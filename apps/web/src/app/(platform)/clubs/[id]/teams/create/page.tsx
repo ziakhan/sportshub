@@ -67,7 +67,7 @@ function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
 export default function CreateTeamPage() {
   const router = useRouter()
   const params = useParams()
-  const clubId = params.id as string
+  const clubId = params?.id as string
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

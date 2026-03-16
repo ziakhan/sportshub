@@ -12,7 +12,7 @@ import {
 
 function AddPlayerForm() {
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirect")
+  const redirectTo = searchParams?.get("redirect") ?? null
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

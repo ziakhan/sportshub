@@ -19,15 +19,51 @@ type EditTeamFormData = z.infer<typeof editTeamSchema>
 
 const ageGroups = ["U6", "U8", "U10", "U12", "U14", "U16", "U18", "Adult"]
 
+interface StaffMember {
+  id: string
+  role: string
+  designation: string | null
+  user: {
+    id: string
+    firstName: string | null
+    lastName: string | null
+    email: string
+  }
+}
+
+interface TeamTryout {
+  id: string
+  title: string
+  scheduledAt: string
+  isPublished: boolean
+  ageGroup: string
+}
+
+function getDesignationLabel(designation: string | null, role: string): string {
+  if (designation === "HeadCoach") return "Head Coach"
+  if (designation === "AssistantCoach") return "Assistant Coach"
+  if (role === "TeamManager") return "Team Manager"
+  return role
+}
+
+function getDesignationBadgeColor(designation: string | null, role: string): string {
+  if (designation === "HeadCoach") return "bg-blue-100 text-blue-800"
+  if (designation === "AssistantCoach") return "bg-indigo-100 text-indigo-800"
+  if (role === "TeamManager") return "bg-green-100 text-green-800"
+  return "bg-gray-100 text-gray-700"
+}
+
 export default function EditTeamPage() {
   const params = useParams()
-  const clubId = params.id as string
-  const teamId = params.teamId as string
+  const clubId = params?.id as string
+  const teamId = params?.teamId as string
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [staffList, setStaffList] = useState<StaffMember[]>([])
+  const [tryoutList, setTryoutList] = useState<TeamTryout[]>([])
 
   const {
     register,
@@ -51,6 +87,8 @@ export default function EditTeamPage() {
           season: team.season || "",
           description: team.description || "",
         })
+        setStaffList(team.staff || [])
+        setTryoutList(team.tryouts || [])
       } catch {
         setError("Failed to load team")
       } finally {
@@ -224,6 +262,120 @@ export default function EditTeamPage() {
           </button>
         </div>
       </form>
+
+      {/* Staff Section */}
+      <div className="mt-8 rounded-lg bg-white p-8 shadow">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          Staff ({staffList.length})
+        </h3>
+        {staffList.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No staff assigned to this team yet. Assign staff when{" "}
+            <Link
+              href={`/clubs/${clubId}/teams/create`}
+              className="text-green-600 hover:text-green-700"
+            >
+              creating a team
+            </Link>{" "}
+            or from the{" "}
+            <Link
+              href={`/clubs/${clubId}/staff`}
+              className="text-green-600 hover:text-green-700"
+            >
+              staff page
+            </Link>
+            .
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {staffList.map((member) => {
+              const name =
+                [member.user.firstName, member.user.lastName]
+                  .filter(Boolean)
+                  .join(" ") || member.user.email
+
+              return (
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between rounded-md border border-gray-200 p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{name}</p>
+                      <p className="text-xs text-gray-500">{member.user.email}</p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getDesignationBadgeColor(member.designation, member.role)}`}
+                    >
+                      {getDesignationLabel(member.designation, member.role)}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Tryouts Section */}
+      <div className="mt-6 rounded-lg bg-white p-8 shadow">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Tryouts ({tryoutList.length})
+          </h3>
+          <Link
+            href={`/clubs/${clubId}/tryouts/create`}
+            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Create Tryout
+          </Link>
+        </div>
+        {tryoutList.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No tryouts linked to this team yet. Link a tryout by selecting this team when creating or editing a tryout.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {tryoutList.map((tryout) => {
+              const isPast = new Date(tryout.scheduledAt) < new Date()
+              return (
+                <Link
+                  key={tryout.id}
+                  href={`/clubs/${clubId}/tryouts/${tryout.id}/edit`}
+                  className="flex items-center justify-between rounded-md border border-gray-200 p-3 transition hover:border-blue-300 hover:shadow-sm"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {tryout.title}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(tryout.scheduledAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      &middot; {tryout.ageGroup}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      isPast
+                        ? "bg-gray-100 text-gray-600"
+                        : tryout.isPublished
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {isPast ? "Past" : tryout.isPublished ? "Published" : "Draft"}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

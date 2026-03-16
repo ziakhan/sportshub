@@ -12,7 +12,7 @@ import {
 export default function EditPlayerPage() {
   const router = useRouter()
   const params = useParams()
-  const playerId = params.id as string
+  const playerId = params?.id as string
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)

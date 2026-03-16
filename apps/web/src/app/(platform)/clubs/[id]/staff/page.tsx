@@ -6,6 +6,8 @@ import { useParams, useRouter } from "next/navigation"
 interface StaffMember {
   id: string
   role: string
+  designation: string | null
+  team: { id: string; name: string } | null
   user: {
     id: string
     firstName: string | null
@@ -35,7 +37,7 @@ interface Invitation {
 export default function StaffPage() {
   const params = useParams()
   const router = useRouter()
-  const clubId = params.id as string
+  const clubId = params?.id as string
 
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [invitations, setInvitations] = useState<Invitation[]>([])
@@ -297,6 +299,13 @@ export default function StaffPage() {
                   .filter(Boolean)
                   .join(" ") || member.user.email
 
+              const designationLabel =
+                member.designation === "HeadCoach"
+                  ? "Head Coach"
+                  : member.designation === "AssistantCoach"
+                    ? "Assistant Coach"
+                    : null
+
               return (
                 <div
                   key={member.id}
@@ -320,6 +329,29 @@ export default function StaffPage() {
                     >
                       {member.role}
                     </span>
+                    {designationLabel && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          member.designation === "HeadCoach"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-indigo-100 text-indigo-800"
+                        }`}
+                      >
+                        {designationLabel}
+                      </span>
+                    )}
+                    {member.team ? (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                        {member.team.name}
+                      </span>
+                    ) : (
+                      member.role !== "ClubOwner" &&
+                      member.role !== "ClubManager" && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                          Unassigned
+                        </span>
+                      )
+                    )}
                   </div>
                   {member.role !== "ClubOwner" && (
                     <button

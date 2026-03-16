@@ -15,6 +15,7 @@ const updateTryoutSchema = z.object({
   fee: z.number().min(0).optional(),
   maxParticipants: z.number().nullable().optional(),
   isPublic: z.boolean().optional(),
+  teamId: z.string().uuid().nullable().optional(),
 })
 
 /**
@@ -34,6 +35,9 @@ export async function GET(
           include: {
             branding: true,
           },
+        },
+        team: {
+          select: { id: true, name: true },
         },
         _count: {
           select: {

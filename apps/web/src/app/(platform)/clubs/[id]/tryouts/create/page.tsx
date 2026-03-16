@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
@@ -27,11 +27,28 @@ const ageGroups = ["U6", "U8", "U10", "U12", "U14", "U16", "U18", "Adult"]
 export default function CreateTryoutPage() {
   const router = useRouter()
   const params = useParams()
-  const clubId = params.id as string
+  const clubId = params?.id as string
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdTryout, setCreatedTryout] = useState<{ title: string } | null>(null)
+  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedTeamId, setSelectedTeamId] = useState("")
+
+  useEffect(() => {
+    async function fetchTeams() {
+      try {
+        const res = await fetch(`/api/teams?tenantId=${clubId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setTeams(data.teams || [])
+        }
+      } catch {
+        // silently fail
+      }
+    }
+    fetchTeams()
+  }, [clubId])
 
   const {
     register,
@@ -58,6 +75,7 @@ export default function CreateTryoutPage() {
           ...data,
           scheduledAt: new Date(data.scheduledAt).toISOString(),
           tenantId: clubId,
+          teamId: selectedTeamId || null,
         }),
       })
 
@@ -101,6 +119,7 @@ export default function CreateTryoutPage() {
                 setCreatedTryout(null)
                 setError(null)
                 setIsSubmitting(false)
+                setSelectedTeamId("")
                 reset()
               }}
               className="flex-1 rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
@@ -202,6 +221,30 @@ export default function CreateTryoutPage() {
               </select>
             </div>
           </div>
+
+          {teams.length > 0 && (
+            <div>
+              <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+                Team
+              </label>
+              <select
+                id="teamId"
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">No team (club-wide tryout)</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Link this tryout to a specific team.
+              </p>
+            </div>
+          )}
 
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">

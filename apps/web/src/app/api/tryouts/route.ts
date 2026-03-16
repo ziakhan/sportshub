@@ -16,6 +16,7 @@ const createTryoutSchema = z.object({
   maxParticipants: z.number().optional(),
   isPublic: z.boolean().default(true),
   tenantId: z.string().uuid(),
+  teamId: z.string().uuid().nullable().optional(),
 })
 
 /**
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
         isPublic: validatedData.isPublic,
         isPublished: false, // Requires explicit publish
         tenantId: validatedData.tenantId,
+        teamId: validatedData.teamId || null,
       },
       include: {
         tenant: {
@@ -137,6 +139,9 @@ export async function GET(request: NextRequest) {
       const tryouts = await prisma.tryout.findMany({
         where: { tenantId },
         include: {
+          team: {
+            select: { id: true, name: true },
+          },
           _count: {
             select: {
               signups: true,

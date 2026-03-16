@@ -66,7 +66,7 @@ function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
 function CreateTeamForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const tenantId = searchParams.get("tenantId")
+  const tenantId = searchParams?.get("tenantId") ?? null
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

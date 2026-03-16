@@ -7,6 +7,9 @@ async function getTryouts(tenantId: string) {
   return await prisma.tryout.findMany({
     where: { tenantId },
     include: {
+      team: {
+        select: { id: true, name: true },
+      },
       _count: {
         select: { signups: true },
       },
@@ -78,6 +81,11 @@ export default async function ClubTryoutsPage({
                       ) : (
                         <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
                           Draft
+                        </span>
+                      )}
+                      {tryout.team && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                          {tryout.team.name}
                         </span>
                       )}
                     </div>

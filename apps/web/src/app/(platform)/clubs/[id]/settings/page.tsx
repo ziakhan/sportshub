@@ -15,7 +15,7 @@ interface ClubData {
 
 export default function SettingsPage() {
   const params = useParams()
-  const clubId = params.id as string
+  const clubId = params?.id as string
 
   const [club, setClub] = useState<ClubData | null>(null)
   const [isLoading, setIsLoading] = useState(true)

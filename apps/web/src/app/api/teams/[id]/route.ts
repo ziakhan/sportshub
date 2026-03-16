@@ -29,6 +29,23 @@ export async function GET(
     const team = await prisma.team.findUnique({
       where: { id: params.id },
       include: {
+        staff: {
+          include: {
+            user: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+        tryouts: {
+          select: {
+            id: true,
+            title: true,
+            scheduledAt: true,
+            isPublished: true,
+            ageGroup: true,
+          },
+          orderBy: { scheduledAt: "desc" },
+        },
         _count: {
           select: {
             players: true,

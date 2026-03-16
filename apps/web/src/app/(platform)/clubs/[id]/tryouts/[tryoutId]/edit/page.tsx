@@ -33,13 +33,15 @@ function toLocalDatetimeValue(isoString: string): string {
 
 export default function EditTryoutPage() {
   const params = useParams()
-  const clubId = params.id as string
-  const tryoutId = params.tryoutId as string
+  const clubId = params?.id as string
+  const tryoutId = params?.tryoutId as string
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedTeamId, setSelectedTeamId] = useState("")
 
   const {
     register,
@@ -53,9 +55,12 @@ export default function EditTryoutPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/tryouts/${tryoutId}`)
-        if (!res.ok) throw new Error("Failed to load tryout")
-        const tryout = await res.json()
+        const [tryoutRes, teamsRes] = await Promise.all([
+          fetch(`/api/tryouts/${tryoutId}`),
+          fetch(`/api/teams?tenantId=${clubId}`),
+        ])
+        if (!tryoutRes.ok) throw new Error("Failed to load tryout")
+        const tryout = await tryoutRes.json()
         reset({
           title: tryout.title,
           description: tryout.description || "",
@@ -68,6 +73,11 @@ export default function EditTryoutPage() {
           maxParticipants: tryout.maxParticipants || undefined,
           isPublic: tryout.isPublic,
         })
+        setSelectedTeamId(tryout.teamId || "")
+        if (teamsRes.ok) {
+          const teamsData = await teamsRes.json()
+          setTeams(teamsData.teams || [])
+        }
       } catch {
         setError("Failed to load tryout")
       } finally {
@@ -75,7 +85,7 @@ export default function EditTryoutPage() {
       }
     }
     load()
-  }, [tryoutId, reset])
+  }, [tryoutId, clubId, reset])
 
   const onSubmit = async (data: EditTryoutFormData) => {
     setIsSubmitting(true)
@@ -97,6 +107,7 @@ export default function EditTryoutPage() {
           fee: data.fee,
           maxParticipants: data.maxParticipants || null,
           isPublic: data.isPublic,
+          teamId: selectedTeamId || null,
         }),
       })
 
@@ -209,6 +220,30 @@ export default function EditTryoutPage() {
               </select>
             </div>
           </div>
+
+          {teams.length > 0 && (
+            <div>
+              <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+                Team
+              </label>
+              <select
+                id="teamId"
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">No team (club-wide tryout)</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Link this tryout to a specific team.
+              </p>
+            </div>
+          )}
 
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">
