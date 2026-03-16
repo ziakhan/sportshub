@@ -1,0 +1,294 @@
+import { prisma } from "@youthbasketballhub/db"
+
+export interface DashboardData {
+  roles: string[]
+  parent?: {
+    players: Array<{
+      id: string
+      firstName: string
+      lastName: string
+      dateOfBirth: Date
+      gender: string
+      teams: Array<{ team: { id: string; name: string; ageGroup: string } }>
+    }>
+    tryoutSignups: Array<{
+      id: string
+      playerName: string
+      status: string
+      tryout: { id: string; title: string; scheduledAt: Date; location: string }
+    }>
+    recentPayments: Array<{
+      id: string
+      amount: any
+      status: string
+      paymentType: string
+      createdAt: Date
+    }>
+  }
+  clubOwner?: {
+    tenants: Array<{
+      id: string
+      name: string
+      slug: string
+      plan: string
+      _count: { teams: number; tryouts: number }
+    }>
+  }
+  staff?: {
+    teams: Array<{
+      id: string
+      name: string
+      ageGroup: string
+      season: string | null
+      tenant: { name: string }
+      _count: { players: number }
+    }>
+  }
+  referee?: {
+    profile: {
+      certificationLevel: string | null
+      gamesRefereed: number
+      averageRating: any
+      standardFee: any
+    } | null
+  }
+  leagueOwner?: {
+    leagues: Array<{
+      id: string
+      name: string
+      season: string
+      _count: { teams: number; games: number }
+    }>
+  }
+  player?: {
+    teams: Array<{
+      id: string
+      name: string
+      ageGroup: string
+      club: string
+    }>
+    upcomingGames: Array<{
+      id: string
+      homeTeam: string
+      awayTeam: string
+      scheduledAt: Date
+      location: string | null
+    }>
+    stats: Array<{
+      id: string
+      points: number
+      rebounds: number
+      assists: number
+    }>
+  }
+}
+
+interface UserWithRoles {
+  id: string
+  roles: Array<{
+    role: string
+    tenantId: string | null
+    teamId: string | null
+    leagueId: string | null
+  }>
+}
+
+export async function getDashboardData(
+  user: UserWithRoles
+): Promise<DashboardData> {
+  const roleNames = user.roles.map((r) => r.role)
+  const data: DashboardData = { roles: roleNames }
+
+  // Parent data
+  if (roleNames.includes("Parent")) {
+    const [players, tryoutSignups, recentPayments] = await Promise.all([
+      prisma.player.findMany({
+        where: { parentId: user.id },
+        include: {
+          teams: {
+            include: { team: { select: { id: true, name: true, ageGroup: true } } },
+          },
+        },
+      }),
+      prisma.tryoutSignup.findMany({
+        where: { userId: user.id },
+        include: {
+          tryout: {
+            select: { id: true, title: true, scheduledAt: true, location: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.payment.findMany({
+        where: { payerId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+    ])
+
+    data.parent = { players, tryoutSignups, recentPayments }
+  }
+
+  // ClubOwner / ClubManager data
+  if (roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")) {
+    const tenantIds = user.roles
+      .filter(
+        (r) =>
+          (r.role === "ClubOwner" || r.role === "ClubManager") && r.tenantId
+      )
+      .map((r) => r.tenantId!)
+
+    if (tenantIds.length > 0) {
+      const tenants = await prisma.tenant.findMany({
+        where: { id: { in: tenantIds } },
+        include: {
+          _count: { select: { teams: true, tryouts: true } },
+        },
+      })
+      data.clubOwner = { tenants }
+    } else {
+      data.clubOwner = { tenants: [] }
+    }
+  }
+
+  // Staff data
+  if (roleNames.includes("Staff")) {
+    const teamIds = user.roles
+      .filter((r) => r.role === "Staff" && r.teamId)
+      .map((r) => r.teamId!)
+
+    if (teamIds.length > 0) {
+      const teams = await prisma.team.findMany({
+        where: { id: { in: teamIds } },
+        include: {
+          tenant: { select: { name: true } },
+          _count: { select: { players: true } },
+        },
+      })
+      data.staff = { teams }
+    } else {
+      data.staff = { teams: [] }
+    }
+  }
+
+  // Referee data
+  if (roleNames.includes("Referee")) {
+    const profile = await prisma.refereeProfile.findUnique({
+      where: { userId: user.id },
+      select: {
+        certificationLevel: true,
+        gamesRefereed: true,
+        averageRating: true,
+        standardFee: true,
+      },
+    })
+    data.referee = { profile }
+  }
+
+  // LeagueOwner / LeagueManager data
+  if (
+    roleNames.includes("LeagueOwner") ||
+    roleNames.includes("LeagueManager")
+  ) {
+    const leagueIds = user.roles
+      .filter(
+        (r) =>
+          (r.role === "LeagueOwner" || r.role === "LeagueManager") &&
+          r.leagueId
+      )
+      .map((r) => r.leagueId!)
+
+    if (leagueIds.length > 0) {
+      const leagues = await prisma.league.findMany({
+        where: { id: { in: leagueIds } },
+        include: {
+          _count: { select: { teams: true, games: true } },
+        },
+      })
+      data.leagueOwner = { leagues }
+    } else {
+      data.leagueOwner = { leagues: [] }
+    }
+  }
+
+  // Player data
+  if (roleNames.includes("Player")) {
+    // Find players linked to this user (via parentId — self-registered 13+ players)
+    const players = await prisma.player.findMany({
+      where: { parentId: user.id },
+      include: {
+        teams: {
+          where: { status: "ACTIVE" },
+          include: {
+            team: {
+              select: {
+                id: true,
+                name: true,
+                ageGroup: true,
+                tenant: { select: { name: true } },
+              },
+            },
+          },
+        },
+        stats: {
+          orderBy: { game: { scheduledAt: "desc" } },
+          take: 3,
+        },
+      },
+    })
+
+    const teamIds = players.flatMap((p) =>
+      p.teams.map((t) => t.team.id)
+    )
+
+    const upcomingGames =
+      teamIds.length > 0
+        ? await prisma.game.findMany({
+            where: {
+              OR: [
+                { homeTeamId: { in: teamIds } },
+                { awayTeamId: { in: teamIds } },
+              ],
+              scheduledAt: { gte: new Date() },
+              status: "SCHEDULED",
+            },
+            include: {
+              homeTeam: { select: { name: true } },
+              awayTeam: { select: { name: true } },
+              venue: { select: { name: true } },
+            },
+            orderBy: { scheduledAt: "asc" },
+            take: 5,
+          })
+        : []
+
+    data.player = {
+      teams: players.flatMap((p) =>
+        p.teams.map((t) => ({
+          id: t.team.id,
+          name: t.team.name,
+          ageGroup: t.team.ageGroup,
+          club: t.team.tenant.name,
+        }))
+      ),
+      upcomingGames: upcomingGames.map((g) => ({
+        id: g.id,
+        homeTeam: g.homeTeam.name,
+        awayTeam: g.awayTeam.name,
+        scheduledAt: g.scheduledAt,
+        location: g.venue?.name || null,
+      })),
+      stats: players.flatMap((p) =>
+        p.stats.map((s) => ({
+          id: s.id,
+          points: s.points,
+          rebounds: s.rebounds,
+          assists: s.assists,
+        }))
+      ),
+    }
+  }
+
+  return data
+}

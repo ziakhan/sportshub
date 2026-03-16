@@ -1,0 +1,41 @@
+{
+  "name": "youth-basketball-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Youth Basketball Hub - Complete platform for youth basketball clubs, leagues, and families",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "db:studio": "turbo run db:studio",
+    "db:seed": "turbo run db:seed"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.11.2",
+    "prettier": "^3.1.0",
+    "prettier-plugin-tailwindcss": "^0.5.9",
+    "prisma": "^5.8.1",
+    "turbo": "^1.11.2",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "npm@10.2.4",
+  "engines": {
+    "node": ">=18.17.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.8.1"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker exec:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(export PATH=\"/usr/local/opt/node@18/bin:$PATH\")",
+      "Bash(npx next build:*)"
+    ]
+  }
+}

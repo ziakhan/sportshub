@@ -1,0 +1,901 @@
+// Youth Basketball Hub - Complete Prisma Schema
+// Includes all MVP models with recommended enhancements
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "darwin", "darwin-arm64"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE ENTITIES
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  phoneNumber   String?
+  avatarUrl     String?
+
+  // Soft Delete (Recommended Addition)
+  status        UserStatus @default(ACTIVE)
+  deletedAt     DateTime?
+
+  // Onboarding
+  onboardedAt   DateTime?
+
+  // Relationships
+  roles         UserRole[]
+  players       Player[]  @relation("ParentPlayers")
+  tryoutSignups TryoutSignup[]
+  paymentsAsPayer Payment[] @relation("PayerPayments")
+  paymentsAsPayee Payment[] @relation("PayeePayments")
+  auditLogs     AuditLog[]
+  reviews       Review[]
+  announcements Announcement[]
+  sentInvitations     StaffInvitation[] @relation("SentInvitations")
+  receivedInvitations StaffInvitation[] @relation("ReceivedInvitations")
+  notifications       Notification[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DELETED
+}
+
+model UserRole {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role          Role
+
+  // Scope (nullable based on role)
+  tenantId      String?
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  teamId        String?
+  team          Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  leagueId      String?
+  league        League?  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  gameId        String?  // For temporary scorekeeper role
+  game          Game?    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  designation   String?   // "HeadCoach", "AssistantCoach" — for Coach roles on a team
+  expiresAt     DateTime? // For temporary roles
+
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, role, tenantId, teamId, leagueId, gameId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([teamId])
+  @@index([leagueId])
+}
+
+enum Role {
+  ClubOwner
+  ClubManager
+  Staff
+  TeamManager
+  Scorekeeper
+  LeagueOwner
+  LeagueManager
+  Parent
+  Player
+  Referee
+  PlatformAdmin
+}
+
+// ============================================
+// MULTI-TENANCY
+// ============================================
+
+model Tenant {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  name          String
+  description   String?  @db.Text
+  customDomain  String?  @unique
+
+  // Timezone (Recommended Addition)
+  timezone      String   @default("America/New_York")
+
+  // Stripe
+  stripeAccountId String? @unique
+  stripeAccountStatus String? // active, pending, restricted
+
+  // Subscription
+  plan          TenantPlan @default(FREE)
+  planExpiresAt DateTime?
+
+  // Relationships
+  branding      TenantBranding?
+  features      TenantFeatures?
+  teams         Team[]
+  staff         UserRole[]
+  tryouts       Tryout[]
+  practices     Practice[]
+  venues        Venue[]
+  announcements Announcement[]
+  payments      Payment[] @relation("TenantPayments")
+  reviews       Review[]
+  staffInvitations StaffInvitation[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([slug])
+  @@index([customDomain])
+}
+
+enum TenantPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+model TenantBranding {
+  id            String   @id @default(uuid())
+  tenantId      String   @unique
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  logoUrl       String?
+  faviconUrl    String?
+  primaryColor  String   @default("#1a73e8")
+  secondaryColor String  @default("#34a853")
+  accentColor   String   @default("#fbbc04")
+  fontFamily    String   @default("Inter")
+  customCss     String?  @db.Text
+
+  emailLogoUrl  String?
+  emailFooter   String?  @db.Text
+
+  updatedAt     DateTime @updatedAt
+}
+
+model TenantFeatures {
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  enableTournaments Boolean  @default(false)
+  enableReviews     Boolean  @default(true)
+  enableChat        Boolean  @default(false)
+  enableAnalytics   Boolean  @default(false)
+
+  maxTeams          Int      @default(10)
+  maxStaff          Int      @default(5)
+  maxVenues         Int      @default(3)
+}
+
+// ============================================
+// TEAMS & PLAYERS
+// ============================================
+
+model Team {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  ageGroup      String   // U10, U12, U14, etc.
+  gender        Gender?
+  season        String?  // "Spring 2026"
+  description   String?  @db.Text
+
+  // Relationships
+  players       TeamPlayer[]
+  staff         UserRole[]
+  leagues       LeagueTeam[]
+  homeGames     Game[]   @relation("HomeTeam")
+  awayGames     Game[]   @relation("AwayTeam")
+  practices     Practice[]
+  announcements Announcement[]
+  offers        Offer[]
+  tryouts       Tryout[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([ageGroup])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  COED
+}
+
+model Player {
+  id            String   @id @default(uuid())
+
+  // Personal Info
+  firstName     String
+  lastName      String
+  dateOfBirth   DateTime
+  gender        Gender
+  jerseyNumber  String?
+
+  // COPPA Compliance (Recommended Addition)
+  isMinor       Boolean  @default(false) // Age < 13
+  parentalConsentGiven Boolean? // Required if isMinor = true
+  consentGivenAt DateTime?
+  canLogin      Boolean  @default(false) // Only true if 13+
+
+  // Parent/Guardian
+  parentId      String
+  parent        User     @relation("ParentPlayers", fields: [parentId], references: [id], onDelete: Cascade)
+
+  // Relationships
+  teams         TeamPlayer[]
+  stats         PlayerStat[]
+  offers        Offer[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([isMinor])
+}
+
+model TeamPlayer {
+  id            String   @id @default(uuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  status        TeamPlayerStatus @default(ACTIVE)
+  joinedAt      DateTime @default(now())
+  leftAt        DateTime?
+
+  @@unique([teamId, playerId])
+  @@index([teamId])
+  @@index([playerId])
+}
+
+enum TeamPlayerStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ============================================
+// REFEREE PROFILES (Recommended Addition)
+// ============================================
+
+model RefereeProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+
+  // Certifications
+  certificationLevel String? // "Level 1", "Level 2", etc.
+  certificationExpiry DateTime?
+
+  // Availability
+  availableRegions String[] // ["California", "Nevada"]
+
+  // Fee
+  standardFee   Decimal  @db.Decimal(10, 2)
+
+  // Stripe Connect
+  stripeAccountId String? @unique
+  stripeAccountStatus String?
+
+  // Stats
+  gamesRefereed Int      @default(0)
+  averageRating Decimal? @db.Decimal(3, 2)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================
+// TRYOUTS & OFFERS
+// ============================================
+
+model Tryout {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  teamId        String?
+  team          Team?    @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  title         String
+  description   String?  @db.Text
+  ageGroup      String
+  gender        Gender?
+
+  location      String
+  scheduledAt   DateTime
+  duration      Int?     // minutes
+
+  fee           Decimal  @db.Decimal(10, 2)
+  maxParticipants Int?
+
+  isPublished   Boolean  @default(false)
+  isPublic      Boolean  @default(true)
+
+  // Relationships
+  signups       TryoutSignup[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([teamId])
+  @@index([scheduledAt])
+  @@index([isPublished, isPublic])
+}
+
+model TryoutSignup {
+  id            String   @id @default(uuid())
+  tryoutId      String
+  tryout        Tryout   @relation(fields: [tryoutId], references: [id], onDelete: Cascade)
+
+  userId        String   // Parent
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  playerName    String
+  playerAge     Int
+  playerGender  Gender
+
+  status        TryoutSignupStatus @default(PENDING)
+  paymentId     String?  @unique
+  payment       Payment? @relation(fields: [paymentId], references: [id])
+
+  notes         String?  @db.Text
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tryoutId, userId, playerName])
+  @@index([tryoutId])
+  @@index([userId])
+}
+
+enum TryoutSignupStatus {
+  PENDING
+  PAID
+  CONFIRMED
+  CANCELLED
+}
+
+model Offer {
+  id            String   @id @default(uuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  status        OfferStatus @default(PENDING)
+
+  seasonFee     Decimal  @db.Decimal(10, 2)
+  installments  Int      @default(1)
+
+  message       String?  @db.Text
+  expiresAt     DateTime
+
+  respondedAt   DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([playerId])
+  @@index([status])
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+// ============================================
+// LEAGUES & GAMES
+// ============================================
+
+model League {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?  @db.Text
+  season        String   // "Spring 2026"
+
+  ownerId       String
+
+  // Age Group Cutoff (Recommended Addition)
+  ageGroupCutoffDate DateTime? // e.g., "Aug 31, 2026"
+
+  // Stripe
+  stripeAccountId String? @unique
+
+  // Relationships
+  divisions     LeagueDivision[]
+  teams         LeagueTeam[]
+  games         Game[]
+  staff         UserRole[]
+  reviews       Review[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([season])
+}
+
+model LeagueDivision {
+  id            String   @id @default(uuid())
+  leagueId      String
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  name          String   // "U12 Boys Division A"
+  ageGroup      String
+  gender        Gender?
+
+  teams         LeagueTeam[]
+
+  @@index([leagueId])
+}
+
+model LeagueTeam {
+  id            String   @id @default(uuid())
+  leagueId      String
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  divisionId    String?
+  division      LeagueDivision? @relation(fields: [divisionId], references: [id])
+
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  status        LeagueTeamStatus @default(PENDING)
+  registrationFee Decimal? @db.Decimal(10, 2)
+  paymentId     String?  @unique
+  payment       Payment? @relation(fields: [paymentId], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  @@unique([leagueId, teamId])
+  @@index([leagueId])
+  @@index([teamId])
+}
+
+enum LeagueTeamStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+model Game {
+  id            String   @id @default(uuid())
+  leagueId      String?  // Null for exhibition games
+  league        League?  @relation(fields: [leagueId], references: [id])
+
+  homeTeamId    String
+  homeTeam      Team     @relation("HomeTeam", fields: [homeTeamId], references: [id])
+
+  awayTeamId    String
+  awayTeam      Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
+
+  venueId       String?
+  venue         Venue?   @relation(fields: [venueId], references: [id])
+
+  scheduledAt   DateTime
+  duration      Int      @default(90) // minutes
+  status        GameStatus @default(SCHEDULED)
+
+  // Scoring
+  homeScore     Int?
+  awayScore     Int?
+
+  // Relationships
+  events        GameEvent[]
+  stats         PlayerStat[]
+  scorekeepers  UserRole[]
+
+  finalizedAt   DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([leagueId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([scheduledAt])
+  @@index([status])
+}
+
+enum GameStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+model GameEvent {
+  id            String   @id @default(uuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  eventType     GameEventType
+  teamId        String   // Team that scored/fouled
+  playerId      String?  // Player involved
+
+  points        Int?     // For SCORE events
+  quarter       Int?     // 1-4
+  timestamp     DateTime @default(now())
+
+  metadata      Json?    // Additional event data
+
+  @@index([gameId])
+  @@index([teamId])
+  @@index([playerId])
+}
+
+enum GameEventType {
+  SCORE_2PT
+  SCORE_3PT
+  SCORE_FT
+  REBOUND
+  ASSIST
+  STEAL
+  BLOCK
+  TURNOVER
+  FOUL
+  TIMEOUT
+  SUBSTITUTION
+}
+
+model PlayerStat {
+  id            String   @id @default(uuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  // Stats (Auto-calculated from GameEvents)
+  points        Int      @default(0)
+  rebounds      Int      @default(0)
+  assists       Int      @default(0)
+  steals        Int      @default(0)
+  blocks        Int      @default(0)
+  turnovers     Int      @default(0)
+  fouls         Int      @default(0)
+
+  minutesPlayed Int?
+
+  @@unique([gameId, playerId])
+  @@index([gameId])
+  @@index([playerId])
+}
+
+// ============================================
+// VENUES & PRACTICES
+// ============================================
+
+model Venue {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  address       String
+  city          String
+  state         String
+  zipCode       String
+
+  capacity      Int?
+  notes         String?  @db.Text
+
+  games         Game[]
+  practices     Practice[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model Practice {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  venueId       String?
+  venue         Venue?   @relation(fields: [venueId], references: [id])
+
+  scheduledAt   DateTime
+  duration      Int      // minutes
+
+  notes         String?  @db.Text
+  status        PracticeStatus @default(SCHEDULED)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([teamId])
+  @@index([scheduledAt])
+}
+
+enum PracticeStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================
+// PAYMENTS (Enhanced with Installments)
+// ============================================
+
+model Payment {
+  id            String   @id @default(uuid())
+
+  // Stripe
+  stripePaymentIntentId String? @unique
+  stripeChargeId        String? @unique
+
+  // Parties
+  payerId       String
+  payer         User     @relation("PayerPayments", fields: [payerId], references: [id])
+
+  payeeId       String?  // Club/League owner
+  payee         User?    @relation("PayeePayments", fields: [payeeId], references: [id])
+
+  tenantId      String?  // If club payment
+  tenant        Tenant?  @relation("TenantPayments", fields: [tenantId], references: [id])
+
+  // Payment Details
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("usd")
+  platformFee   Decimal? @db.Decimal(10, 2)
+
+  status        PaymentStatus @default(PENDING)
+
+  // Installments (Recommended Addition)
+  dueDate       DateTime? // For installment payments
+  installmentNumber Int?  // 1, 2, 3, 4
+  relatedOfferId String?  // Link installments together
+
+  // Context
+  paymentType   PaymentType
+  description   String?
+
+  // Relationships
+  tryoutSignup  TryoutSignup?
+  leagueTeam    LeagueTeam?
+
+  // Refund
+  refundedAt    DateTime?
+  refundAmount  Decimal? @db.Decimal(10, 2)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([paymentType])
+  @@index([dueDate])
+  @@index([relatedOfferId])
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum PaymentType {
+  TRYOUT_FEE
+  SEASON_FEE
+  LEAGUE_FEE
+  TOURNAMENT_FEE
+  REFEREE_FEE
+  OTHER
+}
+
+// ============================================
+// COMMUNICATIONS
+// ============================================
+
+model Announcement {
+  id            String   @id @default(uuid())
+  tenantId      String?
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  teamId        String?
+  team          Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id])
+
+  title         String
+  content       String   @db.Text
+
+  isPinned      Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([teamId])
+  @@index([createdAt])
+}
+
+// ============================================
+// REVIEWS & RATINGS (v1+)
+// ============================================
+
+model Review {
+  id            String   @id @default(uuid())
+
+  reviewerId    String
+  reviewer      User     @relation(fields: [reviewerId], references: [id])
+
+  // Target (one of these)
+  tenantId      String?  // Review of club
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id])
+
+  leagueId      String?  // Review of league
+  league        League?  @relation(fields: [leagueId], references: [id])
+
+  // Content
+  rating        Int      // 1-5
+  title         String?
+  content       String?  @db.Text
+
+  status        ReviewStatus @default(PUBLISHED)
+
+  // Moderation
+  flaggedAt     DateTime?
+  moderatedAt   DateTime?
+  moderatorNotes String? @db.Text
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([leagueId])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  FLAGGED
+  REMOVED
+}
+
+// ============================================
+// STAFF INVITATIONS & NOTIFICATIONS
+// ============================================
+
+model StaffInvitation {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Who sent it
+  invitedById   String
+  invitedBy     User     @relation("SentInvitations", fields: [invitedById], references: [id])
+
+  // Who it's for
+  invitedUserId String?
+  invitedUser   User?    @relation("ReceivedInvitations", fields: [invitedUserId], references: [id])
+  invitedEmail  String
+
+  role          Role
+  teamId        String?
+  designation   String?   // "HeadCoach", "AssistantCoach" — carried through on accept
+  message       String?  @db.Text
+
+  type          InvitationType
+  status        InvitationStatus @default(PENDING)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  respondedAt   DateTime?
+
+  @@index([tenantId])
+  @@index([invitedUserId])
+  @@index([invitedEmail])
+  @@index([status])
+}
+
+enum InvitationType {
+  INVITE
+  REQUEST
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type          String
+  title         String
+  message       String   @db.Text
+  link          String?
+
+  isRead        Boolean  @default(false)
+
+  referenceId   String?
+  referenceType String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+// ============================================
+// AUDIT & LOGGING
+// ============================================
+
+model AuditLog {
+  id            String   @id @default(uuid())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  userRole      Role
+
+  action        String   // CREATE, UPDATE, DELETE, etc.
+  resource      String   // Team, Payment, etc.
+  resourceId    String
+
+  tenantId      String?
+  ipAddress     String
+  userAgent     String
+
+  changes       Json?
+  metadata      Json?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([resource, resourceId])
+}
