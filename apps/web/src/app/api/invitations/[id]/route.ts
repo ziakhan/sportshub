@@ -66,12 +66,14 @@ export async function PATCH(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
     } else {
-      // REQUEST — only club owner/manager can accept/decline
+      // REQUEST — only club owner/manager or PlatformAdmin can accept/decline
       const hasAccess = await prisma.userRole.findFirst({
         where: {
           userId: user.id,
-          tenantId: invitation.tenantId,
-          role: { in: ["ClubOwner", "ClubManager"] },
+          OR: [
+            { tenantId: invitation.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+            { role: "PlatformAdmin" },
+          ],
         },
       })
 

@@ -135,12 +135,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Verify ClubOwner or ClubManager
+    // Verify ClubOwner, ClubManager, or PlatformAdmin
     const userRole = await prisma.userRole.findFirst({
       where: {
         userId: session.user.id,
-        tenantId: tryout.tenantId,
-        role: { in: ["ClubOwner", "ClubManager"] },
+        OR: [
+          { tenantId: tryout.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          { role: "PlatformAdmin" },
+        ],
       },
     })
 

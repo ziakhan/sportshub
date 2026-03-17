@@ -34,14 +34,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTryoutSchema.parse(body)
 
-    // Verify permissions
+    // Verify permissions (ClubOwner, ClubManager, Staff, or PlatformAdmin)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         roles: {
           where: {
-            tenantId: validatedData.tenantId,
-            role: { in: ["ClubOwner", "ClubManager", "Staff"] },
+            OR: [
+              { tenantId: validatedData.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
+              { role: "PlatformAdmin" },
+            ],
           },
         },
       },

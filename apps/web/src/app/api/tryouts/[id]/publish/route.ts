@@ -26,14 +26,16 @@ export async function POST(
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Verify permissions
+    // Verify permissions (ClubOwner, ClubManager, or PlatformAdmin)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         roles: {
           where: {
-            tenantId: tryout.tenantId,
-            role: { in: ["ClubOwner", "ClubManager"] },
+            OR: [
+              { tenantId: tryout.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+              { role: "PlatformAdmin" },
+            ],
           },
         },
       },
