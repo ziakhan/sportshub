@@ -313,22 +313,31 @@ export default function EditTeamPage() {
     ]
 
     try {
+      const payload: Record<string, unknown> = {
+        name: data.name,
+        ageGroup: data.ageGroup,
+        season: data.season || null,
+        description: data.description || null,
+      }
+      if (data.gender) payload.gender = data.gender
+      if (staffToAddPayload.length > 0) payload.staffToAdd = staffToAddPayload
+      if (staffToRemove.length > 0) payload.staffToRemove = staffToRemove
+
       const res = await fetch(`/api/teams/${teamId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          gender: data.gender || null,
-          season: data.season || null,
-          description: data.description || null,
-          staffToAdd: staffToAddPayload.length > 0 ? staffToAddPayload : undefined,
-          staffToRemove: staffToRemove.length > 0 ? staffToRemove : undefined,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to update team")
+        let errorMsg = "Failed to update team"
+        try {
+          const errorData = await res.json()
+          errorMsg = errorData.error || errorMsg
+        } catch {
+          // Response wasn't JSON
+        }
+        throw new Error(errorMsg)
       }
 
       const updatedTeam = await res.json()
