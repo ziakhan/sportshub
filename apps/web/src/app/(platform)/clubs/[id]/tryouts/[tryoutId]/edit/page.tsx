@@ -112,8 +112,14 @@ export default function EditTryoutPage() {
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to update tryout")
+        let errorMsg = "Failed to update tryout"
+        try {
+          const errorData = await res.json()
+          errorMsg = errorData.error || errorMsg
+        } catch {
+          // Response wasn't JSON
+        }
+        throw new Error(errorMsg)
       }
 
       setSaved(true)

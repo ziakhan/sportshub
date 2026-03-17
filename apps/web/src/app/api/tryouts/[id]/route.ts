@@ -53,14 +53,20 @@ export async function GET(
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Allow club staff to see unpublished tryouts; otherwise require published
+    // Allow club staff or PlatformAdmin to see unpublished tryouts
     const session = await getServerSession(authOptions)
     if (!tryout.isPublished) {
       if (!session?.user?.id) {
         return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
       }
       const hasAccess = await prisma.userRole.findFirst({
-        where: { userId: session.user.id, tenantId: tryout.tenantId },
+        where: {
+          userId: session.user.id,
+          OR: [
+            { tenantId: tryout.tenantId },
+            { role: "PlatformAdmin" },
+          ],
+        },
       })
       if (!hasAccess) {
         return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
