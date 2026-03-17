@@ -2,6 +2,31 @@ import { prisma } from "@youthbasketballhub/db"
 
 export interface DashboardData {
   roles: string[]
+  admin?: {
+    totalUsers: number
+    totalClubs: number
+    totalTeams: number
+    totalPlayers: number
+    totalLeagues: number
+    totalTryouts: number
+    totalGames: number
+    pendingInvitations: number
+    recentClubs: Array<{
+      id: string
+      name: string
+      slug: string
+      plan: string
+      _count: { teams: number; tryouts: number }
+    }>
+    recentUsers: Array<{
+      id: string
+      firstName: string | null
+      lastName: string | null
+      email: string
+      createdAt: Date
+      roles: Array<{ role: string }>
+    }>
+  }
   parent?: {
     players: Array<{
       id: string
@@ -98,6 +123,61 @@ export async function getDashboardData(
 ): Promise<DashboardData> {
   const roleNames = user.roles.map((r) => r.role)
   const data: DashboardData = { roles: roleNames }
+
+  // PlatformAdmin data
+  if (roleNames.includes("PlatformAdmin")) {
+    const [
+      totalUsers,
+      totalClubs,
+      totalTeams,
+      totalPlayers,
+      totalLeagues,
+      totalTryouts,
+      totalGames,
+      pendingInvitations,
+      recentClubs,
+      recentUsers,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.tenant.count(),
+      prisma.team.count(),
+      prisma.player.count(),
+      prisma.league.count(),
+      prisma.tryout.count(),
+      prisma.game.count(),
+      prisma.staffInvitation.count({ where: { status: "PENDING" } }),
+      prisma.tenant.findMany({
+        include: { _count: { select: { teams: true, tryouts: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.user.findMany({
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          createdAt: true,
+          roles: { select: { role: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+    ])
+
+    data.admin = {
+      totalUsers,
+      totalClubs,
+      totalTeams,
+      totalPlayers,
+      totalLeagues,
+      totalTryouts,
+      totalGames,
+      pendingInvitations,
+      recentClubs,
+      recentUsers,
+    }
+  }
 
   // Parent data
   if (roleNames.includes("Parent")) {

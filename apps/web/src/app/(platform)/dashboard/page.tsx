@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { getDashboardData } from "./get-dashboard-data"
+import { AdminSection } from "./sections/admin-section"
 import { ParentSection } from "./sections/parent-section"
 import { ClubSection } from "./sections/club-section"
 import { StaffSection } from "./sections/staff-section"
@@ -18,6 +19,7 @@ export default async function DashboardPage() {
   const roles = dbUser.roles.map((r) => r.role)
   const dashboardData = await getDashboardData(dbUser)
 
+  const hasAdminRole = roles.includes("PlatformAdmin")
   const hasClubRole =
     roles.includes("ClubOwner") || roles.includes("ClubManager")
   const hasStaffRole = roles.includes("Staff") || roles.includes("TeamManager")
@@ -40,6 +42,10 @@ export default async function DashboardPage() {
       </div>
 
       {/* Role-specific sections — ordered by "management" roles first */}
+      {hasAdminRole && dashboardData.admin && (
+        <AdminSection data={dashboardData.admin} />
+      )}
+
       {hasClubRole && dashboardData.clubOwner && (
         <ClubSection data={dashboardData.clubOwner} />
       )}

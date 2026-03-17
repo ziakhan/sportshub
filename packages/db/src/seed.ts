@@ -116,6 +116,7 @@ async function main() {
         firstName: user.firstName,
         lastName: user.lastName,
         status: "ACTIVE",
+        onboardedAt: new Date(),
       },
       update: {
         firstName: user.firstName,
