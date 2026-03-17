@@ -73,11 +73,14 @@ export async function GET(
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // Verify user has access to this tenant
+    // Verify user has access to this tenant (or is PlatformAdmin)
     const userRole = await prisma.userRole.findFirst({
       where: {
         userId: session.user.id,
-        tenantId: team.tenantId,
+        OR: [
+          { tenantId: team.tenantId },
+          { role: "PlatformAdmin" },
+        ],
       },
     })
 
@@ -116,12 +119,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // Verify ClubOwner or ClubManager
+    // Verify ClubOwner, ClubManager, or PlatformAdmin
     const userRole = await prisma.userRole.findFirst({
       where: {
         userId: session.user.id,
-        tenantId: team.tenantId,
-        role: { in: ["ClubOwner", "ClubManager"] },
+        OR: [
+          { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          { role: "PlatformAdmin" },
+        ],
       },
     })
 

@@ -40,14 +40,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTeamSchema.parse(body)
 
-    // Verify user has ClubOwner or ClubManager role for this tenant
+    // Verify user has ClubOwner, ClubManager, or PlatformAdmin role
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         roles: {
           where: {
-            tenantId: validatedData.tenantId,
-            role: { in: ["ClubOwner", "ClubManager"] },
+            OR: [
+              { tenantId: validatedData.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+              { role: "PlatformAdmin" },
+            ],
           },
         },
       },
@@ -204,12 +206,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Verify user has access to this tenant
+    // Verify user has access to this tenant (or is PlatformAdmin)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         roles: {
-          where: { tenantId },
+          where: {
+            OR: [
+              { tenantId },
+              { role: "PlatformAdmin" },
+            ],
+          },
         },
       },
     })
