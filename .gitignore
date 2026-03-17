@@ -43,7 +43,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Prisma
-prisma/migrations
+# prisma/migrations — tracked in git for CI/CD migrate deploy
 
 # IDE
 .vscode/*

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { sendStaffInviteEmail } from "@/lib/email"
 
 const inviteSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -16,6 +17,8 @@ async function verifyClubAccess(userId: string, tenantId: string) {
     where: { id: userId },
     select: {
       id: true,
+      firstName: true,
+      lastName: true,
       roles: {
         where: {
           tenantId,
@@ -169,6 +172,24 @@ export async function POST(
         type: "INVITE",
       },
     })
+
+    // Send invitation email
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const inviteLink = invitedUser
+      ? `${appUrl}/notifications`
+      : `${appUrl}/auth/signup?invite=${invitation.id}`
+    try {
+      await sendStaffInviteEmail({
+        to: data.email,
+        clubName: tenant?.name || "A club",
+        role: data.role,
+        inviterName: `${user.firstName} ${user.lastName}`.trim(),
+        inviteLink,
+        message: data.message,
+      })
+    } catch (emailError) {
+      console.error("Failed to send invite email:", emailError)
+    }
 
     // Create notification for the invited user (if they exist)
     if (invitedUser) {
