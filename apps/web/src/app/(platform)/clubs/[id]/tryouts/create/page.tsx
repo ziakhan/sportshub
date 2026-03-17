@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -10,8 +10,6 @@ import { z } from "zod"
 const createTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
   description: z.string().optional(),
-  ageGroup: z.string().min(1, "Select an age group"),
-  gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   location: z.string().min(3, "Enter a location"),
   scheduledAt: z.string().min(1, "Select a date and time"),
   duration: z.coerce.number().min(1).optional(),
@@ -22,18 +20,25 @@ const createTryoutSchema = z.object({
 
 type CreateTryoutFormData = z.infer<typeof createTryoutSchema>
 
-const ageGroups = ["U6", "U8", "U10", "U12", "U14", "U16", "U18", "Adult"]
+interface Team {
+  id: string
+  name: string
+  ageGroup: string
+  gender: string | null
+}
 
 export default function CreateTryoutPage() {
-  const router = useRouter()
   const params = useParams()
   const clubId = params?.id as string
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdTryout, setCreatedTryout] = useState<{ title: string } | null>(null)
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState("")
+  const [loadingTeams, setLoadingTeams] = useState(true)
+
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId)
 
   useEffect(() => {
     async function fetchTeams() {
@@ -45,6 +50,8 @@ export default function CreateTryoutPage() {
         }
       } catch {
         // silently fail
+      } finally {
+        setLoadingTeams(false)
       }
     }
     fetchTeams()
@@ -64,6 +71,11 @@ export default function CreateTryoutPage() {
   })
 
   const onSubmit = async (data: CreateTryoutFormData) => {
+    if (!selectedTeamId) {
+      setError("Please select a team")
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
@@ -71,15 +83,15 @@ export default function CreateTryoutPage() {
       const payload: Record<string, unknown> = {
         title: data.title,
         description: data.description || undefined,
-        ageGroup: data.ageGroup,
+        ageGroup: selectedTeam?.ageGroup,
         location: data.location,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
         tenantId: clubId,
-        teamId: selectedTeamId || null,
+        teamId: selectedTeamId,
       }
-      if (data.gender) payload.gender = data.gender
+      if (selectedTeam?.gender) payload.gender = selectedTeam.gender
       if (data.duration) payload.duration = data.duration
       if (data.maxParticipants) payload.maxParticipants = data.maxParticipants
 
@@ -148,6 +160,13 @@ export default function CreateTryoutPage() {
     )
   }
 
+  const genderLabel = (g: string | null) => {
+    if (g === "MALE") return "Boys"
+    if (g === "FEMALE") return "Girls"
+    if (g === "COED") return "Co-ed"
+    return "Any"
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
@@ -169,6 +188,48 @@ export default function CreateTryoutPage() {
           {error && (
             <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {error}
+            </div>
+          )}
+
+          {/* Team Selection (mandatory) */}
+          <div>
+            <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+              Team <span className="text-red-500">*</span>
+            </label>
+            {loadingTeams ? (
+              <p className="mt-1 text-sm text-gray-500">Loading teams...</p>
+            ) : teams.length === 0 ? (
+              <div className="mt-1 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+                No teams found. <Link href={`/clubs/${clubId}/teams/create`} className="font-medium underline">Create a team</Link> first.
+              </div>
+            ) : (
+              <select
+                id="teamId"
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">Select a team</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.ageGroup}{team.gender ? ` / ${genderLabel(team.gender)}` : ""})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Show age group & gender from team */}
+          {selectedTeam && (
+            <div className="flex gap-4">
+              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
+                <span className="text-blue-600">Age Group:</span>{" "}
+                <span className="font-medium text-blue-900">{selectedTeam.ageGroup}</span>
+              </div>
+              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
+                <span className="text-blue-600">Gender:</span>{" "}
+                <span className="font-medium text-blue-900">{genderLabel(selectedTeam.gender)}</span>
+              </div>
             </div>
           )}
 
@@ -200,67 +261,6 @@ export default function CreateTryoutPage() {
               placeholder="What to expect, what to bring..."
             />
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="ageGroup" className="block text-sm font-medium text-gray-700">
-                Age Group <span className="text-red-500">*</span>
-              </label>
-              <select
-                {...register("ageGroup")}
-                id="ageGroup"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select age group</option>
-                {ageGroups.map((age) => (
-                  <option key={age} value={age}>{age}</option>
-                ))}
-              </select>
-              {errors.ageGroup && (
-                <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <select
-                {...register("gender")}
-                id="gender"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Any</option>
-                <option value="MALE">Boys</option>
-                <option value="FEMALE">Girls</option>
-                <option value="COED">Co-ed</option>
-              </select>
-            </div>
-          </div>
-
-          {teams.length > 0 && (
-            <div>
-              <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
-                Team
-              </label>
-              <select
-                id="teamId"
-                value={selectedTeamId}
-                onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">No team (club-wide tryout)</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Link this tryout to a specific team.
-              </p>
-            </div>
-          )}
 
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">
@@ -368,7 +368,7 @@ export default function CreateTryoutPage() {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedTeamId}
               className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
             >
               {isSubmitting ? "Creating..." : "Create Tryout"}

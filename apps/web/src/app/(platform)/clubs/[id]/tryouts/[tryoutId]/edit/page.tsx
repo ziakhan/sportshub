@@ -10,8 +10,6 @@ import { z } from "zod"
 const editTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
   description: z.string().optional(),
-  ageGroup: z.string().min(1, "Select an age group"),
-  gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   location: z.string().min(3, "Enter a location"),
   scheduledAt: z.string().min(1, "Select a date and time"),
   duration: z.coerce.number().min(1).optional(),
@@ -22,13 +20,25 @@ const editTryoutSchema = z.object({
 
 type EditTryoutFormData = z.infer<typeof editTryoutSchema>
 
-const ageGroups = ["U6", "U8", "U10", "U12", "U14", "U16", "U18", "Adult"]
+interface Team {
+  id: string
+  name: string
+  ageGroup: string
+  gender: string | null
+}
 
 function toLocalDatetimeValue(isoString: string): string {
   const date = new Date(isoString)
   const offset = date.getTimezoneOffset()
   const local = new Date(date.getTime() - offset * 60000)
   return local.toISOString().slice(0, 16)
+}
+
+function genderLabel(g: string | null) {
+  if (g === "MALE") return "Boys"
+  if (g === "FEMALE") return "Girls"
+  if (g === "COED") return "Co-ed"
+  return "Any"
 }
 
 export default function EditTryoutPage() {
@@ -40,8 +50,10 @@ export default function EditTryoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
-  const [teams, setTeams] = useState<Array<{ id: string; name: string }>>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState("")
+
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId)
 
   const {
     register,
@@ -64,8 +76,6 @@ export default function EditTryoutPage() {
         reset({
           title: tryout.title,
           description: tryout.description || "",
-          ageGroup: tryout.ageGroup,
-          gender: tryout.gender || undefined,
           location: tryout.location,
           scheduledAt: toLocalDatetimeValue(tryout.scheduledAt),
           duration: tryout.duration || undefined,
@@ -88,6 +98,11 @@ export default function EditTryoutPage() {
   }, [tryoutId, clubId, reset])
 
   const onSubmit = async (data: EditTryoutFormData) => {
+    if (!selectedTeamId) {
+      setError("Please select a team")
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
     setSaved(false)
@@ -96,15 +111,14 @@ export default function EditTryoutPage() {
       const payload: Record<string, unknown> = {
         title: data.title,
         description: data.description || null,
-        ageGroup: data.ageGroup,
+        ageGroup: selectedTeam?.ageGroup,
         location: data.location,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
-        teamId: selectedTeamId || null,
+        teamId: selectedTeamId,
       }
-      // Only include optional fields if they have values
-      if (data.gender) payload.gender = data.gender
+      if (selectedTeam?.gender) payload.gender = selectedTeam.gender
       if (data.duration) payload.duration = data.duration
       if (data.maxParticipants) payload.maxParticipants = data.maxParticipants
 
@@ -166,6 +180,44 @@ export default function EditTryoutPage() {
             </div>
           )}
 
+          {/* Team Selection (mandatory) */}
+          <div>
+            <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+              Team <span className="text-red-500">*</span>
+            </label>
+            {teams.length === 0 ? (
+              <p className="mt-1 text-sm text-gray-500">Loading teams...</p>
+            ) : (
+              <select
+                id="teamId"
+                value={selectedTeamId}
+                onChange={(e) => setSelectedTeamId(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">Select a team</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name} ({team.ageGroup}{team.gender ? ` / ${genderLabel(team.gender)}` : ""})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Show age group & gender from team */}
+          {selectedTeam && (
+            <div className="flex gap-4">
+              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
+                <span className="text-blue-600">Age Group:</span>{" "}
+                <span className="font-medium text-blue-900">{selectedTeam.ageGroup}</span>
+              </div>
+              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
+                <span className="text-blue-600">Gender:</span>{" "}
+                <span className="font-medium text-blue-900">{genderLabel(selectedTeam.gender)}</span>
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700">
               Title <span className="text-red-500">*</span>
@@ -192,67 +244,6 @@ export default function EditTryoutPage() {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="ageGroup" className="block text-sm font-medium text-gray-700">
-                Age Group <span className="text-red-500">*</span>
-              </label>
-              <select
-                {...register("ageGroup")}
-                id="ageGroup"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Select age group</option>
-                {ageGroups.map((age) => (
-                  <option key={age} value={age}>{age}</option>
-                ))}
-              </select>
-              {errors.ageGroup && (
-                <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <select
-                {...register("gender")}
-                id="gender"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Any</option>
-                <option value="MALE">Boys</option>
-                <option value="FEMALE">Girls</option>
-                <option value="COED">Co-ed</option>
-              </select>
-            </div>
-          </div>
-
-          {teams.length > 0 && (
-            <div>
-              <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
-                Team
-              </label>
-              <select
-                id="teamId"
-                value={selectedTeamId}
-                onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">No team (club-wide tryout)</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">
-                Link this tryout to a specific team.
-              </p>
-            </div>
-          )}
 
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-700">
@@ -351,7 +342,7 @@ export default function EditTryoutPage() {
             </Link>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedTeamId}
               className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
