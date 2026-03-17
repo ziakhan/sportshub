@@ -20,12 +20,14 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Verify caller has access to this club
+    // Verify caller has access to this club (or is PlatformAdmin)
     const callerRole = await prisma.userRole.findFirst({
       where: {
         userId: session.user.id,
-        tenantId: params.id,
-        role: { in: ["ClubOwner", "ClubManager"] },
+        OR: [
+          { tenantId: params.id, role: { in: ["ClubOwner", "ClubManager"] } },
+          { role: "PlatformAdmin" },
+        ],
       },
     })
 

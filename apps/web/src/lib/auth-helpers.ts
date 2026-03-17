@@ -62,6 +62,25 @@ export function isImpersonating() {
 }
 
 /**
+ * Get the effective user ID for API routes.
+ * Returns the real session user ID, but also checks if
+ * the real user is a PlatformAdmin (grants access to everything).
+ */
+export async function getSessionUserId(): Promise<{ userId: string; isPlatformAdmin: boolean } | null> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return null
+
+  const adminRole = await prisma.userRole.findFirst({
+    where: { userId: session.user.id, role: "PlatformAdmin" },
+  })
+
+  return {
+    userId: session.user.id,
+    isPlatformAdmin: !!adminRole,
+  }
+}
+
+/**
  * Get user's abilities based on their roles
  */
 export async function getUserAbilities() {

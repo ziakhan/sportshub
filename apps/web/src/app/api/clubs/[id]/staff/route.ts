@@ -21,8 +21,10 @@ async function verifyClubAccess(userId: string, tenantId: string) {
       lastName: true,
       roles: {
         where: {
-          tenantId,
-          role: { in: ["ClubOwner", "ClubManager"] },
+          OR: [
+            { tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+            { role: "PlatformAdmin" },
+          ],
         },
       },
     },
@@ -237,13 +239,18 @@ export async function DELETE(
     }
     const userId = session.user.id
 
-    // Only ClubOwner can remove staff
+    // Only ClubOwner or PlatformAdmin can remove staff
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         roles: {
-          where: { tenantId: params.id, role: "ClubOwner" },
+          where: {
+            OR: [
+              { tenantId: params.id, role: "ClubOwner" },
+              { role: "PlatformAdmin" },
+            ],
+          },
         },
       },
     })

@@ -1,25 +1,39 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
+import { getCurrentUser } from "@/lib/auth-helpers"
 
-async function getClubAccess(clubId: string, userId: string) {
-  // Check if user has ANY role at this club (owner, manager, staff, team manager)
-  const roles = await prisma.userRole.findMany({
-    where: {
-      userId,
-      tenantId: clubId,
-      role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
-    },
-    select: { role: true },
-  })
+async function getClubAccess(clubId: string, userId: string, userRoles: string[]) {
+  // PlatformAdmin can access any club
+  const isPlatformAdmin = userRoles.includes("PlatformAdmin")
 
-  if (roles.length === 0) return null
+  if (!isPlatformAdmin) {
+    // Check if user has ANY role at this club (owner, manager, staff, team manager)
+    const roles = await prisma.userRole.findMany({
+      where: {
+        userId,
+        tenantId: clubId,
+        role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
+      },
+      select: { role: true },
+    })
 
-  const roleNames = roles.map((r) => r.role)
-  const isAdmin = roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")
+    if (roles.length === 0) return null
 
+    const roleNames = roles.map((r) => r.role)
+    const isAdmin = roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: clubId },
+      select: { id: true, name: true, slug: true },
+    })
+
+    if (!tenant) return null
+
+    return { tenant, isAdmin }
+  }
+
+  // PlatformAdmin gets full admin access
   const tenant = await prisma.tenant.findUnique({
     where: { id: clubId },
     select: { id: true, name: true, slug: true },
@@ -27,7 +41,7 @@ async function getClubAccess(clubId: string, userId: string) {
 
   if (!tenant) return null
 
-  return { tenant, isAdmin }
+  return { tenant, isAdmin: true }
 }
 
 export default async function ClubLayout({
@@ -37,10 +51,11 @@ export default async function ClubLayout({
   children: React.ReactNode
   params: { id: string }
 }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) redirect("/sign-in")
+  const dbUser = await getCurrentUser()
+  if (!dbUser) redirect("/sign-in")
 
-  const access = await getClubAccess(params.id, session.user.id)
+  const userRoles = dbUser.roles.map((r) => r.role)
+  const access = await getClubAccess(params.id, dbUser.id, userRoles)
   if (!access) notFound()
 
   const { tenant: club, isAdmin } = access
