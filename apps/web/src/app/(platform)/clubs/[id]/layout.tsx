@@ -83,12 +83,12 @@ export default async function ClubLayout({
             >
               &larr; Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-gray-900">{club.name}</h1>
+            <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{club.name}</h1>
             <p className="text-sm text-gray-500">
               {club.slug}.youthbasketballhub.com
             </p>
           </div>
-          <nav className="-mb-px flex gap-6">
+          <nav className="-mb-px flex gap-4 overflow-x-auto md:gap-6">
             {tabs.map((tab) => (
               <Link
                 key={tab.href}

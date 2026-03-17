@@ -95,7 +95,7 @@ export function AdminSection({ data }: AdminSectionProps) {
       {data.recentUsers.length > 0 && (
         <div>
           <h3 className="mb-3 text-lg font-semibold text-gray-900">Recent Users</h3>
-          <div className="overflow-hidden rounded-lg bg-white shadow">
+          <div className="overflow-x-auto rounded-lg bg-white shadow">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>

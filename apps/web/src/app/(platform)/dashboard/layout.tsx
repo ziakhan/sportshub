@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser, isImpersonating, getRealUserId } from "@/lib/auth-helpers"
 import { Sidebar } from "./sidebar"
+import { MobileNav } from "./mobile-nav"
 import { NotificationBell } from "./notification-bell"
 import { UserMenu } from "./user-menu"
 import { ImpersonationBanner } from "./impersonation-banner"
@@ -49,10 +50,13 @@ export default async function DashboardLayout({
       {/* Top nav */}
       <nav className="border-b bg-white">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-            Youth Basketball Hub
-          </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <MobileNav roles={roles} tenants={tenants} />
+            <Link href="/dashboard" className="text-lg font-bold text-blue-600 md:text-xl">
+              Youth Basketball Hub
+            </Link>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3">
             <NotificationBell />
             <UserMenu
               userName={userName}
