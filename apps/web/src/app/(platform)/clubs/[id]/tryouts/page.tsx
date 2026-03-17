@@ -6,7 +6,14 @@ import { PublishButton } from "./publish-button"
 async function getTryouts(tenantId: string) {
   return await prisma.tryout.findMany({
     where: { tenantId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      scheduledAt: true,
+      location: true,
+      ageGroup: true,
+      isPublished: true,
+      maxParticipants: true,
       team: {
         select: { id: true, name: true },
       },

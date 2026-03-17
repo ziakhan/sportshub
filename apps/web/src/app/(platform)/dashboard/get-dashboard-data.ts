@@ -207,7 +207,16 @@ export async function getDashboardData(
       }),
     ])
 
-    data.parent = { players, tryoutSignups, recentPayments }
+    data.parent = {
+      players,
+      tryoutSignups,
+      recentPayments: recentPayments.map((p) => ({
+        ...p,
+        amount: Number(p.amount),
+        platformFee: p.platformFee ? Number(p.platformFee) : null,
+        refundAmount: p.refundAmount ? Number(p.refundAmount) : null,
+      })),
+    }
   }
 
   // ClubOwner / ClubManager data
@@ -263,7 +272,15 @@ export async function getDashboardData(
         standardFee: true,
       },
     })
-    data.referee = { profile }
+    data.referee = {
+      profile: profile
+        ? {
+            ...profile,
+            standardFee: Number(profile.standardFee),
+            averageRating: profile.averageRating ? Number(profile.averageRating) : null,
+          }
+        : null,
+    }
   }
 
   // LeagueOwner / LeagueManager data

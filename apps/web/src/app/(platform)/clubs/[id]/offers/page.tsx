@@ -5,7 +5,23 @@ import Link from "next/link"
 async function getClubOffers(tenantId: string) {
   const raw = await prisma.offer.findMany({
     where: { team: { tenantId } },
-    include: {
+    select: {
+      id: true,
+      status: true,
+      seasonFee: true,
+      installments: true,
+      uniformSize: true,
+      shoeSize: true,
+      tracksuitSize: true,
+      jerseyPref1: true,
+      jerseyPref2: true,
+      jerseyPref3: true,
+      includesUniform: true,
+      includesTracksuit: true,
+      includesShoes: true,
+      includesBallBag: true,
+      practiceSessions: true,
+      createdAt: true,
       team: { select: { id: true, name: true } },
       player: {
         select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
@@ -13,7 +29,6 @@ async function getClubOffers(tenantId: string) {
     },
     orderBy: { createdAt: "desc" },
   })
-  // Simplify Decimal fields to avoid serialization issues
   return raw.map((o) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 

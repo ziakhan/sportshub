@@ -3,7 +3,7 @@ import { format } from "date-fns"
 import Link from "next/link"
 
 async function getPublicTryouts() {
-  return await prisma.tryout.findMany({
+  const raw = await prisma.tryout.findMany({
     where: {
       isPublished: true,
       isPublic: true,
@@ -23,6 +23,7 @@ async function getPublicTryouts() {
     },
     orderBy: { scheduledAt: "asc" },
   })
+  return raw.map((t) => ({ ...t, fee: Number(t.fee) }))
 }
 
 export default async function MarketplacePage() {
@@ -142,7 +143,7 @@ export default async function MarketplacePage() {
 
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="text-2xl font-bold text-blue-600">
-                      ${tryout.fee.toString()}
+                      ${tryout.fee.toFixed(2)}
                     </div>
                     <div className="text-sm text-gray-600">
                       {tryout._count.signups}{" "}

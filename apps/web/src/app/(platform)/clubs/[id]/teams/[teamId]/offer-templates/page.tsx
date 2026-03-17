@@ -4,7 +4,7 @@ import { TemplateForm } from "./template-form"
 import { TemplateCard } from "./template-card"
 
 async function getTeamWithTemplates(teamId: string, tenantId: string) {
-  return await prisma.team.findFirst({
+  const team = await prisma.team.findFirst({
     where: { id: teamId, tenantId },
     select: {
       id: true,
@@ -15,6 +15,21 @@ async function getTeamWithTemplates(teamId: string, tenantId: string) {
       },
     },
   })
+  if (!team) return null
+  return {
+    ...team,
+    offerTemplates: team.offerTemplates.map((t) => ({
+      id: t.id,
+      name: t.name,
+      seasonFee: Number(t.seasonFee),
+      installments: t.installments,
+      practiceSessions: t.practiceSessions,
+      includesBallBag: t.includesBallBag,
+      includesShoes: t.includesShoes,
+      includesUniform: t.includesUniform,
+      includesTracksuit: t.includesTracksuit,
+    })),
+  }
 }
 
 export default async function OfferTemplatesPage({

@@ -26,7 +26,7 @@ async function getTryout(id: string) {
   })
 
   if (!tryout || !tryout.isPublished) return null
-  return tryout
+  return { ...tryout, fee: Number(tryout.fee) }
 }
 
 async function getUserData(userId: string | null, tryoutId: string) {
