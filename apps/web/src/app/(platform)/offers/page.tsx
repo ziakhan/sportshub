@@ -9,9 +9,16 @@ interface Offer {
   status: string
   seasonFee: number
   installments: number
+  practiceSessions: number
+  includesBallBag: boolean
+  includesShoes: boolean
+  includesUniform: boolean
+  includesTracksuit: boolean
   message: string | null
   expiresAt: string
   uniformSize: string | null
+  shoeSize: string | null
+  tracksuitSize: string | null
   jerseyPref1: number | null
   jerseyPref2: number | null
   jerseyPref3: number | null
@@ -128,6 +135,33 @@ export default function OffersPage() {
                         </div>
                       </div>
 
+                      {/* What's included */}
+                      {(() => {
+                        const items = [
+                          offer.includesUniform && "Uniform (Shirt + Shorts)",
+                          offer.includesTracksuit && "Tracksuit",
+                          offer.includesShoes && "Shoes",
+                          offer.includesBallBag && "Ball Bag",
+                        ].filter(Boolean)
+                        return (items.length > 0 || offer.practiceSessions > 0) ? (
+                          <div className="mt-3 rounded-md bg-blue-50 p-3">
+                            <div className="text-xs font-medium text-blue-700 mb-1">What&apos;s included:</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {offer.practiceSessions > 0 && (
+                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                  {offer.practiceSessions} practice sessions
+                                </span>
+                              )}
+                              {items.map((item) => (
+                                <span key={item as string} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null
+                      })()}
+
                       {offer.message && (
                         <div className="mt-3 rounded-md bg-gray-50 p-3 text-sm text-gray-700 italic">
                           &ldquo;{offer.message}&rdquo;
@@ -163,7 +197,9 @@ export default function OffersPage() {
                       {respondingTo === offer.id && (
                         <OfferResponseForm
                           offerId={offer.id}
-                          action="accept"
+                          includesUniform={offer.includesUniform}
+                          includesShoes={offer.includesShoes}
+                          includesTracksuit={offer.includesTracksuit}
                           onDone={handleResponse}
                           onCancel={() => setRespondingTo(null)}
                         />
@@ -227,9 +263,11 @@ export default function OffersPage() {
                           )}
                         </div>
                       </div>
-                      {offer.status === "ACCEPTED" && offer.uniformSize && (
+                      {offer.status === "ACCEPTED" && (
                         <div className="mt-2 text-xs text-gray-600">
-                          Uniform: {offer.uniformSize}
+                          {offer.uniformSize ? `Uniform: ${offer.uniformSize}` : ""}
+                          {offer.tracksuitSize ? ` | Tracksuit: ${offer.tracksuitSize}` : ""}
+                          {offer.shoeSize ? ` | Shoes: ${offer.shoeSize}` : ""}
                           {offer.jerseyPref1 !== null ? ` | Jersey prefs: #${offer.jerseyPref1}` : ""}
                           {offer.jerseyPref2 !== null ? `, #${offer.jerseyPref2}` : ""}
                           {offer.jerseyPref3 !== null ? `, #${offer.jerseyPref3}` : ""}

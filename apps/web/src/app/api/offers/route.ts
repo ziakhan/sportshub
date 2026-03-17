@@ -10,8 +10,15 @@ const createOfferSchema = z.object({
   teamId: z.string(),
   playerId: z.string(),
   tryoutSignupId: z.string().optional(),
-  seasonFee: z.number().min(0),
-  installments: z.number().min(1).max(12).default(1),
+  templateId: z.string().optional(),
+  // These can override template values
+  seasonFee: z.number().min(0).optional(),
+  installments: z.number().min(1).max(12).optional(),
+  practiceSessions: z.number().min(0).optional(),
+  includesBallBag: z.boolean().optional(),
+  includesShoes: z.boolean().optional(),
+  includesUniform: z.boolean().optional(),
+  includesTracksuit: z.boolean().optional(),
   message: z.string().optional(),
   expiresAt: z.string().datetime(),
 })
@@ -86,6 +93,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Load template if provided
+    let templateValues = {
+      seasonFee: 0,
+      installments: 1,
+      practiceSessions: 0,
+      includesBallBag: false,
+      includesShoes: false,
+      includesUniform: false,
+      includesTracksuit: false,
+    }
+
+    if (data.templateId) {
+      const template = await prisma.offerTemplate.findFirst({
+        where: { id: data.templateId, teamId: data.teamId, isActive: true },
+      })
+      if (!template) {
+        return NextResponse.json({ error: "Template not found" }, { status: 404 })
+      }
+      templateValues = {
+        seasonFee: Number(template.seasonFee),
+        installments: template.installments,
+        practiceSessions: template.practiceSessions,
+        includesBallBag: template.includesBallBag,
+        includesShoes: template.includesShoes,
+        includesUniform: template.includesUniform,
+        includesTracksuit: template.includesTracksuit,
+      }
+    }
+
+    // Merge: explicit values override template defaults
+    const offerData = {
+      seasonFee: data.seasonFee ?? templateValues.seasonFee,
+      installments: data.installments ?? templateValues.installments,
+      practiceSessions: data.practiceSessions ?? templateValues.practiceSessions,
+      includesBallBag: data.includesBallBag ?? templateValues.includesBallBag,
+      includesShoes: data.includesShoes ?? templateValues.includesShoes,
+      includesUniform: data.includesUniform ?? templateValues.includesUniform,
+      includesTracksuit: data.includesTracksuit ?? templateValues.includesTracksuit,
+    }
+
     // Create the offer + notification + update signup status in a transaction
     const result = await prisma.$transaction(async (tx) => {
       const offer = await tx.offer.create({
@@ -93,8 +140,8 @@ export async function POST(request: NextRequest) {
           teamId: data.teamId,
           playerId: data.playerId,
           tryoutSignupId: data.tryoutSignupId || null,
-          seasonFee: data.seasonFee,
-          installments: data.installments,
+          templateId: data.templateId || null,
+          ...offerData,
           message: data.message || null,
           expiresAt: new Date(data.expiresAt),
         },
@@ -138,7 +185,7 @@ export async function POST(request: NextRequest) {
           playerName: `${player.firstName} ${player.lastName}`,
           clubName: team.tenant.name,
           teamName: team.name,
-          seasonFee: Number(data.seasonFee),
+          seasonFee: Number(offerData.seasonFee),
           message: data.message,
           offerLink: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/offers`,
         })

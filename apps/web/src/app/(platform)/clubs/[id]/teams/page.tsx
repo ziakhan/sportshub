@@ -56,10 +56,9 @@ export default async function ClubTeamsPage({
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
-            <Link
+            <div
               key={team.id}
-              href={`/clubs/${params.id}/teams/${team.id}/edit`}
-              className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition hover:border-green-300 hover:shadow-md"
+              className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
             >
               <div className="mb-4">
                 <h3 className="text-xl font-bold text-gray-900">
@@ -78,7 +77,7 @@ export default async function ClubTeamsPage({
                 </p>
               )}
 
-              <div className="flex gap-4 text-sm text-gray-600">
+              <div className="flex gap-4 text-sm text-gray-600 mb-4">
                 <div>
                   <span className="font-semibold">{team._count.players}</span>{" "}
                   players
@@ -90,7 +89,28 @@ export default async function ClubTeamsPage({
                   games
                 </div>
               </div>
-            </Link>
+
+              <div className="flex flex-wrap gap-2 border-t pt-3">
+                <Link
+                  href={`/clubs/${params.id}/teams/${team.id}/edit`}
+                  className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Edit
+                </Link>
+                <Link
+                  href={`/clubs/${params.id}/teams/${team.id}/roster`}
+                  className="rounded-md border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+                >
+                  Roster
+                </Link>
+                <Link
+                  href={`/clubs/${params.id}/teams/${team.id}/offer-templates`}
+                  className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                >
+                  Offer Templates
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       )}

@@ -144,6 +144,7 @@ export default async function TryoutSignupsPage({
                           playerId={signup.matchedPlayer.id}
                           playerName={signup.playerName}
                           tryoutSignupId={signup.id}
+                          clubId={params.id}
                         />
                       )}
                       {hasOffer && latestOffer && (

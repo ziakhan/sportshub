@@ -8,8 +8,10 @@ export const dynamic = "force-dynamic"
 
 const respondSchema = z.object({
   action: z.enum(["accept", "decline"]),
-  // Required when accepting
+  // Required when accepting (conditional on what's included)
   uniformSize: z.string().optional(),
+  shoeSize: z.string().optional(),
+  tracksuitSize: z.string().optional(),
   jerseyPref1: z.number().int().min(0).max(99).optional(),
   jerseyPref2: z.number().int().min(0).max(99).optional(),
   jerseyPref3: z.number().int().min(0).max(99).optional(),
@@ -137,10 +139,22 @@ export async function PATCH(
     }
 
     if (data.action === "accept") {
-      // Validate required fields on acceptance
-      if (!data.uniformSize) {
+      // Validate required fields based on what's included in the offer
+      if (offer.includesUniform && !data.uniformSize) {
         return NextResponse.json(
-          { error: "Uniform size is required when accepting an offer" },
+          { error: "Uniform size is required for this offer" },
+          { status: 400 }
+        )
+      }
+      if (offer.includesShoes && !data.shoeSize) {
+        return NextResponse.json(
+          { error: "Shoe size is required for this offer" },
+          { status: 400 }
+        )
+      }
+      if (offer.includesTracksuit && !data.tracksuitSize) {
+        return NextResponse.json(
+          { error: "Tracksuit size is required for this offer" },
           { status: 400 }
         )
       }
@@ -157,7 +171,9 @@ export async function PATCH(
           where: { id: params.id },
           data: {
             status: "ACCEPTED",
-            uniformSize: data.uniformSize,
+            uniformSize: data.uniformSize || null,
+            shoeSize: data.shoeSize || null,
+            tracksuitSize: data.tracksuitSize || null,
             jerseyPref1: data.jerseyPref1,
             jerseyPref2: data.jerseyPref2 ?? null,
             jerseyPref3: data.jerseyPref3 ?? null,
@@ -176,12 +192,12 @@ export async function PATCH(
           create: {
             teamId: offer.teamId,
             playerId: offer.playerId,
-            uniformSize: data.uniformSize,
+            uniformSize: data.uniformSize || null,
             status: "ACTIVE",
           },
           update: {
             status: "ACTIVE",
-            uniformSize: data.uniformSize,
+            uniformSize: data.uniformSize || null,
           },
         })
 

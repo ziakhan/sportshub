@@ -226,6 +226,7 @@ model Team {
   practices     Practice[]
   announcements Announcement[]
   offers        Offer[]
+  offerTemplates OfferTemplate[]
   tryouts       Tryout[]
 
   createdAt     DateTime @default(now())
@@ -410,6 +411,33 @@ enum TryoutSignupStatus {
   OFFERED
 }
 
+model OfferTemplate {
+  id            String   @id @default(uuid())
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  name          String   // e.g. "Standard Package", "Premium Package"
+
+  seasonFee     Decimal  @db.Decimal(10, 2)
+  installments  Int      @default(1)
+  practiceSessions Int   @default(0)
+
+  // Included items
+  includesBallBag   Boolean @default(false)
+  includesShoes     Boolean @default(false)
+  includesUniform   Boolean @default(false) // shirt + shorts
+  includesTracksuit Boolean @default(false)
+
+  isActive      Boolean  @default(true)
+
+  offers        Offer[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([teamId])
+}
+
 model Offer {
   id            String   @id @default(uuid())
   teamId        String
@@ -421,16 +449,29 @@ model Offer {
   tryoutSignupId String?
   tryoutSignup  TryoutSignup? @relation(fields: [tryoutSignupId], references: [id])
 
+  templateId    String?
+  template      OfferTemplate? @relation(fields: [templateId], references: [id])
+
   status        OfferStatus @default(PENDING)
 
+  // Offer details (copied from template, tweakable per offer)
   seasonFee     Decimal  @db.Decimal(10, 2)
   installments  Int      @default(1)
+  practiceSessions Int   @default(0)
+
+  // Included items
+  includesBallBag   Boolean @default(false)
+  includesShoes     Boolean @default(false)
+  includesUniform   Boolean @default(false)
+  includesTracksuit Boolean @default(false)
 
   message       String?  @db.Text
   expiresAt     DateTime
 
   // Filled on acceptance by parent/player
   uniformSize   String?  // YS, YM, YL, AS, AM, AL, AXL
+  shoeSize      String?  // e.g. "7", "8.5"
+  tracksuitSize String?  // YS, YM, YL, AS, AM, AL, AXL
   jerseyPref1   Int?     // First choice jersey number
   jerseyPref2   Int?     // Second choice jersey number
   jerseyPref3   Int?     // Third choice jersey number
@@ -443,6 +484,7 @@ model Offer {
   @@index([teamId])
   @@index([playerId])
   @@index([tryoutSignupId])
+  @@index([templateId])
   @@index([status])
 }
 

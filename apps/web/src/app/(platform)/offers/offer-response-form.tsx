@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-const UNIFORM_SIZES = [
+const CLOTHING_SIZES = [
   { value: "YS", label: "Youth Small" },
   { value: "YM", label: "Youth Medium" },
   { value: "YL", label: "Youth Large" },
@@ -12,18 +12,30 @@ const UNIFORM_SIZES = [
   { value: "AXL", label: "Adult XL" },
 ]
 
+const SHOE_SIZES = [
+  "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5", "5.5",
+  "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5",
+  "11", "11.5", "12", "12.5", "13", "14",
+]
+
 export function OfferResponseForm({
   offerId,
-  action,
+  includesUniform,
+  includesShoes,
+  includesTracksuit,
   onDone,
   onCancel,
 }: {
   offerId: string
-  action: "accept"
+  includesUniform: boolean
+  includesShoes: boolean
+  includesTracksuit: boolean
   onDone: () => void
   onCancel: () => void
 }) {
   const [uniformSize, setUniformSize] = useState("")
+  const [shoeSize, setShoeSize] = useState("")
+  const [tracksuitSize, setTracksuitSize] = useState("")
   const [jerseyPref1, setJerseyPref1] = useState("")
   const [jerseyPref2, setJerseyPref2] = useState("")
   const [jerseyPref3, setJerseyPref3] = useState("")
@@ -34,8 +46,16 @@ export function OfferResponseForm({
     e.preventDefault()
     setError(null)
 
-    if (!uniformSize) {
+    if (includesUniform && !uniformSize) {
       setError("Please select a uniform size")
+      return
+    }
+    if (includesShoes && !shoeSize) {
+      setError("Please select a shoe size")
+      return
+    }
+    if (includesTracksuit && !tracksuitSize) {
+      setError("Please select a tracksuit size")
       return
     }
     if (!jerseyPref1) {
@@ -52,7 +72,6 @@ export function OfferResponseForm({
       return
     }
 
-    // Check for duplicates
     const prefs = [pref1, pref2, pref3].filter((p) => p !== undefined)
     if (new Set(prefs).size !== prefs.length) {
       setError("Jersey number preferences must be different")
@@ -66,8 +85,10 @@ export function OfferResponseForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action,
-          uniformSize,
+          action: "accept",
+          uniformSize: uniformSize || undefined,
+          shoeSize: shoeSize || undefined,
+          tracksuitSize: tracksuitSize || undefined,
           jerseyPref1: pref1,
           jerseyPref2: pref2,
           jerseyPref3: pref3,
@@ -87,12 +108,16 @@ export function OfferResponseForm({
     }
   }
 
+  const hasSizeFields = includesUniform || includesShoes || includesTracksuit
+
   return (
     <div className="mt-4 rounded-md border border-green-200 bg-green-50 p-4">
       <h4 className="font-semibold text-gray-900 mb-3">Accept Offer</h4>
       <p className="text-sm text-gray-600 mb-4">
-        Please provide uniform size and your preferred jersey numbers (3 choices).
-        Jersey numbers are assigned first-come, first-served based on your preferences.
+        {hasSizeFields
+          ? "Please provide the required sizes and your preferred jersey numbers."
+          : "Please provide your preferred jersey numbers (3 choices)."}
+        {" "}Jersey numbers are assigned first-come, first-served.
       </p>
 
       {error && (
@@ -102,24 +127,70 @@ export function OfferResponseForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Uniform Size <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={uniformSize}
-            onChange={(e) => setUniformSize(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">Select size...</option>
-            {UNIFORM_SIZES.map((size) => (
-              <option key={size.value} value={size.value}>
-                {size.label} ({size.value})
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Size fields */}
+        {hasSizeFields && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {includesUniform && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Uniform Size <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={uniformSize}
+                  onChange={(e) => setUniformSize(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Select...</option>
+                  {CLOTHING_SIZES.map((size) => (
+                    <option key={size.value} value={size.value}>
+                      {size.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
+            {includesTracksuit && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Tracksuit Size <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={tracksuitSize}
+                  onChange={(e) => setTracksuitSize(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Select...</option>
+                  {CLOTHING_SIZES.map((size) => (
+                    <option key={size.value} value={size.value}>
+                      {size.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {includesShoes && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Shoe Size <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={shoeSize}
+                  onChange={(e) => setShoeSize(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Select...</option>
+                  {SHOE_SIZES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Jersey preferences */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Jersey Number Preferences <span className="text-red-500">*</span>
