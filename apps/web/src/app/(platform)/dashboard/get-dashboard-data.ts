@@ -152,10 +152,10 @@ export async function getDashboardData(
     }
   }
 
-  // Staff data
-  if (roleNames.includes("Staff")) {
+  // Staff data (includes TeamManager)
+  if (roleNames.includes("Staff") || roleNames.includes("TeamManager")) {
     const teamIds = user.roles
-      .filter((r) => r.role === "Staff" && r.teamId)
+      .filter((r) => (r.role === "Staff" || r.role === "TeamManager") && r.teamId)
       .map((r) => r.teamId!)
 
     if (teamIds.length > 0) {

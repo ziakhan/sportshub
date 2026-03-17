@@ -204,21 +204,81 @@ function AddPlayerForm() {
               )}
             </div>
 
-            <div>
-              <label
-                htmlFor="jerseyNumber"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Jersey Number{" "}
-                <span className="text-gray-400">(optional)</span>
-              </label>
-              <input
-                {...register("jerseyNumber")}
-                type="text"
-                id="jerseyNumber"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="e.g. 23"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="jerseyNumber"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Jersey Number{" "}
+                  <span className="text-gray-400">(optional)</span>
+                </label>
+                <input
+                  {...register("jerseyNumber")}
+                  type="text"
+                  id="jerseyNumber"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g. 23"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="height"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Height{" "}
+                  <span className="text-gray-400">(optional)</span>
+                </label>
+                <input
+                  {...register("height")}
+                  type="text"
+                  id="height"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder={`e.g. 5'6"`}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="weight"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Weight (lbs){" "}
+                  <span className="text-gray-400">(optional)</span>
+                </label>
+                <input
+                  {...register("weight")}
+                  type="number"
+                  id="weight"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g. 120"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="position"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Position{" "}
+                  <span className="text-gray-400">(optional)</span>
+                </label>
+                <select
+                  {...register("position")}
+                  id="position"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Select position</option>
+                  <option value="Point Guard">Point Guard</option>
+                  <option value="Shooting Guard">Shooting Guard</option>
+                  <option value="Small Forward">Small Forward</option>
+                  <option value="Power Forward">Power Forward</option>
+                  <option value="Center">Center</option>
+                </select>
+              </div>
             </div>
 
             <div className="flex gap-4 pt-2">

@@ -21,6 +21,9 @@ export const addPlayerSchema = z.object({
     required_error: "Select a gender",
   }),
   jerseyNumber: z.string().max(10).optional(),
+  height: z.string().max(10).optional(),
+  weight: z.coerce.number().min(1).max(500).optional(),
+  position: z.string().max(50).optional(),
 })
 
 export type AddPlayerFormData = z.infer<typeof addPlayerSchema>

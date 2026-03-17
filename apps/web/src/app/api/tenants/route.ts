@@ -9,6 +9,14 @@ const createTenantSchema = z.object({
   slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/),
   description: z.string().optional(),
   timezone: z.string().optional().default("America/New_York"),
+  phoneNumber: z.string().min(7).max(20),
+  contactEmail: z.string().email(),
+  address: z.string().min(3),
+  city: z.string().min(1).max(100),
+  state: z.string().min(1).max(100),
+  zipCode: z.string().min(3).max(10),
+  website: z.string().url().optional().or(z.literal("")),
+  logoUrl: z.string().url().optional().or(z.literal("")),
 })
 
 /**
@@ -60,9 +68,17 @@ export async function POST(request: NextRequest) {
         slug: validatedData.slug,
         description: validatedData.description,
         timezone: validatedData.timezone,
+        phoneNumber: validatedData.phoneNumber,
+        contactEmail: validatedData.contactEmail,
+        address: validatedData.address,
+        city: validatedData.city,
+        state: validatedData.state,
+        zipCode: validatedData.zipCode,
+        website: validatedData.website || null,
         plan: "FREE",
         branding: {
           create: {
+            logoUrl: validatedData.logoUrl || null,
             primaryColor: "#1a73e8",
             secondaryColor: "#34a853",
             accentColor: "#fbbc04",

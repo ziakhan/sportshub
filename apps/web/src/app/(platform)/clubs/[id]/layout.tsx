@@ -4,32 +4,30 @@ import { prisma } from "@youthbasketballhub/db"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 
-async function getClubData(clubId: string, userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      roles: {
-        where: {
-          tenantId: clubId,
-          role: { in: ["ClubOwner", "ClubManager"] },
-        },
-      },
+async function getClubAccess(clubId: string, userId: string) {
+  // Check if user has ANY role at this club (owner, manager, staff, team manager)
+  const roles = await prisma.userRole.findMany({
+    where: {
+      userId,
+      tenantId: clubId,
+      role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
     },
+    select: { role: true },
   })
 
-  if (!user || user.roles.length === 0) return null
+  if (roles.length === 0) return null
+
+  const roleNames = roles.map((r) => r.role)
+  const isAdmin = roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: clubId },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-    },
+    select: { id: true, name: true, slug: true },
   })
 
-  return tenant
+  if (!tenant) return null
+
+  return { tenant, isAdmin }
 }
 
 export default async function ClubLayout({
@@ -42,15 +40,21 @@ export default async function ClubLayout({
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) redirect("/sign-in")
 
-  const club = await getClubData(params.id, session.user.id)
-  if (!club) notFound()
+  const access = await getClubAccess(params.id, session.user.id)
+  if (!access) notFound()
+
+  const { tenant: club, isAdmin } = access
 
   const tabs = [
     { label: "Overview", href: `/clubs/${params.id}` },
     { label: "Teams", href: `/clubs/${params.id}/teams` },
     { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
-    { label: "Staff", href: `/clubs/${params.id}/staff` },
-    { label: "Settings", href: `/clubs/${params.id}/settings` },
+    ...(isAdmin
+      ? [
+          { label: "Staff", href: `/clubs/${params.id}/staff` },
+          { label: "Settings", href: `/clubs/${params.id}/settings` },
+        ]
+      : []),
   ]
 
   return (

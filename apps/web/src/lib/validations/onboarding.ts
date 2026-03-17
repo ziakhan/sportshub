@@ -3,6 +3,8 @@ import { z } from "zod"
 export const parentOnboardingSchema = z.object({
   type: z.literal("Parent"),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  city: z.string().min(1, "City is required").max(100),
+  state: z.string().min(1, "State is required").max(100),
 })
 
 export const playerOnboardingSchema = z.object({
@@ -22,11 +24,17 @@ export const playerOnboardingSchema = z.object({
   ),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
   jerseyNumber: z.string().optional(),
+  city: z.string().min(1, "City is required").max(100),
+  state: z.string().min(1, "State is required").max(100),
+  height: z.string().max(10).optional(),
+  position: z.string().max(50).optional(),
 })
 
 export const staffOnboardingSchema = z.object({
   type: z.literal("Staff"),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  city: z.string().min(1, "City is required").max(100),
+  state: z.string().min(1, "State is required").max(100),
 })
 
 export const refereeOnboardingSchema = z.object({

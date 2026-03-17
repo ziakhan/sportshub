@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+
+interface StaffRole {
+  id: string
+  role: string
+  designation: string | null
+  team: { id: string; name: string } | null
+}
 
 interface StaffMember {
   id: string
@@ -14,6 +22,15 @@ interface StaffMember {
     lastName: string | null
     email: string
   }
+}
+
+interface GroupedStaff {
+  userId: string
+  firstName: string | null
+  lastName: string | null
+  email: string
+  clubRoles: StaffRole[] // ClubOwner, ClubManager, unscoped Staff
+  teamRoles: StaffRole[] // team-scoped Staff/TeamManager with designation
 }
 
 interface Invitation {
@@ -32,6 +49,66 @@ interface Invitation {
     firstName: string | null
     lastName: string | null
   }
+}
+
+function groupStaffByUser(staff: StaffMember[]): GroupedStaff[] {
+  const map = new Map<string, GroupedStaff>()
+
+  for (const member of staff) {
+    let group = map.get(member.user.id)
+    if (!group) {
+      group = {
+        userId: member.user.id,
+        firstName: member.user.firstName,
+        lastName: member.user.lastName,
+        email: member.user.email,
+        clubRoles: [],
+        teamRoles: [],
+      }
+      map.set(member.user.id, group)
+    }
+
+    const entry: StaffRole = {
+      id: member.id,
+      role: member.role,
+      designation: member.designation,
+      team: member.team,
+    }
+
+    if (member.team) {
+      group.teamRoles.push(entry)
+    } else {
+      group.clubRoles.push(entry)
+    }
+  }
+
+  return Array.from(map.values())
+}
+
+function getClubRoleLabel(role: string): string {
+  if (role === "ClubOwner") return "Owner"
+  if (role === "ClubManager") return "Manager"
+  return "Staff"
+}
+
+function getClubRoleBadgeColor(role: string): string {
+  if (role === "ClubOwner") return "bg-yellow-100 text-yellow-700 border-yellow-200"
+  if (role === "ClubManager") return "bg-purple-100 text-purple-700 border-purple-200"
+  return "bg-blue-100 text-blue-700 border-blue-200"
+}
+
+function getTeamRoleLabel(designation: string | null, role: string): string {
+  if (designation === "HeadCoach") return "Head Coach"
+  if (designation === "AssistantCoach") return "Asst. Coach"
+  if (role === "TeamManager") return "Manager"
+  return "Staff"
+}
+
+function getTeamRoleBadgeColor(designation: string | null, role: string): string {
+  if (designation === "HeadCoach") return "bg-blue-50 text-blue-700 border-blue-200"
+  if (designation === "AssistantCoach") return "bg-indigo-50 text-indigo-700 border-indigo-200"
+  if (role === "TeamManager") return "bg-green-50 text-green-700 border-green-200"
+  return "bg-gray-50 text-gray-600 border-gray-200"
 }
 
 export default function StaffPage() {
@@ -156,6 +233,7 @@ export default function StaffPage() {
 
   const sentInvites = invitations.filter((i) => i.type === "INVITE")
   const requests = invitations.filter((i) => i.type === "REQUEST")
+  const grouped = groupStaffByUser(staff)
 
   return (
     <div className="space-y-8">
@@ -286,81 +364,90 @@ export default function StaffPage() {
       {/* Current Staff */}
       <div className="rounded-lg bg-white p-6 shadow">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Current Staff ({staff.length})
+          Current Staff ({grouped.length})
         </h2>
 
-        {staff.length === 0 ? (
+        {grouped.length === 0 ? (
           <p className="text-sm text-gray-400">No staff members yet.</p>
         ) : (
-          <div className="space-y-3">
-            {staff.map((member) => {
+          <div className="space-y-4">
+            {grouped.map((member) => {
               const name =
-                [member.user.firstName, member.user.lastName]
+                [member.firstName, member.lastName]
                   .filter(Boolean)
-                  .join(" ") || member.user.email
+                  .join(" ") || member.email
 
-              const designationLabel =
-                member.designation === "HeadCoach"
-                  ? "Head Coach"
-                  : member.designation === "AssistantCoach"
-                    ? "Assistant Coach"
-                    : null
+              const isOwner = member.clubRoles.some((r) => r.role === "ClubOwner")
 
               return (
                 <div
-                  key={member.id}
-                  className="flex items-center justify-between rounded-md border border-gray-200 p-4"
+                  key={member.userId}
+                  className="rounded-md border border-gray-200 p-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="font-medium text-gray-900">{name}</div>
-                      <div className="text-xs text-gray-500">
-                        {member.user.email}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      {/* Name + Email */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{name}</span>
+                        {/* Club-level role badges */}
+                        {member.clubRoles.map((r) => (
+                          <span
+                            key={r.id}
+                            className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${getClubRoleBadgeColor(r.role)}`}
+                          >
+                            {getClubRoleLabel(r.role)}
+                          </span>
+                        ))}
                       </div>
+                      <div className="mt-0.5 text-xs text-gray-500">{member.email}</div>
+
+                      {/* Team assignments */}
+                      {member.teamRoles.length > 0 && (
+                        <div className="mt-3">
+                          <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
+                            Team Assignments
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {member.teamRoles.map((tr) => (
+                              <Link
+                                key={tr.id}
+                                href={`/clubs/${clubId}/teams/${tr.team!.id}/edit`}
+                                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:shadow-sm ${getTeamRoleBadgeColor(tr.designation, tr.role)}`}
+                              >
+                                <span className="font-semibold">{tr.team!.name}</span>
+                                <span className="opacity-60">·</span>
+                                <span>{getTeamRoleLabel(tr.designation, tr.role)}</span>
+                                <svg className="h-3 w-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Unassigned indicator for non-owner/manager staff */}
+                      {member.teamRoles.length === 0 &&
+                        !isOwner &&
+                        !member.clubRoles.some((r) => r.role === "ClubManager") && (
+                        <div className="mt-2">
+                          <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+                            Not assigned to any team
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        member.role === "ClubOwner"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : member.role === "ClubManager"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {member.role}
-                    </span>
-                    {designationLabel && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          member.designation === "HeadCoach"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-indigo-100 text-indigo-800"
-                        }`}
+
+                    {/* Remove button */}
+                    {!isOwner && (
+                      <button
+                        onClick={() => handleRemove(member.clubRoles[0]?.id || member.teamRoles[0]?.id, name)}
+                        className="ml-4 text-xs font-medium text-red-500 hover:text-red-700"
                       >
-                        {designationLabel}
-                      </span>
-                    )}
-                    {member.team ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                        {member.team.name}
-                      </span>
-                    ) : (
-                      member.role !== "ClubOwner" &&
-                      member.role !== "ClubManager" && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                          Unassigned
-                        </span>
-                      )
+                        Remove
+                      </button>
                     )}
                   </div>
-                  {member.role !== "ClubOwner" && (
-                    <button
-                      onClick={() => handleRemove(member.id, name)}
-                      className="text-xs font-medium text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  )}
                 </div>
               )
             })}

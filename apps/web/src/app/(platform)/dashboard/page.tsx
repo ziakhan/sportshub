@@ -20,7 +20,7 @@ export default async function DashboardPage() {
 
   const hasClubRole =
     roles.includes("ClubOwner") || roles.includes("ClubManager")
-  const hasStaffRole = roles.includes("Staff")
+  const hasStaffRole = roles.includes("Staff") || roles.includes("TeamManager")
   const hasLeagueRole =
     roles.includes("LeagueOwner") || roles.includes("LeagueManager")
   const hasRefereeRole = roles.includes("Referee")

@@ -2,11 +2,32 @@ import Link from "next/link"
 
 interface SidebarProps {
   roles: string[]
-  tenants?: Array<{ id: string; name: string; slug: string }>
+  tenants?: Array<{ id: string; name: string; slug: string; role?: string }>
 }
 
 export function Sidebar({ roles, tenants = [] }: SidebarProps) {
   const hasRole = (role: string) => roles.includes(role)
+
+  const isAdmin = hasRole("ClubOwner") || hasRole("ClubManager")
+  const isStaff = hasRole("Staff") || hasRole("TeamManager")
+
+  // Deduplicate tenants (a user may have multiple roles at the same club)
+  const uniqueTenants = Array.from(
+    new Map(tenants.map((t) => [t.id, t])).values()
+  )
+
+  // Admin tenants: clubs where user is Owner or Manager
+  const adminTenantIds = new Set(
+    tenants
+      .filter((t) => t.role === "ClubOwner" || t.role === "ClubManager")
+      .map((t) => t.id)
+  )
+
+  // Staff-only tenants: clubs where user is Staff/TeamManager but NOT admin
+  const staffOnlyTenants = uniqueTenants.filter(
+    (t) => !adminTenantIds.has(t.id)
+  )
+  const adminTenants = uniqueTenants.filter((t) => adminTenantIds.has(t.id))
 
   return (
     <aside className="hidden w-64 flex-shrink-0 border-r bg-white md:block">
@@ -27,11 +48,11 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
         )}
 
         {/* Club Owner / Manager */}
-        {(hasRole("ClubOwner") || hasRole("ClubManager")) && (
+        {isAdmin && (
           <div className="mb-4">
             <SidebarHeader label="Club" />
-            {tenants.length > 0 ? (
-              tenants.map((t) => (
+            {adminTenants.length > 0 ? (
+              adminTenants.map((t) => (
                 <div key={t.id}>
                   <SidebarLink href={`/clubs/${t.id}`} label={t.name} />
                   <div className="ml-4 space-y-0.5">
@@ -60,11 +81,29 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
           </div>
         )}
 
-        {/* Staff */}
-        {hasRole("Staff") && (
+        {/* Staff — show clubs they're staff at (but not admin of) */}
+        {isStaff && (
           <div className="mb-4">
             <SidebarHeader label="Staff" />
-            <SidebarLink href="/teams" label="My Teams" />
+            {staffOnlyTenants.length > 0 ? (
+              staffOnlyTenants.map((t) => (
+                <div key={t.id}>
+                  <SidebarLink href={`/clubs/${t.id}`} label={t.name} />
+                  <div className="ml-4 space-y-0.5">
+                    <SidebarSubLink
+                      href={`/clubs/${t.id}/teams`}
+                      label="Teams"
+                    />
+                    <SidebarSubLink
+                      href={`/clubs/${t.id}/tryouts`}
+                      label="Tryouts"
+                    />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <SidebarLink href="/teams" label="My Teams" />
+            )}
           </div>
         )}
 
@@ -97,7 +136,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
 
         {/* Always visible */}
         <div className="border-t pt-4">
-          <SidebarLink href="/settings" label="Settings" />
+          <SidebarLink href="/settings/profile" label="Profile" />
         </div>
       </nav>
     </aside>

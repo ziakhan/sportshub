@@ -27,7 +27,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-gray-900">
-          ⛹️ Player Profile
+          Player Profile
         </h2>
         <p className="mt-1 text-sm text-gray-600">
           Tell us a bit about yourself. You must be at least 13 years old.
@@ -68,20 +68,84 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
         )}
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+            City <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("city")}
+            type="text"
+            id="city"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Los Angeles"
+          />
+          {errors.city && (
+            <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+            State <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("state")}
+            type="text"
+            id="state"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="CA"
+          />
+          {errors.state && (
+            <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="height" className="block text-sm font-medium text-gray-700">
+            Height (Optional)
+          </label>
+          <input
+            {...register("height")}
+            type="text"
+            id="height"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder={`5'6"`}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="jerseyNumber" className="block text-sm font-medium text-gray-700">
+            Jersey Number (Optional)
+          </label>
+          <input
+            {...register("jerseyNumber")}
+            type="text"
+            id="jerseyNumber"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="23"
+          />
+        </div>
+      </div>
+
       <div>
-        <label htmlFor="jerseyNumber" className="block text-sm font-medium text-gray-700">
-          Preferred Jersey Number (Optional)
+        <label htmlFor="position" className="block text-sm font-medium text-gray-700">
+          Preferred Position (Optional)
         </label>
-        <input
-          {...register("jerseyNumber")}
-          type="text"
-          id="jerseyNumber"
+        <select
+          {...register("position")}
+          id="position"
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          placeholder="23"
-        />
-        {errors.jerseyNumber && (
-          <p className="mt-1 text-sm text-red-600">{errors.jerseyNumber.message}</p>
-        )}
+        >
+          <option value="">Select position</option>
+          <option value="Point Guard">Point Guard</option>
+          <option value="Shooting Guard">Shooting Guard</option>
+          <option value="Small Forward">Small Forward</option>
+          <option value="Power Forward">Power Forward</option>
+          <option value="Center">Center</option>
+        </select>
       </div>
 
       <div className="flex gap-4">

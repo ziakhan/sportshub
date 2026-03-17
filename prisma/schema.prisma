@@ -23,6 +23,8 @@ model User {
   lastName      String?
   phoneNumber   String?
   avatarUrl     String?
+  city          String?
+  state         String?
 
   // Soft Delete (Recommended Addition)
   status        UserStatus @default(ACTIVE)
@@ -112,6 +114,13 @@ model Tenant {
   slug          String   @unique
   name          String
   description   String?  @db.Text
+  phoneNumber   String?
+  contactEmail  String?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  website       String?
   customDomain  String?  @unique
 
   // Timezone (Recommended Addition)
@@ -234,6 +243,9 @@ model Player {
   dateOfBirth   DateTime
   gender        Gender
   jerseyNumber  String?
+  height        String?   // e.g. "5'6"
+  weight        Int?      // in pounds
+  position      String?   // e.g. "Point Guard", "Center"
 
   // COPPA Compliance (Recommended Addition)
   isMinor       Boolean  @default(false) // Age < 13

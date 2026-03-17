@@ -96,7 +96,33 @@ export async function PATCH(
         )
       }
 
-      // Create UserRole
+      // If this is a team-scoped invitation, ensure the user also has
+      // a tenant-level role so they appear as club staff and can be
+      // assigned to additional teams later.
+      if (invitation.teamId) {
+        const existingTenantRole = await prisma.userRole.findFirst({
+          where: {
+            userId: targetUserId,
+            tenantId: invitation.tenantId,
+            role: roleToAssign as any,
+            teamId: null,
+          },
+        })
+
+        if (!existingTenantRole) {
+          await prisma.userRole.create({
+            data: {
+              userId: targetUserId,
+              role: roleToAssign,
+              tenantId: invitation.tenantId,
+              teamId: null,
+              designation: null,
+            },
+          })
+        }
+      }
+
+      // Create the (possibly team-scoped) UserRole
       await prisma.userRole.create({
         data: {
           userId: targetUserId,

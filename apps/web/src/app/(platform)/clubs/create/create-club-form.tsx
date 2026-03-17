@@ -15,6 +15,14 @@ const createClubSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().optional(),
   timezone: z.string(),
+  phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  contactEmail: z.string().email("Enter a valid email address"),
+  address: z.string().min(3, "Address is required"),
+  city: z.string().min(1, "City is required").max(100),
+  state: z.string().min(1, "State is required").max(100),
+  zipCode: z.string().min(3, "Enter a valid zip code").max(10),
+  website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  logoUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
 })
 
 type CreateClubFormData = z.infer<typeof createClubSchema>
@@ -147,21 +155,176 @@ export function CreateClubForm() {
         </p>
       </div>
 
-      {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Description (Optional)
-        </label>
-        <textarea
-          {...register("description")}
-          id="description"
-          rows={3}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          placeholder="Elite youth basketball program focused on skill development and competitive play..."
-        />
-        {errors.description && (
-          <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-        )}
+      {/* Contact Info Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Contact Information</h3>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                Business Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("phoneNumber")}
+                type="tel"
+                id="phoneNumber"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="(555) 123-4567"
+              />
+              {errors.phoneNumber && (
+                <p className="mt-1 text-sm text-red-600">{errors.phoneNumber.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700">
+                Contact Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("contactEmail")}
+                type="email"
+                id="contactEmail"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="info@warriors.com"
+              />
+              {errors.contactEmail && (
+                <p className="mt-1 text-sm text-red-600">{errors.contactEmail.message}</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+              Website (Optional)
+            </label>
+            <input
+              {...register("website")}
+              type="url"
+              id="website"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="https://www.warriors.com"
+            />
+            {errors.website && (
+              <p className="mt-1 text-sm text-red-600">{errors.website.message}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Address Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Business Address</h3>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+              Street Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("address")}
+              type="text"
+              id="address"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="123 Basketball Ave"
+            />
+            {errors.address && (
+              <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                City <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("city")}
+                type="text"
+                id="city"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Los Angeles"
+              />
+              {errors.city && (
+                <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                State <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("state")}
+                type="text"
+                id="state"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="CA"
+              />
+              {errors.state && (
+                <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
+                Zip Code <span className="text-red-500">*</span>
+              </label>
+              <input
+                {...register("zipCode")}
+                type="text"
+                id="zipCode"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="90001"
+              />
+              {errors.zipCode && (
+                <p className="mt-1 text-sm text-red-600">{errors.zipCode.message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Branding Section */}
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">Branding</h3>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="logoUrl" className="block text-sm font-medium text-gray-700">
+              Logo URL (Optional)
+            </label>
+            <input
+              {...register("logoUrl")}
+              type="url"
+              id="logoUrl"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="https://example.com/logo.png"
+            />
+            {errors.logoUrl && (
+              <p className="mt-1 text-sm text-red-600">{errors.logoUrl.message}</p>
+            )}
+            <p className="mt-1 text-sm text-gray-500">
+              Paste a link to your club logo. You can update this later.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              Description (Optional)
+            </label>
+            <textarea
+              {...register("description")}
+              id="description"
+              rows={3}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Elite youth basketball program focused on skill development and competitive play..."
+            />
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Timezone */}

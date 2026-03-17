@@ -37,6 +37,9 @@ export async function GET(
       dateOfBirth: true,
       gender: true,
       jerseyNumber: true,
+      height: true,
+      weight: true,
+      position: true,
     },
   })
 
@@ -96,6 +99,9 @@ export async function PATCH(
         dateOfBirth: dob,
         gender: data.gender,
         jerseyNumber: data.jerseyNumber || null,
+        height: data.height || null,
+        weight: data.weight || null,
+        position: data.position || null,
         isMinor: ageInYears < 13,
         canLogin: ageInYears >= 13,
       },
@@ -106,6 +112,9 @@ export async function PATCH(
         dateOfBirth: true,
         gender: true,
         jerseyNumber: true,
+        height: true,
+        weight: true,
+        position: true,
       },
     })
 

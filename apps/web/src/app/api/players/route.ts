@@ -33,6 +33,9 @@ export async function GET() {
       dateOfBirth: true,
       gender: true,
       jerseyNumber: true,
+      height: true,
+      weight: true,
+      position: true,
     },
     orderBy: { firstName: "asc" },
   })
@@ -76,6 +79,9 @@ export async function POST(req: Request) {
         dateOfBirth: dob,
         gender: data.gender,
         jerseyNumber: data.jerseyNumber || null,
+        height: data.height || null,
+        weight: data.weight || null,
+        position: data.position || null,
         parentId: user.id,
         isMinor: ageInYears < 13,
         canLogin: ageInYears >= 13,
@@ -87,6 +93,9 @@ export async function POST(req: Request) {
         dateOfBirth: true,
         gender: true,
         jerseyNumber: true,
+        height: true,
+        weight: true,
+        position: true,
       },
     })
 

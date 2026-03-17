@@ -29,6 +29,7 @@ export default async function DashboardLayout({
         id: r.tenant!.id,
         name: r.tenant!.name,
         slug: r.tenant!.slug,
+        role: r.role,
       })) || []
 
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"

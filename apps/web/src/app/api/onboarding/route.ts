@@ -52,15 +52,37 @@ export async function POST(req: Request) {
     if (profileData) {
       switch (profileData.type) {
         case "Parent":
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              phoneNumber: profileData.phoneNumber,
+              city: profileData.city,
+              state: profileData.state,
+            },
+          })
+          break
+
         case "Staff":
           await prisma.user.update({
             where: { id: user.id },
-            data: { phoneNumber: profileData.phoneNumber },
+            data: {
+              phoneNumber: profileData.phoneNumber,
+              city: profileData.city,
+              state: profileData.state,
+            },
           })
           break
 
         case "Player": {
           const dob = new Date(profileData.dateOfBirth)
+          // Save city/state to user record
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              city: profileData.city,
+              state: profileData.state,
+            },
+          })
           await prisma.player.create({
             data: {
               firstName: user.firstName || "Player",
@@ -68,6 +90,8 @@ export async function POST(req: Request) {
               dateOfBirth: dob,
               gender: profileData.gender as any,
               jerseyNumber: profileData.jerseyNumber || null,
+              height: profileData.height || null,
+              position: profileData.position || null,
               parentId: user.id,
               isMinor: false,
               canLogin: true,
