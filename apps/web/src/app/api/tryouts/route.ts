@@ -18,7 +18,7 @@ const createTryoutSchema = z.object({
   maxParticipants: z.number().optional(),
   isPublic: z.boolean().default(true),
   tenantId: z.string().uuid(),
-  teamId: z.string().uuid().nullable().optional(),
+  teamId: z.string().nullable().optional(),
 })
 
 /**

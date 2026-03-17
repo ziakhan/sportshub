@@ -17,7 +17,7 @@ const updateTryoutSchema = z.object({
   fee: z.number().min(0).optional(),
   maxParticipants: z.number().nullable().optional(),
   isPublic: z.boolean().optional(),
-  teamId: z.string().uuid().nullable().optional(),
+  teamId: z.string().nullable().optional(),
 })
 
 /**
