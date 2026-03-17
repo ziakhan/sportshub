@@ -220,15 +220,31 @@ export default function CreateTeamPage() {
     ]
 
     try {
+      const payload: Record<string, unknown> = {
+        name: data.name,
+        ageGroup: data.ageGroup,
+        tenantId: clubId,
+        season: data.season || undefined,
+        description: data.description || undefined,
+      }
+      if (data.gender) payload.gender = data.gender
+      if (staff.length > 0) payload.staff = staff
+
       const res = await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, tenantId: clubId, staff }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to create team")
+        let errorMsg = "Failed to create team"
+        try {
+          const errorData = await res.json()
+          errorMsg = errorData.error || errorMsg
+        } catch {
+          // Response wasn't JSON
+        }
+        throw new Error(errorMsg)
       }
 
       setCreatedTeam({
