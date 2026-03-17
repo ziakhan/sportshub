@@ -37,6 +37,15 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
           <SidebarLink href="/dashboard" label="Home" />
         </div>
 
+        {/* Platform Admin */}
+        {hasRole("PlatformAdmin") && (
+          <div className="mb-4">
+            <SidebarHeader label="Admin" />
+            <SidebarLink href="/dashboard/admin/users" label="Users" />
+            <SidebarLink href="/dashboard/admin/clubs" label="Clubs" />
+          </div>
+        )}
+
         {/* Parent */}
         {hasRole("Parent") && (
           <div className="mb-4">

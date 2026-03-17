@@ -2,9 +2,13 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "./auth"
 import { prisma } from "@youthbasketballhub/db"
 import { defineAbilitiesFor } from "./permissions"
+import { cookies } from "next/headers"
+
+const IMPERSONATE_COOKIE = "admin-impersonate-uid"
 
 /**
- * Get current user from database with roles
+ * Get current user from database with roles.
+ * Supports admin impersonation via cookie.
  */
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions)
@@ -13,8 +17,21 @@ export async function getCurrentUser() {
     return null
   }
 
+  // Check for impersonation
+  let targetUserId = session.user.id
+  const impersonateUid = cookies().get(IMPERSONATE_COOKIE)?.value
+  if (impersonateUid) {
+    // Verify the real user is a PlatformAdmin
+    const adminRole = await prisma.userRole.findFirst({
+      where: { userId: session.user.id, role: "PlatformAdmin" },
+    })
+    if (adminRole) {
+      targetUserId = impersonateUid
+    }
+  }
+
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: targetUserId },
     include: {
       roles: {
         include: {
@@ -27,6 +44,21 @@ export async function getCurrentUser() {
   })
 
   return user
+}
+
+/**
+ * Get the real admin user ID (ignores impersonation)
+ */
+export async function getRealUserId() {
+  const session = await getServerSession(authOptions)
+  return session?.user?.id || null
+}
+
+/**
+ * Check if currently impersonating
+ */
+export function isImpersonating() {
+  return !!cookies().get(IMPERSONATE_COOKIE)?.value
 }
 
 /**

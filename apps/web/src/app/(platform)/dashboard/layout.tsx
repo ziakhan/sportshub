@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { getCurrentUser } from "@/lib/auth-helpers"
+import { getCurrentUser, isImpersonating, getRealUserId } from "@/lib/auth-helpers"
 import { Sidebar } from "./sidebar"
 import { NotificationBell } from "./notification-bell"
 import { UserMenu } from "./user-menu"
+import { ImpersonationBanner } from "./impersonation-banner"
 
 export default async function DashboardLayout({
   children,
@@ -32,6 +33,7 @@ export default async function DashboardLayout({
         role: r.role,
       })) || []
 
+  const impersonating = isImpersonating()
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"
   const userEmail = dbUser.email
   const userInitials = [dbUser.firstName?.[0], dbUser.lastName?.[0]]
@@ -41,6 +43,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Impersonation banner */}
+      {impersonating && <ImpersonationBanner userName={userName} />}
+
       {/* Top nav */}
       <nav className="border-b bg-white">
         <div className="flex items-center justify-between px-4 py-3">
