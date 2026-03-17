@@ -159,10 +159,18 @@ export async function PATCH(
     const body = await request.json()
     const validatedData = updateTryoutSchema.parse(body)
 
-    const data: Record<string, unknown> = { ...validatedData }
-    if (validatedData.scheduledAt) {
-      data.scheduledAt = new Date(validatedData.scheduledAt)
-    }
+    const data: Record<string, unknown> = {}
+    if (validatedData.title !== undefined) data.title = validatedData.title
+    if (validatedData.description !== undefined) data.description = validatedData.description
+    if (validatedData.ageGroup !== undefined) data.ageGroup = validatedData.ageGroup
+    if (validatedData.gender !== undefined) data.gender = validatedData.gender
+    if (validatedData.location !== undefined) data.location = validatedData.location
+    if (validatedData.scheduledAt !== undefined) data.scheduledAt = new Date(validatedData.scheduledAt)
+    if (validatedData.duration !== undefined) data.duration = validatedData.duration
+    if (validatedData.fee !== undefined) data.fee = validatedData.fee
+    if (validatedData.maxParticipants !== undefined) data.maxParticipants = validatedData.maxParticipants
+    if (validatedData.isPublic !== undefined) data.isPublic = validatedData.isPublic
+    if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
 
     const updated = await prisma.tryout.update({
       where: { id: params.id },
@@ -175,11 +183,12 @@ export async function PATCH(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error: " + error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", "), details: error.errors },
         { status: 400 }
       )
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Internal server error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

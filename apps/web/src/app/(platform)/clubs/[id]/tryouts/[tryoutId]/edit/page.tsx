@@ -93,22 +93,25 @@ export default function EditTryoutPage() {
     setSaved(false)
 
     try {
+      const payload: Record<string, unknown> = {
+        title: data.title,
+        description: data.description || null,
+        ageGroup: data.ageGroup,
+        location: data.location,
+        scheduledAt: new Date(data.scheduledAt).toISOString(),
+        fee: data.fee,
+        isPublic: data.isPublic,
+        teamId: selectedTeamId || null,
+      }
+      // Only include optional fields if they have values
+      if (data.gender) payload.gender = data.gender
+      if (data.duration) payload.duration = data.duration
+      if (data.maxParticipants) payload.maxParticipants = data.maxParticipants
+
       const res = await fetch(`/api/tryouts/${tryoutId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: data.title,
-          description: data.description || null,
-          ageGroup: data.ageGroup,
-          gender: data.gender || null,
-          location: data.location,
-          scheduledAt: new Date(data.scheduledAt).toISOString(),
-          duration: data.duration || null,
-          fee: data.fee,
-          maxParticipants: data.maxParticipants || null,
-          isPublic: data.isPublic,
-          teamId: selectedTeamId || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
