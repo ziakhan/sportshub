@@ -68,20 +68,36 @@ export default function CreateTryoutPage() {
     setError(null)
 
     try {
+      const payload: Record<string, unknown> = {
+        title: data.title,
+        description: data.description || undefined,
+        ageGroup: data.ageGroup,
+        location: data.location,
+        scheduledAt: new Date(data.scheduledAt).toISOString(),
+        fee: data.fee,
+        isPublic: data.isPublic,
+        tenantId: clubId,
+        teamId: selectedTeamId || null,
+      }
+      if (data.gender) payload.gender = data.gender
+      if (data.duration) payload.duration = data.duration
+      if (data.maxParticipants) payload.maxParticipants = data.maxParticipants
+
       const res = await fetch("/api/tryouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          scheduledAt: new Date(data.scheduledAt).toISOString(),
-          tenantId: clubId,
-          teamId: selectedTeamId || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to create tryout")
+        let errorMsg = "Failed to create tryout"
+        try {
+          const errorData = await res.json()
+          errorMsg = errorData.error || errorMsg
+        } catch {
+          // Response wasn't JSON
+        }
+        throw new Error(errorMsg)
       }
 
       setCreatedTryout({ title: data.title })
