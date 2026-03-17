@@ -284,6 +284,9 @@ model TeamPlayer {
   playerId      String
   player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
+  jerseyNumber  Int?
+  uniformSize   String?  // YS, YM, YL, AS, AM, AL, AXL
+
   status        TeamPlayerStatus @default(ACTIVE)
   joinedAt      DateTime @default(now())
   leftAt        DateTime?
@@ -388,6 +391,9 @@ model TryoutSignup {
 
   notes         String?  @db.Text
 
+  // Relationships
+  offers        Offer[]
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -401,6 +407,7 @@ enum TryoutSignupStatus {
   PAID
   CONFIRMED
   CANCELLED
+  OFFERED
 }
 
 model Offer {
@@ -411,6 +418,9 @@ model Offer {
   playerId      String
   player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
+  tryoutSignupId String?
+  tryoutSignup  TryoutSignup? @relation(fields: [tryoutSignupId], references: [id])
+
   status        OfferStatus @default(PENDING)
 
   seasonFee     Decimal  @db.Decimal(10, 2)
@@ -419,6 +429,12 @@ model Offer {
   message       String?  @db.Text
   expiresAt     DateTime
 
+  // Filled on acceptance by parent/player
+  uniformSize   String?  // YS, YM, YL, AS, AM, AL, AXL
+  jerseyPref1   Int?     // First choice jersey number
+  jerseyPref2   Int?     // Second choice jersey number
+  jerseyPref3   Int?     // Third choice jersey number
+
   respondedAt   DateTime?
 
   createdAt     DateTime @default(now())
@@ -426,6 +442,7 @@ model Offer {
 
   @@index([teamId])
   @@index([playerId])
+  @@index([tryoutSignupId])
   @@index([status])
 }
 

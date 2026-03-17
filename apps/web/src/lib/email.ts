@@ -61,3 +61,42 @@ export async function sendStaffInviteEmail({
   `
   return sendEmail({ to, subject, html })
 }
+
+export async function sendOfferEmail({
+  to,
+  parentName,
+  playerName,
+  clubName,
+  teamName,
+  seasonFee,
+  message,
+  offerLink,
+}: {
+  to: string
+  parentName: string
+  playerName: string
+  clubName: string
+  teamName: string
+  seasonFee: number
+  message?: string
+  offerLink: string
+}) {
+  const subject = `Team Offer for ${playerName} from ${clubName}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Team Offer</h2>
+      <p>Hi ${parentName},</p>
+      <p><strong>${clubName}</strong> would like to offer <strong>${playerName}</strong> a spot on <strong>${teamName}</strong>!</p>
+      ${seasonFee > 0 ? `<p><strong>Season Fee:</strong> $${seasonFee.toFixed(2)}</p>` : ""}
+      ${message ? `<p style="padding: 12px; background: #f5f5f5; border-radius: 6px; font-style: italic;">"${message}"</p>` : ""}
+      <p>To accept or decline this offer, please log in and visit your offers page.</p>
+      <p>
+        <a href="${offerLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+          View Offer
+        </a>
+      </p>
+      <p style="color: #666; font-size: 14px;">When accepting, you'll need to provide uniform size and preferred jersey numbers.</p>
+    </div>
+  `
+  return sendEmail({ to, subject, html })
+}

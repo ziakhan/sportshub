@@ -64,6 +64,7 @@ export default async function ClubLayout({
     { label: "Overview", href: `/clubs/${params.id}` },
     { label: "Teams", href: `/clubs/${params.id}/teams` },
     { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
+    { label: "Offers", href: `/clubs/${params.id}/offers` },
     ...(isAdmin
       ? [
           { label: "Staff", href: `/clubs/${params.id}/staff` },

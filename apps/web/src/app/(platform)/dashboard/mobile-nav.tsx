@@ -97,6 +97,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                 <div className="mb-4">
                   <NavHeader label="Parent" />
                   <NavLink href="/players" label="My Players" />
+                  <NavLink href="/offers" label="Offers" />
                   <NavLink href="/marketplace" label="Browse Tryouts" />
                   <NavLink href="/payments" label="Payments" />
                 </div>
@@ -112,6 +113,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                         <div className="ml-4 space-y-0.5">
                           <NavSubLink href={`/clubs/${t.id}/teams`} label="Teams" />
                           <NavSubLink href={`/clubs/${t.id}/tryouts`} label="Tryouts" />
+                          <NavSubLink href={`/clubs/${t.id}/offers`} label="Offers" />
                           <NavSubLink href={`/clubs/${t.id}/staff`} label="Staff" />
                           <NavSubLink href={`/clubs/${t.id}/settings`} label="Settings" />
                         </div>

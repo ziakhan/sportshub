@@ -108,6 +108,12 @@ export default async function ClubTryoutsPage({
                       <div className="text-xs text-gray-500">signups</div>
                     </div>
                     <Link
+                      href={`/clubs/${params.id}/tryouts/${tryout.id}/signups`}
+                      className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                    >
+                      Signups
+                    </Link>
+                    <Link
                       href={`/clubs/${params.id}/tryouts/${tryout.id}/edit`}
                       className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                     >

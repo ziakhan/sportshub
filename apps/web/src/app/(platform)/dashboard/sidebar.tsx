@@ -51,6 +51,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
           <div className="mb-4">
             <SidebarHeader label="Parent" />
             <SidebarLink href="/players" label="My Players" />
+            <SidebarLink href="/offers" label="Offers" />
             <SidebarLink href="/marketplace" label="Browse Tryouts" />
             <SidebarLink href="/payments" label="Payments" />
           </div>
@@ -72,6 +73,10 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
                     <SidebarSubLink
                       href={`/clubs/${t.id}/tryouts`}
                       label="Tryouts"
+                    />
+                    <SidebarSubLink
+                      href={`/clubs/${t.id}/offers`}
+                      label="Offers"
                     />
                     <SidebarSubLink
                       href={`/clubs/${t.id}/staff`}
