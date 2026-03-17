@@ -3,7 +3,7 @@ import { format } from "date-fns"
 import Link from "next/link"
 
 async function getClubOffers(tenantId: string) {
-  return await prisma.offer.findMany({
+  const raw = await prisma.offer.findMany({
     where: { team: { tenantId } },
     include: {
       team: { select: { id: true, name: true } },
@@ -13,6 +13,8 @@ async function getClubOffers(tenantId: string) {
     },
     orderBy: { createdAt: "desc" },
   })
+  // Simplify Decimal fields to avoid serialization issues
+  return raw.map((o) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 
 async function getClubTeams(tenantId: string) {

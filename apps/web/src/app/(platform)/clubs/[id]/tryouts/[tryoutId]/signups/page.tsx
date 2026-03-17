@@ -4,9 +4,14 @@ import Link from "next/link"
 import { MakeOfferButton } from "./make-offer-button"
 
 async function getTryoutWithSignups(tryoutId: string, tenantId: string) {
-  return await prisma.tryout.findFirst({
+  const tryout = await prisma.tryout.findFirst({
     where: { id: tryoutId, tenantId },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      scheduledAt: true,
+      location: true,
+      ageGroup: true,
       team: { select: { id: true, name: true } },
       signups: {
         where: { status: { not: "CANCELLED" } },
@@ -18,6 +23,7 @@ async function getTryoutWithSignups(tryoutId: string, tenantId: string) {
       },
     },
   })
+  return tryout
 }
 
 async function getPlayersForParent(parentId: string) {
