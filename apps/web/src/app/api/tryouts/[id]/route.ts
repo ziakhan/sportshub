@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const updateTryoutSchema = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().nullable().optional(),
@@ -172,12 +174,12 @@ export async function PATCH(
     if (validatedData.isPublic !== undefined) data.isPublic = validatedData.isPublic
     if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
 
-    const updated = await prisma.tryout.update({
+    await prisma.tryout.update({
       where: { id: params.id },
       data,
     })
 
-    return NextResponse.json(updated)
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Update tryout error:", error)
 

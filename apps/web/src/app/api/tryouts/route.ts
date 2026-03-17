@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const createTryoutSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().optional(),
@@ -53,43 +55,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    const createData: Record<string, unknown> = {
+      title: validatedData.title,
+      ageGroup: validatedData.ageGroup,
+      location: validatedData.location,
+      scheduledAt: new Date(validatedData.scheduledAt),
+      fee: validatedData.fee,
+      isPublic: validatedData.isPublic,
+      isPublished: false,
+      tenantId: validatedData.tenantId,
+    }
+    if (validatedData.description) createData.description = validatedData.description
+    if (validatedData.gender) createData.gender = validatedData.gender
+    if (validatedData.duration) createData.duration = validatedData.duration
+    if (validatedData.maxParticipants) createData.maxParticipants = validatedData.maxParticipants
+    if (validatedData.teamId) createData.teamId = validatedData.teamId
+
     const tryout = await prisma.tryout.create({
-      data: {
-        title: validatedData.title,
-        description: validatedData.description,
-        ageGroup: validatedData.ageGroup,
-        gender: validatedData.gender,
-        location: validatedData.location,
-        scheduledAt: new Date(validatedData.scheduledAt),
-        duration: validatedData.duration,
-        fee: validatedData.fee,
-        maxParticipants: validatedData.maxParticipants,
-        isPublic: validatedData.isPublic,
-        isPublished: false, // Requires explicit publish
-        tenantId: validatedData.tenantId,
-        teamId: validatedData.teamId || null,
-      },
-      include: {
-        tenant: {
-          include: {
-            branding: true,
-          },
-        },
-      },
+      data: createData as any,
     })
 
-    return NextResponse.json(tryout, { status: 201 })
+    return NextResponse.json({ success: true, id: tryout.id, title: tryout.title }, { status: 201 })
   } catch (error) {
     console.error("Tryout creation error:", error)
 
     if (error instanceof z.ZodError) {
+      const details = error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ")
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error: " + details },
         { status: 400 }
       )
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const message = error instanceof Error ? error.message : "Internal server error"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
