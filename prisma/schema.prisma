@@ -25,6 +25,7 @@ model User {
   avatarUrl     String?
   city          String?
   state         String?
+  country       String   @default("US") // ISO 3166-1 alpha-2
 
   // Soft Delete (Recommended Addition)
   status        UserStatus @default(ACTIVE)
@@ -121,6 +122,8 @@ model Tenant {
   city          String?
   state         String?
   zipCode       String?
+  country       String   @default("US")  // ISO 3166-1 alpha-2
+  currency      String   @default("USD") // ISO 4217
   website       String?
   customDomain  String?  @unique
 

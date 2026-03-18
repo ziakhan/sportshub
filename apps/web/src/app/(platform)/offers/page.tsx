@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { OfferResponseForm } from "./offer-response-form"
+import { formatCurrency } from "@/lib/countries"
 
 interface Offer {
   id: string
@@ -30,7 +31,7 @@ interface Offer {
     name: string
     ageGroup: string
     gender: string | null
-    tenant: { name: string }
+    tenant: { name: string; currency: string }
   }
   player: {
     id: string
@@ -126,7 +127,7 @@ export default function OffersPage() {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-bold text-gray-900">
-                            ${offer.seasonFee.toFixed(2)}
+                            {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
                           </div>
                           {offer.installments > 1 && (
                             <div className="text-xs text-gray-500">

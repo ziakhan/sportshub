@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
+import { formatCurrency } from "@/lib/countries"
 
 async function getAcceptedOffers(tenantId: string) {
   const raw = await prisma.offer.findMany({
@@ -49,7 +50,11 @@ export default async function OfferSummaryPage({
 }: {
   params: { id: string }
 }) {
-  const offers = await getAcceptedOffers(params.id)
+  const [offers, tenantData] = await Promise.all([
+    getAcceptedOffers(params.id),
+    prisma.tenant.findUnique({ where: { id: params.id }, select: { currency: true } }),
+  ])
+  const currency = tenantData?.currency || "USD"
 
   // Group by team
   const teamMap = new Map<string, { name: string; offers: typeof offers }>()
@@ -223,7 +228,7 @@ export default async function OfferSummaryPage({
                             {offer.player.position || "-"}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
-                            ${offer.seasonFee.toFixed(2)}
+                            {formatCurrency(offer.seasonFee, currency)}
                             {offer.installments > 1 ? ` (${offer.installments}x)` : ""}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm">

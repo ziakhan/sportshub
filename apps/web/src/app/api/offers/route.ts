@@ -321,7 +321,7 @@ export async function GET(request: NextRequest) {
         where: { playerId: { in: playerIds } },
         include: {
           team: {
-            select: { id: true, name: true, ageGroup: true, gender: true, tenant: { select: { name: true } } },
+            select: { id: true, name: true, ageGroup: true, gender: true, tenant: { select: { name: true, currency: true } } },
           },
           player: {
             select: { id: true, firstName: true, lastName: true },

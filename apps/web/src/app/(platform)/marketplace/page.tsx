@@ -1,13 +1,15 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
+import { formatCurrency, SUPPORTED_COUNTRIES } from "@/lib/countries"
 
-async function getPublicTryouts() {
+async function getPublicTryouts(country?: string) {
   const raw = await prisma.tryout.findMany({
     where: {
       isPublished: true,
       isPublic: true,
       scheduledAt: { gte: new Date() },
+      ...(country ? { tenant: { country } } : {}),
     },
     include: {
       tenant: {
@@ -26,8 +28,13 @@ async function getPublicTryouts() {
   return raw.map((t) => ({ ...t, fee: Number(t.fee) }))
 }
 
-export default async function MarketplacePage() {
-  const tryouts = await getPublicTryouts()
+export default async function MarketplacePage({
+  searchParams,
+}: {
+  searchParams: { country?: string }
+}) {
+  const selectedCountry = searchParams.country || ""
+  const tryouts = await getPublicTryouts(selectedCountry || undefined)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,7 +51,29 @@ export default async function MarketplacePage() {
         {/* Filters */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <h3 className="mb-4 font-semibold text-gray-900">Filters</h3>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Country
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                <Link
+                  href="/marketplace"
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${!selectedCountry ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                >
+                  All
+                </Link>
+                {SUPPORTED_COUNTRIES.map((c) => (
+                  <Link
+                    key={c.code}
+                    href={`/marketplace?country=${c.code}`}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${selectedCountry === c.code ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                  >
+                    {c.code}
+                  </Link>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age Group
@@ -143,7 +172,7 @@ export default async function MarketplacePage() {
 
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="text-2xl font-bold text-blue-600">
-                      ${tryout.fee.toFixed(2)}
+                      {formatCurrency(tryout.fee, tryout.tenant.currency)}
                     </div>
                     <div className="text-sm text-gray-600">
                       {tryout._count.signups}{" "}

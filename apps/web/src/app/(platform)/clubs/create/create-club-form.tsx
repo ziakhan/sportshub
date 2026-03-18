@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
+import { CountryStateSelector } from "@/components/country-state-selector"
+import { getCountryConfig, getCurrencyForCountry, getTimezonesForCountry } from "@/lib/countries"
 
 const createClubSchema = z.object({
   name: z.string().min(3, "Club name must be at least 3 characters").max(100),
@@ -14,13 +16,15 @@ const createClubSchema = z.object({
     .max(50)
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().optional(),
+  country: z.string().length(2).default("US"),
+  currency: z.string().length(3).default("USD"),
   timezone: z.string(),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
   contactEmail: z.string().email("Enter a valid email address"),
   address: z.string().min(3, "Address is required"),
   city: z.string().min(1, "City is required").max(100),
   state: z.string().min(1, "State is required").max(100),
-  zipCode: z.string().min(3, "Enter a valid zip code").max(10),
+  zipCode: z.string().min(3, "Enter a valid postal code").max(10),
   website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
   logoUrl: z.string().url("Enter a valid URL").optional().or(z.literal("")),
 })
@@ -41,6 +45,8 @@ export function CreateClubForm() {
   } = useForm<CreateClubFormData>({
     resolver: zodResolver(createClubSchema),
     defaultValues: {
+      country: "US",
+      currency: "USD",
       timezone: "America/New_York",
     },
   })
@@ -233,7 +239,22 @@ export function CreateClubForm() {
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <CountryStateSelector
+            countryValue={watch("country") || "US"}
+            stateValue={watch("state") || ""}
+            onCountryChange={(country) => {
+              setValue("country", country)
+              setValue("currency", getCurrencyForCountry(country))
+              // Reset timezone to first option for new country
+              const tzs = getTimezonesForCountry(country)
+              if (tzs.length > 0) setValue("timezone", tzs[0].value)
+            }}
+            onStateChange={(state) => setValue("state", state)}
+            countryError={errors.country?.message}
+            stateError={errors.state?.message}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="city" className="block text-sm font-medium text-gray-700">
                 City <span className="text-red-500">*</span>
@@ -251,31 +272,15 @@ export function CreateClubForm() {
             </div>
 
             <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                State <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("state")}
-                type="text"
-                id="state"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="CA"
-              />
-              {errors.state && (
-                <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
-              )}
-            </div>
-
-            <div>
               <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                Zip Code <span className="text-red-500">*</span>
+                {getCountryConfig(watch("country") || "US")?.postalLabel || "Postal Code"} <span className="text-red-500">*</span>
               </label>
               <input
                 {...register("zipCode")}
                 type="text"
                 id="zipCode"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="90001"
+                placeholder={watch("country") === "CA" ? "A1A 1A1" : "90001"}
               />
               {errors.zipCode && (
                 <p className="mt-1 text-sm text-red-600">{errors.zipCode.message}</p>
@@ -337,13 +342,11 @@ export function CreateClubForm() {
           id="timezone"
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="America/New_York">Eastern Time (ET)</option>
-          <option value="America/Chicago">Central Time (CT)</option>
-          <option value="America/Denver">Mountain Time (MT)</option>
-          <option value="America/Los_Angeles">Pacific Time (PT)</option>
-          <option value="America/Phoenix">Arizona (MST)</option>
-          <option value="America/Anchorage">Alaska Time</option>
-          <option value="Pacific/Honolulu">Hawaii Time</option>
+          {getTimezonesForCountry(watch("country") || "US").map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
+            </option>
+          ))}
         </select>
         {errors.timezone && (
           <p className="mt-1 text-sm text-red-600">{errors.timezone.message}</p>

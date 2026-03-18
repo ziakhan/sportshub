@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import Link from "next/link"
 import { SignupForm } from "./signup-form"
+import { formatCurrency } from "@/lib/countries"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -85,6 +86,7 @@ export default async function TryoutDetailPage({
     tryout.maxParticipants !== null &&
     tryout._count.signups >= tryout.maxParticipants
   const fee = Number(tryout.fee)
+  const currency = tryout.tenant.currency || "USD"
   const spotsLeft = tryout.maxParticipants
     ? tryout.maxParticipants - tryout._count.signups
     : null
@@ -200,7 +202,7 @@ export default async function TryoutDetailPage({
             <div className="rounded-lg bg-white p-6 shadow">
               <div className="mb-4 text-center">
                 <div className="text-3xl font-bold text-blue-600">
-                  {fee === 0 ? "FREE" : `$${fee}`}
+                  {fee === 0 ? "FREE" : formatCurrency(fee, currency)}
                 </div>
                 {fee > 0 && (
                   <p className="mt-1 text-xs text-gray-500">per player</p>

@@ -15,6 +15,8 @@ const createTenantSchema = z.object({
   city: z.string().min(1).max(100),
   state: z.string().min(1).max(100),
   zipCode: z.string().min(3).max(10),
+  country: z.string().length(2).default("US"),
+  currency: z.string().length(3).default("USD"),
   website: z.string().url().optional().or(z.literal("")),
   logoUrl: z.string().url().optional().or(z.literal("")),
 })
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
         city: validatedData.city,
         state: validatedData.state,
         zipCode: validatedData.zipCode,
+        country: validatedData.country,
+        currency: validatedData.currency,
         website: validatedData.website || null,
         plan: "FREE",
         branding: {
