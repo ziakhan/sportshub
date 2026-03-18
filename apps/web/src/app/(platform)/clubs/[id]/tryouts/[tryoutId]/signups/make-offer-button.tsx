@@ -9,7 +9,8 @@ interface Template {
   seasonFee: number
   installments: number
   practiceSessions: number
-  includesBallBag: boolean
+  includesBall: boolean
+  includesBag: boolean
   includesShoes: boolean
   includesUniform: boolean
   includesTracksuit: boolean
@@ -42,7 +43,8 @@ export function MakeOfferButton({
   const [seasonFee, setSeasonFee] = useState("0")
   const [installments, setInstallments] = useState("1")
   const [practiceSessions, setPracticeSessions] = useState("0")
-  const [includesBallBag, setIncludesBallBag] = useState(false)
+  const [includesBall, setIncludesBall] = useState(false)
+  const [includesBag, setIncludesBag] = useState(false)
   const [includesShoes, setIncludesShoes] = useState(false)
   const [includesUniform, setIncludesUniform] = useState(false)
   const [includesTracksuit, setIncludesTracksuit] = useState(false)
@@ -69,7 +71,8 @@ export function MakeOfferButton({
       setSeasonFee(tmpl.seasonFee.toString())
       setInstallments(tmpl.installments.toString())
       setPracticeSessions(tmpl.practiceSessions.toString())
-      setIncludesBallBag(tmpl.includesBallBag)
+      setIncludesBall(tmpl.includesBall)
+      setIncludesBag(tmpl.includesBag)
       setIncludesShoes(tmpl.includesShoes)
       setIncludesUniform(tmpl.includesUniform)
       setIncludesTracksuit(tmpl.includesTracksuit)
@@ -96,7 +99,8 @@ export function MakeOfferButton({
           seasonFee: parseFloat(seasonFee),
           installments: parseInt(installments),
           practiceSessions: parseInt(practiceSessions),
-          includesBallBag,
+          includesBall,
+          includesBag,
           includesShoes,
           includesUniform,
           includesTracksuit,
@@ -138,7 +142,8 @@ export function MakeOfferButton({
     includesUniform && "Uniform",
     includesTracksuit && "Tracksuit",
     includesShoes && "Shoes",
-    includesBallBag && "Ball Bag",
+    includesBall && "Basketball",
+    includesBag && "Bag",
   ].filter(Boolean)
 
   return (
@@ -235,7 +240,8 @@ export function MakeOfferButton({
                 { key: "uniform", label: "Uniform", desc: "Shirt + Shorts", checked: includesUniform, set: setIncludesUniform },
                 { key: "tracksuit", label: "Tracksuit", desc: "Jacket + Pants", checked: includesTracksuit, set: setIncludesTracksuit },
                 { key: "shoes", label: "Shoes", desc: "Basketball shoes", checked: includesShoes, set: setIncludesShoes },
-                { key: "ballbag", label: "Ball Bag", desc: "Equipment bag", checked: includesBallBag, set: setIncludesBallBag },
+                { key: "ball", label: "Basketball", desc: "Game ball", checked: includesBall, set: setIncludesBall },
+                { key: "bag", label: "Bag", desc: "Equipment bag", checked: includesBag, set: setIncludesBag },
               ].map((item) => (
                 <label key={item.key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer">
                   <input

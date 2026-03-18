@@ -40,6 +40,8 @@ async function getTeamOffers(teamId: string) {
     select: {
       id: true,
       uniformSize: true,
+      shoeSize: true,
+      tracksuitSize: true,
       jerseyPref1: true,
       jerseyPref2: true,
       jerseyPref3: true,
@@ -126,6 +128,12 @@ export default async function TeamRosterPage({
                   Uniform
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Tracksuit
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Shoes
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Status
                 </th>
               </tr>
@@ -161,6 +169,12 @@ export default async function TeamRosterPage({
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
                       {tp.uniformSize || offer?.uniformSize || "-"}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                      {tp.tracksuitSize || offer?.tracksuitSize || "-"}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                      {tp.shoeSize || offer?.shoeSize || "-"}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       {tp.jerseyNumber !== null ? (

@@ -19,7 +19,8 @@ export function TemplateForm({
   const [seasonFee, setSeasonFee] = useState("0")
   const [installments, setInstallments] = useState("1")
   const [practiceSessions, setPracticeSessions] = useState("0")
-  const [includesBallBag, setIncludesBallBag] = useState(false)
+  const [includesBall, setIncludesBall] = useState(false)
+  const [includesBag, setIncludesBag] = useState(false)
   const [includesShoes, setIncludesShoes] = useState(false)
   const [includesUniform, setIncludesUniform] = useState(false)
   const [includesTracksuit, setIncludesTracksuit] = useState(false)
@@ -29,7 +30,8 @@ export function TemplateForm({
     setSeasonFee("0")
     setInstallments("1")
     setPracticeSessions("0")
-    setIncludesBallBag(false)
+    setIncludesBall(false)
+    setIncludesBag(false)
     setIncludesShoes(false)
     setIncludesUniform(false)
     setIncludesTracksuit(false)
@@ -50,7 +52,8 @@ export function TemplateForm({
           seasonFee: parseFloat(seasonFee),
           installments: parseInt(installments),
           practiceSessions: parseInt(practiceSessions),
-          includesBallBag,
+          includesBall,
+          includesBag,
           includesShoes,
           includesUniform,
           includesTracksuit,
@@ -191,12 +194,25 @@ export function TemplateForm({
             <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
               <input
                 type="checkbox"
-                checked={includesBallBag}
-                onChange={(e) => setIncludesBallBag(e.target.checked)}
+                checked={includesBall}
+                onChange={(e) => setIncludesBall(e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <div>
-                <div className="text-sm font-medium text-gray-900">Ball Bag</div>
+                <div className="text-sm font-medium text-gray-900">Basketball</div>
+                <div className="text-xs text-gray-500">Game ball</div>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includesBag}
+                onChange={(e) => setIncludesBag(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <div className="text-sm font-medium text-gray-900">Bag</div>
                 <div className="text-xs text-gray-500">Equipment bag</div>
               </div>
             </label>

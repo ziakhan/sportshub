@@ -287,6 +287,8 @@ model TeamPlayer {
 
   jerseyNumber  Int?
   uniformSize   String?  // YS, YM, YL, AS, AM, AL, AXL
+  shoeSize      String?  // e.g. "7", "8.5"
+  tracksuitSize String?  // YS, YM, YL, AS, AM, AL, AXL
 
   status        TeamPlayerStatus @default(ACTIVE)
   joinedAt      DateTime @default(now())
@@ -423,7 +425,8 @@ model OfferTemplate {
   practiceSessions Int   @default(0)
 
   // Included items
-  includesBallBag   Boolean @default(false)
+  includesBall      Boolean @default(false) // basketball
+  includesBag       Boolean @default(false) // equipment bag
   includesShoes     Boolean @default(false)
   includesUniform   Boolean @default(false) // shirt + shorts
   includesTracksuit Boolean @default(false)
@@ -460,7 +463,8 @@ model Offer {
   practiceSessions Int   @default(0)
 
   // Included items
-  includesBallBag   Boolean @default(false)
+  includesBall      Boolean @default(false)
+  includesBag       Boolean @default(false)
   includesShoes     Boolean @default(false)
   includesUniform   Boolean @default(false)
   includesTracksuit Boolean @default(false)

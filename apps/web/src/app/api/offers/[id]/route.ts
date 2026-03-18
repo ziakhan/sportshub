@@ -181,7 +181,7 @@ export async function PATCH(
           },
         })
 
-        // Create TeamPlayer record (player joins the team)
+        // Create TeamPlayer record (player joins the team) with all sizes
         await tx.teamPlayer.upsert({
           where: {
             teamId_playerId: {
@@ -193,11 +193,15 @@ export async function PATCH(
             teamId: offer.teamId,
             playerId: offer.playerId,
             uniformSize: data.uniformSize || null,
+            shoeSize: data.shoeSize || null,
+            tracksuitSize: data.tracksuitSize || null,
             status: "ACTIVE",
           },
           update: {
             status: "ACTIVE",
             uniformSize: data.uniformSize || null,
+            shoeSize: data.shoeSize || null,
+            tracksuitSize: data.tracksuitSize || null,
           },
         })
 

@@ -19,7 +19,8 @@ async function getClubOffers(tenantId: string) {
       includesUniform: true,
       includesTracksuit: true,
       includesShoes: true,
-      includesBallBag: true,
+      includesBall: true,
+      includesBag: true,
       practiceSessions: true,
       createdAt: true,
       team: { select: { id: true, name: true } },
@@ -70,6 +71,14 @@ export default async function ClubOffersPage({
             Manage offers sent to players from tryouts
           </p>
         </div>
+        {acceptedCount > 0 && (
+          <Link
+            href={`/clubs/${params.id}/offers/summary`}
+            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Accepted Summary
+          </Link>
+        )}
       </div>
 
       {/* Stats */}

@@ -10,7 +10,8 @@ interface Offer {
   seasonFee: number
   installments: number
   practiceSessions: number
-  includesBallBag: boolean
+  includesBall: boolean
+  includesBag: boolean
   includesShoes: boolean
   includesUniform: boolean
   includesTracksuit: boolean
@@ -141,7 +142,8 @@ export default function OffersPage() {
                           offer.includesUniform && "Uniform (Shirt + Shorts)",
                           offer.includesTracksuit && "Tracksuit",
                           offer.includesShoes && "Shoes",
-                          offer.includesBallBag && "Ball Bag",
+                          offer.includesBall && "Basketball",
+                          offer.includesBag && "Bag",
                         ].filter(Boolean)
                         return (items.length > 0 || offer.practiceSessions > 0) ? (
                           <div className="mt-3 rounded-md bg-blue-50 p-3">

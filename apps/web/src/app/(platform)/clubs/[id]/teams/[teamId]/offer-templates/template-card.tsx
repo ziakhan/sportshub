@@ -9,7 +9,8 @@ interface Template {
   seasonFee: number
   installments: number
   practiceSessions: number
-  includesBallBag: boolean
+  includesBall: boolean
+  includesBag: boolean
   includesShoes: boolean
   includesUniform: boolean
   includesTracksuit: boolean
@@ -45,7 +46,8 @@ export function TemplateCard({
     template.includesUniform && "Uniform",
     template.includesTracksuit && "Tracksuit",
     template.includesShoes && "Shoes",
-    template.includesBallBag && "Ball Bag",
+    template.includesBall && "Basketball",
+    template.includesBag && "Bag",
   ].filter(Boolean)
 
   return (
