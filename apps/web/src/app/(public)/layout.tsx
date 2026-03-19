@@ -24,8 +24,16 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions)
-  const userInfo = session?.user?.id ? await getUserInfo(session.user.id) : null
+  let session = null
+  let userInfo = null
+  try {
+    session = await getServerSession(authOptions)
+    if (session?.user?.id) {
+      userInfo = await getUserInfo(session.user.id)
+    }
+  } catch {
+    // Session check failed — render as unauthenticated
+  }
 
   return (
     <main className="flex min-h-screen flex-col">
