@@ -32,7 +32,8 @@ function SignInForm() {
       if (result?.error) {
         setError("Invalid email or password")
       } else {
-        router.push(callbackUrl)
+        // Full page reload to pick up session cookie in server layouts
+        window.location.href = callbackUrl
       }
     } catch {
       setError("Something went wrong. Please try again.")

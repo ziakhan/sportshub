@@ -52,7 +52,7 @@ export default async function PublicLayout({
               <>
                 <Link
                   href="/dashboard"
-                  className="hidden text-sm text-gray-600 hover:text-gray-900 sm:block"
+                  className="rounded-md border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
                 >
                   Dashboard
                 </Link>
