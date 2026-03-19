@@ -148,9 +148,11 @@ export async function POST(req: Request) {
     })
 
     // Determine next step based on selected roles
-    let nextStep = "/dashboard"
+    let nextStep = "/"
     if (roles.includes("ClubOwner")) {
       nextStep = "/clubs/find"
+    } else if (roles.includes("LeagueOwner")) {
+      nextStep = "/dashboard"
     }
 
     return NextResponse.json({

@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { Suspense } from "react"
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams?.get("callbackUrl") || "/"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,7 +32,7 @@ export default function SignInPage() {
       if (result?.error) {
         setError("Invalid email or password")
       } else {
-        router.push("/dashboard")
+        router.push(callbackUrl)
       }
     } catch {
       setError("Something went wrong. Please try again.")
@@ -110,5 +113,13 @@ export default function SignInPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   )
 }
