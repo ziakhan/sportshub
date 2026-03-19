@@ -17,10 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (q.length >= 2) {
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { city: { contains: q, mode: "insensitive" } },
-      ]
+      where.name = { contains: q, mode: "insensitive" }
     }
 
     const clubs = await prisma.tenant.findMany({

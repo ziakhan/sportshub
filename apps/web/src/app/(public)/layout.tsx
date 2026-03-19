@@ -1,35 +1,27 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@youthbasketballhub/db"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { UserMenu } from "../(platform)/dashboard/user-menu"
-
-async function getUserInfo(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { firstName: true, lastName: true, email: true },
-  })
-  if (!user) return null
-  return {
-    name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "User",
-    email: user.email,
-    initials: [user.firstName?.[0], user.lastName?.[0]]
-      .filter(Boolean).join("").toUpperCase() || "U",
-  }
-}
 
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  let session = null
-  let userInfo = null
+  let isLoggedIn = false
+  let userName = "User"
+  let userEmail = ""
+  let userInitials = "U"
+
   try {
-    session = await getServerSession(authOptions)
-    if (session?.user?.id) {
-      userInfo = await getUserInfo(session.user.id)
+    const session = await getServerSession(authOptions)
+    if (session?.user) {
+      isLoggedIn = true
+      userName = session.user.name || "User"
+      userEmail = session.user.email || ""
+      const parts = userName.split(" ")
+      userInitials = parts.map((p) => p[0]).join("").toUpperCase().slice(0, 2) || "U"
     }
   } catch {
     // Session check failed — render as unauthenticated
@@ -56,7 +48,7 @@ export default async function PublicLayout({
             >
               Clubs
             </Link>
-            {session && userInfo ? (
+            {isLoggedIn ? (
               <>
                 <Link
                   href="/dashboard"
@@ -66,9 +58,9 @@ export default async function PublicLayout({
                 </Link>
                 <NotificationBell />
                 <UserMenu
-                  userName={userInfo.name}
-                  userEmail={userInfo.email}
-                  userInitials={userInfo.initials}
+                  userName={userName}
+                  userEmail={userEmail}
+                  userInitials={userInitials}
                 />
               </>
             ) : (
