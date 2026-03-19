@@ -70,3 +70,34 @@ export async function GET(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const league = await prisma.league.findUnique({
+      where: { id: params.id },
+      select: { ownerId: true },
+    })
+    if (!league || league.ownerId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const divisionId = request.nextUrl.searchParams.get("divisionId")
+    if (!divisionId) {
+      return NextResponse.json({ error: "divisionId required" }, { status: 400 })
+    }
+
+    await prisma.leagueDivision.delete({ where: { id: divisionId } })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete division error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

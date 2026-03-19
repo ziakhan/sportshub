@@ -190,7 +190,13 @@ export default function LeagueManagePage() {
                 <span className="font-medium text-gray-900">{d.name}</span>
                 <span className="ml-2 text-xs text-gray-500">{d.ageGroup}{d.gender ? ` \u2022 ${d.gender}` : ""}</span>
               </div>
-              <span className="text-xs text-gray-400">{d._count?.teams || 0} teams</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{d._count?.teams || 0} teams</span>
+                <button onClick={async () => {
+                  await fetch(`/api/leagues/${leagueId}/divisions?divisionId=${d.id}`, { method: "DELETE" })
+                  fetchAll()
+                }} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+              </div>
             </div>
           ))}
           <div className="mt-4 space-y-2 border-t pt-4">
@@ -232,7 +238,13 @@ export default function LeagueManagePage() {
             <div key={s.id} className="rounded-md bg-gray-50 px-3 py-2 mb-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-gray-900">{s.label || "Session"}</span>
-                {s.venue && <span className="text-xs text-gray-400">{s.venue.name}</span>}
+                <div className="flex items-center gap-2">
+                  {s.venue && <span className="text-xs text-gray-400">{s.venue.name}</span>}
+                  <button onClick={async () => {
+                    await fetch(`/api/leagues/${leagueId}/sessions?sessionId=${s.id}`, { method: "DELETE" })
+                    fetchAll()
+                  }} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                </div>
               </div>
               {s.days?.map((d: any) => (
                 <div key={d.id} className="text-xs text-gray-500 ml-2">
@@ -269,9 +281,15 @@ export default function LeagueManagePage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Venues</h3>
           {venues.map((v: any) => (
-            <div key={v.id} className="rounded-md bg-gray-50 px-3 py-2 mb-2">
-              <span className="font-medium text-gray-900">{v.venue.name}</span>
-              <span className="ml-2 text-xs text-gray-500">{v.venue.address}, {v.venue.city}</span>
+            <div key={v.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 mb-2">
+              <div>
+                <span className="font-medium text-gray-900">{v.venue.name}</span>
+                <span className="ml-2 text-xs text-gray-500">{v.venue.address}, {v.venue.city}</span>
+              </div>
+              <button onClick={async () => {
+                await fetch(`/api/leagues/${leagueId}/venues?leagueVenueId=${v.id}`, { method: "DELETE" })
+                fetchAll()
+              }} className="text-xs text-red-500 hover:text-red-700">Remove</button>
             </div>
           ))}
           <div className="mt-4 space-y-2 border-t pt-4">

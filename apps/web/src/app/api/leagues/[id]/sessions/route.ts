@@ -89,3 +89,36 @@ export async function GET(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const league = await prisma.league.findUnique({
+      where: { id: params.id },
+      select: { ownerId: true },
+    })
+    if (!league || league.ownerId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const sessionId = request.nextUrl.searchParams.get("sessionId")
+    if (!sessionId) {
+      return NextResponse.json({ error: "sessionId required" }, { status: 400 })
+    }
+
+    // Delete session days first, then session (cascade should handle but be explicit)
+    await (prisma as any).leagueSessionDay.deleteMany({ where: { sessionId } })
+    await (prisma as any).leagueSession.delete({ where: { id: sessionId } })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete session error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
