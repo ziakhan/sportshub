@@ -134,7 +134,7 @@ export default function PublicLeaguePage() {
             )}
 
             {isOpen && !deadlinePassed ? (
-              <Link href="/sign-in?callbackUrl=/dashboard"
+              <Link href={`/browse-leagues/${id}`}
                 className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700">
                 Register Your Team
               </Link>
