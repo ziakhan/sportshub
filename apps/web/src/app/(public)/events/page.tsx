@@ -131,8 +131,12 @@ export default function EventsPage() {
     fetchAll()
   }, [])
 
+  const filterMap: Record<EventType, string | null> = {
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp",
+  }
   const filtered = events.filter((e) => {
-    if (filter !== "all" && filter !== e.type && !(filter === "house-leagues" && e.type === "house-league")) return false
+    const ft = filterMap[filter]
+    if (ft && ft !== e.type) return false
     if (search.length >= 2) {
       const q = search.toLowerCase()
       return e.name.toLowerCase().includes(q) || e.clubName.toLowerCase().includes(q) || e.location.toLowerCase().includes(q)
