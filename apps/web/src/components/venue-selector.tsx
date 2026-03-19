@@ -44,11 +44,29 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
 
   // Load Google Places script
   useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+    if (!apiKey) {
+      console.warn("Google Places API key not configured")
+      return
+    }
+
     if (typeof window !== "undefined" && !(window as any).google?.maps?.places) {
+      // Check if script already loading
+      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+        const checkLoaded = setInterval(() => {
+          if ((window as any).google?.maps?.places) {
+            setGoogleLoaded(true)
+            clearInterval(checkLoaded)
+          }
+        }, 200)
+        return () => clearInterval(checkLoaded)
+      }
+
       const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
       script.async = true
       script.onload = () => setGoogleLoaded(true)
+      script.onerror = () => console.error("Failed to load Google Maps script")
       document.head.appendChild(script)
     } else {
       setGoogleLoaded(true)
