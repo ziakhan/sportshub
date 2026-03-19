@@ -11,15 +11,9 @@ export default async function CreateClubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto max-w-2xl px-4">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-8">
-          <Link
-            href="/dashboard"
-            className="mb-3 inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
-          >
-            &larr; Back to Dashboard
-          </Link>
           <h1 className="text-3xl font-bold text-gray-900">Create Your Club</h1>
           <p className="mt-2 text-gray-600">
             Set up your youth basketball club and start managing teams, tryouts, and more.

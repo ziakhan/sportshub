@@ -40,9 +40,9 @@ export default async function MarketplacePage({
   const tryouts = await getPublicTryouts(selectedCountry || undefined)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-8">
+        <div className="px-4 py-8 md:px-6">
           <h1 className="text-4xl font-bold text-gray-900">Tryout Marketplace</h1>
           <p className="mt-2 text-lg text-gray-600">
             Find the perfect basketball club for your child
@@ -50,7 +50,7 @@ export default async function MarketplacePage({
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="px-4 py-8 md:px-6">
         {/* Filters */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <h3 className="mb-4 font-semibold text-gray-900">Filters</h3>

@@ -92,7 +92,7 @@ export default async function TryoutDetailPage({
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       {/* Club header */}
       <div
         className="border-b"
@@ -101,7 +101,7 @@ export default async function TryoutDetailPage({
             tryout.tenant.branding?.primaryColor || "#1a73e8",
         }}
       >
-        <div className="container mx-auto px-4 py-6">
+        <div className="px-4 py-6 md:px-6">
           <Link
             href="/marketplace"
             className="mb-2 inline-block text-sm text-white/80 hover:text-white"
@@ -114,7 +114,7 @@ export default async function TryoutDetailPage({
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="px-4 py-8 md:px-6">
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2">

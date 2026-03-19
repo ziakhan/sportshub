@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -87,15 +88,15 @@ export default function EditPlayerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
-          <button
-            onClick={() => router.back()}
+          <Link
+            href="/players"
             className="text-sm text-gray-500 hover:text-gray-700"
           >
-            &larr; Back to Dashboard
-          </button>
+            &larr; Back to Players
+          </Link>
         </div>
 
         <div className="rounded-lg bg-white p-8 shadow">

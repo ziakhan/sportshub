@@ -74,9 +74,9 @@ export default async function ClubLayout({
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <div className="border-b bg-white">
-        <div className="container mx-auto px-4">
+        <div className="px-4 md:px-6">
           <div className="py-4">
             <Link
               href="/dashboard"
@@ -102,7 +102,7 @@ export default async function ClubLayout({
           </nav>
         </div>
       </div>
-      <div className="container mx-auto px-4 py-8">{children}</div>
+      <div className="px-4 py-8 md:px-6">{children}</div>
     </div>
   )
 }

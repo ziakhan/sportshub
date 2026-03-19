@@ -94,16 +94,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <div className="mb-6">
-        <Link
-          href="/dashboard"
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          &larr; Back to Dashboard
-        </Link>
-      </div>
-
+    <div className="mx-auto max-w-xl p-6 md:p-8">
       <div className="rounded-lg bg-white p-8 shadow">
         <h1 className="mb-2 text-2xl font-bold text-gray-900">Edit Profile</h1>
         <p className="mb-6 text-sm text-gray-600">

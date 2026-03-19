@@ -53,7 +53,7 @@ function AddPlayerForm() {
 
   if (createdPlayer) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="p-6 md:p-8">
         <div className="mx-auto max-w-xl">
           <div className="rounded-lg bg-white p-8 shadow text-center">
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
@@ -90,7 +90,7 @@ function AddPlayerForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="p-6 md:p-8">
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
           <Link

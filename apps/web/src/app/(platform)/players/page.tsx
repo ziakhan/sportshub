@@ -42,8 +42,8 @@ export default function PlayersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-2xl px-4">
+    <div className="p-6 md:p-8">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">My Players</h1>
           <Link
