@@ -49,6 +49,7 @@ model User {
   notifications       Notification[]
   clubClaims          ClubClaim[]
   houseLeagueSignups  HouseLeagueSignup[]
+  campSignups         CampSignup[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -156,6 +157,7 @@ model Tenant {
   staffInvitations StaffInvitation[]
   clubClaims    ClubClaim[]
   houseLeagues  HouseLeague[]
+  camps         Camp[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -279,6 +281,7 @@ model Player {
   stats         PlayerStat[]
   offers        Offer[]
   houseLeagueSignups HouseLeagueSignup[]
+  campSignups        CampSignup[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -1073,6 +1076,96 @@ model HouseLeagueSignup {
 }
 
 enum HouseLeagueSignupStatus {
+  REGISTERED
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+}
+
+// ============================================
+// CAMPS (March break, holiday, summer, multi-week)
+// ============================================
+
+model Camp {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?  @db.Text
+  details       String?  @db.Text // What's included, daily activities, etc.
+
+  campType      CampType
+  ageGroup      String
+  gender        Gender?
+
+  // Dates
+  startDate     DateTime
+  endDate       DateTime
+  dailyStartTime String  // "09:00"
+  dailyEndTime   String  // "16:00"
+  location      String
+
+  // Multi-week pricing
+  numberOfWeeks   Int     @default(1)
+  weeklyFee       Decimal @db.Decimal(10, 2) // Price per single week
+  fullCampFee     Decimal? @db.Decimal(10, 2) // Discounted price for all weeks
+
+  maxParticipants Int?
+
+  // What's included
+  includesLunch    Boolean @default(false)
+  includesSnacks   Boolean @default(false)
+  includesJersey   Boolean @default(false)
+  includesBall     Boolean @default(false)
+
+  isPublished   Boolean  @default(false)
+
+  signups       CampSignup[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([campType])
+  @@index([isPublished])
+  @@index([startDate])
+}
+
+enum CampType {
+  MARCH_BREAK
+  HOLIDAY
+  SUMMER
+  WEEKLY
+}
+
+model CampSignup {
+  id            String   @id @default(uuid())
+  campId        String
+  camp          Camp     @relation(fields: [campId], references: [id], onDelete: Cascade)
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  weeksSelected Int      @default(1)
+  totalFee      Decimal  @db.Decimal(10, 2)
+
+  status        CampSignupStatus @default(REGISTERED)
+  notes         String?  @db.Text
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([campId, playerId])
+  @@index([campId])
+  @@index([userId])
+  @@index([playerId])
+}
+
+enum CampSignupStatus {
   REGISTERED
   CONFIRMED
   WAITLISTED

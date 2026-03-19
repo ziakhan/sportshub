@@ -32,6 +32,25 @@ async function getHouseLeagues(tenantId: string) {
   return (raw || []).map((l: any) => ({ ...l, fee: Number(l.fee) }))
 }
 
+async function getCamps(tenantId: string) {
+  const raw = await (prisma as any).camp.findMany({
+    where: { tenantId, isPublished: true, endDate: { gte: new Date() } },
+    select: {
+      id: true, name: true, campType: true, ageGroup: true, gender: true,
+      startDate: true, endDate: true, numberOfWeeks: true,
+      weeklyFee: true, fullCampFee: true, location: true,
+      maxParticipants: true,
+      _count: { select: { signups: true } },
+    },
+    orderBy: { startDate: "asc" },
+  })
+  return (raw || []).map((c: any) => ({
+    ...c,
+    weeklyFee: Number(c.weeklyFee),
+    fullCampFee: c.fullCampFee ? Number(c.fullCampFee) : null,
+  }))
+}
+
 async function getClubData(tenantId: string) {
   const [teams, tryouts, staffCount] = await Promise.all([
     prisma.team.findMany({
@@ -91,9 +110,10 @@ export default async function ClubProfilePage({
   const club = await getClubBySlug(params.slug)
   if (!club) notFound()
 
-  const [clubData, houseLeagues] = await Promise.all([
+  const [clubData, houseLeagues, camps] = await Promise.all([
     getClubData(club.id),
     getHouseLeagues(club.id),
+    getCamps(club.id),
   ])
   const { teams, tryouts, staffCount } = clubData
 
@@ -231,6 +251,48 @@ export default async function ClubProfilePage({
                           <div className="text-xs text-gray-400">
                             {league._count.signups}{league.maxParticipants ? `/${league.maxParticipants}` : ""} registered
                           </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Camps */}
+            {camps.length > 0 && (
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Camps</h2>
+                <div className="space-y-3">
+                  {camps.map((camp: any) => (
+                    <Link
+                      key={camp.id}
+                      href={`/camp/${camp.id}`}
+                      className="block rounded-md border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-gray-900">{camp.name}</h3>
+                            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                              {camp.campType === "MARCH_BREAK" ? "March Break" : camp.campType === "HOLIDAY" ? "Holiday" : camp.campType === "SUMMER" ? "Summer" : "Weekly"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {camp.ageGroup}{camp.gender ? ` \u2022 ${camp.gender}` : ""}
+                            {" \u2022 "}{camp.numberOfWeeks} week{camp.numberOfWeeks !== 1 ? "s" : ""}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">{camp.location}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-blue-600">
+                            {formatCurrency(camp.weeklyFee, club.currency)}/wk
+                          </div>
+                          {camp.fullCampFee && camp.numberOfWeeks > 1 && (
+                            <div className="text-xs text-green-600">
+                              {formatCurrency(camp.fullCampFee, club.currency)} all
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Link>

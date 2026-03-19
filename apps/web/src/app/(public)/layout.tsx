@@ -37,10 +37,10 @@ export default async function PublicLayout({
           </Link>
           <nav className="flex items-center gap-4">
             <Link
-              href="/marketplace"
+              href="/events"
               className="hidden text-gray-600 hover:text-gray-900 sm:block"
             >
-              Tryouts
+              Events
             </Link>
             <Link
               href="/club"
