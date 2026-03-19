@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { VenueSelector } from "@/components/venue-selector"
 
 const STATUS_FLOW = ["DRAFT", "REGISTRATION", "REGISTRATION_CLOSED", "FINALIZED", "IN_PROGRESS", "COMPLETED"]
 const STATUS_LABELS: Record<string, string> = {
@@ -34,9 +35,8 @@ export default function LeagueManagePage() {
   ])
 
   // Venue form
-  const [venueName, setVenueName] = useState("")
-  const [venueAddress, setVenueAddress] = useState("")
-  const [venueCity, setVenueCity] = useState("")
+  const [selectedVenueId, setSelectedVenueId] = useState("")
+  const [selectedVenueName, setSelectedVenueName] = useState("")
 
   const fetchAll = async () => {
     const [leagueRes, divRes, sessRes, venRes] = await Promise.all([
@@ -111,13 +111,14 @@ export default function LeagueManagePage() {
   }
 
   const addVenue = async () => {
-    if (!venueName || !venueAddress || !venueCity) return
+    if (!selectedVenueId) return
     await fetch(`/api/leagues/${leagueId}/venues`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: venueName, address: venueAddress, city: venueCity }),
+      body: JSON.stringify({ venueId: selectedVenueId }),
     })
-    setVenueName(""); setVenueAddress(""); setVenueCity("")
+    setSelectedVenueId("")
+    setSelectedVenueName("")
     fetchAll()
   }
 
@@ -293,15 +294,17 @@ export default function LeagueManagePage() {
             </div>
           ))}
           <div className="mt-4 space-y-2 border-t pt-4">
-            <input type="text" value={venueName} onChange={(e) => setVenueName(e.target.value)}
-              placeholder="Venue name" className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-            <input type="text" value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)}
-              placeholder="Address" className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-            <input type="text" value={venueCity} onChange={(e) => setVenueCity(e.target.value)}
-              placeholder="City" className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-            <button onClick={addVenue} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-              Add Venue
-            </button>
+            <VenueSelector
+              value={selectedVenueId}
+              venueName={selectedVenueName}
+              onSelect={(v) => { setSelectedVenueId(v.id); setSelectedVenueName(v.name) }}
+              onClear={() => { setSelectedVenueId(""); setSelectedVenueName("") }}
+            />
+            {selectedVenueId && (
+              <button onClick={addVenue} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                Add to League
+              </button>
+            )}
           </div>
         </div>
 

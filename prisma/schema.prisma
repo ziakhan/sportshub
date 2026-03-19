@@ -829,8 +829,8 @@ model PlayerStat {
 
 model Venue {
   id            String   @id @default(uuid())
-  tenantId      String?  // Null if league-owned or platform-wide
-  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String?  // Optional — venues are global
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
   name          String
   address       String
@@ -839,6 +839,11 @@ model Venue {
   zipCode       String?
   country       String   @default("CA")
   phoneNumber   String?
+
+  // Google Places
+  placeId       String?  @unique // Google Place ID for dedup
+  latitude      Float?
+  longitude     Float?
 
   capacity      Int?
   notes         String?  @db.Text
@@ -853,6 +858,7 @@ model Venue {
 
   @@index([tenantId])
   @@index([city])
+  @@index([name])
 }
 
 model Practice {
