@@ -1,7 +1,8 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
-import { formatCurrency, SUPPORTED_COUNTRIES } from "@/lib/countries"
+import { formatCurrency } from "@/lib/countries"
+import { getEnabledCountries, isSingleCountryMode } from "@/lib/platform-settings"
 
 async function getPublicTryouts(country?: string) {
   const raw = await prisma.tryout.findMany({
@@ -33,7 +34,9 @@ export default async function MarketplacePage({
 }: {
   searchParams: { country?: string }
 }) {
-  const selectedCountry = searchParams.country || ""
+  const singleCountry = await isSingleCountryMode()
+  const enabledCountries = await getEnabledCountries()
+  const selectedCountry = searchParams.country || singleCountry || ""
   const tryouts = await getPublicTryouts(selectedCountry || undefined)
 
   return (
@@ -51,29 +54,31 @@ export default async function MarketplacePage({
         {/* Filters */}
         <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <h3 className="mb-4 font-semibold text-gray-900">Filters</h3>
-          <div className="grid gap-4 md:grid-cols-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Country
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                <Link
-                  href="/marketplace"
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${!selectedCountry ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                >
-                  All
-                </Link>
-                {SUPPORTED_COUNTRIES.map((c) => (
+          <div className={`grid gap-4 ${!singleCountry ? "md:grid-cols-5" : "md:grid-cols-4"}`}>
+            {!singleCountry && enabledCountries.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <div className="flex flex-wrap gap-1.5">
                   <Link
-                    key={c.code}
-                    href={`/marketplace?country=${c.code}`}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${selectedCountry === c.code ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    href="/marketplace"
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${!searchParams.country ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                   >
-                    {c.code}
+                    All
                   </Link>
-                ))}
+                  {enabledCountries.map((c) => (
+                    <Link
+                      key={c.code}
+                      href={`/marketplace?country=${c.code}`}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${searchParams.country === c.code ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    >
+                      {c.code}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Age Group

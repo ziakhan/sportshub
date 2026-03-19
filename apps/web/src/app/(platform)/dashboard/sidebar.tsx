@@ -43,6 +43,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
             <SidebarHeader label="Admin" />
             <SidebarLink href="/dashboard/admin/users" label="Users" />
             <SidebarLink href="/dashboard/admin/clubs" label="Clubs" />
+            <SidebarLink href="/dashboard/admin/settings" label="Settings" />
           </div>
         )}
 

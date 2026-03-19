@@ -984,3 +984,14 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([resource, resourceId])
 }
+
+// ============================================
+// PLATFORM SETTINGS (singleton)
+// ============================================
+
+model PlatformSettings {
+  id                String   @id @default("default")
+  enabledCountries  String[] // ISO codes: ["US", "CA"]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
