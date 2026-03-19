@@ -1,6 +1,23 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { prisma } from "@youthbasketballhub/db"
+import { NotificationBell } from "../(platform)/dashboard/notification-bell"
+import { UserMenu } from "../(platform)/dashboard/user-menu"
+
+async function getUserInfo(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { firstName: true, lastName: true, email: true },
+  })
+  if (!user) return null
+  return {
+    name: [user.firstName, user.lastName].filter(Boolean).join(" ") || "User",
+    email: user.email,
+    initials: [user.firstName?.[0], user.lastName?.[0]]
+      .filter(Boolean).join("").toUpperCase() || "U",
+  }
+}
 
 export default async function PublicLayout({
   children,
@@ -8,6 +25,7 @@ export default async function PublicLayout({
   children: React.ReactNode
 }) {
   const session = await getServerSession(authOptions)
+  const userInfo = session?.user?.id ? await getUserInfo(session.user.id) : null
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -30,13 +48,21 @@ export default async function PublicLayout({
             >
               Clubs
             </Link>
-            {session ? (
-              <Link
-                href="/dashboard"
-                className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              >
-                Dashboard
-              </Link>
+            {session && userInfo ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="hidden text-sm text-gray-600 hover:text-gray-900 sm:block"
+                >
+                  Dashboard
+                </Link>
+                <NotificationBell />
+                <UserMenu
+                  userName={userInfo.name}
+                  userEmail={userInfo.email}
+                  userInitials={userInfo.initials}
+                />
+              </>
             ) : (
               <>
                 <Link
