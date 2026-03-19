@@ -41,7 +41,8 @@ model User {
   paymentsAsPayer Payment[] @relation("PayerPayments")
   paymentsAsPayee Payment[] @relation("PayeePayments")
   auditLogs     AuditLog[]
-  reviews       Review[]
+  reviews       Review[] @relation("ReviewsWritten")
+  reviewsReceived Review[] @relation("ReviewsReceived")
   announcements Announcement[]
   sentInvitations     StaffInvitation[] @relation("SentInvitations")
   receivedInvitations StaffInvitation[] @relation("ReceivedInvitations")
@@ -856,7 +857,7 @@ model Review {
   id            String   @id @default(uuid())
 
   reviewerId    String
-  reviewer      User     @relation(fields: [reviewerId], references: [id])
+  reviewer      User     @relation("ReviewsWritten", fields: [reviewerId], references: [id])
 
   // Target (one of these)
   tenantId      String?  // Review of club
@@ -864,6 +865,9 @@ model Review {
 
   leagueId      String?  // Review of league
   league        League?  @relation(fields: [leagueId], references: [id])
+
+  revieweeId    String?  // Review of a specific user (coach/staff/referee)
+  reviewee      User?    @relation("ReviewsReceived", fields: [revieweeId], references: [id])
 
   // Content
   rating        Int      // 1-5
@@ -883,6 +887,7 @@ model Review {
   @@index([tenantId])
   @@index([leagueId])
   @@index([reviewerId])
+  @@index([revieweeId])
   @@index([status])
 }
 

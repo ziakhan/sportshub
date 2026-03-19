@@ -7,8 +7,15 @@ const PUBLIC_PATHS = [
   "/sign-in",
   "/sign-up",
   "/marketplace",
+  "/club",
+  "/tryout",
   "/api/auth",
   "/api/auth/signup",
+  "/api/clubs/public",
+  "/api/clubs/search",
+  "/api/reviews",
+  "/api/settings",
+  "/api/health",
 ]
 
 function isPublicPath(pathname: string) {
