@@ -541,6 +541,11 @@ model League {
   gamesGuaranteed Int?    // Regular season games guaranteed
   gamesPerSession Int     @default(1) // Games per weekend/session
 
+  // Game format
+  gameSlotMinutes Int     @default(90)  // Schedule slot duration (including warmup, breaks)
+  gameLengthMinutes Int   @default(40)  // Actual game length
+  gamePeriods     String  @default("HALVES") // "HALVES" (2x) or "QUARTERS" (4x)
+
   // Playoffs (optional — can be defined later)
   playoffFormat String?  // "SINGLE_ELIMINATION", "DOUBLE_ELIMINATION", "ROUND_ROBIN"
   playoffTeams  Int?     // Number of teams that advance to playoffs
@@ -665,22 +670,37 @@ model LeagueRosterPlayer {
   @@index([playerId])
 }
 
-// Weekend/session dates for the league
+// A session is a multi-day weekend (e.g., Fri-Sat-Sun)
 model LeagueSession {
   id            String   @id @default(uuid())
   leagueId      String
   league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  sessionDate   DateTime // The date of this session (e.g., Saturday Jan 11)
   label         String?  // "Week 1", "Session 3", etc.
 
   venueId       String?
   venue         Venue?   @relation(fields: [venueId], references: [id])
 
+  // Session days (each day has its own date + times)
+  days          LeagueSessionDay[]
+
   createdAt     DateTime @default(now())
 
   @@index([leagueId])
-  @@index([sessionDate])
+}
+
+// Individual day within a session (e.g., Friday of Week 1)
+model LeagueSessionDay {
+  id            String   @id @default(uuid())
+  sessionId     String
+  session       LeagueSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  date          DateTime // The specific date
+  startTime     String   // "18:00" (6pm Friday) or "09:00" (9am Saturday)
+  endTime       String   // "21:00" or "17:00"
+
+  @@index([sessionId])
+  @@index([date])
 }
 
 // Venues assigned to a league

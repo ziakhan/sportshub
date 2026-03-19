@@ -24,12 +24,14 @@ export default function LeagueManagePage() {
   // Division form
   const [divName, setDivName] = useState("")
   const [divAgeGroup, setDivAgeGroup] = useState("")
-  const [divGender, setDivGender] = useState("")
+  const [divGender, setDivGender] = useState("MALE")
   const [divTier, setDivTier] = useState("1")
 
   // Session form
-  const [sessionDate, setSessionDate] = useState("")
   const [sessionLabel, setSessionLabel] = useState("")
+  const [sessionDays, setSessionDays] = useState([
+    { date: "", startTime: "09:00", endTime: "17:00" },
+  ])
 
   // Venue form
   const [venueName, setVenueName] = useState("")
@@ -76,14 +78,35 @@ export default function LeagueManagePage() {
     fetchAll()
   }
 
+  const addSessionDay = () => {
+    setSessionDays([...sessionDays, { date: "", startTime: "09:00", endTime: "17:00" }])
+  }
+
+  const updateSessionDay = (idx: number, field: string, value: string) => {
+    setSessionDays(sessionDays.map((d, i) => i === idx ? { ...d, [field]: value } : d))
+  }
+
+  const removeSessionDay = (idx: number) => {
+    if (sessionDays.length > 1) setSessionDays(sessionDays.filter((_, i) => i !== idx))
+  }
+
   const addSession = async () => {
-    if (!sessionDate) return
+    const validDays = sessionDays.filter((d) => d.date)
+    if (validDays.length === 0) return
     await fetch(`/api/leagues/${leagueId}/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionDate: new Date(sessionDate).toISOString(), label: sessionLabel || undefined }),
+      body: JSON.stringify({
+        label: sessionLabel || undefined,
+        days: validDays.map((d) => ({
+          date: new Date(d.date).toISOString(),
+          startTime: d.startTime,
+          endTime: d.endTime,
+        })),
+      }),
     })
-    setSessionDate(""); setSessionLabel("")
+    setSessionLabel("")
+    setSessionDays([{ date: "", startTime: "09:00", endTime: "17:00" }])
     fetchAll()
   }
 
@@ -185,9 +208,9 @@ export default function LeagueManagePage() {
             <div className="grid grid-cols-2 gap-2">
               <select value={divGender} onChange={(e) => setDivGender(e.target.value)}
                 className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-                <option value="">Co-ed</option>
                 <option value="MALE">Boys</option>
                 <option value="FEMALE">Girls</option>
+                <option value="">Co-ed</option>
               </select>
               <select value={divTier} onChange={(e) => setDivTier(e.target.value)}
                 className="rounded-md border border-gray-300 px-2 py-1.5 text-sm">
@@ -206,21 +229,36 @@ export default function LeagueManagePage() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h3 className="font-semibold text-gray-900 mb-4">Sessions (Game Days)</h3>
           {sessions.map((s: any) => (
-            <div key={s.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 mb-2">
-              <div>
-                <span className="font-medium text-gray-900">{format(new Date(s.sessionDate), "EEE, MMM d, yyyy")}</span>
-                {s.label && <span className="ml-2 text-xs text-gray-500">{s.label}</span>}
+            <div key={s.id} className="rounded-md bg-gray-50 px-3 py-2 mb-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-900">{s.label || "Session"}</span>
+                {s.venue && <span className="text-xs text-gray-400">{s.venue.name}</span>}
               </div>
-              {s.venue && <span className="text-xs text-gray-400">{s.venue.name}</span>}
+              {s.days?.map((d: any) => (
+                <div key={d.id} className="text-xs text-gray-500 ml-2">
+                  {format(new Date(d.date), "EEE, MMM d")} {d.startTime}-{d.endTime}
+                </div>
+              ))}
             </div>
           ))}
           <div className="mt-4 space-y-2 border-t pt-4">
-            <div className="grid grid-cols-2 gap-2">
-              <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)}
-                className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-              <input type="text" value={sessionLabel} onChange={(e) => setSessionLabel(e.target.value)}
-                placeholder="Label (e.g. Week 1)" className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
-            </div>
+            <input type="text" value={sessionLabel} onChange={(e) => setSessionLabel(e.target.value)}
+              placeholder="Label (e.g. Week 1)" className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            {sessionDays.map((day, idx) => (
+              <div key={idx} className="flex gap-1 items-center">
+                <input type="date" value={day.date} onChange={(e) => updateSessionDay(idx, "date", e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-xs" />
+                <input type="time" value={day.startTime} onChange={(e) => updateSessionDay(idx, "startTime", e.target.value)}
+                  className="w-20 rounded-md border border-gray-300 px-1 py-1 text-xs" />
+                <span className="text-xs text-gray-400">-</span>
+                <input type="time" value={day.endTime} onChange={(e) => updateSessionDay(idx, "endTime", e.target.value)}
+                  className="w-20 rounded-md border border-gray-300 px-1 py-1 text-xs" />
+                {sessionDays.length > 1 && (
+                  <button onClick={() => removeSessionDay(idx)} className="text-xs text-red-500 hover:text-red-700">x</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={addSessionDay} className="text-xs text-blue-600 hover:underline">+ Add another day</button>
             <button onClick={addSession} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
               Add Session
             </button>

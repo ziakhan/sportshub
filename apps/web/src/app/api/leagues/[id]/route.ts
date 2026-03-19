@@ -80,6 +80,7 @@ export async function PATCH(
 
     const fields = [
       "name", "description", "season", "gamesGuaranteed", "gamesPerSession",
+      "gameSlotMinutes", "gameLengthMinutes", "gamePeriods",
       "playoffFormat", "playoffTeams", "leagueStatus",
     ]
     for (const field of fields) {

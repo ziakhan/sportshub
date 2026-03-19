@@ -18,6 +18,9 @@ export default function CreateLeagueSeasonPage() {
   const [teamFee, setTeamFee] = useState("")
   const [gamesGuaranteed, setGamesGuaranteed] = useState("")
   const [gamesPerSession, setGamesPerSession] = useState("1")
+  const [gameSlotMinutes, setGameSlotMinutes] = useState("90")
+  const [gameLengthMinutes, setGameLengthMinutes] = useState("40")
+  const [gamePeriods, setGamePeriods] = useState("HALVES")
   const [playoffFormat, setPlayoffFormat] = useState("")
   const [playoffTeams, setPlayoffTeams] = useState("")
 
@@ -40,6 +43,9 @@ export default function CreateLeagueSeasonPage() {
           teamFee: teamFee ? parseFloat(teamFee) : undefined,
           gamesGuaranteed: gamesGuaranteed ? parseInt(gamesGuaranteed) : undefined,
           gamesPerSession: parseInt(gamesPerSession),
+          gameSlotMinutes: parseInt(gameSlotMinutes),
+          gameLengthMinutes: parseInt(gameLengthMinutes),
+          gamePeriods,
           playoffFormat: playoffFormat || undefined,
           playoffTeams: playoffTeams ? parseInt(playoffTeams) : undefined,
         }),
@@ -134,6 +140,32 @@ export default function CreateLeagueSeasonPage() {
                   {[1, 2, 3, 4].map((n) => (
                     <option key={n} value={n}>{n} game{n !== 1 ? "s" : ""} per weekend</option>
                   ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+            <h3 className="font-semibold text-gray-900">Game Format</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Schedule Slot (minutes)</label>
+                <input type="number" min="30" max="180" value={gameSlotMinutes} onChange={(e) => setGameSlotMinutes(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <p className="mt-1 text-xs text-gray-400">Includes warmup, halftime, breaks</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Game Length (minutes)</label>
+                <input type="number" min="10" max="120" value={gameLengthMinutes} onChange={(e) => setGameLengthMinutes(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <p className="mt-1 text-xs text-gray-400">Actual playing time</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Periods</label>
+                <select value={gamePeriods} onChange={(e) => setGamePeriods(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <option value="HALVES">2 Halves</option>
+                  <option value="QUARTERS">4 Quarters</option>
                 </select>
               </div>
             </div>

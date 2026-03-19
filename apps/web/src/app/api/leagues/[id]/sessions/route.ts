@@ -6,14 +6,16 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const createSessionSchema = z.object({
-  sessionDate: z.string().datetime(),
-  label: z.string().optional(),
-  venueId: z.string().optional(),
+const sessionDaySchema = z.object({
+  date: z.string(),
+  startTime: z.string().min(3),
+  endTime: z.string().min(3),
 })
 
-const bulkCreateSchema = z.object({
-  sessions: z.array(createSessionSchema),
+const createSessionSchema = z.object({
+  label: z.string().optional(),
+  venueId: z.string().optional(),
+  days: z.array(sessionDaySchema).min(1),
 })
 
 export async function POST(
@@ -35,32 +37,30 @@ export async function POST(
     }
 
     const body = await request.json()
+    const data = createSessionSchema.parse(body)
 
-    // Support both single and bulk creation
-    if (body.sessions) {
-      const data = bulkCreateSchema.parse(body)
-      await (prisma as any).leagueSession.createMany({
-        data: data.sessions.map((s, i) => ({
+    const result = await prisma.$transaction(async (tx) => {
+      const leagueSession = await (tx as any).leagueSession.create({
+        data: {
           leagueId: params.id,
-          sessionDate: new Date(s.sessionDate),
-          label: s.label || `Session ${i + 1}`,
-          venueId: s.venueId || null,
+          label: data.label || null,
+          venueId: data.venueId || null,
+        },
+      })
+
+      await (tx as any).leagueSessionDay.createMany({
+        data: data.days.map((d) => ({
+          sessionId: leagueSession.id,
+          date: new Date(d.date),
+          startTime: d.startTime,
+          endTime: d.endTime,
         })),
       })
-      return NextResponse.json({ success: true, count: data.sessions.length }, { status: 201 })
-    }
 
-    const data = createSessionSchema.parse(body)
-    const leagueSession = await (prisma as any).leagueSession.create({
-      data: {
-        leagueId: params.id,
-        sessionDate: new Date(data.sessionDate),
-        label: data.label || null,
-        venueId: data.venueId || null,
-      },
+      return leagueSession
     })
 
-    return NextResponse.json({ success: true, id: leagueSession.id }, { status: 201 })
+    return NextResponse.json({ success: true, id: result.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
@@ -77,8 +77,11 @@ export async function GET(
   try {
     const sessions = await (prisma as any).leagueSession.findMany({
       where: { leagueId: params.id },
-      include: { venue: { select: { id: true, name: true, address: true, city: true } } },
-      orderBy: { sessionDate: "asc" },
+      include: {
+        venue: { select: { id: true, name: true, address: true, city: true } },
+        days: { orderBy: { date: "asc" } },
+      },
+      orderBy: { createdAt: "asc" },
     })
     return NextResponse.json({ sessions })
   } catch (error) {
