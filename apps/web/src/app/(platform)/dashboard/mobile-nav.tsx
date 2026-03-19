@@ -90,6 +90,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                   <NavHeader label="Admin" />
                   <NavLink href="/dashboard/admin/users" label="Users" />
                   <NavLink href="/dashboard/admin/clubs" label="Clubs" />
+                  <NavLink href="/dashboard/admin/claims" label="Claims" />
                   <NavLink href="/dashboard/admin/settings" label="Settings" />
                 </div>
               )}

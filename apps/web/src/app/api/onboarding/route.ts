@@ -150,7 +150,7 @@ export async function POST(req: Request) {
     // Determine next step based on selected roles
     let nextStep = "/dashboard"
     if (roles.includes("ClubOwner")) {
-      nextStep = "/clubs/create"
+      nextStep = "/clubs/find"
     }
 
     return NextResponse.json({
