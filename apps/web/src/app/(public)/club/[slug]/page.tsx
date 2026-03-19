@@ -18,6 +18,20 @@ async function getClubBySlug(slug: string) {
   return tenant
 }
 
+async function getHouseLeagues(tenantId: string) {
+  const raw = await (prisma as any).houseLeague.findMany({
+    where: { tenantId, isPublished: true, endDate: { gte: new Date() } },
+    select: {
+      id: true, name: true, ageGroup: true, gender: true, season: true,
+      startDate: true, endDate: true, daysOfWeek: true, startTime: true, endTime: true,
+      location: true, fee: true, maxParticipants: true,
+      _count: { select: { signups: true } },
+    },
+    orderBy: { startDate: "asc" },
+  })
+  return (raw || []).map((l: any) => ({ ...l, fee: Number(l.fee) }))
+}
+
 async function getClubData(tenantId: string) {
   const [teams, tryouts, staffCount] = await Promise.all([
     prisma.team.findMany({
@@ -77,7 +91,11 @@ export default async function ClubProfilePage({
   const club = await getClubBySlug(params.slug)
   if (!club) notFound()
 
-  const { teams, tryouts, staffCount } = await getClubData(club.id)
+  const [clubData, houseLeagues] = await Promise.all([
+    getClubData(club.id),
+    getHouseLeagues(club.id),
+  ])
+  const { teams, tryouts, staffCount } = clubData
 
   return (
     <>
@@ -172,6 +190,46 @@ export default async function ClubProfilePage({
                         <div className="text-right">
                           <div className="font-bold text-blue-600">
                             {tryout.fee === 0 ? "FREE" : formatCurrency(tryout.fee, club.currency)}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* House Leagues / Programs */}
+            {houseLeagues.length > 0 && (
+              <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Programs
+                </h2>
+                <div className="space-y-3">
+                  {houseLeagues.map((league: any) => (
+                    <Link
+                      key={league.id}
+                      href={`/house-league/${league.id}`}
+                      className="block rounded-md border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-medium text-gray-900">{league.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {league.ageGroup}{league.gender ? ` \u2022 ${league.gender}` : ""}
+                            {league.season ? ` \u2022 ${league.season}` : ""}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {league.daysOfWeek} {league.startTime}-{league.endTime}
+                            {" \u2022 "}{league.location}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-blue-600">
+                            {league.fee === 0 ? "FREE" : formatCurrency(league.fee, club.currency)}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {league._count.signups}{league.maxParticipants ? `/${league.maxParticipants}` : ""} registered
                           </div>
                         </div>
                       </div>

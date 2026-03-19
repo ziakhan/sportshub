@@ -48,6 +48,7 @@ model User {
   receivedInvitations StaffInvitation[] @relation("ReceivedInvitations")
   notifications       Notification[]
   clubClaims          ClubClaim[]
+  houseLeagueSignups  HouseLeagueSignup[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -154,6 +155,7 @@ model Tenant {
   reviews       Review[]
   staffInvitations StaffInvitation[]
   clubClaims    ClubClaim[]
+  houseLeagues  HouseLeague[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -276,6 +278,7 @@ model Player {
   teams         TeamPlayer[]
   stats         PlayerStat[]
   offers        Offer[]
+  houseLeagueSignups HouseLeagueSignup[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -993,6 +996,87 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([tenantId, createdAt])
   @@index([resource, resourceId])
+}
+
+// ============================================
+// HOUSE LEAGUES (club programs)
+// ============================================
+
+model HouseLeague {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?  @db.Text
+  details       String?  @db.Text // What's included, program details
+
+  ageGroup      String   // U8, U10, U12, etc.
+  gender        Gender?
+  season        String?  // "Fall 2026", "Winter 2026-27"
+
+  // Schedule
+  startDate     DateTime
+  endDate       DateTime
+  daysOfWeek    String   // "Saturday" or "Monday,Wednesday"
+  startTime     String   // "10:00"
+  endTime       String   // "12:00"
+  location      String
+
+  // Pricing
+  fee           Decimal  @db.Decimal(10, 2)
+
+  // Capacity
+  maxParticipants Int?
+
+  // What's included
+  includesUniform   Boolean @default(false)
+  includesJersey    Boolean @default(false)
+  includesBall      Boolean @default(false)
+  includesMedal     Boolean @default(false)
+
+  isPublished   Boolean  @default(false)
+
+  // Relationships
+  signups       HouseLeagueSignup[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isPublished])
+  @@index([startDate])
+}
+
+model HouseLeagueSignup {
+  id              String   @id @default(uuid())
+  houseLeagueId   String
+  houseLeague     HouseLeague @relation(fields: [houseLeagueId], references: [id], onDelete: Cascade)
+
+  userId          String   // Parent
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  playerId        String
+  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  status          HouseLeagueSignupStatus @default(REGISTERED)
+
+  notes           String?  @db.Text
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([houseLeagueId, playerId]) // One signup per player per league
+  @@index([houseLeagueId])
+  @@index([userId])
+  @@index([playerId])
+}
+
+enum HouseLeagueSignupStatus {
+  REGISTERED
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
 }
 
 // ============================================

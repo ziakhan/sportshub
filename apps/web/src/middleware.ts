@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   "/marketplace",
   "/club",
   "/tryout",
+  "/house-league",
+  "/api/house-leagues",
   "/api/auth",
   "/api/auth/signup",
   "/api/clubs/public",
