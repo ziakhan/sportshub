@@ -129,11 +129,6 @@ export function ClubSearch() {
                     </div>
                   </div>
                 </div>
-                {club.status === "UNCLAIMED" && (
-                  <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
-                    Unclaimed
-                  </span>
-                )}
               </button>
             ))}
             {results.length >= 8 && (
@@ -165,13 +160,8 @@ export function ClubSearch() {
             >
               <div className="h-2" style={{ backgroundColor: club.primaryColor }} />
               <div className="p-5">
-                <div className="flex items-start justify-between mb-1">
+                <div className="mb-1">
                   <h3 className="font-semibold text-gray-900">{club.name}</h3>
-                  {club.status === "UNCLAIMED" && (
-                    <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">
-                      Unclaimed
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm text-gray-500 mb-2">
                   {[club.city, club.state].filter(Boolean).join(", ")}

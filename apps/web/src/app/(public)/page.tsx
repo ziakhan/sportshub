@@ -88,13 +88,8 @@ export default async function HomePage() {
                     style={{ backgroundColor: club.branding?.primaryColor || "#1a73e8" }}
                   />
                   <div className="p-6">
-                    <div className="flex items-start justify-between mb-2">
+                    <div className="mb-2">
                       <h3 className="text-lg font-bold text-gray-900">{club.name}</h3>
-                      {club.status === "UNCLAIMED" && (
-                        <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                          Unclaimed
-                        </span>
-                      )}
                     </div>
                     <p className="text-sm text-gray-500 mb-3">
                       {[club.city, club.state].filter(Boolean).join(", ")}
