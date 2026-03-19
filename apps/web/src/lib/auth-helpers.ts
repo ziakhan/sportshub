@@ -63,8 +63,8 @@ export function isImpersonating() {
 
 /**
  * Get the effective user ID for API routes.
- * Returns the real session user ID, but also checks if
- * the real user is a PlatformAdmin (grants access to everything).
+ * Respects admin impersonation — returns impersonated user's ID when active.
+ * All API routes that create/own resources should use this.
  */
 export async function getSessionUserId(): Promise<{ userId: string; isPlatformAdmin: boolean } | null> {
   const session = await getServerSession(authOptions)
@@ -74,9 +74,22 @@ export async function getSessionUserId(): Promise<{ userId: string; isPlatformAd
     where: { userId: session.user.id, role: "PlatformAdmin" },
   })
 
+  const isPlatformAdmin = !!adminRole
+
+  // Check for impersonation
+  if (isPlatformAdmin) {
+    const impersonateUid = cookies().get(IMPERSONATE_COOKIE)?.value
+    if (impersonateUid) {
+      return {
+        userId: impersonateUid, // Return impersonated user's ID
+        isPlatformAdmin: true,
+      }
+    }
+  }
+
   return {
     userId: session.user.id,
-    isPlatformAdmin: !!adminRole,
+    isPlatformAdmin,
   }
 }
 

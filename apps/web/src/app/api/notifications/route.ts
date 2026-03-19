@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 
@@ -8,11 +9,11 @@ import { prisma } from "@youthbasketballhub/db"
  * GET /api/notifications?unread=true
  */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  const sessionInfo = await getSessionUserId()
+  if (!sessionInfo) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const userId = session.user.id
+  const userId = sessionInfo.userId
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

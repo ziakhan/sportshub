@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -30,10 +31,11 @@ const createLeagueSeasonSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const userId = sessionInfo.userId
 
     const body = await request.json()
     const data = createLeagueSeasonSchema.parse(body)
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Verify user is LeagueOwner or PlatformAdmin
     const hasAccess = await prisma.userRole.findFirst({
       where: {
-        userId: session.user.id,
+        userId,
         OR: [
           { role: "LeagueOwner" },
           { role: "LeagueManager" },
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
         name: data.name,
         description: data.description || null,
         season: data.season,
-        ownerId: session.user.id,
+        ownerId: userId,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
         registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
@@ -115,13 +117,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (mine) {
-      const session = await getServerSession(authOptions)
-      if (!session?.user?.id) {
+      const sessionInfo = await getSessionUserId()
+      if (!sessionInfo) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
 
       const leagues = await prisma.league.findMany({
-        where: { ownerId: session.user.id },
+        where: { ownerId: sessionInfo.userId },
         include: {
           divisions: true,
           _count: { select: { teams: true, games: true } },

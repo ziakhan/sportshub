@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 
 export const dynamic = "force-dynamic"
@@ -53,8 +54,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -66,12 +67,9 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    // Verify ownership
-    const isOwner = league.ownerId === session.user.id
-    const isAdmin = await prisma.userRole.findFirst({
-      where: { userId: session.user.id, role: "PlatformAdmin" },
-    })
-    if (!isOwner && !isAdmin) {
+    // Verify ownership (impersonation-aware)
+    const isOwner = league.ownerId === sessionInfo.userId
+    if (!isOwner && !sessionInfo.isPlatformAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

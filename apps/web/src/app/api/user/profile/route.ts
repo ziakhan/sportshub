@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
@@ -14,11 +15,11 @@ const updateProfileSchema = z.object({
 })
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  const sessionInfo = await getSessionUserId()
+  if (!sessionInfo) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const userId = session.user.id
+  const userId = sessionInfo.userId
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -42,11 +43,11 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const body = await req.json()
     const data = updateProfileSchema.parse(body)

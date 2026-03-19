@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -27,14 +28,14 @@ const createTenantSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       )
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const body = await request.json()
     const validatedData = createTenantSchema.parse(body)
