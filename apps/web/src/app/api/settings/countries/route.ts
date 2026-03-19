@@ -16,10 +16,10 @@ export async function GET() {
     })
   } catch (error) {
     console.error("Get enabled countries error:", error)
-    // Fallback to US only
+    // Fallback to CA only
     return NextResponse.json({
-      countries: [{ code: "US", name: "United States", currency: "USD", currencySymbol: "$", postalLabel: "ZIP Code", subdivisionLabel: "State" }],
-      singleCountry: "US",
+      countries: [{ code: "CA", name: "Canada", currency: "CAD", currencySymbol: "CA$", postalLabel: "Postal Code", subdivisionLabel: "Province" }],
+      singleCountry: "CA",
     })
   }
 }

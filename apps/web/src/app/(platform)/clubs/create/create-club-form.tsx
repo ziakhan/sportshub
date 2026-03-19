@@ -16,8 +16,8 @@ const createClubSchema = z.object({
     .max(50)
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().optional(),
-  country: z.string().length(2).default("US"),
-  currency: z.string().length(3).default("USD"),
+  country: z.string().length(2).default("CA"),
+  currency: z.string().length(3).default("CAD"),
   timezone: z.string(),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
   contactEmail: z.string().email("Enter a valid email address"),
@@ -45,9 +45,9 @@ export function CreateClubForm() {
   } = useForm<CreateClubFormData>({
     resolver: zodResolver(createClubSchema),
     defaultValues: {
-      country: "US",
-      currency: "USD",
-      timezone: "America/New_York",
+      country: "CA",
+      currency: "CAD",
+      timezone: "America/Toronto",
     },
   })
 

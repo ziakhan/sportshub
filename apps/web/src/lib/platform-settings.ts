@@ -1,7 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { SUPPORTED_COUNTRIES } from "./countries"
 
-const DEFAULT_COUNTRIES = ["US"]
+const DEFAULT_COUNTRIES = ["CA"]
 
 /**
  * Get enabled countries from PlatformSettings.

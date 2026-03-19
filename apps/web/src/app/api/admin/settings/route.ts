@@ -47,7 +47,7 @@ export async function GET() {
 
     if (!settings) {
       settings = await prisma.platformSettings.create({
-        data: { id: "default", enabledCountries: ["US"] },
+        data: { id: "default", enabledCountries: ["CA"] },
       })
     }
 
