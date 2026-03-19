@@ -5,13 +5,15 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { CountryStateSelector } from "@/components/country-state-selector"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  country: z.string().length(2).default("CA"),
   city: z.string().min(1, "City is required").max(100),
-  state: z.string().min(1, "State is required").max(100),
+  state: z.string().min(1, "State/Province is required").max(100),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
@@ -26,9 +28,12 @@ export default function ProfileEditPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    defaultValues: { country: "CA" },
   })
 
   useEffect(() => {
@@ -41,6 +46,7 @@ export default function ProfileEditPage() {
             firstName: data.firstName || "",
             lastName: data.lastName || "",
             phoneNumber: data.phoneNumber || "",
+            country: data.country || "CA",
             city: data.city || "",
             state: data.state || "",
           })
@@ -165,38 +171,29 @@ export default function ProfileEditPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                City <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("city")}
-                type="text"
-                id="city"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Los Angeles"
-              />
-              {errors.city && (
-                <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
-              )}
-            </div>
+          <CountryStateSelector
+            countryValue={watch("country") || "CA"}
+            stateValue={watch("state") || ""}
+            onCountryChange={(country) => setValue("country", country)}
+            onStateChange={(state) => setValue("state", state)}
+            countryError={errors.country?.message}
+            stateError={errors.state?.message}
+          />
 
-            <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                State <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("state")}
-                type="text"
-                id="state"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="CA"
-              />
-              {errors.state && (
-                <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
-              )}
-            </div>
+          <div>
+            <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+              City <span className="text-red-500">*</span>
+            </label>
+            <input
+              {...register("city")}
+              type="text"
+              id="city"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Toronto"
+            />
+            {errors.city && (
+              <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+            )}
           </div>
 
           <div className="flex gap-4 pt-2">

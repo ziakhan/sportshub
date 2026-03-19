@@ -8,6 +8,7 @@ const updateProfileSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   phoneNumber: z.string().min(7).max(20).optional(),
+  country: z.string().length(2).optional(),
   city: z.string().min(1).max(100).optional(),
   state: z.string().min(1).max(100).optional(),
 })
@@ -26,6 +27,7 @@ export async function GET() {
       lastName: true,
       phoneNumber: true,
       email: true,
+      country: true,
       city: true,
       state: true,
     },

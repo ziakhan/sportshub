@@ -56,6 +56,7 @@ export async function POST(req: Request) {
             where: { id: user.id },
             data: {
               phoneNumber: profileData.phoneNumber,
+              country: profileData.country || "CA",
               city: profileData.city,
               state: profileData.state,
             },
@@ -67,6 +68,7 @@ export async function POST(req: Request) {
             where: { id: user.id },
             data: {
               phoneNumber: profileData.phoneNumber,
+              country: profileData.country || "CA",
               city: profileData.city,
               state: profileData.state,
             },
@@ -75,10 +77,11 @@ export async function POST(req: Request) {
 
         case "Player": {
           const dob = new Date(profileData.dateOfBirth)
-          // Save city/state to user record
+          // Save city/state/country to user record
           await prisma.user.update({
             where: { id: user.id },
             data: {
+              country: profileData.country || "CA",
               city: profileData.city,
               state: profileData.state,
             },

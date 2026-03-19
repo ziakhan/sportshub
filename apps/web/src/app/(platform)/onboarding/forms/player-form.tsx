@@ -6,6 +6,7 @@ import {
   playerOnboardingSchema,
   type PlayerOnboardingData,
 } from "@/lib/validations/onboarding"
+import { CountryStateSelector } from "@/components/country-state-selector"
 
 interface PlayerFormProps {
   onSubmit: (data: PlayerOnboardingData) => void
@@ -17,10 +18,12 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<PlayerOnboardingData>({
     resolver: zodResolver(playerOnboardingSchema),
-    defaultValues: { type: "Player" },
+    defaultValues: { type: "Player", country: "CA" },
   })
 
   return (
@@ -68,38 +71,29 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-            City <span className="text-red-500">*</span>
-          </label>
-          <input
-            {...register("city")}
-            type="text"
-            id="city"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            placeholder="Los Angeles"
-          />
-          {errors.city && (
-            <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
-          )}
-        </div>
+      <CountryStateSelector
+        countryValue={watch("country") || "CA"}
+        stateValue={watch("state") || ""}
+        onCountryChange={(country) => setValue("country", country)}
+        onStateChange={(state) => setValue("state", state)}
+        countryError={errors.country?.message}
+        stateError={errors.state?.message}
+      />
 
-        <div>
-          <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-            State <span className="text-red-500">*</span>
-          </label>
-          <input
-            {...register("state")}
-            type="text"
-            id="state"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            placeholder="CA"
-          />
-          {errors.state && (
-            <p className="mt-1 text-sm text-red-600">{errors.state.message}</p>
-          )}
-        </div>
+      <div>
+        <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+          City <span className="text-red-500">*</span>
+        </label>
+        <input
+          {...register("city")}
+          type="text"
+          id="city"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="Toronto"
+        />
+        {errors.city && (
+          <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -3,12 +3,14 @@ import { z } from "zod"
 export const parentOnboardingSchema = z.object({
   type: z.literal("Parent"),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  country: z.string().length(2).default("CA"),
   city: z.string().min(1, "City is required").max(100),
-  state: z.string().min(1, "State is required").max(100),
+  state: z.string().min(1, "State/Province is required").max(100),
 })
 
 export const playerOnboardingSchema = z.object({
   type: z.literal("Player"),
+  country: z.string().length(2).default("CA"),
   dateOfBirth: z.string().refine(
     (val) => {
       const dob = new Date(val)
@@ -33,8 +35,9 @@ export const playerOnboardingSchema = z.object({
 export const staffOnboardingSchema = z.object({
   type: z.literal("Staff"),
   phoneNumber: z.string().min(7, "Enter a valid phone number").max(20),
+  country: z.string().length(2).default("CA"),
   city: z.string().min(1, "City is required").max(100),
-  state: z.string().min(1, "State is required").max(100),
+  state: z.string().min(1, "State/Province is required").max(100),
 })
 
 export const refereeOnboardingSchema = z.object({
