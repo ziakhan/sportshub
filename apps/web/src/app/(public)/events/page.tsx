@@ -5,7 +5,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
-type EventType = "all" | "tryouts" | "house-leagues" | "camps"
+type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "leagues"
 
 interface EventItem {
   id: string
@@ -43,15 +43,17 @@ export default function EventsPage() {
     async function fetchAll() {
       setLoading(true)
       try {
-        const [tryoutsRes, leaguesRes, campsRes] = await Promise.all([
+        const [tryoutsRes, leaguesRes, campsRes, compLeaguesRes] = await Promise.all([
           fetch("/api/tryouts?marketplace=true"),
           fetch("/api/house-leagues?public=true"),
           fetch("/api/camps?public=true"),
+          fetch("/api/leagues?public=true"),
         ])
 
         const tryoutsData = await tryoutsRes.json()
         const leaguesData = await leaguesRes.json()
         const campsData = await campsRes.json()
+        const compLeaguesData = await compLeaguesRes.json()
 
         const items: EventItem[] = []
 
@@ -119,6 +121,28 @@ export default function EventsPage() {
           })
         }
 
+        // Competitive Leagues
+        for (const l of compLeaguesData.leagues || []) {
+          items.push({
+            id: l.id,
+            type: "league" as any,
+            name: l.name,
+            clubName: l.season,
+            clubSlug: "",
+            ageGroup: l.divisions?.map((d: any) => d.ageGroup).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(", ") || "All",
+            gender: null,
+            startDate: l.startDate || l.createdAt,
+            endDate: l.endDate,
+            location: "Multiple Venues",
+            fee: l.teamFee ? Number(l.teamFee) : 0,
+            currency: l.currency || "CAD",
+            primaryColor: "#7c3aed",
+            spotsInfo: `${l._count?.teams || 0} teams`,
+            extra: `${l.gamesGuaranteed || "?"} games guaranteed`,
+            href: `/league/${l.id}`,
+          })
+        }
+
         // Sort by start date
         items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         setEvents(items)
@@ -132,7 +156,7 @@ export default function EventsPage() {
   }, [])
 
   const filterMap: Record<EventType, string | null> = {
-    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp",
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", leagues: "league",
   }
   const filtered = events.filter((e) => {
     const ft = filterMap[filter]
@@ -148,6 +172,7 @@ export default function EventsPage() {
     tryout: { bg: "bg-blue-100", text: "text-blue-700", label: "Tryout" },
     "house-league": { bg: "bg-green-100", text: "text-green-700", label: "Program" },
     camp: { bg: "bg-purple-100", text: "text-purple-700", label: "Camp" },
+    league: { bg: "bg-indigo-100", text: "text-indigo-700", label: "League" },
   }
 
   return (
@@ -167,6 +192,7 @@ export default function EventsPage() {
             { key: "tryouts", label: "Tryouts" },
             { key: "house-leagues", label: "Programs" },
             { key: "camps", label: "Camps" },
+            { key: "leagues", label: "Leagues" },
           ] as const).map((f) => (
             <button
               key={f.key}

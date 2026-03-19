@@ -14,6 +14,8 @@ const PUBLIC_PATHS = [
   "/events",
   "/api/house-leagues",
   "/api/camps",
+  "/league",
+  "/api/leagues",
   "/api/auth",
   "/api/auth/signup",
   "/api/clubs/public",

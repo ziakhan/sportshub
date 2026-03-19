@@ -282,6 +282,7 @@ model Player {
   offers        Offer[]
   houseLeagueSignups HouseLeagueSignup[]
   campSignups        CampSignup[]
+  leagueRosterEntries LeagueRosterPlayer[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -520,12 +521,32 @@ model League {
   id            String   @id @default(uuid())
   name          String
   description   String?  @db.Text
-  season        String   // "Spring 2026"
+  season        String   // "Fall 2026", "Winter 2026-27"
 
   ownerId       String
 
-  // Age Group Cutoff (Recommended Addition)
+  // Season dates
+  startDate     DateTime?
+  endDate       DateTime?
+  registrationDeadline DateTime? // Clubs must submit by this date
+
+  // Age Group Cutoff
   ageGroupCutoffDate DateTime? // e.g., "Aug 31, 2026"
+
+  // Pricing
+  teamFee       Decimal? @db.Decimal(10, 2) // Per team registration fee
+  currency      String   @default("CAD")
+
+  // Season details
+  gamesGuaranteed Int?    // Regular season games guaranteed
+  gamesPerSession Int     @default(1) // Games per weekend/session
+
+  // Playoffs (optional — can be defined later)
+  playoffFormat String?  // "SINGLE_ELIMINATION", "DOUBLE_ELIMINATION", "ROUND_ROBIN"
+  playoffTeams  Int?     // Number of teams that advance to playoffs
+
+  // Status
+  leagueStatus  LeagueSeasonStatus @default(DRAFT)
 
   // Stripe
   stripeAccountId String? @unique
@@ -536,11 +557,24 @@ model League {
   games         Game[]
   staff         UserRole[]
   reviews       Review[]
+  sessions      LeagueSession[]
+  leagueVenues  LeagueVenue[]
+  rosters       LeagueRoster[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([season])
+  @@index([leagueStatus])
+}
+
+enum LeagueSeasonStatus {
+  DRAFT            // League admin building the season
+  REGISTRATION     // Published, clubs can register teams
+  REGISTRATION_CLOSED // Deadline passed, reviewing submissions
+  FINALIZED        // Rosters locked, ready for scheduling
+  IN_PROGRESS      // Games being played
+  COMPLETED        // Season over
 }
 
 model LeagueDivision {
@@ -548,9 +582,10 @@ model LeagueDivision {
   leagueId      String
   league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  name          String   // "U12 Boys Division A"
-  ageGroup      String
+  name          String   // "U14 Boys Division A"
+  ageGroup      String   // "U14", "Junior", "Senior"
   gender        Gender?
+  tier          Int      @default(1) // 1 = top division, 2 = second, etc.
 
   teams         LeagueTeam[]
 
@@ -573,6 +608,9 @@ model LeagueTeam {
   paymentId     String?  @unique
   payment       Payment? @relation(fields: [paymentId], references: [id])
 
+  // Frozen roster for this league
+  roster        LeagueRoster?
+
   createdAt     DateTime @default(now())
 
   @@unique([leagueId, teamId])
@@ -585,6 +623,79 @@ enum LeagueTeamStatus {
   APPROVED
   REJECTED
   WITHDRAWN
+}
+
+// Frozen roster snapshot for a team in a league
+model LeagueRoster {
+  id            String   @id @default(uuid())
+  leagueId      String
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  leagueTeamId  String   @unique
+  leagueTeam    LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+
+  isLocked      Boolean  @default(false) // Locked once league finalizes
+
+  players       LeagueRosterPlayer[]
+
+  submittedAt   DateTime?
+  lockedAt      DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([leagueId])
+}
+
+model LeagueRosterPlayer {
+  id            String   @id @default(uuid())
+  rosterId      String
+  roster        LeagueRoster @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+
+  playerId      String
+  player        Player   @relation(fields: [playerId], references: [id])
+
+  jerseyNumber  Int?
+  position      String?  // Position for this league
+
+  createdAt     DateTime @default(now())
+
+  @@unique([rosterId, playerId])
+  @@index([rosterId])
+  @@index([playerId])
+}
+
+// Weekend/session dates for the league
+model LeagueSession {
+  id            String   @id @default(uuid())
+  leagueId      String
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  sessionDate   DateTime // The date of this session (e.g., Saturday Jan 11)
+  label         String?  // "Week 1", "Session 3", etc.
+
+  venueId       String?
+  venue         Venue?   @relation(fields: [venueId], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  @@index([leagueId])
+  @@index([sessionDate])
+}
+
+// Venues assigned to a league
+model LeagueVenue {
+  id            String   @id @default(uuid())
+  leagueId      String
+  league        League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  venueId       String
+  venue         Venue    @relation(fields: [venueId], references: [id])
+
+  isPrimary     Boolean  @default(false)
+
+  @@unique([leagueId, venueId])
+  @@index([leagueId])
 }
 
 model Game {
@@ -698,14 +809,14 @@ model PlayerStat {
 
 model Venue {
   id            String   @id @default(uuid())
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId      String?  // Null if league-owned or platform-wide
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   name          String
   address       String
   city          String
   state         String
-  zipCode       String
+  zipCode       String?
   country       String   @default("CA")
   phoneNumber   String?
 
@@ -714,11 +825,14 @@ model Venue {
 
   games         Game[]
   practices     Practice[]
+  leagueSessions LeagueSession[]
+  leagueVenues  LeagueVenue[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([tenantId])
+  @@index([city])
 }
 
 model Practice {
