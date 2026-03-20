@@ -20,15 +20,15 @@ const createTemplateSchema = z.object({
 
 async function verifyClubAccess(clubId: string, userId: string, requireAdmin: boolean) {
   const allowedRoles = requireAdmin
-    ? ["ClubOwner", "ClubManager"]
-    : ["ClubOwner", "ClubManager", "Staff", "TeamManager"]
+    ? ["ClubOwner", "ClubManager"] as any
+    : ["ClubOwner", "ClubManager", "Staff", "TeamManager"] as any
 
   const hasAccess = await prisma.userRole.findFirst({
     where: {
       userId,
       OR: [
         { tenantId: clubId, role: { in: allowedRoles } },
-        { role: "PlatformAdmin" },
+        { role: "PlatformAdmin" as any },
       ],
     },
   })

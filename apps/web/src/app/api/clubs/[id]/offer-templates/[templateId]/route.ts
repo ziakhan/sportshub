@@ -23,8 +23,8 @@ async function verifyClubAdmin(clubId: string, userId: string) {
     where: {
       userId,
       OR: [
-        { tenantId: clubId, role: { in: ["ClubOwner", "ClubManager"] } },
-        { role: "PlatformAdmin" },
+        { tenantId: clubId, role: { in: ["ClubOwner", "ClubManager"] as any } },
+        { role: "PlatformAdmin" as any },
       ],
     },
   })
