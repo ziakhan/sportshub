@@ -84,7 +84,15 @@ export default function AdminClubsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Club Management</h1>
-          <p className="text-sm text-gray-600">{total} total clubs</p>
+          <p className="text-sm text-gray-600">
+            {total} total clubs
+            {" \u2022 "}
+            <span className="text-green-600">{clubs.filter((c) => c.status === "ACTIVE").length} active</span>
+            {" \u2022 "}
+            <span className="text-yellow-600">{clubs.filter((c) => c.status === "UNCLAIMED").length} unclaimed</span>
+            {" \u2022 "}
+            <span className="text-red-600">{clubs.filter((c) => c.status === "SUSPENDED").length} suspended</span>
+          </p>
         </div>
         <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">
           ← Back to Dashboard
@@ -128,11 +136,14 @@ export default function AdminClubsPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${planColors[club.plan] || "bg-gray-100"}`}>
                       {club.plan}
                     </span>
-                    {club.status === "SUSPENDED" && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                        SUSPENDED
-                      </span>
-                    )}
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      club.status === "ACTIVE" ? "bg-green-100 text-green-700" :
+                      club.status === "UNCLAIMED" ? "bg-yellow-100 text-yellow-700" :
+                      club.status === "SUSPENDED" ? "bg-red-100 text-red-800" :
+                      "bg-gray-100 text-gray-700"
+                    }`}>
+                      {club.status}
+                    </span>
                   </div>
                 </div>
 

@@ -133,11 +133,29 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
       })
+
+      // Fetch owner info if admin
+      let ownerMap: Record<string, { firstName: string | null; lastName: string | null; email: string }> = {}
+      if (sessionInfo.isPlatformAdmin) {
+        const ownerIds = [...new Set(leagues.map((l) => l.ownerId))]
+        const owners = await prisma.user.findMany({
+          where: { id: { in: ownerIds } },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+        ownerMap = Object.fromEntries(owners.map((o) => [o.id, o]))
+      }
       return NextResponse.json({
-        leagues: leagues.map((l: any) => ({
-          ...l,
-          teamFee: l.teamFee ? Number(l.teamFee) : null,
-        })),
+        leagues: leagues.map((l: any) => {
+          const owner = ownerMap[l.ownerId]
+          return {
+            ...l,
+            teamFee: l.teamFee ? Number(l.teamFee) : null,
+            owner: owner ? {
+              name: [owner.firstName, owner.lastName].filter(Boolean).join(" ") || "Unknown",
+              email: owner.email,
+            } : undefined,
+          }
+        }),
       })
     }
 

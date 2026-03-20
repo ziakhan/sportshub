@@ -17,6 +17,7 @@ interface League {
   gamesGuaranteed: number | null
   _count: { teams: number; games: number }
   divisions: { id: string; name: string; ageGroup: string }[]
+  owner?: { name: string; email: string }
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -80,6 +81,9 @@ export default function LeaguesPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">{league.season}</p>
+                    {league.owner && (
+                      <p className="text-xs text-gray-400">Owner: {league.owner.name} ({league.owner.email})</p>
+                    )}
                     {league.startDate && league.endDate && (
                       <p className="text-xs text-gray-400 mt-1">
                         {format(new Date(league.startDate), "MMM d")} - {format(new Date(league.endDate), "MMM d, yyyy")}
