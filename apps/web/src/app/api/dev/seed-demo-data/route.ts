@@ -440,7 +440,257 @@ export async function GET() {
       data: { status: "OFFERED" },
     })
 
-    // ── 7. Migrate any existing team-scoped templates to club-scoped ──────
+    // ── 7. House Leagues (Saturday mornings) ────────────────────────────
+    const houseLeagues = [
+      {
+        id: "seed-hl-fall-u8u10",
+        name: "Saturday Fall House League",
+        description: "Fun recreational basketball every Saturday morning. Focus on fundamentals, teamwork, and having a great time!",
+        details: "10 weeks of games and skills development. Teams are drafted for balanced play. All players receive equal playing time.",
+        ageGroups: "U8,U9,U10",
+        gender: null,
+        season: "Fall 2026",
+        startDate: new Date("2026-09-12T00:00:00Z"),
+        endDate: new Date("2026-11-14T00:00:00Z"),
+        daysOfWeek: "Saturday",
+        startTime: "10:00",
+        endTime: "12:00",
+        location: "Warriors Community Centre - Gym A",
+        fee: 175,
+        maxParticipants: 48,
+        includesUniform: false,
+        includesJersey: true,
+        includesBall: false,
+        includesMedal: true,
+        isPublished: true,
+      },
+      {
+        id: "seed-hl-fall-u11u13",
+        name: "Saturday Fall House League (Older)",
+        description: "Intermediate recreational league for older players. More competitive play with referee officiating.",
+        details: "10 weeks. Full court games with scorekeeping. Skills clinics before games. End-of-season tournament.",
+        ageGroups: "U11,U12,U13",
+        gender: null,
+        season: "Fall 2026",
+        startDate: new Date("2026-09-12T00:00:00Z"),
+        endDate: new Date("2026-11-14T00:00:00Z"),
+        daysOfWeek: "Saturday",
+        startTime: "10:00",
+        endTime: "12:00",
+        location: "Warriors Community Centre - Gym B",
+        fee: 200,
+        maxParticipants: 40,
+        includesUniform: false,
+        includesJersey: true,
+        includesBall: false,
+        includesMedal: true,
+        isPublished: true,
+      },
+      {
+        id: "seed-hl-winter-u6u7",
+        name: "Winter Mini-Ballers",
+        description: "Introduction to basketball for our youngest players. Fun games, basic skills, and lots of energy!",
+        ageGroups: "U5,U6,U7",
+        gender: null,
+        season: "Winter 2027",
+        startDate: new Date("2027-01-10T00:00:00Z"),
+        endDate: new Date("2027-03-14T00:00:00Z"),
+        daysOfWeek: "Saturday",
+        startTime: "10:00",
+        endTime: "11:30",
+        location: "Warriors Community Centre - Gym A",
+        fee: 150,
+        maxParticipants: 32,
+        includesUniform: false,
+        includesJersey: true,
+        includesBall: true,
+        includesMedal: true,
+        isPublished: false, // draft
+      },
+    ]
+
+    for (const hl of houseLeagues) {
+      const { id, ...data } = hl
+      await (prisma as any).houseLeague.upsert({
+        where: { id },
+        create: { id, tenantId: clubId, ...data },
+        update: { name: data.name },
+      })
+    }
+    results.push(`Created ${houseLeagues.length} house leagues (Saturday 10AM-12PM)`)
+
+    // ── 8. March Break Camps ─────────────────────────────────────────────
+    const camps = [
+      {
+        id: "seed-camp-marchbreak-jr",
+        name: "March Break Basketball Camp (Junior)",
+        description: "A week of basketball fun during March Break! Skills development, games, and team activities.",
+        details: "Daily schedule: 9AM warm-up, skills stations, team games, lunch break, afternoon scrimmages. Snacks provided. Bring your own lunch.",
+        campType: "MARCH_BREAK",
+        ageGroup: "U8,U9,U10",
+        gender: null,
+        startDate: new Date("2026-03-16T00:00:00Z"),
+        endDate: new Date("2026-03-20T00:00:00Z"),
+        dailyStartTime: "09:00",
+        dailyEndTime: "16:00",
+        location: "Warriors Community Centre",
+        numberOfWeeks: 1,
+        weeklyFee: 275,
+        fullCampFee: 275,
+        maxParticipants: 40,
+        includesLunch: false,
+        includesSnacks: true,
+        includesJersey: true,
+        includesBall: false,
+        isPublished: true,
+      },
+      {
+        id: "seed-camp-marchbreak-sr",
+        name: "March Break Elite Skills Camp",
+        description: "Intensive skills camp for competitive players. Focus on position-specific training, game IQ, and advanced techniques.",
+        details: "Led by our competitive coaching staff. Video analysis sessions. 3-on-3 tournament on Friday. Each player receives a skills evaluation report.",
+        campType: "MARCH_BREAK",
+        ageGroup: "U12,U13,U14",
+        gender: null,
+        startDate: new Date("2026-03-16T00:00:00Z"),
+        endDate: new Date("2026-03-20T00:00:00Z"),
+        dailyStartTime: "09:00",
+        dailyEndTime: "16:00",
+        location: "Warriors Community Centre",
+        numberOfWeeks: 1,
+        weeklyFee: 325,
+        fullCampFee: 325,
+        maxParticipants: 32,
+        includesLunch: false,
+        includesSnacks: true,
+        includesJersey: true,
+        includesBall: true,
+        isPublished: true,
+      },
+      {
+        id: "seed-camp-summer",
+        name: "Summer Basketball Academy",
+        description: "Multi-week summer program with weekly sessions. Sign up for one week or all four at a discount!",
+        details: "Each week has a different theme: Week 1 - Ball Handling, Week 2 - Shooting, Week 3 - Defense, Week 4 - Game Play. Guest coaches and special events.",
+        campType: "SUMMER",
+        ageGroup: "U10,U11,U12,U13,U14",
+        gender: null,
+        startDate: new Date("2026-07-06T00:00:00Z"),
+        endDate: new Date("2026-07-31T00:00:00Z"),
+        dailyStartTime: "09:00",
+        dailyEndTime: "15:00",
+        location: "Warriors Community Centre",
+        numberOfWeeks: 4,
+        weeklyFee: 250,
+        fullCampFee: 850,
+        maxParticipants: 48,
+        includesLunch: true,
+        includesSnacks: true,
+        includesJersey: true,
+        includesBall: true,
+        isPublished: true,
+      },
+    ]
+
+    for (const camp of camps) {
+      const { id, ...data } = camp
+      await (prisma as any).camp.upsert({
+        where: { id },
+        create: { id, tenantId: clubId, ...data },
+        update: { name: data.name },
+      })
+    }
+    results.push(`Created ${camps.length} camps (2 March Break + 1 Summer)`)
+
+    // ── 9. Tournaments ───────────────────────────────────────────────────
+    const tournaments = [
+      {
+        id: "seed-tournament-spring",
+        name: "Warriors Spring Invitational",
+        description: "Annual spring tournament hosted by Warriors Basketball. Teams from across the GTA compete over one exciting weekend.",
+        city: "Toronto",
+        state: "Ontario",
+        country: "CA",
+        startDate: new Date("2026-04-18T00:00:00Z"),
+        endDate: new Date("2026-04-19T00:00:00Z"),
+        registrationDeadline: new Date("2026-04-10T00:00:00Z"),
+        teamFee: 450,
+        currency: "CAD",
+        gamesGuaranteed: 3,
+        gameSlotMinutes: 60,
+        gameLengthMinutes: 40,
+        gamePeriods: "HALVES",
+        playoffFormat: "SINGLE_ELIMINATION",
+        status: "REGISTRATION",
+      },
+      {
+        id: "seed-tournament-summer-slam",
+        name: "Summer Slam Classic",
+        description: "End-of-summer tournament to wrap up the season. All age groups welcome. Great competition and community.",
+        city: "Mississauga",
+        state: "Ontario",
+        country: "CA",
+        startDate: new Date("2026-08-22T00:00:00Z"),
+        endDate: new Date("2026-08-23T00:00:00Z"),
+        registrationDeadline: new Date("2026-08-14T00:00:00Z"),
+        teamFee: 500,
+        currency: "CAD",
+        gamesGuaranteed: 4,
+        gameSlotMinutes: 60,
+        gameLengthMinutes: 40,
+        gamePeriods: "HALVES",
+        playoffFormat: "SINGLE_ELIMINATION",
+        status: "DRAFT",
+      },
+    ]
+
+    for (const t of tournaments) {
+      const { id, ...data } = t
+      await (prisma as any).tournament.upsert({
+        where: { id },
+        create: { id, ownerId: owner.id, tenantId: clubId, ...data },
+        update: { name: data.name },
+      })
+    }
+    results.push(`Created ${tournaments.length} tournaments`)
+
+    // Add divisions to the Spring Invitational
+    const springDivisions = [
+      { id: "seed-tdiv-u10b", name: "U10 Boys", ageGroup: "U10", gender: "MALE", maxTeams: 8 },
+      { id: "seed-tdiv-u12b", name: "U12 Boys", ageGroup: "U12", gender: "MALE", maxTeams: 8 },
+      { id: "seed-tdiv-u12g", name: "U12 Girls", ageGroup: "U12", gender: "FEMALE", maxTeams: 8 },
+      { id: "seed-tdiv-u14b", name: "U14 Boys", ageGroup: "U14", gender: "MALE", maxTeams: 8 },
+      { id: "seed-tdiv-u14g", name: "U14 Girls", ageGroup: "U14", gender: "FEMALE", maxTeams: 6 },
+    ]
+
+    for (const d of springDivisions) {
+      const { id, ...data } = d
+      await (prisma as any).tournamentDivision.upsert({
+        where: { id },
+        create: { id, tournamentId: "seed-tournament-spring", ...data },
+        update: { name: data.name },
+      })
+    }
+    results.push(`Created ${springDivisions.length} divisions for Spring Invitational`)
+
+    // Submit Warriors teams to the Spring Invitational
+    const teamSubmissions = [
+      { id: "seed-tt-u10", teamId: "seed-team-u10", divisionId: "seed-tdiv-u10b", status: "APPROVED" },
+      { id: "seed-tt-u14b", teamId: "seed-team-u14b", divisionId: "seed-tdiv-u14b", status: "APPROVED" },
+      { id: "seed-tt-u12g", teamId: "seed-team-u12g", divisionId: "seed-tdiv-u12g", status: "PENDING" },
+    ]
+
+    for (const ts of teamSubmissions) {
+      const { id, ...data } = ts
+      await (prisma as any).tournamentTeam.upsert({
+        where: { id },
+        create: { id, tournamentId: "seed-tournament-spring", registrationFee: 450, ...data },
+        update: {},
+      })
+    }
+    results.push("Submitted 3 Warriors teams to Spring Invitational (2 approved, 1 pending)")
+
+    // ── 11. Migrate any existing team-scoped templates to club-scoped ──────
     const orphanedTemplates = await prisma.offerTemplate.findMany({
       where: { tenantId: null, teamId: { not: null } },
       select: { id: true, teamId: true },
