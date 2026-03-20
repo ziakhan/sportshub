@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -23,8 +22,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -32,7 +31,7 @@ export async function POST(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!league || league.ownerId !== session.user.id) {
+    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -113,8 +112,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -122,7 +121,7 @@ export async function DELETE(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!league || league.ownerId !== session.user.id) {
+    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

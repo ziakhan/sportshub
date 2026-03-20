@@ -122,8 +122,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
 
+      // PlatformAdmin sees all leagues
+      const where = sessionInfo.isPlatformAdmin ? {} : { ownerId: sessionInfo.userId }
+
       const leagues = await prisma.league.findMany({
-        where: { ownerId: sessionInfo.userId },
+        where,
         include: {
           divisions: true,
           _count: { select: { teams: true, games: true } },
