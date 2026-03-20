@@ -19,6 +19,7 @@ interface Club {
 export default function AdminClubsPage() {
   const [clubs, setClubs] = useState<Club[]>([])
   const [total, setTotal] = useState(0)
+  const [statusCounts, setStatusCounts] = useState({ active: 0, unclaimed: 0, suspended: 0 })
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [search, setSearch] = useState("")
@@ -39,6 +40,7 @@ export default function AdminClubsPage() {
       setClubs(data.clubs)
       setTotal(data.total)
       setTotalPages(data.totalPages)
+      if (data.statusCounts) setStatusCounts(data.statusCounts)
     }
     setLoading(false)
   }, [page, search])
@@ -87,11 +89,11 @@ export default function AdminClubsPage() {
           <p className="text-sm text-gray-600">
             {total} total clubs
             {" \u2022 "}
-            <span className="text-green-600">{clubs.filter((c) => c.status === "ACTIVE").length} active</span>
+            <span className="text-green-600">{statusCounts.active} active</span>
             {" \u2022 "}
-            <span className="text-yellow-600">{clubs.filter((c) => c.status === "UNCLAIMED").length} unclaimed</span>
+            <span className="text-yellow-600">{statusCounts.unclaimed} unclaimed</span>
             {" \u2022 "}
-            <span className="text-red-600">{clubs.filter((c) => c.status === "SUSPENDED").length} suspended</span>
+            <span className="text-red-600">{statusCounts.suspended} suspended</span>
           </p>
         </div>
         <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">

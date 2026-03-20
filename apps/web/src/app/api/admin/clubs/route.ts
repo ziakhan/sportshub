@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     where.status = status
   }
 
-  const [clubs, total] = await Promise.all([
+  const [clubs, total, activeCount, unclaimedCount, suspendedCount] = await Promise.all([
     prisma.tenant.findMany({
       where,
       include: {
@@ -55,7 +55,13 @@ export async function GET(request: NextRequest) {
       take: limit,
     }),
     prisma.tenant.count({ where }),
+    prisma.tenant.count({ where: { status: "ACTIVE" } }),
+    prisma.tenant.count({ where: { status: "UNCLAIMED" } }),
+    prisma.tenant.count({ where: { status: "SUSPENDED" } }),
   ])
 
-  return NextResponse.json({ clubs, total, page, totalPages: Math.ceil(total / limit) })
+  return NextResponse.json({
+    clubs, total, page, totalPages: Math.ceil(total / limit),
+    statusCounts: { active: activeCount, unclaimed: unclaimedCount, suspended: suspendedCount },
+  })
 }
