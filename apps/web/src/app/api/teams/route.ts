@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Run team creation + staff assignments in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Create the team
       const team = await tx.team.create({
         data: {

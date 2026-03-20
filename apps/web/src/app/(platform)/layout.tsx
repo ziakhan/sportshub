@@ -24,11 +24,11 @@ export default async function PlatformLayout({
     return <>{children}</>
   }
 
-  const roles = dbUser.roles.map((r) => r.role)
+  const roles = dbUser.roles.map((r: any) => r.role as string)
   const tenants =
     dbUser?.roles
-      .filter((r) => r.tenant)
-      .map((r) => ({
+      .filter((r: any) => r.tenant)
+      .map((r: any) => ({
         id: r.tenant!.id,
         name: r.tenant!.name,
         slug: r.tenant!.slug,

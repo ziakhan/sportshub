@@ -100,7 +100,7 @@ export async function POST(
     const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
 
     await prisma.notification.createMany({
-      data: clubOwners.map((owner) => ({
+      data: clubOwners.map((owner: any) => ({
         userId: owner.userId,
         type: "staff_request",
         title: "Staff Request",

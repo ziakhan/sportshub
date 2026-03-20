@@ -177,8 +177,8 @@ export async function GET() {
     }
 
     const tenants = user.roles
-      .filter((role) => role.tenant !== null)
-      .map((role) => ({
+      .filter((role: any) => role.tenant !== null)
+      .map((role: any) => ({
         id: role.tenant!.id,
         slug: role.tenant!.slug,
         name: role.tenant!.name,

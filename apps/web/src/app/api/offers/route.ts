@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the offer + notification + update signup status in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const offer = await tx.offer.create({
         data: {
           teamId: data.teamId,
@@ -312,7 +312,7 @@ export async function GET(request: NextRequest) {
         where: { parentId: userId },
         select: { id: true },
       })
-      const playerIds = players.map((p) => p.id)
+      const playerIds = players.map((p: any) => p.id)
 
       if (playerIds.length === 0) {
         return NextResponse.json({ offers: [] })

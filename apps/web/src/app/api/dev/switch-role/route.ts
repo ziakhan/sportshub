@@ -109,7 +109,7 @@ export async function GET() {
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
       },
-      roles: user.roles.map((r) => ({
+      roles: user.roles.map((r: any) => ({
         role: r.role,
         tenant: r.tenant?.name || null,
       })),

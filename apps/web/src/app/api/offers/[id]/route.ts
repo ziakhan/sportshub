@@ -165,7 +165,7 @@ export async function PATCH(
         )
       }
 
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         // Update the offer
         const updated = await tx.offer.update({
           where: { id: params.id },
@@ -238,7 +238,7 @@ export async function PATCH(
       })
     } else {
       // Decline
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         const updated = await tx.offer.update({
           where: { id: params.id },
           data: {

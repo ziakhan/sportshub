@@ -2,7 +2,38 @@ import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 
-async function getAcceptedOffers(tenantId: string) {
+interface AcceptedOffer {
+  id: string
+  seasonFee: number
+  installments: number
+  practiceSessions: number
+  includesBall: boolean
+  includesBag: boolean
+  includesShoes: boolean
+  includesUniform: boolean
+  includesTracksuit: boolean
+  uniformSize: string | null
+  shoeSize: string | null
+  tracksuitSize: string | null
+  jerseyPref1: number | null
+  jerseyPref2: number | null
+  jerseyPref3: number | null
+  respondedAt: Date | null
+  message: string | null
+  team: { id: string; name: string }
+  player: {
+    id: string
+    firstName: string
+    lastName: string
+    dateOfBirth: Date | null
+    gender: string | null
+    position: string | null
+    height: string | null
+    weight: number | null
+  }
+}
+
+async function getAcceptedOffers(tenantId: string): Promise<AcceptedOffer[]> {
   const raw = await prisma.offer.findMany({
     where: {
       team: { tenantId },
@@ -42,7 +73,7 @@ async function getAcceptedOffers(tenantId: string) {
     },
     orderBy: [{ team: { name: "asc" } }, { respondedAt: "asc" }],
   })
-  return raw.map((o) => ({ ...o, seasonFee: Number(o.seasonFee) }))
+  return raw.map((o: (typeof raw)[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 
 export default async function OfferSummaryPage({

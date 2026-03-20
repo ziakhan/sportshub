@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      clubs: clubs.map((c) => ({
+      clubs: clubs.map((c: any) => ({
         id: c.id,
         slug: c.slug,
         name: c.name,

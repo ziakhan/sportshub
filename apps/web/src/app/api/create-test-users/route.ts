@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
       // Find a club where this user is a ClubOwner
       const ownerRole = currentDbUser.roles.find(
-        (r) => r.role === "ClubOwner" && r.tenantId
+        (r: any) => r.role === "ClubOwner" && r.tenantId
       )
 
       if (ownerRole && ownerRole.tenantId) {

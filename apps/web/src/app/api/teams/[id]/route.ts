@@ -140,7 +140,7 @@ export async function PATCH(
     const { staffToAdd, staffToRemove, ...teamData } = validatedData
 
     // Run everything in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Update team details (if any fields provided)
       const hasTeamData = Object.keys(teamData).length > 0
       if (hasTeamData) {

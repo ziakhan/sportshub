@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
+import { ClubTabs } from "./club-tabs"
 
 async function getClubAccess(clubId: string, userId: string, userRoles: string[]) {
   // PlatformAdmin can access any club
@@ -20,7 +21,7 @@ async function getClubAccess(clubId: string, userId: string, userRoles: string[]
 
     if (roles.length === 0) return null
 
-    const roleNames = roles.map((r) => r.role)
+    const roleNames = roles.map((r: { role: string }) => r.role)
     const isAdmin = roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")
 
     const tenant = await prisma.tenant.findUnique({
@@ -54,7 +55,7 @@ export default async function ClubLayout({
   const dbUser = await getCurrentUser()
   if (!dbUser) redirect("/sign-in")
 
-  const userRoles = dbUser.roles.map((r) => r.role)
+  const userRoles = dbUser.roles.map((r: { role: string }) => r.role)
   const access = await getClubAccess(params.id, dbUser.id, userRoles)
   if (!access) notFound()
 
@@ -91,17 +92,7 @@ export default async function ClubLayout({
               {club.slug}.youthbasketballhub.com
             </p>
           </div>
-          <nav className="-mb-px flex gap-4 overflow-x-auto md:gap-6">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className="border-b-2 border-transparent px-1 pb-3 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </nav>
+          <ClubTabs tabs={tabs} />
         </div>
       </div>
       <div className="px-4 py-8 md:px-6">{children}</div>

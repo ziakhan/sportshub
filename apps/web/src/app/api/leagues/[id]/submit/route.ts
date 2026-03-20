@@ -98,7 +98,7 @@ export async function POST(
     })
 
     // Create LeagueTeam + LeagueRoster + LeagueRosterPlayers in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const leagueTeam = await tx.leagueTeam.create({
         data: {
           leagueId: params.id,
@@ -121,7 +121,7 @@ export async function POST(
       // Snapshot players
       if (teamPlayers.length > 0) {
         await (tx as any).leagueRosterPlayer.createMany({
-          data: teamPlayers.map((tp) => ({
+          data: teamPlayers.map((tp: any) => ({
             rosterId: roster.id,
             playerId: tp.playerId,
             jerseyNumber: tp.jerseyNumber,

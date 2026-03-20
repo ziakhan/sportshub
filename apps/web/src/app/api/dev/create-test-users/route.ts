@@ -155,11 +155,11 @@ export async function GET() {
 
     return NextResponse.json({
       count: testUsers.length,
-      users: testUsers.map((u) => ({
+      users: testUsers.map((u: any) => ({
         id: u.id,
         email: u.email,
         name: `${u.firstName} ${u.lastName}`,
-        roles: u.roles.map((r) => ({
+        roles: u.roles.map((r: any) => ({
           role: r.role,
           tenant: r.tenant?.name || null,
         })),

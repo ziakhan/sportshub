@@ -64,7 +64,7 @@ export async function GET(
     })
 
     return NextResponse.json({
-      templates: templates.map((t) => ({
+      templates: templates.map((t: any) => ({
         ...t,
         seasonFee: Number(t.seasonFee),
       })),

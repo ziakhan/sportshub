@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({
-      reviews: reviews.map((r) => ({
+      reviews: reviews.map((r: any) => ({
         ...r,
         reviewer: {
           name: [r.reviewer.firstName, r.reviewer.lastName?.[0] ? `${r.reviewer.lastName[0]}.` : ""].filter(Boolean).join(" "),

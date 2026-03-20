@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -28,14 +28,24 @@ interface Team {
 }
 
 export default function CreateTryoutPage() {
+  return (
+    <Suspense fallback={<div className="py-12 text-center text-gray-500">Loading...</div>}>
+      <CreateTryoutForm />
+    </Suspense>
+  )
+}
+
+function CreateTryoutForm() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const clubId = params?.id as string
+  const preselectedTeamId = searchParams?.get("teamId") || ""
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdTryout, setCreatedTryout] = useState<{ title: string } | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
-  const [selectedTeamId, setSelectedTeamId] = useState("")
+  const [selectedTeamId, setSelectedTeamId] = useState(preselectedTeamId)
   const [loadingTeams, setLoadingTeams] = useState(true)
 
   const selectedTeam = teams.find((t) => t.id === selectedTeamId)

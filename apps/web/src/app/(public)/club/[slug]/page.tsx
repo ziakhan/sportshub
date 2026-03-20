@@ -85,7 +85,7 @@ async function getClubData(tenantId: string) {
 
   return {
     teams,
-    tryouts: tryouts.map((t) => ({ ...t, fee: Number(t.fee) })),
+    tryouts: tryouts.map((t: any) => ({ ...t, fee: Number(t.fee) })),
     staffCount,
   }
 }
@@ -166,7 +166,7 @@ export default async function ClubProfilePage({
                 <p className="text-gray-500 text-sm">No teams listed yet.</p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {teams.map((team) => (
+                  {teams.map((team: any) => (
                     <div key={team.id} className="rounded-md border border-gray-100 bg-gray-50 p-4">
                       <h3 className="font-medium text-gray-900">{team.name}</h3>
                       <p className="text-sm text-gray-500">
@@ -187,7 +187,7 @@ export default async function ClubProfilePage({
                   Upcoming Tryouts
                 </h2>
                 <div className="space-y-3">
-                  {tryouts.map((tryout) => (
+                  {tryouts.map((tryout: any) => (
                     <Link
                       key={tryout.id}
                       href={`/tryout/${tryout.id}`}

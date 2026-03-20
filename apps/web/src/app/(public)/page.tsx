@@ -77,7 +77,7 @@ export default async function HomePage() {
               Featured Clubs
             </h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredClubs.map((club) => (
+              {featuredClubs.map((club: any) => (
                 <Link
                   key={club.id}
                   href={`/club/${club.slug}`}

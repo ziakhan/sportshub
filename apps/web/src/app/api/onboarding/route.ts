@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     // Determine which roles need to be created
-    const existingRoles = new Set(user.roles.map((r) => r.role))
+    const existingRoles = new Set(user.roles.map((r: any) => r.role))
     const rolesToCreate = roles.filter((r) => !existingRoles.has(r))
 
     // Create missing roles (all unscoped — scoped when creating club/league/team)

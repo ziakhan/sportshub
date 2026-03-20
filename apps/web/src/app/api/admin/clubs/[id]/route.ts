@@ -77,7 +77,7 @@ export async function PATCH(
           return NextResponse.json({ error: "User not found" }, { status: 404 })
         }
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
           // Remove old owner role
           await tx.userRole.deleteMany({
             where: { tenantId: clubId, role: "ClubOwner" },

@@ -52,7 +52,7 @@ export async function PATCH(
     const data = reviewSchema.parse(body)
 
     if (data.action === "approve") {
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.clubClaim.update({
           where: { id: params.id },
           data: {
@@ -96,7 +96,7 @@ export async function PATCH(
         })
       })
     } else {
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.clubClaim.update({
           where: { id: params.id },
           data: {

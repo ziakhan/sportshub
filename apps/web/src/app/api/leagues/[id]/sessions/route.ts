@@ -38,7 +38,7 @@ export async function POST(
     const body = await request.json()
     const data = createSessionSchema.parse(body)
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const leagueSession = await (tx as any).leagueSession.create({
         data: {
           leagueId: params.id,

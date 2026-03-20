@@ -3,7 +3,20 @@ import Link from "next/link"
 import { TemplateForm } from "./template-form"
 import { TemplateCard } from "./template-card"
 
-async function getTeamWithTemplates(teamId: string, tenantId: string) {
+interface TemplateData {
+  id: string
+  name: string
+  seasonFee: number
+  installments: number
+  practiceSessions: number
+  includesBall: boolean
+  includesBag: boolean
+  includesShoes: boolean
+  includesUniform: boolean
+  includesTracksuit: boolean
+}
+
+async function getTeamWithTemplates(teamId: string, tenantId: string): Promise<{ id: string; name: string; offerTemplates: TemplateData[] } | null> {
   const team = await prisma.team.findFirst({
     where: { id: teamId, tenantId },
     select: {
@@ -18,7 +31,7 @@ async function getTeamWithTemplates(teamId: string, tenantId: string) {
   if (!team) return null
   return {
     ...team,
-    offerTemplates: team.offerTemplates.map((t) => ({
+    offerTemplates: team.offerTemplates.map((t: any) => ({
       id: t.id,
       name: t.name,
       seasonFee: Number(t.seasonFee),

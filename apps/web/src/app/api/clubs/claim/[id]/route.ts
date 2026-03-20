@@ -175,7 +175,7 @@ export async function PATCH(
     }
 
     // Verification successful — approve the claim and activate the club
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.clubClaim.update({
         where: { id: claim.id },
         data: {

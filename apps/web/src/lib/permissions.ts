@@ -1,5 +1,4 @@
 import { AbilityBuilder, createMongoAbility, MongoAbility } from "@casl/ability"
-import { Role } from "@youthbasketballhub/db"
 
 type Actions = "manage" | "create" | "read" | "update" | "delete"
 type Subjects =
@@ -18,7 +17,7 @@ type Subjects =
 export type AppAbility = MongoAbility<[Actions, Subjects]>
 
 interface UserRole {
-  role: Role
+  role: string
   tenantId?: string | null
   teamId?: string | null
   leagueId?: string | null

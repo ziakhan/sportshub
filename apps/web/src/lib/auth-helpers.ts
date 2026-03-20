@@ -103,7 +103,7 @@ export async function getUserAbilities() {
     return null
   }
 
-  const roles = user.roles.map((role) => ({
+  const roles = user.roles.map((role: any) => ({
     role: role.role,
     tenantId: role.tenantId,
     teamId: role.teamId,
@@ -123,7 +123,7 @@ export async function hasRole(role: string) {
     return false
   }
 
-  return user.roles.some((r) => r.role === role)
+  return user.roles.some((r: any) => r.role === role)
 }
 
 /**
@@ -136,9 +136,9 @@ export async function getUserTenants() {
     return []
   }
 
-  const tenantRoles = user.roles.filter((role) => role.tenant !== null)
+  const tenantRoles = user.roles.filter((role: any) => role.tenant !== null)
 
-  return tenantRoles.map((role) => ({
+  return tenantRoles.map((role: any) => ({
     id: role.tenant!.id,
     slug: role.tenant!.slug,
     name: role.tenant!.name,
@@ -151,5 +151,5 @@ export async function getUserTenants() {
  */
 export async function canAccessTenant(tenantId: string) {
   const tenants = await getUserTenants()
-  return tenants.some((t) => t.id === tenantId)
+  return tenants.some((t: any) => t.id === tenantId)
 }

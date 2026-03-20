@@ -137,12 +137,12 @@ export async function GET(request: NextRequest) {
       // Fetch owner info if admin
       let ownerMap: Record<string, { firstName: string | null; lastName: string | null; email: string }> = {}
       if (sessionInfo.isPlatformAdmin) {
-        const ownerIds = [...new Set(leagues.map((l) => l.ownerId))]
+        const ownerIds = [...new Set(leagues.map((l: any) => l.ownerId))]
         const owners = await prisma.user.findMany({
           where: { id: { in: ownerIds } },
           select: { id: true, firstName: true, lastName: true, email: true },
         })
-        ownerMap = Object.fromEntries(owners.map((o) => [o.id, o]))
+        ownerMap = Object.fromEntries(owners.map((o: any) => [o.id, o]))
       }
       return NextResponse.json({
         leagues: leagues.map((l: any) => {

@@ -16,7 +16,7 @@ export default async function DashboardPage() {
     redirect("/sign-in")
   }
 
-  const roles = dbUser.roles.map((r) => r.role)
+  const roles = dbUser.roles.map((r: any) => r.role as string)
   const dashboardData = await getDashboardData(dbUser)
 
   const hasAdminRole = roles.includes("PlatformAdmin")

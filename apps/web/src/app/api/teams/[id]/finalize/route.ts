@@ -74,7 +74,7 @@ export async function POST(
       where: { teamId: params.id, jerseyNumber: { not: null } },
       select: { jerseyNumber: true },
     })
-    existingPlayers.forEach((p) => {
+    existingPlayers.forEach((p: any) => {
       if (p.jerseyNumber !== null) assignedNumbers.add(p.jerseyNumber)
     })
 
@@ -106,7 +106,7 @@ export async function POST(
     }
 
     // Update TeamPlayer records with assigned jersey numbers
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       for (const assignment of assignments) {
         if (assignment.jerseyNumber !== null) {
           await tx.offer.update({
@@ -128,7 +128,7 @@ export async function POST(
 
       // Notify parents about jersey assignments
       for (const offer of acceptedOffers) {
-        const assignment = assignments.find((a) => a.offerId === offer.id)
+        const assignment = assignments.find((a: any) => a.offerId === offer.id)
         if (assignment?.jerseyNumber !== null) {
           await tx.notification.create({
             data: {
@@ -156,7 +156,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      assignments: assignments.map((a) => ({
+      assignments: assignments.map((a: any) => ({
         playerName: a.playerName,
         jerseyNumber: a.jerseyNumber,
         status: a.jerseyNumber !== null ? "assigned" : "no_preference_available",

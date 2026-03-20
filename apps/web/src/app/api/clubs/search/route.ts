@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     })
 
     const userId = session.user.id
-    const results = clubs.map((club) => ({
+    const results = clubs.map((club: any) => ({
       id: club.id,
       name: club.name,
       city: club.city,
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       website: club.website,
       description: club.description,
       hasPendingClaim: club.clubClaims.length > 0,
-      myClaimStatus: club.clubClaims.find((c) => c.userId === userId)?.status || null,
+      myClaimStatus: club.clubClaims.find((c: any) => c.userId === userId)?.status || null,
     }))
 
     return NextResponse.json({ clubs: results })

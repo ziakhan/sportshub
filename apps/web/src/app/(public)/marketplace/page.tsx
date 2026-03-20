@@ -23,7 +23,7 @@ async function getPublicTryouts(country?: string) {
     },
     orderBy: { scheduledAt: "asc" },
   })
-  return raw.map((t) => ({ ...t, fee: Number(t.fee) }))
+  return raw.map((t: any) => ({ ...t, fee: Number(t.fee) }))
 }
 
 export default async function PublicMarketplacePage({
@@ -73,7 +73,7 @@ export default async function PublicMarketplacePage({
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {tryouts.map((tryout) => (
+          {tryouts.map((tryout: any) => (
             <Link
               key={tryout.id}
               href={`/tryout/${tryout.id}`}

@@ -3,7 +3,30 @@ import { format } from "date-fns"
 import Link from "next/link"
 import { MakeOfferButton } from "./make-offer-button"
 
-async function getTryoutWithSignups(tryoutId: string, tenantId: string) {
+interface TryoutSignup {
+  id: string
+  userId: string
+  playerName: string
+  playerAge: number | null
+  playerGender: string | null
+  status: string
+  notes: string | null
+  createdAt: Date
+  user: { id: string; email: string; firstName: string | null; lastName: string | null }
+  offers: { id: string; status: string }[]
+}
+
+interface TryoutWithSignups {
+  id: string
+  title: string
+  scheduledAt: Date
+  location: string
+  ageGroup: string
+  team: { id: string; name: string } | null
+  signups: TryoutSignup[]
+}
+
+async function getTryoutWithSignups(tryoutId: string, tenantId: string): Promise<TryoutWithSignups | null> {
   const tryout = await prisma.tryout.findFirst({
     where: { id: tryoutId, tenantId },
     select: {
@@ -26,10 +49,11 @@ async function getTryoutWithSignups(tryoutId: string, tenantId: string) {
   return tryout
 }
 
-async function getPlayersForParent(parentId: string) {
+async function getPlayersForParents(parentIds: string[]): Promise<{ id: string; firstName: string; lastName: string; parentId: string }[]> {
+  if (parentIds.length === 0) return []
   return await prisma.player.findMany({
-    where: { parentId },
-    select: { id: true, firstName: true, lastName: true },
+    where: { parentId: { in: parentIds } },
+    select: { id: true, firstName: true, lastName: true, parentId: true },
   })
 }
 
@@ -48,17 +72,17 @@ export default async function TryoutSignupsPage({
     )
   }
 
-  // For each signup, find matching players
-  const signupsWithPlayers = await Promise.all(
-    tryout.signups.map(async (signup) => {
-      const players = await getPlayersForParent(signup.userId)
-      // Try to match by name
-      const matchedPlayer = players.find(
-        (p) => `${p.firstName} ${p.lastName}` === signup.playerName
-      )
-      return { ...signup, matchedPlayer, allPlayers: players }
-    })
-  )
+  // Batch fetch all players for all parents in one query
+  const parentIds = [...new Set(tryout.signups.map((s) => s.userId))]
+  const allPlayers = await getPlayersForParents(parentIds)
+
+  const signupsWithPlayers = tryout.signups.map((signup) => {
+    const parentPlayers = allPlayers.filter((p) => p.parentId === signup.userId)
+    const matchedPlayer = parentPlayers.find(
+      (p) => `${p.firstName} ${p.lastName}` === signup.playerName
+    )
+    return { ...signup, matchedPlayer, allPlayers: parentPlayers }
+  })
 
   return (
     <div>

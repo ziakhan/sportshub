@@ -210,7 +210,7 @@ export async function getDashboardData(
     data.parent = {
       players,
       tryoutSignups,
-      recentPayments: recentPayments.map((p) => ({
+      recentPayments: recentPayments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),
         platformFee: p.platformFee ? Number(p.platformFee) : null,
@@ -335,8 +335,8 @@ export async function getDashboardData(
       },
     })
 
-    const teamIds = players.flatMap((p) =>
-      p.teams.map((t) => t.team.id)
+    const teamIds = players.flatMap((p: any) =>
+      p.teams.map((t: any) => t.team.id)
     )
 
     const upcomingGames =
@@ -361,23 +361,23 @@ export async function getDashboardData(
         : []
 
     data.player = {
-      teams: players.flatMap((p) =>
-        p.teams.map((t) => ({
+      teams: players.flatMap((p: any) =>
+        p.teams.map((t: any) => ({
           id: t.team.id,
           name: t.team.name,
           ageGroup: t.team.ageGroup,
           club: t.team.tenant.name,
         }))
       ),
-      upcomingGames: upcomingGames.map((g) => ({
+      upcomingGames: upcomingGames.map((g: any) => ({
         id: g.id,
         homeTeam: g.homeTeam.name,
         awayTeam: g.awayTeam.name,
         scheduledAt: g.scheduledAt,
         location: g.venue?.name || null,
       })),
-      stats: players.flatMap((p) =>
-        p.stats.map((s) => ({
+      stats: players.flatMap((p: any) =>
+        p.stats.map((s: any) => ({
           id: s.id,
           points: s.points,
           rebounds: s.rebounds,

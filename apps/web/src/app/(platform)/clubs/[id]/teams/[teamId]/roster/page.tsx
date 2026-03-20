@@ -2,7 +2,47 @@ import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import { FinalizeButton } from "./finalize-button"
 
-async function getTeamRoster(teamId: string, tenantId: string) {
+interface RosterPlayer {
+  id: string
+  playerId: string
+  jerseyNumber: number | null
+  uniformSize: string | null
+  tracksuitSize: string | null
+  shoeSize: string | null
+  player: {
+    id: string
+    firstName: string
+    lastName: string
+    dateOfBirth: Date | null
+    gender: string | null
+    position: string | null
+    height: string | null
+    weight: number | null
+  }
+}
+
+interface RosterTeam {
+  id: string
+  name: string
+  ageGroup: string
+  gender: string | null
+  season: string | null
+  players: RosterPlayer[]
+}
+
+interface RosterOffer {
+  id: string
+  uniformSize: string | null
+  shoeSize: string | null
+  tracksuitSize: string | null
+  jerseyPref1: number | null
+  jerseyPref2: number | null
+  jerseyPref3: number | null
+  respondedAt: Date | null
+  player: { id: string }
+}
+
+async function getTeamRoster(teamId: string, tenantId: string): Promise<RosterTeam | null> {
   const team = await prisma.team.findFirst({
     where: { id: teamId, tenantId },
     select: {
@@ -34,7 +74,7 @@ async function getTeamRoster(teamId: string, tenantId: string) {
   return team
 }
 
-async function getTeamOffers(teamId: string) {
+async function getTeamOffers(teamId: string): Promise<RosterOffer[]> {
   return await prisma.offer.findMany({
     where: { teamId, status: "ACCEPTED" },
     select: {
@@ -80,10 +120,10 @@ export default async function TeamRosterPage({
     <div>
       <div className="mb-6">
         <Link
-          href={`/clubs/${params.id}/offers`}
+          href={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
           className="text-sm text-blue-600 hover:underline"
         >
-          &larr; Back to Offers
+          &larr; Back to Team Dashboard
         </Link>
       </div>
 
