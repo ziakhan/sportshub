@@ -3,13 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-export function TemplateForm({
-  teamId,
-  clubId,
-}: {
-  teamId: string
-  clubId: string
-}) {
+export function TemplateForm({ clubId }: { clubId: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +38,7 @@ export function TemplateForm({
     setError(null)
 
     try {
-      const res = await fetch(`/api/teams/${teamId}/offer-templates`, {
+      const res = await fetch(`/api/clubs/${clubId}/offer-templates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -103,7 +97,7 @@ export function TemplateForm({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Standard Package, Premium Package"
+            placeholder="e.g. Competitive Package, Development Package"
             required
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
@@ -148,74 +142,28 @@ export function TemplateForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Included Items
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includesUniform}
-                onChange={(e) => setIncludesUniform(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Uniform</div>
-                <div className="text-xs text-gray-500">Shirt + Shorts</div>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includesTracksuit}
-                onChange={(e) => setIncludesTracksuit(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Tracksuit</div>
-                <div className="text-xs text-gray-500">Jacket + Pants</div>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includesShoes}
-                onChange={(e) => setIncludesShoes(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Shoes</div>
-                <div className="text-xs text-gray-500">Basketball shoes</div>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includesBall}
-                onChange={(e) => setIncludesBall(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Basketball</div>
-                <div className="text-xs text-gray-500">Game ball</div>
-              </div>
-            </label>
-
-            <label className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includesBag}
-                onChange={(e) => setIncludesBag(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <div className="text-sm font-medium text-gray-900">Bag</div>
-                <div className="text-xs text-gray-500">Equipment bag</div>
-              </div>
-            </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Included Items</label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              { label: "Uniform", desc: "Shirt + Shorts", checked: includesUniform, set: setIncludesUniform },
+              { label: "Tracksuit", desc: "Jacket + Pants", checked: includesTracksuit, set: setIncludesTracksuit },
+              { label: "Shoes", desc: "Basketball shoes", checked: includesShoes, set: setIncludesShoes },
+              { label: "Basketball", desc: "Game ball", checked: includesBall, set: setIncludesBall },
+              { label: "Bag", desc: "Equipment bag", checked: includesBag, set: setIncludesBag },
+            ].map((item) => (
+              <label key={item.label} className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={(e) => item.set(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">{item.label}</div>
+                  <div className="text-xs text-gray-500">{item.desc}</div>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
 

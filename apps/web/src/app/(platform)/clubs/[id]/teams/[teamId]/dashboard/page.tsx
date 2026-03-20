@@ -89,11 +89,6 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     orderBy: { createdAt: "desc" },
   }) as any
 
-  const templates = await prisma.offerTemplate.findMany({
-    where: { teamId, isActive: true },
-    select: { id: true },
-  })
-
   return {
     team: {
       ...team,
@@ -102,7 +97,6 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     },
     tryouts,
     offers,
-    templateCount: templates.length,
   }
 }
 
@@ -114,7 +108,7 @@ export default async function TeamDashboardPage({
   const data = await getTeamDashboardData(params.teamId, params.id)
   if (!data) notFound()
 
-  const { team, tryouts, offers, templateCount } = data
+  const { team, tryouts, offers } = data
   const clubId = params.id
   const teamId = params.teamId
 
@@ -179,7 +173,7 @@ export default async function TeamDashboardPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="rounded-lg border bg-white p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{players.length}</div>
           <div className="text-xs text-gray-500">Players</div>
@@ -191,10 +185,6 @@ export default async function TeamDashboardPage({
         <div className="rounded-lg border bg-white p-4 text-center">
           <div className="text-2xl font-bold text-purple-600">{offers.length}</div>
           <div className="text-xs text-gray-500">Offers</div>
-        </div>
-        <div className="rounded-lg border bg-white p-4 text-center">
-          <div className="text-2xl font-bold text-orange-600">{templateCount}</div>
-          <div className="text-xs text-gray-500">Templates</div>
         </div>
       </div>
 
@@ -321,7 +311,7 @@ export default async function TeamDashboardPage({
               className="rounded-md border border-gray-200 p-3 text-center text-sm hover:bg-gray-50">
               Roster
             </Link>
-            <Link href={`/clubs/${clubId}/teams/${teamId}/offer-templates`}
+            <Link href={`/clubs/${clubId}/offer-templates`}
               className="rounded-md border border-gray-200 p-3 text-center text-sm hover:bg-gray-50">
               Offer Templates
             </Link>

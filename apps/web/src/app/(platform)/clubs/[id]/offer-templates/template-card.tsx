@@ -18,10 +18,12 @@ interface Template {
 
 export function TemplateCard({
   template,
-  teamId,
+  clubId,
+  isAdmin,
 }: {
   template: Template
-  teamId: string
+  clubId: string
+  isAdmin: boolean
 }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
@@ -31,7 +33,7 @@ export function TemplateCard({
 
     setIsDeleting(true)
     try {
-      await fetch(`/api/teams/${teamId}/offer-templates/${template.id}`, {
+      await fetch(`/api/clubs/${clubId}/offer-templates/${template.id}`, {
         method: "DELETE",
       })
       router.refresh()
@@ -54,13 +56,15 @@ export function TemplateCard({
     <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <h4 className="font-semibold text-gray-900">{template.name}</h4>
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="text-xs text-gray-400 hover:text-red-600"
-        >
-          {isDeleting ? "..." : "Archive"}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="text-xs text-gray-400 hover:text-red-600"
+          >
+            {isDeleting ? "..." : "Archive"}
+          </button>
+        )}
       </div>
 
       <div className="mt-3 space-y-2">

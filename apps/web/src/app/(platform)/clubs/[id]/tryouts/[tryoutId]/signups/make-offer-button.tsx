@@ -54,7 +54,7 @@ export function MakeOfferButton({
   useEffect(() => {
     if (showForm && templates.length === 0) {
       setLoadingTemplates(true)
-      fetch(`/api/teams/${teamId}/offer-templates`)
+      fetch(`/api/clubs/${clubId}/offer-templates`)
         .then((res) => res.json())
         .then((data) => setTemplates(data.templates || []))
         .catch(() => {})
@@ -183,7 +183,7 @@ export function MakeOfferButton({
               <p className="mt-1 text-xs text-gray-500">
                 No templates yet.{" "}
                 <a
-                  href={`/clubs/${clubId}/teams/${teamId}/offer-templates`}
+                  href={`/clubs/${clubId}/offer-templates`}
                   className="text-blue-600 hover:underline"
                   target="_blank"
                 >

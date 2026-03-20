@@ -440,6 +440,27 @@ export async function GET() {
       data: { status: "OFFERED" },
     })
 
+    // ── 7. Migrate any existing team-scoped templates to club-scoped ──────
+    const orphanedTemplates = await prisma.offerTemplate.findMany({
+      where: { tenantId: null, teamId: { not: null } },
+      select: { id: true, teamId: true },
+    })
+    for (const t of orphanedTemplates as any[]) {
+      const team = await prisma.team.findUnique({
+        where: { id: t.teamId },
+        select: { tenantId: true },
+      })
+      if (team) {
+        await prisma.offerTemplate.update({
+          where: { id: t.id },
+          data: { tenantId: team.tenantId },
+        })
+      }
+    }
+    if (orphanedTemplates.length > 0) {
+      results.push(`Migrated ${orphanedTemplates.length} team-scoped templates to club-scoped`)
+    }
+
     return NextResponse.json({
       success: true,
       message: "Demo data seeded successfully",

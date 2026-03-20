@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     if (data.templateId) {
       const template = await prisma.offerTemplate.findFirst({
-        where: { id: data.templateId, teamId: data.teamId, isActive: true },
+        where: { id: data.templateId, tenantId: team.tenantId, isActive: true },
       })
       if (!template) {
         return NextResponse.json({ error: "Template not found" }, { status: 404 })
