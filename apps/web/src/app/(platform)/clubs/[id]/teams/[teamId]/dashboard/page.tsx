@@ -66,7 +66,26 @@ export default function TeamDashboardPage() {
             {team.gender ? ` \u2022 ${team.gender}` : ""}
             {team.season ? ` \u2022 ${team.season}` : ""}
           </p>
-          {team.description && <p className="text-sm text-gray-600 mt-1">{team.description}</p>}
+          {/* Staff / Coaches */}
+          {team.staff && team.staff.filter((s: any) => s.teamId === teamId).length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {team.staff.filter((s: any) => s.teamId === teamId).map((s: any) => (
+                <span key={s.id} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  s.designation === "HeadCoach" ? "bg-blue-100 text-blue-700" :
+                  s.designation === "AssistantCoach" ? "bg-green-100 text-green-700" :
+                  s.role === "TeamManager" ? "bg-purple-100 text-purple-700" :
+                  "bg-gray-100 text-gray-700"
+                }`}>
+                  {s.user?.firstName} {s.user?.lastName}
+                  {" \u2022 "}
+                  {s.designation === "HeadCoach" ? "Head Coach" :
+                   s.designation === "AssistantCoach" ? "Asst. Coach" :
+                   s.role === "TeamManager" ? "Manager" : s.role}
+                </span>
+              ))}
+            </div>
+          )}
+          {team.description && <p className="text-sm text-gray-600 mt-2">{team.description}</p>}
         </div>
         <Link href={`/clubs/${clubId}/teams/${teamId}/edit`}
           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">
