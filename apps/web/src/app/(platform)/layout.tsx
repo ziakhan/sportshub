@@ -44,7 +44,7 @@ export default async function PlatformLayout({
     .toUpperCase() || "U"
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Impersonation banner */}
       {impersonating && <ImpersonationBanner userName={userName} />}
 
@@ -75,7 +75,7 @@ export default async function PlatformLayout({
       </nav>
 
       {/* Sidebar + content */}
-      <div className="flex">
+      <div className="flex flex-1">
         <Sidebar roles={roles} tenants={tenants} />
         <main className="flex-1">{children}</main>
       </div>
