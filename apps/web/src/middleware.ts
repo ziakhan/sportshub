@@ -24,6 +24,7 @@ const PUBLIC_PATHS = [
   "/api/reviews",
   "/api/settings",
   "/api/health",
+  "/api/dev",
 ]
 
 function isPublicPath(pathname: string) {
