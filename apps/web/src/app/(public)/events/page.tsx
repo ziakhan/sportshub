@@ -5,11 +5,11 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
-type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "leagues"
+type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "leagues" | "tournaments"
 
 interface EventItem {
   id: string
-  type: "tryout" | "house-league" | "camp"
+  type: "tryout" | "house-league" | "camp" | "tournament"
   name: string
   clubName: string
   clubSlug: string
@@ -43,17 +43,19 @@ export default function EventsPage() {
     async function fetchAll() {
       setLoading(true)
       try {
-        const [tryoutsRes, leaguesRes, campsRes, compLeaguesRes] = await Promise.all([
+        const [tryoutsRes, leaguesRes, campsRes, compLeaguesRes, tournamentsRes] = await Promise.all([
           fetch("/api/tryouts?marketplace=true"),
           fetch("/api/house-leagues?public=true"),
           fetch("/api/camps?public=true"),
           fetch("/api/leagues?public=true"),
+          fetch("/api/tournaments?public=true"),
         ])
 
         const tryoutsData = await tryoutsRes.json()
         const leaguesData = await leaguesRes.json()
         const campsData = await campsRes.json()
         const compLeaguesData = await compLeaguesRes.json()
+        const tournamentsData = await tournamentsRes.json()
 
         const items: EventItem[] = []
 
@@ -143,6 +145,28 @@ export default function EventsPage() {
           })
         }
 
+        // Tournaments
+        for (const t of tournamentsData.tournaments || []) {
+          items.push({
+            id: t.id,
+            type: "tournament",
+            name: t.name,
+            clubName: `${t.city}${t.state ? `, ${t.state}` : ""}`,
+            clubSlug: "",
+            ageGroup: t.divisions?.map((d: any) => d.ageGroup).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(", ") || "All",
+            gender: null,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            location: t.city,
+            fee: t.teamFee ? Number(t.teamFee) : 0,
+            currency: t.currency || "CAD",
+            primaryColor: "#ea580c",
+            spotsInfo: `${t._count?.teams || 0} teams`,
+            extra: `${t.gamesGuaranteed || "?"} games guaranteed`,
+            href: `/tournament/${t.id}`,
+          })
+        }
+
         // Sort by start date
         items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         setEvents(items)
@@ -156,7 +180,7 @@ export default function EventsPage() {
   }, [])
 
   const filterMap: Record<EventType, string | null> = {
-    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", leagues: "league",
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", leagues: "league", tournaments: "tournament",
   }
   const filtered = events.filter((e) => {
     const ft = filterMap[filter]
@@ -173,6 +197,7 @@ export default function EventsPage() {
     "house-league": { bg: "bg-green-100", text: "text-green-700", label: "Program" },
     camp: { bg: "bg-purple-100", text: "text-purple-700", label: "Camp" },
     league: { bg: "bg-indigo-100", text: "text-indigo-700", label: "League" },
+    tournament: { bg: "bg-red-100", text: "text-red-700", label: "Tournament" },
   }
 
   return (
@@ -193,6 +218,7 @@ export default function EventsPage() {
             { key: "house-leagues", label: "Programs" },
             { key: "camps", label: "Camps" },
             { key: "leagues", label: "Leagues" },
+            { key: "tournaments", label: "Tournaments" },
           ] as const).map((f) => (
             <button
               key={f.key}

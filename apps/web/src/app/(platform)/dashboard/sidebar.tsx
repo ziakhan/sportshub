@@ -97,6 +97,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
             )}
             <div className="mt-2">
               <SidebarLink href="/browse-leagues" label="Browse Leagues" />
+              <SidebarLink href="/browse-tournaments" label="Browse Tournaments" />
             </div>
           </div>
         )}

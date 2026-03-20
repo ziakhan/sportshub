@@ -50,6 +50,7 @@ model User {
   clubClaims          ClubClaim[]
   houseLeagueSignups  HouseLeagueSignup[]
   campSignups         CampSignup[]
+  tournaments         Tournament[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -159,6 +160,7 @@ model Tenant {
   houseLeagues  HouseLeague[]
   camps         Camp[]
   offerTemplates OfferTemplate[]
+  tournaments   Tournament[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -240,6 +242,7 @@ model Team {
   offers        Offer[]
   offerTemplates OfferTemplate[]
   tryouts       Tryout[]
+  tournamentEntries TournamentTeam[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -857,6 +860,7 @@ model Venue {
   practices     Practice[]
   leagueSessions LeagueSession[]
   leagueVenues  LeagueVenue[]
+  tournamentVenues TournamentVenue[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -1369,4 +1373,127 @@ enum ClaimStatus {
   EMAIL_VERIFIED
   APPROVED
   REJECTED
+}
+
+// ============================================
+// TOURNAMENTS (weekend / short-format events)
+// ============================================
+
+model Tournament {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?  @db.Text
+
+  // Owner (the user who created it — club owner or league owner)
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id])
+
+  // Optional club association (null if created by a league owner)
+  tenantId      String?
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Location
+  city          String
+  state         String?
+  country       String   @default("CA")
+
+  // Dates
+  startDate     DateTime
+  endDate       DateTime
+  registrationDeadline DateTime?
+
+  // Pricing
+  teamFee       Decimal  @db.Decimal(10, 2)
+  currency      String   @default("CAD")
+
+  // Tournament details
+  gamesGuaranteed Int    @default(3)
+  gameSlotMinutes Int    @default(60)
+  gameLengthMinutes Int  @default(40)
+  gamePeriods     String @default("HALVES") // "HALVES" or "QUARTERS"
+
+  // Playoffs
+  playoffFormat String?  // "SINGLE_ELIMINATION", "DOUBLE_ELIMINATION", "ROUND_ROBIN"
+
+  // Status
+  status        TournamentStatus @default(DRAFT)
+
+  // Relationships
+  divisions     TournamentDivision[]
+  teams         TournamentTeam[]
+  venues        TournamentVenue[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([startDate])
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION
+  REGISTRATION_CLOSED
+  FINALIZED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model TournamentDivision {
+  id            String   @id @default(uuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  name          String   // "U12 Boys"
+  ageGroup      String   // "U12"
+  gender        Gender?
+  maxTeams      Int?     // Cap per division
+
+  teams         TournamentTeam[]
+
+  @@index([tournamentId])
+}
+
+model TournamentTeam {
+  id            String   @id @default(uuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  divisionId    String?
+  division      TournamentDivision? @relation(fields: [divisionId], references: [id])
+
+  teamId        String
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  status        TournamentTeamStatus @default(PENDING)
+  registrationFee Decimal? @db.Decimal(10, 2)
+
+  createdAt     DateTime @default(now())
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId])
+  @@index([teamId])
+}
+
+enum TournamentTeamStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+model TournamentVenue {
+  id            String   @id @default(uuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  venueId       String
+  venue         Venue    @relation(fields: [venueId], references: [id])
+
+  isPrimary     Boolean  @default(false)
+
+  @@unique([tournamentId, venueId])
+  @@index([tournamentId])
 }

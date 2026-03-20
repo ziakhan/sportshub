@@ -69,6 +69,7 @@ export default async function ClubLayout({
     { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
     { label: "House League", href: `/clubs/${params.id}/house-leagues` },
     { label: "Camps", href: `/clubs/${params.id}/camps` },
+    { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
     ...(isAdmin
       ? [
           { label: "Staff", href: `/clubs/${params.id}/staff` },

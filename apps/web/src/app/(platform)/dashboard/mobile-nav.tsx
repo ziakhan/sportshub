@@ -127,6 +127,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                   )}
                   <div className="mt-2">
                     <NavLink href="/browse-leagues" label="Browse Leagues" />
+                    <NavLink href="/browse-tournaments" label="Browse Tournaments" />
                   </div>
                 </div>
               )}
