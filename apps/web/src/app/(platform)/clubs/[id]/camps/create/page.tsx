@@ -122,7 +122,7 @@ export default function CreateCampPage() {
                 <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} required
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                   <option value="">Select...</option>
-                  {["U6", "U8", "U10", "U12", "U14", "U16", "U18", "All Ages"].map((ag) => (
+                  {["U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18", "All Ages"].map((ag) => (
                     <option key={ag} value={ag}>{ag}</option>
                   ))}
                 </select>

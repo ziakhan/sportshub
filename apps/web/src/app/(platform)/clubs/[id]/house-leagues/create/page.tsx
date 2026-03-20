@@ -123,7 +123,7 @@ export default function CreateHouseLeaguePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Age Groups * <span className="text-xs text-gray-400 font-normal">(select all that apply)</span></label>
               <div className="flex flex-wrap gap-2">
-                {["U6", "U8", "U10", "U12", "U14", "U16", "U18"].map((ag) => (
+                {["U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18"].map((ag) => (
                   <button key={ag} type="button"
                     onClick={() => setSelectedAgeGroups((prev) =>
                       prev.includes(ag) ? prev.filter((a) => a !== ag) : [...prev, ag]
