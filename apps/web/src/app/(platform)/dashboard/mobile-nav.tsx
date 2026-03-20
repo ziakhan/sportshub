@@ -100,7 +100,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                 <div className="mb-4">
                   <NavHeader label="Parent" />
                   <NavLink href="/players" label="My Players" />
-                  <NavLink href="/offers" label="Offers" />
+                  <NavLink href="/offers" label="Offers Received" />
                   <NavLink href="/marketplace" label="Browse Tryouts" />
                   <NavLink href="/payments" label="Payments" />
                 </div>
@@ -117,18 +117,21 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                           <NavSubLink href={`/clubs/${t.id}/teams`} label="Teams" />
                           <NavSubLink href={`/clubs/${t.id}/tryouts`} label="Tryouts" />
                           <NavSubLink href={`/clubs/${t.id}/offers`} label="Offers" />
+                          <NavSubLink href={`/clubs/${t.id}/offer-templates`} label="Templates" />
+                          <NavSubLink href={`/clubs/${t.id}/house-leagues`} label="House League" />
+                          <NavSubLink href={`/clubs/${t.id}/camps`} label="Camps" />
+                          <NavSubLink href={`/clubs/${t.id}/tournaments`} label="Tournaments" />
                           <NavSubLink href={`/clubs/${t.id}/staff`} label="Staff" />
                           <NavSubLink href={`/clubs/${t.id}/settings`} label="Settings" />
                         </div>
                       </div>
                     ))
                   ) : (
-                    <NavLink href="/clubs/create" label="Create Club" />
+                    <>
+                      <NavLink href="/clubs/create" label="Create Club" />
+                      <NavLink href="/clubs/find" label="Find & Claim Club" />
+                    </>
                   )}
-                  <div className="mt-2">
-                    <NavLink href="/browse-leagues" label="Browse Leagues" />
-                    <NavLink href="/browse-tournaments" label="Browse Tournaments" />
-                  </div>
                 </div>
               )}
 
@@ -148,6 +151,16 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                   ) : (
                     <NavLink href="/teams" label="My Teams" />
                   )}
+                </div>
+              )}
+
+              {/* Browse — visible to anyone with a club or staff role */}
+              {(isAdmin || isStaff) && (
+                <div className="mb-4">
+                  <NavHeader label="Browse" />
+                  <NavLink href="/browse-leagues" label="Leagues" />
+                  <NavLink href="/browse-tournaments" label="Tournaments" />
+                  <NavLink href="/marketplace" label="Tryouts" />
                 </div>
               )}
 
@@ -176,6 +189,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
               )}
 
               <div className="border-t border-navy-700 pt-4">
+                <NavLink href="/notifications" label="Notifications" />
                 <NavLink href="/settings/profile" label="Profile" />
               </div>
             </div>

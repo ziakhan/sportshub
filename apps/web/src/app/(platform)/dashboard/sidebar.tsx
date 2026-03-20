@@ -54,7 +54,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
           <div className="mb-4">
             <SidebarHeader label="Parent" />
             <SidebarLink href="/players" label="My Players" />
-            <SidebarLink href="/offers" label="Offers" />
+            <SidebarLink href="/offers" label="Offers Received" />
             <SidebarLink href="/marketplace" label="Browse Tryouts" />
             <SidebarLink href="/payments" label="Payments" />
           </div>
@@ -69,36 +69,24 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
                 <div key={t.id}>
                   <SidebarLink href={`/clubs/${t.id}`} label={t.name} />
                   <div className="ml-4 space-y-0.5">
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/teams`}
-                      label="Teams"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/tryouts`}
-                      label="Tryouts"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/offers`}
-                      label="Offers"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/staff`}
-                      label="Staff"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/settings`}
-                      label="Settings"
-                    />
+                    <SidebarSubLink href={`/clubs/${t.id}/teams`} label="Teams" />
+                    <SidebarSubLink href={`/clubs/${t.id}/tryouts`} label="Tryouts" />
+                    <SidebarSubLink href={`/clubs/${t.id}/offers`} label="Offers" />
+                    <SidebarSubLink href={`/clubs/${t.id}/offer-templates`} label="Templates" />
+                    <SidebarSubLink href={`/clubs/${t.id}/house-leagues`} label="House League" />
+                    <SidebarSubLink href={`/clubs/${t.id}/camps`} label="Camps" />
+                    <SidebarSubLink href={`/clubs/${t.id}/tournaments`} label="Tournaments" />
+                    <SidebarSubLink href={`/clubs/${t.id}/staff`} label="Staff" />
+                    <SidebarSubLink href={`/clubs/${t.id}/settings`} label="Settings" />
                   </div>
                 </div>
               ))
             ) : (
-              <SidebarLink href="/clubs/create" label="Create Club" />
+              <>
+                <SidebarLink href="/clubs/create" label="Create Club" />
+                <SidebarLink href="/clubs/find" label="Find & Claim Club" />
+              </>
             )}
-            <div className="mt-2">
-              <SidebarLink href="/browse-leagues" label="Browse Leagues" />
-              <SidebarLink href="/browse-tournaments" label="Browse Tournaments" />
-            </div>
           </div>
         )}
 
@@ -111,20 +99,24 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
                 <div key={t.id}>
                   <SidebarLink href={`/clubs/${t.id}`} label={t.name} />
                   <div className="ml-4 space-y-0.5">
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/teams`}
-                      label="Teams"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${t.id}/tryouts`}
-                      label="Tryouts"
-                    />
+                    <SidebarSubLink href={`/clubs/${t.id}/teams`} label="Teams" />
+                    <SidebarSubLink href={`/clubs/${t.id}/tryouts`} label="Tryouts" />
                   </div>
                 </div>
               ))
             ) : (
               <SidebarLink href="/teams" label="My Teams" />
             )}
+          </div>
+        )}
+
+        {/* Browse — visible to anyone with a club or staff role */}
+        {(isAdmin || isStaff) && (
+          <div className="mb-4">
+            <SidebarHeader label="Browse" />
+            <SidebarLink href="/browse-leagues" label="Leagues" />
+            <SidebarLink href="/browse-tournaments" label="Tournaments" />
+            <SidebarLink href="/marketplace" label="Tryouts" />
           </div>
         )}
 
@@ -157,6 +149,7 @@ export function Sidebar({ roles, tenants = [] }: SidebarProps) {
 
         {/* Always visible */}
         <div className="border-t border-navy-700 pt-4">
+          <SidebarLink href="/notifications" label="Notifications" />
           <SidebarLink href="/settings/profile" label="Profile" />
         </div>
       </nav>
