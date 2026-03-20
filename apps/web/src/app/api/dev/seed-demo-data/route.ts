@@ -415,7 +415,7 @@ export async function GET() {
       create: {
         id: "seed-invite-demo",
         tenantId: clubId,
-        email: "newcoach@example.com",
+        invitedEmail: "newcoach@example.com",
         role: "Staff",
         type: "INVITE",
         status: "PENDING",
