@@ -11,7 +11,7 @@ interface HouseLeagueDetail {
   name: string
   description: string | null
   details: string | null
-  ageGroup: string
+  ageGroups: string
   gender: string | null
   season: string | null
   startDate: string
@@ -99,7 +99,7 @@ export default function PublicHouseLeaguePage() {
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{league.name}</h1>
               <p className="text-gray-500 mb-4">
-                {league.ageGroup}{league.gender ? ` \u2022 ${league.gender}` : ""}
+                {league.ageGroups.split(",").join(", ")}{league.gender ? ` \u2022 ${league.gender}` : ""}
               </p>
 
               {league.description && (

@@ -73,7 +73,7 @@ export async function PATCH(
 
     // Allow updating any field
     const fields = [
-      "name", "description", "details", "ageGroup", "gender", "season",
+      "name", "description", "details", "ageGroups", "gender", "season",
       "daysOfWeek", "startTime", "endTime", "location", "maxParticipants",
       "includesUniform", "includesJersey", "includesBall", "includesMedal", "isPublished",
     ]

@@ -1159,7 +1159,7 @@ model HouseLeague {
   description   String?  @db.Text
   details       String?  @db.Text // What's included, program details
 
-  ageGroup      String   // U8, U10, U12, etc.
+  ageGroups     String   // Comma-separated: "U8,U10,U12"
   gender        Gender?
   season        String?  // "Fall 2026", "Winter 2026-27"
 

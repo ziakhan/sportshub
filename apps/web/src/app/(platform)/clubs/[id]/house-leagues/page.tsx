@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/countries"
 interface HouseLeague {
   id: string
   name: string
-  ageGroup: string
+  ageGroups: string
   gender: string | null
   season: string | null
   startDate: string
@@ -98,7 +98,7 @@ export default function ClubHouseLeaguesPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-                      <span>{league.ageGroup}{league.gender ? ` \u2022 ${league.gender}` : ""}</span>
+                      <span>{league.ageGroups.split(",").join(", ")}{league.gender ? ` \u2022 ${league.gender}` : ""}</span>
                       <span>{league.daysOfWeek} {league.startTime}-{league.endTime}</span>
                       <span>{format(new Date(league.startDate), "MMM d")} - {format(new Date(league.endDate), "MMM d, yyyy")}</span>
                       <span>{league.location}</span>

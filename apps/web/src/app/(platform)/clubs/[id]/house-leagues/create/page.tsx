@@ -17,7 +17,7 @@ export default function CreateHouseLeaguePage() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [details, setDetails] = useState("")
-  const [ageGroup, setAgeGroup] = useState("")
+  const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([])
   const [gender, setGender] = useState("")
   const [season, setSeason] = useState("")
   const [startDate, setStartDate] = useState("")
@@ -41,6 +41,10 @@ export default function CreateHouseLeaguePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (selectedAgeGroups.length === 0) {
+      setError("Select at least one age group")
+      return
+    }
     if (selectedDays.length === 0) {
       setError("Select at least one day of the week")
       return
@@ -58,7 +62,7 @@ export default function CreateHouseLeaguePage() {
           name,
           description: description || undefined,
           details: details || undefined,
-          ageGroup,
+          ageGroups: selectedAgeGroups.join(","),
           gender: gender || undefined,
           season: season || undefined,
           startDate: new Date(startDate).toISOString(),
@@ -116,17 +120,26 @@ export default function CreateHouseLeaguePage() {
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Age Group *</label>
-                <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  <option value="">Select...</option>
-                  {["U6", "U8", "U10", "U12", "U14", "U16", "U18"].map((ag) => (
-                    <option key={ag} value={ag}>{ag}</option>
-                  ))}
-                </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Age Groups * <span className="text-xs text-gray-400 font-normal">(select all that apply)</span></label>
+              <div className="flex flex-wrap gap-2">
+                {["U6", "U8", "U10", "U12", "U14", "U16", "U18"].map((ag) => (
+                  <button key={ag} type="button"
+                    onClick={() => setSelectedAgeGroups((prev) =>
+                      prev.includes(ag) ? prev.filter((a) => a !== ag) : [...prev, ag]
+                    )}
+                    className={`rounded-full px-3 py-1 text-sm font-medium ${
+                      selectedAgeGroups.includes(ag)
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}>
+                    {ag}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Gender</label>
                 <select value={gender} onChange={(e) => setGender(e.target.value)}

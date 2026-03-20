@@ -85,7 +85,7 @@ export default function EventsPage() {
             name: l.name,
             clubName: l.tenant?.name || "",
             clubSlug: l.tenant?.slug || "",
-            ageGroup: l.ageGroup,
+            ageGroup: (l.ageGroups || l.ageGroup || "").split(",").join(", "),
             gender: l.gender,
             startDate: l.startDate,
             endDate: l.endDate,
