@@ -10,6 +10,9 @@ async function getTeams(tenantId: string) {
           players: true,
           homeGames: true,
           awayGames: true,
+          tryouts: true,
+          offers: true,
+          leagues: true,
         },
       },
     },
@@ -56,11 +59,12 @@ export default async function ClubTeamsPage({
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
-            <div
+            <Link
               key={team.id}
-              className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+              href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
+              className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
             >
-              <div className="mb-4">
+              <div className="mb-3">
                 <h3 className="text-xl font-bold text-gray-900">
                   {team.name}
                 </h3>
@@ -72,45 +76,30 @@ export default async function ClubTeamsPage({
               </div>
 
               {team.description && (
-                <p className="mb-4 text-sm text-gray-700 line-clamp-2">
+                <p className="mb-3 text-sm text-gray-700 line-clamp-2">
                   {team.description}
                 </p>
               )}
 
-              <div className="flex gap-4 text-sm text-gray-600 mb-4">
+              <div className="grid grid-cols-4 gap-2 text-center border-t pt-3">
                 <div>
-                  <span className="font-semibold">{team._count.players}</span>{" "}
-                  players
+                  <div className="text-lg font-bold text-blue-600">{team._count.players}</div>
+                  <div className="text-xs text-gray-500">Players</div>
                 </div>
                 <div>
-                  <span className="font-semibold">
-                    {team._count.homeGames + team._count.awayGames}
-                  </span>{" "}
-                  games
+                  <div className="text-lg font-bold text-green-600">{team._count.tryouts}</div>
+                  <div className="text-xs text-gray-500">Tryouts</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-purple-600">{team._count.offers}</div>
+                  <div className="text-xs text-gray-500">Offers</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-orange-600">{team._count.leagues}</div>
+                  <div className="text-xs text-gray-500">Leagues</div>
                 </div>
               </div>
-
-              <div className="flex flex-wrap gap-2 border-t pt-3">
-                <Link
-                  href={`/clubs/${params.id}/teams/${team.id}/edit`}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Edit
-                </Link>
-                <Link
-                  href={`/clubs/${params.id}/teams/${team.id}/roster`}
-                  className="rounded-md border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
-                >
-                  Roster
-                </Link>
-                <Link
-                  href={`/clubs/${params.id}/teams/${team.id}/offer-templates`}
-                  className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
-                >
-                  Offer Templates
-                </Link>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
