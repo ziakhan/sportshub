@@ -58,7 +58,7 @@ function getStaffRoleLabel(staffRole: StaffRoleType): string {
 
 function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
   switch (staffRole) {
-    case "HeadCoach": return "bg-blue-100 text-blue-800"
+    case "HeadCoach": return "bg-orange-100 text-orange-800"
     case "AssistantCoach": return "bg-indigo-100 text-indigo-800"
     case "TeamManager": return "bg-green-100 text-green-800"
   }

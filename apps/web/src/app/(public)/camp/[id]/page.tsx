@@ -119,7 +119,7 @@ export default function PublicCampDetailPage() {
           <div>
             <div className="rounded-lg bg-white p-6 shadow border border-gray-200 sticky top-4">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {formatCurrency(camp.weeklyFee, currency)}
                 </div>
                 <p className="text-xs text-gray-500">per week</p>
@@ -142,13 +142,13 @@ export default function PublicCampDetailPage() {
                 <div className="rounded-md bg-red-50 p-4 text-center text-sm text-red-600">This camp is full.</div>
               ) : (
                 <Link href="/sign-in?callbackUrl=/dashboard"
-                  className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700">
+                  className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600">
                   Sign Up
                 </Link>
               )}
 
               <div className="mt-4 text-center">
-                <Link href={`/club/${camp.tenant.slug}`} className="text-sm text-blue-600 hover:underline">
+                <Link href={`/club/${camp.tenant.slug}`} className="text-sm text-orange-600 hover:underline">
                   View {camp.tenant.name} &rarr;
                 </Link>
               </div>

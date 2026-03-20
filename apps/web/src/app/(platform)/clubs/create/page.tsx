@@ -24,9 +24,9 @@ export default async function CreateClubPage() {
           <CreateClubForm />
         </div>
 
-        <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
-          <h3 className="mb-2 font-semibold text-blue-900">What&apos;s included:</h3>
-          <ul className="space-y-2 text-sm text-blue-800">
+        <div className="mt-8 rounded-lg border border-orange-200 bg-orange-50 p-6">
+          <h3 className="mb-2 font-semibold text-orange-900">What&apos;s included:</h3>
+          <ul className="space-y-2 text-sm text-orange-800">
             <li>✓ Create and manage unlimited teams</li>
             <li>✓ Host tryouts and collect registrations</li>
             <li>✓ Accept payments with Stripe Connect</li>

@@ -94,7 +94,7 @@ export default function PublicHouseLeaguePage() {
                 {isPast && <span className="rounded-full bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700">Ended</span>}
                 {!isPast && !isFull && <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Open</span>}
                 {isFull && !isPast && <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">Full</span>}
-                {league.season && <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">{league.season}</span>}
+                {league.season && <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700">{league.season}</span>}
               </div>
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{league.name}</h1>
@@ -160,7 +160,7 @@ export default function PublicHouseLeaguePage() {
           <div>
             <div className="rounded-lg bg-white p-6 shadow border border-gray-200 sticky top-4">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {league.fee === 0 ? "FREE" : formatCurrency(league.fee, currency)}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">per player</p>
@@ -177,14 +177,14 @@ export default function PublicHouseLeaguePage() {
               ) : (
                 <Link
                   href={`/sign-in?callbackUrl=/dashboard`}
-                  className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700"
+                  className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
                 >
                   Sign Up
                 </Link>
               )}
 
               <div className="mt-4 text-center">
-                <Link href={`/club/${league.tenant.slug}`} className="text-sm text-blue-600 hover:underline">
+                <Link href={`/club/${league.tenant.slug}`} className="text-sm text-orange-600 hover:underline">
                   View {league.tenant.name} &rarr;
                 </Link>
               </div>

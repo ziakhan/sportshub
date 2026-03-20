@@ -144,7 +144,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="text-sm font-medium text-orange-600 hover:text-orange-700"
             >
               Mark all as read
             </button>
@@ -170,7 +170,7 @@ export default function NotificationsPage() {
                   className={`rounded-lg border bg-white p-4 shadow-sm transition ${
                     notification.isRead
                       ? "border-gray-100"
-                      : "border-blue-200 bg-blue-50/30"
+                      : "border-orange-200 bg-orange-50/30"
                   } ${notification.link && !isActionable ? "cursor-pointer hover:shadow-md" : ""}`}
                   onClick={() =>
                     !isActionable && handleClick(notification)
@@ -189,7 +189,7 @@ export default function NotificationsPage() {
                           {notification.title}
                         </h3>
                         {!notification.isRead && (
-                          <span className="h-2 w-2 rounded-full bg-blue-500" />
+                          <span className="h-2 w-2 rounded-full bg-orange-500" />
                         )}
                       </div>
                       <p className="mt-1 text-sm text-gray-600">

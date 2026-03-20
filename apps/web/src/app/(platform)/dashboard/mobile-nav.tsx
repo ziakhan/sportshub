@@ -50,7 +50,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
       {/* Hamburger button */}
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md p-2 text-gray-600 hover:bg-gray-100 md:hidden"
+        className="rounded-md p-2 text-gray-300 hover:bg-navy-800 hover:text-white md:hidden"
         aria-label="Open menu"
       >
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,13 +68,13 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
           />
 
           {/* Slide-out panel */}
-          <nav className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-white shadow-xl">
+          <nav className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-navy-900 shadow-xl">
             {/* Header */}
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <span className="text-lg font-bold text-blue-600">Menu</span>
+            <div className="flex items-center justify-between border-b border-navy-700 px-4 py-3">
+              <span className="text-lg font-bold text-orange-400">Menu</span>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-md p-1 text-gray-400 hover:bg-navy-800 hover:text-white"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -174,7 +174,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                 </div>
               )}
 
-              <div className="border-t pt-4">
+              <div className="border-t border-navy-700 pt-4">
                 <NavLink href="/settings/profile" label="Profile" />
               </div>
             </div>
@@ -187,7 +187,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
 
 function NavHeader({ label }: { label: string }) {
   return (
-    <div className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+    <div className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-navy-400">
       {label}
     </div>
   )
@@ -197,7 +197,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+      className="block rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-navy-800 hover:text-white"
     >
       {label}
     </Link>
@@ -208,7 +208,7 @@ function NavSubLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="block rounded-md px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+      className="block rounded-md px-3 py-1.5 text-xs text-navy-300 hover:bg-navy-800 hover:text-white"
     >
       {label}
     </Link>

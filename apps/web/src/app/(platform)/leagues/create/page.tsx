@@ -199,7 +199,7 @@ export default function CreateLeagueSeasonPage() {
               Cancel
             </Link>
             <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
               {isSubmitting ? "Creating..." : "Create Season"}
             </button>
           </div>

@@ -121,7 +121,7 @@ export default async function TeamDashboardPage({
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/teams`} className="text-sm text-blue-600 hover:underline">
+        <Link href={`/clubs/${clubId}/teams`} className="text-sm text-orange-600 hover:underline">
           &larr; Back to Teams
         </Link>
       </div>
@@ -140,7 +140,7 @@ export default async function TeamDashboardPage({
             <div className="mt-2 flex flex-wrap gap-2">
               {teamStaff.map((s) => (
                 <span key={s.id} className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  s.designation === "HeadCoach" ? "bg-blue-100 text-blue-700" :
+                  s.designation === "HeadCoach" ? "bg-orange-100 text-orange-700" :
                   s.designation === "AssistantCoach" ? "bg-green-100 text-green-700" :
                   s.role === "TeamManager" ? "bg-purple-100 text-purple-700" :
                   "bg-gray-100 text-gray-700"
@@ -175,7 +175,7 @@ export default async function TeamDashboardPage({
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="rounded-lg border bg-white p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{players.length}</div>
+          <div className="text-2xl font-bold text-orange-600">{players.length}</div>
           <div className="text-xs text-gray-500">Players</div>
         </div>
         <div className="rounded-lg border bg-white p-4 text-center">
@@ -194,7 +194,7 @@ export default async function TeamDashboardPage({
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Roster ({players.length})</h3>
             <Link href={`/clubs/${clubId}/teams/${teamId}/roster`}
-              className="text-xs text-blue-600 hover:underline">View Full Roster</Link>
+              className="text-xs text-orange-600 hover:underline">View Full Roster</Link>
           </div>
           {players.length === 0 ? (
             <p className="text-sm text-gray-500">No players on roster yet. Send offers from tryout signups.</p>
@@ -204,7 +204,7 @@ export default async function TeamDashboardPage({
                 <div key={tp.id} className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2">
                   <div className="flex items-center gap-2">
                     {tp.jerseyNumber !== null && (
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700">
                         {tp.jerseyNumber}
                       </span>
                     )}
@@ -227,7 +227,7 @@ export default async function TeamDashboardPage({
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Tryouts ({tryouts.length})</h3>
             <Link href={`/clubs/${clubId}/tryouts/create?teamId=${teamId}`}
-              className="text-xs text-blue-600 hover:underline">Create Tryout</Link>
+              className="text-xs text-orange-600 hover:underline">Create Tryout</Link>
           </div>
           {tryouts.length === 0 ? (
             <p className="text-sm text-gray-500">No tryouts linked to this team.</p>
@@ -264,7 +264,7 @@ export default async function TeamDashboardPage({
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Offers ({offers.length})</h3>
             <Link href={`/clubs/${clubId}/offers?team=${teamId}`}
-              className="text-xs text-blue-600 hover:underline">View All Offers</Link>
+              className="text-xs text-orange-600 hover:underline">View All Offers</Link>
           </div>
           {offers.length === 0 ? (
             <p className="text-sm text-gray-500">No offers sent for this team yet.</p>

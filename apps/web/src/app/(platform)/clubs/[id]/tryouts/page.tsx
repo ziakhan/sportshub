@@ -100,7 +100,7 @@ export default async function ClubTryoutsPage({
         <h2 className="text-xl font-bold text-gray-900">Tryouts</h2>
         <Link
           href={`/clubs/${params.id}/tryouts/create`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
         >
           Create Tryout
         </Link>
@@ -117,7 +117,7 @@ export default async function ClubTryoutsPage({
           </p>
           <Link
             href={`/clubs/${params.id}/tryouts/create`}
-            className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700"
+            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
           >
             Create Your First Tryout
           </Link>
@@ -137,7 +137,7 @@ export default async function ClubTryoutsPage({
           {filtered.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
               <p className="text-gray-600 mb-3">No tryouts match the current filters.</p>
-              <Link href={`/clubs/${params.id}/tryouts`} className="text-sm text-blue-600 hover:underline">
+              <Link href={`/clubs/${params.id}/tryouts`} className="text-sm text-orange-600 hover:underline">
                 Clear filters
               </Link>
             </div>
@@ -170,7 +170,7 @@ export default async function ClubTryoutsPage({
                         {tryout.team && (
                           <Link
                             href={`/clubs/${params.id}/teams/${tryout.team.id}/dashboard`}
-                            className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
+                            className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 hover:bg-orange-200"
                           >
                             {tryout.team.name}
                           </Link>
@@ -186,7 +186,7 @@ export default async function ClubTryoutsPage({
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-lg font-bold text-blue-600">
+                        <div className="text-lg font-bold text-orange-600">
                           {tryout.signupStats.total}
                           {tryout.maxParticipants
                             ? ` / ${tryout.maxParticipants}`
@@ -201,7 +201,7 @@ export default async function ClubTryoutsPage({
                       </div>
                       <Link
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/signups`}
-                        className="rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                        className="rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100"
                       >
                         Signups
                       </Link>

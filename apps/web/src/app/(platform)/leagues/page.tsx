@@ -24,7 +24,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   DRAFT: { label: "Draft", color: "bg-gray-100 text-gray-700" },
   REGISTRATION: { label: "Open for Registration", color: "bg-green-100 text-green-700" },
   REGISTRATION_CLOSED: { label: "Registration Closed", color: "bg-yellow-100 text-yellow-700" },
-  FINALIZED: { label: "Finalized", color: "bg-blue-100 text-blue-700" },
+  FINALIZED: { label: "Finalized", color: "bg-orange-100 text-orange-700" },
   IN_PROGRESS: { label: "In Progress", color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Completed", color: "bg-gray-100 text-gray-600" },
 }
@@ -51,7 +51,7 @@ export default function LeaguesPage() {
           <p className="text-sm text-gray-500 mt-1">Manage your league seasons</p>
         </div>
         <Link href="/leagues/create"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
           Create Season
         </Link>
       </div>
@@ -61,7 +61,7 @@ export default function LeaguesPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No leagues yet</h3>
           <p className="text-gray-600 mb-6">Create your first league season to get started.</p>
           <Link href="/leagues/create"
-            className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700">
+            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600">
             Create Your First Season
           </Link>
         </div>
@@ -91,14 +91,14 @@ export default function LeaguesPage() {
                     )}
                     <div className="flex flex-wrap gap-1 mt-2">
                       {league.divisions.map((d) => (
-                        <span key={d.id} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                        <span key={d.id} className="rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-700">
                           {d.name}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-blue-600">{league._count.teams}</div>
+                    <div className="text-lg font-bold text-orange-600">{league._count.teams}</div>
                     <div className="text-xs text-gray-500">teams</div>
                     {league.teamFee && (
                       <div className="text-xs text-gray-400 mt-1">{formatCurrency(league.teamFee)}/team</div>

@@ -50,7 +50,7 @@ export default async function PublicMarketplacePage({
         <div className="mb-6 flex flex-wrap gap-1.5">
           <Link
             href="/marketplace"
-            className={`rounded-full px-3 py-1 text-xs font-medium ${!searchParams.country ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${!searchParams.country ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
           >
             All
           </Link>
@@ -58,7 +58,7 @@ export default async function PublicMarketplacePage({
             <Link
               key={c.code}
               href={`/marketplace?country=${c.code}`}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${searchParams.country === c.code ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${searchParams.country === c.code ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
             >
               {c.code}
             </Link>
@@ -95,7 +95,7 @@ export default async function PublicMarketplacePage({
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-orange-600">
                     {tryout.fee === 0 ? "FREE" : formatCurrency(tryout.fee, tryout.tenant.currency)}
                   </div>
                   <div className="text-sm text-gray-600">

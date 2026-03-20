@@ -60,7 +60,7 @@ export default function ClubHouseLeaguesPage() {
         </div>
         <Link
           href={`/clubs/${clubId}/house-leagues/create`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
         >
           Create Program
         </Link>
@@ -74,7 +74,7 @@ export default function ClubHouseLeaguesPage() {
           </p>
           <Link
             href={`/clubs/${clubId}/house-leagues/create`}
-            className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700"
+            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
           >
             Create Your First Program
           </Link>
@@ -106,7 +106,7 @@ export default function ClubHouseLeaguesPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-lg font-bold text-blue-600">
+                      <div className="text-lg font-bold text-orange-600">
                         {league._count.signups}
                         {league.maxParticipants ? ` / ${league.maxParticipants}` : ""}
                       </div>

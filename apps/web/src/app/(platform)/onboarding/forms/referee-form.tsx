@@ -41,7 +41,7 @@ export function RefereeForm({ onSubmit, onBack, isSubmitting }: RefereeFormProps
         <select
           {...register("certificationLevel")}
           id="certificationLevel"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         >
           <option value="">Select level</option>
           <option value="Level 1">Level 1 — Entry</option>
@@ -63,7 +63,7 @@ export function RefereeForm({ onSubmit, onBack, isSubmitting }: RefereeFormProps
           id="standardFee"
           min="0"
           step="0.01"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="50.00"
         />
         {errors.standardFee && (
@@ -79,7 +79,7 @@ export function RefereeForm({ onSubmit, onBack, isSubmitting }: RefereeFormProps
           {...register("availableRegions")}
           type="text"
           id="availableRegions"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="California, Nevada, Arizona"
         />
         <p className="mt-1 text-xs text-gray-500">

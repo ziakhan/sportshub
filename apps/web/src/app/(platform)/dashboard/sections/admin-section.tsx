@@ -24,7 +24,7 @@ export function AdminSection({ data }: AdminSectionProps) {
           <div className="text-sm text-gray-600">Clubs</div>
         </div>
         <div className="rounded-lg bg-white p-5 shadow">
-          <div className="text-3xl font-bold text-blue-700">{data.totalTeams}</div>
+          <div className="text-3xl font-bold text-orange-700">{data.totalTeams}</div>
           <div className="text-sm text-gray-600">Teams</div>
         </div>
         <div className="rounded-lg bg-white p-5 shadow">
@@ -74,7 +74,7 @@ export function AdminSection({ data }: AdminSectionProps) {
                   </Link>
                   <Link
                     href={`/clubs/${club.id}/staff`}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                    className="text-sm font-medium text-orange-600 hover:text-orange-700"
                   >
                     Staff →
                   </Link>

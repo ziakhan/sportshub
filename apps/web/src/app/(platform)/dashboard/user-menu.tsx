@@ -35,12 +35,12 @@ export function UserMenu({ userName, userEmail, userInitials }: UserMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-full border border-gray-200 py-1 pl-1 pr-3 text-sm hover:bg-gray-50"
+        className="flex items-center gap-2 rounded-full border border-navy-600 py-1 pl-1 pr-3 text-sm hover:bg-navy-800"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 text-xs font-semibold text-white">
           {userInitials}
         </div>
-        <span className="hidden font-medium text-gray-700 md:inline">
+        <span className="hidden font-medium text-gray-200 md:inline">
           {userName}
         </span>
         <svg

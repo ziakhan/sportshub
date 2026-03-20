@@ -117,7 +117,7 @@ export default async function PublicTryoutDetailPage({
           <div>
             <div className="rounded-lg bg-white p-6 shadow border border-gray-200">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {fee === 0 ? "FREE" : formatCurrency(fee, currency)}
                 </div>
                 {fee > 0 && <p className="mt-1 text-xs text-gray-500">per player</p>}
@@ -134,7 +134,7 @@ export default async function PublicTryoutDetailPage({
               ) : session ? (
                 <Link
                   href={`/tryouts/${params.id}`}
-                  className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700"
+                  className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
                 >
                   Sign Up Now
                 </Link>
@@ -145,7 +145,7 @@ export default async function PublicTryoutDetailPage({
                   </p>
                   <Link
                     href={`/sign-in?callbackUrl=/tryouts/${params.id}`}
-                    className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700"
+                    className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
                   >
                     Sign In to Sign Up
                   </Link>
@@ -157,7 +157,7 @@ export default async function PublicTryoutDetailPage({
             <div className="mt-4 rounded-lg bg-white p-6 shadow border border-gray-200 text-center">
               <Link
                 href={`/club/${tryout.tenant.slug}`}
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-orange-600 font-semibold hover:underline"
               >
                 View {tryout.tenant.name} Profile &rarr;
               </Link>

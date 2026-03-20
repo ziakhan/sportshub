@@ -121,7 +121,7 @@ export default async function TeamRosterPage({
       <div className="mb-6">
         <Link
           href={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-orange-600 hover:underline"
         >
           &larr; Back to Team Dashboard
         </Link>
@@ -186,7 +186,7 @@ export default async function TeamRosterPage({
                   <tr key={tp.id}>
                     <td className="whitespace-nowrap px-6 py-4">
                       {tp.jerseyNumber !== null ? (
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
                           {tp.jerseyNumber}
                         </span>
                       ) : (

@@ -169,7 +169,7 @@ export default function EventsPage() {
   })
 
   const typeBadge: Record<string, { bg: string; text: string; label: string }> = {
-    tryout: { bg: "bg-blue-100", text: "text-blue-700", label: "Tryout" },
+    tryout: { bg: "bg-orange-100", text: "text-orange-700", label: "Tryout" },
     "house-league": { bg: "bg-green-100", text: "text-green-700", label: "Program" },
     camp: { bg: "bg-purple-100", text: "text-purple-700", label: "Camp" },
     league: { bg: "bg-indigo-100", text: "text-indigo-700", label: "League" },
@@ -198,7 +198,7 @@ export default function EventsPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                filter === f.key ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                filter === f.key ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
               {f.label}
@@ -210,7 +210,7 @@ export default function EventsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, club, or location..."
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         />
       </div>
 
@@ -256,7 +256,7 @@ export default function EventsPage() {
                   </div>
 
                   <div className="mt-3 pt-3 border-t flex items-center justify-between">
-                    <span className="text-lg font-bold text-blue-600">
+                    <span className="text-lg font-bold text-orange-600">
                       {event.fee === 0 ? "FREE" : formatCurrency(event.fee, event.currency)}
                     </span>
                   </div>

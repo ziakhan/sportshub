@@ -124,7 +124,7 @@ export default async function OfferSummaryPage({
       <div className="mb-6">
         <Link
           href={`/clubs/${params.id}/offers`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-orange-600 hover:underline"
         >
           &larr; Back to Offers
         </Link>
@@ -264,7 +264,7 @@ export default async function OfferSummaryPage({
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm">
                             {offer.uniformSize ? (
-                              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
+                              <span className="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-medium text-orange-700">
                                 {offer.uniformSize}
                               </span>
                             ) : offer.includesUniform ? (

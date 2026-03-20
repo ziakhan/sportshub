@@ -181,13 +181,13 @@ export default async function ClubOffersPage({
             </span>
           )}
           {activeFilterTeam && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
               {activeFilterTeam.name}
             </span>
           )}
           <Link
             href={`/clubs/${params.id}/offers`}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-orange-600 hover:underline"
           >
             Clear all
           </Link>
@@ -204,7 +204,7 @@ export default async function ClubOffersPage({
               </p>
               <Link
                 href={`/clubs/${params.id}/tryouts`}
-                className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700"
+                className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
               >
                 View Tryouts
               </Link>
@@ -217,7 +217,7 @@ export default async function ClubOffersPage({
               </p>
               <Link
                 href={`/clubs/${params.id}/offers`}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-orange-600 hover:underline"
               >
                 Clear filters
               </Link>

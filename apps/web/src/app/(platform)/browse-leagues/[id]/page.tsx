@@ -68,7 +68,7 @@ export default function LeagueDetailSubmitPage() {
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto">
       <div className="mb-6">
-        <Link href="/browse-leagues" className="text-sm text-blue-600 hover:underline">&larr; Back to Leagues</Link>
+        <Link href="/browse-leagues" className="text-sm text-orange-600 hover:underline">&larr; Back to Leagues</Link>
       </div>
 
       {message && (
@@ -83,7 +83,7 @@ export default function LeagueDetailSubmitPage() {
           <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
             <div className="flex items-center gap-3 mb-3">
               {canRegister && <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Open</span>}
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">{league.season}</span>
+              <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700">{league.season}</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{league.name}</h1>
             {league.description && <p className="text-gray-700 mb-4">{league.description}</p>}
@@ -148,7 +148,7 @@ export default function LeagueDetailSubmitPage() {
                     <span className="ml-2 text-xs text-gray-500">{t.team.tenant?.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {t.division && <span className="text-xs text-blue-600">{t.division.name}</span>}
+                    {t.division && <span className="text-xs text-orange-600">{t.division.name}</span>}
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       t.status === "APPROVED" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                     }`}>{t.status.toLowerCase()}</span>
@@ -164,7 +164,7 @@ export default function LeagueDetailSubmitPage() {
           <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 sticky top-4">
             {league.teamFee && (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">{formatCurrency(league.teamFee, league.currency)}</div>
+                <div className="text-3xl font-bold text-orange-600">{formatCurrency(league.teamFee, league.currency)}</div>
                 <p className="text-xs text-gray-500">per team</p>
               </div>
             )}
@@ -208,7 +208,7 @@ export default function LeagueDetailSubmitPage() {
                     </div>
 
                     <button onClick={handleSubmit} disabled={submitting || !selectedTeam || !selectedDivision}
-                      className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+                      className="w-full rounded-md bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
                       {submitting ? "Submitting..." : "Submit Team"}
                     </button>
 

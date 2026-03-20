@@ -73,7 +73,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
       >
         Create Template
       </button>
@@ -99,7 +99,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Competitive Package, Development Package"
             required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
         </div>
 
@@ -112,7 +112,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               step="0.01"
               value={seasonFee}
               onChange={(e) => setSeasonFee(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
           <div>
@@ -120,7 +120,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
             <select
               value={installments}
               onChange={(e) => setInstallments(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             >
               {[1, 2, 3, 4, 6, 12].map((n) => (
                 <option key={n} value={n}>
@@ -136,7 +136,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               min="0"
               value={practiceSessions}
               onChange={(e) => setPracticeSessions(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
         </div>
@@ -156,7 +156,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
                   type="checkbox"
                   checked={item.checked}
                   onChange={(e) => item.set(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                 />
                 <div>
                   <div className="text-sm font-medium text-gray-900">{item.label}</div>
@@ -178,7 +178,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {isSubmitting ? "Creating..." : "Create Template"}
           </button>

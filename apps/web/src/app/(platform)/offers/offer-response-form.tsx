@@ -138,7 +138,7 @@ export function OfferResponseForm({
                 <select
                   value={uniformSize}
                   onChange={(e) => setUniformSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 >
                   <option value="">Select...</option>
                   {CLOTHING_SIZES.map((size) => (
@@ -158,7 +158,7 @@ export function OfferResponseForm({
                 <select
                   value={tracksuitSize}
                   onChange={(e) => setTracksuitSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 >
                   <option value="">Select...</option>
                   {CLOTHING_SIZES.map((size) => (
@@ -178,7 +178,7 @@ export function OfferResponseForm({
                 <select
                   value={shoeSize}
                   onChange={(e) => setShoeSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 >
                   <option value="">Select...</option>
                   {SHOE_SIZES.map((s) => (
@@ -205,7 +205,7 @@ export function OfferResponseForm({
                 value={jerseyPref1}
                 onChange={(e) => setJerseyPref1(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
             <div>
@@ -217,7 +217,7 @@ export function OfferResponseForm({
                 value={jerseyPref2}
                 onChange={(e) => setJerseyPref2(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
             <div>
@@ -229,7 +229,7 @@ export function OfferResponseForm({
                 value={jerseyPref3}
                 onChange={(e) => setJerseyPref3(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
           </div>

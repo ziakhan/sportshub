@@ -65,7 +65,7 @@ export default function ClubCampsPage() {
           <p className="text-sm text-gray-500 mt-1">March break, holiday, summer, and weekly camps</p>
         </div>
         <Link href={`/clubs/${clubId}/camps/create`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
           Create Camp
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default function ClubCampsPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No camps yet</h3>
           <p className="text-gray-600 mb-6">Create a camp for parents to register their kids.</p>
           <Link href={`/clubs/${clubId}/camps/create`}
-            className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700">
+            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600">
             Create Your First Camp
           </Link>
         </div>
@@ -109,7 +109,7 @@ export default function ClubCampsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-lg font-bold text-blue-600">
+                      <div className="text-lg font-bold text-orange-600">
                         {camp._count.signups}{camp.maxParticipants ? ` / ${camp.maxParticipants}` : ""}
                       </div>
                       <div className="text-xs text-gray-500">registered</div>

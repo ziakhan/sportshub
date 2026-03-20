@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
           <p className="text-sm text-gray-600">{total} total users</p>
         </div>
-        <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">
+        <Link href="/dashboard" className="text-sm text-orange-600 hover:text-orange-700">
           ← Back to Dashboard
         </Link>
       </div>
@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {user.roles.map((r) => (
-                        <span key={r.id} className="inline-block rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">
+                        <span key={r.id} className="inline-block rounded bg-orange-50 px-1.5 py-0.5 text-xs text-orange-700">
                           {r.role}
                           {r.designation && ` (${r.designation})`}
                           {r.tenant && ` @ ${r.tenant.name}`}

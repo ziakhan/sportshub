@@ -62,9 +62,9 @@ const ROLE_OPTIONS = [
 
 const colorMap: Record<string, { selected: string; border: string; radio: string }> = {
   blue: {
-    selected: "border-blue-500 bg-blue-50",
-    border: "border-gray-200 hover:border-blue-300",
-    radio: "border-blue-600 bg-blue-600",
+    selected: "border-orange-500 bg-orange-50",
+    border: "border-gray-200 hover:border-orange-300",
+    radio: "border-orange-500 bg-orange-500",
   },
   green: {
     selected: "border-green-500 bg-green-50",
@@ -268,7 +268,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       <button
         onClick={handleRoleContinue}
         disabled={isSubmitting || !selectedRole}
-        className="mt-8 w-full rounded-lg bg-blue-600 px-6 py-4 text-lg font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+        className="mt-8 w-full rounded-lg bg-orange-500 px-6 py-4 text-lg font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {isSubmitting ? "Setting up your account..." : "Continue"}
       </button>

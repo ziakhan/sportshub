@@ -192,7 +192,7 @@ export default function EditTryoutPage() {
                 id="teamId"
                 value={selectedTeamId}
                 onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
               >
                 <option value="">Select a team</option>
                 {teams.map((team) => (
@@ -207,13 +207,13 @@ export default function EditTryoutPage() {
           {/* Show age group & gender from team */}
           {selectedTeam && (
             <div className="flex gap-4">
-              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
-                <span className="text-blue-600">Age Group:</span>{" "}
-                <span className="font-medium text-blue-900">{selectedTeam.ageGroup}</span>
+              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
+                <span className="text-orange-600">Age Group:</span>{" "}
+                <span className="font-medium text-orange-900">{selectedTeam.ageGroup}</span>
               </div>
-              <div className="rounded-md bg-blue-50 px-3 py-2 text-sm">
-                <span className="text-blue-600">Gender:</span>{" "}
-                <span className="font-medium text-blue-900">{genderLabel(selectedTeam.gender)}</span>
+              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
+                <span className="text-orange-600">Gender:</span>{" "}
+                <span className="font-medium text-orange-900">{genderLabel(selectedTeam.gender)}</span>
               </div>
             </div>
           )}
@@ -226,7 +226,7 @@ export default function EditTryoutPage() {
               {...register("title")}
               type="text"
               id="title"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
@@ -241,7 +241,7 @@ export default function EditTryoutPage() {
               {...register("description")}
               id="description"
               rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
             />
           </div>
 
@@ -253,7 +253,7 @@ export default function EditTryoutPage() {
               {...register("location")}
               type="text"
               id="location"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             {errors.location && (
               <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
@@ -269,7 +269,7 @@ export default function EditTryoutPage() {
                 {...register("scheduledAt")}
                 type="datetime-local"
                 id="scheduledAt"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
               />
               {errors.scheduledAt && (
                 <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
@@ -284,7 +284,7 @@ export default function EditTryoutPage() {
                 {...register("duration")}
                 type="number"
                 id="duration"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function EditTryoutPage() {
                 id="fee"
                 min="0"
                 step="0.01"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
               />
               {errors.fee && (
                 <p className="mt-1 text-sm text-red-600">{errors.fee.message}</p>
@@ -316,7 +316,7 @@ export default function EditTryoutPage() {
                 type="number"
                 id="maxParticipants"
                 min="1"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -326,7 +326,7 @@ export default function EditTryoutPage() {
               {...register("isPublic")}
               type="checkbox"
               id="isPublic"
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              className="h-4 w-4 rounded border-gray-300 text-orange-600"
             />
             <label htmlFor="isPublic" className="text-sm text-gray-700">
               Public tryout (visible on marketplace when published)
@@ -343,7 +343,7 @@ export default function EditTryoutPage() {
             <button
               type="submit"
               disabled={isSubmitting || !selectedTeamId}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400"
+              className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600 disabled:bg-gray-400"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

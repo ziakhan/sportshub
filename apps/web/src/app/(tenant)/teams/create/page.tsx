@@ -57,7 +57,7 @@ function getStaffRoleLabel(staffRole: StaffRoleType): string {
 
 function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
   switch (staffRole) {
-    case "HeadCoach": return "bg-blue-100 text-blue-800"
+    case "HeadCoach": return "bg-orange-100 text-orange-800"
     case "AssistantCoach": return "bg-indigo-100 text-indigo-800"
     case "TeamManager": return "bg-green-100 text-green-800"
   }
@@ -222,7 +222,7 @@ function CreateTeamForm() {
                   {...register("name")}
                   type="text"
                   id="name"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   placeholder="Warriors U12"
                 />
                 {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
@@ -235,7 +235,7 @@ function CreateTeamForm() {
                 <select
                   {...register("ageGroup")}
                   id="ageGroup"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
                 >
                   <option value="">Select age group</option>
                   {constants.ageGroups.map((age) => (
@@ -253,7 +253,7 @@ function CreateTeamForm() {
                   <select
                     {...register("gender")}
                     id="gender"
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
                   >
                     <option value="">Select gender</option>
                     <option value="MALE">Male</option>
@@ -267,7 +267,7 @@ function CreateTeamForm() {
                     {...register("season")}
                     type="text"
                     id="season"
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
                     placeholder="Spring 2026"
                   />
                 </div>
@@ -279,7 +279,7 @@ function CreateTeamForm() {
                   {...register("description")}
                   id="description"
                   rows={3}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
                   placeholder="Team description..."
                 />
               </div>
@@ -342,7 +342,7 @@ function CreateTeamForm() {
                 <p className="text-sm text-gray-500">No available staff. Use the invite section below.</p>
               ) : (
                 <div className="flex gap-2">
-                  <select value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)} className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                  <select value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)} className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none">
                     <option value="">Select a staff member</option>
                     {unassignedStaff.map((s) => {
                       const name = [s.firstName, s.lastName].filter(Boolean).join(" ") || s.email
@@ -350,12 +350,12 @@ function CreateTeamForm() {
                       return <option key={s.userId} value={s.userId}>{name} ({currentRoles})</option>
                     })}
                   </select>
-                  <select value={selectedStaffRole} onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)} className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                  <select value={selectedStaffRole} onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)} className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none">
                     <option value="HeadCoach" disabled={hasHeadCoach}>Head Coach</option>
                     <option value="AssistantCoach">Assistant Coach</option>
                     <option value="TeamManager">Team Manager</option>
                   </select>
-                  <button type="button" onClick={handleAddStaff} disabled={!selectedStaffId} className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300">Add</button>
+                  <button type="button" onClick={handleAddStaff} disabled={!selectedStaffId} className="rounded-md bg-orange-500 px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:bg-gray-300">Add</button>
                 </div>
               )}
             </div>
@@ -368,15 +368,15 @@ function CreateTeamForm() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="staff@example.com"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddInvite() } }}
                 />
-                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as StaffRoleType)} className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
+                <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as StaffRoleType)} className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none">
                   <option value="HeadCoach" disabled={hasHeadCoach}>Head Coach</option>
                   <option value="AssistantCoach">Assistant Coach</option>
                   <option value="TeamManager">Team Manager</option>
                 </select>
-                <button type="button" onClick={handleAddInvite} disabled={!inviteEmail.trim()} className="rounded-md border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:border-gray-300 disabled:text-gray-300">Invite</button>
+                <button type="button" onClick={handleAddInvite} disabled={!inviteEmail.trim()} className="rounded-md border border-orange-500 px-3 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 disabled:border-gray-300 disabled:text-gray-300">Invite</button>
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 The invited person will receive a notification and be assigned once they accept.
@@ -388,7 +388,7 @@ function CreateTeamForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700 disabled:bg-gray-400"
+              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-orange-600 disabled:bg-gray-400"
             >
               {isSubmitting ? "Creating..." : "Create Team"}
             </button>

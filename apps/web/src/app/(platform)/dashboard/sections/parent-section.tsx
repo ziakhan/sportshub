@@ -19,7 +19,7 @@ export function ParentSection({ data }: ParentSectionProps) {
         </div>
         <Link
           href="/settings/profile"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="text-sm font-medium text-orange-600 hover:text-orange-700"
         >
           Edit Profile
         </Link>
@@ -41,7 +41,7 @@ export function ParentSection({ data }: ParentSectionProps) {
                 <li key={player.id}>
                   <Link
                     href={`/players/${player.id}/edit`}
-                    className="block rounded-md border border-gray-100 bg-gray-50 p-3 transition hover:border-blue-200 hover:bg-blue-50"
+                    className="block rounded-md border border-gray-100 bg-gray-50 p-3 transition hover:border-orange-200 hover:bg-orange-50"
                   >
                     <div className="font-medium text-gray-900">
                       {player.firstName} {player.lastName}
@@ -52,7 +52,7 @@ export function ParentSection({ data }: ParentSectionProps) {
                           ? player.teams.map((t) => t.team.name).join(", ")
                           : "No team yet"}
                       </span>
-                      <span className="text-xs text-blue-500">Edit</span>
+                      <span className="text-xs text-orange-500">Edit</span>
                     </div>
                   </Link>
                 </li>
@@ -64,7 +64,7 @@ export function ParentSection({ data }: ParentSectionProps) {
 
           <Link
             href="/players/add"
-            className="mt-4 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
           >
             Add a Player &rarr;
           </Link>
@@ -91,7 +91,7 @@ export function ParentSection({ data }: ParentSectionProps) {
 
           <Link
             href="/marketplace"
-            className="mt-4 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
           >
             Browse Tryouts &rarr;
           </Link>
@@ -201,7 +201,7 @@ function SignupItem({
               signup.status === "CONFIRMED"
                 ? "text-green-600"
                 : signup.status === "PAID"
-                  ? "text-blue-600"
+                  ? "text-orange-600"
                   : "text-yellow-600"
             }
           >

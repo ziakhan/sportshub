@@ -47,7 +47,7 @@ export default function SyncUserPage() {
         <button
           onClick={syncUser}
           disabled={loading}
-          className="w-full rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? "Syncing..." : "Sync My Account"}
         </button>
@@ -76,7 +76,7 @@ export default function SyncUserPage() {
             )}
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-4 text-orange-600 hover:text-orange-700 font-medium"
             >
               Go to Dashboard →
             </button>

@@ -123,7 +123,7 @@ export default function ProfileEditPage() {
                 {...register("firstName")}
                 type="text"
                 id="firstName"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
@@ -138,7 +138,7 @@ export default function ProfileEditPage() {
                 {...register("lastName")}
                 type="text"
                 id="lastName"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               {errors.lastName && (
                 <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
@@ -154,7 +154,7 @@ export default function ProfileEditPage() {
               {...register("phoneNumber")}
               type="tel"
               id="phoneNumber"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="(555) 123-4567"
             />
             {errors.phoneNumber && (
@@ -179,7 +179,7 @@ export default function ProfileEditPage() {
               {...register("city")}
               type="text"
               id="city"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="Toronto"
             />
             {errors.city && (
@@ -197,7 +197,7 @@ export default function ProfileEditPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

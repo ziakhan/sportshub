@@ -131,7 +131,7 @@ export function MakeOfferButton({
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+        className="rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600"
       >
         Make Offer
       </button>
@@ -170,7 +170,7 @@ export function MakeOfferButton({
               <select
                 value={selectedTemplateId}
                 onChange={(e) => handleTemplateSelect(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="">Custom (no template)</option>
                 {templates.map((t) => (
@@ -184,7 +184,7 @@ export function MakeOfferButton({
                 No templates yet.{" "}
                 <a
                   href={`/clubs/${clubId}/offer-templates`}
-                  className="text-blue-600 hover:underline"
+                  className="text-orange-600 hover:underline"
                   target="_blank"
                 >
                   Create one
@@ -203,7 +203,7 @@ export function MakeOfferButton({
                 step="0.01"
                 value={seasonFee}
                 onChange={(e) => setSeasonFee(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
             <div>
@@ -211,7 +211,7 @@ export function MakeOfferButton({
               <select
                 value={installments}
                 onChange={(e) => setInstallments(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 {[1, 2, 3, 4, 6, 12].map((n) => (
                   <option key={n} value={n}>
@@ -227,7 +227,7 @@ export function MakeOfferButton({
                 min="0"
                 value={practiceSessions}
                 onChange={(e) => setPracticeSessions(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
           </div>
@@ -248,7 +248,7 @@ export function MakeOfferButton({
                     type="checkbox"
                     checked={item.checked}
                     onChange={(e) => item.set(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                   />
                   <div>
                     <div className="text-xs font-medium text-gray-900">{item.label}</div>
@@ -265,7 +265,7 @@ export function MakeOfferButton({
               <select
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="3">3 days</option>
                 <option value="7">7 days</option>
@@ -282,15 +282,15 @@ export function MakeOfferButton({
               onChange={(e) => setMessage(e.target.value)}
               rows={2}
               placeholder="Congratulations! We'd love to have you on the team..."
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
           </div>
 
           {/* Preview */}
           {includedItems.length > 0 && (
-            <div className="rounded-md bg-blue-50 p-3">
-              <div className="text-xs font-medium text-blue-700 mb-1">Offer includes:</div>
-              <div className="text-xs text-blue-600">
+            <div className="rounded-md bg-orange-50 p-3">
+              <div className="text-xs font-medium text-orange-700 mb-1">Offer includes:</div>
+              <div className="text-xs text-orange-600">
                 ${parseFloat(seasonFee).toFixed(2)}
                 {parseInt(installments) > 1 ? ` (${installments} installments)` : ""}
                 {parseInt(practiceSessions) > 0 ? ` + ${practiceSessions} practice sessions` : ""}
@@ -311,7 +311,7 @@ export function MakeOfferButton({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
             >
               {isSubmitting ? "Sending..." : "Send Offer"}
             </button>

@@ -19,7 +19,7 @@ export default function PlatformError({
         <div className="flex justify-center gap-3">
           <button
             onClick={reset}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
           >
             Try again
           </button>

@@ -45,7 +45,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
           {...register("dateOfBirth")}
           type="date"
           id="dateOfBirth"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         />
         {errors.dateOfBirth && (
           <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>
@@ -59,7 +59,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
         <select
           {...register("gender")}
           id="gender"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         >
           <option value="">Select gender</option>
           <option value="MALE">Male</option>
@@ -88,7 +88,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
           {...register("city")}
           type="text"
           id="city"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Toronto"
         />
         {errors.city && (
@@ -105,7 +105,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
             {...register("height")}
             type="text"
             id="height"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             placeholder={`5'6"`}
           />
         </div>
@@ -118,7 +118,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
             {...register("jerseyNumber")}
             type="text"
             id="jerseyNumber"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             placeholder="23"
           />
         </div>
@@ -131,7 +131,7 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
         <select
           {...register("position")}
           id="position"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         >
           <option value="">Select position</option>
           <option value="Point Guard">Point Guard</option>

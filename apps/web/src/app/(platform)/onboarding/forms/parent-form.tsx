@@ -45,7 +45,7 @@ export function ParentForm({ onSubmit, onBack, isSubmitting }: ParentFormProps) 
           {...register("phoneNumber")}
           type="tel"
           id="phoneNumber"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="(555) 123-4567"
         />
         {errors.phoneNumber && (
@@ -70,7 +70,7 @@ export function ParentForm({ onSubmit, onBack, isSubmitting }: ParentFormProps) 
           {...register("city")}
           type="text"
           id="city"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Toronto"
         />
         {errors.city && (
@@ -89,7 +89,7 @@ export function ParentForm({ onSubmit, onBack, isSubmitting }: ParentFormProps) 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 rounded-md bg-blue-600 px-4 py-3 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="flex-1 rounded-md bg-orange-500 px-4 py-3 font-semibold text-white shadow-sm hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           {isSubmitting ? "Setting up..." : "Complete Setup"}
         </button>

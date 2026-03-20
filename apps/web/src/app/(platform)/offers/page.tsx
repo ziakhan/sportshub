@@ -110,7 +110,7 @@ export default function OffersPage() {
                   return (
                     <div
                       key={offer.id}
-                      className="rounded-lg border border-blue-200 bg-white p-6 shadow-sm"
+                      className="rounded-lg border border-orange-200 bg-white p-6 shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -147,16 +147,16 @@ export default function OffersPage() {
                           offer.includesBag && "Bag",
                         ].filter(Boolean)
                         return (items.length > 0 || offer.practiceSessions > 0) ? (
-                          <div className="mt-3 rounded-md bg-blue-50 p-3">
-                            <div className="text-xs font-medium text-blue-700 mb-1">What&apos;s included:</div>
+                          <div className="mt-3 rounded-md bg-orange-50 p-3">
+                            <div className="text-xs font-medium text-orange-700 mb-1">What&apos;s included:</div>
                             <div className="flex flex-wrap gap-1.5">
                               {offer.practiceSessions > 0 && (
-                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
                                   {offer.practiceSessions} practice sessions
                                 </span>
                               )}
                               {items.map((item) => (
-                                <span key={item as string} className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                <span key={item as string} className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
                                   {item}
                                 </span>
                               ))}

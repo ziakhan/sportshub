@@ -30,7 +30,7 @@ export default function PublicLeaguePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link href="/events" className="text-sm text-blue-600 hover:underline">&larr; Back to Events</Link>
+        <Link href="/events" className="text-sm text-orange-600 hover:underline">&larr; Back to Events</Link>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -40,7 +40,7 @@ export default function PublicLeaguePage() {
             <div className="flex items-center gap-3 mb-3">
               {isOpen && <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Open for Registration</span>}
               {league.leagueStatus === "IN_PROGRESS" && <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700">In Progress</span>}
-              {league.season && <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">{league.season}</span>}
+              {league.season && <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700">{league.season}</span>}
             </div>
 
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{league.name}</h1>
@@ -110,7 +110,7 @@ export default function PublicLeaguePage() {
                     <div>
                       <span className="font-medium text-gray-900">{t.team.name}</span>
                       {t.team.tenant && (
-                        <Link href={`/club/${t.team.tenant.slug}`} className="ml-2 text-xs text-blue-600 hover:underline">
+                        <Link href={`/club/${t.team.tenant.slug}`} className="ml-2 text-xs text-orange-600 hover:underline">
                           {t.team.tenant.name}
                         </Link>
                       )}
@@ -128,14 +128,14 @@ export default function PublicLeaguePage() {
           <div className="rounded-lg bg-white p-6 shadow border border-gray-200 sticky top-4">
             {league.teamFee && (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">{formatCurrency(league.teamFee)}</div>
+                <div className="text-3xl font-bold text-orange-600">{formatCurrency(league.teamFee)}</div>
                 <p className="text-xs text-gray-500">per team</p>
               </div>
             )}
 
             {isOpen && !deadlinePassed ? (
               <Link href={`/browse-leagues/${id}`}
-                className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700">
+                className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600">
                 Register Your Team
               </Link>
             ) : (

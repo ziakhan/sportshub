@@ -79,7 +79,7 @@ export default async function ClubLayout({
 
   return (
     <div>
-      <div className="border-b bg-white">
+      <div className="border-b border-gray-200 bg-white">
         <div className="px-4 md:px-6">
           <div className="py-4">
             <Link

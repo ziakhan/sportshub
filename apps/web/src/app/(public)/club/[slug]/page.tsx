@@ -191,7 +191,7 @@ export default async function ClubProfilePage({
                     <Link
                       key={tryout.id}
                       href={`/tryout/${tryout.id}`}
-                      className="block rounded-md border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition"
+                      className="block rounded-md border border-gray-200 p-4 hover:border-orange-300 hover:shadow-sm transition"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -208,7 +208,7 @@ export default async function ClubProfilePage({
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-600">
+                          <div className="font-bold text-orange-600">
                             {tryout.fee === 0 ? "FREE" : formatCurrency(tryout.fee, club.currency)}
                           </div>
                         </div>
@@ -230,7 +230,7 @@ export default async function ClubProfilePage({
                     <Link
                       key={league.id}
                       href={`/house-league/${league.id}`}
-                      className="block rounded-md border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition"
+                      className="block rounded-md border border-gray-200 p-4 hover:border-orange-300 hover:shadow-sm transition"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -245,7 +245,7 @@ export default async function ClubProfilePage({
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-600">
+                          <div className="font-bold text-orange-600">
                             {league.fee === 0 ? "FREE" : formatCurrency(league.fee, club.currency)}
                           </div>
                           <div className="text-xs text-gray-400">
@@ -268,7 +268,7 @@ export default async function ClubProfilePage({
                     <Link
                       key={camp.id}
                       href={`/camp/${camp.id}`}
-                      className="block rounded-md border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition"
+                      className="block rounded-md border border-gray-200 p-4 hover:border-orange-300 hover:shadow-sm transition"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -285,7 +285,7 @@ export default async function ClubProfilePage({
                           <p className="text-xs text-gray-400 mt-1">{camp.location}</p>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-blue-600">
+                          <div className="font-bold text-orange-600">
                             {formatCurrency(camp.weeklyFee, club.currency)}/wk
                           </div>
                           {camp.fullCampFee && camp.numberOfWeeks > 1 && (
@@ -344,7 +344,7 @@ export default async function ClubProfilePage({
                       href={club.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
+                      className="text-orange-600 hover:underline"
                     >
                       {club.website.replace(/^https?:\/\//, "")}
                     </a>
@@ -358,7 +358,7 @@ export default async function ClubProfilePage({
               <h3 className="font-semibold text-gray-900 mb-4">At a Glance</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">{teams.length}</div>
+                  <div className="text-2xl font-bold text-orange-600">{teams.length}</div>
                   <div className="text-xs text-gray-500">Teams</div>
                 </div>
                 <div>
@@ -381,20 +381,20 @@ export default async function ClubProfilePage({
                 </p>
                 <Link
                   href={`/clubs/find?q=${encodeURIComponent(club.name)}`}
-                  className="inline-block rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="inline-block rounded-md bg-orange-500 px-6 py-2 text-sm font-semibold text-white hover:bg-orange-600"
                 >
                   Claim This Club
                 </Link>
               </div>
             ) : tryouts.length > 0 ? (
-              <div className="rounded-lg bg-blue-50 p-6 text-center border border-blue-200">
+              <div className="rounded-lg bg-orange-50 p-6 text-center border border-orange-200">
                 <h3 className="font-semibold text-gray-900 mb-2">Interested?</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Browse upcoming tryouts and sign up your player.
                 </p>
                 <Link
                   href="/marketplace"
-                  className="inline-block rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="inline-block rounded-md bg-orange-500 px-6 py-2 text-sm font-semibold text-white hover:bg-orange-600"
                 >
                   Browse Tryouts
                 </Link>

@@ -89,7 +89,7 @@ export default async function TryoutSignupsPage({
       <div className="mb-6">
         <Link
           href={`/clubs/${params.id}/tryouts`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-orange-600 hover:underline"
         >
           &larr; Back to Tryouts
         </Link>
@@ -101,7 +101,7 @@ export default async function TryoutSignupsPage({
           <span>{format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>
           <span>{tryout.location}</span>
           {tryout.team && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
               {tryout.team.name}
             </span>
           )}
@@ -218,7 +218,7 @@ function StatusBadge({ status, offerStatus }: { status: string; offerStatus?: st
   const colors: Record<string, string> = {
     PENDING: "bg-yellow-100 text-yellow-700",
     CONFIRMED: "bg-green-100 text-green-700",
-    PAID: "bg-blue-100 text-blue-700",
+    PAID: "bg-orange-100 text-orange-700",
     OFFERED: "bg-purple-100 text-purple-700",
   }
 

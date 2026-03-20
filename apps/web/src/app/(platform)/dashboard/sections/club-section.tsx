@@ -39,11 +39,11 @@ export function ClubSection({ data }: ClubSectionProps) {
                   </div>
                   <div className="text-xs text-green-600">Teams</div>
                 </div>
-                <div className="rounded-md bg-blue-50 px-3 py-2 text-center">
-                  <div className="text-2xl font-bold text-blue-700">
+                <div className="rounded-md bg-orange-50 px-3 py-2 text-center">
+                  <div className="text-2xl font-bold text-orange-700">
                     {tenant._count.tryouts}
                   </div>
-                  <div className="text-xs text-blue-600">Tryouts</div>
+                  <div className="text-xs text-orange-600">Tryouts</div>
                 </div>
                 <div className="rounded-md bg-gray-50 px-3 py-2 text-center">
                   <div className="text-2xl font-bold text-gray-700">
@@ -62,7 +62,7 @@ export function ClubSection({ data }: ClubSectionProps) {
                 </Link>
                 <Link
                   href={`/clubs/${tenant.id}/tryouts`}
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700"
                 >
                   Manage Tryouts &rarr;
                 </Link>

@@ -23,7 +23,7 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       <div className="container mx-auto max-w-2xl px-4 py-12">
         <OnboardingFlow userName={dbUser.firstName || "there"} />
       </div>

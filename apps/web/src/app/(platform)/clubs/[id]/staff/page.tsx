@@ -94,7 +94,7 @@ function getClubRoleLabel(role: string): string {
 function getClubRoleBadgeColor(role: string): string {
   if (role === "ClubOwner") return "bg-yellow-100 text-yellow-700 border-yellow-200"
   if (role === "ClubManager") return "bg-purple-100 text-purple-700 border-purple-200"
-  return "bg-blue-100 text-blue-700 border-blue-200"
+  return "bg-orange-100 text-orange-700 border-orange-200"
 }
 
 function getTeamRoleLabel(designation: string | null, role: string): string {
@@ -105,7 +105,7 @@ function getTeamRoleLabel(designation: string | null, role: string): string {
 }
 
 function getTeamRoleBadgeColor(designation: string | null, role: string): string {
-  if (designation === "HeadCoach") return "bg-blue-50 text-blue-700 border-blue-200"
+  if (designation === "HeadCoach") return "bg-orange-50 text-orange-700 border-orange-200"
   if (designation === "AssistantCoach") return "bg-indigo-50 text-indigo-700 border-indigo-200"
   if (role === "TeamManager") return "bg-green-50 text-green-700 border-green-200"
   return "bg-gray-50 text-gray-600 border-gray-200"

@@ -78,7 +78,7 @@ export default function AdminClubsPage() {
 
   const planColors: Record<string, string> = {
     FREE: "bg-gray-100 text-gray-700",
-    BASIC: "bg-blue-100 text-blue-700",
+    BASIC: "bg-orange-100 text-orange-700",
     PRO: "bg-purple-100 text-purple-700",
     ENTERPRISE: "bg-yellow-100 text-yellow-800",
   }
@@ -98,7 +98,7 @@ export default function AdminClubsPage() {
             <span className="text-red-600">{statusCounts.suspended} suspended</span>
           </p>
         </div>
-        <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">
+        <Link href="/dashboard" className="text-sm text-orange-600 hover:text-orange-700">
           ← Back to Dashboard
         </Link>
       </div>
@@ -123,7 +123,7 @@ export default function AdminClubsPage() {
               onClick={() => { setStatusFilter(f.key); setPage(1) }}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 statusFilter === f.key
-                  ? "bg-blue-600 text-white"
+                  ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
@@ -187,7 +187,7 @@ export default function AdminClubsPage() {
                 <div className="flex flex-wrap gap-2 border-t pt-3">
                   <Link
                     href={`/clubs/${club.id}`}
-                    className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                    className="rounded px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50"
                   >
                     View
                   </Link>

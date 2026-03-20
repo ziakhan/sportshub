@@ -145,7 +145,7 @@ export function NotificationBell() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        className="relative rounded-md p-2 text-gray-300 hover:bg-navy-800 hover:text-white"
         title="Notifications"
       >
         <svg
@@ -177,7 +177,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="text-xs font-medium text-orange-600 hover:text-orange-700"
               >
                 Mark all read
               </button>
@@ -262,7 +262,7 @@ export function NotificationBell() {
             <Link
               href="/notifications"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-center text-xs font-medium text-blue-600 hover:bg-gray-50"
+              className="block px-4 py-2.5 text-center text-xs font-medium text-orange-600 hover:bg-gray-50"
             >
               View all notifications
             </Link>

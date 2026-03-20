@@ -83,7 +83,7 @@ export default function CreateCampPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/camps`} className="text-sm text-blue-600 hover:underline">
+        <Link href={`/clubs/${clubId}/camps`} className="text-sm text-orange-600 hover:underline">
           &larr; Back to Camps
         </Link>
       </div>
@@ -236,7 +236,7 @@ export default function CreateCampPage() {
                 ].map((item) => (
                   <label key={item.key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2 cursor-pointer hover:bg-gray-50">
                     <input type="checkbox" checked={item.checked} onChange={(e) => item.set(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
                     <span className="text-sm text-gray-700">{item.label}</span>
                   </label>
                 ))}
@@ -250,7 +250,7 @@ export default function CreateCampPage() {
               Cancel
             </Link>
             <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
+              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
               {isSubmitting ? "Creating..." : "Create Camp"}
             </button>
           </div>

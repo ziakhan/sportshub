@@ -58,7 +58,7 @@ export function FinalizeButton({
               >
                 <span className="font-medium">{a.playerName}</span>
                 {a.jerseyNumber !== null ? (
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
                     #{a.jerseyNumber}
                   </span>
                 ) : (

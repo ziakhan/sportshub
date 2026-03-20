@@ -138,20 +138,20 @@ export default function LeagueManagePage() {
     <div className="p-6 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/leagues" className="text-sm text-blue-600 hover:underline">&larr; Back to Leagues</Link>
+        <Link href="/leagues" className="text-sm text-orange-600 hover:underline">&larr; Back to Leagues</Link>
       </div>
 
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{league.name}</h1>
           <p className="text-sm text-gray-500">{league.season}</p>
-          <span className="mt-1 inline-block rounded-full bg-blue-100 px-3 py-0.5 text-xs font-medium text-blue-700">
+          <span className="mt-1 inline-block rounded-full bg-orange-100 px-3 py-0.5 text-xs font-medium text-orange-700">
             {STATUS_LABELS[league.leagueStatus]}
           </span>
         </div>
         {nextStatus && (
           <button onClick={() => updateStatus(nextStatus)}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
             {nextStatus === "REGISTRATION" ? "Open Registration" :
              nextStatus === "REGISTRATION_CLOSED" ? "Close Registration" :
              nextStatus === "FINALIZED" ? "Finalize Season" :
@@ -164,7 +164,7 @@ export default function LeagueManagePage() {
       {/* Stats bar */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="rounded-lg border bg-white p-4 text-center">
-          <div className="text-2xl font-bold text-blue-600">{divisions.length}</div>
+          <div className="text-2xl font-bold text-orange-600">{divisions.length}</div>
           <div className="text-xs text-gray-500">Divisions</div>
         </div>
         <div className="rounded-lg border bg-white p-4 text-center">
@@ -226,7 +226,7 @@ export default function LeagueManagePage() {
                 <option value="3">Tier 3</option>
               </select>
             </div>
-            <button onClick={addDivision} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+            <button onClick={addDivision} className="w-full rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600">
               Add Division
             </button>
           </div>
@@ -271,8 +271,8 @@ export default function LeagueManagePage() {
                 )}
               </div>
             ))}
-            <button type="button" onClick={addSessionDay} className="text-xs text-blue-600 hover:underline">+ Add another day</button>
-            <button onClick={addSession} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+            <button type="button" onClick={addSessionDay} className="text-xs text-orange-600 hover:underline">+ Add another day</button>
+            <button onClick={addSession} className="w-full rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600">
               Add Session
             </button>
           </div>
@@ -301,7 +301,7 @@ export default function LeagueManagePage() {
               onClear={() => { setSelectedVenueId(""); setSelectedVenueName("") }}
             />
             {selectedVenueId && (
-              <button onClick={addVenue} className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+              <button onClick={addVenue} className="w-full rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600">
                 Add to League
               </button>
             )}
@@ -319,7 +319,7 @@ export default function LeagueManagePage() {
                 <div>
                   <span className="font-medium text-gray-900">{t.team.name}</span>
                   <span className="ml-2 text-xs text-gray-500">{t.team.tenant?.name}</span>
-                  {t.division && <span className="ml-2 text-xs text-blue-600">{t.division.name}</span>}
+                  {t.division && <span className="ml-2 text-xs text-orange-600">{t.division.name}</span>}
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                   t.status === "APPROVED" ? "bg-green-100 text-green-700" :

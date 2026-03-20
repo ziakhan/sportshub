@@ -98,11 +98,11 @@ export function CreateClubForm() {
           <span className="font-semibold">{createdClub.name}</span> is ready to go.
         </p>
         <p className="mb-6 text-sm text-gray-500">
-          Your club URL: <span className="font-mono text-blue-600">{createdClub.subdomain}</span>
+          Your club URL: <span className="font-mono text-orange-600">{createdClub.subdomain}</span>
         </p>
         <a
           href={`http://${createdClub.subdomain}/dashboard`}
-          className="inline-block w-full rounded-md bg-blue-600 px-4 py-2 text-center font-semibold text-white hover:bg-blue-700"
+          className="inline-block w-full rounded-md bg-orange-500 px-4 py-2 text-center font-semibold text-white hover:bg-orange-600"
         >
           Go to Club Dashboard
         </a>
@@ -127,7 +127,7 @@ export function CreateClubForm() {
           {...register("name")}
           type="text"
           id="name"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Warriors Basketball Club"
           onBlur={(e) => {
             if (!watch("slug")) {
@@ -148,7 +148,7 @@ export function CreateClubForm() {
             {...register("slug")}
             type="text"
             id="slug"
-            className="block w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="block w-full rounded-l-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             placeholder="warriors"
           />
           <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">
@@ -175,7 +175,7 @@ export function CreateClubForm() {
                 {...register("phoneNumber")}
                 type="tel"
                 id="phoneNumber"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 placeholder="(555) 123-4567"
               />
               {errors.phoneNumber && (
@@ -191,7 +191,7 @@ export function CreateClubForm() {
                 {...register("contactEmail")}
                 type="email"
                 id="contactEmail"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 placeholder="info@warriors.com"
               />
               {errors.contactEmail && (
@@ -208,7 +208,7 @@ export function CreateClubForm() {
               {...register("website")}
               type="url"
               id="website"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="https://www.warriors.com"
             />
             {errors.website && (
@@ -231,7 +231,7 @@ export function CreateClubForm() {
               {...register("address")}
               type="text"
               id="address"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="123 Basketball Ave"
             />
             {errors.address && (
@@ -263,7 +263,7 @@ export function CreateClubForm() {
                 {...register("city")}
                 type="text"
                 id="city"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 placeholder="Los Angeles"
               />
               {errors.city && (
@@ -279,7 +279,7 @@ export function CreateClubForm() {
                 {...register("zipCode")}
                 type="text"
                 id="zipCode"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 placeholder={watch("country") === "CA" ? "A1A 1A1" : "90001"}
               />
               {errors.zipCode && (
@@ -303,7 +303,7 @@ export function CreateClubForm() {
               {...register("logoUrl")}
               type="url"
               id="logoUrl"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="https://example.com/logo.png"
             />
             {errors.logoUrl && (
@@ -322,7 +322,7 @@ export function CreateClubForm() {
               {...register("description")}
               id="description"
               rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               placeholder="Elite youth basketball program focused on skill development and competitive play..."
             />
             {errors.description && (
@@ -340,7 +340,7 @@ export function CreateClubForm() {
         <select
           {...register("timezone")}
           id="timezone"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         >
           {getTimezonesForCountry(watch("country") || "US").map((tz) => (
             <option key={tz.value} value={tz.value}>
@@ -358,7 +358,7 @@ export function CreateClubForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-white font-semibold shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-white font-semibold shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           {isSubmitting ? "Creating..." : "Create Club"}
         </button>

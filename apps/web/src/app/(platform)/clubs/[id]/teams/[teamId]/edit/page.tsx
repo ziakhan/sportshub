@@ -78,7 +78,7 @@ function getStaffRoleLabel(staffRole: StaffRoleType): string {
 
 function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
   switch (staffRole) {
-    case "HeadCoach": return "bg-blue-100 text-blue-800"
+    case "HeadCoach": return "bg-orange-100 text-orange-800"
     case "AssistantCoach": return "bg-indigo-100 text-indigo-800"
     case "TeamManager": return "bg-green-100 text-green-800"
   }
@@ -92,7 +92,7 @@ function getDesignationLabel(designation: string | null, role: string): string {
 }
 
 function getDesignationBadgeColor(designation: string | null, role: string): string {
-  if (designation === "HeadCoach") return "bg-blue-100 text-blue-800"
+  if (designation === "HeadCoach") return "bg-orange-100 text-orange-800"
   if (designation === "AssistantCoach") return "bg-indigo-100 text-indigo-800"
   if (role === "TeamManager") return "bg-green-100 text-green-800"
   return "bg-gray-100 text-gray-700"
@@ -526,7 +526,7 @@ export default function EditTeamPage() {
                         <button
                           type="button"
                           onClick={() => undoRemoval(member.id)}
-                          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                          className="text-xs font-medium text-orange-600 hover:text-orange-700"
                         >
                           Undo
                         </button>
@@ -733,7 +733,7 @@ export default function EditTeamPage() {
           </h3>
           <Link
             href={`/clubs/${clubId}/tryouts/create`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="text-sm font-medium text-orange-600 hover:text-orange-700"
           >
             Create Tryout
           </Link>
@@ -750,7 +750,7 @@ export default function EditTeamPage() {
                 <Link
                   key={tryout.id}
                   href={`/clubs/${clubId}/tryouts/${tryout.id}/edit`}
-                  className="flex items-center justify-between rounded-md border border-gray-200 p-3 transition hover:border-blue-300 hover:shadow-sm"
+                  className="flex items-center justify-between rounded-md border border-gray-200 p-3 transition hover:border-orange-300 hover:shadow-sm"
                 >
                   <div>
                     <p className="text-sm font-medium text-gray-900">

@@ -19,7 +19,7 @@ const ALL_ROLES = [
 const roleColor: Record<string, string> = {
   ClubOwner: "bg-purple-100 text-purple-800 border-purple-300",
   ClubManager: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  Staff: "bg-blue-100 text-blue-800 border-blue-300",
+  Staff: "bg-orange-100 text-orange-800 border-orange-300",
   TeamManager: "bg-cyan-100 text-cyan-800 border-cyan-300",
   Parent: "bg-green-100 text-green-800 border-green-300",
   Player: "bg-yellow-100 text-yellow-800 border-yellow-300",
@@ -147,7 +147,7 @@ export default function RoleSwitcherPage() {
                 className={`text-left p-4 rounded-lg border-2 transition-all ${
                   role === currentRole
                     ? `${roleColor[role]} border-2 cursor-default`
-                    : "bg-white border-gray-200 hover:border-blue-400 hover:shadow-md cursor-pointer"
+                    : "bg-white border-gray-200 hover:border-orange-400 hover:shadow-md cursor-pointer"
                 } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <div className="font-semibold text-gray-900">{role}</div>

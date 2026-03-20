@@ -95,7 +95,7 @@ export default function AdminSettingsPage() {
                 key={country.code}
                 className={`flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition ${
                   isEnabled
-                    ? "border-blue-300 bg-blue-50"
+                    ? "border-orange-300 bg-orange-50"
                     : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
@@ -104,7 +104,7 @@ export default function AdminSettingsPage() {
                   checked={isEnabled}
                   onChange={() => toggleCountry(country.code)}
                   disabled={isOnly}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 disabled:opacity-50"
                 />
                 <div>
                   <div className="font-medium text-gray-900">{country.name}</div>
@@ -126,7 +126,7 @@ export default function AdminSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>

@@ -77,7 +77,7 @@ export function TryoutsFilter({
               onClick={() => handleStatusClick(pill.key === "all" ? "" : pill.key)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 isActive
-                  ? "bg-blue-600 text-white"
+                  ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -92,7 +92,7 @@ export function TryoutsFilter({
         <select
           value={activeTeamId || ""}
           onChange={(e) => handleTeamChange(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
         >
           <option value="">All Teams</option>
           {teams.map((team) => (
@@ -108,7 +108,7 @@ export function TryoutsFilter({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tryouts..."
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
           />
           <button
             type="submit"

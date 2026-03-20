@@ -45,7 +45,7 @@ export function StaffForm({ onSubmit, onBack, isSubmitting }: StaffFormProps) {
           {...register("phoneNumber")}
           type="tel"
           id="phoneNumber"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="(555) 123-4567"
         />
         {errors.phoneNumber && (
@@ -70,7 +70,7 @@ export function StaffForm({ onSubmit, onBack, isSubmitting }: StaffFormProps) {
           {...register("city")}
           type="text"
           id="city"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Toronto"
         />
         {errors.city && (

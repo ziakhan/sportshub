@@ -63,7 +63,7 @@ export default function CreateTestUsersPage() {
             id="clubId"
             value={clubId}
             onChange={(e) => setClubId(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-orange-500 focus:ring-orange-500"
             placeholder="Enter club ID or leave empty"
           />
           <p className="mt-1 text-sm text-gray-500">
@@ -74,7 +74,7 @@ export default function CreateTestUsersPage() {
         <button
           onClick={createTestUsers}
           disabled={loading}
-          className="w-full rounded-lg bg-blue-600 px-6 py-3 text-white font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? "Creating Test Users..." : "Create Test Users"}
         </button>
@@ -109,7 +109,7 @@ export default function CreateTestUsersPage() {
             )}
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-4 text-orange-600 hover:text-orange-700 font-medium"
             >
               Go to Dashboard →
             </button>

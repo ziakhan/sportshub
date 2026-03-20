@@ -42,7 +42,7 @@ export function LeagueOwnerForm({ onSubmit, onBack, isSubmitting }: LeagueOwnerF
           {...register("name")}
           type="text"
           id="name"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Metro Youth Basketball League"
         />
         {errors.name && (
@@ -58,7 +58,7 @@ export function LeagueOwnerForm({ onSubmit, onBack, isSubmitting }: LeagueOwnerF
           {...register("season")}
           type="text"
           id="season"
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Spring 2026"
         />
         {errors.season && (
@@ -74,7 +74,7 @@ export function LeagueOwnerForm({ onSubmit, onBack, isSubmitting }: LeagueOwnerF
           {...register("description")}
           id="description"
           rows={3}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           placeholder="Competitive youth basketball league for ages 8-18..."
         />
         {errors.description && (

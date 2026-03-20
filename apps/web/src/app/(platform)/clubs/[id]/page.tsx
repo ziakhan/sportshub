@@ -147,7 +147,7 @@ export default async function ClubOverviewPage({
           href={`/clubs/${params.id}/tryouts`}
           className="rounded-lg bg-white p-6 shadow hover:shadow-md transition"
         >
-          <div className="text-3xl font-bold text-blue-600">{data.tryoutCount}</div>
+          <div className="text-3xl font-bold text-orange-600">{data.tryoutCount}</div>
           <div className="text-sm text-gray-500">Tryouts</div>
           <div className="mt-1 text-xs text-gray-500">
             {data.activeTryouts} active &middot; {data.draftTryouts} draft
@@ -300,7 +300,7 @@ export default async function ClubOverviewPage({
           </Link>
           <Link
             href={`/clubs/${params.id}/tryouts/create`}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
           >
             Create Tryout
           </Link>

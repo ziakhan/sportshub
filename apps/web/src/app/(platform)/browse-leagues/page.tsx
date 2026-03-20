@@ -68,7 +68,7 @@ export default function BrowseLeaguesPage() {
                 {league.divisions.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {league.divisions.map((d) => (
-                      <span key={d.id} className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                      <span key={d.id} className="rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-700">
                         {d.name}
                       </span>
                     ))}

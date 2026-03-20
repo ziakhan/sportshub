@@ -54,7 +54,7 @@ export default async function TeamsPage({
             </div>
             <Link
               href={`/teams/create?tenantId=${tenantId}`}
-              className="rounded-md bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700"
+              className="rounded-md bg-orange-500 px-4 py-2 text-white font-semibold hover:bg-orange-600"
             >
               Create Team
             </Link>
@@ -74,7 +74,7 @@ export default async function TeamsPage({
               </p>
               <Link
                 href={`/teams/create?tenantId=${tenantId}`}
-                className="inline-block rounded-md bg-blue-600 px-6 py-2 text-white font-semibold hover:bg-blue-700"
+                className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
               >
                 Create Your First Team
               </Link>

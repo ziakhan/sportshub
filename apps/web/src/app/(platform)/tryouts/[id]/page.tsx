@@ -201,7 +201,7 @@ export default async function TryoutDetailPage({
           <div>
             <div className="rounded-lg bg-white p-6 shadow">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-blue-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {fee === 0 ? "FREE" : formatCurrency(fee, currency)}
                 </div>
                 {fee > 0 && (
@@ -224,7 +224,7 @@ export default async function TryoutDetailPage({
                   </p>
                   <Link
                     href={`/sign-in?redirect_url=/tryouts/${params.id}`}
-                    className="inline-block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700"
+                    className="inline-block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
                   >
                     Sign In to Sign Up
                   </Link>

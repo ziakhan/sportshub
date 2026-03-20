@@ -98,7 +98,7 @@ export default function FindClubPage() {
           <h1 className="text-2xl font-bold text-gray-900">Find Your Club</h1>
           <p className="text-sm text-gray-500 mt-1">
             Search for your basketball club and claim ownership. If your club isn&apos;t listed,
-            you can <Link href="/clubs/create" className="text-blue-600 hover:underline">create a new one</Link>.
+            you can <Link href="/clubs/create" className="text-orange-600 hover:underline">create a new one</Link>.
           </p>
         </div>
 
@@ -106,7 +106,7 @@ export default function FindClubPage() {
           <div className={`mb-6 rounded-md p-4 text-sm ${
             message.type === "success" ? "bg-green-50 text-green-700 border border-green-200" :
             message.type === "error" ? "bg-red-50 text-red-700 border border-red-200" :
-            "bg-blue-50 text-blue-700 border border-blue-200"
+            "bg-orange-50 text-orange-700 border border-orange-200"
           }`}>
             {message.text}
           </div>
@@ -120,12 +120,12 @@ export default function FindClubPage() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Search by club name or city..."
-            className="flex-1 rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
           <button
             onClick={handleSearch}
             disabled={loading || query.length < 2}
-            className="rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-orange-500 px-6 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
           >
             {loading ? "..." : "Search"}
           </button>
@@ -164,7 +164,7 @@ export default function FindClubPage() {
                       {club.contactEmail && <span>Email: {club.contactEmail}</span>}
                       {club.phoneNumber && <span>Phone: {club.phoneNumber}</span>}
                       {club.website && (
-                        <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">
                           Website
                         </a>
                       )}
@@ -188,7 +188,7 @@ export default function FindClubPage() {
                       <button
                         onClick={() => handleClaim(club.id)}
                         disabled={claimingId === club.id}
-                        className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="rounded-md bg-orange-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
                       >
                         {claimingId === club.id ? "..." : "Claim This Club"}
                       </button>
@@ -198,8 +198,8 @@ export default function FindClubPage() {
 
                 {/* Verification code input */}
                 {verifyingId === club.id && (
-                  <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-4">
-                    <p className="text-sm text-blue-700 mb-3">
+                  <div className="mt-4 rounded-md border border-orange-200 bg-orange-50 p-4">
+                    <p className="text-sm text-orange-700 mb-3">
                       Enter the 6-digit verification code sent to the club&apos;s email:
                     </p>
                     <div className="flex gap-2">
@@ -209,7 +209,7 @@ export default function FindClubPage() {
                         onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="000000"
                         maxLength={6}
-                        className="w-32 rounded-md border border-gray-300 px-3 py-2 text-center text-lg font-mono tracking-widest shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-32 rounded-md border border-gray-300 px-3 py-2 text-center text-lg font-mono tracking-widest shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                       />
                       <button
                         onClick={() => handleVerify(club.id)}

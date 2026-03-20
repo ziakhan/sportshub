@@ -48,7 +48,7 @@ export default function PlayersPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Players</h1>
           <Link
             href="/players/add"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
           >
             Add Player
           </Link>
@@ -71,7 +71,7 @@ export default function PlayersPage() {
             </p>
             <Link
               href="/players/add"
-              className="inline-block rounded-md bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+              className="inline-block rounded-md bg-orange-500 px-6 py-3 font-semibold text-white hover:bg-orange-600"
             >
               Add Your First Player
             </Link>
@@ -88,7 +88,7 @@ export default function PlayersPage() {
                 <Link
                   key={player.id}
                   href={`/players/${player.id}/edit`}
-                  className="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                  className="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-orange-200 hover:shadow-md"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -107,7 +107,7 @@ export default function PlayersPage() {
                         )}
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-blue-600">
+                    <span className="text-sm font-medium text-orange-600">
                       Edit &rarr;
                     </span>
                   </div>

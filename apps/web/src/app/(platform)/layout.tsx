@@ -48,19 +48,19 @@ export default async function PlatformLayout({
       {/* Impersonation banner */}
       {impersonating && <ImpersonationBanner userName={userName} />}
 
-      {/* Top nav */}
-      <nav className="border-b bg-white">
+      {/* Top nav — dark navy */}
+      <nav className="border-b border-navy-700 bg-navy-900">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <MobileNav roles={roles} tenants={tenants} />
-            <Link href="/" className="text-lg font-bold text-blue-600 md:text-xl">
+            <Link href="/" className="text-lg font-bold text-orange-400 md:text-xl">
               Youth Basketball Hub
             </Link>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <Link
               href="/"
-              className="hidden text-sm text-gray-500 hover:text-gray-900 md:block"
+              className="hidden text-sm text-gray-300 hover:text-white md:block"
             >
               Home
             </Link>

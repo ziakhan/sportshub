@@ -116,7 +116,7 @@ export function SignupForm({
         </div>
         <Link
           href="/dashboard"
-          className="block text-center text-sm font-medium text-blue-600 hover:text-blue-700"
+          className="block text-center text-sm font-medium text-orange-600 hover:text-orange-700"
         >
           View in Dashboard &rarr;
         </Link>
@@ -128,9 +128,9 @@ export function SignupForm({
   if (existingSignups.length > 0 && availablePlayers.length === 0 && players.length > 0) {
     return (
       <div className="space-y-4">
-        <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
-          <h3 className="font-semibold text-blue-800 mb-2">Already Signed Up</h3>
-          <p className="text-sm text-blue-700">
+        <div className="rounded-md bg-orange-50 border border-orange-200 p-4">
+          <h3 className="font-semibold text-orange-800 mb-2">Already Signed Up</h3>
+          <p className="text-sm text-orange-700">
             All your players are already signed up for this tryout.
           </p>
         </div>
@@ -173,7 +173,7 @@ export function SignupForm({
         </div>
         <Link
           href={`/players/add?redirect=/tryouts/${tryoutId}`}
-          className="block w-full rounded-md bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700"
+          className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
         >
           Add a Player
         </Link>
@@ -218,7 +218,7 @@ export function SignupForm({
           <select
             {...register("playerId")}
             id="playerId"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             <option value="">Choose a player...</option>
             {availablePlayers.map((player) => (
@@ -245,7 +245,7 @@ export function SignupForm({
             {...register("notes")}
             id="notes"
             rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
             placeholder="Any additional info for the club..."
           />
           {errors.notes && (
@@ -266,7 +266,7 @@ export function SignupForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-md bg-blue-600 px-4 py-3 font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="w-full rounded-md bg-orange-500 px-4 py-3 font-semibold text-white shadow-sm hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
         >
           {isSubmitting
             ? "Signing up..."

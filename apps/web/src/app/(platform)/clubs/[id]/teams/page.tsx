@@ -103,7 +103,7 @@ export default async function ClubTeamsPage({
           {filtered.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
               <p className="text-gray-600 mb-3">No teams match the current filters.</p>
-              <Link href={`/clubs/${params.id}/teams`} className="text-sm text-blue-600 hover:underline">
+              <Link href={`/clubs/${params.id}/teams`} className="text-sm text-orange-600 hover:underline">
                 Clear filters
               </Link>
             </div>
@@ -118,7 +118,7 @@ export default async function ClubTeamsPage({
                   <Link
                     key={team.id}
                     href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
-                    className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
+                    className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-orange-300 transition"
                   >
                     <div className="mb-3">
                       <div className="flex items-start justify-between">
@@ -162,7 +162,7 @@ export default async function ClubTeamsPage({
 
                     <div className="grid grid-cols-4 gap-2 text-center border-t pt-3">
                       <div>
-                        <div className="text-lg font-bold text-blue-600">{team._count.players}</div>
+                        <div className="text-lg font-bold text-orange-600">{team._count.players}</div>
                         <div className="text-xs text-gray-500">Players</div>
                       </div>
                       <div>
