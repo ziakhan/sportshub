@@ -23,6 +23,7 @@ export default function AdminClubsPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("")
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -33,6 +34,7 @@ export default function AdminClubsPage() {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
     if (search) params.set("search", search)
+    if (statusFilter) params.set("status", statusFilter)
 
     const res = await fetch(`/api/admin/clubs?${params}`)
     if (res.ok) {
@@ -43,7 +45,7 @@ export default function AdminClubsPage() {
       if (data.statusCounts) setStatusCounts(data.statusCounts)
     }
     setLoading(false)
-  }, [page, search])
+  }, [page, search, statusFilter])
 
   useEffect(() => {
     loadClubs()
@@ -107,14 +109,34 @@ export default function AdminClubsPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* Filters */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex gap-1.5">
+          {[
+            { key: "", label: "All", count: total },
+            { key: "ACTIVE", label: "Active", count: statusCounts.active },
+            { key: "UNCLAIMED", label: "Unclaimed", count: statusCounts.unclaimed },
+            { key: "SUSPENDED", label: "Suspended", count: statusCounts.suspended },
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => { setStatusFilter(f.key); setPage(1) }}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                statusFilter === f.key
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {f.label} ({f.count})
+            </button>
+          ))}
+        </div>
         <input
           type="text"
           placeholder="Search clubs by name or slug..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="w-full rounded-lg border px-3 py-2 text-sm md:w-96"
+          className="flex-1 rounded-lg border px-3 py-2 text-sm"
         />
       </div>
 
