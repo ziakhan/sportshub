@@ -40,19 +40,13 @@ export default async function PublicLayout({
               href="/events"
               className="hidden text-gray-300 hover:text-white sm:block"
             >
-              Events
+              Programs
             </Link>
             <Link
               href="/club"
               className="hidden text-gray-300 hover:text-white sm:block"
             >
               Clubs
-            </Link>
-            <Link
-              href="/marketplace"
-              className="hidden text-gray-300 hover:text-white sm:block"
-            >
-              Tryouts
             </Link>
             {isLoggedIn ? (
               <>

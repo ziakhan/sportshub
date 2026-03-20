@@ -5,11 +5,11 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
-type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "leagues" | "tournaments"
+type EventType = "all" | "tryouts" | "house-leagues" | "camps"
 
 interface EventItem {
   id: string
-  type: "tryout" | "house-league" | "camp" | "tournament"
+  type: "tryout" | "house-league" | "camp"
   name: string
   clubName: string
   clubSlug: string
@@ -22,7 +22,7 @@ interface EventItem {
   currency: string
   primaryColor: string
   spotsInfo: string
-  extra?: string // camp type, schedule, etc.
+  extra?: string
   href: string
 }
 
@@ -43,19 +43,15 @@ export default function EventsPage() {
     async function fetchAll() {
       setLoading(true)
       try {
-        const [tryoutsRes, leaguesRes, campsRes, compLeaguesRes, tournamentsRes] = await Promise.all([
+        const [tryoutsRes, leaguesRes, campsRes] = await Promise.all([
           fetch("/api/tryouts?marketplace=true"),
           fetch("/api/house-leagues?public=true"),
           fetch("/api/camps?public=true"),
-          fetch("/api/leagues?public=true"),
-          fetch("/api/tournaments?public=true"),
         ])
 
         const tryoutsData = await tryoutsRes.json()
         const leaguesData = await leaguesRes.json()
         const campsData = await campsRes.json()
-        const compLeaguesData = await compLeaguesRes.json()
-        const tournamentsData = await tournamentsRes.json()
 
         const items: EventItem[] = []
 
@@ -73,7 +69,7 @@ export default function EventsPage() {
             location: t.location,
             fee: Number(t.fee),
             currency: t.tenant?.currency || "CAD",
-            primaryColor: t.tenant?.branding?.primaryColor || "#1a73e8",
+            primaryColor: t.tenant?.branding?.primaryColor || "#f97316",
             spotsInfo: `${t._count?.signups || 0}${t.maxParticipants ? `/${t.maxParticipants}` : ""} signed up`,
             href: `/tryout/${t.id}`,
           })
@@ -94,7 +90,7 @@ export default function EventsPage() {
             location: l.location,
             fee: Number(l.fee),
             currency: l.tenant?.currency || "CAD",
-            primaryColor: l.tenant?.branding?.primaryColor || "#1a73e8",
+            primaryColor: l.tenant?.branding?.primaryColor || "#f97316",
             spotsInfo: `${l._count?.signups || 0}${l.maxParticipants ? `/${l.maxParticipants}` : ""} registered`,
             extra: `${l.daysOfWeek} ${l.startTime}-${l.endTime}`,
             href: `/house-league/${l.id}`,
@@ -116,54 +112,10 @@ export default function EventsPage() {
             location: c.location,
             fee: Number(c.weeklyFee),
             currency: c.tenant?.currency || "CAD",
-            primaryColor: c.tenant?.branding?.primaryColor || "#1a73e8",
+            primaryColor: c.tenant?.branding?.primaryColor || "#f97316",
             spotsInfo: `${c._count?.signups || 0}${c.maxParticipants ? `/${c.maxParticipants}` : ""} registered`,
             extra: `${TYPE_LABELS[c.campType] || c.campType} \u2022 ${c.numberOfWeeks} week${c.numberOfWeeks !== 1 ? "s" : ""}`,
             href: `/camp/${c.id}`,
-          })
-        }
-
-        // Competitive Leagues
-        for (const l of compLeaguesData.leagues || []) {
-          items.push({
-            id: l.id,
-            type: "league" as any,
-            name: l.name,
-            clubName: l.season,
-            clubSlug: "",
-            ageGroup: l.divisions?.map((d: any) => d.ageGroup).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(", ") || "All",
-            gender: null,
-            startDate: l.startDate || l.createdAt,
-            endDate: l.endDate,
-            location: "Multiple Venues",
-            fee: l.teamFee ? Number(l.teamFee) : 0,
-            currency: l.currency || "CAD",
-            primaryColor: "#7c3aed",
-            spotsInfo: `${l._count?.teams || 0} teams`,
-            extra: `${l.gamesGuaranteed || "?"} games guaranteed`,
-            href: `/league/${l.id}`,
-          })
-        }
-
-        // Tournaments
-        for (const t of tournamentsData.tournaments || []) {
-          items.push({
-            id: t.id,
-            type: "tournament",
-            name: t.name,
-            clubName: `${t.city}${t.state ? `, ${t.state}` : ""}`,
-            clubSlug: "",
-            ageGroup: t.divisions?.map((d: any) => d.ageGroup).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i).join(", ") || "All",
-            gender: null,
-            startDate: t.startDate,
-            endDate: t.endDate,
-            location: t.city,
-            fee: t.teamFee ? Number(t.teamFee) : 0,
-            currency: t.currency || "CAD",
-            primaryColor: "#ea580c",
-            spotsInfo: `${t._count?.teams || 0} teams`,
-            extra: `${t.gamesGuaranteed || "?"} games guaranteed`,
-            href: `/tournament/${t.id}`,
           })
         }
 
@@ -180,7 +132,7 @@ export default function EventsPage() {
   }, [])
 
   const filterMap: Record<EventType, string | null> = {
-    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", leagues: "league", tournaments: "tournament",
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp",
   }
   const filtered = events.filter((e) => {
     const ft = filterMap[filter]
@@ -194,18 +146,16 @@ export default function EventsPage() {
 
   const typeBadge: Record<string, { bg: string; text: string; label: string }> = {
     tryout: { bg: "bg-orange-100", text: "text-orange-700", label: "Tryout" },
-    "house-league": { bg: "bg-green-100", text: "text-green-700", label: "Program" },
+    "house-league": { bg: "bg-green-100", text: "text-green-700", label: "House League" },
     camp: { bg: "bg-purple-100", text: "text-purple-700", label: "Camp" },
-    league: { bg: "bg-indigo-100", text: "text-indigo-700", label: "League" },
-    tournament: { bg: "bg-red-100", text: "text-red-700", label: "Tournament" },
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Events &amp; Programs</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Find Programs &amp; Tryouts</h1>
         <p className="mt-2 text-gray-600">
-          Find tryouts, house leagues, and camps near you
+          Browse tryouts, house leagues, and camps to find the right fit for your player.
         </p>
       </div>
 
@@ -215,10 +165,8 @@ export default function EventsPage() {
           {([
             { key: "all", label: "All" },
             { key: "tryouts", label: "Tryouts" },
-            { key: "house-leagues", label: "Programs" },
+            { key: "house-leagues", label: "House Leagues" },
             { key: "camps", label: "Camps" },
-            { key: "leagues", label: "Leagues" },
-            { key: "tournaments", label: "Tournaments" },
           ] as const).map((f) => (
             <button
               key={f.key}
@@ -241,10 +189,10 @@ export default function EventsPage() {
       </div>
 
       {loading ? (
-        <div className="text-gray-500 py-12 text-center">Loading events...</div>
+        <div className="text-gray-500 py-12 text-center">Loading programs...</div>
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No events found</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No programs found</h3>
           <p className="text-gray-600">Try adjusting your filters or search terms.</p>
         </div>
       ) : (

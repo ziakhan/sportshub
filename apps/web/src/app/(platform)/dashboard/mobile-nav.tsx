@@ -101,7 +101,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                   <NavHeader label="Parent" />
                   <NavLink href="/players" label="My Players" />
                   <NavLink href="/offers" label="Offers Received" />
-                  <NavLink href="/marketplace" label="Browse Tryouts" />
+                  <NavLink href="/events" label="Browse Programs" />
                   <NavLink href="/payments" label="Payments" />
                 </div>
               )}
@@ -160,7 +160,6 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                   <NavHeader label="Browse" />
                   <NavLink href="/browse-leagues" label="Leagues" />
                   <NavLink href="/browse-tournaments" label="Tournaments" />
-                  <NavLink href="/marketplace" label="Tryouts" />
                 </div>
               )}
 
