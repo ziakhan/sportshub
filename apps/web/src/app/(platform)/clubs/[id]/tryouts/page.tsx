@@ -146,59 +146,62 @@ export default async function ClubTryoutsPage({
               {filtered.map((tryout) => (
                 <div
                   key={tryout.id}
-                  className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
                 >
-                  <div className="flex items-start justify-between">
+                  {/* Title + badges */}
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-semibold text-gray-900 sm:text-lg">
+                      {tryout.title}
+                    </h3>
+                    {tryout.isPast ? (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        Past
+                      </span>
+                    ) : tryout.isPublished ? (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                        Published
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                        Draft
+                      </span>
+                    )}
+                    {tryout.team && (
+                      <Link
+                        href={`/clubs/${params.id}/teams/${tryout.team.id}/dashboard`}
+                        className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 hover:bg-orange-200"
+                      >
+                        {tryout.team.name}
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Details — wraps on mobile */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mb-3">
+                    <span>
+                      {format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
+                    </span>
+                    <span>{tryout.location}</span>
+                    <span>{tryout.ageGroup}</span>
+                  </div>
+
+                  {/* Stats + actions — stacks on mobile */}
+                  <div className="flex flex-wrap items-center gap-3">
                     <div>
-                      <div className="mb-1 flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {tryout.title}
-                        </h3>
-                        {tryout.isPast ? (
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                            Past
-                          </span>
-                        ) : tryout.isPublished ? (
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                            Published
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                            Draft
-                          </span>
-                        )}
-                        {tryout.team && (
-                          <Link
-                            href={`/clubs/${params.id}/teams/${tryout.team.id}/dashboard`}
-                            className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 hover:bg-orange-200"
-                          >
-                            {tryout.team.name}
-                          </Link>
-                        )}
-                      </div>
-                      <div className="flex gap-4 text-sm text-gray-500">
-                        <span>
-                          {format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
+                      <span className="text-lg font-bold text-orange-600">
+                        {tryout.signupStats.total}
+                        {tryout.maxParticipants
+                          ? ` / ${tryout.maxParticipants}`
+                          : ""}
+                      </span>
+                      <span className="ml-1 text-xs text-gray-500">signups</span>
+                      {tryout.signupStats.needsOffer > 0 && (
+                        <span className="ml-2 text-xs font-medium text-orange-600">
+                          ({tryout.signupStats.needsOffer} need{tryout.signupStats.needsOffer === 1 ? "s" : ""} offer)
                         </span>
-                        <span>{tryout.location}</span>
-                        <span>{tryout.ageGroup}</span>
-                      </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-orange-600">
-                          {tryout.signupStats.total}
-                          {tryout.maxParticipants
-                            ? ` / ${tryout.maxParticipants}`
-                            : ""}
-                        </div>
-                        <div className="text-xs text-gray-500">signups</div>
-                        {tryout.signupStats.needsOffer > 0 && (
-                          <div className="text-xs font-medium text-orange-600">
-                            {tryout.signupStats.needsOffer} need{tryout.signupStats.needsOffer === 1 ? "s" : ""} offer
-                          </div>
-                        )}
-                      </div>
+                    <div className="flex flex-wrap gap-2 ml-auto">
                       <Link
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/signups`}
                         className="rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100"

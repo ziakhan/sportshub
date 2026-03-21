@@ -88,11 +88,11 @@ export function TryoutsFilter({
       </div>
 
       {/* Team dropdown + search */}
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
         <select
           value={activeTeamId || ""}
           onChange={(e) => handleTeamChange(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+          className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none sm:w-auto"
         >
           <option value="">All Teams</option>
           {teams.map((team) => (
@@ -102,13 +102,13 @@ export function TryoutsFilter({
           ))}
         </select>
 
-        <form onSubmit={handleSearch} className="flex gap-2">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tryouts..."
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
           />
           <button
             type="submit"
