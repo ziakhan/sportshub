@@ -78,7 +78,7 @@ export default async function PlatformLayout({
       {/* Sidebar + content */}
       <div className="flex flex-1">
         <Sidebar roles={roles} tenants={tenants} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 min-w-0 overflow-x-hidden">{children}</main>
       </div>
     </div>
   )
