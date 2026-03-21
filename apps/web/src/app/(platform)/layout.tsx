@@ -53,8 +53,9 @@ export default async function PlatformLayout({
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <MobileNav roles={roles} tenants={tenants} />
-            <Link href="/" className="text-lg font-bold text-orange-400 md:text-xl">
-              Youth Basketball Hub
+            <Link href="/" className="text-lg font-bold text-orange-400 md:text-xl whitespace-nowrap">
+              <span className="md:hidden">YBH</span>
+              <span className="hidden md:inline">Youth Basketball Hub</span>
             </Link>
           </div>
           <div className="flex items-center gap-2 md:gap-3">

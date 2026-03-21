@@ -31,20 +31,24 @@ export default async function PublicLayout({
     <main className="flex min-h-screen flex-col">
       {/* Header — dark navy */}
       <header className="border-b border-navy-700 bg-navy-950">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <Link href="/" className="text-2xl font-bold text-orange-400">
-            Youth Basketball Hub
+        <div className="container mx-auto flex items-center justify-between px-4 py-3 sm:py-4">
+          {/* Logo — shorter on mobile */}
+          <Link href="/" className="text-lg font-bold text-orange-400 sm:text-2xl whitespace-nowrap">
+            <span className="sm:hidden">YBH</span>
+            <span className="hidden sm:inline">Youth Basketball Hub</span>
           </Link>
-          <nav className="flex items-center gap-4">
+
+          {/* Nav links */}
+          <nav className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/events"
-              className="hidden text-gray-300 hover:text-white sm:block"
+              className="hidden text-sm text-gray-300 hover:text-white sm:block"
             >
               Programs
             </Link>
             <Link
               href="/club"
-              className="hidden text-gray-300 hover:text-white sm:block"
+              className="hidden text-sm text-gray-300 hover:text-white sm:block"
             >
               Clubs
             </Link>
@@ -52,7 +56,7 @@ export default async function PublicLayout({
               <>
                 <Link
                   href="/dashboard"
-                  className="rounded-md border border-orange-500 px-4 py-2 text-sm font-medium text-orange-400 hover:bg-orange-500/10"
+                  className="rounded-md border border-orange-500 px-3 py-1.5 text-xs font-medium text-orange-400 hover:bg-orange-500/10 sm:px-4 sm:py-2 sm:text-sm"
                 >
                   Dashboard
                 </Link>
@@ -67,19 +71,29 @@ export default async function PublicLayout({
               <>
                 <Link
                   href="/sign-in"
-                  className="rounded-md px-4 py-2 text-gray-300 hover:text-white"
+                  className="px-3 py-1.5 text-sm text-gray-300 hover:text-white"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/sign-up"
-                  className="rounded-full bg-orange-500 px-5 py-2 font-semibold text-white hover:bg-orange-600"
+                  className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 sm:px-5 sm:py-2"
                 >
                   Sign Up Free
                 </Link>
               </>
             )}
           </nav>
+        </div>
+
+        {/* Mobile nav row — shows Programs + Clubs on small screens */}
+        <div className="flex gap-4 border-t border-navy-800 px-4 py-2 sm:hidden">
+          <Link href="/events" className="text-sm text-gray-400 hover:text-white">
+            Programs
+          </Link>
+          <Link href="/club" className="text-sm text-gray-400 hover:text-white">
+            Clubs
+          </Link>
         </div>
       </header>
 
