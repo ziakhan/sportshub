@@ -173,7 +173,7 @@ export default async function TeamDashboardPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-3">
         <div className="rounded-lg border bg-white p-4 text-center">
           <div className="text-2xl font-bold text-orange-600">{players.length}</div>
           <div className="text-xs text-gray-500">Players</div>

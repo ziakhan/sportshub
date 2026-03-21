@@ -209,7 +209,7 @@ export default function TournamentManagePage() {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3">
         <div className="rounded-lg border bg-white p-4 text-center">
           <div className="text-2xl font-bold text-orange-600">{divisions.length}</div>
           <div className="text-xs text-gray-500">Divisions</div>
@@ -392,7 +392,7 @@ export default function TournamentManagePage() {
             ))}
           </div>
           <div className="mt-4 space-y-2 border-t pt-4">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <input
                 type="text"
                 value={venueName}
@@ -428,7 +428,7 @@ export default function TournamentManagePage() {
       {/* Tournament Summary */}
       <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
         <h3 className="font-semibold text-gray-900 mb-3">Tournament Summary</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
           {tournament.startDate && (
             <div>
               <span className="text-gray-500">Start:</span>{" "}

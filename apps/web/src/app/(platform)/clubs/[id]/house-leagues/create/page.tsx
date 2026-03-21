@@ -139,7 +139,7 @@ export default function CreateHouseLeaguePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Gender</label>
                 <select value={gender} onChange={(e) => setGender(e.target.value)}
@@ -176,7 +176,7 @@ export default function CreateHouseLeaguePage() {
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Schedule</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Start Date *</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
@@ -205,7 +205,7 @@ export default function CreateHouseLeaguePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Start Time *</label>
                 <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required
@@ -230,7 +230,7 @@ export default function CreateHouseLeaguePage() {
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Pricing & Capacity</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Fee ($) *</label>
                 <input type="number" min="0" step="0.01" value={fee} onChange={(e) => setFee(e.target.value)}

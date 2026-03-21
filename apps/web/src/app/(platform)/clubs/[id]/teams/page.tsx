@@ -160,7 +160,7 @@ export default async function ClubTeamsPage({
                       </div>
                     )}
 
-                    <div className="grid grid-cols-4 gap-2 text-center border-t pt-3">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-center border-t pt-3">
                       <div>
                         <div className="text-lg font-bold text-orange-600">{team._count.players}</div>
                         <div className="text-xs text-gray-500">Players</div>

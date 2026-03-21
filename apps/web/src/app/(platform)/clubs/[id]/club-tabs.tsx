@@ -22,7 +22,7 @@ export function ClubTabs({ tabs }: { tabs: Tab[] }) {
   }
 
   return (
-    <nav className="-mb-px flex gap-4 overflow-x-auto md:gap-6">
+    <nav className="-mb-px flex gap-2 overflow-x-auto sm:gap-4 md:gap-6">
       {tabs.map((tab) => {
         const active = isActive(tab.href)
         return (

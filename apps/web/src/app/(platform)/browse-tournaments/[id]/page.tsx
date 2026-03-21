@@ -90,7 +90,7 @@ export default function TournamentDetailSubmitPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tournament Info — Left 2/3 */}
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">

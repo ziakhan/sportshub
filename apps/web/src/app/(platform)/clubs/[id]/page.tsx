@@ -265,7 +265,7 @@ export default async function ClubOverviewPage({
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
             Offer Pipeline
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link href={`/clubs/${params.id}/offers?status=pending`} className="text-center hover:opacity-80 transition">
               <div className="text-2xl font-bold text-yellow-600">{data.pendingOffers}</div>
               <div className="text-xs text-gray-500">Pending</div>

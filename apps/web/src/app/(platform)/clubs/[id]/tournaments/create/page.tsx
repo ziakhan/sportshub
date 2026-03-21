@@ -143,7 +143,7 @@ export default function CreateTournamentPage() {
           {/* Dates */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Dates</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Start Date *</label>
                 <input
