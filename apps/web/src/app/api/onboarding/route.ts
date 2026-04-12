@@ -4,11 +4,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { profileDataSchema } from "@/lib/validations/onboarding"
+import { getOnboardingNextStep, onboardingRoleEnum } from "@/lib/onboarding-next-step"
 
 const onboardingSchema = z.object({
-  roles: z
-    .array(z.enum(["Parent", "ClubOwner", "Staff", "Referee", "LeagueOwner", "Player"]))
-    .min(1, "Select at least one role"),
+  roles: z.array(z.enum(onboardingRoleEnum)).min(1, "Select at least one role"),
   profileData: profileDataSchema.optional(),
 })
 
@@ -148,12 +147,7 @@ export async function POST(req: Request) {
     })
 
     // Determine next step based on selected roles
-    let nextStep = "/"
-    if (roles.includes("ClubOwner")) {
-      nextStep = "/clubs/find"
-    } else if (roles.includes("LeagueOwner")) {
-      nextStep = "/dashboard"
-    }
+    const nextStep = getOnboardingNextStep(roles)
 
     return NextResponse.json({
       success: true,
@@ -162,10 +156,7 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Onboarding error:", error)
     return NextResponse.json(

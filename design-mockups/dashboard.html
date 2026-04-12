@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youth Basketball Hub - Dashboard Design Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              50: '#f0f3f9',
+              100: '#dae1ef',
+              200: '#b8c6df',
+              300: '#8ea4ca',
+              400: '#6580b0',
+              500: '#4a6596',
+              600: '#3a507d',
+              700: '#2f4066',
+              800: '#1e2d4d',
+              900: '#0f1b33',
+              950: '#0b1628',
+            },
+            brand: {
+              orange: '#f97316',
+              'orange-light': '#fb923c',
+              'orange-dark': '#ea580c',
+              green: '#22c55e',
+            }
+          },
+          fontFamily: {
+            display: ['Barlow Condensed', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .font-display { font-family: 'Barlow Condensed', sans-serif; }
+
+    /* Sidebar link active state */
+    .sidebar-link-active {
+      background: rgba(249,115,22,0.1);
+      color: #f97316;
+      border-left: 3px solid #f97316;
+    }
+
+    /* Scrollbar styling for sidebar */
+    .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* Card hover */
+    .dash-card {
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .dash-card:hover {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      border-color: #e2e8f0;
+    }
+
+    /* Progress bar animation */
+    .progress-fill {
+      transition: width 1s ease;
+    }
+
+    /* Subtle pulse for attention items */
+    .attention-dot {
+      animation: attention 2s ease-in-out infinite;
+    }
+    @keyframes attention {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Stat card gradient borders */
+    .stat-gradient-green { border-top: 3px solid #22c55e; }
+    .stat-gradient-orange { border-top: 3px solid #f97316; }
+    .stat-gradient-purple { border-top: 3px solid #8b5cf6; }
+    .stat-gradient-blue { border-top: 3px solid #3b82f6; }
+  </style>
+</head>
+<body class="bg-slate-50 text-gray-900 font-body">
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- ============================================== -->
+    <!-- SIDEBAR                                         -->
+    <!-- ============================================== -->
+    <aside class="hidden lg:flex lg:flex-col w-[260px] bg-navy-950 border-r border-navy-800 flex-shrink-0">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 px-5 h-16 border-b border-white/5">
+        <div class="w-8 h-8 rounded-lg bg-brand-orange flex items-center justify-center flex-shrink-0">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+        </div>
+        <span class="font-display font-bold text-lg text-white tracking-tight">
+          YBH <span class="text-brand-orange">Dashboard</span>
+        </span>
+      </div>
+
+      <!-- Nav Sections -->
+      <nav class="flex-1 overflow-y-auto sidebar-scroll py-4 px-3">
+        <!-- Main -->
+        <div class="mb-6">
+          <a href="#" class="sidebar-link-active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            Dashboard
+          </a>
+        </div>
+
+        <!-- Club Section -->
+        <div class="mb-6">
+          <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy-400">My Club</div>
+          <div class="space-y-0.5">
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              Overview
+            </a>
+            <a href="#" class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Teams
+              </span>
+              <span class="bg-green-500/15 text-green-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">8</span>
+            </a>
+            <a href="#" class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                Tryouts
+              </span>
+              <span class="bg-brand-orange/15 text-brand-orange text-[10px] font-bold px-1.5 py-0.5 rounded-md">3</span>
+            </a>
+            <a href="#" class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <span class="flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                Offers
+              </span>
+              <span class="bg-purple-500/15 text-purple-400 text-[10px] font-bold px-1.5 py-0.5 rounded-md">5</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              House Leagues
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Camps
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              Tournaments
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              Staff
+            </a>
+          </div>
+        </div>
+
+        <!-- Browse -->
+        <div class="mb-6">
+          <div class="px-3 mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-navy-400">Browse</div>
+          <div class="space-y-0.5">
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Leagues
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              Tournaments
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Bottom: Settings -->
+      <div class="border-t border-white/5 px-3 py-3">
+        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============================================== -->
+    <!-- MAIN CONTENT                                    -->
+    <!-- ============================================== -->
+    <div class="flex-1 flex flex-col min-w-0">
+
+      <!-- Top Bar -->
+      <header class="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200 flex-shrink-0">
+        <div class="flex items-center gap-4">
+          <!-- Mobile menu button -->
+          <button class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <!-- Breadcrumb -->
+          <div class="flex items-center gap-2 text-sm">
+            <span class="text-gray-400">Dashboard</span>
+            <svg class="w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="font-medium text-gray-700">Toronto Raptors Youth</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Search -->
+          <button class="p-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </button>
+          <!-- Notifications -->
+          <button class="relative p-2 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          <!-- User Avatar -->
+          <div class="flex items-center gap-2.5 pl-3 border-l border-gray-200 cursor-pointer">
+            <div class="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center">
+              <span class="text-xs font-bold text-white">ZK</span>
+            </div>
+            <div class="hidden sm:block">
+              <div class="text-sm font-medium text-gray-700">Zia Khan</div>
+              <div class="text-[11px] text-gray-400">Club Owner</div>
+            </div>
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Content -->
+      <main class="flex-1 overflow-y-auto">
+        <div class="p-6 lg:p-8 max-w-[1400px]">
+
+          <!-- Page Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 class="font-display font-bold text-2xl sm:text-3xl text-navy-950">Club Dashboard</h1>
+              <p class="text-sm text-gray-500 mt-1">Toronto Raptors Youth &middot; Active Season: Spring 2026</p>
+            </div>
+            <div class="flex gap-3">
+              <button class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82.33v.16a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15v-.16a2 2 0 1 1 4 0v.09c.08.63.5 1.16 1.08 1.41"/></svg>
+                Settings
+              </button>
+              <button class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-orange hover:bg-brand-orange-dark text-sm font-semibold text-white rounded-lg transition cursor-pointer shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Quick Actions
+              </button>
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- STAT CARDS                                      -->
+          <!-- ============================================== -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Teams -->
+            <div class="dash-card bg-white rounded-xl p-5 border border-gray-100 stat-gradient-green cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="font-display font-bold text-3xl text-navy-950">8</div>
+              <div class="text-sm text-gray-500">Active Teams</div>
+              <div class="flex items-center gap-1 mt-2 text-xs text-green-600">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+                +2 this season
+              </div>
+            </div>
+
+            <!-- Tryouts -->
+            <div class="dash-card bg-white rounded-xl p-5 border border-gray-100 stat-gradient-orange cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-brand-orange" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="font-display font-bold text-3xl text-navy-950">3</div>
+              <div class="text-sm text-gray-500">Active Tryouts</div>
+              <div class="flex items-center gap-1 mt-2 text-xs text-brand-orange">
+                1 draft &middot; 47 signups total
+              </div>
+            </div>
+
+            <!-- Offers -->
+            <div class="dash-card bg-white rounded-xl p-5 border border-gray-100 stat-gradient-purple cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="font-display font-bold text-3xl text-navy-950">12</div>
+              <div class="text-sm text-gray-500">Pending Offers</div>
+              <div class="flex items-center gap-1 mt-2 text-xs text-purple-600">
+                5 accepted &middot; 2 expired
+              </div>
+            </div>
+
+            <!-- Staff -->
+            <div class="dash-card bg-white rounded-xl p-5 border border-gray-100 stat-gradient-blue cursor-pointer">
+              <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                </div>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+              <div class="font-display font-bold text-3xl text-navy-950">14</div>
+              <div class="text-sm text-gray-500">Staff Members</div>
+              <div class="flex items-center gap-1 mt-2 text-xs text-blue-600">
+                2 pending invites
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- NEEDS ATTENTION + OFFER PIPELINE                -->
+          <!-- ============================================== -->
+          <div class="grid lg:grid-cols-3 gap-6 mb-8">
+            <!-- Needs Attention -->
+            <div class="lg:col-span-1 bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div class="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
+                <div class="w-2 h-2 rounded-full bg-brand-orange attention-dot"></div>
+                <h3 class="font-semibold text-sm text-navy-950">Needs Attention</h3>
+              </div>
+              <div class="divide-y divide-gray-50">
+                <a href="#" class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition cursor-pointer group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-700 group-hover:text-brand-orange transition">2 teams without head coach</div>
+                      <div class="text-xs text-gray-400">Assign coaches to proceed</div>
+                    </div>
+                  </div>
+                  <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+
+                <a href="#" class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition cursor-pointer group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-700 group-hover:text-brand-orange transition">3 tryouts need offers</div>
+                      <div class="text-xs text-gray-400">Players awaiting decisions</div>
+                    </div>
+                  </div>
+                  <span class="bg-brand-orange/10 text-brand-orange text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                </a>
+
+                <a href="#" class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition cursor-pointer group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-700 group-hover:text-brand-orange transition">2 offers expiring soon</div>
+                      <div class="text-xs text-gray-400">Expires in 3 days</div>
+                    </div>
+                  </div>
+                  <span class="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full">2</span>
+                </a>
+
+                <a href="#" class="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition cursor-pointer group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-700 group-hover:text-brand-orange transition">1 draft tryout</div>
+                      <div class="text-xs text-gray-400">Ready to publish?</div>
+                    </div>
+                  </div>
+                  <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Offer Pipeline -->
+            <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h3 class="font-semibold text-sm text-navy-950">Offer Pipeline</h3>
+                <a href="#" class="text-xs font-medium text-brand-orange hover:text-brand-orange-dark transition cursor-pointer">View All Offers &rarr;</a>
+              </div>
+              <div class="p-5">
+                <!-- Pipeline Stages -->
+                <div class="grid grid-cols-4 gap-3 mb-6">
+                  <div class="text-center p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <div class="font-display font-bold text-2xl text-blue-700">12</div>
+                    <div class="text-xs font-medium text-blue-600 mt-1">Pending</div>
+                  </div>
+                  <div class="text-center p-4 rounded-xl bg-green-50 border border-green-100">
+                    <div class="font-display font-bold text-2xl text-green-700">5</div>
+                    <div class="text-xs font-medium text-green-600 mt-1">Accepted</div>
+                  </div>
+                  <div class="text-center p-4 rounded-xl bg-red-50 border border-red-100">
+                    <div class="font-display font-bold text-2xl text-red-700">3</div>
+                    <div class="text-xs font-medium text-red-600 mt-1">Declined</div>
+                  </div>
+                  <div class="text-center p-4 rounded-xl bg-gray-50 border border-gray-100">
+                    <div class="font-display font-bold text-2xl text-gray-700">2</div>
+                    <div class="text-xs font-medium text-gray-500 mt-1">Expired</div>
+                  </div>
+                </div>
+
+                <!-- Recent Offers Table -->
+                <div class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Recent Offers</div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-xs font-bold text-purple-600">JD</div>
+                      <div>
+                        <div class="text-sm font-medium text-gray-700">Jordan Davis</div>
+                        <div class="text-xs text-gray-400">U14 Boys Rep &middot; Sent Apr 3</div>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">Pending</span>
+                  </div>
+
+                  <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-600">AM</div>
+                      <div>
+                        <div class="text-sm font-medium text-gray-700">Aisha Mohammed</div>
+                        <div class="text-xs text-gray-400">U12 Girls Rep &middot; Sent Apr 1</div>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">Accepted</span>
+                  </div>
+
+                  <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-full bg-brand-orange/10 flex items-center justify-center text-xs font-bold text-brand-orange">LW</div>
+                      <div>
+                        <div class="text-sm font-medium text-gray-700">Liam Williams</div>
+                        <div class="text-xs text-gray-400">U16 Boys Rep &middot; Sent Mar 28</div>
+                      </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">Expiring</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- TEAMS GRID                                      -->
+          <!-- ============================================== -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-base text-navy-950">Teams</h3>
+              <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-xs font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Team
+              </button>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Team Card -->
+              <div class="dash-card bg-white rounded-xl p-4 border border-gray-100 cursor-pointer group">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+                  <svg class="w-4 h-4 text-gray-300 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+                <h4 class="font-semibold text-sm text-navy-950 group-hover:text-brand-orange transition">U14 Boys Rep</h4>
+                <p class="text-xs text-gray-400 mb-3">Spring 2026 &middot; Boys</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-blue-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-blue-700">J</div>
+                    <div class="w-6 h-6 rounded-full bg-green-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-green-700">A</div>
+                    <div class="w-6 h-6 rounded-full bg-purple-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-purple-700">M</div>
+                    <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-gray-500">+9</div>
+                  </div>
+                  <span class="text-xs text-gray-400">12 players</span>
+                </div>
+                <!-- Coach -->
+                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span class="text-xs text-gray-500">Coach: Mike Johnson</span>
+                </div>
+              </div>
+
+              <!-- Team Card 2 -->
+              <div class="dash-card bg-white rounded-xl p-4 border border-gray-100 cursor-pointer group">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+                  <svg class="w-4 h-4 text-gray-300 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+                <h4 class="font-semibold text-sm text-navy-950 group-hover:text-brand-orange transition">U12 Girls Rep</h4>
+                <p class="text-xs text-gray-400 mb-3">Spring 2026 &middot; Girls</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-pink-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-pink-700">S</div>
+                    <div class="w-6 h-6 rounded-full bg-yellow-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-yellow-700">L</div>
+                    <div class="w-6 h-6 rounded-full bg-blue-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-blue-700">R</div>
+                    <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-gray-500">+7</div>
+                  </div>
+                  <span class="text-xs text-gray-400">10 players</span>
+                </div>
+                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span class="text-xs text-gray-500">Coach: Sarah Chen</span>
+                </div>
+              </div>
+
+              <!-- Team Card 3 - No Coach (attention) -->
+              <div class="dash-card bg-white rounded-xl p-4 border border-red-200 cursor-pointer group">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+                  <svg class="w-4 h-4 text-gray-300 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+                <h4 class="font-semibold text-sm text-navy-950 group-hover:text-brand-orange transition">U16 Boys Rep</h4>
+                <p class="text-xs text-gray-400 mb-3">Spring 2026 &middot; Boys</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-teal-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-teal-700">D</div>
+                    <div class="w-6 h-6 rounded-full bg-orange-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-orange-700">K</div>
+                    <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-gray-500">+6</div>
+                  </div>
+                  <span class="text-xs text-gray-400">8 players</span>
+                </div>
+                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-red-100">
+                  <svg class="w-3.5 h-3.5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                  <span class="text-xs text-red-500 font-medium">No head coach assigned</span>
+                </div>
+              </div>
+
+              <!-- Team Card 4 -->
+              <div class="dash-card bg-white rounded-xl p-4 border border-gray-100 cursor-pointer group">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+                  <svg class="w-4 h-4 text-gray-300 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                </div>
+                <h4 class="font-semibold text-sm text-navy-950 group-hover:text-brand-orange transition">U10 Co-ed Dev</h4>
+                <p class="text-xs text-gray-400 mb-3">Spring 2026 &middot; Co-ed</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-indigo-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-indigo-700">E</div>
+                    <div class="w-6 h-6 rounded-full bg-red-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-red-700">N</div>
+                    <div class="w-6 h-6 rounded-full bg-gray-200 border-2 border-white text-[8px] font-bold flex items-center justify-center text-gray-500">+12</div>
+                  </div>
+                  <span class="text-xs text-gray-400">14 players</span>
+                </div>
+                <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                  <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span class="text-xs text-gray-500">Coach: David Park</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- RECENT ACTIVITY                                 -->
+          <!-- ============================================== -->
+          <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 class="font-semibold text-sm text-navy-950">Recent Activity</h3>
+              <a href="#" class="text-xs font-medium text-brand-orange hover:text-brand-orange-dark transition cursor-pointer">View All</a>
+            </div>
+            <div class="divide-y divide-gray-50">
+              <div class="flex items-start gap-3 px-5 py-3.5">
+                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-700"><span class="font-medium">Aisha Mohammed</span> accepted offer for <span class="font-medium">U12 Girls Rep</span></p>
+                  <p class="text-xs text-gray-400 mt-0.5">2 hours ago</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 px-5 py-3.5">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-700">New tryout signup: <span class="font-medium">Marcus Chen</span> for <span class="font-medium">U14 Boys Rep Tryout</span></p>
+                  <p class="text-xs text-gray-400 mt-0.5">5 hours ago</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 px-5 py-3.5">
+                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-700">Staff invite sent to <span class="font-medium">coach.smith@email.com</span></p>
+                  <p class="text-xs text-gray-400 mt-0.5">Yesterday at 3:45 PM</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 px-5 py-3.5">
+                <div class="w-8 h-8 rounded-full bg-brand-orange/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-700"><span class="font-medium">U16 Boys Rep Tryout</span> published - now visible to parents</p>
+                  <p class="text-xs text-gray-400 mt-0.5">Yesterday at 11:20 AM</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>

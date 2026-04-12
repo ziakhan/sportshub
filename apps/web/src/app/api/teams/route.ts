@@ -4,17 +4,20 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { normalizedEmailSchema } from "@/lib/validations/email"
 
-const staffEntrySchema = z.object({
-  type: z.enum(["assign", "invite"]),
-  userId: z.string().uuid().optional(),
-  email: z.string().email().optional(),
-  role: z.enum(["Staff", "TeamManager"]),
-  designation: z.enum(["HeadCoach", "AssistantCoach"]).nullable().optional(),
-}).refine(
-  (data) => (data.type === "assign" && data.userId) || (data.type === "invite" && data.email),
-  { message: "assign requires userId, invite requires email" }
-)
+const staffEntrySchema = z
+  .object({
+    type: z.enum(["assign", "invite"]),
+    userId: z.string().uuid().optional(),
+    email: normalizedEmailSchema().optional(),
+    role: z.enum(["Staff", "TeamManager"]),
+    designation: z.enum(["HeadCoach", "AssistantCoach"]).nullable().optional(),
+  })
+  .refine(
+    (data) => (data.type === "assign" && data.userId) || (data.type === "invite" && data.email),
+    { message: "assign requires userId, invite requires email" }
+  )
 
 const createTeamSchema = z.object({
   name: z.string().min(3).max(100),
@@ -65,10 +68,7 @@ export async function POST(request: NextRequest) {
     // Validate: at most 1 HeadCoach
     const headCoaches = staffEntries.filter((s) => s.designation === "HeadCoach")
     if (headCoaches.length > 1) {
-      return NextResponse.json(
-        { error: "A team can have at most one Head Coach" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "A team can have at most one Head Coach" }, { status: 400 })
     }
 
     // Run team creation + staff assignments in a transaction
@@ -98,9 +98,7 @@ export async function POST(request: NextRequest) {
           })
 
           if (!existingRole) {
-            throw new Error(
-              `User ${entry.userId} does not have ${entry.role} role for this club`
-            )
+            throw new Error(`User ${entry.userId} does not have ${entry.role} role for this club`)
           }
 
           // Create team-scoped role
@@ -114,9 +112,16 @@ export async function POST(request: NextRequest) {
             },
           })
         } else if (entry.type === "invite" && entry.email) {
+          const normalizedEmail = entry.email
+
           // Look up user by email
-          const invitedUser = await tx.user.findUnique({
-            where: { email: entry.email },
+          const invitedUser = await tx.user.findFirst({
+            where: {
+              email: {
+                equals: normalizedEmail,
+                mode: "insensitive",
+              },
+            },
             select: { id: true },
           })
 
@@ -126,7 +131,7 @@ export async function POST(request: NextRequest) {
               tenantId: validatedData.tenantId,
               invitedById: userId,
               invitedUserId: invitedUser?.id || null,
-              invitedEmail: entry.email,
+              invitedEmail: normalizedEmail,
               role: entry.role,
               teamId: team.id,
               designation: entry.designation || null,
@@ -140,13 +145,14 @@ export async function POST(request: NextRequest) {
               where: { id: validatedData.tenantId },
               select: { name: true },
             })
-            const roleLabel = entry.designation === "HeadCoach"
-              ? "Head Coach"
-              : entry.designation === "AssistantCoach"
-              ? "Assistant Coach"
-              : entry.role === "TeamManager"
-              ? "Team Manager"
-              : entry.role
+            const roleLabel =
+              entry.designation === "HeadCoach"
+                ? "Head Coach"
+                : entry.designation === "AssistantCoach"
+                  ? "Assistant Coach"
+                  : entry.role === "TeamManager"
+                    ? "Team Manager"
+                    : entry.role
 
             await tx.notification.create({
               data: {
@@ -201,10 +207,7 @@ export async function GET(request: NextRequest) {
     const tenantId = searchParams.get("tenantId")
 
     if (!tenantId) {
-      return NextResponse.json(
-        { error: "tenantId parameter is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "tenantId parameter is required" }, { status: 400 })
     }
 
     // Verify user has access to this tenant (or is PlatformAdmin)
@@ -213,10 +216,7 @@ export async function GET(request: NextRequest) {
       include: {
         roles: {
           where: {
-            OR: [
-              { tenantId },
-              { role: "PlatformAdmin" },
-            ],
+            OR: [{ tenantId }, { role: "PlatformAdmin" }],
           },
         },
       },

@@ -2,9 +2,10 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { normalizedEmailSchema } from "@/lib/validations/email"
 
 const signupSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: normalizedEmailSchema("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -14,10 +15,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const data = signupSchema.parse(body)
+    const normalizedEmail = data.email
 
     // Check if user already exists
-    const existing = await prisma.user.findUnique({
-      where: { email: data.email },
+    const existing = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: normalizedEmail,
+          mode: "insensitive",
+        },
+      },
     })
 
     if (existing) {
@@ -31,7 +38,7 @@ export async function POST(request: Request) {
 
     await prisma.user.create({
       data: {
-        email: data.email,
+        email: normalizedEmail,
         passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -42,15 +49,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: err.errors[0].message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: err.errors[0].message }, { status: 400 })
     }
     console.error("Signup error:", err)
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
   }
 }

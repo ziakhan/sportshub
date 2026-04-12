@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { sendStaffInviteEmail } from "@/lib/email"
+import { normalizedEmailSchema } from "@/lib/validations/email"
 
 const inviteSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  email: normalizedEmailSchema("Enter a valid email"),
   role: z.enum(["ClubManager", "Staff", "TeamManager"]),
   teamId: z.string().uuid().optional(),
   message: z.string().max(500).optional(),
@@ -21,10 +22,7 @@ async function verifyClubAccess(userId: string, tenantId: string) {
       lastName: true,
       roles: {
         where: {
-          OR: [
-            { tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
-            { role: "PlatformAdmin" },
-          ],
+          OR: [{ tenantId, role: { in: ["ClubOwner", "ClubManager"] } }, { role: "PlatformAdmin" }],
         },
       },
     },
@@ -38,10 +36,7 @@ async function verifyClubAccess(userId: string, tenantId: string) {
  * List club staff + pending invitations
  * GET /api/clubs/[id]/staff
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -97,10 +92,7 @@ export async function GET(
  * Invite a user to join club as staff
  * POST /api/clubs/[id]/staff
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -115,12 +107,13 @@ export async function POST(
 
     const body = await request.json()
     const data = inviteSchema.parse(body)
+    const normalizedEmail = data.email
 
     // Check for existing pending invitation
     const existingInvite = await prisma.staffInvitation.findFirst({
       where: {
         tenantId: params.id,
-        invitedEmail: data.email,
+        invitedEmail: normalizedEmail,
         status: "PENDING",
       },
     })
@@ -133,8 +126,13 @@ export async function POST(
     }
 
     // Look up user by email
-    const invitedUser = await prisma.user.findUnique({
-      where: { email: data.email },
+    const invitedUser = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: normalizedEmail,
+          mode: "insensitive",
+        },
+      },
       select: { id: true, firstName: true, lastName: true },
     })
 
@@ -149,10 +147,7 @@ export async function POST(
       })
 
       if (existingRole) {
-        return NextResponse.json(
-          { error: "This user is already a staff member" },
-          { status: 409 }
-        )
+        return NextResponse.json({ error: "This user is already a staff member" }, { status: 409 })
       }
     }
 
@@ -167,7 +162,7 @@ export async function POST(
         tenantId: params.id,
         invitedById: user.id,
         invitedUserId: invitedUser?.id || null,
-        invitedEmail: data.email,
+        invitedEmail: normalizedEmail,
         role: data.role,
         teamId: data.teamId || null,
         message: data.message || null,
@@ -182,7 +177,7 @@ export async function POST(
       : `${appUrl}/auth/signup?invite=${invitation.id}`
     try {
       await sendStaffInviteEmail({
-        to: data.email,
+        to: normalizedEmail,
         clubName: tenant?.name || "A club",
         role: data.role,
         inviterName: `${user.firstName} ${user.lastName}`.trim(),
@@ -211,16 +206,10 @@ export async function POST(
     return NextResponse.json(invitation, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Staff invite error:", error)
-    return NextResponse.json(
-      { error: "Failed to send invitation" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to send invitation" }, { status: 500 })
   }
 }
 
@@ -228,10 +217,7 @@ export async function POST(
  * Remove a staff member
  * DELETE /api/clubs/[id]/staff?roleId=xxx
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -246,28 +232,19 @@ export async function DELETE(
         id: true,
         roles: {
           where: {
-            OR: [
-              { tenantId: params.id, role: "ClubOwner" },
-              { role: "PlatformAdmin" },
-            ],
+            OR: [{ tenantId: params.id, role: "ClubOwner" }, { role: "PlatformAdmin" }],
           },
         },
       },
     })
 
     if (!user || user.roles.length === 0) {
-      return NextResponse.json(
-        { error: "Only club owners can remove staff" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Only club owners can remove staff" }, { status: 403 })
     }
 
     const roleId = request.nextUrl.searchParams.get("roleId")
     if (!roleId) {
-      return NextResponse.json(
-        { error: "roleId is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "roleId is required" }, { status: 400 })
     }
 
     const role = await prisma.userRole.findFirst({
@@ -275,18 +252,12 @@ export async function DELETE(
     })
 
     if (!role) {
-      return NextResponse.json(
-        { error: "Role not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Role not found" }, { status: 404 })
     }
 
     // Cannot remove yourself
     if (role.userId === user.id) {
-      return NextResponse.json(
-        { error: "You cannot remove yourself" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "You cannot remove yourself" }, { status: 400 })
     }
 
     await prisma.userRole.delete({ where: { id: roleId } })
@@ -294,9 +265,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Remove staff error:", error)
-    return NextResponse.json(
-      { error: "Failed to remove staff member" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to remove staff member" }, { status: 500 })
   }
 }

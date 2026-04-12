@@ -1,38 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
-
-const PUBLIC_PATHS = [
-  "/",
-  "/sign-in",
-  "/sign-up",
-  "/marketplace",
-  "/club",
-  "/tryout",
-  "/house-league",
-  "/camp",
-  "/events",
-  "/api/house-leagues",
-  "/api/camps",
-  "/league",
-  "/api/leagues",
-  "/api/venues",
-  "/api/auth",
-  "/api/auth/signup",
-  "/api/clubs/public",
-  "/api/clubs/search",
-  "/api/reviews",
-  "/api/settings",
-  "/api/health",
-  "/api/dev",
-]
-
-function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.some((path) => {
-    if (path === "/") return pathname === "/"
-    return pathname.startsWith(path)
-  })
-}
+import { isPublicPath } from "@/lib/public-paths"
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

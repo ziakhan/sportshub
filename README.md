@@ -1,351 +1,212 @@
-# Youth Basketball Hub 🏀
+# Youth Basketball Hub
 
-The complete platform for youth basketball clubs, leagues, and families.
+Youth Basketball Hub is a multi-tenant platform for youth basketball clubs, leagues, staff, players, referees, and families.
 
-## 🚀 Quick Start
+The current repo is a Turborepo monorepo with a Next.js 14 web app, Prisma/PostgreSQL data layer, NextAuth credentials auth, and shared packages for auth, db, UI, payments, and config.
 
-### Prerequisites
+## Current Status
 
-- **Node.js** 18.17.0 or higher
-- **npm** 9.0.0 or higher
-- **Docker** (for local database)
-- **Git**
+- Auth, onboarding, club flows, team management, staff invitations, tryouts, offers, notifications, and admin impersonation are implemented.
+- The active auth system is NextAuth with email/password credentials and JWT sessions.
+- The active database stack is Prisma 5 plus PostgreSQL.
+- Focused Vitest coverage is in place for middleware, auth credentials, signup, onboarding, staff invitations, team invite flows, invitation responses, and auth helper impersonation behavior.
+- TypeScript type-check is passing.
+- A lightweight automated test setup now exists via Vitest in the web app.
 
-### Installation
+## Tech Stack
 
-1. **Clone the repository**
+| Layer         | Technology                                     |
+| ------------- | ---------------------------------------------- |
+| App framework | Next.js 14 App Router                          |
+| Monorepo      | Turborepo                                      |
+| Language      | TypeScript                                     |
+| Auth          | NextAuth.js v4                                 |
+| Database      | PostgreSQL                                     |
+| ORM           | Prisma 5                                       |
+| Styling       | Tailwind CSS                                   |
+| Forms         | react-hook-form + zod                          |
+| Permissions   | CASL                                           |
+| Payments      | Stripe package scaffolded, partial integration |
 
-```bash
-git clone https://github.com/your-org/youth-basketball-hub.git
-cd youth-basketball-hub
+## Workspace Layout
+
+```text
+apps/
+	web/                  Next.js application
+packages/
+	auth/                 Shared auth utilities
+	config/               Shared config
+	db/                   Prisma client access and seed script
+	payments/             Payment-related helpers
+	ui/                   Shared UI components
+prisma/
+	schema.prisma         Main Prisma schema
+	migrations/           Prisma migrations
+docs/
+	sprint-1-summary.md   Implementation summary
+	platform-specification.md
+design-mockups/
+	Standalone HTML design explorations
 ```
 
-2. **Install dependencies**
+## Prerequisites
+
+- Node.js 18.17+
+- npm 9+
+- Docker
+
+## Local Setup
+
+1. Install dependencies
 
 ```bash
 npm install
 ```
 
-3. **Set up environment variables**
-
-```bash
-cp .env.example .env.local
-```
-
-Edit `.env.local` with your actual credentials. For local development, you'll need:
-- Clerk account (free tier: https://clerk.com)
-- Stripe account in test mode (https://stripe.com)
-- Supabase project (free tier: https://supabase.com)
-
-4. **Start the database**
+2. Start PostgreSQL
 
 ```bash
 docker-compose up -d
 ```
 
-This starts PostgreSQL on `localhost:5432` and pgAdmin on `localhost:5050`.
+3. Configure environment variables
 
-5. **Set up the database**
+Create a local env file and set at minimum:
 
 ```bash
-# Generate Prisma client
+DATABASE_URL=postgresql://...
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace-with-a-long-random-secret
+```
+
+Optional variables depend on the feature you are working on, for example app URL or Stripe keys.
+
+4. Generate Prisma client
+
+```bash
 npm run db:generate
+```
 
-# Push schema to database (for development)
+5. Apply schema to the local database
+
+```bash
 npm run db:push
+```
 
-# Or run migrations (for production-like workflow)
+If you want to use migrations instead:
+
+```bash
 npm run db:migrate
 ```
 
-6. **Start the development server**
+6. Seed local data if needed
+
+```bash
+npm run db:seed
+```
+
+7. Start the app
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open http://localhost:3000.
 
----
+## Useful Scripts
 
-## 📁 Project Structure
-
-```
-youth-basketball-hub/
-├── apps/
-│   └── web/                    # Next.js 14 app (App Router)
-│       ├── src/
-│       │   ├── app/           # App Router pages
-│       │   │   ├── (auth)/    # Auth pages (sign-in, sign-up)
-│       │   │   ├── (platform)/ # Global marketplace
-│       │   │   ├── (tenant)/  # Tenant-scoped pages
-│       │   │   └── api/       # API routes
-│       │   ├── components/    # React components
-│       │   └── lib/           # Utilities
-│       └── middleware.ts      # Tenant routing middleware
-│
-├── packages/
-│   ├── db/                    # Prisma schema & client
-│   ├── ui/                    # Shared UI components (shadcn/ui)
-│   ├── auth/                  # Clerk utilities
-│   ├── payments/              # Stripe utilities
-│   └── config/                # Shared config
-│
-├── prisma/
-│   └── schema.prisma          # Complete database schema
-│
-├── docs/                      # Documentation
-│   └── platform-specification.md  # Full technical spec
-│
-├── docker-compose.yml         # Local PostgreSQL + pgAdmin
-├── turbo.json                 # Turborepo configuration
-└── package.json               # Monorepo root
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 14 (App Router) | SSR, RSC, API routes |
-| **Language** | TypeScript | Type safety |
-| **Database** | PostgreSQL 15 | Relational data |
-| **ORM** | Prisma | Type-safe queries |
-| **Auth** | Clerk | Multi-tenant, RBAC, COPPA-compliant |
-| **Payments** | Stripe Connect | Multi-party payments |
-| **UI** | shadcn/ui + Tailwind CSS | Accessible components |
-| **State** | React Query (TanStack Query) | Server state management |
-| **Forms** | React Hook Form + Zod | Validation |
-| **Real-time** | Supabase Realtime | Live scoring |
-| **Jobs** | Inngest | Background tasks |
-| **Email** | Resend | Transactional emails |
-| **Hosting** | Vercel | Deployment |
-
----
-
-## 📜 Available Scripts
-
-### Root (Monorepo)
+### Root
 
 ```bash
-npm run dev          # Start all apps in development
-npm run build        # Build all apps for production
-npm run lint         # Lint all packages
-npm run format       # Format code with Prettier
-npm run clean        # Clean all build artifacts
+npm run dev
+npm run build
+npm run lint
+npm run test
+npm run type-check
+npm run format
 ```
 
 ### Database
 
 ```bash
-npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema changes (development)
-npm run db:migrate   # Run migrations (production)
-npm run db:studio    # Open Prisma Studio (GUI)
-npm run db:seed      # Seed database with test data
+npm run db:generate
+npm run db:push
+npm run db:migrate
+npm run db:studio
+npm run db:seed
 ```
 
-### Development
+## Auth Model
 
-```bash
-# Start database
-docker-compose up -d
+- Sign-up is handled by the API route at apps/web/src/app/api/auth/signup/route.ts.
+- Sign-in is handled through NextAuth credentials in apps/web/src/lib/auth.ts.
+- Sessions use JWT strategy.
+- Protected routes are enforced in apps/web/src/middleware.ts.
+- Server-side user and role helpers live in apps/web/src/lib/auth-helpers.ts.
 
-# Stop database
-docker-compose down
+## Multi-Tenancy Model
 
-# View database logs
-docker-compose logs -f postgres
+- Public platform routes live under the main app.
+- Clubs are modeled as tenants.
+- Tenant context is derived from subdomain and custom-domain handling in middleware.
+- Scoped roles are stored in UserRole with optional tenant, team, league, and game scope.
 
-# Access pgAdmin
-# URL: http://localhost:5050
-# Email: admin@youthbasketballhub.com
-# Password: admin
-```
+## Key Domain Areas Already in Repo
 
----
+- User onboarding
+- Club creation and club claiming
+- Team creation and editing
+- Staff invitations and team assignment
+- Tryouts and signups
+- Offers and offer templates
+- Notifications
+- League and tournament groundwork
+- Admin user tooling and impersonation
 
-## 🏗️ Multi-Tenant Architecture
+## Testing Status
 
-### Domain Routing
+The repo currently has:
 
-- **Platform**: `app.youthbasketballhub.com` → Global marketplace
-- **Subdomain**: `warriors.youthbasketballhub.com` → Warriors Basketball Club
-- **Custom Domain**: `warriorsbasketball.com` → Warriors Basketball Club (Pro/Enterprise)
+- Vitest-based route and helper coverage via `npm run test`
+- TypeScript type-checking via `npm run type-check`
+- GitHub Actions CI that runs `npm run db:generate`, `npm test`, `npm run type-check`, and `npm run build` on `master` and `develop`
+- No committed end-to-end test runner configuration
 
-### Tenant Isolation
+Current automated coverage focuses on:
 
-- **Row-level tenancy**: Each club is a tenant with `tenant_id`
-- **Row-Level Security (RLS)**: Database-level enforcement
-- **Middleware**: Automatic tenant context injection
-- **Cross-tenant entities**: Leagues, Games (spanning multiple clubs)
+- Middleware auth redirects and tenant header injection
+- Credential auth normalization
+- Signup normalization and duplicate handling
+- Onboarding role creation and next-step routing
+- Club staff invitations
+- Team invite flows on create and update
+- Invitation accept and decline flows
+- Auth helper impersonation behavior
 
----
+The next testing step should be a small integration layer around invitation acceptance, notifications, and onboarding-to-dashboard transitions rather than jumping straight to broad E2E coverage.
 
-## 🔐 Authentication & Authorization
+## Prisma Note
 
-### Roles
+This repo is currently configured around Prisma 5.8.x in packages/db/package.json.
 
-| Role | Scope | Example |
-|------|-------|---------|
-| **ClubOwner** | Tenant-wide | Club founder |
-| **ClubManager** | Tenant-wide | Operations manager |
-| **Coach** | Team-scoped | Head coach |
-| **TeamManager** | Team-scoped | Team parent volunteer |
-| **LeagueOwner** | League-wide | League founder |
-| **Parent** | Family-scoped | Parent/guardian |
-| **Player** | Self-scoped | Youth player |
-| **Referee** | Game-scoped | Certified referee |
-| **PlatformAdmin** | Global | Platform operator |
+If your editor shows warnings about Prisma 7 datasource configuration such as moving `url` to `prisma.config.ts`, that is editor and tooling drift rather than a current repo break. The current package scripts and schema are still based on Prisma 5 conventions.
 
-### COPPA Compliance
+## Documentation
 
-- Players under 13 require parental consent
-- `Player.isMinor` flag tracks age status
-- `Player.parentalConsentGiven` + `consentGivenAt` for audit trail
-- Players under 13 cannot log in independently (`canLogin = false`)
+- docs/platform-specification.md
+- docs/sprint-1-summary.md
+- CLAUDE.md
 
----
+## Development Notes
 
-## 💳 Payment Flows
+- CASL uses some `as any` assertions as a practical compatibility workaround.
+- Club owner onboarding currently routes to club creation.
+- Emails are normalized to lowercase in auth and invite flows.
+- The repo may contain local design-mockup files and generated artifacts unrelated to the main app runtime.
 
-### Stripe Connect Architecture
+## Next Recommended Work
 
-**Platform as Merchant of Record** → Destination Charges to Club/League/Referee Connect Accounts
-
-1. **Tryout Fee**: Parent → Platform (5% fee) → Club
-2. **Season Fee**: Parent → Platform (5% fee) → Club (4 installments)
-3. **League Fee**: Club → Platform (5% fee) → League
-4. **Referee Fee**: Platform → Referee (after game completion)
-
-### Platform Fee
-
-- **Default**: 5% on all transactions
-- **Configurable**: Can be adjusted per payment type
-
----
-
-## 🎯 MVP Scope (Sprint 1-7, 14 weeks)
-
-### Included Features
-
-✅ Club onboarding with Stripe Connect
-✅ Team & staff management
-✅ Tryout creation & marketplace
-✅ Parent signup & payment
-✅ Offer system (coach → player)
-✅ League creation & team registration
-✅ Manual scheduling with conflict detection
-✅ Live scorekeeping (WebSocket/Supabase Realtime)
-✅ Basic stats (points, rebounds, assists, etc.)
-✅ Standings & W/L records
-✅ Email notifications
-✅ Mobile-responsive web app
-
-### Excluded from MVP (v1+)
-
-❌ Custom domains (subdomain only for MVP)
-❌ Advanced stats (just basic counting stats)
-❌ Referee marketplace (manual assignment)
-❌ In-app chat (use announcements)
-❌ Native mobile apps (Capacitor in v1)
-❌ Tournaments (leagues only)
-❌ Exhibition games
-
----
-
-## 🧪 Testing
-
-### Running Tests
-
-```bash
-# Unit tests (coming in Sprint 1)
-npm run test
-
-# E2E tests with Playwright (Sprint 8)
-npm run test:e2e
-
-# Type checking
-npm run type-check
-```
-
-### Test Coverage Goals
-
-- **Unit**: 80%+ coverage for business logic
-- **Integration**: API routes, database operations
-- **E2E**: Critical flows (signup, tryout, payment, scoring)
-
----
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-1. **Connect repository** to Vercel
-2. **Set environment variables** in Vercel dashboard
-3. **Deploy**: Automatic on push to `main` branch
-
-### Environment Variables Checklist
-
-- [ ] `DATABASE_URL` (production Supabase or managed PostgreSQL)
-- [ ] `CLERK_SECRET_KEY` (production)
-- [ ] `STRIPE_SECRET_KEY` (live mode)
-- [ ] `STRIPE_WEBHOOK_SECRET` (live webhook endpoint)
-- [ ] `NEXT_PUBLIC_APP_URL` (production URL)
-- [ ] All other keys from `.env.example`
-
----
-
-## 📚 Documentation
-
-- [Platform Specification](docs/platform-specification.md) - Complete technical spec
-- [API Documentation](docs/api.md) - API reference (coming soon)
-- [Database Schema](prisma/schema.prisma) - Complete Prisma schema
-
----
-
-## 🤝 Contributing
-
-### Development Workflow
-
-1. Create a feature branch: `git checkout -b feature/my-feature`
-2. Make changes and commit: `git commit -m "Add my feature"`
-3. Push to branch: `git push origin feature/my-feature`
-4. Open a Pull Request
-
-### Code Style
-
-- **TypeScript**: Strict mode enabled
-- **Formatting**: Prettier (automatic on save)
-- **Linting**: ESLint + Next.js rules
-
----
-
-## 📝 License
-
-Proprietary - All Rights Reserved
-
----
-
-## 🆘 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-org/youth-basketball-hub/issues)
-- **Email**: support@youthbasketballhub.com
-- **Docs**: [Documentation](docs/)
-
----
-
-## 🎉 Acknowledgments
-
-Built with:
-- [Next.js](https://nextjs.org)
-- [Prisma](https://prisma.io)
-- [Clerk](https://clerk.com)
-- [Stripe](https://stripe.com)
-- [shadcn/ui](https://ui.shadcn.com)
-- [Tailwind CSS](https://tailwindcss.com)
-
----
-
-**Ready to ship!** 🚀
+1. Add a minimal automated test layer for auth, onboarding, and middleware access control.
+2. Add a small integration slice around invitation acceptance, notification creation, and onboarding completion flows.
+3. Keep README and sprint summary aligned with the actual implementation as flows evolve.
+4. Decide on a deliberate Prisma upgrade path later instead of mixing Prisma 5 runtime with Prisma 7 editor conventions ad hoc.

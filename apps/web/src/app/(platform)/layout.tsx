@@ -1,3 +1,4 @@
+import React from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser, isImpersonating } from "@/lib/auth-helpers"
@@ -7,11 +8,7 @@ import { NotificationBell } from "./dashboard/notification-bell"
 import { UserMenu } from "./dashboard/user-menu"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
 
-export default async function PlatformLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   const dbUser = await getCurrentUser()
 
   if (!dbUser) {
@@ -38,10 +35,8 @@ export default async function PlatformLayout({
   const impersonating = isImpersonating()
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"
   const userEmail = dbUser.email
-  const userInitials = [dbUser.firstName?.[0], dbUser.lastName?.[0]]
-    .filter(Boolean)
-    .join("")
-    .toUpperCase() || "U"
+  const userInitials =
+    [dbUser.firstName?.[0], dbUser.lastName?.[0]].filter(Boolean).join("").toUpperCase() || "U"
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
@@ -49,28 +44,24 @@ export default async function PlatformLayout({
       {impersonating && <ImpersonationBanner userName={userName} />}
 
       {/* Top nav — dark navy */}
-      <nav className="border-b border-navy-700 bg-navy-900">
+      <nav className="border-navy-700 bg-navy-900 border-b">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <MobileNav roles={roles} tenants={tenants} />
-            <Link href="/" className="text-lg font-bold text-orange-400 md:text-xl whitespace-nowrap">
+            <Link
+              href="/"
+              className="whitespace-nowrap text-lg font-bold text-orange-400 md:text-xl"
+            >
               <span className="md:hidden">YBH</span>
               <span className="hidden md:inline">Youth Basketball Hub</span>
             </Link>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <Link
-              href="/"
-              className="hidden text-sm text-gray-300 hover:text-white md:block"
-            >
+            <Link href="/" className="hidden text-sm text-gray-300 hover:text-white md:block">
               Home
             </Link>
             <NotificationBell />
-            <UserMenu
-              userName={userName}
-              userEmail={userEmail}
-              userInitials={userInitials}
-            />
+            <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
           </div>
         </div>
       </nav>
@@ -78,7 +69,7 @@ export default async function PlatformLayout({
       {/* Sidebar + content */}
       <div className="flex flex-1">
         <Sidebar roles={roles} tenants={tenants} />
-        <main className="flex-1 min-w-0 overflow-x-hidden">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   )

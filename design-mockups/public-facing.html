@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youth Basketball Hub - Public Facing Design Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: {
+              50: '#f0f3f9',
+              100: '#dae1ef',
+              200: '#b8c6df',
+              300: '#8ea4ca',
+              400: '#6580b0',
+              500: '#4a6596',
+              600: '#3a507d',
+              700: '#2f4066',
+              800: '#1e2d4d',
+              900: '#0f1b33',
+              950: '#0b1628',
+            },
+            brand: {
+              orange: '#f97316',
+              'orange-light': '#fb923c',
+              'orange-dark': '#ea580c',
+              green: '#22c55e',
+              'green-light': '#4ade80',
+            }
+          },
+          fontFamily: {
+            display: ['Barlow Condensed', 'sans-serif'],
+            body: ['Barlow', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { font-family: 'Barlow', sans-serif; }
+    .font-display { font-family: 'Barlow Condensed', sans-serif; }
+
+    /* Animated gradient background */
+    .hero-gradient {
+      background: linear-gradient(135deg, #0b1628 0%, #1e2d4d 40%, #0f1b33 70%, #0b1628 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-gradient::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 50%, rgba(249,115,22,0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 20%, rgba(249,115,22,0.05) 0%, transparent 40%);
+      animation: float 20s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, -30px) rotate(1deg); }
+      66% { transform: translate(-20px, 20px) rotate(-1deg); }
+    }
+
+    /* Court line decoration */
+    .court-line {
+      position: absolute;
+      border: 2px solid rgba(249,115,22,0.06);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Stat counter animation */
+    .stat-pulse {
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+      50% { box-shadow: 0 0 20px 4px rgba(249,115,22,0.1); }
+    }
+
+    /* Card hover lift */
+    .card-lift {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    }
+
+    /* Scroll indicator */
+    .scroll-indicator {
+      animation: bounce 2s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* Section label line */
+    .section-label::after {
+      content: '';
+      display: inline-block;
+      width: 40px;
+      height: 3px;
+      background: #f97316;
+      margin-left: 12px;
+      vertical-align: middle;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- ============================================== -->
+  <!-- NAVIGATION                                      -->
+  <!-- ============================================== -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-navy-950/95 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <!-- Basketball icon -->
+          <div class="w-9 h-9 rounded-full bg-brand-orange flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 2v20M2 12h20M4.93 4.93c4.08 2.72 8.14 2.72 14.14 0M4.93 19.07c4.08-2.72 8.14-2.72 14.14 0"/>
+            </svg>
+          </div>
+          <span class="font-display font-bold text-xl text-white tracking-tight">
+            YOUTH BASKETBALL <span class="text-brand-orange">HUB</span>
+          </span>
+        </div>
+
+        <!-- Nav Links -->
+        <div class="hidden md:flex items-center gap-1">
+          <a href="#" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/5 transition-colors">Programs</a>
+          <a href="#" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/5 transition-colors">Clubs</a>
+          <a href="#" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/5 transition-colors">Leagues</a>
+          <a href="#" class="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg hover:bg-white/5 transition-colors">About</a>
+        </div>
+
+        <!-- Auth Buttons -->
+        <div class="flex items-center gap-3">
+          <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors">Sign In</a>
+          <a href="#" class="px-5 py-2 bg-brand-orange hover:bg-brand-orange-dark text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
+            Get Started
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============================================== -->
+  <!-- HERO SECTION                                    -->
+  <!-- ============================================== -->
+  <section class="hero-gradient min-h-[90vh] flex items-center pt-16 relative">
+    <!-- Court line decorations -->
+    <div class="court-line w-[600px] h-[600px] top-[10%] right-[-200px]"></div>
+    <div class="court-line w-[400px] h-[400px] bottom-[5%] left-[-100px]"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <!-- Left: Text Content -->
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-orange/10 border border-brand-orange/20 rounded-full mb-6">
+            <div class="w-2 h-2 bg-brand-green rounded-full animate-pulse"></div>
+            <span class="text-brand-orange text-xs font-semibold uppercase tracking-wider">188+ Ontario Clubs & Growing</span>
+          </div>
+
+          <h1 class="font-display font-extrabold text-5xl sm:text-6xl lg:text-7xl text-white leading-[0.95] tracking-tight mb-6">
+            THE ALL-IN-ONE<br>
+            PLATFORM FOR<br>
+            <span class="text-brand-orange">YOUTH BASKETBALL</span>
+          </h1>
+
+          <p class="text-lg text-gray-400 max-w-lg mb-8 leading-relaxed">
+            Find clubs, browse tryouts, manage teams, and connect with the basketball community — all in one place.
+          </p>
+
+          <!-- CTA Buttons -->
+          <div class="flex flex-wrap gap-4 mb-12">
+            <a href="#" class="group inline-flex items-center gap-2 px-7 py-3.5 bg-brand-orange hover:bg-brand-orange-dark text-white font-semibold rounded-lg transition-all cursor-pointer shadow-lg shadow-brand-orange/20">
+              Get Started Free
+              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#" class="inline-flex items-center gap-2 px-7 py-3.5 border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white font-semibold rounded-lg transition-all cursor-pointer">
+              Browse Tryouts
+            </a>
+          </div>
+
+          <!-- Live Stats -->
+          <div class="flex gap-8">
+            <div>
+              <div class="font-display font-bold text-3xl text-white">188+</div>
+              <div class="text-sm text-gray-500">Clubs</div>
+            </div>
+            <div class="w-px bg-gray-700"></div>
+            <div>
+              <div class="font-display font-bold text-3xl text-white">2,400+</div>
+              <div class="text-sm text-gray-500">Players</div>
+            </div>
+            <div class="w-px bg-gray-700"></div>
+            <div>
+              <div class="font-display font-bold text-3xl text-white">500+</div>
+              <div class="text-sm text-gray-500">Teams</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Search Card -->
+        <div class="relative">
+          <div class="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+            <h3 class="font-display font-bold text-xl text-white mb-1">Find Your Club</h3>
+            <p class="text-gray-400 text-sm mb-5">Search 188+ basketball clubs across Ontario</p>
+
+            <!-- Search Input -->
+            <div class="relative mb-6">
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="Start typing a club name..." class="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-orange/50 focus:ring-1 focus:ring-brand-orange/30 transition">
+            </div>
+
+            <!-- Quick Results Preview -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] cursor-pointer transition group">
+                <div class="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 font-display font-bold text-sm">TR</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-white group-hover:text-brand-orange transition">Toronto Raptors Youth</div>
+                  <div class="text-xs text-gray-500">Toronto, ON &middot; 12 teams &middot; 3 open tryouts</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-600 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] cursor-pointer transition group">
+                <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 font-display font-bold text-sm">OE</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-white group-hover:text-brand-orange transition">Ottawa Elite Basketball</div>
+                  <div class="text-xs text-gray-500">Ottawa, ON &middot; 8 teams &middot; 5 open tryouts</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-600 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] cursor-pointer transition group">
+                <div class="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 font-display font-bold text-sm">HH</div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-white group-hover:text-brand-orange transition">Hamilton Hoops Academy</div>
+                  <div class="text-xs text-gray-500">Hamilton, ON &middot; 6 teams &middot; 2 open tryouts</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-600 group-hover:text-brand-orange transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </div>
+
+            <a href="#" class="block mt-4 text-center text-sm text-brand-orange hover:text-brand-orange-light font-medium transition cursor-pointer">
+              View all 188 clubs &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-indicator">
+      <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 14l-7 7m0 0l-7-7"/></svg>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SOCIAL PROOF BAR                                -->
+  <!-- ============================================== -->
+  <section class="bg-gray-50 border-y border-gray-100 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-sm text-gray-500">
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-green" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"/></svg>
+          Trusted by 188+ clubs
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-green" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"/></svg>
+          Free to get started
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-green" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"/></svg>
+          Online payments via Stripe
+        </span>
+        <span class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-green" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"/></svg>
+          Built for Canadian basketball
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FEATURED PROGRAMS                               -->
+  <!-- ============================================== -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Section Header -->
+      <div class="flex items-end justify-between mb-10">
+        <div>
+          <span class="section-label font-display font-semibold text-xs uppercase tracking-[0.15em] text-brand-orange">Programs</span>
+          <h2 class="font-display font-bold text-3xl sm:text-4xl text-navy-950 mt-2">Upcoming Tryouts & Events</h2>
+          <p class="text-gray-500 mt-2 max-w-lg">Find the right program for your player. Filter by age, location, and type.</p>
+        </div>
+        <a href="#" class="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-brand-orange hover:text-brand-orange-dark transition cursor-pointer">
+          View All
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+
+      <!-- Filter Pills -->
+      <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
+        <button class="px-4 py-2 bg-navy-950 text-white text-sm font-medium rounded-lg whitespace-nowrap cursor-pointer">All Programs</button>
+        <button class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium rounded-lg whitespace-nowrap cursor-pointer transition">Tryouts</button>
+        <button class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium rounded-lg whitespace-nowrap cursor-pointer transition">House Leagues</button>
+        <button class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium rounded-lg whitespace-nowrap cursor-pointer transition">Camps</button>
+        <button class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 text-sm font-medium rounded-lg whitespace-nowrap cursor-pointer transition">Tournaments</button>
+      </div>
+
+      <!-- Program Cards Grid -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Card 1 - Tryout -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-1.5 bg-red-500"></div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-flex items-center px-2.5 py-1 bg-brand-orange/10 text-brand-orange text-xs font-semibold rounded-md">TRYOUT</span>
+              <span class="text-xs text-gray-400">3/20 signed up</span>
+            </div>
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition mb-1">U14 Boys Rep Team Tryout</h3>
+            <p class="text-sm text-gray-500 mb-4">Toronto Raptors Youth</p>
+            <div class="space-y-2 text-sm text-gray-600">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Apr 15 - Apr 20, 2026
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Downsview Arena, Toronto
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                U14 Boys
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+              <span class="font-display font-bold text-xl text-brand-orange">$75</span>
+              <span class="text-sm font-medium text-navy-950 group-hover:text-brand-orange transition">View Details &rarr;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 - House League -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-1.5 bg-green-500"></div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md">HOUSE LEAGUE</span>
+              <span class="text-xs text-gray-400">18/24 spots filled</span>
+            </div>
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition mb-1">Spring House League 2026</h3>
+            <p class="text-sm text-gray-500 mb-4">Ottawa Elite Basketball</p>
+            <div class="space-y-2 text-sm text-gray-600">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                May 1 - Jul 15, 2026
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Minto Sports Complex, Ottawa
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                U12 Co-ed &middot; Saturdays 10am-12pm
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+              <span class="font-display font-bold text-xl text-brand-orange">$200</span>
+              <span class="text-sm font-medium text-navy-950 group-hover:text-brand-orange transition">View Details &rarr;</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 - Camp -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-1.5 bg-purple-500"></div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-md">CAMP</span>
+              <span class="text-xs text-gray-400">10/30 spots filled</span>
+            </div>
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition mb-1">Summer Skills Intensive</h3>
+            <p class="text-sm text-gray-500 mb-4">Hamilton Hoops Academy</p>
+            <div class="space-y-2 text-sm text-gray-600">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Jul 7 - Jul 18, 2026
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                McMaster Gymnasium, Hamilton
+              </div>
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                U10-U16 &middot; 2-week day camp
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+              <div>
+                <span class="font-display font-bold text-xl text-brand-orange">$350</span>
+                <span class="text-xs text-gray-400 ml-1">/ full camp</span>
+              </div>
+              <span class="text-sm font-medium text-navy-950 group-hover:text-brand-orange transition">View Details &rarr;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile CTA -->
+      <div class="sm:hidden mt-6 text-center">
+        <a href="#" class="text-sm font-semibold text-brand-orange">View All Programs &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- AUDIENCE VALUE PROPS                            -->
+  <!-- ============================================== -->
+  <section class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-14">
+        <span class="section-label font-display font-semibold text-xs uppercase tracking-[0.15em] text-brand-orange">For Everyone</span>
+        <h2 class="font-display font-bold text-3xl sm:text-4xl text-navy-950 mt-2">Built for the Basketball Community</h2>
+        <p class="text-gray-500 mt-3 max-w-2xl mx-auto">Whether you're a parent looking for tryouts, a club owner managing teams, or a referee tracking games — we've got you covered.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Parents -->
+        <div class="card-lift bg-white rounded-xl p-6 border border-gray-200 cursor-pointer">
+          <div class="w-12 h-12 rounded-xl bg-brand-orange/10 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-brand-orange" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 class="font-display font-bold text-lg text-navy-950 mb-2">Parents & Families</h3>
+          <ul class="space-y-2">
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-brand-orange mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Browse tryouts by age & location
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-brand-orange mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Register & pay online
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-brand-orange mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Track schedules & stats
+            </li>
+          </ul>
+        </div>
+
+        <!-- Club Owners -->
+        <div class="card-lift bg-white rounded-xl p-6 border border-gray-200 cursor-pointer">
+          <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <h3 class="font-display font-bold text-lg text-navy-950 mb-2">Club Owners</h3>
+          <ul class="space-y-2">
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Organize teams by age group
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Publish tryouts & camps
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Accept payments via Stripe
+            </li>
+          </ul>
+        </div>
+
+        <!-- Referees -->
+        <div class="card-lift bg-white rounded-xl p-6 border border-gray-200 cursor-pointer">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3 class="font-display font-bold text-lg text-navy-950 mb-2">Referees</h3>
+          <ul class="space-y-2">
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Set availability & certs
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Get assigned to games
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Track earnings & history
+            </li>
+          </ul>
+        </div>
+
+        <!-- League Organizers -->
+        <div class="card-lift bg-white rounded-xl p-6 border border-gray-200 cursor-pointer">
+          <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <h3 class="font-display font-bold text-lg text-navy-950 mb-2">League Organizers</h3>
+          <ul class="space-y-2">
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Create divisions & schedules
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Assign referees to games
+            </li>
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+              Live standings & stats
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FEATURED CLUBS                                  -->
+  <!-- ============================================== -->
+  <section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between mb-10">
+        <div>
+          <span class="section-label font-display font-semibold text-xs uppercase tracking-[0.15em] text-brand-orange">Featured</span>
+          <h2 class="font-display font-bold text-3xl sm:text-4xl text-navy-950 mt-2">Popular Clubs</h2>
+        </div>
+        <a href="#" class="hidden sm:inline-flex items-center gap-1 text-sm font-semibold text-brand-orange hover:text-brand-orange-dark transition cursor-pointer">
+          View All 188 Clubs
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Club Card 1 -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-24 bg-gradient-to-br from-red-600 to-red-800 relative">
+            <div class="absolute bottom-0 translate-y-1/2 left-5">
+              <div class="w-14 h-14 rounded-xl bg-white shadow-lg flex items-center justify-center">
+                <span class="font-display font-bold text-xl text-red-600">TR</span>
+              </div>
+            </div>
+          </div>
+          <div class="pt-10 p-5">
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition">Toronto Raptors Youth</h3>
+            <p class="text-sm text-gray-500 mb-4">Toronto, Ontario</p>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-4">Developing the next generation of basketball talent in the Greater Toronto Area with competitive rep and recreational programs.</p>
+            <div class="flex gap-4 text-xs">
+              <span class="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">12 teams</span>
+              <span class="inline-flex items-center gap-1 text-brand-orange bg-orange-50 px-2 py-1 rounded-md font-medium">3 tryouts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club Card 2 -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-24 bg-gradient-to-br from-blue-600 to-blue-800 relative">
+            <div class="absolute bottom-0 translate-y-1/2 left-5">
+              <div class="w-14 h-14 rounded-xl bg-white shadow-lg flex items-center justify-center">
+                <span class="font-display font-bold text-xl text-blue-600">OE</span>
+              </div>
+            </div>
+          </div>
+          <div class="pt-10 p-5">
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition">Ottawa Elite Basketball</h3>
+            <p class="text-sm text-gray-500 mb-4">Ottawa, Ontario</p>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-4">Premier competitive basketball club in the National Capital Region, offering rep and development programs for youth athletes.</p>
+            <div class="flex gap-4 text-xs">
+              <span class="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">8 teams</span>
+              <span class="inline-flex items-center gap-1 text-brand-orange bg-orange-50 px-2 py-1 rounded-md font-medium">5 tryouts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club Card 3 -->
+        <div class="card-lift bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer group">
+          <div class="h-24 bg-gradient-to-br from-green-600 to-green-800 relative">
+            <div class="absolute bottom-0 translate-y-1/2 left-5">
+              <div class="w-14 h-14 rounded-xl bg-white shadow-lg flex items-center justify-center">
+                <span class="font-display font-bold text-xl text-green-600">HH</span>
+              </div>
+            </div>
+          </div>
+          <div class="pt-10 p-5">
+            <h3 class="font-display font-bold text-lg text-navy-950 group-hover:text-brand-orange transition">Hamilton Hoops Academy</h3>
+            <p class="text-sm text-gray-500 mb-4">Hamilton, Ontario</p>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-4">Community-focused basketball academy dedicated to skill development and sportsmanship for players of all skill levels.</p>
+            <div class="flex gap-4 text-xs">
+              <span class="inline-flex items-center gap-1 text-green-700 bg-green-50 px-2 py-1 rounded-md font-medium">6 teams</span>
+              <span class="inline-flex items-center gap-1 text-brand-orange bg-orange-50 px-2 py-1 rounded-md font-medium">2 tryouts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FINAL CTA                                       -->
+  <!-- ============================================== -->
+  <section class="hero-gradient py-24 relative">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      <h2 class="font-display font-extrabold text-4xl sm:text-5xl text-white mb-4">
+        Ready to <span class="text-brand-orange">Get Started?</span>
+      </h2>
+      <p class="text-lg text-gray-400 mb-8 max-w-xl mx-auto">
+        Join 188+ clubs and thousands of families already using Youth Basketball Hub.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="#" class="group inline-flex items-center gap-2 px-8 py-4 bg-brand-orange hover:bg-brand-orange-dark text-white text-lg font-semibold rounded-lg transition-all cursor-pointer shadow-lg shadow-brand-orange/25">
+          Create Your Free Account
+          <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FOOTER                                          -->
+  <!-- ============================================== -->
+  <footer class="bg-navy-950 border-t border-white/5 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-full bg-brand-orange flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+              </svg>
+            </div>
+            <span class="font-display font-bold text-lg text-white">YBH</span>
+          </div>
+          <p class="text-sm text-gray-500 leading-relaxed">The all-in-one platform for youth basketball in Canada.</p>
+        </div>
+        <!-- Programs -->
+        <div>
+          <h4 class="font-display font-semibold text-sm text-white uppercase tracking-wider mb-4">Programs</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Tryouts</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">House Leagues</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Camps</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Tournaments</a></li>
+          </ul>
+        </div>
+        <!-- Platform -->
+        <div>
+          <h4 class="font-display font-semibold text-sm text-white uppercase tracking-wider mb-4">Platform</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">For Clubs</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">For Parents</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">For Referees</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">For Leagues</a></li>
+          </ul>
+        </div>
+        <!-- Legal -->
+        <div>
+          <h4 class="font-display font-semibold text-sm text-white uppercase tracking-wider mb-4">Legal</h4>
+          <ul class="space-y-2.5">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Privacy Policy</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Terms of Service</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-300 transition">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-white/5 pt-6">
+        <p class="text-sm text-gray-600 text-center">&copy; 2026 Youth Basketball Hub. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

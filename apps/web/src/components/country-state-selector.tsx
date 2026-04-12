@@ -68,7 +68,7 @@ export function CountryStateSelector({
           <select
             value={countryValue}
             onChange={(e) => onCountryChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             {enabledCountries.map((c) => (
               <option key={c.code} value={c.code}>
@@ -88,7 +88,7 @@ export function CountryStateSelector({
           <select
             value={stateValue}
             onChange={(e) => onStateChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           >
             <option value="">Select {config?.subdivisionLabel || "region"}...</option>
             {subdivisions.map((s) => (
@@ -103,7 +103,7 @@ export function CountryStateSelector({
             value={stateValue}
             onChange={(e) => onStateChange(e.target.value)}
             placeholder={config?.subdivisionLabel || "Region"}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
           />
         )}
         {stateError && <p className="mt-1 text-sm text-red-600">{stateError}</p>}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -128,7 +128,7 @@ export default function StaffPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null)
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const res = await fetch(`/api/clubs/${clubId}/staff`)
       if (!res.ok) throw new Error("Failed to load staff")
@@ -140,11 +140,11 @@ export default function StaffPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [clubId])
 
   useEffect(() => {
     loadData()
-  }, [clubId])
+  }, [loadData])
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -183,10 +183,7 @@ export default function StaffPage() {
     if (!confirm(`Remove ${name} from staff?`)) return
 
     try {
-      const res = await fetch(
-        `/api/clubs/${clubId}/staff?roleId=${roleId}`,
-        { method: "DELETE" }
-      )
+      const res = await fetch(`/api/clubs/${clubId}/staff?roleId=${roleId}`, { method: "DELETE" })
 
       if (!res.ok) {
         const data = await res.json()
@@ -239,9 +236,7 @@ export default function StaffPage() {
     <div className="space-y-8">
       {/* Invite Form */}
       <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Invite Staff
-        </h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">Invite Staff</h2>
 
         {error && (
           <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -258,9 +253,7 @@ export default function StaffPage() {
         <form onSubmit={handleInvite} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
               <input
                 type="email"
                 value={inviteEmail}
@@ -271,14 +264,10 @@ export default function StaffPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Role</label>
               <select
                 value={inviteRole}
-                onChange={(e) =>
-                  setInviteRole(e.target.value as "ClubManager" | "Staff")
-                }
+                onChange={(e) => setInviteRole(e.target.value as "ClubManager" | "Staff")}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none"
               >
                 <option value="Staff">Staff</option>
@@ -319,9 +308,8 @@ export default function StaffPage() {
           <div className="space-y-3">
             {requests.map((req) => {
               const name = req.invitedUser
-                ? [req.invitedUser.firstName, req.invitedUser.lastName]
-                    .filter(Boolean)
-                    .join(" ") || req.invitedEmail
+                ? [req.invitedUser.firstName, req.invitedUser.lastName].filter(Boolean).join(" ") ||
+                  req.invitedEmail
                 : req.invitedEmail
 
               return (
@@ -338,17 +326,13 @@ export default function StaffPage() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() =>
-                        handleRespondToRequest(req.id, "accept", req.role)
-                      }
+                      onClick={() => handleRespondToRequest(req.id, "accept", req.role)}
                       className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
                     >
                       Accept
                     </button>
                     <button
-                      onClick={() =>
-                        handleRespondToRequest(req.id, "decline")
-                      }
+                      onClick={() => handleRespondToRequest(req.id, "decline")}
                       className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                     >
                       Decline
@@ -373,17 +357,12 @@ export default function StaffPage() {
           <div className="space-y-4">
             {grouped.map((member) => {
               const name =
-                [member.firstName, member.lastName]
-                  .filter(Boolean)
-                  .join(" ") || member.email
+                [member.firstName, member.lastName].filter(Boolean).join(" ") || member.email
 
               const isOwner = member.clubRoles.some((r) => r.role === "ClubOwner")
 
               return (
-                <div
-                  key={member.userId}
-                  className="rounded-md border border-gray-200 p-4"
-                >
+                <div key={member.userId} className="rounded-md border border-gray-200 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       {/* Name + Email */}
@@ -417,8 +396,18 @@ export default function StaffPage() {
                                 <span className="font-semibold">{tr.team!.name}</span>
                                 <span className="opacity-60">·</span>
                                 <span>{getTeamRoleLabel(tr.designation, tr.role)}</span>
-                                <svg className="h-3 w-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                <svg
+                                  className="h-3 w-3 opacity-40"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5l7 7-7 7"
+                                  />
                                 </svg>
                               </Link>
                             ))}
@@ -430,18 +419,20 @@ export default function StaffPage() {
                       {member.teamRoles.length === 0 &&
                         !isOwner &&
                         !member.clubRoles.some((r) => r.role === "ClubManager") && (
-                        <div className="mt-2">
-                          <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
-                            Not assigned to any team
-                          </span>
-                        </div>
-                      )}
+                          <div className="mt-2">
+                            <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+                              Not assigned to any team
+                            </span>
+                          </div>
+                        )}
                     </div>
 
                     {/* Remove button */}
                     {!isOwner && (
                       <button
-                        onClick={() => handleRemove(member.clubRoles[0]?.id || member.teamRoles[0]?.id, name)}
+                        onClick={() =>
+                          handleRemove(member.clubRoles[0]?.id || member.teamRoles[0]?.id, name)
+                        }
                         className="ml-4 text-xs font-medium text-red-500 hover:text-red-700"
                       >
                         Remove
@@ -468,12 +459,8 @@ export default function StaffPage() {
                 className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 p-4"
               >
                 <div>
-                  <div className="font-medium text-gray-900">
-                    {invite.invitedEmail}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Invited as {invite.role} — Pending
-                  </div>
+                  <div className="font-medium text-gray-900">{invite.invitedEmail}</div>
+                  <div className="text-xs text-gray-500">Invited as {invite.role} — Pending</div>
                 </div>
               </div>
             ))}

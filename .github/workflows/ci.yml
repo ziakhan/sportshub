@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Lint, Type Check & Build
+    name: Test, Type Check & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -26,19 +26,19 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Generate Prisma Client
-        run: npx prisma generate --schema=prisma/schema.prisma
+        run: npm run db:generate
 
-      - name: Lint
-        run: npx turbo run lint
+      - name: Test
+        run: npm test
 
       - name: Type Check
-        run: npx turbo run type-check
+        run: npm run type-check
 
       - name: Build
-        run: npx turbo run build
+        run: npm run build
         env:
           NEXTAUTH_SECRET: ci-build-secret
           NEXTAUTH_URL: http://localhost:3000

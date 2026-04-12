@@ -3,17 +3,20 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { normalizedEmailSchema } from "@/lib/validations/email"
 
-const staffEntrySchema = z.object({
-  type: z.enum(["assign", "invite"]),
-  userId: z.string().uuid().optional(),
-  email: z.string().email().optional(),
-  role: z.enum(["Staff", "TeamManager"]),
-  designation: z.enum(["HeadCoach", "AssistantCoach"]).nullable().optional(),
-}).refine(
-  (data) => (data.type === "assign" && data.userId) || (data.type === "invite" && data.email),
-  { message: "assign requires userId, invite requires email" }
-)
+const staffEntrySchema = z
+  .object({
+    type: z.enum(["assign", "invite"]),
+    userId: z.string().uuid().optional(),
+    email: normalizedEmailSchema().optional(),
+    role: z.enum(["Staff", "TeamManager"]),
+    designation: z.enum(["HeadCoach", "AssistantCoach"]).nullable().optional(),
+  })
+  .refine(
+    (data) => (data.type === "assign" && data.userId) || (data.type === "invite" && data.email),
+    { message: "assign requires userId, invite requires email" }
+  )
 
 const updateTeamSchema = z.object({
   name: z.string().min(3).max(100).optional(),
@@ -29,10 +32,7 @@ const updateTeamSchema = z.object({
  * Get single team
  * GET /api/teams/[id]
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -77,10 +77,7 @@ export async function GET(
     const userRole = await prisma.userRole.findFirst({
       where: {
         userId: session.user.id,
-        OR: [
-          { tenantId: team.tenantId },
-          { role: "PlatformAdmin" },
-        ],
+        OR: [{ tenantId: team.tenantId }, { role: "PlatformAdmin" }],
       },
     })
 
@@ -99,10 +96,7 @@ export async function GET(
  * Update team (details + staff changes)
  * PATCH /api/teams/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -188,9 +182,7 @@ export async function PATCH(
             })
 
             if (!existingRole) {
-              throw new Error(
-                `User ${entry.userId} does not have ${entry.role} role for this club`
-              )
+              throw new Error(`User ${entry.userId} does not have ${entry.role} role for this club`)
             }
 
             // Check if already assigned to this team with same role
@@ -214,8 +206,15 @@ export async function PATCH(
               })
             }
           } else if (entry.type === "invite" && entry.email) {
-            const invitedUser = await tx.user.findUnique({
-              where: { email: entry.email },
+            const normalizedEmail = entry.email
+
+            const invitedUser = await tx.user.findFirst({
+              where: {
+                email: {
+                  equals: normalizedEmail,
+                  mode: "insensitive",
+                },
+              },
               select: { id: true },
             })
 
@@ -224,7 +223,7 @@ export async function PATCH(
                 tenantId: team.tenantId,
                 invitedById: userId,
                 invitedUserId: invitedUser?.id || null,
-                invitedEmail: entry.email,
+                invitedEmail: normalizedEmail,
                 role: entry.role,
                 teamId: params.id,
                 designation: entry.designation || null,
@@ -237,13 +236,14 @@ export async function PATCH(
                 where: { id: team.tenantId },
                 select: { name: true },
               })
-              const roleLabel = entry.designation === "HeadCoach"
-                ? "Head Coach"
-                : entry.designation === "AssistantCoach"
-                ? "Assistant Coach"
-                : entry.role === "TeamManager"
-                ? "Team Manager"
-                : entry.role
+              const roleLabel =
+                entry.designation === "HeadCoach"
+                  ? "Head Coach"
+                  : entry.designation === "AssistantCoach"
+                    ? "Assistant Coach"
+                    : entry.role === "TeamManager"
+                      ? "Team Manager"
+                      : entry.role
 
               await tx.notification.create({
                 data: {

@@ -214,7 +214,7 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
         <button
           type="button"
           onClick={() => { setMode("search"); onClear?.() }}
-          className="text-xs text-blue-600 hover:underline"
+          className="text-xs text-orange-600 hover:underline"
         >
           Change
         </button>
@@ -231,14 +231,14 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => { if (existingVenues.length > 0 || googlePredictions.length > 0) setShowDropdown(true) }}
           placeholder="Search venue by name or address..."
-          className="w-full rounded-md border border-gray-300 px-3 py-2 pl-9 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 pl-9 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
         />
         <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
         {(loading || creating) && (
-          <div className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+          <div className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500" />
         )}
       </div>
 
@@ -250,7 +250,7 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
               <div className="px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-50">Existing Venues</div>
               {existingVenues.map((v) => (
                 <button key={v.id} onClick={() => selectExisting(v)}
-                  className="w-full px-3 py-2 text-left hover:bg-blue-50 border-b border-gray-50">
+                  className="w-full px-3 py-2 text-left hover:bg-orange-50 border-b border-gray-50">
                   <div className="text-sm font-medium text-gray-900">{v.name}</div>
                   <div className="text-xs text-gray-500">{v.address}, {v.city}, {v.state}</div>
                 </button>

@@ -60,7 +60,7 @@ export function MakeOfferButton({
         .catch(() => {})
         .finally(() => setLoadingTemplates(false))
     }
-  }, [showForm, teamId, templates.length])
+  }, [showForm, teamId, templates.length, clubId])
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplateId(templateId)
@@ -148,22 +148,18 @@ export function MakeOfferButton({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">Make Offer</h3>
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+        <h3 className="mb-1 text-lg font-semibold text-gray-900">Make Offer</h3>
+        <p className="mb-4 text-sm text-gray-600">
           Offering <strong>{playerName}</strong> a spot on <strong>{teamName}</strong>
         </p>
 
-        {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-        )}
+        {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Template selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Template
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Template</label>
             {loadingTemplates ? (
               <div className="mt-1 text-sm text-gray-500">Loading templates...</div>
             ) : templates.length > 0 ? (
@@ -234,16 +230,49 @@ export function MakeOfferButton({
 
           {/* Included items */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Includes</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Includes</label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { key: "uniform", label: "Uniform", desc: "Shirt + Shorts", checked: includesUniform, set: setIncludesUniform },
-                { key: "tracksuit", label: "Tracksuit", desc: "Jacket + Pants", checked: includesTracksuit, set: setIncludesTracksuit },
-                { key: "shoes", label: "Shoes", desc: "Basketball shoes", checked: includesShoes, set: setIncludesShoes },
-                { key: "ball", label: "Basketball", desc: "Game ball", checked: includesBall, set: setIncludesBall },
-                { key: "bag", label: "Bag", desc: "Equipment bag", checked: includesBag, set: setIncludesBag },
+                {
+                  key: "uniform",
+                  label: "Uniform",
+                  desc: "Shirt + Shorts",
+                  checked: includesUniform,
+                  set: setIncludesUniform,
+                },
+                {
+                  key: "tracksuit",
+                  label: "Tracksuit",
+                  desc: "Jacket + Pants",
+                  checked: includesTracksuit,
+                  set: setIncludesTracksuit,
+                },
+                {
+                  key: "shoes",
+                  label: "Shoes",
+                  desc: "Basketball shoes",
+                  checked: includesShoes,
+                  set: setIncludesShoes,
+                },
+                {
+                  key: "ball",
+                  label: "Basketball",
+                  desc: "Game ball",
+                  checked: includesBall,
+                  set: setIncludesBall,
+                },
+                {
+                  key: "bag",
+                  label: "Bag",
+                  desc: "Equipment bag",
+                  checked: includesBag,
+                  set: setIncludesBag,
+                },
               ].map((item) => (
-                <label key={item.key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50 cursor-pointer">
+                <label
+                  key={item.key}
+                  className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50"
+                >
                   <input
                     type="checkbox"
                     checked={item.checked}
@@ -289,7 +318,7 @@ export function MakeOfferButton({
           {/* Preview */}
           {includedItems.length > 0 && (
             <div className="rounded-md bg-orange-50 p-3">
-              <div className="text-xs font-medium text-orange-700 mb-1">Offer includes:</div>
+              <div className="mb-1 text-xs font-medium text-orange-700">Offer includes:</div>
               <div className="text-xs text-orange-600">
                 ${parseFloat(seasonFee).toFixed(2)}
                 {parseInt(installments) > 1 ? ` (${installments} installments)` : ""}
