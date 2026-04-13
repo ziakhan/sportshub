@@ -404,7 +404,7 @@ export default function EditTeamPage() {
           </div>
         )}
         {saved && (
-          <div className="bg-court-50 text-court-700 rounded-xl border border-court-200 p-3 text-sm">
+          <div className="bg-court-50 text-court-700 border-court-200 rounded-xl border p-3 text-sm">
             Team updated successfully.
           </div>
         )}
@@ -422,7 +422,7 @@ export default function EditTeamPage() {
                 {...register("name")}
                 type="text"
                 id="name"
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
+                className="border-ink-200 focus:border-play-500 focus:ring-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-1"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
             </div>
@@ -434,7 +434,7 @@ export default function EditTeamPage() {
               <select
                 {...register("ageGroup")}
                 id="ageGroup"
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
               >
                 <option value="">Select age group</option>
                 {ageGroups.map((age) => (
@@ -456,7 +456,7 @@ export default function EditTeamPage() {
                 <select
                   {...register("gender")}
                   id="gender"
-                  className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                 >
                   <option value="">Select gender</option>
                   <option value="MALE">Male</option>
@@ -473,7 +473,7 @@ export default function EditTeamPage() {
                   {...register("season")}
                   type="text"
                   id="season"
-                  className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                   placeholder="Spring 2026"
                 />
               </div>
@@ -487,7 +487,7 @@ export default function EditTeamPage() {
                 {...register("description")}
                 id="description"
                 rows={3}
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                 placeholder="Team description..."
               />
             </div>
@@ -587,7 +587,7 @@ export default function EditTeamPage() {
                 {staffAssignments.map((s) => (
                   <div
                     key={s.userId}
-                    className="flex items-center justify-between rounded-xl border border-court-200 bg-court-50 px-3 py-2"
+                    className="border-court-200 bg-court-50 flex items-center justify-between rounded-xl border px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
                       <div>
@@ -599,7 +599,7 @@ export default function EditTeamPage() {
                       >
                         {getStaffRoleLabel(s.staffRole)}
                       </span>
-                      <span className="text-xs text-court-600">+ New</span>
+                      <span className="text-court-600 text-xs">+ New</span>
                     </div>
                     <button
                       type="button"
@@ -679,7 +679,7 @@ export default function EditTeamPage() {
                 <select
                   value={selectedStaffId}
                   onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="border-ink-200 flex-1 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 >
                   <option value="">Select a staff member</option>
                   {unassignedStaff.map((s) => {
@@ -698,7 +698,7 @@ export default function EditTeamPage() {
                 <select
                   value={selectedStaffRole}
                   onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)}
-                  className="border-ink-200 w-40 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 >
                   <option value="HeadCoach" disabled={hasHeadCoach}>
                     Head Coach
@@ -727,7 +727,7 @@ export default function EditTeamPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="staff@example.com"
-                className="border-ink-200 flex-1 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
@@ -738,7 +738,7 @@ export default function EditTeamPage() {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as StaffRoleType)}
-                className="border-ink-200 w-40 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
               >
                 <option value="HeadCoach" disabled={hasHeadCoach}>
                   Head Coach
@@ -750,7 +750,7 @@ export default function EditTeamPage() {
                 type="button"
                 onClick={handleAddInvite}
                 disabled={!inviteEmail.trim()}
-                className="disabled:border-ink-200 disabled:text-ink-300 rounded-xl border border-play-600 px-3 py-2 text-sm font-medium text-play-600 hover:bg-play-50"
+                className="disabled:border-ink-200 disabled:text-ink-300 border-play-600 text-play-600 hover:bg-play-50 rounded-xl border px-3 py-2 text-sm font-medium"
               >
                 Invite
               </button>
@@ -785,7 +785,7 @@ export default function EditTeamPage() {
       </form>
 
       {/* Tryouts Section */}
-      <div className="mt-6 border-ink-100 shadow-soft rounded-2xl border bg-white p-8">
+      <div className="border-ink-100 shadow-soft mt-6 rounded-2xl border bg-white p-8">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-ink-900 text-lg font-semibold">Tryouts ({tryoutList.length})</h3>
           <Link
@@ -808,7 +808,7 @@ export default function EditTeamPage() {
                 <Link
                   key={tryout.id}
                   href={`/clubs/${clubId}/tryouts/${tryout.id}/edit`}
-                  className="border-ink-200 hover:border-play-300 flex items-center justify-between rounded-xl border p-3 transition hover:shadow-soft"
+                  className="border-ink-200 hover:border-play-300 hover:shadow-soft flex items-center justify-between rounded-xl border p-3 transition"
                 >
                   <div>
                     <p className="text-ink-900 text-sm font-medium">{tryout.title}</p>

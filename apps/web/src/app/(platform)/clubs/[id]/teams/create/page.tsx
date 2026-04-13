@@ -381,7 +381,7 @@ export default function CreateTeamPage() {
                 {...register("name")}
                 type="text"
                 id="name"
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
+                className="border-ink-200 focus:border-play-500 focus:ring-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-1"
                 placeholder="Warriors U12"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
@@ -394,7 +394,7 @@ export default function CreateTeamPage() {
               <select
                 {...register("ageGroup")}
                 id="ageGroup"
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
               >
                 <option value="">Select age group</option>
                 {ageGroups.map((age) => (
@@ -416,7 +416,7 @@ export default function CreateTeamPage() {
                 <select
                   {...register("gender")}
                   id="gender"
-                  className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                 >
                   <option value="">Select gender</option>
                   <option value="MALE">Male</option>
@@ -433,7 +433,7 @@ export default function CreateTeamPage() {
                   {...register("season")}
                   type="text"
                   id="season"
-                  className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                   placeholder="Spring 2026"
                 />
               </div>
@@ -447,7 +447,7 @@ export default function CreateTeamPage() {
                 {...register("description")}
                 id="description"
                 rows={3}
-                className="border-ink-200 mt-1 block w-full rounded-xl border px-3 py-2 focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
                 placeholder="Team description..."
               />
             </div>
@@ -547,7 +547,7 @@ export default function CreateTeamPage() {
                 <select
                   value={selectedStaffId}
                   onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="border-ink-200 flex-1 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 >
                   <option value="">Select a staff member</option>
                   {unassignedStaff.map((s) => {
@@ -566,7 +566,7 @@ export default function CreateTeamPage() {
                 <select
                   value={selectedStaffRole}
                   onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)}
-                  className="border-ink-200 w-40 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                  className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 >
                   <option value="HeadCoach" disabled={hasHeadCoach}>
                     Head Coach
@@ -595,7 +595,7 @@ export default function CreateTeamPage() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="staff@example.com"
-                className="border-ink-200 flex-1 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
@@ -606,7 +606,7 @@ export default function CreateTeamPage() {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as StaffRoleType)}
-                className="border-ink-200 w-40 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
               >
                 <option value="HeadCoach" disabled={hasHeadCoach}>
                   Head Coach
@@ -618,7 +618,7 @@ export default function CreateTeamPage() {
                 type="button"
                 onClick={handleAddInvite}
                 disabled={!inviteEmail.trim()}
-                className="disabled:border-ink-200 disabled:text-ink-300 rounded-xl border border-play-600 px-3 py-2 text-sm font-medium text-play-600 hover:bg-play-50"
+                className="disabled:border-ink-200 disabled:text-ink-300 border-play-600 text-play-600 hover:bg-play-50 rounded-xl border px-3 py-2 text-sm font-medium"
               >
                 Invite
               </button>
