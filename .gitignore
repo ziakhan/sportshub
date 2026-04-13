@@ -58,3 +58,10 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Assistant tooling (local/generated)
+.claude/settings.local.json
+.claude/projects/
+.claude/skills/
+.claude/**/__pycache__/
+.claude/**/*.pyc
