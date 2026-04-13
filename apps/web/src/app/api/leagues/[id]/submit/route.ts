@@ -76,9 +76,32 @@ export async function POST(
     // Check division exists
     const division = await prisma.leagueDivision.findFirst({
       where: { id: data.divisionId, leagueId: params.id },
+      include: {
+        _count: {
+          select: {
+            teams: {
+              where: {
+                status: { in: ["PENDING", "APPROVED"] },
+              },
+            },
+          },
+        },
+      },
     })
     if (!division) {
       return NextResponse.json({ error: "Division not found" }, { status: 404 })
+    }
+
+    if (division.maxTeams !== null && division.maxTeams !== undefined) {
+      const activeTeams = division._count?.teams ?? 0
+      if (activeTeams >= division.maxTeams) {
+        return NextResponse.json(
+          {
+            error: `Division capacity reached (${division.maxTeams} teams).`,
+          },
+          { status: 409 }
+        )
+      }
     }
 
     // Check if team already submitted

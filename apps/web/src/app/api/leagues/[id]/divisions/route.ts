@@ -10,6 +10,7 @@ const createDivisionSchema = z.object({
   ageGroup: z.string().min(1),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   tier: z.number().min(1).default(1),
+  maxTeams: z.number().int().min(1).max(128).optional(),
 })
 
 export async function POST(
@@ -40,6 +41,7 @@ export async function POST(
         ageGroup: data.ageGroup,
         gender: data.gender || null,
         tier: data.tier,
+        maxTeams: data.maxTeams ?? null,
       } as any,
     })
 

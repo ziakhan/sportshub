@@ -599,6 +599,7 @@ model LeagueDivision {
   ageGroup      String   // "U14", "Junior", "Senior"
   gender        Gender?
   tier          Int      @default(1) // 1 = top division, 2 = second, etc.
+  maxTeams      Int?     // Optional capacity for registration control
 
   teams         LeagueTeam[]
 

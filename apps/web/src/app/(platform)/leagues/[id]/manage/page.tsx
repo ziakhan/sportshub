@@ -32,12 +32,14 @@ export default function LeagueManagePage() {
   const [sessions, setSessions] = useState<any[]>([])
   const [venues, setVenues] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [teamStatusFilter, setTeamStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL")
 
   // Division form
   const [divName, setDivName] = useState("")
   const [divAgeGroup, setDivAgeGroup] = useState("")
   const [divGender, setDivGender] = useState("MALE")
   const [divTier, setDivTier] = useState("1")
+  const [divMaxTeams, setDivMaxTeams] = useState("")
 
   // Session form
   const [sessionLabel, setSessionLabel] = useState("")
@@ -94,12 +96,14 @@ export default function LeagueManagePage() {
         ageGroup: divAgeGroup,
         gender: divGender || undefined,
         tier: parseInt(divTier),
+        maxTeams: divMaxTeams ? parseInt(divMaxTeams) : undefined,
       }),
     })
     setDivName("")
     setDivAgeGroup("")
     setDivGender("")
     setDivTier("1")
+    setDivMaxTeams("")
     fetchAll()
   }
 
@@ -161,6 +165,11 @@ export default function LeagueManagePage() {
 
   const currentIdx = STATUS_FLOW.indexOf(league.leagueStatus)
   const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null
+  const allTeams = league.teams || []
+  const filteredTeams =
+    teamStatusFilter === "ALL"
+      ? allTeams
+      : allTeams.filter((t: any) => t.status === teamStatusFilter)
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
@@ -232,6 +241,13 @@ export default function LeagueManagePage() {
                   {d.ageGroup}
                   {d.gender ? ` \u2022 ${d.gender}` : ""}
                 </span>
+                {d.maxTeams ? (
+                  <div className="text-ink-500 mt-0.5 text-xs">
+                    Capacity: {d._count?.teams || 0}/{d.maxTeams}
+                  </div>
+                ) : (
+                  <div className="text-ink-400 mt-0.5 text-xs">Capacity: unlimited</div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-ink-400 text-xs">{d._count?.teams || 0} teams</span>
@@ -291,6 +307,15 @@ export default function LeagueManagePage() {
                 <option value="3">Tier 3</option>
               </select>
             </div>
+            <input
+              type="number"
+              min="1"
+              max="128"
+              value={divMaxTeams}
+              onChange={(e) => setDivMaxTeams(e.target.value)}
+              placeholder="Max teams (optional)"
+              className={inputClass}
+            />
             <button
               onClick={addDivision}
               className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition"
@@ -440,11 +465,44 @@ export default function LeagueManagePage() {
 
         {/* Registered Teams */}
         <div className={panelClass}>
-          <h3 className="text-ink-900 mb-4 font-semibold">Registered Teams</h3>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h3 className="text-ink-900 font-semibold">Registered Teams</h3>
+            <div className="flex flex-wrap items-center gap-1">
+              {[
+                { key: "ALL", label: `All (${allTeams.length})` },
+                {
+                  key: "PENDING",
+                  label: `Pending (${allTeams.filter((t: any) => t.status === "PENDING").length})`,
+                },
+                {
+                  key: "APPROVED",
+                  label: `Approved (${allTeams.filter((t: any) => t.status === "APPROVED").length})`,
+                },
+                {
+                  key: "REJECTED",
+                  label: `Rejected (${allTeams.filter((t: any) => t.status === "REJECTED").length})`,
+                },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => setTeamStatusFilter(opt.key as any)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                    teamStatusFilter === opt.key
+                      ? "bg-play-100 text-play-700"
+                      : "bg-ink-50 text-ink-500 hover:bg-court-100"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
           {!league.teams || league.teams.length === 0 ? (
             <p className="text-ink-500 text-sm">No teams registered yet.</p>
+          ) : filteredTeams.length === 0 ? (
+            <p className="text-ink-500 text-sm">No teams match the selected status.</p>
           ) : (
-            league.teams.map((t: any) => (
+            filteredTeams.map((t: any) => (
               <div
                 key={t.id}
                 className="border-court-100 bg-court-50 mb-2 flex items-center justify-between rounded-xl border px-3 py-2"

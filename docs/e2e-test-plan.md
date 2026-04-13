@@ -100,15 +100,15 @@
 
 | #   | Scenario                                                       | Status     | What's Needed                                                        |
 | --- | -------------------------------------------------------------- | ---------- | -------------------------------------------------------------------- |
-| 7.1 | **League Owner creates league**                                | ⚠️ Partial | Onboarding creates League, no full management                        |
-| 7.2 | **Create season** — start/end dates, enrollment deadline       | ❌         | No Season model (could use League fields or new model)               |
-| 7.3 | **Define divisions** — age brackets, gender, max team capacity | ⚠️ Partial | `LeagueDivision` exists in schema, no API/UI                         |
-| 7.4 | **Club submits team to league**                                | ❌         | Need `POST /api/leagues/[id]/teams` → creates `LeagueTeam` (PENDING) |
-| 7.5 | **League reviews team submissions**                            | ❌         | Need league management page                                          |
-| 7.6 | **League approves/rejects teams**                              | ❌         | Need `PATCH /api/leagues/[id]/teams/[teamId]`                        |
+| 7.1 | **League Owner creates league**                                | ✅ Built   | League create and manage flows are available                          |
+| 7.2 | **Create season** — start/end dates, enrollment deadline       | ✅ Built   | Uses league season fields on `League` model                           |
+| 7.3 | **Define divisions** — age brackets, gender, max team capacity | ✅ Built   | Division CRUD UI/API with optional max team capacity                  |
+| 7.4 | **Club submits team to league**                                | ✅ Built   | `POST /api/leagues/[id]/submit` creates `LeagueTeam` + frozen roster |
+| 7.5 | **League reviews team submissions**                            | ✅ Built   | League management page lists registered/submitted teams               |
+| 7.6 | **League approves/rejects teams**                              | ✅ Built   | `PATCH /api/leagues/[id]/teams/[teamId]`                              |
 | 7.7 | **League registration fee payment**                            | ❌         | Need payment flow                                                    |
-| 7.8 | **Enrollment deadline enforced**                               | ❌         | Need date check logic                                                |
-| 7.9 | **League finalizes season** — locks rosters                    | ❌         | Need finalization endpoint                                           |
+| 7.8 | **Enrollment deadline enforced**                               | ✅ Built   | Submission route rejects after deadline                              |
+| 7.9 | **League finalizes season** — locks rosters                    | ✅ Built   | League status transition to FINALIZED locks league rosters           |
 
 ---
 
