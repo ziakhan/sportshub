@@ -73,7 +73,7 @@ export function TemplateForm({ clubId }: { clubId: string }) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+        className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
       >
         Create Template
       </button>
@@ -81,16 +81,16 @@ export function TemplateForm({ clubId }: { clubId: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">New Offer Template</h3>
+    <div className="rounded-2xl border border-ink-100 bg-white p-6 shadow-soft">
+      <h3 className="text-lg font-semibold text-ink-900 mb-4">New Offer Template</h3>
 
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-hoop-700">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-ink-700">
             Template Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -99,28 +99,28 @@ export function TemplateForm({ clubId }: { clubId: string }) {
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Competitive Package, Development Package"
             required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
           />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Season Fee ($)</label>
+            <label className="block text-sm font-medium text-ink-700">Season Fee ($)</label>
             <input
               type="number"
               min="0"
               step="0.01"
               value={seasonFee}
               onChange={(e) => setSeasonFee(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Installments</label>
+            <label className="block text-sm font-medium text-ink-700">Installments</label>
             <select
               value={installments}
               onChange={(e) => setInstallments(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             >
               {[1, 2, 3, 4, 6, 12].map((n) => (
                 <option key={n} value={n}>
@@ -130,19 +130,19 @@ export function TemplateForm({ clubId }: { clubId: string }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Practice Sessions</label>
+            <label className="block text-sm font-medium text-ink-700">Practice Sessions</label>
             <input
               type="number"
               min="0"
               value={practiceSessions}
               onChange={(e) => setPracticeSessions(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Included Items</label>
+          <label className="block text-sm font-medium text-ink-700 mb-2">Included Items</label>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
               { label: "Uniform", desc: "Shirt + Shorts", checked: includesUniform, set: setIncludesUniform },
@@ -151,16 +151,16 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               { label: "Basketball", desc: "Game ball", checked: includesBall, set: setIncludesBall },
               { label: "Bag", desc: "Equipment bag", checked: includesBag, set: setIncludesBag },
             ].map((item) => (
-              <label key={item.label} className="flex items-center gap-2 rounded-md border border-gray-200 p-3 hover:bg-gray-50 cursor-pointer">
+              <label key={item.label} className="flex items-center gap-2 rounded-md border border-ink-200 p-3 hover:bg-court-50 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={item.checked}
                   onChange={(e) => item.set(e.target.checked)}
-                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  className="rounded border-ink-200 text-play-700 focus:ring-play-500/20"
                 />
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{item.label}</div>
-                  <div className="text-xs text-gray-500">{item.desc}</div>
+                  <div className="text-sm font-medium text-ink-900">{item.label}</div>
+                  <div className="text-xs text-ink-500">{item.desc}</div>
                 </div>
               </label>
             ))}
@@ -171,14 +171,14 @@ export function TemplateForm({ clubId }: { clubId: string }) {
           <button
             type="button"
             onClick={() => { resetForm(); setIsOpen(false) }}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-md border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-court-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+            className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700 disabled:opacity-50"
           >
             {isSubmitting ? "Creating..." : "Create Template"}
           </button>

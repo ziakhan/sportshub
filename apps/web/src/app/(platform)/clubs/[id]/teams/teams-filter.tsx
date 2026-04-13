@@ -39,7 +39,7 @@ export function TeamsFilter({
       <select
         value={activeAge || ""}
         onChange={(e) => handleAgeChange(e.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+        className="rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none"
       >
         <option value="">All Age Groups</option>
         {ageGroups.map((ag) => (
@@ -55,11 +55,11 @@ export function TeamsFilter({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search teams..."
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+          className="rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none"
         />
         <button
           type="submit"
-          className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+          className="rounded-xl bg-court-100 px-3 py-1.5 text-sm text-ink-700 hover:bg-court-200"
         >
           Search
         </button>

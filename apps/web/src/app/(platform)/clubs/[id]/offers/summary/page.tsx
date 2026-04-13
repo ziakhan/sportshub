@@ -124,40 +124,40 @@ export default async function OfferSummaryPage({
       <div className="mb-6">
         <Link
           href={`/clubs/${params.id}/offers`}
-          className="text-sm text-orange-600 hover:underline"
+          className="text-sm text-play-700 hover:underline"
         >
           &larr; Back to Offers
         </Link>
       </div>
 
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Accepted Offers Summary</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-bold text-ink-900">Accepted Offers Summary</h2>
+        <p className="text-sm text-ink-500 mt-1">
           All selections made by players/parents when accepting offers
         </p>
       </div>
 
       {offers.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No accepted offers yet</h3>
-          <p className="text-gray-600">
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
+          <h3 className="text-lg font-semibold text-ink-900 mb-2">No accepted offers yet</h3>
+          <p className="text-ink-600">
             Once players accept their offers, their selections will appear here.
           </p>
         </div>
       ) : (
         <div className="space-y-8">
           {/* Order Summary */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="font-semibold text-gray-900 mb-4">Equipment Order Summary</h3>
+          <div className="rounded-2xl border border-ink-100 bg-white p-6 shadow-soft">
+            <h3 className="font-semibold text-ink-900 mb-4">Equipment Order Summary</h3>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Object.keys(uniformSizes).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Uniform Sizes</h4>
+                  <h4 className="text-sm font-medium text-ink-700 mb-2">Uniform Sizes</h4>
                   <div className="space-y-1">
                     {Object.entries(uniformSizes).sort().map(([size, count]) => (
                       <div key={size} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{size}</span>
-                        <span className="font-medium text-gray-900">{count}</span>
+                        <span className="text-ink-600">{size}</span>
+                        <span className="font-medium text-ink-900">{count}</span>
                       </div>
                     ))}
                   </div>
@@ -166,12 +166,12 @@ export default async function OfferSummaryPage({
 
               {Object.keys(tracksuitSizes).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Tracksuit Sizes</h4>
+                  <h4 className="text-sm font-medium text-ink-700 mb-2">Tracksuit Sizes</h4>
                   <div className="space-y-1">
                     {Object.entries(tracksuitSizes).sort().map(([size, count]) => (
                       <div key={size} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{size}</span>
-                        <span className="font-medium text-gray-900">{count}</span>
+                        <span className="text-ink-600">{size}</span>
+                        <span className="font-medium text-ink-900">{count}</span>
                       </div>
                     ))}
                   </div>
@@ -180,12 +180,12 @@ export default async function OfferSummaryPage({
 
               {Object.keys(shoeSizes).length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Shoe Sizes</h4>
+                  <h4 className="text-sm font-medium text-ink-700 mb-2">Shoe Sizes</h4>
                   <div className="space-y-1">
                     {Object.entries(shoeSizes).sort((a, b) => parseFloat(a[0]) - parseFloat(b[0])).map(([size, count]) => (
                       <div key={size} className="flex justify-between text-sm">
-                        <span className="text-gray-600">Size {size}</span>
-                        <span className="font-medium text-gray-900">{count}</span>
+                        <span className="text-ink-600">Size {size}</span>
+                        <span className="font-medium text-ink-900">{count}</span>
                       </div>
                     ))}
                   </div>
@@ -194,18 +194,18 @@ export default async function OfferSummaryPage({
 
               {(totalBalls > 0 || totalBags > 0) && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Other Items</h4>
+                  <h4 className="text-sm font-medium text-ink-700 mb-2">Other Items</h4>
                   <div className="space-y-1">
                     {totalBalls > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Basketballs</span>
-                        <span className="font-medium text-gray-900">{totalBalls}</span>
+                        <span className="text-ink-600">Basketballs</span>
+                        <span className="font-medium text-ink-900">{totalBalls}</span>
                       </div>
                     )}
                     {totalBags > 0 && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Bags</span>
-                        <span className="font-medium text-gray-900">{totalBags}</span>
+                        <span className="text-ink-600">Bags</span>
+                        <span className="font-medium text-ink-900">{totalBags}</span>
                       </div>
                     )}
                   </div>
@@ -216,27 +216,27 @@ export default async function OfferSummaryPage({
 
           {/* Per-team detail */}
           {Array.from(teamMap.entries()).map(([teamId, { name: teamName, offers: teamOffers }]) => (
-            <div key={teamId} className="rounded-lg border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 px-6 py-4">
-                <h3 className="font-semibold text-gray-900">{teamName}</h3>
-                <p className="text-xs text-gray-500">{teamOffers.length} accepted offer{teamOffers.length !== 1 ? "s" : ""}</p>
+            <div key={teamId} className="rounded-lg border border-ink-200 bg-white shadow-sm">
+              <div className="border-b border-ink-100 px-6 py-4">
+                <h3 className="font-semibold text-ink-900">{teamName}</h3>
+                <p className="text-xs text-ink-500">{teamOffers.length} accepted offer{teamOffers.length !== 1 ? "s" : ""}</p>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-court-200">
+                  <thead className="bg-court-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Player</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Position</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fee</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Uniform</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tracksuit</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Shoes</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Items</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Jersey Prefs</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Player</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Position</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Fee</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Uniform</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Tracksuit</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Shoes</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">Jersey Prefs</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-court-200">
                     {teamOffers.map((offer) => {
                       const items = [
                         offer.includesBall && "Ball",
@@ -246,59 +246,59 @@ export default async function OfferSummaryPage({
                       return (
                         <tr key={offer.id}>
                           <td className="whitespace-nowrap px-4 py-3">
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-ink-900">
                               {offer.player.firstName} {offer.player.lastName}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-ink-500">
                               {offer.player.gender}
                               {offer.player.height ? ` | ${offer.player.height}` : ""}
                               {offer.player.weight ? ` | ${offer.player.weight}lbs` : ""}
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-ink-600">
                             {offer.player.position || "-"}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-ink-600">
                             {formatCurrency(offer.seasonFee, currency)}
                             {offer.installments > 1 ? ` (${offer.installments}x)` : ""}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm">
                             {offer.uniformSize ? (
-                              <span className="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-medium text-orange-700">
+                              <span className="rounded bg-play-100 px-1.5 py-0.5 text-xs font-medium text-play-700">
                                 {offer.uniformSize}
                               </span>
                             ) : offer.includesUniform ? (
-                              <span className="text-xs text-gray-400">pending</span>
+                              <span className="text-xs text-ink-400">pending</span>
                             ) : (
-                              <span className="text-xs text-gray-300">-</span>
+                              <span className="text-xs text-ink-300">-</span>
                             )}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm">
                             {offer.tracksuitSize ? (
-                              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
+                              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-play-700">
                                 {offer.tracksuitSize}
                               </span>
                             ) : offer.includesTracksuit ? (
-                              <span className="text-xs text-gray-400">pending</span>
+                              <span className="text-xs text-ink-400">pending</span>
                             ) : (
-                              <span className="text-xs text-gray-300">-</span>
+                              <span className="text-xs text-ink-300">-</span>
                             )}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-sm">
                             {offer.shoeSize ? (
-                              <span className="rounded bg-orange-100 px-1.5 py-0.5 text-xs font-medium text-orange-700">
+                              <span className="rounded bg-play-100 px-1.5 py-0.5 text-xs font-medium text-play-700">
                                 {offer.shoeSize}
                               </span>
                             ) : offer.includesShoes ? (
-                              <span className="text-xs text-gray-400">pending</span>
+                              <span className="text-xs text-ink-400">pending</span>
                             ) : (
-                              <span className="text-xs text-gray-300">-</span>
+                              <span className="text-xs text-ink-300">-</span>
                             )}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-ink-600">
                             {items.length > 0 ? items.join(", ") : "-"}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-ink-600">
                             {[offer.jerseyPref1, offer.jerseyPref2, offer.jerseyPref3]
                               .filter((n) => n !== null)
                               .map((n) => `#${n}`)

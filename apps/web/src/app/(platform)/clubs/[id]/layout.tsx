@@ -80,17 +80,17 @@ export default async function ClubLayout({
 
   return (
     <div>
-      <div className="border-b border-gray-200 bg-white">
+      <div className="border-b border-ink-200 bg-white">
         <div className="px-4 md:px-6">
           <div className="py-4">
             <Link
               href="/dashboard"
-              className="mb-2 inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+              className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
             >
               &larr; Back to Dashboard
             </Link>
-            <h1 className="text-xl font-bold text-gray-900 md:text-2xl">{club.name}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-bold text-ink-900 md:text-2xl">{club.name}</h1>
+            <p className="text-sm text-ink-500">
               {club.slug}.youthbasketballhub.com
             </p>
           </div>

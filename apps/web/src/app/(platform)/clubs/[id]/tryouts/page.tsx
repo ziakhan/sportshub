@@ -54,11 +54,11 @@ async function getTryouts(tenantId: string): Promise<TryoutListItem[]> {
 }
 
 async function getClubTeams(tenantId: string): Promise<{ id: string; name: string }[]> {
-  return await prisma.team.findMany({
+  return (await prisma.team.findMany({
     where: { tenantId },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
-  }) as any
+  })) as any
 }
 
 export default async function ClubTryoutsPage({
@@ -68,10 +68,7 @@ export default async function ClubTryoutsPage({
   params: { id: string }
   searchParams: { status?: string; team?: string; q?: string }
 }) {
-  const [tryouts, teams] = await Promise.all([
-    getTryouts(params.id),
-    getClubTeams(params.id),
-  ])
+  const [tryouts, teams] = await Promise.all([getTryouts(params.id), getClubTeams(params.id)])
 
   const statusFilter = searchParams.status
   const teamFilter = searchParams.team
@@ -97,27 +94,24 @@ export default async function ClubTryoutsPage({
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Tryouts</h2>
+        <h2 className="text-ink-900 text-xl font-bold">Tryouts</h2>
         <Link
           href={`/clubs/${params.id}/tryouts/create`}
-          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+          className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
         >
           Create Tryout
         </Link>
       </div>
 
       {tryouts.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No tryouts yet
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Create a tryout and publish it to the marketplace so parents can
-            sign up.
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+          <h3 className="text-ink-900 mb-2 text-lg font-semibold">No tryouts yet</h3>
+          <p className="text-ink-600 mb-6">
+            Create a tryout and publish it to the marketplace so parents can sign up.
           </p>
           <Link
             href={`/clubs/${params.id}/tryouts/create`}
-            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
+            className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
           >
             Create Your First Tryout
           </Link>
@@ -131,13 +125,22 @@ export default async function ClubTryoutsPage({
             activeStatus={statusFilter}
             activeTeamId={teamFilter}
             activeSearch={searchParams.q}
-            counts={{ all: tryouts.length, published: publishedCount, draft: draftCount, past: pastCount, needsOffer: needsOfferCount }}
+            counts={{
+              all: tryouts.length,
+              published: publishedCount,
+              draft: draftCount,
+              past: pastCount,
+              needsOffer: needsOfferCount,
+            }}
           />
 
           {filtered.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
-              <p className="text-gray-600 mb-3">No tryouts match the current filters.</p>
-              <Link href={`/clubs/${params.id}/tryouts`} className="text-sm text-orange-600 hover:underline">
+            <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
+              <p className="text-ink-600 mb-3">No tryouts match the current filters.</p>
+              <Link
+                href={`/clubs/${params.id}/tryouts`}
+                className="text-play-700 text-sm hover:underline"
+              >
                 Clear filters
               </Link>
             </div>
@@ -146,30 +149,30 @@ export default async function ClubTryoutsPage({
               {filtered.map((tryout) => (
                 <div
                   key={tryout.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
+                  className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4 sm:p-6"
                 >
                   {/* Title + badges */}
                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-gray-900 sm:text-lg">
+                    <h3 className="text-ink-900 text-base font-semibold sm:text-lg">
                       {tryout.title}
                     </h3>
                     {tryout.isPast ? (
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <span className="bg-court-100 text-ink-600 rounded-full px-2 py-0.5 text-xs font-medium">
                         Past
                       </span>
                     ) : tryout.isPublished ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                      <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
                         Published
                       </span>
                     ) : (
-                      <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                      <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
                         Draft
                       </span>
                     )}
                     {tryout.team && (
                       <Link
                         href={`/clubs/${params.id}/teams/${tryout.team.id}/dashboard`}
-                        className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 hover:bg-orange-200"
+                        className="bg-play-100 text-play-700 hover:bg-play-200 rounded-full px-2 py-0.5 text-xs font-medium"
                       >
                         {tryout.team.name}
                       </Link>
@@ -177,10 +180,8 @@ export default async function ClubTryoutsPage({
                   </div>
 
                   {/* Details — wraps on mobile */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mb-3">
-                    <span>
-                      {format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
-                    </span>
+                  <div className="text-ink-500 mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    <span>{format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>
                     <span>{tryout.location}</span>
                     <span>{tryout.ageGroup}</span>
                   </div>
@@ -188,37 +189,33 @@ export default async function ClubTryoutsPage({
                   {/* Stats + actions — stacks on mobile */}
                   <div className="flex flex-wrap items-center gap-3">
                     <div>
-                      <span className="text-lg font-bold text-orange-600">
+                      <span className="text-play-700 text-lg font-bold">
                         {tryout.signupStats.total}
-                        {tryout.maxParticipants
-                          ? ` / ${tryout.maxParticipants}`
-                          : ""}
+                        {tryout.maxParticipants ? ` / ${tryout.maxParticipants}` : ""}
                       </span>
-                      <span className="ml-1 text-xs text-gray-500">signups</span>
+                      <span className="text-ink-500 ml-1 text-xs">signups</span>
                       {tryout.signupStats.needsOffer > 0 && (
-                        <span className="ml-2 text-xs font-medium text-orange-600">
-                          ({tryout.signupStats.needsOffer} need{tryout.signupStats.needsOffer === 1 ? "s" : ""} offer)
+                        <span className="text-play-700 ml-2 text-xs font-medium">
+                          ({tryout.signupStats.needsOffer} need
+                          {tryout.signupStats.needsOffer === 1 ? "s" : ""} offer)
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 ml-auto">
+                    <div className="ml-auto flex flex-wrap gap-2">
                       <Link
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/signups`}
-                        className="rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100"
+                        className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                       >
                         Signups
                       </Link>
                       <Link
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/edit`}
-                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                        className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                       >
                         Edit
                       </Link>
                       {!tryout.isPast && (
-                        <PublishButton
-                          tryoutId={tryout.id}
-                          isPublished={tryout.isPublished}
-                        />
+                        <PublishButton tryoutId={tryout.id} isPublished={tryout.isPublished} />
                       )}
                     </div>
                   </div>

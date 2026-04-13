@@ -58,7 +58,7 @@ export default function SyncUserPage() {
               {result.message}
             </h3>
             {result.user && (
-              <div className="text-sm text-green-700 space-y-1">
+              <div className="text-sm text-court-700 space-y-1">
                 <p>
                   <strong>Email:</strong> {result.user.email}
                 </p>
@@ -84,9 +84,9 @@ export default function SyncUserPage() {
         )}
 
         {error && (
-          <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
+          <div className="mt-6 rounded-lg bg-red-50 border border-hoop-200 p-4">
             <h3 className="text-red-800 font-semibold mb-2">Error</h3>
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm text-hoop-700">{error}</p>
           </div>
         )}
       </div>

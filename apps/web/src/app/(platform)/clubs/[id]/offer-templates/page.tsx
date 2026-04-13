@@ -65,8 +65,8 @@ export default async function ClubOfferTemplatesPage({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Offer Templates</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-bold text-ink-900">Offer Templates</h2>
+        <p className="text-sm text-ink-500 mt-1">
           {isAdmin
             ? "Create reusable templates for sending offers to players. All teams in the club share these templates."
             : "Templates created by club management for sending offers to players."}
@@ -82,9 +82,9 @@ export default async function ClubOfferTemplatesPage({
 
       {/* Existing templates */}
       {templates.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No templates yet</h3>
-          <p className="text-gray-600">
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-8 text-center shadow-soft">
+          <h3 className="text-lg font-semibold text-ink-900 mb-2">No templates yet</h3>
+          <p className="text-ink-600">
             {isAdmin
               ? "Create your first offer template above. Templates define the fee structure and included items for offers sent to players."
               : "No templates have been created yet. Ask your club owner or manager to set up offer templates."}

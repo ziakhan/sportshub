@@ -29,7 +29,7 @@ interface Team {
 
 export default function CreateTryoutPage() {
   return (
-    <Suspense fallback={<div className="py-12 text-center text-gray-500">Loading...</div>}>
+    <Suspense fallback={<div className="py-12 text-center text-ink-500">Loading...</div>}>
       <CreateTryoutForm />
     </Suspense>
   )
@@ -138,17 +138,17 @@ function CreateTryoutForm() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-bold text-gray-900">Tryout Created!</h2>
-          <p className="mb-1 text-gray-600">
+          <h2 className="mb-2 text-xl font-bold text-ink-900">Tryout Created!</h2>
+          <p className="mb-1 text-ink-600">
             <span className="font-semibold">{createdTryout.title}</span> has been created as a draft.
           </p>
-          <p className="mb-6 text-sm text-gray-500">
+          <p className="mb-6 text-sm text-ink-500">
             You can publish it to the marketplace from the tryouts list.
           </p>
           <div className="flex gap-3">
             <Link
               href={`/clubs/${clubId}/tryouts`}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-center font-semibold text-white hover:bg-orange-600"
+              className="flex-1 rounded-xl bg-play-600 px-4 py-2 text-center font-semibold text-white hover:bg-play-700"
             >
               View Tryouts
             </Link>
@@ -160,7 +160,7 @@ function CreateTryoutForm() {
                 setSelectedTeamId("")
                 reset()
               }}
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+              className="flex-1 rounded-md border border-ink-200 px-4 py-2 font-semibold text-ink-700 hover:bg-court-50"
             >
               Create Another Tryout
             </button>
@@ -182,12 +182,12 @@ function CreateTryoutForm() {
       <div className="mb-6">
         <Link
           href={`/clubs/${clubId}/tryouts`}
-          className="mb-2 inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
         >
           &larr; Back to Tryouts
         </Link>
-        <h2 className="text-xl font-bold text-gray-900">Create Tryout</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className="text-xl font-bold text-ink-900">Create Tryout</h2>
+        <p className="mt-1 text-sm text-ink-600">
           Set up a tryout for your club. You can publish it to the marketplace
           after creation.
         </p>
@@ -196,20 +196,20 @@ function CreateTryoutForm() {
       <div className="rounded-lg bg-white p-8 shadow">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
               {error}
             </div>
           )}
 
           {/* Team Selection (mandatory) */}
           <div>
-            <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="teamId" className="block text-sm font-medium text-ink-700">
               Team <span className="text-red-500">*</span>
             </label>
             {loadingTeams ? (
-              <p className="mt-1 text-sm text-gray-500">Loading teams...</p>
+              <p className="mt-1 text-sm text-ink-500">Loading teams...</p>
             ) : teams.length === 0 ? (
-              <div className="mt-1 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-700">
+              <div className="mt-1 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-hoop-700">
                 No teams found. <Link href={`/clubs/${clubId}/teams/create`} className="font-medium underline">Create a team</Link> first.
               </div>
             ) : (
@@ -217,7 +217,7 @@ function CreateTryoutForm() {
                 id="teamId"
                 value={selectedTeamId}
                 onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               >
                 <option value="">Select a team</option>
                 {teams.map((team) => (
@@ -232,26 +232,26 @@ function CreateTryoutForm() {
           {/* Show age group & gender from team */}
           {selectedTeam && (
             <div className="flex gap-4">
-              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
-                <span className="text-orange-600">Age Group:</span>{" "}
-                <span className="font-medium text-orange-900">{selectedTeam.ageGroup}</span>
+              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
+                <span className="text-play-700">Age Group:</span>{" "}
+                <span className="font-medium text-play-900">{selectedTeam.ageGroup}</span>
               </div>
-              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
-                <span className="text-orange-600">Gender:</span>{" "}
-                <span className="font-medium text-orange-900">{genderLabel(selectedTeam.gender)}</span>
+              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
+                <span className="text-play-700">Gender:</span>{" "}
+                <span className="font-medium text-play-900">{genderLabel(selectedTeam.gender)}</span>
               </div>
             </div>
           )}
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className="block text-sm font-medium text-ink-700">
               Title <span className="text-red-500">*</span>
             </label>
             <input
               {...register("title")}
               type="text"
               id="title"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               placeholder="Spring 2026 U12 Boys Tryout"
             />
             {errors.title && (
@@ -260,27 +260,27 @@ function CreateTryoutForm() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="block text-sm font-medium text-ink-700">
               Description
             </label>
             <textarea
               {...register("description")}
               id="description"
               rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               placeholder="What to expect, what to bring..."
             />
           </div>
 
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="location" className="block text-sm font-medium text-ink-700">
               Location <span className="text-red-500">*</span>
             </label>
             <input
               {...register("location")}
               type="text"
               id="location"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               placeholder="Main Gym, 123 Court Ave"
             />
             {errors.location && (
@@ -290,14 +290,14 @@ function CreateTryoutForm() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="scheduledAt" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
                 Date & Time <span className="text-red-500">*</span>
               </label>
               <input
                 {...register("scheduledAt")}
                 type="datetime-local"
                 id="scheduledAt"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               />
               {errors.scheduledAt && (
                 <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
@@ -305,14 +305,14 @@ function CreateTryoutForm() {
             </div>
 
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
                 Duration (minutes)
               </label>
               <input
                 {...register("duration")}
                 type="number"
                 id="duration"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
                 placeholder="90"
               />
             </div>
@@ -320,7 +320,7 @@ function CreateTryoutForm() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="fee" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="fee" className="block text-sm font-medium text-ink-700">
                 Fee ($) <span className="text-red-500">*</span>
               </label>
               <input
@@ -329,7 +329,7 @@ function CreateTryoutForm() {
                 id="fee"
                 min="0"
                 step="0.01"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
                 placeholder="0.00"
               />
               {errors.fee && (
@@ -338,7 +338,7 @@ function CreateTryoutForm() {
             </div>
 
             <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="maxParticipants" className="block text-sm font-medium text-ink-700">
                 Max Participants
               </label>
               <input
@@ -346,7 +346,7 @@ function CreateTryoutForm() {
                 type="number"
                 id="maxParticipants"
                 min="1"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
                 placeholder="No limit"
               />
             </div>
@@ -357,14 +357,14 @@ function CreateTryoutForm() {
               {...register("isPublic")}
               type="checkbox"
               id="isPublic"
-              className="h-4 w-4 rounded border-gray-300 text-orange-600"
+              className="h-4 w-4 rounded border-ink-200 text-play-700"
             />
-            <label htmlFor="isPublic" className="text-sm text-gray-700">
+            <label htmlFor="isPublic" className="text-sm text-ink-700">
               Public tryout (visible on marketplace when published)
             </label>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-500">
             Tryouts are saved as drafts. You can publish them to the marketplace
             from the tryouts list.
           </p>
@@ -372,14 +372,14 @@ function CreateTryoutForm() {
           <div className="flex gap-4">
             <Link
               href={`/clubs/${clubId}/tryouts`}
-              className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-ink-200 px-4 py-2 font-semibold text-ink-700 hover:bg-court-50"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting || !selectedTeamId}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600 disabled:bg-gray-400"
+              className="flex-1 rounded-xl bg-play-600 px-4 py-2 font-semibold text-white hover:bg-play-700 disabled:bg-court-300"
             >
               {isSubmitting ? "Creating..." : "Create Tryout"}
             </button>

@@ -31,8 +31,8 @@ export function ClubTabs({ tabs }: { tabs: Tab[] }) {
             href={tab.href}
             className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium ${
               active
-                ? "border-orange-500 text-orange-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                ? "border-play-500 text-play-700"
+                : "border-transparent text-ink-500 hover:border-ink-200 hover:text-ink-700"
             }`}
           >
             {tab.label}

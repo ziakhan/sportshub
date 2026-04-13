@@ -70,8 +70,8 @@ export default function OffersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500">Loading offers...</div>
+      <div className="flex items-center justify-center py-16">
+        <div className="text-ink-500">Loading offers...</div>
       </div>
     )
   }
@@ -80,18 +80,19 @@ export default function OffersPage() {
   const respondedOffers = offers.filter((o) => o.status !== "PENDING")
 
   return (
-    <div className="mx-auto max-w-3xl p-6 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Offers</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Team offers for your players
-        </p>
+    <div className="space-y-6">
+      <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
+        <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+          Offers
+        </div>
+        <h1 className="font-display text-ink-950 text-3xl font-bold">My offers</h1>
+        <p className="text-ink-500 mt-1 text-sm">Team offers for your players</p>
       </div>
 
       {offers.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No offers yet</h3>
-          <p className="text-gray-600">
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+          <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">No offers yet</h3>
+          <p className="text-ink-600">
             When a club sends an offer for one of your players, it will appear here.
           </p>
         </div>
@@ -100,7 +101,7 @@ export default function OffersPage() {
           {/* Pending offers */}
           {pendingOffers.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              <h2 className="font-display text-ink-950 mb-3 text-lg font-semibold">
                 Pending ({pendingOffers.length})
               </h2>
               <div className="space-y-4">
@@ -110,27 +111,30 @@ export default function OffersPage() {
                   return (
                     <div
                       key={offer.id}
-                      className="rounded-lg border border-orange-200 bg-white p-6 shadow-sm"
+                      className="border-play-200 shadow-soft rounded-2xl border bg-white p-6"
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-ink-950 text-lg font-semibold">
                             {offer.team.tenant.name}
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-ink-600 text-sm">
                             {offer.team.name} &middot; {offer.team.ageGroup}
                             {offer.team.gender ? ` &middot; ${offer.team.gender}` : ""}
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            For <strong>{offer.player.firstName} {offer.player.lastName}</strong>
+                          <p className="text-ink-500 mt-1 text-sm">
+                            For{" "}
+                            <strong>
+                              {offer.player.firstName} {offer.player.lastName}
+                            </strong>
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-gray-900">
+                          <div className="text-ink-900 text-lg font-bold">
                             {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
                           </div>
                           {offer.installments > 1 && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-ink-500 text-xs">
                               {offer.installments} installments
                             </div>
                           )}
@@ -146,17 +150,22 @@ export default function OffersPage() {
                           offer.includesBall && "Basketball",
                           offer.includesBag && "Bag",
                         ].filter(Boolean)
-                        return (items.length > 0 || offer.practiceSessions > 0) ? (
-                          <div className="mt-3 rounded-md bg-orange-50 p-3">
-                            <div className="text-xs font-medium text-orange-700 mb-1">What&apos;s included:</div>
+                        return items.length > 0 || offer.practiceSessions > 0 ? (
+                          <div className="border-play-200 bg-play-50 mt-3 rounded-xl border p-3">
+                            <div className="text-play-700 mb-1 text-xs font-medium">
+                              What&apos;s included:
+                            </div>
                             <div className="flex flex-wrap gap-1.5">
                               {offer.practiceSessions > 0 && (
-                                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
+                                <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs">
                                   {offer.practiceSessions} practice sessions
                                 </span>
                               )}
                               {items.map((item) => (
-                                <span key={item as string} className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">
+                                <span
+                                  key={item as string}
+                                  className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs"
+                                >
                                   {item}
                                 </span>
                               ))}
@@ -166,14 +175,14 @@ export default function OffersPage() {
                       })()}
 
                       {offer.message && (
-                        <div className="mt-3 rounded-md bg-gray-50 p-3 text-sm text-gray-700 italic">
+                        <div className="bg-ink-50 text-ink-700 mt-3 rounded-md p-3 text-sm italic">
                           &ldquo;{offer.message}&rdquo;
                         </div>
                       )}
 
-                      <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                      <div className="text-ink-500 mt-3 flex items-center justify-between text-xs">
                         <span>Received {format(new Date(offer.createdAt), "MMM d, yyyy")}</span>
-                        <span className={isExpired ? "text-red-600 font-medium" : ""}>
+                        <span className={isExpired ? "text-hoop-700 font-medium" : ""}>
                           {isExpired
                             ? "Expired"
                             : `Expires ${format(new Date(offer.expiresAt), "MMM d, yyyy")}`}
@@ -184,13 +193,13 @@ export default function OffersPage() {
                         <div className="mt-4 flex gap-3">
                           <button
                             onClick={() => setRespondingTo(offer.id)}
-                            className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                            className="bg-court-600 hover:bg-court-700 flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white"
                           >
                             Accept Offer
                           </button>
                           <button
                             onClick={() => setRespondingTo(offer.id + "-decline")}
-                            className="flex-1 rounded-md border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                            className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 flex-1 rounded-md border px-4 py-2 text-sm font-semibold"
                           >
                             Decline
                           </button>
@@ -225,53 +234,57 @@ export default function OffersPage() {
           {/* Past offers */}
           {respondedOffers.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              <h2 className="font-display text-ink-950 mb-3 text-lg font-semibold">
                 Past Offers ({respondedOffers.length})
               </h2>
               <div className="space-y-3">
                 {respondedOffers.map((offer) => {
                   const statusColors: Record<string, string> = {
-                    ACCEPTED: "border-green-200 bg-green-50",
-                    DECLINED: "border-red-200 bg-red-50",
-                    EXPIRED: "border-gray-200 bg-gray-50",
+                    ACCEPTED: "border-court-200 bg-court-50",
+                    DECLINED: "border-hoop-200 bg-hoop-50",
+                    EXPIRED: "border-ink-200 bg-ink-50",
                   }
                   const badgeColors: Record<string, string> = {
-                    ACCEPTED: "bg-green-100 text-green-700",
-                    DECLINED: "bg-red-100 text-red-700",
-                    EXPIRED: "bg-gray-100 text-gray-600",
+                    ACCEPTED: "bg-court-100 text-court-700",
+                    DECLINED: "bg-hoop-100 text-hoop-700",
+                    EXPIRED: "bg-ink-100 text-ink-600",
                   }
 
                   return (
                     <div
                       key={offer.id}
-                      className={`rounded-lg border p-4 ${statusColors[offer.status] || "border-gray-200"}`}
+                      className={`rounded-xl border p-4 ${statusColors[offer.status] || "border-ink-200"}`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="font-medium text-gray-900">
+                          <span className="text-ink-900 font-medium">
                             {offer.team.tenant.name} - {offer.team.name}
                           </span>
-                          <span className="ml-2 text-sm text-gray-500">
+                          <span className="text-ink-500 ml-2 text-sm">
                             for {offer.player.firstName} {offer.player.lastName}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColors[offer.status]}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColors[offer.status]}`}
+                          >
                             {offer.status.toLowerCase()}
                           </span>
                           {offer.respondedAt && (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-ink-400 text-xs">
                               {format(new Date(offer.respondedAt), "MMM d")}
                             </span>
                           )}
                         </div>
                       </div>
                       {offer.status === "ACCEPTED" && (
-                        <div className="mt-2 text-xs text-gray-600">
+                        <div className="text-ink-600 mt-2 text-xs">
                           {offer.uniformSize ? `Uniform: ${offer.uniformSize}` : ""}
                           {offer.tracksuitSize ? ` | Tracksuit: ${offer.tracksuitSize}` : ""}
                           {offer.shoeSize ? ` | Shoes: ${offer.shoeSize}` : ""}
-                          {offer.jerseyPref1 !== null ? ` | Jersey prefs: #${offer.jerseyPref1}` : ""}
+                          {offer.jerseyPref1 !== null
+                            ? ` | Jersey prefs: #${offer.jerseyPref1}`
+                            : ""}
                           {offer.jerseyPref2 !== null ? `, #${offer.jerseyPref2}` : ""}
                           {offer.jerseyPref3 !== null ? `, #${offer.jerseyPref3}` : ""}
                         </div>
@@ -321,21 +334,21 @@ function DeclineConfirm({
   }
 
   return (
-    <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-4">
-      <p className="text-sm text-red-700 mb-3">
+    <div className="border-hoop-200 bg-hoop-50 mt-4 rounded-md border p-4">
+      <p className="text-hoop-700 mb-3 text-sm">
         Are you sure you want to decline this offer? This cannot be undone.
       </p>
       <div className="flex gap-3">
         <button
           onClick={handleDecline}
           disabled={isSubmitting}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+          className="bg-hoop-600 hover:bg-hoop-700 rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {isSubmitting ? "Declining..." : "Confirm Decline"}
         </button>
         <button
           onClick={onCancel}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="border-ink-300 text-ink-700 hover:bg-ink-50 rounded-md border px-4 py-2 text-sm font-medium"
         >
           Cancel
         </button>

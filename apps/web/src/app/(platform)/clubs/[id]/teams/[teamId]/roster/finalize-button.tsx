@@ -46,28 +46,28 @@ export function FinalizeButton({
   if (result) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-          <h3 className="text-lg font-semibold text-green-700 mb-3">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-court-700 mb-3">
             Roster Finalized!
           </h3>
           <div className="space-y-2">
             {result.assignments.map((a, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-xl bg-court-50 px-3 py-2 text-sm"
               >
                 <span className="font-medium">{a.playerName}</span>
                 {a.jerseyNumber !== null ? (
-                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">
+                  <span className="rounded-full bg-play-100 px-2 py-0.5 text-xs font-bold text-play-700">
                     #{a.jerseyNumber}
                   </span>
                 ) : (
-                  <span className="text-xs text-gray-500">No preference available</span>
+                  <span className="text-xs text-ink-500">No preference available</span>
                 )}
               </div>
             ))}
           </div>
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-ink-500">
             All remaining pending offers have been expired. Page will refresh shortly.
           </p>
         </div>
@@ -79,7 +79,7 @@ export function FinalizeButton({
     return (
       <button
         onClick={() => setShowConfirm(true)}
-        className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+        className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
       >
         Finalize Roster
       </button>
@@ -88,17 +88,17 @@ export function FinalizeButton({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="text-lg font-semibold text-ink-900 mb-2">
           Finalize {teamName} Roster?
         </h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-ink-600 mb-4">
           This will assign jersey numbers based on player preferences (first-come, first-served)
           and expire all remaining pending offers.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-hoop-700">
             {error}
           </div>
         )}
@@ -106,14 +106,14 @@ export function FinalizeButton({
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setShowConfirm(false)}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-court-50"
           >
             Cancel
           </button>
           <button
             onClick={handleFinalize}
             disabled={isSubmitting}
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700 disabled:opacity-50"
           >
             {isSubmitting ? "Finalizing..." : "Confirm & Finalize"}
           </button>

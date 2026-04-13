@@ -11,21 +11,19 @@ export default function PlatformError({
 }) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="text-center">
-        <h2 className="mb-2 text-xl font-bold text-gray-900">
-          Something went wrong
-        </h2>
-        <p className="mb-6 text-sm text-gray-600">{error.message}</p>
+      <div className="border-ink-100 w-full max-w-xl rounded-3xl border bg-white p-8 text-center shadow-[0_20px_60px_-36px_rgba(15,23,42,0.45)]">
+        <h2 className="text-ink-900 mb-2 text-xl font-semibold">Something went wrong</h2>
+        <p className="text-ink-700 mb-6 text-sm">{error.message}</p>
         <div className="flex justify-center gap-3">
           <button
             onClick={reset}
-            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition"
           >
             Try again
           </button>
           <Link
             href="/dashboard"
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2.5 text-sm font-semibold transition"
           >
             Back to Dashboard
           </Link>

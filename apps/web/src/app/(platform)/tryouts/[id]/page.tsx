@@ -69,11 +69,7 @@ async function getUserData(userId: string | null, tryoutId: string) {
   return { players, existingSignups }
 }
 
-export default async function TryoutDetailPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function TryoutDetailPage({ params }: { params: { id: string } }) {
   const tryout = await getTryout(params.id)
   if (!tryout) notFound()
 
@@ -82,14 +78,10 @@ export default async function TryoutDetailPage({
   const userData = await getUserData(userId, params.id)
 
   const isPast = new Date(tryout.scheduledAt) < new Date()
-  const isFull =
-    tryout.maxParticipants !== null &&
-    tryout._count.signups >= tryout.maxParticipants
+  const isFull = tryout.maxParticipants !== null && tryout._count.signups >= tryout.maxParticipants
   const fee = Number(tryout.fee)
   const currency = tryout.tenant.currency || "USD"
-  const spotsLeft = tryout.maxParticipants
-    ? tryout.maxParticipants - tryout._count.signups
-    : null
+  const spotsLeft = tryout.maxParticipants ? tryout.maxParticipants - tryout._count.signups : null
 
   return (
     <div>
@@ -97,8 +89,7 @@ export default async function TryoutDetailPage({
       <div
         className="border-b"
         style={{
-          backgroundColor:
-            tryout.tenant.branding?.primaryColor || "#1a73e8",
+          backgroundColor: tryout.tenant.branding?.primaryColor || "#1a73e8",
         }}
       >
         <div className="px-4 py-6 md:px-6">
@@ -108,9 +99,7 @@ export default async function TryoutDetailPage({
           >
             &larr; Back to Marketplace
           </Link>
-          <h2 className="text-lg font-semibold text-white">
-            {tryout.tenant.name}
-          </h2>
+          <h2 className="text-lg font-semibold text-white">{tryout.tenant.name}</h2>
         </div>
       </div>
 
@@ -118,75 +107,60 @@ export default async function TryoutDetailPage({
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2">
-            <div className="rounded-lg bg-white p-8 shadow">
+            <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 {isPast && (
-                  <span className="rounded-full bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700">
+                  <span className="bg-ink-100 text-ink-700 rounded-full px-3 py-1 text-sm font-medium">
                     Closed
                   </span>
                 )}
                 {isFull && !isPast && (
-                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">
+                  <span className="text-hoop-700 rounded-full bg-red-100 px-3 py-1 text-sm font-medium">
                     Full
                   </span>
                 )}
                 {!isPast && !isFull && (
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                  <span className="text-court-700 rounded-full bg-green-100 px-3 py-1 text-sm font-medium">
                     Open
                   </span>
                 )}
               </div>
 
-              <h1 className="mb-4 text-3xl font-bold text-gray-900">
-                {tryout.title}
-              </h1>
+              <h1 className="text-ink-900 mb-4 text-3xl font-semibold">{tryout.title}</h1>
 
-              {tryout.description && (
-                <p className="mb-6 text-gray-700">{tryout.description}</p>
-              )}
+              {tryout.description && <p className="text-ink-700 mb-6">{tryout.description}</p>}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">
-                    Date & Time
+                <div className="border-court-100 bg-court-50 rounded-2xl border p-4">
+                  <div className="text-ink-500 mb-1 text-sm font-medium">Date & Time</div>
+                  <div className="text-ink-900">
+                    {format(new Date(tryout.scheduledAt), "EEEE, MMMM d, yyyy")}
                   </div>
-                  <div className="text-gray-900">
-                    {format(
-                      new Date(tryout.scheduledAt),
-                      "EEEE, MMMM d, yyyy"
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-ink-600 text-sm">
                     {format(new Date(tryout.scheduledAt), "h:mm a")}
                     {tryout.duration && ` (${tryout.duration} min)`}
                   </div>
                 </div>
 
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">
-                    Location
-                  </div>
-                  <div className="text-gray-900">{tryout.location}</div>
+                <div className="border-court-100 bg-court-50 rounded-2xl border p-4">
+                  <div className="text-ink-500 mb-1 text-sm font-medium">Location</div>
+                  <div className="text-ink-900">{tryout.location}</div>
                 </div>
 
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">
-                    Age Group & Gender
-                  </div>
-                  <div className="text-gray-900">
+                <div className="border-court-100 bg-court-50 rounded-2xl border p-4">
+                  <div className="text-ink-500 mb-1 text-sm font-medium">Age Group & Gender</div>
+                  <div className="text-ink-900">
                     {tryout.ageGroup}
                     {tryout.gender ? ` \u2022 ${tryout.gender}` : ""}
                   </div>
                 </div>
 
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">
-                    Spots
-                  </div>
-                  <div className="text-gray-900">
+                <div className="border-court-100 bg-court-50 rounded-2xl border p-4">
+                  <div className="text-ink-500 mb-1 text-sm font-medium">Spots</div>
+                  <div className="text-ink-900">
                     {tryout._count.signups} signed up
                     {spotsLeft !== null && (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-ink-500 text-sm">
                         {" "}
                         ({spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} left)
                       </span>
@@ -199,18 +173,16 @@ export default async function TryoutDetailPage({
 
           {/* Sidebar — signup */}
           <div>
-            <div className="rounded-lg bg-white p-6 shadow">
+            <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-play-700 text-3xl font-bold">
                   {fee === 0 ? "FREE" : formatCurrency(fee, currency)}
                 </div>
-                {fee > 0 && (
-                  <p className="mt-1 text-xs text-gray-500">per player</p>
-                )}
+                {fee > 0 && <p className="text-ink-500 mt-1 text-xs">per player</p>}
               </div>
 
               {isPast ? (
-                <div className="rounded-md bg-gray-100 p-4 text-center text-sm text-gray-600">
+                <div className="bg-ink-100 text-ink-600 rounded-xl p-4 text-center text-sm">
                   This tryout has already taken place.
                 </div>
               ) : isFull ? (
@@ -219,12 +191,12 @@ export default async function TryoutDetailPage({
                 </div>
               ) : !userId ? (
                 <div className="text-center">
-                  <p className="mb-4 text-sm text-gray-600">
+                  <p className="text-ink-700 mb-4 text-sm">
                     Sign in to register your player for this tryout.
                   </p>
                   <Link
                     href={`/sign-in?redirect_url=/tryouts/${params.id}`}
-                    className="inline-block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
+                    className="bg-play-600 hover:bg-play-700 inline-block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition"
                   >
                     Sign In to Sign Up
                   </Link>
@@ -234,10 +206,7 @@ export default async function TryoutDetailPage({
                   tryoutId={params.id}
                   tryoutFee={fee}
                   tryoutLocation={tryout.location}
-                  tryoutDate={format(
-                    new Date(tryout.scheduledAt),
-                    "MMM d, yyyy 'at' h:mm a"
-                  )}
+                  tryoutDate={format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
                   players={userData?.players || []}
                   existingSignups={userData?.existingSignups || []}
                 />

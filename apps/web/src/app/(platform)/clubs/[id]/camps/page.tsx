@@ -55,27 +55,27 @@ export default function ClubCampsPage() {
     setCamps((prev) => prev.map((c) => (c.id === id ? { ...c, isPublished: publish } : c)))
   }
 
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
+  if (loading) return <div className="text-ink-500 py-12 text-center">Loading...</div>
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Camps</h2>
-          <p className="text-sm text-gray-500 mt-1">March break, holiday, summer, and weekly camps</p>
+          <h2 className="text-xl font-bold text-ink-900">Camps</h2>
+          <p className="text-sm text-ink-500 mt-1">March break, holiday, summer, and weekly camps</p>
         </div>
         <Link href={`/clubs/${clubId}/camps/create`}
-          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
+          className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700">
           Create Camp
         </Link>
       </div>
 
       {camps.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No camps yet</h3>
-          <p className="text-gray-600 mb-6">Create a camp for parents to register their kids.</p>
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
+          <h3 className="text-lg font-semibold text-ink-900 mb-2">No camps yet</h3>
+          <p className="text-ink-600 mb-6">Create a camp for parents to register their kids.</p>
           <Link href={`/clubs/${clubId}/camps/create`}
-            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600">
+            className="inline-block rounded-xl bg-play-600 px-6 py-2 text-white font-semibold hover:bg-play-700">
             Create Your First Camp
           </Link>
         </div>
@@ -84,23 +84,23 @@ export default function ClubCampsPage() {
           {camps.map((camp) => {
             const isPast = new Date(camp.endDate) < new Date()
             return (
-              <div key={camp.id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div key={camp.id} className="rounded-2xl border border-ink-100 bg-white p-6 shadow-soft">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{camp.name}</h3>
-                      <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                      <h3 className="text-lg font-semibold text-ink-900">{camp.name}</h3>
+                      <span className="rounded-full bg-play-100 px-2 py-0.5 text-xs font-medium text-play-700">
                         {CAMP_TYPE_LABELS[camp.campType] || camp.campType}
                       </span>
                       {isPast ? (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Past</span>
+                        <span className="rounded-full bg-court-100 px-2 py-0.5 text-xs font-medium text-ink-600">Past</span>
                       ) : camp.isPublished ? (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Published</span>
+                        <span className="rounded-full bg-court-100 px-2 py-0.5 text-xs font-medium text-court-700">Published</span>
                       ) : (
-                        <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Draft</span>
+                        <span className="rounded-full bg-hoop-100 px-2 py-0.5 text-xs font-medium text-hoop-700">Draft</span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-3 text-sm text-gray-500">
+                    <div className="flex flex-wrap gap-3 text-sm text-ink-500">
                       <span>{camp.ageGroup}{camp.gender ? ` \u2022 ${camp.gender}` : ""}</span>
                       <span>{format(new Date(camp.startDate), "MMM d")} - {format(new Date(camp.endDate), "MMM d, yyyy")}</span>
                       <span>{camp.numberOfWeeks} week{camp.numberOfWeeks !== 1 ? "s" : ""}</span>
@@ -109,10 +109,10 @@ export default function ClubCampsPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-lg font-bold text-orange-600">
+                      <div className="text-lg font-bold text-play-700">
                         {camp._count.signups}{camp.maxParticipants ? ` / ${camp.maxParticipants}` : ""}
                       </div>
-                      <div className="text-xs text-gray-500">registered</div>
+                      <div className="text-xs text-ink-500">registered</div>
                     </div>
                     <div className="text-right text-sm">
                       <div className="font-medium">{formatCurrency(camp.weeklyFee)}/wk</div>
@@ -122,8 +122,8 @@ export default function ClubCampsPage() {
                     </div>
                     {!isPast && (
                       <button onClick={() => togglePublish(camp.id, !camp.isPublished)}
-                        className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                          camp.isPublished ? "border border-gray-300 text-gray-700 hover:bg-gray-50" : "bg-green-600 text-white hover:bg-green-700"
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
+                          camp.isPublished ? "border border-ink-200 text-ink-700 hover:bg-court-50" : "bg-play-600 text-white hover:bg-play-700"
                         }`}>
                         {camp.isPublished ? "Unpublish" : "Publish"}
                       </button>

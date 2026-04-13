@@ -58,6 +58,21 @@ export interface DashboardData {
       plan: string
       _count: { teams: number; tryouts: number }
     }>
+    teams: Array<{
+      id: string
+      name: string
+      ageGroup: string
+      season: string | null
+      tenant: { id: string; name: string }
+      _count: { players: number }
+      staff: Array<{
+        designation: string | null
+        user: { firstName: string | null; lastName: string | null }
+      }>
+      players: Array<{
+        player: { firstName: string; lastName: string }
+      }>
+    }>
   }
   staff?: {
     teams: Array<{
@@ -65,7 +80,7 @@ export interface DashboardData {
       name: string
       ageGroup: string
       season: string | null
-      tenant: { name: string }
+      tenant: { id: string; name: string }
       _count: { players: number }
     }>
   }
@@ -118,9 +133,7 @@ interface UserWithRoles {
   }>
 }
 
-export async function getDashboardData(
-  user: UserWithRoles
-): Promise<DashboardData> {
+export async function getDashboardData(user: UserWithRoles): Promise<DashboardData> {
   const roleNames = user.roles.map((r) => r.role)
   const data: DashboardData = { roles: roleNames }
 
@@ -222,22 +235,43 @@ export async function getDashboardData(
   // ClubOwner / ClubManager data
   if (roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")) {
     const tenantIds = user.roles
-      .filter(
-        (r) =>
-          (r.role === "ClubOwner" || r.role === "ClubManager") && r.tenantId
-      )
+      .filter((r) => (r.role === "ClubOwner" || r.role === "ClubManager") && r.tenantId)
       .map((r) => r.tenantId!)
 
     if (tenantIds.length > 0) {
-      const tenants = await prisma.tenant.findMany({
-        where: { id: { in: tenantIds } },
-        include: {
-          _count: { select: { teams: true, tryouts: true } },
-        },
-      })
-      data.clubOwner = { tenants }
+      const [tenants, teams] = await Promise.all([
+        prisma.tenant.findMany({
+          where: { id: { in: tenantIds } },
+          include: {
+            _count: { select: { teams: true, tryouts: true } },
+          },
+        }),
+        prisma.team.findMany({
+          where: { tenantId: { in: tenantIds } },
+          include: {
+            tenant: { select: { id: true, name: true } },
+            _count: { select: { players: true } },
+            staff: {
+              where: { role: { in: ["Staff", "TeamManager"] } },
+              select: {
+                designation: true,
+                user: { select: { firstName: true, lastName: true } },
+              },
+            },
+            players: {
+              take: 3,
+              orderBy: { joinedAt: "asc" },
+              select: {
+                player: { select: { firstName: true, lastName: true } },
+              },
+            },
+          },
+          orderBy: [{ createdAt: "desc" }],
+        }),
+      ])
+      data.clubOwner = { tenants, teams }
     } else {
-      data.clubOwner = { tenants: [] }
+      data.clubOwner = { tenants: [], teams: [] }
     }
   }
 
@@ -251,7 +285,7 @@ export async function getDashboardData(
       const teams = await prisma.team.findMany({
         where: { id: { in: teamIds } },
         include: {
-          tenant: { select: { name: true } },
+          tenant: { select: { id: true, name: true } },
           _count: { select: { players: true } },
         },
       })
@@ -284,16 +318,9 @@ export async function getDashboardData(
   }
 
   // LeagueOwner / LeagueManager data
-  if (
-    roleNames.includes("LeagueOwner") ||
-    roleNames.includes("LeagueManager")
-  ) {
+  if (roleNames.includes("LeagueOwner") || roleNames.includes("LeagueManager")) {
     const leagueIds = user.roles
-      .filter(
-        (r) =>
-          (r.role === "LeagueOwner" || r.role === "LeagueManager") &&
-          r.leagueId
-      )
+      .filter((r) => (r.role === "LeagueOwner" || r.role === "LeagueManager") && r.leagueId)
       .map((r) => r.leagueId!)
 
     if (leagueIds.length > 0) {
@@ -335,18 +362,13 @@ export async function getDashboardData(
       },
     })
 
-    const teamIds = players.flatMap((p: any) =>
-      p.teams.map((t: any) => t.team.id)
-    )
+    const teamIds = players.flatMap((p: any) => p.teams.map((t: any) => t.team.id))
 
     const upcomingGames =
       teamIds.length > 0
         ? await prisma.game.findMany({
             where: {
-              OR: [
-                { homeTeamId: { in: teamIds } },
-                { awayTeamId: { in: teamIds } },
-              ],
+              OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
               scheduledAt: { gte: new Date() },
               status: "SCHEDULED",
             },

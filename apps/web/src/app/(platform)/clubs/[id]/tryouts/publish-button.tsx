@@ -32,10 +32,10 @@ export function PublishButton({ tryoutId, isPublished }: PublishButtonProps) {
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
+      className={`rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
         isPublished
-          ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-          : "bg-green-600 text-white hover:bg-green-700"
+          ? "border border-ink-200 bg-white text-ink-700 hover:bg-court-50"
+          : "bg-play-600 text-white hover:bg-play-700"
       }`}
     >
       {loading ? "..." : isPublished ? "Unpublish" : "Publish"}

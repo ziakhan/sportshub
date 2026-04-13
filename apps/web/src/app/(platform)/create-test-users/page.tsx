@@ -41,21 +41,16 @@ export default function CreateTestUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-3xl w-full bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
-          Create Test Users
-        </h1>
-        <p className="text-gray-600 mb-6">
-          This will create test users with different roles in your database.
-          These are for development/testing only.
+    <div className="bg-court-50 flex min-h-screen items-center justify-center p-4">
+      <div className="border-ink-100 w-full max-w-3xl rounded-3xl border bg-white p-8 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.45)]">
+        <h1 className="text-ink-900 mb-4 text-2xl font-semibold">Create Test Users</h1>
+        <p className="text-ink-700 mb-6">
+          This will create test users with different roles in your database. These are for
+          development/testing only.
         </p>
 
         <div className="mb-6">
-          <label
-            htmlFor="clubId"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
+          <label htmlFor="clubId" className="text-ink-800 mb-2 block text-sm font-medium">
             Club ID (optional - leave empty to auto-detect your club)
           </label>
           <input
@@ -63,10 +58,10 @@ export default function CreateTestUsersPage() {
             id="clubId"
             value={clubId}
             onChange={(e) => setClubId(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-orange-500 focus:ring-orange-500"
+            className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-4 py-2.5"
             placeholder="Enter club ID or leave empty"
           />
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-ink-500 mt-1 text-sm">
             If you leave this empty, we&apos;ll use the first club you own
           </p>
         </div>
@@ -74,22 +69,20 @@ export default function CreateTestUsersPage() {
         <button
           onClick={createTestUsers}
           disabled={loading}
-          className="w-full rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 w-full rounded-xl px-6 py-3 font-semibold text-white transition disabled:cursor-not-allowed"
         >
           {loading ? "Creating Test Users..." : "Create Test Users"}
         </button>
 
         {result && (
-          <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4">
-            <h3 className="text-green-800 font-semibold mb-3">
-              {result.message}
-            </h3>
+          <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
+            <h3 className="mb-3 font-semibold text-green-800">{result.message}</h3>
             {result.users && (
               <div className="space-y-3">
                 {result.users.map((user: any, index: number) => (
                   <div
                     key={index}
-                    className="text-sm text-green-700 bg-white rounded p-3 border border-green-100"
+                    className="text-court-700 rounded-xl border border-green-100 bg-white p-3 text-sm"
                   >
                     <p>
                       <strong>Name:</strong> {user.firstName} {user.lastName}
@@ -100,16 +93,14 @@ export default function CreateTestUsersPage() {
                     <p>
                       <strong>Role:</strong> {user.role}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      User ID: {user.id}
-                    </p>
+                    <p className="text-ink-500 mt-1 text-xs">User ID: {user.id}</p>
                   </div>
                 ))}
               </div>
             )}
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-4 text-orange-600 hover:text-orange-700 font-medium"
+              className="text-play-700 hover:text-play-800 mt-4 font-medium"
             >
               Go to Dashboard →
             </button>
@@ -117,51 +108,43 @@ export default function CreateTestUsersPage() {
         )}
 
         {error && (
-          <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
-            <h3 className="text-red-800 font-semibold mb-2">Error</h3>
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="border-hoop-200 mt-6 rounded-lg border bg-red-50 p-4">
+            <h3 className="mb-2 font-semibold text-red-800">Error</h3>
+            <p className="text-hoop-700 text-sm">{error}</p>
           </div>
         )}
 
         <div className="mt-8 border-t pt-6">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            Test Users That Will Be Created:
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h3 className="text-ink-900 mb-3 font-semibold">Test Users That Will Be Created:</h3>
+          <ul className="text-ink-700 space-y-2 text-sm">
             <li>
-              • <strong>ClubOwner:</strong> owner@test.com - Can manage entire
-              club
+              • <strong>ClubOwner:</strong> owner@test.com - Can manage entire club
             </li>
             <li>
-              • <strong>ClubManager:</strong> manager@test.com - Can manage
-              club operations
+              • <strong>ClubManager:</strong> manager@test.com - Can manage club operations
             </li>
             <li>
-              • <strong>Staff (Boys U14):</strong> staff.boys@test.com - Team
-              staff
+              • <strong>Staff (Boys U14):</strong> staff.boys@test.com - Team staff
             </li>
             <li>
-              • <strong>Staff (Girls U16):</strong> staff.girls@test.com - Team
-              staff
+              • <strong>Staff (Girls U16):</strong> staff.girls@test.com - Team staff
             </li>
             <li>
               • <strong>Parent:</strong> parent@test.com - Can register players
             </li>
             <li>
-              • <strong>Referee:</strong> referee@test.com - Can officiate
-              games
+              • <strong>Referee:</strong> referee@test.com - Can officiate games
             </li>
             <li>
-              • <strong>Scorekeeper:</strong> scorekeeper@test.com - Can track
-              game stats
+              • <strong>Scorekeeper:</strong> scorekeeper@test.com - Can track game stats
             </li>
             <li>
               • <strong>Player:</strong> player@test.com - Athlete
             </li>
           </ul>
-          <p className="mt-4 text-xs text-gray-500">
-            Note: These are test users for verifying data relationships and permissions logic.
-            All test accounts use the same password.
+          <p className="text-ink-500 mt-4 text-xs">
+            Note: These are test users for verifying data relationships and permissions logic. All
+            test accounts use the same password.
           </p>
         </div>
       </div>

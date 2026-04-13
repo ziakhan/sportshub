@@ -19,6 +19,9 @@ export default function RefereeProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const labelClass = "block text-sm font-medium text-ink-700"
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
   const {
     register,
@@ -84,7 +87,7 @@ export default function RefereeProfilePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading profile...</p>
+        <p className="text-ink-500">Loading profile...</p>
       </div>
     )
   }
@@ -92,41 +95,38 @@ export default function RefereeProfilePage() {
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
-        <Link
-          href="/dashboard"
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
+        <Link href="/dashboard" className="text-ink-500 hover:text-ink-700 text-sm">
           &larr; Back to Dashboard
         </Link>
       </div>
 
-      <div className="rounded-lg bg-white p-8 shadow">
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">Referee Profile</h1>
-        <p className="mb-6 text-sm text-gray-600">
+      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+        <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Referee Profile</h1>
+        <p className="text-ink-600 mb-6 text-sm">
           Update your certification, fee, and availability.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="border-hoop-200 text-hoop-700 mb-4 rounded-lg border bg-red-50 p-3 text-sm">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <div className="bg-court-50 text-court-700 mb-4 rounded-lg border border-green-200 p-3 text-sm">
             Profile updated successfully!
           </div>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label htmlFor="certificationLevel" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="certificationLevel" className={labelClass}>
               Certification Level <span className="text-red-500">*</span>
             </label>
             <select
               {...register("certificationLevel")}
               id="certificationLevel"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className={inputClass}
             >
               <option value="">Select level</option>
               <option value="Level 1">Level 1 — Entry</option>
@@ -139,7 +139,7 @@ export default function RefereeProfilePage() {
           </div>
 
           <div>
-            <label htmlFor="standardFee" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="standardFee" className={labelClass}>
               Standard Fee per Game ($) <span className="text-red-500">*</span>
             </label>
             <input
@@ -148,7 +148,7 @@ export default function RefereeProfilePage() {
               id="standardFee"
               min="0"
               step="0.01"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className={inputClass}
               placeholder="50.00"
             />
             {errors.standardFee && (
@@ -157,19 +157,17 @@ export default function RefereeProfilePage() {
           </div>
 
           <div>
-            <label htmlFor="availableRegions" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="availableRegions" className={labelClass}>
               Available Regions <span className="text-red-500">*</span>
             </label>
             <input
               {...register("availableRegions")}
               type="text"
               id="availableRegions"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className={inputClass}
               placeholder="California, Nevada, Arizona"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Separate multiple regions with commas.
-            </p>
+            <p className="text-ink-500 mt-1 text-xs">Separate multiple regions with commas.</p>
             {errors.availableRegions && (
               <p className="mt-1 text-sm text-red-600">{errors.availableRegions.message}</p>
             )}
@@ -178,14 +176,14 @@ export default function RefereeProfilePage() {
           <div className="flex gap-4 pt-2">
             <Link
               href="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border bg-white px-4 py-2 font-semibold shadow-sm transition"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-md bg-orange-600 px-4 py-2 font-semibold text-white shadow-sm hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

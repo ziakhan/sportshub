@@ -92,9 +92,9 @@ function getClubRoleLabel(role: string): string {
 }
 
 function getClubRoleBadgeColor(role: string): string {
-  if (role === "ClubOwner") return "bg-yellow-100 text-yellow-700 border-yellow-200"
-  if (role === "ClubManager") return "bg-purple-100 text-purple-700 border-purple-200"
-  return "bg-orange-100 text-orange-700 border-orange-200"
+  if (role === "ClubOwner") return "bg-hoop-100 text-hoop-700 border-hoop-200"
+  if (role === "ClubManager") return "bg-play-100 text-play-700 border-play-200"
+  return "bg-play-100 text-play-700 border-play-200"
 }
 
 function getTeamRoleLabel(designation: string | null, role: string): string {
@@ -105,10 +105,10 @@ function getTeamRoleLabel(designation: string | null, role: string): string {
 }
 
 function getTeamRoleBadgeColor(designation: string | null, role: string): string {
-  if (designation === "HeadCoach") return "bg-orange-50 text-orange-700 border-orange-200"
-  if (designation === "AssistantCoach") return "bg-indigo-50 text-indigo-700 border-indigo-200"
-  if (role === "TeamManager") return "bg-green-50 text-green-700 border-green-200"
-  return "bg-gray-50 text-gray-600 border-gray-200"
+  if (designation === "HeadCoach") return "bg-play-50 text-play-700 border-play-200"
+  if (designation === "AssistantCoach") return "bg-court-50 text-court-700 border-court-200"
+  if (role === "TeamManager") return "bg-court-50 text-court-700 border-court-200"
+  return "bg-court-50 text-ink-600 border-ink-200"
 }
 
 export default function StaffPage() {
@@ -223,7 +223,7 @@ export default function StaffPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading staff...</p>
+        <p className="text-ink-500">Loading staff...</p>
       </div>
     )
   }
@@ -235,17 +235,17 @@ export default function StaffPage() {
   return (
     <div className="space-y-8">
       {/* Invite Form */}
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">Invite Staff</h2>
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h2 className="text-ink-900 mb-4 text-lg font-semibold">Invite Staff</h2>
 
         {error && (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-4 rounded-xl border p-3 text-sm">
             {error}
           </div>
         )}
 
         {inviteSuccess && (
-          <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <div className="border-court-200 bg-court-50 text-court-700 mb-4 rounded-xl border p-3 text-sm">
             {inviteSuccess}
           </div>
         )}
@@ -253,22 +253,22 @@ export default function StaffPage() {
         <form onSubmit={handleInvite} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <label className="text-ink-700 block text-sm font-medium">Email</label>
               <input
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="border-ink-200 focus:border-play-500 focus:ring-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-1"
                 placeholder="staff@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Role</label>
+              <label className="text-ink-700 block text-sm font-medium">Role</label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as "ClubManager" | "Staff")}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none"
+                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
               >
                 <option value="Staff">Staff</option>
                 <option value="ClubManager">Manager</option>
@@ -278,21 +278,21 @@ export default function StaffPage() {
               <button
                 type="submit"
                 disabled={inviting}
-                className="w-full rounded-md bg-purple-600 px-4 py-2 font-semibold text-white hover:bg-purple-700 disabled:bg-gray-400"
+                className="bg-play-600 hover:bg-play-700 disabled:bg-court-300 w-full rounded-xl px-4 py-2 font-semibold text-white"
               >
                 {inviting ? "Sending..." : "Send Invite"}
               </button>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Message <span className="text-gray-400">(optional)</span>
+            <label className="text-ink-700 block text-sm font-medium">
+              Message <span className="text-ink-400">(optional)</span>
             </label>
             <input
               type="text"
               value={inviteMessage}
               onChange={(e) => setInviteMessage(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none"
+              className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
               placeholder="We'd love you to join our staff!"
             />
           </div>
@@ -301,8 +301,8 @@ export default function StaffPage() {
 
       {/* Staff Requests */}
       {requests.length > 0 && (
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+          <h2 className="text-ink-900 mb-4 text-lg font-semibold">
             Staff Requests ({requests.length})
           </h2>
           <div className="space-y-3">
@@ -315,11 +315,11 @@ export default function StaffPage() {
               return (
                 <div
                   key={req.id}
-                  className="flex items-center justify-between rounded-md border border-gray-200 p-4"
+                  className="border-ink-100 flex items-center justify-between rounded-xl border p-4"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">{name}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-ink-900 font-medium">{name}</div>
+                    <div className="text-ink-500 text-sm">
                       Wants to join as {req.role}
                       {req.message && ` — "${req.message}"`}
                     </div>
@@ -327,13 +327,13 @@ export default function StaffPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleRespondToRequest(req.id, "accept", req.role)}
-                      className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                      className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
                     >
                       Accept
                     </button>
                     <button
                       onClick={() => handleRespondToRequest(req.id, "decline")}
-                      className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                     >
                       Decline
                     </button>
@@ -346,13 +346,13 @@ export default function StaffPage() {
       )}
 
       {/* Current Staff */}
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h2 className="text-ink-900 mb-4 text-lg font-semibold">
           Current Staff ({grouped.length})
         </h2>
 
         {grouped.length === 0 ? (
-          <p className="text-sm text-gray-400">No staff members yet.</p>
+          <p className="text-ink-400 text-sm">No staff members yet.</p>
         ) : (
           <div className="space-y-4">
             {grouped.map((member) => {
@@ -362,12 +362,12 @@ export default function StaffPage() {
               const isOwner = member.clubRoles.some((r) => r.role === "ClubOwner")
 
               return (
-                <div key={member.userId} className="rounded-md border border-gray-200 p-4">
+                <div key={member.userId} className="border-ink-100 rounded-xl border bg-white p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       {/* Name + Email */}
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{name}</span>
+                        <span className="text-ink-900 font-medium">{name}</span>
                         {/* Club-level role badges */}
                         {member.clubRoles.map((r) => (
                           <span
@@ -378,12 +378,12 @@ export default function StaffPage() {
                           </span>
                         ))}
                       </div>
-                      <div className="mt-0.5 text-xs text-gray-500">{member.email}</div>
+                      <div className="text-ink-500 mt-0.5 text-xs">{member.email}</div>
 
                       {/* Team assignments */}
                       {member.teamRoles.length > 0 && (
                         <div className="mt-3">
-                          <div className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
+                          <div className="text-ink-400 mb-1.5 text-xs font-medium uppercase tracking-wider">
                             Team Assignments
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -391,7 +391,7 @@ export default function StaffPage() {
                               <Link
                                 key={tr.id}
                                 href={`/clubs/${clubId}/teams/${tr.team!.id}/edit`}
-                                className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:shadow-sm ${getTeamRoleBadgeColor(tr.designation, tr.role)}`}
+                                className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors hover:shadow-sm ${getTeamRoleBadgeColor(tr.designation, tr.role)}`}
                               >
                                 <span className="font-semibold">{tr.team!.name}</span>
                                 <span className="opacity-60">·</span>
@@ -420,7 +420,7 @@ export default function StaffPage() {
                         !isOwner &&
                         !member.clubRoles.some((r) => r.role === "ClubManager") && (
                           <div className="mt-2">
-                            <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+                            <span className="border-ink-200 bg-court-50 text-ink-500 inline-flex rounded-full border px-2 py-0.5 text-xs">
                               Not assigned to any team
                             </span>
                           </div>
@@ -433,7 +433,7 @@ export default function StaffPage() {
                         onClick={() =>
                           handleRemove(member.clubRoles[0]?.id || member.teamRoles[0]?.id, name)
                         }
-                        className="ml-4 text-xs font-medium text-red-500 hover:text-red-700"
+                        className="text-hoop-600 hover:text-hoop-700 ml-4 text-xs font-medium"
                       >
                         Remove
                       </button>
@@ -448,19 +448,19 @@ export default function StaffPage() {
 
       {/* Pending Invitations */}
       {sentInvites.length > 0 && (
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+          <h2 className="text-ink-900 mb-4 text-lg font-semibold">
             Pending Invitations ({sentInvites.length})
           </h2>
           <div className="space-y-3">
             {sentInvites.map((invite) => (
               <div
                 key={invite.id}
-                className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 p-4"
+                className="border-ink-100 bg-court-50 flex items-center justify-between rounded-xl border p-4"
               >
                 <div>
-                  <div className="font-medium text-gray-900">{invite.invitedEmail}</div>
-                  <div className="text-xs text-gray-500">Invited as {invite.role} — Pending</div>
+                  <div className="text-ink-900 font-medium">{invite.invitedEmail}</div>
+                  <div className="text-ink-500 text-xs">Invited as {invite.role} — Pending</div>
                 </div>
               </div>
             ))}

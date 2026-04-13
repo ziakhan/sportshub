@@ -2,189 +2,481 @@ import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
 import { ClubSearch } from "./club-search"
 
-async function getFeaturedClubs() {
-  const clubs = await prisma.tenant.findMany({
-    where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      city: true,
-      state: true,
-      country: true,
-      description: true,
-      status: true,
-      branding: { select: { primaryColor: true, logoUrl: true } },
-      _count: { select: { teams: true, tryouts: true } },
+async function getHomePageData() {
+  const [featuredClubs, rawUpcomingTryouts, totalClubs, totalTeams, totalTryouts] =
+    await Promise.all([
+      prisma.tenant.findMany({
+        where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          city: true,
+          state: true,
+          description: true,
+          status: true,
+          branding: { select: { primaryColor: true, logoUrl: true } },
+          _count: { select: { teams: true, tryouts: true } },
+        },
+        orderBy: { teams: { _count: "desc" } },
+        take: 6,
+      }),
+      prisma.tryout.findMany({
+        where: {
+          isPublished: true,
+          isPublic: true,
+          scheduledAt: { gte: new Date() },
+          tenant: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
+        },
+        select: {
+          id: true,
+          title: true,
+          ageGroup: true,
+          location: true,
+          scheduledAt: true,
+          fee: true,
+          tenant: {
+            select: {
+              name: true,
+              slug: true,
+              branding: { select: { primaryColor: true } },
+            },
+          },
+        },
+        orderBy: { scheduledAt: "asc" },
+        take: 3,
+      }),
+      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] } } }),
+      prisma.team.count(),
+      prisma.tryout.count({ where: { isPublished: true, isPublic: true } }),
+    ])
+
+  return {
+    featuredClubs,
+    upcomingTryouts: rawUpcomingTryouts.map((tryout) => ({
+      ...tryout,
+      fee: Number(tryout.fee),
+    })),
+    stats: {
+      totalClubs,
+      totalTeams,
+      totalTryouts,
     },
-    orderBy: { teams: { _count: "desc" } },
-    take: 6,
-  })
-  return clubs
+  }
 }
 
 export default async function HomePage() {
-  const featuredClubs = await getFeaturedClubs()
+  const { featuredClubs, upcomingTryouts, stats } = await getHomePageData()
+  const logoMarquee = featuredClubs.length > 0 ? [...featuredClubs, ...featuredClubs] : []
 
   return (
     <>
-      {/* Hero Section — dark navy */}
-      <section className="relative bg-navy-950 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-950 to-navy-900" />
-        <div className="relative container mx-auto px-4 py-24 text-center md:py-32">
-          <div className="mb-6 inline-block rounded-full bg-orange-500/20 px-4 py-1.5 text-sm font-semibold text-orange-400">
-            YOUTH BASKETBALL HUB
-          </div>
-          <h1 className="mb-6 text-5xl font-extrabold tracking-tight text-white md:text-6xl lg:text-7xl">
-            THE ALL-IN-ONE{" "}
-            <br className="hidden md:block" />
-            PLATFORM FOR{" "}
-            <span className="text-orange-400">YOUTH BASKETBALL</span>
-          </h1>
-          <p className="mx-auto mb-10 max-w-3xl text-xl text-gray-300">
-            Find clubs, browse tryouts, manage teams, and connect with the basketball
-            community — all in one place.
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link
-              href="/sign-up"
-              className="rounded-full bg-orange-500 px-8 py-4 text-lg font-semibold text-white hover:bg-orange-600 transition"
-            >
-              Get Started Free
-            </Link>
-            <Link
-              href="/marketplace"
-              className="rounded-full border-2 border-gray-500 px-8 py-4 text-lg font-semibold text-gray-300 hover:border-white hover:text-white transition"
-            >
-              Browse Tryouts
-            </Link>
+      <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
+        <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
+        <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
+        <div className="bg-court-200/50 absolute bottom-[8%] left-[28%] h-60 w-60 rounded-full blur-3xl" />
+
+        <div className="container relative z-10 mx-auto px-4 sm:px-6">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="border-ink-200 mb-8 inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 shadow-sm">
+              <span className="bg-court-500 h-1.5 w-1.5 rounded-full" />
+              <span className="text-ink-600 text-xs font-medium">
+                {stats.totalClubs}+ clubs across the platform
+              </span>
+            </div>
+
+            <h1 className="font-display text-ink-950 mb-6 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
+              Youth basketball,
+              <br />
+              <span className="from-play-600 via-hoop-500 to-court-600 bg-gradient-to-r bg-clip-text text-transparent">
+                organized beautifully
+              </span>
+            </h1>
+
+            <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
+              The modern platform where clubs manage teams, parents find tryouts, and the basketball
+              community stays connected without spreadsheets and scattered messages.
+            </p>
+
+            <div className="mb-14 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link
+                href="/sign-up"
+                className="bg-ink-950 shadow-ink-950/10 hover:bg-ink-800 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition sm:w-auto"
+              >
+                Get started for free
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <Link
+                href="/marketplace"
+                className="border-ink-200 text-ink-700 hover:bg-ink-50 inline-flex w-full items-center justify-center rounded-2xl border bg-white px-7 py-3.5 text-[15px] font-semibold transition sm:w-auto"
+              >
+                Browse tryouts
+              </Link>
+            </div>
+
+            <ClubSearch />
           </div>
         </div>
       </section>
 
-      {/* Club Discovery — slightly lighter navy */}
-      <section className="bg-navy-900 py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-2 text-center text-3xl font-bold text-white">
-            Find a Basketball Club
-          </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-center text-gray-400">
-            Search by club name or city to find programs near you.
-          </p>
-          <ClubSearch />
-        </div>
-      </section>
+      {logoMarquee.length > 0 && (
+        <section className="border-ink-100 overflow-hidden border-b bg-white py-6">
+          <div className="marquee-track">
+            {logoMarquee.map((club, index) => (
+              <div key={`${club.id}-${index}`} className="flex items-center gap-4 px-6">
+                <span className="text-ink-300 text-sm font-medium">{club.name}</span>
+                <span className="text-ink-200">|</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Featured Clubs */}
+      {upcomingTryouts.length > 0 && (
+        <section className="bg-white py-16 sm:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="mb-10 flex items-end justify-between gap-6">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-3">
+                  <span className="bg-hoop-400 h-px w-10" />
+                  <span className="text-hoop-500 text-xs font-semibold uppercase tracking-[0.2em]">
+                    Live marketplace
+                  </span>
+                </div>
+                <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+                  Programs families can act on right now
+                </h2>
+                <p className="text-ink-500 text-base leading-7 sm:text-lg">
+                  Pulling from real club data, upcoming tryouts stay visible, searchable, and easy
+                  to compare.
+                </p>
+              </div>
+              <Link
+                href="/marketplace"
+                className="text-play-600 hover:text-play-700 hidden text-sm font-semibold transition sm:inline-flex"
+              >
+                Explore all programs &rarr;
+              </Link>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-3">
+              {upcomingTryouts.map((tryout) => (
+                <Link
+                  key={tryout.id}
+                  href={`/tryout/${tryout.id}`}
+                  className="card-lift border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+                >
+                  <div className="mb-5 flex items-center justify-between">
+                    <span className="bg-hoop-50 text-hoop-600 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                      Tryout
+                    </span>
+                    <span className="text-ink-500 text-sm font-semibold">
+                      {tryout.fee === 0 ? "Free" : `$${tryout.fee}`}
+                    </span>
+                  </div>
+                  <h3 className="text-ink-950 mb-2 text-2xl font-semibold">{tryout.title}</h3>
+                  <p className="text-ink-500 mb-6 text-sm leading-6">
+                    {tryout.tenant.name} | {tryout.ageGroup} | {tryout.location}
+                  </p>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-ink-400 text-xs uppercase tracking-[0.16em]">
+                        Next session
+                      </div>
+                      <div className="text-ink-700 mt-1 text-sm font-medium">
+                        {new Date(tryout.scheduledAt).toLocaleDateString("en-CA", {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    <span
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white"
+                      style={{ backgroundColor: tryout.tenant.branding?.primaryColor || "#4f46e5" }}
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {featuredClubs.length > 0 && (
-        <section className="bg-navy-950 py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="mb-8 text-center text-3xl font-bold text-white">
-              Featured Clubs
-            </h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {featuredClubs.map((club: any) => (
+        <section className="bg-ink-50 py-16 sm:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="mb-10 max-w-2xl">
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="bg-play-400 h-px w-10" />
+                <span className="text-play-500 text-xs font-semibold uppercase tracking-[0.2em]">
+                  Featured clubs
+                </span>
+              </div>
+              <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+                Clubs with active teams, tryouts, and real momentum
+              </h2>
+              <p className="text-ink-500 text-base leading-7 sm:text-lg">
+                Clubs get a better public presence, and families get clearer signals about what is
+                active.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {featuredClubs.map((club) => (
                 <Link
                   key={club.id}
                   href={`/club/${club.slug}`}
-                  className="rounded-lg border border-navy-700 bg-navy-800 overflow-hidden shadow-sm transition hover:border-orange-500/50 hover:shadow-lg"
+                  className="card-lift border-ink-100 shadow-soft overflow-hidden rounded-[30px] border bg-white"
                 >
                   <div
-                    className="h-1.5"
-                    style={{ backgroundColor: club.branding?.primaryColor || "#f97316" }}
-                  />
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-white">{club.name}</h3>
-                    <p className="text-sm text-gray-400 mb-3">
-                      {[club.city, club.state].filter(Boolean).join(", ")}
-                    </p>
+                    className="relative h-32 overflow-hidden"
+                    style={{
+                      background: `linear-gradient(135deg, ${club.branding?.primaryColor || "#4f46e5"}, #18181b)`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_32%)]" />
+                    <div className="text-ink-950 absolute bottom-4 left-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 text-lg font-bold shadow-lg">
+                      {club.name.slice(0, 1)}
+                    </div>
+                  </div>
+                  <div className="p-6 pt-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-ink-950 text-xl font-bold">{club.name}</h3>
+                        <p className="text-ink-500 mt-1 text-sm">
+                          {[club.city, club.state].filter(Boolean).join(", ")}
+                        </p>
+                      </div>
+                      <span className="bg-ink-50 text-ink-600 ring-ink-200 rounded-full px-3 py-1 text-xs font-semibold ring-1">
+                        {club.status === "UNCLAIMED" ? "Open profile" : "Active"}
+                      </span>
+                    </div>
                     {club.description && (
-                      <p className="text-sm text-gray-300 line-clamp-2 mb-3">{club.description}</p>
+                      <p className="text-ink-600 mb-4 line-clamp-2 text-sm leading-6">
+                        {club.description}
+                      </p>
                     )}
-                    <div className="flex gap-4 text-xs text-gray-500">
-                      <span>{club._count.teams} teams</span>
-                      <span>{club._count.tryouts} tryouts</span>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-court-50 rounded-2xl p-3">
+                        <div className="text-court-700 text-xs uppercase tracking-[0.16em]">
+                          Teams
+                        </div>
+                        <div className="text-ink-950 mt-1 text-lg font-semibold">
+                          {club._count.teams}
+                        </div>
+                      </div>
+                      <div className="bg-hoop-50 rounded-2xl p-3">
+                        <div className="text-hoop-700 text-xs uppercase tracking-[0.16em]">
+                          Tryouts
+                        </div>
+                        <div className="text-ink-950 mt-1 text-lg font-semibold">
+                          {club._count.tryouts}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-            <div className="mt-8 text-center">
+
+            <div className="mt-8">
               <Link
                 href="/club"
-                className="text-orange-400 font-semibold hover:text-orange-300"
+                className="text-play-600 hover:text-play-700 inline-flex text-sm font-semibold transition"
               >
-                View All Clubs &rarr;
+                View all clubs &rarr;
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* Audience Cards */}
-      <section className="bg-navy-900 py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-4 text-center text-3xl font-bold text-white">
-            Built for Everyone in Youth Basketball
-          </h2>
-          <p className="mx-auto mb-12 max-w-2xl text-center text-gray-400">
-            No matter your role, Youth Basketball Hub gives you the tools to
-            stay organized and connected.
-          </p>
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="rounded-xl border border-navy-700 border-t-4 border-t-orange-500 bg-navy-800 p-8">
-              <h3 className="mb-3 text-2xl font-bold text-white">Parents &amp; Families</h3>
-              <p className="mb-4 text-gray-400">Find the perfect club and team for your child.</p>
-              <ul className="space-y-2 text-gray-300">
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Browse tryouts by age group and location</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Register and pay online</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Track schedule, games, and stats</li>
-              </ul>
+      <section className="bg-white py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-10 max-w-2xl">
+            <div className="mb-4 inline-flex items-center gap-3">
+              <span className="bg-court-400 h-px w-10" />
+              <span className="text-court-600 text-xs font-semibold uppercase tracking-[0.2em]">
+                Why it works
+              </span>
             </div>
-            <div className="rounded-xl border border-navy-700 border-t-4 border-t-green-500 bg-navy-800 p-8">
-              <h3 className="mb-3 text-2xl font-bold text-white">Club Owners &amp; Managers</h3>
-              <p className="mb-4 text-gray-400">Run your club with powerful management tools.</p>
-              <ul className="space-y-2 text-gray-300">
-                <li className="flex items-start gap-2"><span className="mt-1 text-green-400">&#10003;</span>Create and organize teams by age group</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-green-400">&#10003;</span>Publish tryouts for families to find</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-green-400">&#10003;</span>Accept payments online with Stripe</li>
-              </ul>
+            <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+              One platform, built for every role around the team
+            </h2>
+            <p className="text-ink-500 text-base leading-7 sm:text-lg">
+              The design direction works best when it still feels useful, so these sections stay
+              tied to real workflows already present in the product.
+            </p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
+            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+              <div className="bg-hoop-50 text-hoop-600 mb-4 inline-flex rounded-2xl p-3">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 14c4.418 0 8-1.79 8-4s-3.582-4-8-4-8 1.79-8 4 3.582 4 8 4Z" />
+                  <path d="M4 10v4c0 2.21 3.582 4 8 4s8-1.79 8-4v-4" />
+                </svg>
+              </div>
+              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Parents</h3>
+              <p className="text-ink-600 text-sm leading-6">
+                Find real clubs, compare tryouts, and keep registration in one organized flow.
+              </p>
             </div>
-            <div className="rounded-xl border border-navy-700 border-t-4 border-t-orange-400 bg-navy-800 p-8">
-              <h3 className="mb-3 text-2xl font-bold text-white">Referees</h3>
-              <p className="mb-4 text-gray-400">Get booked for games on your schedule.</p>
-              <ul className="space-y-2 text-gray-300">
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Set your availability and certification</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Get assigned to local games</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-orange-400">&#10003;</span>Track earnings and game history</li>
-              </ul>
+            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+              <div className="bg-court-50 text-court-600 mb-4 inline-flex rounded-2xl p-3">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 21h18" />
+                  <path d="M5 21V8l7-5 7 5v13" />
+                  <path d="M9 12h6" />
+                </svg>
+              </div>
+              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Clubs</h3>
+              <p className="text-ink-600 text-sm leading-6">
+                Publish programs, manage staff, track teams, and turn public interest into
+                structured operations.
+              </p>
             </div>
-            <div className="rounded-xl border border-navy-700 border-t-4 border-t-purple-500 bg-navy-800 p-8">
-              <h3 className="mb-3 text-2xl font-bold text-white">League Organizers</h3>
-              <p className="mb-4 text-gray-400">Organize competitions effortlessly.</p>
-              <ul className="space-y-2 text-gray-300">
-                <li className="flex items-start gap-2"><span className="mt-1 text-purple-400">&#10003;</span>Create divisions by age group and gender</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-purple-400">&#10003;</span>Schedule games and assign referees</li>
-                <li className="flex items-start gap-2"><span className="mt-1 text-purple-400">&#10003;</span>Track standings and player stats live</li>
-              </ul>
+            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+              <div className="bg-play-50 text-play-600 mb-4 inline-flex rounded-2xl p-3">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M9 6.75V4.5A2.25 2.25 0 0 1 11.25 2.25h1.5A2.25 2.25 0 0 1 15 4.5v2.25" />
+                  <path d="M4.5 9.75h15v9.75a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V9.75Z" />
+                </svg>
+              </div>
+              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Staff</h3>
+              <p className="text-ink-600 text-sm leading-6">
+                Accept invitations, stay tied to club context, and manage the players and workflows
+                assigned to you.
+              </p>
+            </div>
+            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+              <div className="bg-ink-100 text-ink-700 mb-4 inline-flex rounded-2xl p-3">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25v13.5A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V5.25Z" />
+                  <path d="M7.5 15 10.5 12l2.25 2.25L16.5 9.75" />
+                </svg>
+              </div>
+              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Leagues</h3>
+              <p className="text-ink-600 text-sm leading-6">
+                Coordinate divisions, visibility, and scheduling with cleaner data moving through
+                the platform.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-orange-500 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-white">Ready to Get Started?</h2>
-          <p className="mx-auto mb-8 max-w-xl text-lg text-orange-100">
-            Join clubs, staff, and families already using Youth Basketball Hub.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-block rounded-full bg-navy-900 px-8 py-4 text-lg font-semibold text-white hover:bg-navy-800 transition"
-          >
-            Create Your Free Account
-          </Link>
+      <section className="bg-ink-950 py-16 text-white sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="grid gap-8 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm lg:grid-cols-[1.2fr_0.8fr] lg:p-12">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="bg-hoop-400 h-px w-10" />
+                <span className="text-hoop-300 text-xs font-semibold uppercase tracking-[0.2em]">
+                  Platform snapshot
+                </span>
+              </div>
+              <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                Built to replace the patchwork behind club operations
+              </h2>
+              <p className="text-ink-300 max-w-2xl text-base leading-7 sm:text-lg">
+                Real teams, real tryouts, and real public pages. The design shift is not just
+                cosmetic; it makes the product feel credible the moment someone lands on it.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+              <div className="bg-white/8 rounded-3xl p-5">
+                <div className="text-ink-400 text-xs uppercase tracking-[0.18em]">Clubs</div>
+                <div className="mt-2 text-3xl font-bold text-white">{stats.totalClubs}+</div>
+              </div>
+              <div className="bg-white/8 rounded-3xl p-5">
+                <div className="text-ink-400 text-xs uppercase tracking-[0.18em]">Teams</div>
+                <div className="mt-2 text-3xl font-bold text-white">{stats.totalTeams}+</div>
+              </div>
+              <div className="bg-white/8 rounded-3xl p-5">
+                <div className="text-ink-400 text-xs uppercase tracking-[0.18em]">
+                  Public tryouts
+                </div>
+                <div className="mt-2 text-3xl font-bold text-white">{stats.totalTryouts}+</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#fafafa] py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="from-play-600 via-play-700 to-ink-950 shadow-panel rounded-[34px] bg-gradient-to-br px-8 py-12 text-white sm:px-12">
+            <div className="max-w-3xl">
+              <div className="text-play-100 mb-4 inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+                Start building with it
+              </div>
+              <h2 className="mb-4 text-3xl font-bold sm:text-5xl">
+                Bring your club online with a platform that looks as organized as it works.
+              </h2>
+              <p className="text-play-100 mb-8 max-w-2xl text-base leading-7 sm:text-lg">
+                Create a free account, publish your programs, and give families a public-facing
+                experience that feels intentional from the first click.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/sign-up"
+                  className="text-ink-950 hover:bg-ink-50 inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-sm font-semibold transition"
+                >
+                  Create your account
+                </Link>
+                <Link
+                  href="/club"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/20 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  Explore club profiles
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </>

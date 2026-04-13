@@ -53,7 +53,74 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-body text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 22%),
+      radial-gradient(circle at top right, rgba(242, 78, 30, 0.04), transparent 18%);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight;
+  }
+  ::selection {
+    background: rgba(79, 70, 229, 0.18);
+  }
+}
+
+@layer utilities {
+  .mesh-surface {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 80% 20%, rgba(242, 78, 30, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 50% 80%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+  }
+
+  .card-lift {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 48px rgba(24, 24, 27, 0.08);
+  }
+
+  .hairline {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 28s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+    }
+  }
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }

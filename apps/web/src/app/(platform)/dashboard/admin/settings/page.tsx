@@ -59,28 +59,31 @@ export default function AdminSettingsPage() {
   }
 
   if (loading) {
-    return <div className="text-gray-500 py-12 text-center">Loading settings...</div>
+    return <div className="text-ink-500 py-12 text-center">Loading settings...</div>
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Platform Settings</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Configure platform-wide settings
-        </p>
+    <div className="space-y-5">
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+          Admin
+        </div>
+        <h2 className="font-display text-ink-950 text-2xl font-bold">Platform settings</h2>
+        <p className="text-ink-500 mt-1 text-sm">Configure platform-wide settings</p>
       </div>
 
       {message && (
-        <div className={`mb-6 rounded-md p-4 text-sm ${message.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+        <div
+          className={`rounded-xl border p-4 text-sm font-medium ${message.type === "success" ? "border-court-200 bg-court-50 text-court-700" : "border-hoop-200 bg-hoop-50 text-hoop-700"}`}
+        >
           {message.text}
         </div>
       )}
 
       {/* Enabled Countries */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="font-semibold text-gray-900 mb-2">Enabled Countries</h3>
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">Enabled countries</h3>
+        <p className="text-ink-500 mb-4 text-sm">
           Select which countries are active on the platform. When only one country is enabled,
           country selectors are hidden and that country is used as the default everywhere.
         </p>
@@ -93,10 +96,10 @@ export default function AdminSettingsPage() {
             return (
               <label
                 key={country.code}
-                className={`flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition ${
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition ${
                   isEnabled
-                    ? "border-orange-300 bg-orange-50"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-play-300 bg-play-50"
+                    : "border-ink-200 hover:border-ink-300 hover:bg-ink-50"
                 }`}
               >
                 <input
@@ -104,11 +107,11 @@ export default function AdminSettingsPage() {
                   checked={isEnabled}
                   onChange={() => toggleCountry(country.code)}
                   disabled={isOnly}
-                  className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 disabled:opacity-50"
+                  className="border-ink-300 text-play-600 focus:ring-play-500 rounded disabled:opacity-50"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">{country.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-ink-900 font-medium">{country.name}</div>
+                  <div className="text-ink-500 text-xs">
                     {country.code} &middot; {country.currency} ({country.currencySymbol})
                   </div>
                 </div>
@@ -118,7 +121,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-xs text-gray-500">
+          <div className="text-ink-500 text-xs">
             {enabledCodes.length === 1
               ? "Single-country mode: country selectors will be hidden across the platform"
               : `${enabledCodes.length} countries enabled: users will see country selectors`}
@@ -126,7 +129,7 @@ export default function AdminSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>

@@ -4,11 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { UserMenu } from "../(platform)/dashboard/user-menu"
 
-export default async function PublicLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
   let userName = "User"
   let userEmail = ""
@@ -21,87 +17,199 @@ export default async function PublicLayout({
       userName = session.user.name || "User"
       userEmail = session.user.email || ""
       const parts = userName.split(" ")
-      userInitials = parts.map((p) => p[0]).join("").toUpperCase().slice(0, 2) || "U"
+      userInitials =
+        parts
+          .map((p) => p[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2) || "U"
     }
   } catch {
     // Session check failed — render as unauthenticated
   }
 
   return (
-    <main className="flex min-h-screen flex-col">
-      {/* Header — dark navy */}
-      <header className="border-b border-navy-700 bg-navy-950">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3 sm:py-4">
-          {/* Logo — shorter on mobile */}
-          <Link href="/" className="text-lg font-bold text-orange-400 sm:text-2xl whitespace-nowrap">
-            <span className="sm:hidden">YBH</span>
-            <span className="hidden sm:inline">Youth Basketball Hub</span>
+    <main className="text-ink-950 flex min-h-screen flex-col bg-[#fafafa]">
+      <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
+        <div className="container mx-auto flex h-[60px] items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="bg-play-600 shadow-play-200/70 flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10" />
+              </svg>
+            </span>
+            <span className="font-display text-ink-950 text-lg font-bold tracking-tight">
+              sportshub
+            </span>
           </Link>
 
-          {/* Nav links */}
-          <nav className="flex items-center gap-2 sm:gap-4">
+          <nav className="hidden items-center gap-1 md:flex">
             <Link
               href="/events"
-              className="hidden text-sm text-gray-300 hover:text-white sm:block"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
               Programs
             </Link>
             <Link
               href="/club"
-              className="hidden text-sm text-gray-300 hover:text-white sm:block"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
               Clubs
             </Link>
+            <Link
+              href="/browse-leagues"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+            >
+              Leagues
+            </Link>
+            <Link
+              href="/marketplace"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+            >
+              Marketplace
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="rounded-md border border-orange-500 px-3 py-1.5 text-xs font-medium text-orange-400 hover:bg-orange-500/10 sm:px-4 sm:py-2 sm:text-sm"
+                  className="border-ink-200 text-ink-700 hover:bg-ink-50 hidden rounded-xl border px-4 py-2 text-[13px] font-semibold transition-colors sm:inline-flex"
                 >
                   Dashboard
                 </Link>
                 <NotificationBell />
-                <UserMenu
-                  userName={userName}
-                  userEmail={userEmail}
-                  userInitials={userInitials}
-                />
+                <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
               </>
             ) : (
               <>
                 <Link
                   href="/sign-in"
-                  className="px-3 py-1.5 text-sm text-gray-300 hover:text-white"
+                  className="text-ink-600 hover:text-ink-950 px-3 py-1.5 text-[13px] font-medium transition-colors"
                 >
-                  Sign In
+                  Log in
                 </Link>
                 <Link
                   href="/sign-up"
-                  className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 sm:px-5 sm:py-2"
+                  className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors"
                 >
-                  Sign Up Free
+                  Start Free
                 </Link>
               </>
             )}
-          </nav>
+          </div>
         </div>
 
-        {/* Mobile nav row — shows Programs + Clubs on small screens */}
-        <div className="flex gap-4 border-t border-navy-800 px-4 py-2 sm:hidden">
-          <Link href="/events" className="text-sm text-gray-400 hover:text-white">
-            Programs
-          </Link>
-          <Link href="/club" className="text-sm text-gray-400 hover:text-white">
-            Clubs
-          </Link>
+        <div className="border-ink-100 border-t px-4 py-2 md:hidden">
+          <div className="flex gap-2 overflow-x-auto">
+            <Link
+              href="/events"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              Programs
+            </Link>
+            <Link
+              href="/club"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              Clubs
+            </Link>
+            <Link
+              href="/browse-leagues"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              Leagues
+            </Link>
+            <Link
+              href="/marketplace"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              Marketplace
+            </Link>
+          </div>
         </div>
       </header>
 
       {children}
 
-      {/* Footer — dark navy */}
-      <footer className="border-t border-navy-800 bg-navy-950 py-8 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-gray-400">
+      <footer className="bg-ink-950 mt-auto border-t border-white/5 py-14 text-white">
+        <div className="container mx-auto grid gap-10 px-4 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
+          <div className="max-w-sm">
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="bg-play-600 flex h-9 w-9 items-center justify-center rounded-xl text-white">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10" />
+                </svg>
+              </span>
+              <span className="font-display text-lg font-bold tracking-tight">sportshub</span>
+            </div>
+            <p className="text-ink-300 text-sm leading-6">
+              A modern operating system for youth basketball clubs, parents, players, and league
+              organizers.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-ink-400 mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
+              Explore
+            </h3>
+            <div className="text-ink-300 space-y-3 text-sm">
+              <Link href="/events" className="block transition-colors hover:text-white">
+                Programs
+              </Link>
+              <Link href="/club" className="block transition-colors hover:text-white">
+                Clubs
+              </Link>
+              <Link href="/marketplace" className="block transition-colors hover:text-white">
+                Marketplace
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-ink-400 mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
+              Platform
+            </h3>
+            <div className="text-ink-300 space-y-3 text-sm">
+              <Link href="/sign-up" className="block transition-colors hover:text-white">
+                Create account
+              </Link>
+              <Link href="/sign-in" className="block transition-colors hover:text-white">
+                Sign in
+              </Link>
+              <Link href="/dashboard" className="block transition-colors hover:text-white">
+                Dashboard
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-ink-400 mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
+              Company
+            </h3>
+            <p className="text-ink-300 text-sm leading-6">
+              Built for the real workflows behind teams, tryouts, offers, payments, and club
+              operations.
+            </p>
+          </div>
+        </div>
+
+        <div className="text-ink-400 container mx-auto mt-10 border-t border-white/5 px-4 pt-6 text-sm sm:px-6">
           &copy; {new Date().getFullYear()} Youth Basketball Hub. All rights reserved.
         </div>
       </footer>

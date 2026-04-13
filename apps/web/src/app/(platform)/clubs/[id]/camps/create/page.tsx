@@ -83,31 +83,31 @@ export default function CreateCampPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/camps`} className="text-sm text-orange-600 hover:underline">
+        <Link href={`/clubs/${clubId}/camps`} className="text-sm text-play-700 hover:underline">
           &larr; Back to Camps
         </Link>
       </div>
 
       <div className="mx-auto max-w-2xl">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Create Camp</h2>
+        <h2 className="text-xl font-bold text-ink-900 mb-6">Create Camp</h2>
 
-        {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200">{error}</div>}
+        {error && <div className="mb-4 rounded-md bg-hoop-50 p-3 text-sm text-hoop-700 border border-hoop-200">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Camp Details</h3>
+          <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
+            <h3 className="font-semibold text-ink-900">Camp Details</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Camp Name *</label>
+                <label className="block text-sm font-medium text-ink-700">Camp Name *</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
                   placeholder="e.g. Summer Basketball Camp 2026"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Camp Type *</label>
+                <label className="block text-sm font-medium text-ink-700">Camp Type *</label>
                 <select value={campType} onChange={(e) => setCampType(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
                   <option value="SUMMER">Summer Camp</option>
                   <option value="MARCH_BREAK">March Break</option>
                   <option value="HOLIDAY">Holiday Camp</option>
@@ -118,9 +118,9 @@ export default function CreateCampPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Age Group *</label>
+                <label className="block text-sm font-medium text-ink-700">Age Group *</label>
                 <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
                   <option value="">Select...</option>
                   {["U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18", "All Ages"].map((ag) => (
                     <option key={ag} value={ag}>{ag}</option>
@@ -128,9 +128,9 @@ export default function CreateCampPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Gender</label>
+                <label className="block text-sm font-medium text-ink-700">Gender</label>
                 <select value={gender} onChange={(e) => setGender(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
                   <option value="">Co-ed</option>
                   <option value="MALE">Boys</option>
                   <option value="FEMALE">Girls</option>
@@ -139,77 +139,77 @@ export default function CreateCampPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <label className="block text-sm font-medium text-ink-700">Description</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
                 placeholder="Brief overview..."
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">What&apos;s Included (Details)</label>
+              <label className="block text-sm font-medium text-ink-700">What&apos;s Included (Details)</label>
               <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={4}
                 placeholder="Daily activities, coaching, skills focus, what to bring, etc."
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Schedule</h3>
+          <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
+            <h3 className="font-semibold text-ink-900">Schedule</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Start Date *</label>
+                <label className="block text-sm font-medium text-ink-700">Start Date *</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">End Date *</label>
+                <label className="block text-sm font-medium text-ink-700">End Date *</label>
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Daily Start *</label>
+                <label className="block text-sm font-medium text-ink-700">Daily Start *</label>
                 <input type="time" value={dailyStartTime} onChange={(e) => setDailyStartTime(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Daily End *</label>
+                <label className="block text-sm font-medium text-ink-700">Daily End *</label>
                 <input type="time" value={dailyEndTime} onChange={(e) => setDailyEndTime(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Number of Weeks *</label>
+                <label className="block text-sm font-medium text-ink-700">Number of Weeks *</label>
                 <input type="number" min="1" max="12" value={numberOfWeeks} onChange={(e) => setNumberOfWeeks(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location *</label>
+              <label className="block text-sm font-medium text-ink-700">Location *</label>
               <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} required
                 placeholder="Gym name or address"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Pricing</h3>
+          <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
+            <h3 className="font-semibold text-ink-900">Pricing</h3>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Per Week ($) *</label>
+                <label className="block text-sm font-medium text-ink-700">Per Week ($) *</label>
                 <input type="number" min="0" step="0.01" value={weeklyFee} onChange={(e) => setWeeklyFee(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
               {weeks > 1 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">All {weeks} Weeks ($)</label>
+                  <label className="block text-sm font-medium text-ink-700">All {weeks} Weeks ($)</label>
                   <input type="number" min="0" step="0.01" value={fullCampFee} onChange={(e) => setFullCampFee(e.target.value)}
                     placeholder={`${(parseFloat(weeklyFee) * weeks).toFixed(2)} (no discount)`}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                    className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
                   {fullCampFee && parseFloat(fullCampFee) < parseFloat(weeklyFee) * weeks && (
                     <p className="mt-1 text-xs text-green-600">
                       Save {((1 - parseFloat(fullCampFee) / (parseFloat(weeklyFee) * weeks)) * 100).toFixed(0)}% vs weekly
@@ -218,15 +218,15 @@ export default function CreateCampPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Max Participants</label>
+                <label className="block text-sm font-medium text-ink-700">Max Participants</label>
                 <input type="number" min="1" value={maxParticipants} onChange={(e) => setMaxParticipants(e.target.value)}
                   placeholder="Unlimited"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Includes</label>
+              <label className="block text-sm font-medium text-ink-700 mb-2">Includes</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: "lunch", label: "Lunch", checked: includesLunch, set: setIncludesLunch },
@@ -234,10 +234,10 @@ export default function CreateCampPage() {
                   { key: "jersey", label: "Jersey/T-Shirt", checked: includesJersey, set: setIncludesJersey },
                   { key: "ball", label: "Basketball", checked: includesBall, set: setIncludesBall },
                 ].map((item) => (
-                  <label key={item.key} className="flex items-center gap-2 rounded-md border border-gray-200 p-2 cursor-pointer hover:bg-gray-50">
+                  <label key={item.key} className="flex items-center gap-2 rounded-md border border-ink-200 p-2 cursor-pointer hover:bg-court-50">
                     <input type="checkbox" checked={item.checked} onChange={(e) => item.set(e.target.checked)}
-                      className="rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
-                    <span className="text-sm text-gray-700">{item.label}</span>
+                      className="rounded border-ink-200 text-play-700 focus:ring-play-500/20" />
+                    <span className="text-sm text-ink-700">{item.label}</span>
                   </label>
                 ))}
               </div>
@@ -246,11 +246,11 @@ export default function CreateCampPage() {
 
           <div className="flex gap-4">
             <Link href={`/clubs/${clubId}/camps`}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              className="rounded-md border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-court-50">
               Cancel
             </Link>
             <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+              className="flex-1 rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700 disabled:opacity-50">
               {isSubmitting ? "Creating..." : "Create Camp"}
             </button>
           </div>

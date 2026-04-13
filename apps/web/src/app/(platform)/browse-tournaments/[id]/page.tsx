@@ -56,9 +56,9 @@ export default function TournamentDetailSubmitPage() {
     }
   }
 
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
+  if (loading) return <div className="text-ink-500 py-12 text-center">Loading...</div>
   if (!tournament)
-    return <div className="text-gray-500 py-12 text-center">Tournament not found.</div>
+    return <div className="text-ink-500 py-12 text-center">Tournament not found.</div>
 
   const isOpen = tournament.status === "REGISTRATION"
   const deadlinePassed =
@@ -71,9 +71,12 @@ export default function TournamentDetailSubmitPage() {
   const availableTeams = myTeams.filter((t: any) => !registeredTeamIds.has(t.id))
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl p-6 md:p-8">
       <div className="mb-6">
-        <Link href="/browse-tournaments" className="text-sm text-orange-600 hover:underline">
+        <Link
+          href="/browse-tournaments"
+          className="text-play-700 text-sm font-medium hover:underline"
+        >
           &larr; Back to Tournaments
         </Link>
       </div>
@@ -82,8 +85,8 @@ export default function TournamentDetailSubmitPage() {
         <div
           className={`mb-6 rounded-md p-4 text-sm ${
             message.type === "success"
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
+              ? "bg-court-50 text-court-700 border-court-200 border"
+              : "bg-hoop-50 text-hoop-700 border-hoop-200 border"
           }`}
         >
           {message.text}
@@ -92,29 +95,29 @@ export default function TournamentDetailSubmitPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tournament Info — Left 2/3 */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center gap-3 mb-3">
+        <div className="space-y-6 lg:col-span-2">
+          <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+            <div className="mb-3 flex items-center gap-3">
               {canRegister && (
-                <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                <span className="text-court-700 rounded-full bg-green-100 px-3 py-1 text-sm font-medium">
                   Open
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{tournament.name}</h1>
-            <p className="text-sm text-gray-500 mb-3">
+            <h1 className="text-ink-900 mb-2 text-2xl font-semibold">{tournament.name}</h1>
+            <p className="text-ink-500 mb-3 text-sm">
               {tournament.city}
               {tournament.state ? `, ${tournament.state}` : ""}
             </p>
             {tournament.description && (
-              <p className="text-gray-700 mb-4">{tournament.description}</p>
+              <p className="text-ink-700 mb-4">{tournament.description}</p>
             )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               {tournament.startDate && (
-                <div className="rounded-md bg-gray-50 p-3">
-                  <div className="text-xs font-medium text-gray-500">Dates</div>
-                  <div className="text-sm text-gray-900">
+                <div className="border-court-100 bg-court-50 rounded-xl border p-3">
+                  <div className="text-ink-500 text-xs font-medium">Dates</div>
+                  <div className="text-ink-900 text-sm">
                     {format(new Date(tournament.startDate), "MMM d")} -{" "}
                     {tournament.endDate
                       ? format(new Date(tournament.endDate), "MMM d, yyyy")
@@ -123,25 +126,23 @@ export default function TournamentDetailSubmitPage() {
                 </div>
               )}
               {tournament.gamesGuaranteed && (
-                <div className="rounded-md bg-gray-50 p-3">
-                  <div className="text-xs font-medium text-gray-500">Games Guaranteed</div>
-                  <div className="text-sm text-gray-900">{tournament.gamesGuaranteed} games</div>
+                <div className="border-court-100 bg-court-50 rounded-xl border p-3">
+                  <div className="text-ink-500 text-xs font-medium">Games Guaranteed</div>
+                  <div className="text-ink-900 text-sm">{tournament.gamesGuaranteed} games</div>
                 </div>
               )}
               {tournament.registrationDeadline && (
-                <div className="rounded-md bg-gray-50 p-3">
-                  <div className="text-xs font-medium text-gray-500">Registration Deadline</div>
-                  <div
-                    className={`text-sm ${deadlinePassed ? "text-red-600" : "text-gray-900"}`}
-                  >
+                <div className="border-court-100 bg-court-50 rounded-xl border p-3">
+                  <div className="text-ink-500 text-xs font-medium">Registration Deadline</div>
+                  <div className={`text-sm ${deadlinePassed ? "text-red-600" : "text-ink-900"}`}>
                     {format(new Date(tournament.registrationDeadline), "MMM d, yyyy")}
                   </div>
                 </div>
               )}
               {tournament.gameSlotMinutes && (
-                <div className="rounded-md bg-gray-50 p-3">
-                  <div className="text-xs font-medium text-gray-500">Game Format</div>
-                  <div className="text-sm text-gray-900">
+                <div className="border-court-100 bg-court-50 rounded-xl border p-3">
+                  <div className="text-ink-500 text-xs font-medium">Game Format</div>
+                  <div className="text-ink-900 text-sm">
                     {tournament.gameLengthMinutes}min (
                     {tournament.gamePeriods === "QUARTERS" ? "4 quarters" : "2 halves"})
                   </div>
@@ -152,23 +153,18 @@ export default function TournamentDetailSubmitPage() {
 
           {/* Divisions */}
           {tournament.divisions?.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-              <h2 className="font-semibold text-gray-900 mb-3">Divisions</h2>
+            <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+              <h2 className="text-ink-900 mb-3 font-semibold">Divisions</h2>
               <div className="grid gap-2 sm:grid-cols-2">
                 {tournament.divisions.map((d: any) => (
-                  <div
-                    key={d.id}
-                    className="rounded-md border border-gray-100 bg-gray-50 p-3"
-                  >
-                    <span className="font-medium text-gray-900">{d.name}</span>
-                    <span className="ml-2 text-xs text-gray-500">
+                  <div key={d.id} className="border-court-100 bg-court-50 rounded-xl border p-3">
+                    <span className="text-ink-900 font-medium">{d.name}</span>
+                    <span className="text-ink-500 ml-2 text-xs">
                       {d.ageGroup}
                       {d.gender ? ` \u2022 ${d.gender}` : ""}
                     </span>
                     {d.maxTeams && (
-                      <span className="ml-2 text-xs text-gray-400">
-                        (max {d.maxTeams} teams)
-                      </span>
+                      <span className="text-ink-400 ml-2 text-xs">(max {d.maxTeams} teams)</span>
                     )}
                   </div>
                 ))}
@@ -178,30 +174,26 @@ export default function TournamentDetailSubmitPage() {
 
           {/* Registered Teams */}
           {registeredTeams.length > 0 && (
-            <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200">
-              <h2 className="font-semibold text-gray-900 mb-3">
+            <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+              <h2 className="text-ink-900 mb-3 font-semibold">
                 Registered Teams ({registeredTeams.length})
               </h2>
               {registeredTeams.map((t: any) => (
                 <div
                   key={t.id}
-                  className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 mb-1"
+                  className="border-court-100 bg-court-50 mb-1 flex items-center justify-between rounded-xl border px-3 py-2"
                 >
                   <div>
-                    <span className="font-medium text-gray-900">
-                      {t.team?.name || "Unknown"}
-                    </span>
-                    <span className="ml-2 text-xs text-gray-500">{t.team?.tenant?.name}</span>
+                    <span className="text-ink-900 font-medium">{t.team?.name || "Unknown"}</span>
+                    <span className="text-ink-500 ml-2 text-xs">{t.team?.tenant?.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {t.division && (
-                      <span className="text-xs text-orange-600">{t.division.name}</span>
-                    )}
+                    {t.division && <span className="text-play-700 text-xs">{t.division.name}</span>}
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         t.status === "APPROVED"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
+                          ? "bg-court-100 text-court-700"
+                          : "bg-hoop-100 text-hoop-700"
                       }`}
                     >
                       {t.status.toLowerCase()}
@@ -215,22 +207,22 @@ export default function TournamentDetailSubmitPage() {
 
         {/* Sidebar — Submit Team (1/3) */}
         <div>
-          <div className="rounded-lg bg-white p-6 shadow-sm border border-gray-200 sticky top-4">
+          <div className="border-ink-100 sticky top-4 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
             {tournament.teamFee != null && (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-play-700 text-3xl font-bold">
                   {formatCurrency(tournament.teamFee, tournament.currency)}
                 </div>
-                <p className="text-xs text-gray-500">per team</p>
+                <p className="text-ink-500 text-xs">per team</p>
               </div>
             )}
 
             {canRegister ? (
               <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">Submit Your Team</h3>
+                <h3 className="text-ink-900 font-semibold">Submit Your Team</h3>
 
                 {availableTeams.length === 0 ? (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-ink-500 text-sm">
                     {myTeams.length === 0
                       ? "You don't have any teams yet. Create a team first."
                       : "All your teams are already submitted."}
@@ -238,13 +230,13 @@ export default function TournamentDetailSubmitPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label className="text-ink-600 mb-1 block text-xs font-medium">
                         Select Team
                       </label>
                       <select
                         value={selectedTeam}
                         onChange={(e) => setSelectedTeam(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
                       >
                         <option value="">Choose team...</option>
                         {availableTeams.map((t: any) => (
@@ -257,13 +249,13 @@ export default function TournamentDetailSubmitPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label className="text-ink-600 mb-1 block text-xs font-medium">
                         Select Division
                       </label>
                       <select
                         value={selectedDivision}
                         onChange={(e) => setSelectedDivision(e.target.value)}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
                       >
                         <option value="">Choose division...</option>
                         {tournament.divisions?.map((d: any) => (
@@ -277,7 +269,7 @@ export default function TournamentDetailSubmitPage() {
                     <button
                       onClick={handleSubmit}
                       disabled={submitting || !selectedTeam || !selectedDivision}
-                      className="w-full rounded-md bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                      className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
                     >
                       {submitting ? "Submitting..." : "Submit Team"}
                     </button>
@@ -285,7 +277,7 @@ export default function TournamentDetailSubmitPage() {
                 )}
               </div>
             ) : (
-              <div className="rounded-md bg-gray-100 p-4 text-center text-sm text-gray-600">
+              <div className="bg-ink-100 text-ink-600 rounded-xl p-4 text-center text-sm">
                 {deadlinePassed
                   ? "Registration deadline has passed."
                   : "Registration is not open yet."}

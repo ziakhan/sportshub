@@ -23,7 +23,13 @@ interface ClubOffer {
   practiceSessions: number
   createdAt: Date
   team: { id: string; name: string }
-  player: { id: string; firstName: string; lastName: string; dateOfBirth: Date | null; gender: string | null }
+  player: {
+    id: string
+    firstName: string
+    lastName: string
+    dateOfBirth: Date | null
+    gender: string | null
+  }
 }
 
 async function getClubOffers(tenantId: string): Promise<ClubOffer[]> {
@@ -55,7 +61,7 @@ async function getClubOffers(tenantId: string): Promise<ClubOffer[]> {
     orderBy: { createdAt: "desc" },
   })
   // Convert Decimal to Number for serialization
-  return raw.map((o: typeof raw[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))
+  return raw.map((o: (typeof raw)[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 
 async function getClubTeams(tenantId: string): Promise<{ id: string; name: string }[]> {
@@ -88,10 +94,10 @@ export default async function ClubOffersPage({
   ])
 
   const statusColors: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-700",
-    ACCEPTED: "bg-green-100 text-green-700",
-    DECLINED: "bg-red-100 text-red-700",
-    EXPIRED: "bg-gray-100 text-gray-600",
+    PENDING: "bg-hoop-100 text-hoop-700",
+    ACCEPTED: "bg-court-100 text-court-700",
+    DECLINED: "bg-hoop-100 text-hoop-700",
+    EXPIRED: "bg-court-100 text-ink-600",
   }
 
   const pendingCount = offers.filter((o) => o.status === "PENDING").length
@@ -105,7 +111,8 @@ export default async function ClubOffersPage({
   const validStatuses = ["PENDING", "ACCEPTED", "DECLINED", "EXPIRED"]
 
   const filteredOffers = offers.filter((o) => {
-    if (statusFilter && validStatuses.includes(statusFilter) && o.status !== statusFilter) return false
+    if (statusFilter && validStatuses.includes(statusFilter) && o.status !== statusFilter)
+      return false
     if (teamFilter && o.team.id !== teamFilter) return false
     return true
   })
@@ -116,15 +123,13 @@ export default async function ClubOffersPage({
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Offers</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage offers sent to players from tryouts
-          </p>
+          <h2 className="text-ink-900 text-xl font-bold">Offers</h2>
+          <p className="text-ink-500 mt-1 text-sm">Manage offers sent to players from tryouts</p>
         </div>
         {acceptedCount > 0 && (
           <Link
             href={`/clubs/${params.id}/offers/summary`}
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
           >
             Accepted Summary
           </Link>
@@ -134,32 +139,48 @@ export default async function ClubOffersPage({
       {/* Stats — clickable to filter */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Link
-          href={statusFilter === "PENDING" ? `/clubs/${params.id}/offers` : `/clubs/${params.id}/offers?status=pending${teamFilter ? `&team=${teamFilter}` : ""}`}
-          className={`rounded-lg border p-4 transition ${statusFilter === "PENDING" ? "border-yellow-400 ring-2 ring-yellow-200" : "border-yellow-200"} bg-yellow-50`}
+          href={
+            statusFilter === "PENDING"
+              ? `/clubs/${params.id}/offers`
+              : `/clubs/${params.id}/offers?status=pending${teamFilter ? `&team=${teamFilter}` : ""}`
+          }
+          className={`rounded-2xl border p-4 transition ${statusFilter === "PENDING" ? "border-hoop-400 ring-hoop-200 ring-2" : "border-hoop-200"} bg-hoop-50`}
         >
-          <div className="text-2xl font-bold text-yellow-700">{pendingCount}</div>
-          <div className="text-sm text-yellow-600">Pending</div>
+          <div className="text-hoop-700 text-2xl font-bold">{pendingCount}</div>
+          <div className="text-hoop-600 text-sm">Pending</div>
         </Link>
         <Link
-          href={statusFilter === "ACCEPTED" ? `/clubs/${params.id}/offers` : `/clubs/${params.id}/offers?status=accepted${teamFilter ? `&team=${teamFilter}` : ""}`}
-          className={`rounded-lg border p-4 transition ${statusFilter === "ACCEPTED" ? "border-green-400 ring-2 ring-green-200" : "border-green-200"} bg-green-50`}
+          href={
+            statusFilter === "ACCEPTED"
+              ? `/clubs/${params.id}/offers`
+              : `/clubs/${params.id}/offers?status=accepted${teamFilter ? `&team=${teamFilter}` : ""}`
+          }
+          className={`rounded-2xl border p-4 transition ${statusFilter === "ACCEPTED" ? "border-court-400 ring-court-200 ring-2" : "border-court-200"} bg-court-50`}
         >
-          <div className="text-2xl font-bold text-green-700">{acceptedCount}</div>
-          <div className="text-sm text-green-600">Accepted</div>
+          <div className="text-court-700 text-2xl font-bold">{acceptedCount}</div>
+          <div className="text-court-600 text-sm">Accepted</div>
         </Link>
         <Link
-          href={statusFilter === "DECLINED" ? `/clubs/${params.id}/offers` : `/clubs/${params.id}/offers?status=declined${teamFilter ? `&team=${teamFilter}` : ""}`}
-          className={`rounded-lg border p-4 transition ${statusFilter === "DECLINED" ? "border-red-400 ring-2 ring-red-200" : "border-red-200"} bg-red-50`}
+          href={
+            statusFilter === "DECLINED"
+              ? `/clubs/${params.id}/offers`
+              : `/clubs/${params.id}/offers?status=declined${teamFilter ? `&team=${teamFilter}` : ""}`
+          }
+          className={`rounded-2xl border p-4 transition ${statusFilter === "DECLINED" ? "border-hoop-400 ring-hoop-200 ring-2" : "border-hoop-200"} bg-hoop-50`}
         >
-          <div className="text-2xl font-bold text-red-700">{declinedCount}</div>
-          <div className="text-sm text-red-600">Declined</div>
+          <div className="text-hoop-700 text-2xl font-bold">{declinedCount}</div>
+          <div className="text-hoop-600 text-sm">Declined</div>
         </Link>
         <Link
-          href={statusFilter === "EXPIRED" ? `/clubs/${params.id}/offers` : `/clubs/${params.id}/offers?status=expired${teamFilter ? `&team=${teamFilter}` : ""}`}
-          className={`rounded-lg border p-4 transition ${statusFilter === "EXPIRED" ? "border-gray-400 ring-2 ring-gray-200" : "border-gray-200"} bg-gray-50`}
+          href={
+            statusFilter === "EXPIRED"
+              ? `/clubs/${params.id}/offers`
+              : `/clubs/${params.id}/offers?status=expired${teamFilter ? `&team=${teamFilter}` : ""}`
+          }
+          className={`rounded-2xl border p-4 transition ${statusFilter === "EXPIRED" ? "border-ink-400 ring-court-200 ring-2" : "border-ink-200"} bg-court-50`}
         >
-          <div className="text-2xl font-bold text-gray-600">{expiredCount}</div>
-          <div className="text-sm text-gray-500">Expired</div>
+          <div className="text-ink-600 text-2xl font-bold">{expiredCount}</div>
+          <div className="text-ink-500 text-sm">Expired</div>
         </Link>
       </div>
 
@@ -174,20 +195,22 @@ export default async function ClubOffersPage({
       {/* Active filter indicator */}
       {(statusFilter || teamFilter) && (
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-sm text-gray-500">Filtered by:</span>
+          <span className="text-ink-500 text-sm">Filtered by:</span>
           {statusFilter && (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[statusFilter] || "bg-gray-100 text-gray-600"}`}>
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[statusFilter] || "bg-court-100 text-ink-600"}`}
+            >
               {statusFilter.toLowerCase()}
             </span>
           )}
           {activeFilterTeam && (
-            <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+            <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
               {activeFilterTeam.name}
             </span>
           )}
           <Link
             href={`/clubs/${params.id}/offers`}
-            className="text-xs text-orange-600 hover:underline"
+            className="text-play-700 text-xs hover:underline"
           >
             Clear all
           </Link>
@@ -195,29 +218,27 @@ export default async function ClubOffersPage({
       )}
 
       {filteredOffers.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
           {offers.length === 0 ? (
             <>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No offers yet</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-ink-900 mb-2 text-lg font-semibold">No offers yet</h3>
+              <p className="text-ink-600 mb-4">
                 Go to a tryout&apos;s signups page to make offers to players.
               </p>
               <Link
                 href={`/clubs/${params.id}/tryouts`}
-                className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
+                className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
               >
                 View Tryouts
               </Link>
             </>
           ) : (
             <>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No matching offers</h3>
-              <p className="text-gray-600 mb-4">
-                No offers match the current filters.
-              </p>
+              <h3 className="text-ink-900 mb-2 text-lg font-semibold">No matching offers</h3>
+              <p className="text-ink-600 mb-4">No offers match the current filters.</p>
               <Link
                 href={`/clubs/${params.id}/offers`}
-                className="text-sm text-orange-600 hover:underline"
+                className="text-play-700 text-sm hover:underline"
               >
                 Clear filters
               </Link>
@@ -234,25 +255,26 @@ export default async function ClubOffersPage({
             const teamAccepted = teamOffers.filter((o) => o.status === "ACCEPTED").length
 
             return (
-              <div key={team.id} className="rounded-lg border border-gray-200 bg-white shadow-sm">
-                <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+              <div key={team.id} className="border-ink-100 shadow-soft rounded-2xl border bg-white">
+                <div className="border-ink-100 flex items-center justify-between border-b px-6 py-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{team.name}</h3>
-                    <p className="text-xs text-gray-500">
-                      {teamOffers.length} offer{teamOffers.length !== 1 ? "s" : ""} &middot; {teamAccepted} accepted
+                    <h3 className="text-ink-900 font-semibold">{team.name}</h3>
+                    <p className="text-ink-500 text-xs">
+                      {teamOffers.length} offer{teamOffers.length !== 1 ? "s" : ""} &middot;{" "}
+                      {teamAccepted} accepted
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
-                      className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                      className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                     >
                       Team Dashboard
                     </Link>
                     {teamAccepted > 0 && (
                       <Link
                         href={`/clubs/${params.id}/teams/${team.id}/roster`}
-                        className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                        className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
                       >
                         View Roster
                       </Link>
@@ -260,31 +282,33 @@ export default async function ClubOffersPage({
                   </div>
                 </div>
 
-                <div className="divide-y divide-gray-100">
+                <div className="divide-court-100 divide-y">
                   {teamOffers.map((offer) => (
                     <div key={offer.id} className="flex items-center justify-between px-6 py-3">
                       <div>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-ink-900 font-medium">
                           {offer.player.firstName} {offer.player.lastName}
                         </span>
-                        <span className="ml-2 text-xs text-gray-500">
+                        <span className="text-ink-500 ml-2 text-xs">
                           {formatCurrency(Number(offer.seasonFee), currency)}
                           {offer.installments > 1 ? ` (${offer.installments} installments)` : ""}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
                         {offer.status === "ACCEPTED" && offer.uniformSize && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-ink-500 text-xs">
                             Size: {offer.uniformSize}
                             {offer.jerseyPref1 !== null ? ` | Pref: #${offer.jerseyPref1}` : ""}
                             {offer.jerseyPref2 !== null ? `, #${offer.jerseyPref2}` : ""}
                             {offer.jerseyPref3 !== null ? `, #${offer.jerseyPref3}` : ""}
                           </span>
                         )}
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[offer.status]}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[offer.status]}`}
+                        >
                           {offer.status.toLowerCase()}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-ink-400 text-xs">
                           {format(new Date(offer.createdAt), "MMM d")}
                         </span>
                       </div>

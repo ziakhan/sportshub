@@ -66,9 +66,7 @@ export function NotificationBell() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     })
-    setNotifications((prev) =>
-      prev.map((n) => (ids.includes(n.id) ? { ...n, isRead: true } : n))
-    )
+    setNotifications((prev) => prev.map((n) => (ids.includes(n.id) ? { ...n, isRead: true } : n)))
     setUnreadCount((prev) => Math.max(0, prev - ids.length))
   }
 
@@ -115,9 +113,7 @@ export function NotificationBell() {
             ? {
                 ...n,
                 isRead: true,
-                message:
-                  n.message +
-                  ` (${action === "accept" ? "Accepted" : "Declined"})`,
+                message: n.message + ` (${action === "accept" ? "Accepted" : "Declined"})`,
               }
             : n
         )
@@ -145,8 +141,9 @@ export function NotificationBell() {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative rounded-md p-2 text-gray-300 hover:bg-navy-800 hover:text-white"
+        className="border-ink-200 text-ink-600 hover:bg-ink-50 hover:text-ink-950 relative rounded-2xl border bg-white p-2 transition"
         title="Notifications"
+        aria-label="Notifications"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -163,32 +160,30 @@ export function NotificationBell() {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="bg-hoop-500 absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+        <div className="border-ink-100 shadow-panel absolute right-0 z-50 mt-3 w-80 overflow-hidden rounded-3xl border bg-white">
+          <div className="border-ink-100 flex items-center justify-between border-b px-4 py-4">
+            <h3 className="text-ink-950 text-sm font-semibold">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs font-medium text-orange-600 hover:text-orange-700"
+                className="text-play-600 hover:text-play-700 text-xs font-semibold transition"
               >
                 Mark all read
               </button>
             )}
           </div>
 
-          {/* Notification list */}
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <p className="text-sm text-gray-500">No notifications yet</p>
+                <p className="text-ink-500 text-sm">No notifications yet</p>
               </div>
             ) : (
               notifications.map((notification) => {
@@ -200,23 +195,21 @@ export function NotificationBell() {
                 return (
                   <div
                     key={notification.id}
-                    className={`border-b border-gray-50 px-4 py-3 transition ${
-                      notification.isRead ? "bg-white" : "bg-blue-50/40"
-                    } ${!isActionable ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                    className={`border-ink-100 border-b px-4 py-3 transition ${
+                      notification.isRead ? "bg-white" : "bg-play-50/50"
+                    } ${!isActionable ? "hover:bg-ink-50 cursor-pointer" : ""}`}
                     onClick={() => !isActionable && handleClick(notification)}
                   >
                     <div className="flex items-start gap-2">
                       {!notification.isRead && (
-                        <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
+                        <span className="bg-play-500 mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" />
                       )}
                       <div className={`flex-1 ${notification.isRead ? "pl-4" : ""}`}>
-                        <p className="text-sm font-medium text-gray-900">
-                          {notification.title}
-                        </p>
-                        <p className="mt-0.5 text-xs text-gray-600 line-clamp-2">
+                        <p className="text-ink-950 text-sm font-medium">{notification.title}</p>
+                        <p className="text-ink-600 mt-0.5 line-clamp-2 text-xs">
                           {notification.message}
                         </p>
-                        <p className="mt-1 text-[11px] text-gray-400">
+                        <p className="text-ink-400 mt-1 text-[11px]">
                           {formatTime(notification.createdAt)}
                         </p>
                         {isActionable && notification.referenceId && (
@@ -224,26 +217,18 @@ export function NotificationBell() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleRespond(
-                                  notification.id,
-                                  notification.referenceId!,
-                                  "accept"
-                                )
+                                handleRespond(notification.id, notification.referenceId!, "accept")
                               }}
-                              className="rounded bg-green-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                              className="bg-court-600 hover:bg-court-700 rounded-xl px-2.5 py-1 text-xs font-semibold text-white transition"
                             >
                               Accept
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleRespond(
-                                  notification.id,
-                                  notification.referenceId!,
-                                  "decline"
-                                )
+                                handleRespond(notification.id, notification.referenceId!, "decline")
                               }}
-                              className="rounded border border-gray-300 px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-2.5 py-1 text-xs font-semibold transition"
                             >
                               Decline
                             </button>
@@ -257,12 +242,11 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-gray-100">
+          <div className="border-ink-100 border-t">
             <Link
               href="/notifications"
               onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-center text-xs font-medium text-orange-600 hover:bg-gray-50"
+              className="text-play-600 hover:bg-ink-50 block px-4 py-3 text-center text-xs font-semibold transition"
             >
               View all notifications
             </Link>

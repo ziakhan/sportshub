@@ -36,15 +36,30 @@ export default function AdminClubsPage() {
     if (search) params.set("search", search)
     if (statusFilter) params.set("status", statusFilter)
 
-    const res = await fetch(`/api/admin/clubs?${params}`)
-    if (res.ok) {
-      const data = await res.json()
-      setClubs(data.clubs)
-      setTotal(data.total)
-      setTotalPages(data.totalPages)
+    try {
+      const res = await fetch(`/api/admin/clubs?${params}`)
+      const data = await res.json().catch(() => ({}) as any)
+
+      if (!res.ok) {
+        setClubs([])
+        setTotal(0)
+        setTotalPages(1)
+        setMessage({ type: "error", text: data.error || "Failed to load clubs" })
+        return
+      }
+
+      setClubs(data.clubs || [])
+      setTotal(data.total || 0)
+      setTotalPages(data.totalPages || 1)
       if (data.statusCounts) setStatusCounts(data.statusCounts)
+    } catch {
+      setClubs([])
+      setTotal(0)
+      setTotalPages(1)
+      setMessage({ type: "error", text: "Network error while loading clubs" })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [page, search, statusFilter])
 
   useEffect(() => {
@@ -77,40 +92,50 @@ export default function AdminClubsPage() {
   }
 
   const planColors: Record<string, string> = {
-    FREE: "bg-gray-100 text-gray-700",
-    BASIC: "bg-orange-100 text-orange-700",
-    PRO: "bg-purple-100 text-purple-700",
-    ENTERPRISE: "bg-yellow-100 text-yellow-800",
+    FREE: "bg-ink-100 text-ink-700",
+    BASIC: "bg-play-50 text-play-700",
+    PRO: "bg-court-50 text-court-700",
+    ENTERPRISE: "bg-hoop-50 text-hoop-700",
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Club Management</h1>
-          <p className="text-sm text-gray-600">
-            {total} total clubs
-            {" \u2022 "}
-            <span className="text-green-600">{statusCounts.active} active</span>
-            {" \u2022 "}
-            <span className="text-yellow-600">{statusCounts.unclaimed} unclaimed</span>
-            {" \u2022 "}
-            <span className="text-red-600">{statusCounts.suspended} suspended</span>
-          </p>
+    <div className="space-y-5">
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+          Admin
         </div>
-        <Link href="/dashboard" className="text-sm text-orange-600 hover:text-orange-700">
-          ← Back to Dashboard
-        </Link>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-ink-950 text-2xl font-bold">Club management</h1>
+            <p className="text-ink-600 text-sm">
+              {total} total clubs
+              {" \u2022 "}
+              <span className="text-court-700">{statusCounts.active} active</span>
+              {" \u2022 "}
+              <span className="text-play-700">{statusCounts.unclaimed} unclaimed</span>
+              {" \u2022 "}
+              <span className="text-hoop-700">{statusCounts.suspended} suspended</span>
+            </p>
+          </div>
+          <Link
+            href="/dashboard"
+            className="text-play-600 hover:text-play-700 text-sm font-semibold"
+          >
+            ← Back to Dashboard
+          </Link>
+        </div>
       </div>
 
       {message && (
-        <div className={`mb-4 rounded-lg p-3 text-sm ${message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+        <div
+          className={`rounded-xl p-3 text-sm font-medium ${message.type === "success" ? "bg-court-50 text-court-700" : "bg-hoop-50 text-hoop-700"}`}
+        >
           {message.text}
         </div>
       )}
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex gap-1.5">
           {[
             { key: "", label: "All", count: total },
@@ -120,11 +145,14 @@ export default function AdminClubsPage() {
           ].map((f) => (
             <button
               key={f.key}
-              onClick={() => { setStatusFilter(f.key); setPage(1) }}
+              onClick={() => {
+                setStatusFilter(f.key)
+                setPage(1)
+              }}
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 statusFilter === f.key
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-play-600 text-white"
+                  : "bg-ink-100 text-ink-700 hover:bg-ink-200"
               }`}
             >
               {f.label} ({f.count})
@@ -135,59 +163,72 @@ export default function AdminClubsPage() {
           type="text"
           placeholder="Search clubs by name or slug..."
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="flex-1 rounded-lg border px-3 py-2 text-sm"
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1)
+          }}
+          className="border-ink-200 text-ink-900 ring-play-200 flex-1 rounded-xl border bg-white px-3 py-2 text-sm outline-none transition focus:ring"
         />
       </div>
 
       {/* Clubs grid */}
       {loading ? (
-        <div className="py-12 text-center text-gray-500">Loading...</div>
+        <div className="text-ink-500 py-12 text-center">Loading...</div>
       ) : clubs.length === 0 ? (
-        <div className="py-12 text-center text-gray-500">No clubs found</div>
+        <div className="text-ink-500 py-12 text-center">No clubs found</div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {clubs.map((club) => {
             const owner = club.staff[0]?.user
             return (
-              <div key={club.id} className={`rounded-lg bg-white p-5 shadow ${club.status === "SUSPENDED" ? "border-2 border-red-200 opacity-75" : ""}`}>
+              <div
+                key={club.id}
+                className={`border-ink-100 shadow-soft rounded-2xl border bg-white p-5 ${club.status === "SUSPENDED" ? "border-hoop-300" : ""}`}
+              >
                 <div className="mb-3 flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{club.name}</h3>
-                    <p className="text-xs text-gray-500">{club.slug}.youthbasketballhub.com</p>
+                    <h3 className="text-ink-950 text-lg font-semibold">{club.name}</h3>
+                    <p className="text-ink-500 text-xs">{club.slug}.youthbasketballhub.com</p>
                   </div>
                   <div className="flex gap-1">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${planColors[club.plan] || "bg-gray-100"}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${planColors[club.plan] || "bg-ink-100 text-ink-700"}`}
+                    >
                       {club.plan}
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      club.status === "ACTIVE" ? "bg-green-100 text-green-700" :
-                      club.status === "UNCLAIMED" ? "bg-yellow-100 text-yellow-700" :
-                      club.status === "SUSPENDED" ? "bg-red-100 text-red-800" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        club.status === "ACTIVE"
+                          ? "bg-court-50 text-court-700"
+                          : club.status === "UNCLAIMED"
+                            ? "bg-play-50 text-play-700"
+                            : club.status === "SUSPENDED"
+                              ? "bg-hoop-50 text-hoop-700"
+                              : "bg-ink-100 text-ink-700"
+                      }`}
+                    >
                       {club.status}
                     </span>
                   </div>
                 </div>
 
                 {owner && (
-                  <p className="mb-2 text-xs text-gray-500">
+                  <p className="text-ink-500 mb-2 text-xs">
                     Owner: {owner.firstName} {owner.lastName} ({owner.email})
                   </p>
                 )}
 
-                <div className="mb-4 flex gap-4 text-sm text-gray-600">
+                <div className="text-ink-600 mb-4 flex gap-4 text-sm">
                   <span>{club._count.teams} teams</span>
                   <span>{club._count.tryouts} tryouts</span>
                   <span>{club._count.staff} staff</span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-wrap gap-2 border-t pt-3">
+                <div className="border-ink-100 flex flex-wrap gap-2 border-t pt-3">
                   <Link
                     href={`/clubs/${club.id}`}
-                    className="rounded px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50"
+                    className="text-play-600 hover:bg-play-50 rounded-md px-2 py-1 text-xs font-semibold"
                   >
                     View
                   </Link>
@@ -196,7 +237,7 @@ export default function AdminClubsPage() {
                     <button
                       onClick={() => handleAction(club.id, "suspend")}
                       disabled={actionLoading === club.id}
-                      className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      className="text-hoop-700 hover:bg-hoop-50 rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-50"
                     >
                       Suspend
                     </button>
@@ -204,7 +245,7 @@ export default function AdminClubsPage() {
                     <button
                       onClick={() => handleAction(club.id, "reactivate")}
                       disabled={actionLoading === club.id}
-                      className="rounded px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 disabled:opacity-50"
+                      className="text-court-700 hover:bg-court-50 rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-50"
                     >
                       Reactivate
                     </button>
@@ -215,7 +256,7 @@ export default function AdminClubsPage() {
                     value={club.plan}
                     onChange={(e) => handleAction(club.id, "changePlan", { plan: e.target.value })}
                     disabled={actionLoading === club.id}
-                    className="rounded border px-1.5 py-1 text-xs disabled:opacity-50"
+                    className="border-ink-200 text-ink-700 rounded-md border px-1.5 py-1 text-xs disabled:opacity-50"
                   >
                     <option value="FREE">Free</option>
                     <option value="BASIC">Basic</option>
@@ -225,7 +266,7 @@ export default function AdminClubsPage() {
 
                   <button
                     onClick={() => setTransferModal(club.id)}
-                    className="rounded px-2 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50"
+                    className="text-play-600 hover:bg-play-50 rounded-md px-2 py-1 text-xs font-semibold"
                   >
                     Transfer
                   </button>
@@ -233,25 +274,28 @@ export default function AdminClubsPage() {
 
                 {/* Transfer modal inline */}
                 {transferModal === club.id && (
-                  <div className="mt-3 rounded-lg border bg-gray-50 p-3">
-                    <p className="mb-2 text-xs font-medium text-gray-700">Transfer ownership to:</p>
+                  <div className="border-ink-200 bg-ink-50 mt-3 rounded-xl border p-3">
+                    <p className="text-ink-700 mb-2 text-xs font-medium">Transfer ownership to:</p>
                     <div className="flex gap-2">
                       <input
                         type="email"
                         placeholder="New owner email"
                         value={transferEmail}
                         onChange={(e) => setTransferEmail(e.target.value)}
-                        className="flex-1 rounded border px-2 py-1 text-xs"
+                        className="border-ink-200 flex-1 rounded-md border px-2 py-1 text-xs"
                       />
                       <button
                         onClick={() => handleTransfer(club.id)}
-                        className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white hover:bg-orange-700"
+                        className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1 text-xs font-medium text-white"
                       >
                         Transfer
                       </button>
                       <button
-                        onClick={() => { setTransferModal(null); setTransferEmail("") }}
-                        className="rounded px-2 py-1 text-xs text-gray-600 hover:bg-gray-200"
+                        onClick={() => {
+                          setTransferModal(null)
+                          setTransferEmail("")
+                        }}
+                        className="text-ink-600 hover:bg-ink-200 rounded-md px-2 py-1 text-xs"
                       >
                         Cancel
                       </button>
@@ -266,21 +310,21 @@ export default function AdminClubsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
+        <div className="border-ink-100 shadow-soft flex items-center justify-between rounded-xl border bg-white p-3">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
+            className="border-ink-200 text-ink-700 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-sm text-gray-600">
+          <span className="text-ink-600 text-sm">
             Page {page} of {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
+            className="border-ink-200 text-ink-700 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
           >
             Next
           </button>

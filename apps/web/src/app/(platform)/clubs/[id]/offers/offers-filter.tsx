@@ -33,7 +33,7 @@ export function OffersFilter({
       <select
         value={activeTeamId || ""}
         onChange={(e) => handleTeamChange(e.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+        className="rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none"
       >
         <option value="">All Teams</option>
         {teams.map((team) => (

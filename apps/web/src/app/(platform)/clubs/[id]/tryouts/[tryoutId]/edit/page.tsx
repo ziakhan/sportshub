@@ -150,7 +150,7 @@ export default function EditTryoutPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading tryout...</p>
+        <p className="text-ink-500">Loading tryout...</p>
       </div>
     )
   }
@@ -160,39 +160,39 @@ export default function EditTryoutPage() {
       <div className="mb-6">
         <Link
           href={`/clubs/${clubId}/tryouts`}
-          className="mb-2 inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
         >
           &larr; Back to Tryouts
         </Link>
-        <h2 className="text-xl font-bold text-gray-900">Edit Tryout</h2>
+        <h2 className="text-xl font-bold text-ink-900">Edit Tryout</h2>
       </div>
 
       <div className="rounded-lg bg-white p-8 shadow">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
               {error}
             </div>
           )}
           {saved && (
-            <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+            <div className="rounded-md border border-green-200 bg-court-50 p-3 text-sm text-court-700">
               Tryout updated successfully.
             </div>
           )}
 
           {/* Team Selection (mandatory) */}
           <div>
-            <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="teamId" className="block text-sm font-medium text-ink-700">
               Team <span className="text-red-500">*</span>
             </label>
             {teams.length === 0 ? (
-              <p className="mt-1 text-sm text-gray-500">Loading teams...</p>
+              <p className="mt-1 text-sm text-ink-500">Loading teams...</p>
             ) : (
               <select
                 id="teamId"
                 value={selectedTeamId}
                 onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               >
                 <option value="">Select a team</option>
                 {teams.map((team) => (
@@ -207,26 +207,26 @@ export default function EditTryoutPage() {
           {/* Show age group & gender from team */}
           {selectedTeam && (
             <div className="flex gap-4">
-              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
-                <span className="text-orange-600">Age Group:</span>{" "}
-                <span className="font-medium text-orange-900">{selectedTeam.ageGroup}</span>
+              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
+                <span className="text-play-700">Age Group:</span>{" "}
+                <span className="font-medium text-play-900">{selectedTeam.ageGroup}</span>
               </div>
-              <div className="rounded-md bg-orange-50 px-3 py-2 text-sm">
-                <span className="text-orange-600">Gender:</span>{" "}
-                <span className="font-medium text-orange-900">{genderLabel(selectedTeam.gender)}</span>
+              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
+                <span className="text-play-700">Gender:</span>{" "}
+                <span className="font-medium text-play-900">{genderLabel(selectedTeam.gender)}</span>
               </div>
             </div>
           )}
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className="block text-sm font-medium text-ink-700">
               Title <span className="text-red-500">*</span>
             </label>
             <input
               {...register("title")}
               type="text"
               id="title"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
@@ -234,26 +234,26 @@ export default function EditTryoutPage() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="block text-sm font-medium text-ink-700">
               Description
             </label>
             <textarea
               {...register("description")}
               id="description"
               rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="location" className="block text-sm font-medium text-ink-700">
               Location <span className="text-red-500">*</span>
             </label>
             <input
               {...register("location")}
               type="text"
               id="location"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
             {errors.location && (
               <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
@@ -262,14 +262,14 @@ export default function EditTryoutPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="scheduledAt" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
                 Date & Time <span className="text-red-500">*</span>
               </label>
               <input
                 {...register("scheduledAt")}
                 type="datetime-local"
                 id="scheduledAt"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               />
               {errors.scheduledAt && (
                 <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
@@ -277,21 +277,21 @@ export default function EditTryoutPage() {
             </div>
 
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
                 Duration (minutes)
               </label>
               <input
                 {...register("duration")}
                 type="number"
                 id="duration"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="fee" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="fee" className="block text-sm font-medium text-ink-700">
                 Fee ($) <span className="text-red-500">*</span>
               </label>
               <input
@@ -300,7 +300,7 @@ export default function EditTryoutPage() {
                 id="fee"
                 min="0"
                 step="0.01"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               />
               {errors.fee && (
                 <p className="mt-1 text-sm text-red-600">{errors.fee.message}</p>
@@ -308,7 +308,7 @@ export default function EditTryoutPage() {
             </div>
 
             <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="maxParticipants" className="block text-sm font-medium text-ink-700">
                 Max Participants
               </label>
               <input
@@ -316,7 +316,7 @@ export default function EditTryoutPage() {
                 type="number"
                 id="maxParticipants"
                 min="1"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-orange-500 focus:outline-none"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
               />
             </div>
           </div>
@@ -326,9 +326,9 @@ export default function EditTryoutPage() {
               {...register("isPublic")}
               type="checkbox"
               id="isPublic"
-              className="h-4 w-4 rounded border-gray-300 text-orange-600"
+              className="h-4 w-4 rounded border-ink-200 text-play-700"
             />
-            <label htmlFor="isPublic" className="text-sm text-gray-700">
+            <label htmlFor="isPublic" className="text-sm text-ink-700">
               Public tryout (visible on marketplace when published)
             </label>
           </div>
@@ -336,14 +336,14 @@ export default function EditTryoutPage() {
           <div className="flex gap-4">
             <Link
               href={`/clubs/${clubId}/tryouts`}
-              className="rounded-md border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-ink-200 px-4 py-2 font-semibold text-ink-700 hover:bg-court-50"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting || !selectedTeamId}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white hover:bg-orange-600 disabled:bg-gray-400"
+              className="flex-1 rounded-xl bg-play-600 px-4 py-2 font-semibold text-white hover:bg-play-700 disabled:bg-court-300"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

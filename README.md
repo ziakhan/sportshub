@@ -111,6 +111,8 @@ npm run db:seed
 npm run dev
 ```
 
+The default dev launcher now performs a clean startup and runtime health check to prevent stale chunk and missing asset issues.
+
 Open http://localhost:3000.
 
 ## Useful Scripts
@@ -119,6 +121,8 @@ Open http://localhost:3000.
 
 ```bash
 npm run dev
+npm run dev:raw
+npm run dev:reset
 npm run build
 npm run lint
 npm run test

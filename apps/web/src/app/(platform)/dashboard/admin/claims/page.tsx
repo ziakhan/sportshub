@@ -29,7 +29,9 @@ export default function AdminClaimsPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchClaims() }, [])
+  useEffect(() => {
+    fetchClaims()
+  }, [])
 
   const handleAction = async (claimId: string, action: "approve" | "reject", note?: string) => {
     setActionId(claimId)
@@ -40,39 +42,43 @@ export default function AdminClaimsPage() {
         body: JSON.stringify({ action, note }),
       })
       if (res.ok) fetchClaims()
-    } catch {} finally {
+    } catch {
+    } finally {
       setActionId(null)
       setRejectingId(null)
       setRejectNote("")
     }
   }
 
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading claims...</div>
+  if (loading) return <div className="text-ink-500 py-12 text-center">Loading claims...</div>
 
-  const pending = claims.filter((c) => ["PENDING", "EMAIL_SENT", "EMAIL_VERIFIED"].includes(c.status))
+  const pending = claims.filter((c) =>
+    ["PENDING", "EMAIL_SENT", "EMAIL_VERIFIED"].includes(c.status)
+  )
   const resolved = claims.filter((c) => ["APPROVED", "REJECTED"].includes(c.status))
 
   const statusColors: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-700",
-    EMAIL_SENT: "bg-orange-100 text-orange-700",
-    EMAIL_VERIFIED: "bg-green-100 text-green-700",
-    APPROVED: "bg-green-100 text-green-700",
-    REJECTED: "bg-red-100 text-red-700",
+    PENDING: "bg-play-50 text-play-700",
+    EMAIL_SENT: "bg-hoop-50 text-hoop-700",
+    EMAIL_VERIFIED: "bg-court-50 text-court-700",
+    APPROVED: "bg-court-50 text-court-700",
+    REJECTED: "bg-hoop-50 text-hoop-700",
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Club Claims</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Review and manage club ownership claims
-        </p>
+    <div className="space-y-6">
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+          Admin
+        </div>
+        <h2 className="font-display text-ink-950 text-2xl font-bold">Club claims</h2>
+        <p className="text-ink-500 mt-1 text-sm">Review and manage club ownership claims</p>
       </div>
 
       {claims.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No claims yet</h3>
-          <p className="text-gray-600">
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+          <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">No claims yet</h3>
+          <p className="text-ink-600">
             When users request to claim unclaimed clubs, they&apos;ll appear here.
           </p>
         </div>
@@ -81,31 +87,42 @@ export default function AdminClaimsPage() {
           {/* Pending claims */}
           {pending.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <h3 className="font-display text-ink-950 mb-3 text-lg font-semibold">
                 Pending Review ({pending.length})
               </h3>
               <div className="space-y-3">
                 {pending.map((claim) => (
-                  <div key={claim.id} className="rounded-lg border border-yellow-200 bg-white p-5 shadow-sm">
+                  <div
+                    key={claim.id}
+                    className="border-play-200 shadow-soft rounded-2xl border bg-white p-5"
+                  >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="font-semibold text-gray-900">{claim.tenant.name}</h4>
-                        <p className="text-sm text-gray-500">{claim.tenant.city}</p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Claimed by: <strong>{claim.user.firstName} {claim.user.lastName}</strong> ({claim.user.email})
+                        <h4 className="text-ink-950 font-semibold">{claim.tenant.name}</h4>
+                        <p className="text-ink-500 text-sm">{claim.tenant.city}</p>
+                        <p className="text-ink-600 mt-1 text-sm">
+                          Claimed by:{" "}
+                          <strong>
+                            {claim.user.firstName} {claim.user.lastName}
+                          </strong>{" "}
+                          ({claim.user.email})
                         </p>
                         {claim.message && (
-                          <p className="text-xs text-gray-500 mt-1 italic">&ldquo;{claim.message}&rdquo;</p>
+                          <p className="text-ink-500 mt-1 text-xs italic">
+                            &ldquo;{claim.message}&rdquo;
+                          </p>
                         )}
                         <div className="mt-2 flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[claim.status]}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[claim.status]}`}
+                          >
                             {claim.status.replace("_", " ").toLowerCase()}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-ink-400 text-xs">
                             {format(new Date(claim.createdAt), "MMM d, yyyy")}
                           </span>
                           {claim.tenant.contactEmail && (
-                            <span className="text-xs text-gray-400">
+                            <span className="text-ink-400 text-xs">
                               Club email: {claim.tenant.contactEmail}
                             </span>
                           )}
@@ -115,7 +132,7 @@ export default function AdminClaimsPage() {
                         <button
                           onClick={() => handleAction(claim.id, "approve")}
                           disabled={actionId === claim.id}
-                          className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                          className="bg-court-600 hover:bg-court-700 rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                         >
                           Approve
                         </button>
@@ -126,11 +143,11 @@ export default function AdminClaimsPage() {
                               value={rejectNote}
                               onChange={(e) => setRejectNote(e.target.value)}
                               placeholder="Reason..."
-                              className="w-32 rounded-md border border-gray-300 px-2 py-1 text-xs"
+                              className="border-ink-300 w-32 rounded-md border px-2 py-1 text-xs"
                             />
                             <button
                               onClick={() => handleAction(claim.id, "reject", rejectNote)}
-                              className="rounded-md bg-red-600 px-2 py-1 text-xs text-white"
+                              className="bg-hoop-600 rounded-md px-2 py-1 text-xs text-white"
                             >
                               Confirm
                             </button>
@@ -138,7 +155,7 @@ export default function AdminClaimsPage() {
                         ) : (
                           <button
                             onClick={() => setRejectingId(claim.id)}
-                            className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
+                            className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-md border px-3 py-1.5 text-xs font-semibold"
                           >
                             Reject
                           </button>
@@ -154,32 +171,34 @@ export default function AdminClaimsPage() {
           {/* Resolved claims */}
           {resolved.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <h3 className="font-display text-ink-950 mb-3 text-lg font-semibold">
                 Resolved ({resolved.length})
               </h3>
               <div className="space-y-2">
                 {resolved.map((claim) => (
-                  <div key={claim.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                  <div key={claim.id} className="border-ink-200 rounded-xl border bg-white p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-medium text-gray-900">{claim.tenant.name}</span>
-                        <span className="ml-2 text-sm text-gray-500">
+                        <span className="text-ink-900 font-medium">{claim.tenant.name}</span>
+                        <span className="text-ink-500 ml-2 text-sm">
                           by {claim.user.firstName} {claim.user.lastName}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[claim.status]}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[claim.status]}`}
+                        >
                           {claim.status.toLowerCase()}
                         </span>
                         {claim.reviewedAt && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-ink-400 text-xs">
                             {format(new Date(claim.reviewedAt), "MMM d")}
                           </span>
                         )}
                       </div>
                     </div>
                     {claim.reviewNote && (
-                      <p className="text-xs text-gray-500 mt-1">{claim.reviewNote}</p>
+                      <p className="text-ink-500 mt-1 text-xs">{claim.reviewNote}</p>
                     )}
                   </div>
                 ))}

@@ -10,7 +10,14 @@ interface TeamListItem {
   season: string | null
   description: string | null
   createdAt: Date
-  _count: { players: number; homeGames: number; awayGames: number; tryouts: number; offers: number; leagues: number }
+  _count: {
+    players: number
+    homeGames: number
+    awayGames: number
+    tryouts: number
+    offers: number
+    leagues: number
+  }
   staff: { designation: string | null }[]
   offers: { status: string }[]
 }
@@ -66,27 +73,24 @@ export default async function ClubTeamsPage({
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">Teams ({teams.length})</h2>
+        <h2 className="text-ink-900 text-xl font-bold">Teams ({teams.length})</h2>
         <Link
           href={`/clubs/${params.id}/teams/create`}
-          className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
         >
           Create Team
         </Link>
       </div>
 
       {teams.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No teams yet
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Create your first team to start managing players and scheduling
-            games.
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+          <h3 className="text-ink-900 mb-2 text-lg font-semibold">No teams yet</h3>
+          <p className="text-ink-600 mb-6">
+            Create your first team to start managing players and scheduling games.
           </p>
           <Link
             href={`/clubs/${params.id}/teams/create`}
-            className="inline-block rounded-md bg-green-600 px-6 py-2 text-white font-semibold hover:bg-green-700"
+            className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
           >
             Create Your First Team
           </Link>
@@ -101,9 +105,12 @@ export default async function ClubTeamsPage({
           />
 
           {filtered.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
-              <p className="text-gray-600 mb-3">No teams match the current filters.</p>
-              <Link href={`/clubs/${params.id}/teams`} className="text-sm text-orange-600 hover:underline">
+            <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
+              <p className="text-ink-600 mb-3">No teams match the current filters.</p>
+              <Link
+                href={`/clubs/${params.id}/teams`}
+                className="text-play-700 text-sm hover:underline"
+              >
                 Clear filters
               </Link>
             </div>
@@ -118,20 +125,18 @@ export default async function ClubTeamsPage({
                   <Link
                     key={team.id}
                     href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
-                    className="block rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-orange-300 transition"
+                    className="border-ink-100 shadow-soft hover:shadow-panel hover:border-play-300 block rounded-2xl border bg-white p-6 transition"
                   >
                     <div className="mb-3">
                       <div className="flex items-start justify-between">
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {team.name}
-                        </h3>
+                        <h3 className="text-ink-900 text-xl font-bold">{team.name}</h3>
                         {!hasHeadCoach && (
-                          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                          <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
                             No coach
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-ink-600 text-sm">
                         {team.ageGroup}
                         {team.gender ? ` \u2022 ${team.gender}` : ""}
                         {team.season ? ` \u2022 ${team.season}` : ""}
@@ -139,43 +144,43 @@ export default async function ClubTeamsPage({
                     </div>
 
                     {team.description && (
-                      <p className="mb-3 text-sm text-gray-700 line-clamp-2">
-                        {team.description}
-                      </p>
+                      <p className="text-ink-700 mb-3 line-clamp-2 text-sm">{team.description}</p>
                     )}
 
                     {/* Status indicators */}
                     {(pendingOffers > 0 || acceptedOffers > 0) && (
                       <div className="mb-3 flex gap-2">
                         {pendingOffers > 0 && (
-                          <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                          <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
                             {pendingOffers} pending offer{pendingOffers !== 1 ? "s" : ""}
                           </span>
                         )}
                         {acceptedOffers > 0 && (
-                          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                          <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
                             {acceptedOffers} accepted
                           </span>
                         )}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 text-center border-t pt-3">
+                    <div className="grid grid-cols-2 gap-2 border-t pt-3 text-center sm:grid-cols-4">
                       <div>
-                        <div className="text-lg font-bold text-orange-600">{team._count.players}</div>
-                        <div className="text-xs text-gray-500">Players</div>
+                        <div className="text-court-700 text-lg font-bold">
+                          {team._count.players}
+                        </div>
+                        <div className="text-ink-500 text-xs">Players</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold text-green-600">{team._count.tryouts}</div>
-                        <div className="text-xs text-gray-500">Tryouts</div>
+                        <div className="text-hoop-600 text-lg font-bold">{team._count.tryouts}</div>
+                        <div className="text-ink-500 text-xs">Tryouts</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold text-purple-600">{team._count.offers}</div>
-                        <div className="text-xs text-gray-500">Offers</div>
+                        <div className="text-play-700 text-lg font-bold">{team._count.offers}</div>
+                        <div className="text-ink-500 text-xs">Offers</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold text-orange-600">{team._count.leagues}</div>
-                        <div className="text-xs text-gray-500">Leagues</div>
+                        <div className="text-play-700 text-lg font-bold">{team._count.leagues}</div>
+                        <div className="text-ink-500 text-xs">Leagues</div>
                       </div>
                     </div>
                   </Link>

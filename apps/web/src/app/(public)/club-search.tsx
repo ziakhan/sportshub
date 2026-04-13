@@ -81,49 +81,66 @@ export function ClubSearch() {
 
   return (
     <div>
-      <div className="mx-auto max-w-xl relative" ref={wrapperRef}>
+      <div className="relative mx-auto max-w-xl" ref={wrapperRef}>
         <div className="relative">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => { if (results.length > 0) setShowDropdown(true) }}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearchAll() }}
+            onFocus={() => {
+              if (results.length > 0) setShowDropdown(true)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchAll()
+            }}
             placeholder="Start typing a club name..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 pl-10 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="border-ink-200 text-ink-950 focus:border-play-400 focus:ring-play-500/10 w-full rounded-2xl border bg-white px-4 py-4 pl-12 pr-24 text-[15px] shadow-sm transition focus:outline-none focus:ring-4"
           />
           <svg
-            className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
+            className="text-ink-400 absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           {loading && (
-            <div className="absolute right-3 top-3.5 h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-orange-500" />
+            <div className="border-ink-200 border-t-play-600 absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin rounded-full border-2" />
           )}
+
+          <button
+            type="button"
+            onClick={handleSearchAll}
+            className="bg-play-600 hover:bg-play-700 absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-xl px-4 py-2 text-sm font-semibold text-white transition sm:inline-flex"
+          >
+            Search
+          </button>
         </div>
 
         {/* Autocomplete dropdown */}
         {showDropdown && results.length > 0 && (
-          <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+          <div className="border-ink-100 shadow-panel absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border bg-white">
             {results.map((club) => (
               <button
                 key={club.id}
                 onClick={() => handleSelect(club)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg border-b border-gray-100 last:border-0"
+                className="border-ink-100 hover:bg-ink-50 flex w-full items-center justify-between border-b px-4 py-3 text-left transition last:border-0"
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                    className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold text-white shadow-sm"
                     style={{ backgroundColor: club.primaryColor }}
                   >
                     {club.name[0]}
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">{club.name}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-ink-950 font-semibold">{club.name}</div>
+                    <div className="text-ink-500 text-xs">
                       {[club.city, club.state].filter(Boolean).join(", ")}
                       {club.teamCount > 0 ? ` \u2022 ${club.teamCount} teams` : ""}
                     </div>
@@ -134,7 +151,7 @@ export function ClubSearch() {
             {results.length >= 8 && (
               <button
                 onClick={handleSearchAll}
-                className="w-full px-4 py-2 text-center text-sm text-orange-600 hover:bg-orange-50 rounded-b-lg"
+                className="text-play-600 hover:bg-play-50 w-full px-4 py-3 text-center text-sm font-semibold transition"
               >
                 View all results &rarr;
               </button>
@@ -143,7 +160,7 @@ export function ClubSearch() {
         )}
 
         {showDropdown && query.length >= 2 && results.length === 0 && !loading && (
-          <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white p-4 shadow-lg text-center text-sm text-gray-500">
+          <div className="border-ink-100 text-ink-500 shadow-panel absolute z-50 mt-2 w-full rounded-2xl border bg-white p-4 text-center text-sm">
             No clubs found matching &ldquo;{query}&rdquo;
           </div>
         )}
@@ -156,20 +173,20 @@ export function ClubSearch() {
             <Link
               key={club.id}
               href={`/club/${club.slug}`}
-              className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md"
+              className="card-lift border-ink-100 shadow-soft overflow-hidden rounded-3xl border bg-white"
             >
               <div className="h-2" style={{ backgroundColor: club.primaryColor }} />
               <div className="p-5">
                 <div className="mb-1">
-                  <h3 className="font-semibold text-gray-900">{club.name}</h3>
+                  <h3 className="text-ink-950 font-semibold">{club.name}</h3>
                 </div>
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-ink-500 mb-2 text-sm">
                   {[club.city, club.state].filter(Boolean).join(", ")}
                 </p>
                 {club.description && (
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-2">{club.description}</p>
+                  <p className="text-ink-600 mb-2 line-clamp-2 text-xs">{club.description}</p>
                 )}
-                <div className="flex gap-3 text-xs text-gray-400">
+                <div className="text-ink-400 flex gap-3 text-xs">
                   <span>{club.teamCount} teams</span>
                   <span>{club.tryoutCount} tryouts</span>
                 </div>

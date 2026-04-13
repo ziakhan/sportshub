@@ -25,7 +25,10 @@ export default function FindClubPage() {
   const [claimingId, setClaimingId] = useState<string | null>(null)
   const [verifyingId, setVerifyingId] = useState<string | null>(null)
   const [verifyCode, setVerifyCode] = useState("")
-  const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null)
+  const [message, setMessage] = useState<{
+    type: "success" | "error" | "info"
+    text: string
+  } | null>(null)
 
   const handleSearch = async () => {
     if (query.length < 2) return
@@ -64,7 +67,10 @@ export default function FindClubPage() {
       // Refresh search to update claim status
       handleSearch()
     } catch (err) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to submit claim" })
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to submit claim",
+      })
     } finally {
       setClaimingId(null)
     }
@@ -85,9 +91,14 @@ export default function FindClubPage() {
       setVerifyingId(null)
       setVerifyCode("")
       // Redirect to dashboard after short delay
-      setTimeout(() => { window.location.href = "/dashboard" }, 2000)
+      setTimeout(() => {
+        window.location.href = "/dashboard"
+      }, 2000)
     } catch (err) {
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Verification failed" })
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Verification failed",
+      })
     }
   }
 
@@ -95,19 +106,27 @@ export default function FindClubPage() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Find Your Club</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Search for your basketball club and claim ownership. If your club isn&apos;t listed,
-            you can <Link href="/clubs/create" className="text-orange-600 hover:underline">create a new one</Link>.
+          <h1 className="text-ink-900 text-2xl font-semibold">Find Your Club</h1>
+          <p className="text-ink-500 mt-1 text-sm">
+            Search for your basketball club and claim ownership. If your club isn&apos;t listed, you
+            can{" "}
+            <Link href="/clubs/create" className="text-play-700 hover:underline">
+              create a new one
+            </Link>
+            .
           </p>
         </div>
 
         {message && (
-          <div className={`mb-6 rounded-md p-4 text-sm ${
-            message.type === "success" ? "bg-green-50 text-green-700 border border-green-200" :
-            message.type === "error" ? "bg-red-50 text-red-700 border border-red-200" :
-            "bg-orange-50 text-orange-700 border border-orange-200"
-          }`}>
+          <div
+            className={`mb-6 rounded-xl p-4 text-sm ${
+              message.type === "success"
+                ? "bg-court-50 text-court-700 border-court-200 border"
+                : message.type === "error"
+                  ? "bg-hoop-50 text-hoop-700 border-hoop-200 border"
+                  : "border-play-200 bg-play-50 text-play-700 border"
+            }`}
+          >
             {message.text}
           </div>
         )}
@@ -120,12 +139,12 @@ export default function FindClubPage() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Search by club name or city..."
-            className="flex-1 rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 flex-1 rounded-xl border px-4 py-2 shadow-sm focus:outline-none focus:ring-2"
           />
           <button
             onClick={handleSearch}
             disabled={loading || query.length < 2}
-            className="rounded-md bg-orange-500 px-6 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-6 py-2 text-sm font-semibold text-white transition disabled:opacity-50"
           >
             {loading ? "..." : "Search"}
           </button>
@@ -133,14 +152,14 @@ export default function FindClubPage() {
 
         {/* Results */}
         {searched && clubs.length === 0 && !loading && (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No clubs found</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="border-ink-300 rounded-3xl border-2 border-dashed bg-white p-8 text-center">
+            <h3 className="text-ink-900 mb-2 text-lg font-semibold">No clubs found</h3>
+            <p className="text-ink-600 mb-4">
               We couldn&apos;t find a matching club. You can create a new one instead.
             </p>
             <Link
               href="/clubs/create"
-              className="inline-block rounded-md bg-green-600 px-6 py-2 text-white font-semibold hover:bg-green-700"
+              className="bg-hoop-600 hover:bg-hoop-700 inline-block rounded-xl px-6 py-2 font-semibold text-white transition"
             >
               Create New Club
             </Link>
@@ -150,21 +169,29 @@ export default function FindClubPage() {
         {clubs.length > 0 && (
           <div className="space-y-3">
             {clubs.map((club) => (
-              <div key={club.id} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+              <div
+                key={club.id}
+                className="border-ink-100 rounded-3xl border bg-white p-5 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
+              >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{club.name}</h3>
-                    <p className="text-sm text-gray-500">
+                    <h3 className="text-ink-900 font-semibold">{club.name}</h3>
+                    <p className="text-ink-500 text-sm">
                       {[club.city, club.state, club.country].filter(Boolean).join(", ")}
                     </p>
                     {club.description && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{club.description}</p>
+                      <p className="text-ink-400 mt-1 line-clamp-2 text-xs">{club.description}</p>
                     )}
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-500">
+                    <div className="text-ink-500 mt-2 flex flex-wrap gap-2 text-xs">
                       {club.contactEmail && <span>Email: {club.contactEmail}</span>}
                       {club.phoneNumber && <span>Phone: {club.phoneNumber}</span>}
                       {club.website && (
-                        <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline">
+                        <a
+                          href={club.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-play-700 hover:underline"
+                        >
                           Website
                         </a>
                       )}
@@ -173,22 +200,22 @@ export default function FindClubPage() {
 
                   <div className="ml-4 flex-shrink-0">
                     {club.myClaimStatus === "APPROVED" ? (
-                      <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                      <span className="text-court-700 rounded-full bg-green-100 px-3 py-1 text-xs font-medium">
                         Claimed by you
                       </span>
                     ) : club.myClaimStatus ? (
-                      <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
+                      <span className="text-hoop-700 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium">
                         Claim {club.myClaimStatus.toLowerCase().replace("_", " ")}
                       </span>
                     ) : club.hasPendingClaim ? (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                      <span className="bg-court-100 text-ink-600 rounded-full px-3 py-1 text-xs font-medium">
                         Claim pending
                       </span>
                     ) : (
                       <button
                         onClick={() => handleClaim(club.id)}
                         disabled={claimingId === club.id}
-                        className="rounded-md bg-orange-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                        className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
                       >
                         {claimingId === club.id ? "..." : "Claim This Club"}
                       </button>
@@ -198,23 +225,25 @@ export default function FindClubPage() {
 
                 {/* Verification code input */}
                 {verifyingId === club.id && (
-                  <div className="mt-4 rounded-md border border-orange-200 bg-orange-50 p-4">
-                    <p className="text-sm text-orange-700 mb-3">
+                  <div className="border-play-200 bg-play-50 mt-4 rounded-xl border p-4">
+                    <p className="text-play-700 mb-3 text-sm">
                       Enter the 6-digit verification code sent to the club&apos;s email:
                     </p>
                     <div className="flex gap-2">
                       <input
                         type="text"
                         value={verifyCode}
-                        onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        onChange={(e) =>
+                          setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        }
                         placeholder="000000"
                         maxLength={6}
-                        className="w-32 rounded-md border border-gray-300 px-3 py-2 text-center text-lg font-mono tracking-widest shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-32 rounded-xl border px-3 py-2 text-center font-mono text-lg tracking-widest shadow-sm focus:outline-none focus:ring-2"
                       />
                       <button
                         onClick={() => handleVerify(club.id)}
                         disabled={verifyCode.length !== 6}
-                        className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                        className="bg-hoop-600 hover:bg-hoop-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50"
                       >
                         Verify
                       </button>
@@ -227,10 +256,10 @@ export default function FindClubPage() {
         )}
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500 mb-2">Don&apos;t see your club?</p>
+          <p className="text-ink-500 mb-2 text-sm">Don&apos;t see your club?</p>
           <Link
             href="/clubs/create"
-            className="inline-block rounded-md border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="border-ink-200 text-ink-700 hover:bg-court-50 inline-block rounded-xl border px-6 py-2 text-sm font-medium transition"
           >
             Create a New Club
           </Link>

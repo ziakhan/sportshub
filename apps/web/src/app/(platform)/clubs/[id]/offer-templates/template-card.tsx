@@ -118,43 +118,43 @@ export function TemplateCard({
 
   if (isEditing) {
     return (
-      <div className="rounded-lg border-2 border-orange-300 bg-white p-5 shadow-sm">
-        <h4 className="font-semibold text-gray-900 mb-3">Edit Template</h4>
+      <div className="rounded-lg border-2 border-play-300 bg-white p-5 shadow-sm">
+        <h4 className="font-semibold text-ink-900 mb-3">Edit Template</h4>
 
         {error && (
-          <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-red-700">{error}</div>
+          <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-hoop-700">{error}</div>
         )}
 
         <form onSubmit={handleSave} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600">Name</label>
+            <label className="block text-xs font-medium text-ink-600">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600">Season Fee ($)</label>
+              <label className="block text-xs font-medium text-ink-600">Season Fee ($)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={seasonFee}
                 onChange={(e) => setSeasonFee(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600">Installments</label>
+              <label className="block text-xs font-medium text-ink-600">Installments</label>
               <select
                 value={installments}
                 onChange={(e) => setInstallments(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               >
                 {[1, 2, 3, 4, 6, 12].map((n) => (
                   <option key={n} value={n}>
@@ -166,18 +166,18 @@ export function TemplateCard({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600">Practice Sessions</label>
+            <label className="block text-xs font-medium text-ink-600">Practice Sessions</label>
             <input
               type="number"
               min="0"
               value={practiceSessions}
               onChange={(e) => setPracticeSessions(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Included Items</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Included Items</label>
             <div className="space-y-1.5">
               {[
                 { label: "Uniform", checked: includesUniform, set: setIncludesUniform },
@@ -191,9 +191,9 @@ export function TemplateCard({
                     type="checkbox"
                     checked={item.checked}
                     onChange={(e) => item.set(e.target.checked)}
-                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    className="rounded border-ink-200 text-play-700 focus:ring-play-500/20"
                   />
-                  <span className="text-sm text-gray-700">{item.label}</span>
+                  <span className="text-sm text-ink-700">{item.label}</span>
                 </label>
               ))}
             </div>
@@ -203,14 +203,14 @@ export function TemplateCard({
             <button
               type="button"
               onClick={handleCancel}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-court-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-xl bg-play-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-play-700 disabled:opacity-50"
             >
               {isSaving ? "Saving..." : "Save"}
             </button>
@@ -221,21 +221,21 @@ export function TemplateCard({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-ink-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between">
-        <h4 className="font-semibold text-gray-900">{template.name}</h4>
+        <h4 className="font-semibold text-ink-900">{template.name}</h4>
         {isAdmin && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditing(true)}
-              className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+              className="text-xs text-play-700 hover:text-play-700 font-medium"
             >
               Edit
             </button>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="text-xs text-gray-400 hover:text-red-600"
+              className="text-xs text-ink-400 hover:text-red-600"
             >
               {isDeleting ? "..." : "Archive"}
             </button>
@@ -245,31 +245,31 @@ export function TemplateCard({
 
       <div className="mt-3 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Season Fee</span>
-          <span className="font-medium text-gray-900">${template.seasonFee.toFixed(2)}</span>
+          <span className="text-ink-500">Season Fee</span>
+          <span className="font-medium text-ink-900">${template.seasonFee.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Payment</span>
-          <span className="text-gray-700">
+          <span className="text-ink-500">Payment</span>
+          <span className="text-ink-700">
             {template.installments === 1 ? "Full payment" : `${template.installments} installments`}
           </span>
         </div>
         {template.practiceSessions > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Practice Sessions</span>
-            <span className="text-gray-700">{template.practiceSessions}</span>
+            <span className="text-ink-500">Practice Sessions</span>
+            <span className="text-ink-700">{template.practiceSessions}</span>
           </div>
         )}
       </div>
 
       {includedItems.length > 0 && (
         <div className="mt-3 border-t pt-3">
-          <div className="text-xs font-medium text-gray-500 mb-1">Includes</div>
+          <div className="text-xs font-medium text-ink-500 mb-1">Includes</div>
           <div className="flex flex-wrap gap-1.5">
             {includedItems.map((item) => (
               <span
                 key={item as string}
-                className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+                className="rounded-full bg-court-100 px-2 py-0.5 text-xs font-medium text-court-700"
               >
                 {item}
               </span>

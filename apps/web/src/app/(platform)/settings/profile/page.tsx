@@ -36,6 +36,10 @@ export default function ProfileEditPage() {
     defaultValues: { country: "CA" },
   })
 
+  const labelClass = "block text-sm font-medium text-ink-800"
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -88,27 +92,25 @@ export default function ProfileEditPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading profile...</p>
+        <p className="text-ink-500">Loading profile...</p>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-xl p-6 md:p-8">
-      <div className="rounded-lg bg-white p-8 shadow">
-        <h1 className="mb-2 text-2xl font-bold text-gray-900">Edit Profile</h1>
-        <p className="mb-6 text-sm text-gray-600">
-          Update your personal information.
-        </p>
+      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
+        <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Edit Profile</h1>
+        <p className="text-ink-700 mb-6 text-sm">Update your personal information.</p>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="border-hoop-200 text-hoop-700 mb-4 rounded-lg border bg-red-50 p-3 text-sm">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <div className="bg-court-50 text-court-700 mb-4 rounded-lg border border-green-200 p-3 text-sm">
             Profile updated successfully!
           </div>
         )}
@@ -116,30 +118,20 @@ export default function ProfileEditPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="firstName" className={labelClass}>
                 First Name <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("firstName")}
-                type="text"
-                id="firstName"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
+              <input {...register("firstName")} type="text" id="firstName" className={inputClass} />
               {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="lastName" className={labelClass}>
                 Last Name <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("lastName")}
-                type="text"
-                id="lastName"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
+              <input {...register("lastName")} type="text" id="lastName" className={inputClass} />
               {errors.lastName && (
                 <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
               )}
@@ -147,14 +139,14 @@ export default function ProfileEditPage() {
           </div>
 
           <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="phoneNumber" className={labelClass}>
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               {...register("phoneNumber")}
               type="tel"
               id="phoneNumber"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className={inputClass}
               placeholder="(555) 123-4567"
             />
             {errors.phoneNumber && (
@@ -172,32 +164,30 @@ export default function ProfileEditPage() {
           />
 
           <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="city" className={labelClass}>
               City <span className="text-red-500">*</span>
             </label>
             <input
               {...register("city")}
               type="text"
               id="city"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className={inputClass}
               placeholder="Toronto"
             />
-            {errors.city && (
-              <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
-            )}
+            {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>}
           </div>
 
           <div className="flex gap-4 pt-2">
             <Link
               href="/dashboard"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+              className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border bg-white px-4 py-2.5 font-semibold transition"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2.5 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </button>

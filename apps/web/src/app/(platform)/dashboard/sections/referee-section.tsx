@@ -7,96 +7,219 @@ interface RefereeSectionProps {
 
 export function RefereeSection({ data }: RefereeSectionProps) {
   return (
-    <section className="mb-10">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="text-2xl">🏁</span>
-        <h2 className="text-xl font-bold text-gray-900">Referee Dashboard</h2>
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-display text-ink-950 text-2xl font-bold">Referee dashboard</h2>
+        <p className="text-ink-500 mt-1 text-sm">
+          Your certification, assignments, and officiating performance.
+        </p>
       </div>
 
       {data.profile ? (
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-1 text-lg font-semibold text-gray-900">
-              Profile
-            </h3>
-            <div className="mt-3 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Certification</span>
-                <span className="font-medium text-gray-900">
-                  {data.profile.certificationLevel || "Not set"}
-                </span>
+        <>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <MetricCard
+              label="Certification"
+              value={data.profile.certificationLevel || "Not set"}
+              tone="bg-play-50 text-play-700"
+              icon={<IconBadge className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Games refereed"
+              value={String(data.profile.gamesRefereed)}
+              tone="bg-court-50 text-court-700"
+              icon={<IconWhistle className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Average rating"
+              value={data.profile.averageRating ? `${data.profile.averageRating}/5` : "No ratings"}
+              tone="bg-hoop-50 text-hoop-700"
+              icon={<IconStar className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Standard fee"
+              value={`$${String(data.profile.standardFee)}`}
+              tone="bg-ink-100 text-ink-700"
+              icon={<IconCard className="h-4 w-4" />}
+            />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6 lg:col-span-2">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-display text-ink-950 text-lg font-semibold">
+                  Profile snapshot
+                </h3>
+                <Link
+                  href="/referee/profile"
+                  className="text-play-600 hover:text-play-700 text-sm font-semibold"
+                >
+                  Edit
+                </Link>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Standard Fee</span>
-                <span className="font-medium text-gray-900">
-                  ${String(data.profile.standardFee)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Games Refereed</span>
-                <span className="font-medium text-gray-900">
-                  {data.profile.gamesRefereed}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Rating</span>
-                <span className="font-medium text-gray-900">
-                  {data.profile.averageRating
-                    ? `${data.profile.averageRating}/5`
-                    : "No ratings yet"}
-                </span>
-              </div>
+              <dl className="grid gap-3 sm:grid-cols-2">
+                <Detail
+                  label="Certification"
+                  value={data.profile.certificationLevel || "Not set"}
+                />
+                <Detail label="Games refereed" value={String(data.profile.gamesRefereed)} />
+                <Detail
+                  label="Average rating"
+                  value={
+                    data.profile.averageRating
+                      ? `${data.profile.averageRating}/5`
+                      : "No ratings yet"
+                  }
+                />
+                <Detail label="Standard fee" value={`$${String(data.profile.standardFee)}`} />
+              </dl>
             </div>
-            <Link
-              href="/referee/profile"
-              className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
-            >
-              Edit Profile &rarr;
-            </Link>
-          </div>
 
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-1 text-lg font-semibold text-gray-900">
-              Upcoming Games
-            </h3>
-            <p className="mt-3 text-sm text-gray-400">
-              No upcoming games assigned.
-            </p>
-            <Link
-              href="/referee/games"
-              className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
-            >
-              Browse Available Games &rarr;
-            </Link>
+            <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+              <h3 className="font-display text-ink-950 text-lg font-semibold">Next assignments</h3>
+              <p className="text-ink-500 mt-3 text-sm">No upcoming games assigned yet.</p>
+              <Link
+                href="/browse-leagues"
+                className="bg-play-600 hover:bg-play-700 mt-5 inline-flex rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+              >
+                Browse opportunities
+              </Link>
+            </div>
           </div>
-
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="mb-1 text-lg font-semibold text-gray-900">
-              Earnings
-            </h3>
-            <p className="mt-3 text-sm text-gray-400">
-              Earnings tracking coming soon.
-            </p>
-          </div>
-        </div>
+        </>
       ) : (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-8 text-center">
-          <div className="mb-2 text-4xl">🏁</div>
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
-            Complete Your Referee Profile
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
+          <div className="bg-ink-50 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl">
+            <IconFlag className="text-ink-500 h-5 w-5" />
+          </div>
+          <h3 className="font-display text-ink-950 text-xl font-semibold">
+            Complete your referee profile
           </h3>
-          <p className="mb-4 text-gray-600">
-            Set up your certification, availability, and rates to start getting
-            booked for games.
+          <p className="text-ink-500 mx-auto mb-5 mt-2 max-w-xl text-sm">
+            Add certification level, rate, and availability so leagues can discover and assign you
+            to games.
           </p>
           <Link
-            href="/referee/register"
-            className="inline-block rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white hover:bg-orange-700"
+            href="/referee/profile"
+            className="bg-play-600 hover:bg-play-700 inline-flex rounded-xl px-6 py-3 text-sm font-semibold text-white transition"
           >
-            Set Up Profile
+            Set up profile
           </Link>
         </div>
       )}
     </section>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  tone,
+  icon,
+}: {
+  label: string
+  value: string
+  tone: string
+  icon: JSX.Element
+}) {
+  return (
+    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
+        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
+          {label}
+        </div>
+      </div>
+      <div className="font-display text-ink-950 text-xl font-bold">{value}</div>
+    </div>
+  )
+}
+
+function IconBadge({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="5" />
+      <path d="m8 14-2 8 6-3 6 3-2-8" />
+    </svg>
+  )
+}
+
+function IconWhistle({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="14" r="4" />
+      <path d="M11 14h5a4 4 0 0 0 0-8h-2" />
+      <circle cx="16" cy="8" r="1" />
+    </svg>
+  )
+}
+
+function IconStar({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <polygon points="12 2 15.1 8.3 22 9.3 17 14.2 18.2 21 12 17.7 5.8 21 7 14.2 2 9.3 8.9 8.3 12 2" />
+    </svg>
+  )
+}
+
+function IconCard({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+    </svg>
+  )
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-ink-100 bg-ink-50 rounded-xl border p-4">
+      <dt className="text-ink-400 text-xs uppercase tracking-[0.12em]">{label}</dt>
+      <dd className="text-ink-900 mt-1 text-sm font-semibold">{value}</dd>
+    </div>
+  )
+}
+
+function IconFlag({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+      <line x1="4" y1="22" x2="4" y2="15" />
+    </svg>
   )
 }

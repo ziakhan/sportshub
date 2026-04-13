@@ -131,7 +131,7 @@ export function MakeOfferButton({
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600"
+        className="rounded-xl bg-play-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-play-700"
       >
         Make Offer
       </button>
@@ -148,25 +148,25 @@ export function MakeOfferButton({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
-        <h3 className="mb-1 text-lg font-semibold text-gray-900">Make Offer</h3>
-        <p className="mb-4 text-sm text-gray-600">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <h3 className="mb-1 text-lg font-semibold text-ink-900">Make Offer</h3>
+        <p className="mb-4 text-sm text-ink-600">
           Offering <strong>{playerName}</strong> a spot on <strong>{teamName}</strong>
         </p>
 
-        {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        {error && <div className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-hoop-700">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Template selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Template</label>
+            <label className="block text-sm font-medium text-ink-700">Template</label>
             {loadingTemplates ? (
-              <div className="mt-1 text-sm text-gray-500">Loading templates...</div>
+              <div className="mt-1 text-sm text-ink-500">Loading templates...</div>
             ) : templates.length > 0 ? (
               <select
                 value={selectedTemplateId}
                 onChange={(e) => handleTemplateSelect(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               >
                 <option value="">Custom (no template)</option>
                 {templates.map((t) => (
@@ -176,11 +176,11 @@ export function MakeOfferButton({
                 ))}
               </select>
             ) : (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-ink-500">
                 No templates yet.{" "}
                 <a
                   href={`/clubs/${clubId}/offer-templates`}
-                  className="text-orange-600 hover:underline"
+                  className="text-play-700 hover:underline"
                   target="_blank"
                 >
                   Create one
@@ -192,22 +192,22 @@ export function MakeOfferButton({
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Fee ($)</label>
+              <label className="block text-sm font-medium text-ink-700">Fee ($)</label>
               <input
                 type="number"
                 min="0"
                 step="0.01"
                 value={seasonFee}
                 onChange={(e) => setSeasonFee(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Installments</label>
+              <label className="block text-sm font-medium text-ink-700">Installments</label>
               <select
                 value={installments}
                 onChange={(e) => setInstallments(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               >
                 {[1, 2, 3, 4, 6, 12].map((n) => (
                   <option key={n} value={n}>
@@ -217,20 +217,20 @@ export function MakeOfferButton({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Sessions</label>
+              <label className="block text-sm font-medium text-ink-700">Sessions</label>
               <input
                 type="number"
                 min="0"
                 value={practiceSessions}
                 onChange={(e) => setPracticeSessions(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               />
             </div>
           </div>
 
           {/* Included items */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">Includes</label>
+            <label className="mb-2 block text-sm font-medium text-ink-700">Includes</label>
             <div className="grid grid-cols-2 gap-2">
               {[
                 {
@@ -271,17 +271,17 @@ export function MakeOfferButton({
               ].map((item) => (
                 <label
                   key={item.key}
-                  className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50"
+                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-ink-200 p-2 hover:bg-court-50"
                 >
                   <input
                     type="checkbox"
                     checked={item.checked}
                     onChange={(e) => item.set(e.target.checked)}
-                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                    className="rounded border-ink-200 text-play-700 focus:ring-play-500/20"
                   />
                   <div>
-                    <div className="text-xs font-medium text-gray-900">{item.label}</div>
-                    <div className="text-xs text-gray-400">{item.desc}</div>
+                    <div className="text-xs font-medium text-ink-900">{item.label}</div>
+                    <div className="text-xs text-ink-400">{item.desc}</div>
                   </div>
                 </label>
               ))}
@@ -290,11 +290,11 @@ export function MakeOfferButton({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Expires In</label>
+              <label className="block text-sm font-medium text-ink-700">Expires In</label>
               <select
                 value={expiresInDays}
                 onChange={(e) => setExpiresInDays(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               >
                 <option value="3">3 days</option>
                 <option value="7">7 days</option>
@@ -305,21 +305,21 @@ export function MakeOfferButton({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Message (optional)</label>
+            <label className="block text-sm font-medium text-ink-700">Message (optional)</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={2}
               placeholder="Congratulations! We'd love to have you on the team..."
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
 
           {/* Preview */}
           {includedItems.length > 0 && (
-            <div className="rounded-md bg-orange-50 p-3">
-              <div className="mb-1 text-xs font-medium text-orange-700">Offer includes:</div>
-              <div className="text-xs text-orange-600">
+            <div className="rounded-xl bg-play-50 p-3">
+              <div className="mb-1 text-xs font-medium text-play-700">Offer includes:</div>
+              <div className="text-xs text-play-700">
                 ${parseFloat(seasonFee).toFixed(2)}
                 {parseInt(installments) > 1 ? ` (${installments} installments)` : ""}
                 {parseInt(practiceSessions) > 0 ? ` + ${practiceSessions} practice sessions` : ""}
@@ -333,14 +333,14 @@ export function MakeOfferButton({
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-court-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+              className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700 disabled:opacity-50"
             >
               {isSubmitting ? "Sending..." : "Send Offer"}
             </button>

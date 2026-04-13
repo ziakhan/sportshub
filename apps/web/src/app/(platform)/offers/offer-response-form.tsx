@@ -13,9 +13,32 @@ const CLOTHING_SIZES = [
 ]
 
 const SHOE_SIZES = [
-  "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5", "5.5",
-  "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5",
-  "11", "11.5", "12", "12.5", "13", "14",
+  "1",
+  "1.5",
+  "2",
+  "2.5",
+  "3",
+  "3.5",
+  "4",
+  "4.5",
+  "5",
+  "5.5",
+  "6",
+  "6.5",
+  "7",
+  "7.5",
+  "8",
+  "8.5",
+  "9",
+  "9.5",
+  "10",
+  "10.5",
+  "11",
+  "11.5",
+  "12",
+  "12.5",
+  "13",
+  "14",
 ]
 
 export function OfferResponseForm({
@@ -41,6 +64,9 @@ export function OfferResponseForm({
   const [jerseyPref3, setJerseyPref3] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const labelClass = "block text-sm font-medium text-ink-800"
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,17 +137,17 @@ export function OfferResponseForm({
   const hasSizeFields = includesUniform || includesShoes || includesTracksuit
 
   return (
-    <div className="mt-4 rounded-md border border-green-200 bg-green-50 p-4">
-      <h4 className="font-semibold text-gray-900 mb-3">Accept Offer</h4>
-      <p className="text-sm text-gray-600 mb-4">
+    <div className="border-court-200 bg-court-50 mt-4 rounded-2xl border p-4">
+      <h4 className="text-ink-900 mb-3 font-semibold">Accept Offer</h4>
+      <p className="text-ink-700 mb-4 text-sm">
         {hasSizeFields
           ? "Please provide the required sizes and your preferred jersey numbers."
-          : "Please provide your preferred jersey numbers (3 choices)."}
-        {" "}Jersey numbers are assigned first-come, first-served.
+          : "Please provide your preferred jersey numbers (3 choices)."}{" "}
+        Jersey numbers are assigned first-come, first-served.
       </p>
 
       {error && (
-        <div className="mb-3 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className="border-hoop-200 text-hoop-700 mb-3 rounded-md border bg-red-50 p-3 text-sm">
           {error}
         </div>
       )}
@@ -132,13 +158,13 @@ export function OfferResponseForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {includesUniform && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className={labelClass}>
                   Uniform Size <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={uniformSize}
                   onChange={(e) => setUniformSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                 >
                   <option value="">Select...</option>
                   {CLOTHING_SIZES.map((size) => (
@@ -152,13 +178,13 @@ export function OfferResponseForm({
 
             {includesTracksuit && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className={labelClass}>
                   Tracksuit Size <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={tracksuitSize}
                   onChange={(e) => setTracksuitSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                 >
                   <option value="">Select...</option>
                   {CLOTHING_SIZES.map((size) => (
@@ -172,17 +198,19 @@ export function OfferResponseForm({
 
             {includesShoes && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className={labelClass}>
                   Shoe Size <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={shoeSize}
                   onChange={(e) => setShoeSize(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                 >
                   <option value="">Select...</option>
                   {SHOE_SIZES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -192,12 +220,12 @@ export function OfferResponseForm({
 
         {/* Jersey preferences */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="text-ink-800 mb-2 block text-sm font-medium">
             Jersey Number Preferences <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">1st Choice</label>
+              <label className="text-ink-500 mb-1 block text-xs">1st Choice</label>
               <input
                 type="number"
                 min="0"
@@ -205,11 +233,11 @@ export function OfferResponseForm({
                 value={jerseyPref1}
                 onChange={(e) => setJerseyPref1(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 block w-full rounded-xl border px-3 py-2 text-center text-sm shadow-sm focus:outline-none focus:ring-2"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">2nd Choice</label>
+              <label className="text-ink-500 mb-1 block text-xs">2nd Choice</label>
               <input
                 type="number"
                 min="0"
@@ -217,11 +245,11 @@ export function OfferResponseForm({
                 value={jerseyPref2}
                 onChange={(e) => setJerseyPref2(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 block w-full rounded-xl border px-3 py-2 text-center text-sm shadow-sm focus:outline-none focus:ring-2"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">3rd Choice</label>
+              <label className="text-ink-500 mb-1 block text-xs">3rd Choice</label>
               <input
                 type="number"
                 min="0"
@@ -229,7 +257,7 @@ export function OfferResponseForm({
                 value={jerseyPref3}
                 onChange={(e) => setJerseyPref3(e.target.value)}
                 placeholder="#"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-center shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 block w-full rounded-xl border px-3 py-2 text-center text-sm shadow-sm focus:outline-none focus:ring-2"
               />
             </div>
           </div>
@@ -239,14 +267,14 @@ export function OfferResponseForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
           >
             {isSubmitting ? "Accepting..." : "Confirm & Accept"}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2.5 text-sm font-medium transition"
           >
             Cancel
           </button>

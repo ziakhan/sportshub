@@ -5,10 +5,7 @@ import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import {
-  addPlayerSchema,
-  type AddPlayerFormData,
-} from "@/lib/validations/tryout-signup"
+import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 
 export default function EditPlayerPage() {
   const router = useRouter()
@@ -19,6 +16,9 @@ export default function EditPlayerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const labelClass = "block text-sm font-medium text-ink-700"
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
   const {
     register,
@@ -82,7 +82,7 @@ export default function EditPlayerPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading player...</p>
+        <p className="text-ink-500">Loading player...</p>
       </div>
     )
   }
@@ -91,30 +91,23 @@ export default function EditPlayerPage() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
-          <Link
-            href="/players"
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
+          <Link href="/players" className="text-ink-500 hover:text-ink-700 text-sm">
             &larr; Back to Players
           </Link>
         </div>
 
-        <div className="rounded-lg bg-white p-8 shadow">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">
-            Edit Player
-          </h1>
-          <p className="mb-6 text-sm text-gray-600">
-            Update your player&apos;s information.
-          </p>
+        <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+          <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Edit Player</h1>
+          <p className="text-ink-600 mb-6 text-sm">Update your player&apos;s information.</p>
 
           {error && (
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-4 rounded-xl border p-3 text-sm">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+            <div className="bg-court-50 text-court-700 mb-4 rounded-md border border-green-200 p-3 text-sm">
               Player updated successfully!
             </div>
           )}
@@ -122,121 +115,84 @@ export default function EditPlayerPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="firstName" className={labelClass}>
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   {...register("firstName")}
                   type="text"
                   id="firstName"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.firstName.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
                 )}
               </div>
 
               <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="lastName" className={labelClass}>
                   Last Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  {...register("lastName")}
-                  type="text"
-                  id="lastName"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                />
+                <input {...register("lastName")} type="text" id="lastName" className={inputClass} />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.lastName.message}
-                  </p>
+                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="dateOfBirth"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="dateOfBirth" className={labelClass}>
                 Date of Birth <span className="text-red-500">*</span>
               </label>
               <input
                 {...register("dateOfBirth")}
                 type="date"
                 id="dateOfBirth"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className={inputClass}
               />
               {errors.dateOfBirth && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.dateOfBirth.message}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>
               )}
             </div>
 
             <div>
-              <label
-                htmlFor="gender"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="gender" className={labelClass}>
                 Gender <span className="text-red-500">*</span>
               </label>
-              <select
-                {...register("gender")}
-                id="gender"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              >
+              <select {...register("gender")} id="gender" className={inputClass}>
                 <option value="">Select gender</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
                 <option value="COED">Other</option>
               </select>
               {errors.gender && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.gender.message}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>
               )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="jerseyNumber"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Jersey Number{" "}
-                  <span className="text-gray-400">(optional)</span>
+                <label htmlFor="jerseyNumber" className={labelClass}>
+                  Jersey Number <span className="text-ink-400">(optional)</span>
                 </label>
                 <input
                   {...register("jerseyNumber")}
                   type="text"
                   id="jerseyNumber"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                   placeholder="e.g. 23"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="height"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Height{" "}
-                  <span className="text-gray-400">(optional)</span>
+                <label htmlFor="height" className={labelClass}>
+                  Height <span className="text-ink-400">(optional)</span>
                 </label>
                 <input
                   {...register("height")}
                   type="text"
                   id="height"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                   placeholder={`e.g. 5'6"`}
                 />
               </div>
@@ -244,35 +200,23 @@ export default function EditPlayerPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label
-                  htmlFor="weight"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Weight (lbs){" "}
-                  <span className="text-gray-400">(optional)</span>
+                <label htmlFor="weight" className={labelClass}>
+                  Weight (lbs) <span className="text-ink-400">(optional)</span>
                 </label>
                 <input
                   {...register("weight")}
                   type="number"
                   id="weight"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  className={inputClass}
                   placeholder="e.g. 120"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="position"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Position{" "}
-                  <span className="text-gray-400">(optional)</span>
+                <label htmlFor="position" className={labelClass}>
+                  Position <span className="text-ink-400">(optional)</span>
                 </label>
-                <select
-                  {...register("position")}
-                  id="position"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-                >
+                <select {...register("position")} id="position" className={inputClass}>
                   <option value="">Select position</option>
                   <option value="Point Guard">Point Guard</option>
                   <option value="Shooting Guard">Shooting Guard</option>
@@ -287,14 +231,14 @@ export default function EditPlayerPage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+                className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border bg-white px-4 py-2 font-semibold shadow-sm transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex-1 rounded-md bg-orange-500 px-4 py-2 font-semibold text-white shadow-sm hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+                className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Saving..." : "Save Changes"}
               </button>

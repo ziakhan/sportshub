@@ -77,8 +77,8 @@ export function TryoutsFilter({
               onClick={() => handleStatusClick(pill.key === "all" ? "" : pill.key)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 isActive
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-play-600 text-white"
+                  : "bg-court-100 text-ink-600 hover:bg-court-200"
               }`}
             >
               {pill.label} ({pill.count})
@@ -92,7 +92,7 @@ export function TryoutsFilter({
         <select
           value={activeTeamId || ""}
           onChange={(e) => handleTeamChange(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none sm:w-auto"
+          className="w-full rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none sm:w-auto"
         >
           <option value="">All Teams</option>
           {teams.map((team) => (
@@ -108,11 +108,11 @@ export function TryoutsFilter({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tryouts..."
-            className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:outline-none"
+            className="min-w-0 flex-1 rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none"
           />
           <button
             type="submit"
-            className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+            className="rounded-md bg-court-100 px-3 py-1.5 text-sm text-ink-700 hover:bg-court-200"
           >
             Search
           </button>

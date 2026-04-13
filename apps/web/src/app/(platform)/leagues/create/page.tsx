@@ -23,6 +23,11 @@ export default function CreateLeagueSeasonPage() {
   const [gamePeriods, setGamePeriods] = useState("HALVES")
   const [playoffFormat, setPlayoffFormat] = useState("")
   const [playoffTeams, setPlayoffTeams] = useState("")
+  const labelClass = "block text-sm font-medium text-ink-700"
+  const inputClass =
+    "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
+  const cardClass =
+    "space-y-4 rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +44,9 @@ export default function CreateLeagueSeasonPage() {
           description: description || undefined,
           startDate: startDate ? new Date(startDate).toISOString() : undefined,
           endDate: endDate ? new Date(endDate).toISOString() : undefined,
-          registrationDeadline: registrationDeadline ? new Date(registrationDeadline).toISOString() : undefined,
+          registrationDeadline: registrationDeadline
+            ? new Date(registrationDeadline).toISOString()
+            : undefined,
           teamFee: teamFee ? parseFloat(teamFee) : undefined,
           gamesGuaranteed: gamesGuaranteed ? parseInt(gamesGuaranteed) : undefined,
           gamesPerSession: parseInt(gamesPerSession),
@@ -68,102 +75,163 @@ export default function CreateLeagueSeasonPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create League Season</h1>
+        <h1 className="text-ink-900 mb-6 text-2xl font-semibold">Create League Season</h1>
 
-        {error && <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200">{error}</div>}
+        {error && (
+          <div className="border-hoop-200 text-hoop-700 mb-4 rounded-xl border bg-red-50 p-3 text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">League Info</h3>
+          <div className={cardClass}>
+            <h3 className="text-ink-900 font-semibold">League Info</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">League Name *</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
+                <label className={labelClass}>League Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                   placeholder="e.g. NPH Showcase League"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className={inputClass}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Season *</label>
-                <input type="text" value={season} onChange={(e) => setSeason(e.target.value)} required
+                <label className={labelClass}>Season *</label>
+                <input
+                  type="text"
+                  value={season}
+                  onChange={(e) => setSeason(e.target.value)}
+                  required
                   placeholder="e.g. Fall 2026, Winter 2026-27"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className={inputClass}
+                />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+              <label className={labelClass}>Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
                 placeholder="About this league season..."
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                className={inputClass}
+              />
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Dates</h3>
+          <div className={cardClass}>
+            <h3 className="text-ink-900 font-semibold">Dates</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Season Start</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label className={labelClass}>Season Start</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={inputClass}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Season End</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label className={labelClass}>Season End</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={inputClass}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
-                <input type="date" value={registrationDeadline} onChange={(e) => setRegistrationDeadline(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                <label className={labelClass}>Registration Deadline</label>
+                <input
+                  type="date"
+                  value={registrationDeadline}
+                  onChange={(e) => setRegistrationDeadline(e.target.value)}
+                  className={inputClass}
+                />
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Season Details</h3>
+          <div className={cardClass}>
+            <h3 className="text-ink-900 font-semibold">Season Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Team Registration Fee ($)</label>
-                <input type="number" min="0" step="0.01" value={teamFee} onChange={(e) => setTeamFee(e.target.value)}
+                <label className={labelClass}>Team Registration Fee ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={teamFee}
+                  onChange={(e) => setTeamFee(e.target.value)}
                   placeholder="e.g. 3500"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className={inputClass}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Games Guaranteed</label>
-                <input type="number" min="1" value={gamesGuaranteed} onChange={(e) => setGamesGuaranteed(e.target.value)}
+                <label className={labelClass}>Games Guaranteed</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={gamesGuaranteed}
+                  onChange={(e) => setGamesGuaranteed(e.target.value)}
                   placeholder="e.g. 10"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className={inputClass}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Games Per Session</label>
-                <select value={gamesPerSession} onChange={(e) => setGamesPerSession(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <label className={labelClass}>Games Per Session</label>
+                <select
+                  value={gamesPerSession}
+                  onChange={(e) => setGamesPerSession(e.target.value)}
+                  className={inputClass}
+                >
                   {[1, 2, 3, 4].map((n) => (
-                    <option key={n} value={n}>{n} game{n !== 1 ? "s" : ""} per weekend</option>
+                    <option key={n} value={n}>
+                      {n} game{n !== 1 ? "s" : ""} per weekend
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Game Format</h3>
+          <div className={cardClass}>
+            <h3 className="text-ink-900 font-semibold">Game Format</h3>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Schedule Slot (minutes)</label>
-                <input type="number" min="30" max="180" value={gameSlotMinutes} onChange={(e) => setGameSlotMinutes(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <p className="mt-1 text-xs text-gray-400">Includes warmup, halftime, breaks</p>
+                <label className={labelClass}>Schedule Slot (minutes)</label>
+                <input
+                  type="number"
+                  min="30"
+                  max="180"
+                  value={gameSlotMinutes}
+                  onChange={(e) => setGameSlotMinutes(e.target.value)}
+                  className={inputClass}
+                />
+                <p className="text-ink-400 mt-1 text-xs">Includes warmup, halftime, breaks</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Game Length (minutes)</label>
-                <input type="number" min="10" max="120" value={gameLengthMinutes} onChange={(e) => setGameLengthMinutes(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-                <p className="mt-1 text-xs text-gray-400">Actual playing time</p>
+                <label className={labelClass}>Game Length (minutes)</label>
+                <input
+                  type="number"
+                  min="10"
+                  max="120"
+                  value={gameLengthMinutes}
+                  onChange={(e) => setGameLengthMinutes(e.target.value)}
+                  className={inputClass}
+                />
+                <p className="text-ink-400 mt-1 text-xs">Actual playing time</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Periods</label>
-                <select value={gamePeriods} onChange={(e) => setGamePeriods(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <label className={labelClass}>Periods</label>
+                <select
+                  value={gamePeriods}
+                  onChange={(e) => setGamePeriods(e.target.value)}
+                  className={inputClass}
+                >
                   <option value="HALVES">2 Halves</option>
                   <option value="QUARTERS">4 Quarters</option>
                 </select>
@@ -171,14 +239,17 @@ export default function CreateLeagueSeasonPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h3 className="font-semibold text-gray-900">Playoffs (Optional)</h3>
-            <p className="text-xs text-gray-500">Can be defined now or configured later.</p>
+          <div className={cardClass}>
+            <h3 className="text-ink-900 font-semibold">Playoffs (Optional)</h3>
+            <p className="text-ink-500 text-xs">Can be defined now or configured later.</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Playoff Format</label>
-                <select value={playoffFormat} onChange={(e) => setPlayoffFormat(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <label className={labelClass}>Playoff Format</label>
+                <select
+                  value={playoffFormat}
+                  onChange={(e) => setPlayoffFormat(e.target.value)}
+                  className={inputClass}
+                >
                   <option value="">To be determined</option>
                   <option value="SINGLE_ELIMINATION">Single Elimination</option>
                   <option value="DOUBLE_ELIMINATION">Double Elimination</option>
@@ -186,27 +257,39 @@ export default function CreateLeagueSeasonPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Teams in Playoffs</label>
-                <input type="number" min="2" value={playoffTeams} onChange={(e) => setPlayoffTeams(e.target.value)}
+                <label className={labelClass}>Teams in Playoffs</label>
+                <input
+                  type="number"
+                  min="2"
+                  value={playoffTeams}
+                  onChange={(e) => setPlayoffTeams(e.target.value)}
                   placeholder="e.g. 4, 8"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+                  className={inputClass}
+                />
               </div>
             </div>
           </div>
 
           <div className="flex gap-4">
-            <Link href="/leagues" className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Link
+              href="/leagues"
+              className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2 text-sm font-medium transition"
+            >
               Cancel
             </Link>
-            <button type="submit" disabled={isSubmitting}
-              className="flex-1 rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-play-600 hover:bg-play-700 flex-1 rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50"
+            >
               {isSubmitting ? "Creating..." : "Create Season"}
             </button>
           </div>
         </form>
 
-        <p className="mt-4 text-xs text-gray-500 text-center">
-          After creating, you&apos;ll add divisions, venues, and session dates from the management page.
+        <p className="text-ink-500 mt-4 text-center text-xs">
+          After creating, you&apos;ll add divisions, venues, and session dates from the management
+          page.
         </p>
       </div>
     </div>

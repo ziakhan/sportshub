@@ -24,12 +24,12 @@ interface Tournament {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: "Draft", color: "bg-gray-100 text-gray-700" },
-  REGISTRATION: { label: "Open for Registration", color: "bg-green-100 text-green-700" },
-  REGISTRATION_CLOSED: { label: "Registration Closed", color: "bg-yellow-100 text-yellow-700" },
-  FINALIZED: { label: "Finalized", color: "bg-orange-100 text-orange-700" },
-  IN_PROGRESS: { label: "In Progress", color: "bg-purple-100 text-purple-700" },
-  COMPLETED: { label: "Completed", color: "bg-gray-100 text-gray-600" },
+  DRAFT: { label: "Draft", color: "bg-court-100 text-ink-700" },
+  REGISTRATION: { label: "Open for Registration", color: "bg-court-100 text-court-700" },
+  REGISTRATION_CLOSED: { label: "Registration Closed", color: "bg-hoop-100 text-hoop-700" },
+  FINALIZED: { label: "Finalized", color: "bg-play-100 text-play-700" },
+  IN_PROGRESS: { label: "In Progress", color: "bg-play-100 text-play-700" },
+  COMPLETED: { label: "Completed", color: "bg-court-100 text-ink-600" },
 }
 
 export default function ClubTournamentsPage() {
@@ -58,32 +58,32 @@ export default function ClubTournamentsPage() {
     )
   }
 
-  if (loading) return <div className="text-gray-500 py-12 text-center p-6">Loading...</div>
+  if (loading) return <div className="text-ink-500 py-12 text-center p-6">Loading...</div>
 
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tournaments</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage your club&apos;s tournaments</p>
+          <h1 className="text-2xl font-bold text-ink-900">Tournaments</h1>
+          <p className="text-sm text-ink-500 mt-1">Manage your club&apos;s tournaments</p>
         </div>
         <Link
           href={`/clubs/${clubId}/tournaments/create`}
-          className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+          className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
         >
           Create Tournament
         </Link>
       </div>
 
       {tournaments.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No tournaments yet</h3>
-          <p className="text-gray-600 mb-6">
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
+          <h3 className="text-lg font-semibold text-ink-900 mb-2">No tournaments yet</h3>
+          <p className="text-ink-600 mb-6">
             Create your first tournament to attract teams from across the region.
           </p>
           <Link
             href={`/clubs/${clubId}/tournaments/create`}
-            className="inline-block rounded-md bg-orange-500 px-6 py-2 text-white font-semibold hover:bg-orange-600"
+            className="inline-block rounded-xl bg-play-600 px-6 py-2 text-white font-semibold hover:bg-play-700"
           >
             Create Your First Tournament
           </Link>
@@ -95,7 +95,7 @@ export default function ClubTournamentsPage() {
             return (
               <div
                 key={tournament.id}
-                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition"
+                className="rounded-2xl border border-ink-100 bg-white p-6 shadow-soft hover:shadow-md transition"
               >
                 <div className="flex items-start justify-between">
                   <Link
@@ -103,16 +103,16 @@ export default function ClubTournamentsPage() {
                     className="flex-1"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{tournament.name}</h3>
+                      <h3 className="text-lg font-semibold text-ink-900">{tournament.name}</h3>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.color}`}
                       >
                         {status.label}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">{tournament.city}{tournament.state ? `, ${tournament.state}` : ""}</p>
+                    <p className="text-sm text-ink-500">{tournament.city}{tournament.state ? `, ${tournament.state}` : ""}</p>
                     {tournament.startDate && tournament.endDate && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-ink-400 mt-1">
                         {format(new Date(tournament.startDate), "MMM d")} -{" "}
                         {format(new Date(tournament.endDate), "MMM d, yyyy")}
                       </p>
@@ -121,7 +121,7 @@ export default function ClubTournamentsPage() {
                       {tournament.divisions.map((d) => (
                         <span
                           key={d.id}
-                          className="rounded-full bg-orange-50 px-2 py-0.5 text-xs text-orange-700"
+                          className="rounded-full bg-play-50 px-2 py-0.5 text-xs text-play-700"
                         >
                           {d.name}
                         </span>
@@ -130,12 +130,12 @@ export default function ClubTournamentsPage() {
                   </Link>
                   <div className="flex flex-col items-end gap-2 ml-4">
                     <div className="text-right">
-                      <div className="text-lg font-bold text-orange-600">
+                      <div className="text-lg font-bold text-play-700">
                         {tournament._count.teams}
                       </div>
-                      <div className="text-xs text-gray-500">teams</div>
+                      <div className="text-xs text-ink-500">teams</div>
                       {tournament.teamFee != null && (
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-xs text-ink-400 mt-1">
                           {formatCurrency(tournament.teamFee, tournament.currency)}/team
                         </div>
                       )}
@@ -148,8 +148,8 @@ export default function ClubTournamentsPage() {
                         }}
                         className={`rounded-md px-3 py-1 text-xs font-medium ${
                           tournament.status === "DRAFT"
-                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? "bg-court-100 text-court-700 hover:bg-green-200"
+                            : "bg-court-100 text-ink-700 hover:bg-court-200"
                         }`}
                       >
                         {tournament.status === "DRAFT" ? "Publish" : "Unpublish"}

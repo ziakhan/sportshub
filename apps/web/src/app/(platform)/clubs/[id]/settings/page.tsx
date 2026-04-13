@@ -78,7 +78,7 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-gray-500">Loading settings...</p>
+        <p className="text-ink-500">Loading settings...</p>
       </div>
     )
   }
@@ -95,25 +95,25 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-6 text-lg font-semibold text-gray-900">
+        <h2 className="mb-6 text-lg font-semibold text-ink-900">
           Club Settings
         </h2>
 
         {error && (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div className="mb-4 rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+          <div className="mb-4 rounded-md border border-green-200 bg-court-50 p-3 text-sm text-court-700">
             {success}
           </div>
         )}
 
         <form onSubmit={handleSave} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-700">
               Club Name
             </label>
             <input
@@ -121,16 +121,16 @@ export default function SettingsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-700">
               Slug (URL)
             </label>
             <div className="mt-1 flex rounded-md shadow-sm">
-              <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">
+              <span className="inline-flex items-center rounded-l-md border border-r-0 border-ink-200 bg-court-50 px-3 text-sm text-ink-500">
                 youthbasketballhub.com/
               </span>
               <input
@@ -144,19 +144,19 @@ export default function SettingsPage() {
                   )
                 }
                 required
-                className="block w-full rounded-r-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="block w-full rounded-r-md border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-700">
               Timezone
             </label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-purple-500 focus:outline-none"
+              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
             >
               {timezones.map((tz) => (
                 <option key={tz} value={tz}>
@@ -167,7 +167,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-ink-700">
               Primary Color
             </label>
             <div className="mt-1 flex items-center gap-3">
@@ -175,13 +175,13 @@ export default function SettingsPage() {
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded border border-gray-300"
+                className="h-10 w-14 cursor-pointer rounded border border-ink-200"
               />
               <input
                 type="text"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="block w-32 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
+                className="block w-32 rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
                 placeholder="#1a73e8"
               />
             </div>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-purple-600 px-6 py-2 font-semibold text-white hover:bg-purple-700 disabled:bg-gray-400"
+              className="rounded-xl bg-play-600 px-6 py-2 font-semibold text-white hover:bg-play-700 disabled:bg-court-300"
             >
               {saving ? "Saving..." : "Save Settings"}
             </button>

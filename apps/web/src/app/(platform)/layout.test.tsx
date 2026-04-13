@@ -62,7 +62,7 @@ describe("PlatformLayout", () => {
 
     expect(html).toContain("OnboardingContent")
     expect(html).not.toContain("NotificationBell")
-    expect(html).not.toContain("Youth Basketball Hub")
+    expect(html).not.toContain("sportshub")
   })
 
   it("renders dashboard chrome after onboarding completes", async () => {
@@ -87,7 +87,7 @@ describe("PlatformLayout", () => {
     const element = await PlatformLayout({ children: <div>DashboardContent</div> })
     const html = renderToStaticMarkup(element)
 
-    expect(html).toContain("Youth Basketball Hub")
+    expect(html).toContain("sportshub")
     expect(html).toContain("NotificationBell")
     expect(html).toContain("UserMenu:Taylor Jordan")
     expect(html).toContain("DashboardContent")

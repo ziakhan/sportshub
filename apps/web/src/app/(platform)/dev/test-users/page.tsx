@@ -86,40 +86,32 @@ export default function RoleSwitcherPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <p className="text-yellow-800 font-semibold">
-            DEV ONLY - Role Switcher
-          </p>
-          <p className="text-yellow-700 text-sm">
+    <div className="bg-court-50 min-h-screen p-8">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <p className="font-semibold text-yellow-800">DEV ONLY - Role Switcher</p>
+          <p className="text-hoop-700 text-sm">
             Switch your account&apos;s role to test different permissions and UI views.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">
-            Role Switcher
-          </h1>
+        <div className="border-ink-100 mb-6 rounded-3xl border bg-white p-8 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.45)]">
+          <h1 className="text-ink-900 mb-1 text-2xl font-semibold">Role Switcher</h1>
           {userName && (
-            <p className="text-gray-500 mb-4">
+            <p className="text-ink-500 mb-4">
               Logged in as <strong>{userName}</strong> ({userEmail})
             </p>
           )}
 
           {currentRole && (
             <div className="mb-6 flex items-center gap-3">
-              <span className="text-gray-600">Current role:</span>
+              <span className="text-ink-700">Current role:</span>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-semibold border ${roleColor[currentRole] || "bg-gray-100"}`}
+                className={`rounded-full border px-3 py-1 text-sm font-semibold ${roleColor[currentRole] || "bg-gray-100"}`}
               >
                 {currentRole}
               </span>
-              {tenantName && (
-                <span className="text-gray-500 text-sm">
-                  (scoped to {tenantName})
-                </span>
-              )}
+              {tenantName && <span className="text-ink-500 text-sm">(scoped to {tenantName})</span>}
             </div>
           )}
 
@@ -127,34 +119,30 @@ export default function RoleSwitcherPage() {
             <div
               className={`mb-6 rounded-lg p-3 text-sm ${
                 message.startsWith("Error")
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-green-50 text-green-700 border border-green-200"
+                  ? "bg-hoop-50 text-hoop-700 border-hoop-200 border"
+                  : "bg-court-50 text-court-700 border-court-200 border"
               }`}
             >
               {message}
             </div>
           )}
 
-          <h2 className="text-lg font-semibold text-gray-800 mb-3">
-            Click a role to switch:
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <h2 className="text-ink-900 mb-3 text-lg font-semibold">Click a role to switch:</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {ALL_ROLES.map(({ role, description }) => (
               <button
                 key={role}
                 onClick={() => switchRole(role)}
                 disabled={loading || role === currentRole}
-                className={`text-left p-4 rounded-lg border-2 transition-all ${
+                className={`rounded-lg border-2 p-4 text-left transition-all ${
                   role === currentRole
-                    ? `${roleColor[role]} border-2 cursor-default`
-                    : "bg-white border-gray-200 hover:border-orange-400 hover:shadow-md cursor-pointer"
-                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    ? `${roleColor[role]} cursor-default border-2`
+                    : "border-ink-200 hover:border-play-300 cursor-pointer bg-white hover:shadow-md"
+                } ${loading ? "cursor-not-allowed opacity-50" : ""}`}
               >
-                <div className="font-semibold text-gray-900">{role}</div>
-                <div className="text-sm text-gray-500">{description}</div>
-                {role === currentRole && (
-                  <div className="text-xs font-medium mt-1">Active</div>
-                )}
+                <div className="text-ink-900 font-semibold">{role}</div>
+                <div className="text-ink-500 text-sm">{description}</div>
+                {role === currentRole && <div className="mt-1 text-xs font-medium">Active</div>}
               </button>
             ))}
           </div>

@@ -44,26 +44,27 @@ function SignInForm() {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
-      <div className="w-full max-w-md rounded-lg border border-navy-700 bg-navy-900 p-8 shadow-xl">
-        <h1 className="mb-2 text-center text-2xl font-bold text-white">
-          Sign In
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-400">
+      <div className="border-ink-100 shadow-panel w-full max-w-md rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
+        <div className="mb-6 text-center">
+          <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+            Welcome Back
+          </div>
+        </div>
+
+        <h1 className="text-ink-950 mb-2 text-center text-3xl font-bold">Sign In</h1>
+        <p className="text-ink-500 mb-6 text-center text-sm">
           Welcome back to Youth Basketball Hub
         </p>
 
         {error && (
-          <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-300"
-            >
+            <label htmlFor="email" className="text-ink-700 block text-sm font-medium">
               Email
             </label>
             <input
@@ -72,16 +73,13 @@ function SignInForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-navy-600 bg-navy-800 px-3 py-2 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-300"
-            >
+            <label htmlFor="password" className="text-ink-700 block text-sm font-medium">
               Password
             </label>
             <input
@@ -90,25 +88,22 @@ function SignInForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-md border border-navy-600 bg-navy-800 px-3 py-2 text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-orange-500 px-4 py-2.5 font-semibold text-white hover:bg-orange-600 disabled:bg-gray-600 disabled:text-gray-400"
+            className="bg-ink-950 hover:bg-ink-800 disabled:bg-ink-300 w-full rounded-2xl px-4 py-3 font-semibold text-white transition disabled:cursor-not-allowed"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-400">
+        <p className="text-ink-500 mt-6 text-center text-sm">
           Don&apos;t have an account?{" "}
-          <Link
-            href="/sign-up"
-            className="font-medium text-orange-400 hover:text-orange-300"
-          >
+          <Link href="/sign-up" className="text-play-600 hover:text-play-700 font-semibold">
             Sign up
           </Link>
         </p>
