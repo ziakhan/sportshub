@@ -185,4 +185,4 @@ To make the full E2E flow testable, build in this order:
 - **Phases 1–4**: Fully testable today
 - **Phase 5 onward**: Requires new API routes, pages, and integrations
 - **32 database models** exist covering the full domain — most backend schema is ready
-- **Key gaps**: Offer management, league admin, email delivery, scheduling engine, payment wiring
+- **Key gaps**: league admin, email delivery hardening, scheduling engine, payment wiring
