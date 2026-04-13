@@ -15,12 +15,10 @@ const addVenueSchema = z.object({
   zipCode: z.string().optional(),
   capacity: z.number().optional(),
   isPrimary: z.boolean().default(false),
+  courtsAvailable: z.number().int().min(1).optional(), // Override courts for this league at this venue
 })
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -76,28 +74,39 @@ export async function POST(
         leagueId: params.id,
         venueId,
         isPrimary: data.isPrimary,
+        courtsAvailable: data.courtsAvailable ?? null,
       },
     })
 
     return NextResponse.json({ success: true, id: leagueVenue.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Add venue error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const venues = await (prisma as any).leagueVenue.findMany({
       where: { leagueId: params.id },
       include: {
-        venue: { select: { id: true, name: true, address: true, city: true, state: true, capacity: true } },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            city: true,
+            state: true,
+            capacity: true,
+            courts: true,
+          },
+        },
       },
     })
     return NextResponse.json({ venues })
@@ -107,10 +116,7 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {

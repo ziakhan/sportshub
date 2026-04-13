@@ -32,7 +32,9 @@ export default function LeagueManagePage() {
   const [sessions, setSessions] = useState<any[]>([])
   const [venues, setVenues] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [teamStatusFilter, setTeamStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL")
+  const [teamStatusFilter, setTeamStatusFilter] = useState<
+    "ALL" | "PENDING" | "APPROVED" | "REJECTED"
+  >("ALL")
 
   // Division form
   const [divName, setDivName] = useState("")
@@ -50,6 +52,23 @@ export default function LeagueManagePage() {
   // Venue form
   const [selectedVenueId, setSelectedVenueId] = useState("")
   const [selectedVenueName, setSelectedVenueName] = useState("")
+
+  // Scheduling settings form
+  const [schedSettings, setSchedSettings] = useState({
+    gamesGuaranteed: "",
+    gamesPerSession: "1",
+    gameLengthMinutes: "40",
+    gameSlotMinutes: "90",
+    gamePeriods: "HALVES",
+    periodLengthMinutes: "",
+    idealGamesPerDayPerTeam: "1",
+    defaultVenueOpenTime: "09:00",
+    defaultVenueCloseTime: "20:00",
+    defaultCourtsPerVenue: "",
+  })
+  const [schedSaving, setSchedSaving] = useState(false)
+  const [finalizeErrors, setFinalizeErrors] = useState<string[]>([])
+
   const panelClass =
     "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
   const inputClass =
@@ -67,6 +86,18 @@ export default function LeagueManagePage() {
     const sessData = await sessRes.json()
     const venData = await venRes.json()
     setLeague(leagueData)
+    setSchedSettings({
+      gamesGuaranteed: leagueData.gamesGuaranteed?.toString() ?? "",
+      gamesPerSession: leagueData.gamesPerSession?.toString() ?? "1",
+      gameLengthMinutes: leagueData.gameLengthMinutes?.toString() ?? "40",
+      gameSlotMinutes: leagueData.gameSlotMinutes?.toString() ?? "90",
+      gamePeriods: leagueData.gamePeriods ?? "HALVES",
+      periodLengthMinutes: leagueData.periodLengthMinutes?.toString() ?? "",
+      idealGamesPerDayPerTeam: leagueData.idealGamesPerDayPerTeam?.toString() ?? "1",
+      defaultVenueOpenTime: leagueData.defaultVenueOpenTime ?? "09:00",
+      defaultVenueCloseTime: leagueData.defaultVenueCloseTime ?? "20:00",
+      defaultCourtsPerVenue: leagueData.defaultCourtsPerVenue?.toString() ?? "",
+    })
     setDivisions(divData.divisions || [])
     setSessions(sessData.sessions || [])
     setVenues(venData.venues || [])
@@ -77,12 +108,46 @@ export default function LeagueManagePage() {
     fetchAll()
   }, [leagueId]) // eslint-disable-line
 
-  const updateStatus = async (newStatus: string) => {
-    await fetch(`/api/leagues/${leagueId}`, {
+  const handleStatusChange = async (newStatus: string) => {
+    const res = await fetch(`/api/leagues/${leagueId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ leagueStatus: newStatus }),
     })
+    if (res.status === 422) {
+      const data = await res.json()
+      setFinalizeErrors(data.missing || [data.error])
+      return
+    }
+    setFinalizeErrors([])
+    fetchAll()
+  }
+
+  const saveSchedulingSettings = async () => {
+    setSchedSaving(true)
+    await fetch(`/api/leagues/${leagueId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gamesGuaranteed: schedSettings.gamesGuaranteed
+          ? parseInt(schedSettings.gamesGuaranteed)
+          : null,
+        gamesPerSession: parseInt(schedSettings.gamesPerSession) || 1,
+        gameLengthMinutes: parseInt(schedSettings.gameLengthMinutes) || 40,
+        gameSlotMinutes: parseInt(schedSettings.gameSlotMinutes) || 90,
+        gamePeriods: schedSettings.gamePeriods,
+        periodLengthMinutes: schedSettings.periodLengthMinutes
+          ? parseInt(schedSettings.periodLengthMinutes)
+          : null,
+        idealGamesPerDayPerTeam: parseInt(schedSettings.idealGamesPerDayPerTeam) || 1,
+        defaultVenueOpenTime: schedSettings.defaultVenueOpenTime,
+        defaultVenueCloseTime: schedSettings.defaultVenueCloseTime,
+        defaultCourtsPerVenue: schedSettings.defaultCourtsPerVenue
+          ? parseInt(schedSettings.defaultCourtsPerVenue)
+          : null,
+      }),
+    })
+    setSchedSaving(false)
     fetchAll()
   }
 
@@ -171,6 +236,23 @@ export default function LeagueManagePage() {
       ? allTeams
       : allTeams.filter((t: any) => t.status === teamStatusFilter)
 
+  const preflightChecks =
+    nextStatus === "FINALIZED"
+      ? [
+          { label: "At least one division created", ok: divisions.length > 0 },
+          { label: "At least one game session scheduled", ok: sessions.length > 0 },
+          { label: "At least one venue assigned", ok: venues.length > 0 },
+          {
+            label: "No teams pending approval",
+            ok: allTeams.filter((t: any) => t.status === "PENDING").length === 0,
+          },
+          { label: "Max games per season defined", ok: !!league.gamesGuaranteed },
+          { label: "Period / half length defined", ok: !!league.periodLengthMinutes },
+          { label: "Courts per venue defined", ok: !!league.defaultCourtsPerVenue },
+        ]
+      : null
+  const canFinalize = !preflightChecks || preflightChecks.every((c) => c.ok)
+
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       {/* Header */}
@@ -190,8 +272,9 @@ export default function LeagueManagePage() {
         </div>
         {nextStatus && (
           <button
-            onClick={() => updateStatus(nextStatus)}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+            onClick={() => handleStatusChange(nextStatus)}
+            disabled={nextStatus === "FINALIZED" && !canFinalize}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
           >
             {nextStatus === "REGISTRATION"
               ? "Open Registration"
@@ -205,6 +288,39 @@ export default function LeagueManagePage() {
           </button>
         )}
       </div>
+
+      {/* Finalization preflight checklist */}
+      {preflightChecks && (
+        <div
+          className={`mb-6 rounded-2xl border p-4 ${canFinalize ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}
+        >
+          <p
+            className={`mb-2 text-sm font-semibold ${canFinalize ? "text-green-800" : "text-amber-800"}`}
+          >
+            {canFinalize ? "✓ Ready to finalize" : "Complete these before finalizing"}
+          </p>
+          <ul className="grid gap-1 sm:grid-cols-2">
+            {preflightChecks.map((c) => (
+              <li key={c.label} className="flex items-center gap-2 text-xs">
+                <span className={c.ok ? "text-green-600" : "text-amber-500"}>
+                  {c.ok ? "✓" : "✗"}
+                </span>
+                <span className={c.ok ? "text-ink-700" : "text-amber-700"}>{c.label}</span>
+              </li>
+            ))}
+          </ul>
+          {finalizeErrors.length > 0 && (
+            <div className="mt-3 border-t border-amber-200 pt-2">
+              <p className="text-hoop-700 mb-1 text-xs font-semibold">Could not finalize:</p>
+              {finalizeErrors.map((e, i) => (
+                <p key={i} className="text-hoop-600 text-xs">
+                  • {e}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats bar */}
       <div className="mb-8 grid grid-cols-4 gap-4">
@@ -425,6 +541,13 @@ export default function LeagueManagePage() {
                 <span className="text-ink-500 ml-2 text-xs">
                   {v.venue.address}, {v.venue.city}
                 </span>
+                <div className="text-ink-400 mt-0.5 text-xs">
+                  {v.courtsAvailable
+                    ? `${v.courtsAvailable} court${v.courtsAvailable !== 1 ? "s" : ""} (league override)`
+                    : v.venue.courts
+                      ? `${v.venue.courts} court${v.venue.courts !== 1 ? "s" : ""}`
+                      : "Courts: use league default"}
+                </div>
               </div>
               <button
                 onClick={async () => {
@@ -546,6 +669,235 @@ export default function LeagueManagePage() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* Scheduling Settings */}
+      <div className="border-ink-100 mt-6 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-ink-900 font-semibold">Scheduling Settings</h3>
+            <p className="text-ink-400 mt-0.5 text-xs">
+              Fields marked <span className="text-hoop-600 font-semibold">*</span> are required
+              before the league can be finalized
+            </p>
+          </div>
+          <button
+            onClick={saveSchedulingSettings}
+            disabled={schedSaving}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
+          >
+            {schedSaving ? "Saving…" : "Save Settings"}
+          </button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Max games per season */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Max games per team per season <span className="text-hoop-600">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={schedSettings.gamesGuaranteed}
+              onChange={(e) => setSchedSettings((s) => ({ ...s, gamesGuaranteed: e.target.value }))}
+              placeholder="e.g. 10"
+              className={inputClass + " w-full"}
+            />
+          </div>
+          {/* Games per session */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Games per session per team
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={schedSettings.gamesPerSession}
+              onChange={(e) => setSchedSettings((s) => ({ ...s, gamesPerSession: e.target.value }))}
+              className={inputClass + " w-full"}
+            />
+          </div>
+          {/* Ideal games per day */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Ideal games per day per team
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="5"
+              value={schedSettings.idealGamesPerDayPerTeam}
+              onChange={(e) =>
+                setSchedSettings((s) => ({ ...s, idealGamesPerDayPerTeam: e.target.value }))
+              }
+              className={inputClass + " w-full"}
+            />
+            <p className="text-ink-400 mt-0.5 text-[10px]">
+              Scheduler only exceeds this if unavoidable
+            </p>
+          </div>
+
+          {/* Game format — periods */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">Game format</label>
+            <select
+              value={schedSettings.gamePeriods}
+              onChange={(e) => setSchedSettings((s) => ({ ...s, gamePeriods: e.target.value }))}
+              className={inputClass + " w-full"}
+            >
+              <option value="HALVES">2 Halves</option>
+              <option value="QUARTERS">4 Quarters</option>
+            </select>
+          </div>
+          {/* Period / half length */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Half / quarter length (min) <span className="text-hoop-600">*</span>
+            </label>
+            <input
+              type="number"
+              min="5"
+              max="30"
+              value={schedSettings.periodLengthMinutes}
+              onChange={(e) =>
+                setSchedSettings((s) => ({ ...s, periodLengthMinutes: e.target.value }))
+              }
+              placeholder="e.g. 20 for halves, 10 for quarters"
+              className={inputClass + " w-full"}
+            />
+          </div>
+          {/* Total game length */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">Game length (min)</label>
+            <input
+              type="number"
+              min="20"
+              max="60"
+              value={schedSettings.gameLengthMinutes}
+              onChange={(e) =>
+                setSchedSettings((s) => ({ ...s, gameLengthMinutes: e.target.value }))
+              }
+              className={inputClass + " w-full"}
+            />
+          </div>
+
+          {/* Game slot */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Game slot length (min)
+            </label>
+            <input
+              type="number"
+              min="30"
+              max="180"
+              value={schedSettings.gameSlotMinutes}
+              onChange={(e) => setSchedSettings((s) => ({ ...s, gameSlotMinutes: e.target.value }))}
+              className={inputClass + " w-full"}
+            />
+            <p className="text-ink-400 mt-0.5 text-[10px]">Includes warmup + transition buffer</p>
+          </div>
+          {/* Default courts per venue */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Default courts per venue <span className="text-hoop-600">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={schedSettings.defaultCourtsPerVenue}
+              onChange={(e) =>
+                setSchedSettings((s) => ({ ...s, defaultCourtsPerVenue: e.target.value }))
+              }
+              placeholder="e.g. 2"
+              className={inputClass + " w-full"}
+            />
+            <p className="text-ink-400 mt-0.5 text-[10px]">
+              Can be overridden per venue in the Venues panel
+            </p>
+          </div>
+          {/* Venue hours */}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-medium">
+              Default venue hours
+            </label>
+            <div className="flex items-center gap-1">
+              <input
+                type="time"
+                value={schedSettings.defaultVenueOpenTime}
+                onChange={(e) =>
+                  setSchedSettings((s) => ({ ...s, defaultVenueOpenTime: e.target.value }))
+                }
+                className={inputClass + " flex-1"}
+              />
+              <span className="text-ink-400 text-xs">–</span>
+              <input
+                type="time"
+                value={schedSettings.defaultVenueCloseTime}
+                onChange={(e) =>
+                  setSchedSettings((s) => ({ ...s, defaultVenueCloseTime: e.target.value }))
+                }
+                className={inputClass + " flex-1"}
+              />
+            </div>
+            <p className="text-ink-400 mt-0.5 text-[10px]">
+              Session-day times override these defaults
+            </p>
+          </div>
+        </div>
+
+        {/* Playoff settings */}
+        <div className="border-ink-100 mt-5 border-t pt-4">
+          <p className="text-ink-600 mb-3 text-xs font-medium">
+            Playoffs (optional — can be set later)
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-ink-700 mb-1 block text-xs font-medium">Playoff format</label>
+              <select
+                value={league.playoffFormat || ""}
+                onChange={async (e) => {
+                  await fetch(`/api/leagues/${leagueId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ playoffFormat: e.target.value || null }),
+                  })
+                  fetchAll()
+                }}
+                className={inputClass + " w-full"}
+              >
+                <option value="">None / TBD</option>
+                <option value="SINGLE_ELIMINATION">Single Elimination</option>
+                <option value="DOUBLE_ELIMINATION">Double Elimination</option>
+                <option value="ROUND_ROBIN">Round Robin</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-ink-700 mb-1 block text-xs font-medium">
+                Teams advancing to playoffs
+              </label>
+              <input
+                type="number"
+                min="2"
+                max="64"
+                defaultValue={league.playoffTeams || ""}
+                placeholder="e.g. 8"
+                onBlur={async (e) => {
+                  await fetch(`/api/leagues/${leagueId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      playoffTeams: e.target.value ? parseInt(e.target.value) : null,
+                    }),
+                  })
+                  fetchAll()
+                }}
+                className={inputClass + " w-full"}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
