@@ -147,10 +147,13 @@ export default function LeagueManagePage() {
     fetchAll()
   }
 
-  const approveTeam = async (leagueTeamId: string) => {
-    // Direct DB update via league PATCH isn't ideal — for now use a simple approach
-    // In production, create a dedicated endpoint
-    alert("Team approved! (Endpoint to be wired)")
+  const updateTeamStatus = async (leagueTeamId: string, status: "APPROVED" | "REJECTED") => {
+    await fetch(`/api/leagues/${leagueId}/teams/${leagueTeamId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+    fetchAll()
   }
 
   if (loading) return <div className="text-ink-500 p-6 py-12 text-center">Loading...</div>
@@ -453,17 +456,35 @@ export default function LeagueManagePage() {
                     <span className="text-play-700 ml-2 text-xs">{t.division.name}</span>
                   )}
                 </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    t.status === "APPROVED"
-                      ? "bg-court-100 text-court-700"
-                      : t.status === "REJECTED"
-                        ? "bg-hoop-100 text-hoop-700"
-                        : "bg-hoop-100 text-hoop-700"
-                  }`}
-                >
-                  {t.status.toLowerCase()}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      t.status === "APPROVED"
+                        ? "bg-court-100 text-court-700"
+                        : t.status === "REJECTED"
+                          ? "bg-hoop-100 text-hoop-700"
+                          : "bg-hoop-100 text-hoop-700"
+                    }`}
+                  >
+                    {t.status.toLowerCase()}
+                  </span>
+                  {t.status === "PENDING" && (
+                    <>
+                      <button
+                        onClick={() => updateTeamStatus(t.id, "APPROVED")}
+                        className="bg-court-600 hover:bg-court-700 rounded-lg px-2 py-1 text-xs font-semibold text-white"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => updateTeamStatus(t.id, "REJECTED")}
+                        className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-lg border px-2 py-1 text-xs font-semibold"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             ))
           )}
