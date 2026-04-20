@@ -9,6 +9,7 @@ export function ClubSection({ data }: ClubSectionProps) {
   const totalTeams = data.tenants.reduce((sum, tenant) => sum + tenant._count.teams, 0)
   const totalTryouts = data.tenants.reduce((sum, tenant) => sum + tenant._count.tryouts, 0)
   const teams = data.teams
+  const primaryTenantId = data.tenants[0]?.id
 
   return (
     <section className="space-y-6">
@@ -145,32 +146,7 @@ export function ClubSection({ data }: ClubSectionProps) {
               </div>
             </div>
 
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white">
-              <div className="border-ink-100 flex items-center gap-2 border-b px-5 py-4">
-                <div className="bg-hoop-500 h-2 w-2 rounded-full" />
-                <h3 className="font-display text-ink-950 text-sm font-semibold">At a glance</h3>
-              </div>
-              <div className="divide-ink-100 divide-y">
-                <AttentionRow
-                  label={`${data.tenants.length} club workspace${data.tenants.length === 1 ? "" : "s"} under management`}
-                  href={data.tenants[0] ? `/clubs/${data.tenants[0].id}` : "/clubs/create"}
-                  icon={<IconBuilding className="text-play-600 h-3.5 w-3.5" />}
-                  iconTone="bg-play-50"
-                />
-                <AttentionRow
-                  label={`${teams.length} active team card${teams.length === 1 ? "" : "s"} available below`}
-                  href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/teams` : "/clubs/create"}
-                  icon={<IconUsers className="text-court-700 h-3.5 w-3.5" />}
-                  iconTone="bg-court-50"
-                />
-                <AttentionRow
-                  label={`${teams.filter((team) => !getLeadCoach(team)).length} team${teams.filter((team) => !getLeadCoach(team)).length === 1 ? "" : "s"} without a head coach`}
-                  href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/staff` : "/clubs/create"}
-                  icon={<IconAlert className="text-hoop-500 h-3.5 w-3.5" />}
-                  iconTone="bg-hoop-50"
-                />
-              </div>
-            </div>
+            <OfferPipeline pipeline={data.offerPipeline} primaryTenantId={primaryTenantId} />
           </div>
 
           <div>
@@ -285,6 +261,8 @@ export function ClubSection({ data }: ClubSectionProps) {
               </div>
             )}
           </div>
+
+          <ActivityFeed activity={data.activity} primaryTenantId={primaryTenantId} />
         </>
       ) : (
         <div className="border-ink-200 rounded-[28px] border-2 border-dashed bg-white p-8 text-center">
@@ -303,6 +281,294 @@ export function ClubSection({ data }: ClubSectionProps) {
       )}
     </section>
   )
+}
+
+function OfferPipeline({
+  pipeline,
+  primaryTenantId,
+}: {
+  pipeline: NonNullable<DashboardData["clubOwner"]>["offerPipeline"]
+  primaryTenantId: string | undefined
+}) {
+  const offersHref = primaryTenantId ? `/clubs/${primaryTenantId}/offers` : "/clubs/create"
+
+  return (
+    <div className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white">
+      <div className="border-ink-100 flex items-center justify-between border-b px-5 py-4">
+        <h3 className="font-display text-ink-950 text-sm font-semibold">Offer pipeline</h3>
+        <Link
+          href={offersHref}
+          className="text-play-600 hover:text-play-700 text-xs font-medium transition"
+        >
+          View all
+        </Link>
+      </div>
+      <div className="p-5">
+        <div className="mb-5 grid grid-cols-4 gap-3">
+          <PipelineStage
+            value={pipeline.pending}
+            label="Pending"
+            tone="bg-play-50 border-play-100 text-play-700"
+            labelTone="text-play-500"
+          />
+          <PipelineStage
+            value={pipeline.accepted}
+            label="Accepted"
+            tone="bg-court-50 border-court-100 text-court-700"
+            labelTone="text-court-500"
+          />
+          <PipelineStage
+            value={pipeline.declined}
+            label="Declined"
+            tone="bg-red-50 border-red-100 text-red-700"
+            labelTone="text-red-500"
+          />
+          <PipelineStage
+            value={pipeline.expired}
+            label="Expired"
+            tone="bg-ink-50 border-ink-100 text-ink-600"
+            labelTone="text-ink-400"
+          />
+        </div>
+
+        {pipeline.recent.length > 0 ? (
+          <div className="space-y-2">
+            {pipeline.recent.map((offer, index) => (
+              <Link
+                key={offer.id}
+                href={`/clubs/${offer.team.tenantId}/offers`}
+                className="hover:bg-ink-100/60 flex items-center gap-3 rounded-xl bg-[#f7f7f8] p-2.5 transition"
+              >
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br text-[10px] font-bold text-white ${
+                    OFFER_AVATAR_TONES[index % OFFER_AVATAR_TONES.length]
+                  }`}
+                >
+                  {getInitials(offer.player.firstName, offer.player.lastName)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-ink-700 text-sm font-medium">
+                    {offer.player.firstName} {offer.player.lastName}
+                  </span>
+                  <span className="text-ink-400 ml-2 text-xs">{offer.team.name}</span>
+                </div>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${OFFER_STATUS_TONES[offer.status] || "bg-ink-50 text-ink-600"}`}
+                >
+                  {formatStatus(offer.status)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-ink-400 text-xs">
+            No offers yet. Send your first offer to see the pipeline fill up.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PipelineStage({
+  value,
+  label,
+  tone,
+  labelTone,
+}: {
+  value: number
+  label: string
+  tone: string
+  labelTone: string
+}) {
+  return (
+    <div className={`rounded-xl border p-3 text-center ${tone}`}>
+      <div className="font-display text-xl font-bold">{value}</div>
+      <div className={`mt-0.5 text-[10px] font-medium ${labelTone}`}>{label}</div>
+    </div>
+  )
+}
+
+function ActivityFeed({
+  activity,
+  primaryTenantId,
+}: {
+  activity: NonNullable<DashboardData["clubOwner"]>["activity"]
+  primaryTenantId: string | undefined
+}) {
+  if (activity.length === 0) return null
+
+  return (
+    <div className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white">
+      <div className="border-ink-100 flex items-center justify-between border-b px-5 py-4">
+        <h3 className="font-display text-ink-950 text-sm font-semibold">Recent activity</h3>
+        {primaryTenantId && (
+          <Link
+            href={`/clubs/${primaryTenantId}`}
+            className="text-play-600 hover:text-play-700 text-xs font-medium transition"
+          >
+            View all
+          </Link>
+        )}
+      </div>
+      <div className="divide-ink-50 divide-y">
+        {activity.map((entry) => {
+          const visual = ACTIVITY_VISUALS[entry.type]
+          return (
+            <div key={entry.id} className="flex items-start gap-3 px-5 py-3.5">
+              <div
+                className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${visual.tone}`}
+              >
+                {visual.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-ink-700 text-sm">
+                  {entry.type === "tryout_published" || entry.type === "invite_sent" ? (
+                    <>
+                      {entry.type === "tryout_published" ? (
+                        <>
+                          <span className="text-ink-950 font-medium">{entry.highlight}</span>{" "}
+                          {entry.message}
+                        </>
+                      ) : (
+                        <>
+                          {entry.message}{" "}
+                          <span className="text-ink-950 font-medium">{entry.highlight}</span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-ink-950 font-medium">{entry.highlight}</span>{" "}
+                      {entry.message}
+                    </>
+                  )}
+                </p>
+                <p className="text-ink-400 mt-0.5 text-[11px]">{formatRelative(entry.createdAt)}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const OFFER_AVATAR_TONES = [
+  "from-violet-300 to-violet-500",
+  "from-court-300 to-court-500",
+  "from-amber-300 to-amber-500",
+  "from-sky-300 to-sky-500",
+]
+
+const OFFER_STATUS_TONES: Record<string, string> = {
+  PENDING: "bg-play-50 text-play-700",
+  ACCEPTED: "bg-court-50 text-court-700",
+  DECLINED: "bg-red-50 text-red-700",
+  EXPIRED: "bg-ink-100 text-ink-600",
+}
+
+const ACTIVITY_VISUALS: Record<
+  NonNullable<DashboardData["clubOwner"]>["activity"][number]["type"],
+  { tone: string; icon: JSX.Element }
+> = {
+  offer_accepted: {
+    tone: "bg-court-50 text-court-600",
+    icon: (
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+  },
+  offer_declined: {
+    tone: "bg-red-50 text-red-500",
+    icon: (
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    ),
+  },
+  signup: {
+    tone: "bg-play-50 text-play-600",
+    icon: (
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <line x1="20" y1="8" x2="20" y2="14" />
+        <line x1="23" y1="11" x2="17" y2="11" />
+      </svg>
+    ),
+  },
+  invite_sent: {
+    tone: "bg-violet-50 text-violet-600",
+    icon: (
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+        <polyline points="22,6 12,13 2,6" />
+      </svg>
+    ),
+  },
+  tryout_published: {
+    tone: "bg-hoop-50 text-hoop-500",
+    icon: (
+      <svg
+        className="h-3.5 w-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <rect x="8" y="2" width="8" height="4" rx="1" />
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      </svg>
+    ),
+  },
+}
+
+function formatStatus(status: string) {
+  return status.charAt(0) + status.slice(1).toLowerCase()
+}
+
+function formatRelative(date: Date) {
+  const diffMs = Date.now() - new Date(date).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return "just now"
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`
+  const diffHour = Math.floor(diffMin / 60)
+  if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`
+  const diffDay = Math.floor(diffHour / 24)
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`
+  return new Date(date).toLocaleDateString("en-CA", { month: "short", day: "numeric" })
 }
 
 const PLAYER_BADGE_TONES = [

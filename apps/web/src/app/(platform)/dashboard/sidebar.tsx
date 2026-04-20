@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation"
 
 interface SidebarProps {
   roles: string[]
-  tenants?: Array<{ id: string; name: string; slug: string; role?: string }>
+  tenants?: Array<{
+    id: string
+    name: string
+    slug: string
+    role?: string
+    counts?: { teams: number; tryouts: number; offers: number }
+  }>
   userName: string
   userInitials: string
   primaryRole: string
@@ -146,18 +152,24 @@ export function Sidebar({
                       label="Teams"
                       pathname={pathname}
                       icon={<IconUsers />}
+                      badge={tenant.counts?.teams}
+                      badgeTone="bg-court-50 text-court-600"
                     />
                     <SidebarSubLink
                       href={`/clubs/${tenant.id}/tryouts`}
                       label="Tryouts"
                       pathname={pathname}
                       icon={<IconClipboard />}
+                      badge={tenant.counts?.tryouts}
+                      badgeTone="bg-hoop-50 text-hoop-600"
                     />
                     <SidebarSubLink
                       href={`/clubs/${tenant.id}/offers`}
                       label="Offers"
                       pathname={pathname}
                       icon={<IconFlag />}
+                      badge={tenant.counts?.offers}
+                      badgeTone="bg-violet-50 text-violet-600"
                     />
                     <SidebarSubLink
                       href={`/clubs/${tenant.id}/offer-templates`}
@@ -407,14 +419,19 @@ function SidebarSubLink({
   label,
   pathname,
   icon,
+  badge,
+  badgeTone,
 }: {
   href: string
   label: string
   pathname: string | null
   icon: React.ReactNode
+  badge?: number
+  badgeTone?: string
 }) {
   const active = pathname === href || (pathname?.startsWith(`${href}/`) ?? false)
   const shouldPrefetch = process.env.NODE_ENV === "production"
+  const showBadge = typeof badge === "number" && badge > 0
 
   return (
     <Link
@@ -429,7 +446,14 @@ function SidebarSubLink({
       >
         {icon}
       </span>
-      <span>{label}</span>
+      <span className="flex-1">{label}</span>
+      {showBadge && (
+        <span
+          className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${badgeTone || "bg-ink-100 text-ink-600"}`}
+        >
+          {badge}
+        </span>
+      )}
     </Link>
   )
 }

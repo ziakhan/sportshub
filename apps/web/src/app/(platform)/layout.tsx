@@ -1,6 +1,7 @@
 import React from "react"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { prisma } from "@youthbasketballhub/db"
 import { getCurrentUser, isImpersonating } from "@/lib/auth-helpers"
 import { Sidebar } from "./dashboard/sidebar"
 import { MobileNav } from "./dashboard/mobile-nav"
@@ -24,7 +25,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     return <>{children}</>
   }
 
-  const tenants =
+  const rawTenants =
     dbUser?.roles
       .filter((r: any) => r.tenant)
       .map((r: any) => ({
@@ -33,6 +34,33 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         slug: r.tenant!.slug,
         role: r.role,
       })) || []
+
+  const tenantIds = Array.from(new Set(rawTenants.map((t: any) => t.id as string)))
+
+  const tenantCounts =
+    tenantIds.length > 0
+      ? await Promise.all(
+          tenantIds.map(async (tenantId) => {
+            const [teams, tryouts, offers] = await Promise.all([
+              prisma.team.count({ where: { tenantId } }),
+              prisma.tryout.count({ where: { tenantId } }),
+              prisma.offer.count({
+                where: { team: { tenantId }, status: "PENDING" },
+              }),
+            ])
+            return { tenantId, teams, tryouts, offers }
+          })
+        )
+      : []
+
+  const countsByTenant = new Map(
+    tenantCounts.map((c) => [c.tenantId, { teams: c.teams, tryouts: c.tryouts, offers: c.offers }])
+  )
+
+  const tenants = rawTenants.map((tenant: any) => ({
+    ...tenant,
+    counts: countsByTenant.get(tenant.id),
+  }))
 
   const impersonating = isImpersonating()
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"

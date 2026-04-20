@@ -309,99 +309,192 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="bg-white py-16 sm:py-20">
+      <section className="bg-white py-20 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="mb-10 max-w-2xl">
-            <div className="mb-4 inline-flex items-center gap-3">
-              <span className="bg-court-400 h-px w-10" />
-              <span className="text-court-600 text-xs font-semibold uppercase tracking-[0.2em]">
-                Why it works
-              </span>
+          <div className="mb-14 text-center">
+            <div className="bg-play-50 text-play-700 mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+              Platform
             </div>
-            <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
-              One platform, built for every role around the team
+            <h2 className="font-display text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+              Everything your club needs
             </h2>
-            <p className="text-ink-500 text-base leading-7 sm:text-lg">
-              The design direction works best when it still feels useful, so these sections stay
-              tied to real workflows already present in the product.
+            <p className="text-ink-500 mx-auto max-w-xl">
+              From tryout management to live scoring — built specifically for youth basketball
+              organizations.
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
-              <div className="bg-hoop-50 text-hoop-600 mb-4 inline-flex rounded-2xl p-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:[grid-auto-rows:minmax(200px,auto)]">
+            <div className="card-lift from-hoop-50 to-hoop-100/50 border-hoop-200/50 group relative overflow-hidden rounded-3xl border bg-gradient-to-br p-8 sm:col-span-2 lg:row-span-2">
+              <div className="relative z-10">
+                <div className="bg-hoop-500 shadow-hoop-200 mb-5 flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg">
+                  <svg
+                    className="h-6 w-6 text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="8" y="2" width="8" height="4" rx="1" />
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                  </svg>
+                </div>
+                <h3 className="font-display text-ink-950 mb-2 text-2xl font-bold">
+                  Tryout Management
+                </h3>
+                <p className="text-ink-500 mb-6 max-w-sm leading-relaxed">
+                  Publish tryouts, collect signups, evaluate players, and send offers — all from
+                  one dashboard.
+                </p>
+                <div className="border-ink-100 max-w-sm rounded-2xl border bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-ink-950 text-xs font-semibold">
+                      U14 Boys Rep Tryout
+                    </span>
+                    <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                      ACTIVE
+                    </span>
+                  </div>
+                  <div className="mb-3 flex gap-3">
+                    <div className="bg-ink-50 flex-1 rounded-xl p-2.5 text-center">
+                      <div className="font-display text-ink-950 text-lg font-bold">24</div>
+                      <div className="text-ink-400 text-[10px]">signups</div>
+                    </div>
+                    <div className="bg-ink-50 flex-1 rounded-xl p-2.5 text-center">
+                      <div className="font-display text-ink-950 text-lg font-bold">12</div>
+                      <div className="text-ink-400 text-[10px]">evaluated</div>
+                    </div>
+                    <div className="bg-ink-50 flex-1 rounded-xl p-2.5 text-center">
+                      <div className="font-display text-ink-950 text-lg font-bold">8</div>
+                      <div className="text-ink-400 text-[10px]">offered</div>
+                    </div>
+                  </div>
+                  <div className="bg-ink-100 h-1.5 w-full rounded-full">
+                    <div className="bg-hoop-500 h-1.5 w-[65%] rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card-lift from-play-50 to-play-100/50 border-play-200/50 rounded-3xl border bg-gradient-to-br p-6 sm:col-span-2">
+              <div className="bg-play-600 shadow-play-200 mb-4 flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M12 14c4.418 0 8-1.79 8-4s-3.582-4-8-4-8 1.79-8 4 3.582 4 8 4Z" />
-                  <path d="M4 10v4c0 2.21 3.582 4 8 4s8-1.79 8-4v-4" />
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
-              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Parents</h3>
-              <p className="text-ink-600 text-sm leading-6">
-                Find real clubs, compare tryouts, and keep registration in one organized flow.
+              <h3 className="font-display text-ink-950 mb-1.5 text-xl font-bold">Team Rosters</h3>
+              <p className="text-ink-500 text-sm leading-relaxed">
+                Organize players by age group, manage rosters, and track assignments across the
+                season.
               </p>
             </div>
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
-              <div className="bg-court-50 text-court-600 mb-4 inline-flex rounded-2xl p-3">
+
+            <div className="card-lift from-court-50 to-court-100/50 border-court-200/50 rounded-3xl border bg-gradient-to-br p-6 sm:col-span-2">
+              <div className="bg-court-600 shadow-court-200 mb-4 flex h-10 w-10 items-center justify-center rounded-xl shadow-lg">
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M3 21h18" />
-                  <path d="M5 21V8l7-5 7 5v13" />
-                  <path d="M9 12h6" />
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <line x1="4" y1="22" x2="4" y2="15" />
                 </svg>
               </div>
-              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Clubs</h3>
-              <p className="text-ink-600 text-sm leading-6">
-                Publish programs, manage staff, track teams, and turn public interest into
-                structured operations.
+              <h3 className="font-display text-ink-950 mb-1.5 text-xl font-bold">Offer Pipeline</h3>
+              <p className="text-ink-500 text-sm leading-relaxed">
+                Send offers with custom templates, track responses in real-time, and fill your
+                rosters fast.
               </p>
             </div>
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
-              <div className="bg-play-50 text-play-600 mb-4 inline-flex rounded-2xl p-3">
+
+            <div className="card-lift rounded-3xl border border-amber-200/50 bg-gradient-to-br from-amber-50 to-amber-100/50 p-6">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-200">
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M9 6.75V4.5A2.25 2.25 0 0 1 11.25 2.25h1.5A2.25 2.25 0 0 1 15 4.5v2.25" />
-                  <path d="M4.5 9.75h15v9.75a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V9.75Z" />
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
               </div>
-              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Staff</h3>
-              <p className="text-ink-600 text-sm leading-6">
-                Accept invitations, stay tied to club context, and manage the players and workflows
-                assigned to you.
+              <h3 className="font-display text-ink-950 mb-1 text-lg font-bold">Payments</h3>
+              <p className="text-ink-500 text-xs leading-relaxed">
+                Stripe-powered online payments for tryouts, camps, and registration fees.
               </p>
             </div>
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
-              <div className="bg-ink-100 text-ink-700 mb-4 inline-flex rounded-2xl p-3">
+
+            <div className="card-lift rounded-3xl border border-sky-200/50 bg-gradient-to-br from-sky-50 to-sky-100/50 p-6">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500 shadow-lg shadow-sky-200">
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 text-white"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
                 >
-                  <path d="M3 5.25A2.25 2.25 0 0 1 5.25 3h13.5A2.25 2.25 0 0 1 21 5.25v13.5A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V5.25Z" />
-                  <path d="M7.5 15 10.5 12l2.25 2.25L16.5 9.75" />
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-ink-950 mb-2 text-xl font-semibold">Leagues</h3>
-              <p className="text-ink-600 text-sm leading-6">
-                Coordinate divisions, visibility, and scheduling with cleaner data moving through
-                the platform.
+              <h3 className="font-display text-ink-950 mb-1 text-lg font-bold">Scheduling</h3>
+              <p className="text-ink-500 text-xs leading-relaxed">
+                Game schedules, practice times, and venue management in one calendar.
+              </p>
+            </div>
+
+            <div className="card-lift rounded-3xl border border-rose-200/50 bg-gradient-to-br from-rose-50 to-rose-100/50 p-6">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 shadow-lg shadow-rose-200">
+                <svg
+                  className="h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              </div>
+              <h3 className="font-display text-ink-950 mb-1 text-lg font-bold">Live Scoring</h3>
+              <p className="text-ink-500 text-xs leading-relaxed">
+                Real-time game scoring with stats tracking.
+              </p>
+              <span className="mt-2 inline-block rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600">
+                COMING SOON
+              </span>
+            </div>
+
+            <div className="card-lift rounded-3xl border border-violet-200/50 bg-gradient-to-br from-violet-50 to-violet-100/50 p-6">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500 shadow-lg shadow-violet-200">
+                <svg
+                  className="h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </div>
+              <h3 className="font-display text-ink-950 mb-1 text-lg font-bold">Notifications</h3>
+              <p className="text-ink-500 text-xs leading-relaxed">
+                Email and in-app alerts for signups, offers, invites, and game updates.
               </p>
             </div>
           </div>
