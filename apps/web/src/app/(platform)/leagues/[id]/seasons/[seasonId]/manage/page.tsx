@@ -1635,8 +1635,8 @@ export default function LeagueManagePage() {
             <div>
               <h3 className="text-ink-900 font-semibold">Schedule</h3>
               <p className="text-ink-500 mt-0.5 text-xs">
-                Preview the scheduler's proposal, then commit to persist games. Season must be
-                finalized before you can commit.
+                Preview the scheduler&apos;s proposal, then commit to persist games. Season must
+                be finalized before you can commit.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1727,7 +1727,7 @@ export default function LeagueManagePage() {
               {preview.unscheduled.length > 0 && (
                 <details className="mt-3 text-xs">
                   <summary className="text-amber-700 cursor-pointer font-medium">
-                    {preview.unscheduled.length} pairing(s) couldn't be placed
+                    {preview.unscheduled.length} pairing(s) couldn&apos;t be placed
                   </summary>
                   <ul className="mt-1 space-y-0.5">
                     {preview.unscheduled.map((u: any, i: number) => (
