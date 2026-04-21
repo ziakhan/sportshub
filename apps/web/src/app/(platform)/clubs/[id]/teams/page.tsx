@@ -16,7 +16,7 @@ interface TeamListItem {
     awayGames: number
     tryouts: number
     offers: number
-    leagues: number
+    seasonSubmissions: number
   }
   staff: { designation: string | null }[]
   offers: { status: string }[]
@@ -33,7 +33,7 @@ async function getTeams(tenantId: string): Promise<TeamListItem[]> {
           awayGames: true,
           tryouts: true,
           offers: true,
-          leagues: true,
+          seasonSubmissions: true,
         },
       },
       staff: {
@@ -179,7 +179,7 @@ export default async function ClubTeamsPage({
                         <div className="text-ink-500 text-xs">Offers</div>
                       </div>
                       <div>
-                        <div className="text-play-700 text-lg font-bold">{team._count.leagues}</div>
+                        <div className="text-play-700 text-lg font-bold">{team._count.seasonSubmissions}</div>
                         <div className="text-ink-500 text-xs">Leagues</div>
                       </div>
                     </div>
