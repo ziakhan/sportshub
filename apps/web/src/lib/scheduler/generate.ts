@@ -138,7 +138,7 @@ function overlaps(
 
 // ---------- slot inventory ----------
 
-function buildSlots(input: SchedulerInput): SchedulerSlot[] {
+export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
   const slots: SchedulerSlot[] = []
   const fallbackOpen = parseHHMM(input.defaultVenueOpenTime) ?? { h: 9, m: 0 }
   const fallbackClose = parseHHMM(input.defaultVenueCloseTime) ?? { h: 20, m: 0 }

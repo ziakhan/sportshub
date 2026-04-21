@@ -116,6 +116,10 @@ export default function LeagueManagePage() {
   const [previewLoading, setPreviewLoading] = useState(false)
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
+  const [openGameId, setOpenGameId] = useState<string | null>(null)
+  const [suggestionsFor, setSuggestionsFor] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
 
   const panelClass =
     "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
@@ -214,6 +218,66 @@ export default function LeagueManagePage() {
       setScheduleError(err?.error || "Delete failed")
     }
     fetchAll()
+  }
+
+  const patchGame = async (gameId: string, body: Record<string, any>) => {
+    setScheduleError(null)
+    const res = await fetch(`/api/games/${gameId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(
+        Array.isArray(err?.conflicts)
+          ? err.conflicts.join("; ")
+          : err?.error || "Update failed"
+      )
+    }
+    fetchAll()
+  }
+
+  const cancelGame = async (gameId: string) => {
+    if (!confirm("Cancel this game? It will be excluded from standings.")) return
+    setScheduleError(null)
+    const res = await fetch(`/api/games/${gameId}`, { method: "DELETE" })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(err?.error || "Cancel failed")
+    }
+    fetchAll()
+  }
+
+  const loadSuggestions = async (gameId: string) => {
+    setSuggestionsFor(gameId)
+    setSuggestionsLoading(true)
+    setSuggestions([])
+    const res = await fetch(`/api/games/${gameId}/reschedule-suggestions`, {
+      method: "POST",
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setSuggestions(data.suggestions || [])
+    } else {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(err?.error || "Could not load suggestions")
+    }
+    setSuggestionsLoading(false)
+  }
+
+  const applySuggestion = async (gameId: string, s: any) => {
+    await patchGame(gameId, {
+      scheduledAt: s.startAt,
+      courtId: s.courtId,
+      venueId: s.venueId,
+      dayId: s.dayId,
+      dayVenueId: s.dayVenueId,
+      sessionId: s.sessionId,
+    })
+    setSuggestionsFor(null)
+    setSuggestions([])
+    setOpenGameId(null)
   }
 
   useEffect(() => {
@@ -1670,36 +1734,145 @@ export default function LeagueManagePage() {
                 No games committed yet. Preview then commit once the season is finalized.
               </p>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-ink-100">
-                <table className="text-ink-700 w-full text-xs">
-                  <thead className="bg-ink-50 text-ink-500 text-[10px] uppercase tracking-wide">
-                    <tr>
-                      <th className="px-3 py-1.5 text-left">When</th>
-                      <th className="px-3 py-1.5 text-left">Home</th>
-                      <th className="px-3 py-1.5 text-left">Away</th>
-                      <th className="px-3 py-1.5 text-left">Venue</th>
-                      <th className="px-3 py-1.5 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scheduleGames.map((g: any) => (
-                      <tr key={g.id} className="border-ink-100 border-t">
-                        <td className="px-3 py-1.5">
-                          {format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
-                        </td>
-                        <td className="px-3 py-1.5">{g.homeTeam?.name ?? g.homeTeamId}</td>
-                        <td className="px-3 py-1.5">{g.awayTeam?.name ?? g.awayTeamId}</td>
-                        <td className="px-3 py-1.5">
-                          {g.venue?.name ?? "—"}
-                          {g.court?.name ? ` · ${g.court.name}` : ""}
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <span className="text-ink-500 text-[10px]">{g.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {scheduleGames.map((g: any) => {
+                  const open = openGameId === g.id
+                  const statusStyle =
+                    g.status === "CANCELLED"
+                      ? "text-hoop-600"
+                      : g.status === "COMPLETED"
+                        ? "text-court-700"
+                        : g.status === "DEFAULTED"
+                          ? "text-amber-700"
+                          : "text-ink-600"
+                  return (
+                    <div
+                      key={g.id}
+                      className="border-ink-100 rounded-xl border bg-white"
+                    >
+                      <button
+                        onClick={() => setOpenGameId(open ? null : g.id)}
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs"
+                      >
+                        <div className="flex flex-1 flex-wrap items-center gap-3">
+                          <span className="text-ink-700 whitespace-nowrap">
+                            {format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
+                          </span>
+                          <span className="text-ink-900 font-medium">
+                            {g.homeTeam?.name ?? g.homeTeamId}{" "}
+                            <span className="text-ink-400">vs</span>{" "}
+                            {g.awayTeam?.name ?? g.awayTeamId}
+                          </span>
+                          <span className="text-ink-500">
+                            {g.venue?.name ?? "—"}
+                            {g.court?.name ? ` · ${g.court.name}` : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {g.isLocked && (
+                            <span className="text-ink-500 text-[10px]">🔒</span>
+                          )}
+                          <span className={`text-[10px] font-semibold ${statusStyle}`}>
+                            {g.status}
+                          </span>
+                          <span className="text-ink-400 text-[10px]">
+                            {open ? "▴" : "▾"}
+                          </span>
+                        </div>
+                      </button>
+
+                      {open && (
+                        <div className="border-ink-100 border-t px-3 py-3 text-xs">
+                          <div className="mb-3 flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => patchGame(g.id, { isLocked: !g.isLocked })}
+                              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                            >
+                              {g.isLocked ? "Unlock" : "Lock"}
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (suggestionsFor === g.id) {
+                                  setSuggestionsFor(null)
+                                  setSuggestions([])
+                                } else {
+                                  loadSuggestions(g.id)
+                                }
+                              }}
+                              className="border-play-300 text-play-700 hover:bg-play-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                            >
+                              {suggestionsFor === g.id ? "Hide alternates" : "Find alternates"}
+                            </button>
+                            <button
+                              onClick={() =>
+                                patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.homeTeamId })
+                              }
+                              className="border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                            >
+                              Home defaults
+                            </button>
+                            <button
+                              onClick={() =>
+                                patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.awayTeamId })
+                              }
+                              className="border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                            >
+                              Away defaults
+                            </button>
+                            <button
+                              onClick={() => cancelGame(g.id)}
+                              disabled={g.status === "CANCELLED" || g.status === "COMPLETED"}
+                              className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-lg border px-2 py-1 text-[11px] font-semibold disabled:opacity-40"
+                            >
+                              Cancel game
+                            </button>
+                          </div>
+
+                          {suggestionsFor === g.id && (
+                            <div className="bg-ink-50 rounded-xl p-2">
+                              <p className="text-ink-700 mb-2 text-[11px] font-semibold">
+                                Suggested alternate slots
+                              </p>
+                              {suggestionsLoading ? (
+                                <p className="text-ink-500 text-[11px]">Searching…</p>
+                              ) : suggestions.length === 0 ? (
+                                <p className="text-ink-500 text-[11px]">
+                                  No viable alternate slots found.
+                                </p>
+                              ) : (
+                                <ul className="space-y-1">
+                                  {suggestions.map((s, i) => (
+                                    <li
+                                      key={i}
+                                      className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2 py-1"
+                                    >
+                                      <div>
+                                        <span className="text-ink-900 font-medium">
+                                          {format(new Date(s.startAt), "EEE MMM d · h:mm a")}
+                                        </span>
+                                        {s.sameDay && (
+                                          <span className="bg-play-100 text-play-700 ml-2 rounded-full px-1.5 py-0.5 text-[9px]">
+                                            same day
+                                          </span>
+                                        )}
+                                      </div>
+                                      <button
+                                        onClick={() => applySuggestion(g.id, s)}
+                                        className="bg-play-600 hover:bg-play-700 rounded-lg px-2 py-1 text-[10px] font-semibold text-white"
+                                      >
+                                        Move here
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
