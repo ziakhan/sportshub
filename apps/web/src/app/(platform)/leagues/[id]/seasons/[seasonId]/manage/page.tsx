@@ -34,6 +34,7 @@ const TABS = [
   { key: "tiebreakers", label: "Tiebreakers" },
   { key: "teams", label: "Teams" },
   { key: "schedule", label: "Schedule" },
+  { key: "standings", label: "Standings" },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
@@ -120,6 +121,8 @@ export default function LeagueManagePage() {
   const [suggestionsFor, setSuggestionsFor] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [standings, setStandings] = useState<any[]>([])
+  const [standingsLoading, setStandingsLoading] = useState(false)
 
   const panelClass =
     "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
@@ -265,6 +268,20 @@ export default function LeagueManagePage() {
     }
     setSuggestionsLoading(false)
   }
+
+  const loadStandings = async () => {
+    setStandingsLoading(true)
+    const res = await fetch(`/api/seasons/${seasonId}/standings`)
+    if (res.ok) {
+      const data = await res.json()
+      setStandings(data.divisions || [])
+    }
+    setStandingsLoading(false)
+  }
+
+  useEffect(() => {
+    if (activeTab === "standings") loadStandings()
+  }, [activeTab]) // eslint-disable-line
 
   const applySuggestion = async (gameId: string, s: any) => {
     await patchGame(gameId, {
@@ -1876,6 +1893,108 @@ export default function LeagueManagePage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+      )}
+
+      {activeTab === "standings" && (
+      <div className="space-y-6">
+        <div className={panelClass}>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-ink-900 font-semibold">Standings</h3>
+              <p className="text-ink-500 mt-0.5 text-xs">
+                Computed on read from completed games. Ties are broken in the order
+                configured in the Tiebreakers tab.
+              </p>
+            </div>
+            <button
+              onClick={loadStandings}
+              disabled={standingsLoading}
+              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+            >
+              {standingsLoading ? "Loading…" : "Refresh"}
+            </button>
+          </div>
+
+          {standingsLoading && standings.length === 0 ? (
+            <p className="text-ink-500 text-sm">Loading…</p>
+          ) : standings.length === 0 ? (
+            <p className="text-ink-500 text-sm">
+              No standings yet. Standings become meaningful once games are completed.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {standings.map((div: any) => (
+                <div key={div.divisionId}>
+                  <h4 className="text-ink-800 mb-2 text-sm font-semibold">
+                    {div.divisionName}
+                  </h4>
+                  {div.rows.length === 0 ? (
+                    <p className="text-ink-500 text-xs">No teams in this division.</p>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-ink-100">
+                      <table className="text-ink-700 w-full text-xs">
+                        <thead className="bg-ink-50 text-ink-500 text-[10px] uppercase tracking-wide">
+                          <tr>
+                            <th className="px-3 py-1.5 text-left">#</th>
+                            <th className="px-3 py-1.5 text-left">Team</th>
+                            <th className="px-3 py-1.5 text-right">GP</th>
+                            <th className="px-3 py-1.5 text-right">W</th>
+                            <th className="px-3 py-1.5 text-right">L</th>
+                            <th className="px-3 py-1.5 text-right">T</th>
+                            <th className="px-3 py-1.5 text-right">PF</th>
+                            <th className="px-3 py-1.5 text-right">PA</th>
+                            <th className="px-3 py-1.5 text-right">Diff</th>
+                            <th className="px-3 py-1.5 text-right">Win%</th>
+                            <th className="px-3 py-1.5 text-left">Tiebreakers</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {div.rows.map((row: any, idx: number) => (
+                            <tr key={row.teamId} className="border-ink-100 border-t">
+                              <td className="px-3 py-1.5 font-mono text-[10px] text-ink-400">
+                                {idx + 1}
+                              </td>
+                              <td className="px-3 py-1.5 text-ink-900 font-medium">
+                                {row.name}
+                              </td>
+                              <td className="px-3 py-1.5 text-right">{row.gamesPlayed}</td>
+                              <td className="px-3 py-1.5 text-right">{row.wins}</td>
+                              <td className="px-3 py-1.5 text-right">{row.losses}</td>
+                              <td className="px-3 py-1.5 text-right">{row.ties}</td>
+                              <td className="px-3 py-1.5 text-right">{row.pointsFor}</td>
+                              <td className="px-3 py-1.5 text-right">{row.pointsAgainst}</td>
+                              <td
+                                className={`px-3 py-1.5 text-right font-mono text-[11px] ${
+                                  row.differential > 0
+                                    ? "text-court-700"
+                                    : row.differential < 0
+                                      ? "text-hoop-600"
+                                      : "text-ink-500"
+                                }`}
+                              >
+                                {row.differential > 0 ? "+" : ""}
+                                {row.differential}
+                              </td>
+                              <td className="px-3 py-1.5 text-right">
+                                {(row.winPct * 100).toFixed(0)}%
+                              </td>
+                              <td className="px-3 py-1.5 text-ink-500 text-[10px]">
+                                {row.appliedTiebreakers.length > 0
+                                  ? row.appliedTiebreakers.join(", ")
+                                  : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       )}
