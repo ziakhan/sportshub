@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
-import { POST } from "@/app/api/leagues/[id]/submit/route"
+import { POST } from "@/app/api/seasons/[id]/submit/route"
 
 vi.mock("next-auth", () => ({
   getServerSession: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock("@youthbasketballhub/db", () => ({
   },
 }))
 
-describe("POST /api/leagues/[id]/submit", () => {
+describe("POST /api/seasons/[id]/submit", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getServerSession).mockResolvedValue({ user: { id: "club-owner-1" } } as any)
@@ -65,7 +65,7 @@ describe("POST /api/leagues/[id]/submit", () => {
     } as any)
 
     const response = await POST(
-      new Request("http://localhost:3000/api/leagues/season-1/submit", {
+      new Request("http://localhost:3000/api/seasons/season-1/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ teamId: "team-1", divisionId: "division-1" }),
@@ -103,7 +103,7 @@ describe("POST /api/leagues/[id]/submit", () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
-      new Request("http://localhost:3000/api/leagues/season-1/submit", {
+      new Request("http://localhost:3000/api/seasons/season-1/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ teamId: "team-1", divisionId: "division-1" }),

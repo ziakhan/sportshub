@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { PATCH } from "@/app/api/leagues/[id]/teams/[teamId]/route"
+import { PATCH } from "@/app/api/seasons/[id]/teams/[teamId]/route"
 
 vi.mock("@/lib/auth-helpers", () => ({
   getSessionUserId: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock("@youthbasketballhub/db", () => ({
   },
 }))
 
-describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
+describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getSessionUserId).mockResolvedValue({
@@ -58,7 +58,7 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
 
   it("approves a team submission and notifies club managers", async () => {
     const response = await PATCH(
-      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
+      new Request("http://localhost:3000/api/seasons/season-1/teams/submission-1", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: "APPROVED" }),
@@ -78,7 +78,7 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
           type: "league_registration_status",
           title: "League Registration Approved",
           message: "Warriors U12 was approved for NPH Spring League.",
-          link: "/leagues/season-1/manage",
+          link: "/browse-leagues/season-1",
           referenceId: "submission-1",
           referenceType: "TeamSubmission",
         },
@@ -91,7 +91,7 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
     vi.mocked(prisma.userRole.findFirst).mockResolvedValue(null)
 
     const response = await PATCH(
-      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
+      new Request("http://localhost:3000/api/seasons/season-1/teams/submission-1", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: "REJECTED" }),
@@ -111,7 +111,7 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
     } as any)
 
     const response = await PATCH(
-      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
+      new Request("http://localhost:3000/api/seasons/season-1/teams/submission-1", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ paymentStatus: "PAID_MANUAL" }),

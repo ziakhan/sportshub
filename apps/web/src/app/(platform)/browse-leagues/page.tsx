@@ -5,19 +5,24 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
-interface League {
+interface Season {
   id: string
-  name: string
-  season: string
-  leagueStatus: string
+  label: string
+  status: string
   startDate: string | null
   endDate: string | null
   registrationDeadline: string | null
   teamFee: number | null
   gamesGuaranteed: number | null
+  _count: { teamSubmissions: number; divisions: number }
+}
+
+interface League {
+  id: string
+  name: string
+  description: string | null
   currency: string
-  divisions: { id: string; name: string; ageGroup: string; gender: string | null }[]
-  _count: { teams: number }
+  seasons: Season[]
 }
 
 export default function BrowseLeaguesPage() {
@@ -34,6 +39,11 @@ export default function BrowseLeaguesPage() {
 
   if (loading) return <div className="text-ink-500 py-12 text-center">Loading leagues...</div>
 
+  // Flatten: each league card represents one (league, season) pair for the open seasons
+  const entries = leagues.flatMap((league) =>
+    league.seasons.map((season) => ({ league, season }))
+  )
+
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6">
@@ -41,7 +51,7 @@ export default function BrowseLeaguesPage() {
         <p className="text-ink-500 mt-1 text-sm">Find leagues to register your teams</p>
       </div>
 
-      {leagues.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
           <h3 className="text-ink-900 mb-2 text-lg font-semibold">
             No leagues open for registration
@@ -50,21 +60,21 @@ export default function BrowseLeaguesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {leagues.map((league) => {
-            const isOpen = league.leagueStatus === "REGISTRATION"
+          {entries.map(({ league, season }) => {
+            const isOpen = season.status === "REGISTRATION"
             const deadlinePassed =
-              league.registrationDeadline && new Date(league.registrationDeadline) < new Date()
+              season.registrationDeadline && new Date(season.registrationDeadline) < new Date()
 
             return (
               <Link
-                key={league.id}
-                href={`/browse-leagues/${league.id}`}
+                key={season.id}
+                href={`/browse-leagues/${season.id}`}
                 className="border-ink-100 hover:border-play-200 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)] transition hover:shadow-[0_20px_60px_-34px_rgba(15,23,42,0.5)]"
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div>
                     <h3 className="text-ink-900 text-lg font-semibold">{league.name}</h3>
-                    <p className="text-ink-500 text-sm">{league.season}</p>
+                    <p className="text-ink-500 text-sm">{season.label}</p>
                   </div>
                   {isOpen && !deadlinePassed && (
                     <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
@@ -73,30 +83,17 @@ export default function BrowseLeaguesPage() {
                   )}
                 </div>
 
-                {league.divisions.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-1">
-                    {league.divisions.map((d) => (
-                      <span
-                        key={d.id}
-                        className="bg-play-50 text-play-700 rounded-full px-2 py-0.5 text-xs"
-                      >
-                        {d.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 <div className="text-ink-500 flex items-center justify-between text-sm">
                   <div className="flex gap-4">
-                    {league.teamFee && (
-                      <span>{formatCurrency(league.teamFee, league.currency)}/team</span>
+                    {season.teamFee && (
+                      <span>{formatCurrency(season.teamFee, league.currency)}/team</span>
                     )}
-                    {league.gamesGuaranteed && <span>{league.gamesGuaranteed} games</span>}
-                    <span>{league._count.teams} teams registered</span>
+                    {season.gamesGuaranteed && <span>{season.gamesGuaranteed} games</span>}
+                    <span>{season._count.teamSubmissions} teams registered</span>
                   </div>
-                  {league.registrationDeadline && (
+                  {season.registrationDeadline && (
                     <span className={deadlinePassed ? "text-red-500" : ""}>
-                      Deadline: {format(new Date(league.registrationDeadline), "MMM d")}
+                      Deadline: {format(new Date(season.registrationDeadline), "MMM d")}
                     </span>
                   )}
                 </div>

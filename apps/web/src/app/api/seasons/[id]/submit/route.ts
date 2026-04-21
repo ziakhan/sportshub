@@ -12,7 +12,7 @@ const submitTeamSchema = z.object({
 })
 
 /**
- * POST /api/leagues/[id]/submit — Club submits a team to the season (Phase 0: [id] is a Season.id)
+ * POST /api/seasons/[id]/submit — Club submits a team to the season.
  * Creates TeamSubmission + SeasonRoster with frozen player snapshot.
  */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {

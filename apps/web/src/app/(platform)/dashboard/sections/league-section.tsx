@@ -18,7 +18,7 @@ export function LeagueSection({ data }: LeagueSectionProps) {
         </div>
         {data.leagues.length > 0 && (
           <Link
-            href={`/leagues/${data.leagues[0].id}/manage`}
+            href={`/leagues/${data.leagues[0].leagueId}`}
             className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
           >
             Edit League
@@ -87,7 +87,7 @@ export function LeagueSection({ data }: LeagueSectionProps) {
                     League workspace
                   </span>
                   <Link
-                    href={`/leagues/${league.id}/manage`}
+                    href={`/leagues/${league.leagueId}/seasons/${league.id}/manage`}
                     className="text-play-600 hover:text-play-700 text-sm font-semibold"
                   >
                     Open

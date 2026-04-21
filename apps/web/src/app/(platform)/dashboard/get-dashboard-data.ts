@@ -115,6 +115,7 @@ export interface DashboardData {
   leagueOwner?: {
     leagues: Array<{
       id: string
+      leagueId: string
       name: string
       season: string
       _count: { teams: number; games: number }
@@ -435,6 +436,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
       data.leagueOwner = {
         leagues: seasons.map((s: any) => ({
           id: s.id,
+          leagueId: s.leagueId,
           name: s.league.name,
           season: s.label,
           _count: { teams: s._count.teamSubmissions, games: s._count.games },

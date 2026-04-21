@@ -6,10 +6,10 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
-export default function LeagueDetailSubmitPage() {
+export default function SeasonDetailSubmitPage() {
   const params = useParams()
-  const leagueId = params?.id as string
-  const [league, setLeague] = useState<any>(null)
+  const seasonId = params?.id as string
+  const [season, setSeason] = useState<any>(null)
   const [myTeams, setMyTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -19,16 +19,16 @@ export default function LeagueDetailSubmitPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`/api/leagues/${leagueId}`).then((r) => r.json()),
+      fetch(`/api/seasons/${seasonId}`).then((r) => r.json()),
       fetch("/api/teams").then((r) => r.json()),
     ])
-      .then(([leagueData, teamsData]) => {
-        setLeague(leagueData)
+      .then(([seasonData, teamsData]) => {
+        setSeason(seasonData)
         setMyTeams(teamsData.teams || [])
       })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [leagueId])
+  }, [seasonId])
 
   const handleSubmit = async () => {
     if (!selectedTeam || !selectedDivision) {
@@ -38,7 +38,7 @@ export default function LeagueDetailSubmitPage() {
     setSubmitting(true)
     setMessage(null)
     try {
-      const res = await fetch(`/api/leagues/${leagueId}/submit`, {
+      const res = await fetch(`/api/seasons/${seasonId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ teamId: selectedTeam, divisionId: selectedDivision }),
@@ -46,9 +46,8 @@ export default function LeagueDetailSubmitPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to submit")
       setMessage({ type: "success", text: data.message || "Team submitted successfully!" })
-      // Refresh league data
-      const updated = await fetch(`/api/leagues/${leagueId}`).then((r) => r.json())
-      setLeague(updated)
+      const updated = await fetch(`/api/seasons/${seasonId}`).then((r) => r.json())
+      setSeason(updated)
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to submit" })
     } finally {
@@ -57,15 +56,17 @@ export default function LeagueDetailSubmitPage() {
   }
 
   if (loading) return <div className="text-ink-500 py-12 text-center">Loading...</div>
-  if (!league) return <div className="text-ink-500 py-12 text-center">League not found.</div>
+  if (!season) return <div className="text-ink-500 py-12 text-center">Season not found.</div>
 
-  const isOpen = league.leagueStatus === "REGISTRATION"
+  const leagueName = season.league?.name
+  const leagueDescription = season.league?.description
+  const currency = season.league?.currency
+  const isOpen = season.status === "REGISTRATION"
   const deadlinePassed =
-    league.registrationDeadline && new Date(league.registrationDeadline) < new Date()
+    season.registrationDeadline && new Date(season.registrationDeadline) < new Date()
   const canRegister = isOpen && !deadlinePassed
-  const registeredTeams = league.teams || []
+  const registeredTeams = season.teamSubmissions || []
 
-  // Filter out teams already submitted
   const registeredTeamIds = new Set(registeredTeams.map((t: any) => t.teamId))
   const availableTeams = myTeams.filter((t: any) => !registeredTeamIds.has(t.id))
 
@@ -90,7 +91,6 @@ export default function LeagueDetailSubmitPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* League Info */}
         <div className="space-y-6 lg:col-span-2">
           <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
             <div className="mb-3 flex items-center gap-3">
@@ -100,56 +100,55 @@ export default function LeagueDetailSubmitPage() {
                 </span>
               )}
               <span className="bg-play-100 text-play-700 rounded-full px-3 py-1 text-sm font-medium">
-                {league.season}
+                {season.label}
               </span>
             </div>
-            <h1 className="text-ink-900 mb-2 text-2xl font-semibold">{league.name}</h1>
-            {league.description && <p className="text-ink-700 mb-4">{league.description}</p>}
+            <h1 className="text-ink-900 mb-2 text-2xl font-semibold">{leagueName}</h1>
+            {leagueDescription && <p className="text-ink-700 mb-4">{leagueDescription}</p>}
 
             <div className="grid gap-3 sm:grid-cols-2">
-              {league.startDate && (
+              {season.startDate && (
                 <div className="border-court-100 bg-court-50 rounded-xl border p-3">
                   <div className="text-ink-500 text-xs font-medium">Season</div>
                   <div className="text-ink-900 text-sm">
-                    {format(new Date(league.startDate), "MMM d")} -{" "}
-                    {league.endDate ? format(new Date(league.endDate), "MMM d, yyyy") : "TBD"}
+                    {format(new Date(season.startDate), "MMM d")} -{" "}
+                    {season.endDate ? format(new Date(season.endDate), "MMM d, yyyy") : "TBD"}
                   </div>
                 </div>
               )}
-              {league.gamesGuaranteed && (
+              {season.gamesGuaranteed && (
                 <div className="border-court-100 bg-court-50 rounded-xl border p-3">
                   <div className="text-ink-500 text-xs font-medium">Games Guaranteed</div>
                   <div className="text-ink-900 text-sm">
-                    {league.gamesGuaranteed} regular season
+                    {season.gamesGuaranteed} regular season
                   </div>
                 </div>
               )}
-              {league.registrationDeadline && (
+              {season.registrationDeadline && (
                 <div className="border-court-100 bg-court-50 rounded-xl border p-3">
                   <div className="text-ink-500 text-xs font-medium">Registration Deadline</div>
                   <div className={`text-sm ${deadlinePassed ? "text-red-600" : "text-ink-900"}`}>
-                    {format(new Date(league.registrationDeadline), "MMM d, yyyy")}
+                    {format(new Date(season.registrationDeadline), "MMM d, yyyy")}
                   </div>
                 </div>
               )}
-              {league.gameSlotMinutes && (
+              {season.gameSlotMinutes && (
                 <div className="border-court-100 bg-court-50 rounded-xl border p-3">
                   <div className="text-ink-500 text-xs font-medium">Game Format</div>
                   <div className="text-ink-900 text-sm">
-                    {league.gameLengthMinutes}min (
-                    {league.gamePeriods === "QUARTERS" ? "4 quarters" : "2 halves"})
+                    {season.gameLengthMinutes}min (
+                    {season.gamePeriods === "QUARTERS" ? "4 quarters" : "2 halves"})
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Divisions */}
-          {league.divisions?.length > 0 && (
+          {season.divisions?.length > 0 && (
             <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
               <h2 className="text-ink-900 mb-3 font-semibold">Divisions</h2>
               <div className="grid gap-2 sm:grid-cols-2">
-                {league.divisions.map((d: any) => (
+                {season.divisions.map((d: any) => (
                   <div key={d.id} className="border-court-100 bg-court-50 rounded-xl border p-3">
                     <span className="text-ink-900 font-medium">{d.name}</span>
                     <span className="text-ink-500 ml-2 text-xs">
@@ -162,7 +161,6 @@ export default function LeagueDetailSubmitPage() {
             </div>
           )}
 
-          {/* Registered Teams */}
           {registeredTeams.length > 0 && (
             <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
               <h2 className="text-ink-900 mb-3 font-semibold">
@@ -195,13 +193,12 @@ export default function LeagueDetailSubmitPage() {
           )}
         </div>
 
-        {/* Sidebar — Submit Team */}
         <div>
           <div className="border-ink-100 sticky top-4 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-            {league.teamFee && (
+            {season.teamFee && (
               <div className="mb-4 text-center">
                 <div className="text-play-700 text-3xl font-bold">
-                  {formatCurrency(league.teamFee, league.currency)}
+                  {formatCurrency(season.teamFee, currency)}
                 </div>
                 <p className="text-ink-500 text-xs">per team</p>
               </div>
@@ -248,7 +245,7 @@ export default function LeagueDetailSubmitPage() {
                         className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
                       >
                         <option value="">Choose division...</option>
-                        {league.divisions?.map((d: any) => (
+                        {season.divisions?.map((d: any) => (
                           <option key={d.id} value={d.id}>
                             {d.name} ({d.ageGroup})
                           </option>
@@ -265,7 +262,7 @@ export default function LeagueDetailSubmitPage() {
                     </button>
 
                     <p className="text-ink-400 text-center text-xs">
-                      Your current roster will be frozen for this league.
+                      Your current roster will be frozen for this season.
                     </p>
                   </>
                 )}

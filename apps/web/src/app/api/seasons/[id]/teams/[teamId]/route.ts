@@ -13,9 +13,8 @@ const updateTeamSubmissionSchema = z.object({
 })
 
 /**
- * PATCH /api/leagues/[id]/teams/[teamId]
+ * PATCH /api/seasons/[id]/teams/[teamId]
  * League owner/manager approves, rejects, or withdraws a submitted team, and/or updates its payment status.
- * (Phase 0: [id] is a Season.id.)
  */
 export async function PATCH(
   request: NextRequest,
@@ -115,7 +114,7 @@ export async function PATCH(
             type: "league_registration_status",
             title,
             message,
-            link: `/leagues/${params.id}/manage`,
+            link: `/browse-leagues/${params.id}`,
             referenceId: submission.id,
             referenceType: "TeamSubmission",
           })),

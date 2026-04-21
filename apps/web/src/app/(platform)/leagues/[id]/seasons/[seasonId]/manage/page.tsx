@@ -27,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function LeagueManagePage() {
   const params = useParams()
   const leagueId = params?.id as string
+  const seasonId = params?.seasonId as string
   const [league, setLeague] = useState<any>(null)
   const [divisions, setDivisions] = useState<any[]>([])
   const [sessions, setSessions] = useState<any[]>([])
@@ -76,15 +77,25 @@ export default function LeagueManagePage() {
 
   const fetchAll = async () => {
     const [leagueRes, divRes, sessRes, venRes] = await Promise.all([
-      fetch(`/api/leagues/${leagueId}`),
-      fetch(`/api/leagues/${leagueId}/divisions`),
-      fetch(`/api/leagues/${leagueId}/sessions`),
-      fetch(`/api/leagues/${leagueId}/venues`),
+      fetch(`/api/seasons/${seasonId}`),
+      fetch(`/api/seasons/${seasonId}/divisions`),
+      fetch(`/api/seasons/${seasonId}/sessions`),
+      fetch(`/api/seasons/${seasonId}/venues`),
     ])
-    const leagueData = await leagueRes.json()
+    const seasonData = await leagueRes.json()
     const divData = await divRes.json()
     const sessData = await sessRes.json()
     const venData = await venRes.json()
+    // Map new Season shape into legacy names this page already uses
+    const leagueData = {
+      ...seasonData,
+      name: seasonData.league?.name,
+      description: seasonData.league?.description,
+      ownerId: seasonData.league?.ownerId,
+      leagueStatus: seasonData.status,
+      teams: seasonData.teamSubmissions,
+      gamesPerSession: seasonData.targetGamesPerSession,
+    }
     setLeague(leagueData)
     setSchedSettings({
       gamesGuaranteed: leagueData.gamesGuaranteed?.toString() ?? "",
@@ -96,7 +107,7 @@ export default function LeagueManagePage() {
       idealGamesPerDayPerTeam: leagueData.idealGamesPerDayPerTeam?.toString() ?? "1",
       defaultVenueOpenTime: leagueData.defaultVenueOpenTime ?? "09:00",
       defaultVenueCloseTime: leagueData.defaultVenueCloseTime ?? "20:00",
-      defaultCourtsPerVenue: leagueData.defaultCourtsPerVenue?.toString() ?? "",
+      defaultCourtsPerVenue: "",
     })
     setDivisions(divData.divisions || [])
     setSessions(sessData.sessions || [])
@@ -109,10 +120,10 @@ export default function LeagueManagePage() {
   }, [leagueId]) // eslint-disable-line
 
   const handleStatusChange = async (newStatus: string) => {
-    const res = await fetch(`/api/leagues/${leagueId}`, {
+    const res = await fetch(`/api/seasons/${seasonId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leagueStatus: newStatus }),
+      body: JSON.stringify({ status: newStatus }),
     })
     if (res.status === 422) {
       const data = await res.json()
@@ -125,14 +136,14 @@ export default function LeagueManagePage() {
 
   const saveSchedulingSettings = async () => {
     setSchedSaving(true)
-    await fetch(`/api/leagues/${leagueId}`, {
+    await fetch(`/api/seasons/${seasonId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         gamesGuaranteed: schedSettings.gamesGuaranteed
           ? parseInt(schedSettings.gamesGuaranteed)
           : null,
-        gamesPerSession: parseInt(schedSettings.gamesPerSession) || 1,
+        targetGamesPerSession: parseInt(schedSettings.gamesPerSession) || 1,
         gameLengthMinutes: parseInt(schedSettings.gameLengthMinutes) || 40,
         gameSlotMinutes: parseInt(schedSettings.gameSlotMinutes) || 90,
         gamePeriods: schedSettings.gamePeriods,
@@ -142,9 +153,6 @@ export default function LeagueManagePage() {
         idealGamesPerDayPerTeam: parseInt(schedSettings.idealGamesPerDayPerTeam) || 1,
         defaultVenueOpenTime: schedSettings.defaultVenueOpenTime,
         defaultVenueCloseTime: schedSettings.defaultVenueCloseTime,
-        defaultCourtsPerVenue: schedSettings.defaultCourtsPerVenue
-          ? parseInt(schedSettings.defaultCourtsPerVenue)
-          : null,
       }),
     })
     setSchedSaving(false)
@@ -153,7 +161,7 @@ export default function LeagueManagePage() {
 
   const addDivision = async () => {
     if (!divName || !divAgeGroup) return
-    await fetch(`/api/leagues/${leagueId}/divisions`, {
+    await fetch(`/api/seasons/${seasonId}/divisions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -187,7 +195,7 @@ export default function LeagueManagePage() {
   const addSession = async () => {
     const validDays = sessionDays.filter((d) => d.date)
     if (validDays.length === 0) return
-    await fetch(`/api/leagues/${leagueId}/sessions`, {
+    await fetch(`/api/seasons/${seasonId}/sessions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -206,7 +214,7 @@ export default function LeagueManagePage() {
 
   const addVenue = async () => {
     if (!selectedVenueId) return
-    await fetch(`/api/leagues/${leagueId}/venues`, {
+    await fetch(`/api/seasons/${seasonId}/venues`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ venueId: selectedVenueId }),
@@ -217,7 +225,7 @@ export default function LeagueManagePage() {
   }
 
   const updateTeamStatus = async (leagueTeamId: string, status: "APPROVED" | "REJECTED") => {
-    await fetch(`/api/leagues/${leagueId}/teams/${leagueTeamId}`, {
+    await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -248,7 +256,6 @@ export default function LeagueManagePage() {
           },
           { label: "Max games per season defined", ok: !!league.gamesGuaranteed },
           { label: "Period / half length defined", ok: !!league.periodLengthMinutes },
-          { label: "Courts per venue defined", ok: !!league.defaultCourtsPerVenue },
         ]
       : null
   const canFinalize = !preflightChecks || preflightChecks.every((c) => c.ok)
@@ -257,15 +264,18 @@ export default function LeagueManagePage() {
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       {/* Header */}
       <div className="mb-6">
-        <Link href="/leagues" className="text-play-700 text-sm font-medium hover:underline">
-          &larr; Back to Leagues
+        <Link
+          href={`/leagues/${leagueId}`}
+          className="text-play-700 text-sm font-medium hover:underline"
+        >
+          &larr; Back to {league.name}
         </Link>
       </div>
 
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-ink-900 text-2xl font-semibold">{league.name}</h1>
-          <p className="text-ink-500 text-sm">{league.season}</p>
+          <h1 className="text-ink-900 text-2xl font-semibold">{league.label}</h1>
+          <p className="text-ink-500 text-sm">{league.name}</p>
           <span className="bg-play-100 text-play-700 mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-medium">
             {STATUS_LABELS[league.leagueStatus]}
           </span>
@@ -369,7 +379,7 @@ export default function LeagueManagePage() {
                 <span className="text-ink-400 text-xs">{d._count?.teams || 0} teams</span>
                 <button
                   onClick={async () => {
-                    await fetch(`/api/leagues/${leagueId}/divisions?divisionId=${d.id}`, {
+                    await fetch(`/api/seasons/${seasonId}/divisions?divisionId=${d.id}`, {
                       method: "DELETE",
                     })
                     fetchAll()
@@ -455,7 +465,7 @@ export default function LeagueManagePage() {
                   {s.venue && <span className="text-ink-400 text-xs">{s.venue.name}</span>}
                   <button
                     onClick={async () => {
-                      await fetch(`/api/leagues/${leagueId}/sessions?sessionId=${s.id}`, {
+                      await fetch(`/api/seasons/${seasonId}/sessions?sessionId=${s.id}`, {
                         method: "DELETE",
                       })
                       fetchAll()
@@ -551,7 +561,7 @@ export default function LeagueManagePage() {
               </div>
               <button
                 onClick={async () => {
-                  await fetch(`/api/leagues/${leagueId}/venues?leagueVenueId=${v.id}`, {
+                  await fetch(`/api/seasons/${seasonId}/venues?leagueVenueId=${v.id}`, {
                     method: "DELETE",
                   })
                   fetchAll()
@@ -859,7 +869,7 @@ export default function LeagueManagePage() {
               <select
                 value={league.playoffFormat || ""}
                 onChange={async (e) => {
-                  await fetch(`/api/leagues/${leagueId}`, {
+                  await fetch(`/api/seasons/${seasonId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ playoffFormat: e.target.value || null }),
@@ -885,7 +895,7 @@ export default function LeagueManagePage() {
                 defaultValue={league.playoffTeams || ""}
                 placeholder="e.g. 8"
                 onBlur={async (e) => {
-                  await fetch(`/api/leagues/${leagueId}`, {
+                  await fetch(`/api/seasons/${seasonId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
