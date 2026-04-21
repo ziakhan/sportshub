@@ -117,16 +117,24 @@ export async function POST(req: Request) {
           break
 
         case "LeagueOwner": {
-          const league = await prisma.league.create({
-            data: {
-              name: profileData.name,
-              season: profileData.season,
-              description: profileData.description || null,
-              ownerId: user.id,
-            },
+          const league = await prisma.$transaction(async (tx: any) => {
+            const l = await tx.league.create({
+              data: {
+                name: profileData.name,
+                description: profileData.description || null,
+                ownerId: user!.id,
+              },
+            })
+            await tx.season.create({
+              data: {
+                leagueId: l.id,
+                label: profileData.season,
+                status: "DRAFT",
+              },
+            })
+            return l
           })
 
-          // Scope the LeagueOwner role to this league
           await prisma.userRole.updateMany({
             where: {
               userId: user.id,

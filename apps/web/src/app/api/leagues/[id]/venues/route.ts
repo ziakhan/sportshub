@@ -25,11 +25,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { league: { select: { ownerId: true } } },
     })
-    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -38,9 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     let venueId = data.venueId
 
-    // Create new venue if not linking existing
     if (!venueId && data.name && data.address && data.city) {
-      // Check for duplicate
       const existing = await prisma.venue.findFirst({
         where: {
           name: { equals: data.name, mode: "insensitive" },
@@ -69,16 +67,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Provide venueId or venue details" }, { status: 400 })
     }
 
-    const leagueVenue = await (prisma as any).leagueVenue.create({
+    const seasonVenue = await prisma.seasonVenue.create({
       data: {
-        leagueId: params.id,
+        seasonId: params.id,
         venueId,
         isPrimary: data.isPrimary,
         courtsAvailable: data.courtsAvailable ?? null,
       },
     })
 
-    return NextResponse.json({ success: true, id: leagueVenue.id }, { status: 201 })
+    return NextResponse.json({ success: true, id: seasonVenue.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -93,8 +91,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const venues = await (prisma as any).leagueVenue.findMany({
-      where: { leagueId: params.id },
+    const venues = await prisma.seasonVenue.findMany({
+      where: { seasonId: params.id },
       include: {
         venue: {
           select: {
@@ -109,7 +107,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         },
       },
     })
-    return NextResponse.json({ venues })
+    return NextResponse.json({ venues: venues.map((v: any) => ({ ...v, leagueId: params.id })) })
   } catch (error) {
     console.error("Get venues error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -123,20 +121,22 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { league: { select: { ownerId: true } } },
     })
-    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const leagueVenueId = request.nextUrl.searchParams.get("leagueVenueId")
-    if (!leagueVenueId) {
-      return NextResponse.json({ error: "leagueVenueId required" }, { status: 400 })
+    const seasonVenueId =
+      request.nextUrl.searchParams.get("leagueVenueId") ??
+      request.nextUrl.searchParams.get("seasonVenueId")
+    if (!seasonVenueId) {
+      return NextResponse.json({ error: "seasonVenueId required" }, { status: 400 })
     }
 
-    await (prisma as any).leagueVenue.delete({ where: { id: leagueVenueId } })
+    await prisma.seasonVenue.delete({ where: { id: seasonVenueId } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Delete venue error:", error)

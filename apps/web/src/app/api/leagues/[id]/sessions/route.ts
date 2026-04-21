@@ -17,6 +17,11 @@ const createSessionSchema = z.object({
   days: z.array(sessionDaySchema).min(1),
 })
 
+/**
+ * Phase 0 compat: incoming shape is still { label, venueId, days: [{ date, startTime, endTime }] }.
+ * We persist it as SeasonSession + SeasonSessionDay + SeasonSessionDayVenue rows so the UI keeps
+ * working before Phase 3 rewrites this API to expose the day-venue-court substrate directly.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -27,11 +32,11 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { league: { select: { ownerId: true } } },
     })
-    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -39,24 +44,34 @@ export async function POST(
     const data = createSessionSchema.parse(body)
 
     const result = await prisma.$transaction(async (tx: any) => {
-      const leagueSession = await (tx as any).leagueSession.create({
+      const seasonSession = await tx.seasonSession.create({
         data: {
-          leagueId: params.id,
+          seasonId: params.id,
           label: data.label || null,
-          venueId: data.venueId || null,
+          phase: "REGULAR",
         },
       })
 
-      await (tx as any).leagueSessionDay.createMany({
-        data: data.days.map((d) => ({
-          sessionId: leagueSession.id,
-          date: new Date(d.date),
-          startTime: d.startTime,
-          endTime: d.endTime,
-        })),
-      })
+      for (const d of data.days) {
+        const day = await tx.seasonSessionDay.create({
+          data: {
+            sessionId: seasonSession.id,
+            date: new Date(d.date),
+          },
+        })
+        if (data.venueId) {
+          await tx.seasonSessionDayVenue.create({
+            data: {
+              dayId: day.id,
+              venueId: data.venueId,
+              startTime: d.startTime,
+              endTime: d.endTime,
+            },
+          })
+        }
+      }
 
-      return leagueSession
+      return seasonSession
     })
 
     return NextResponse.json({ success: true, id: result.id }, { status: 201 })
@@ -74,15 +89,46 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const sessions = await (prisma as any).leagueSession.findMany({
-      where: { leagueId: params.id },
+    const sessions = await prisma.seasonSession.findMany({
+      where: { seasonId: params.id },
       include: {
-        venue: { select: { id: true, name: true, address: true, city: true } },
-        days: { orderBy: { date: "asc" } },
+        days: {
+          orderBy: { date: "asc" },
+          include: {
+            dayVenues: {
+              include: {
+                venue: { select: { id: true, name: true, address: true, city: true } },
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "asc" },
     })
-    return NextResponse.json({ sessions })
+    // Flatten back to the legacy { venue, days: [{ date, startTime, endTime }] } shape
+    // so existing UI reads continue to work until Phase 3.
+    const flattened = sessions.map((s: any) => {
+      const firstDayVenue = s.days[0]?.dayVenues[0]
+      return {
+        id: s.id,
+        label: s.label,
+        leagueId: params.id,
+        venueId: firstDayVenue?.venueId ?? null,
+        venue: firstDayVenue?.venue ?? null,
+        days: s.days.map((d: any) => {
+          const dv = d.dayVenues[0]
+          return {
+            id: d.id,
+            sessionId: s.id,
+            date: d.date,
+            startTime: dv?.startTime ?? "",
+            endTime: dv?.endTime ?? "",
+          }
+        }),
+        createdAt: s.createdAt,
+      }
+    })
+    return NextResponse.json({ sessions: flattened })
   } catch (error) {
     console.error("Get sessions error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -99,11 +145,11 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { league: { select: { ownerId: true } } },
     })
-    if (!league || (league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -112,9 +158,7 @@ export async function DELETE(
       return NextResponse.json({ error: "sessionId required" }, { status: 400 })
     }
 
-    // Delete session days first, then session (cascade should handle but be explicit)
-    await (prisma as any).leagueSessionDay.deleteMany({ where: { sessionId } })
-    await (prisma as any).leagueSession.delete({ where: { id: sessionId } })
+    await prisma.seasonSession.delete({ where: { id: sessionId } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Delete session error:", error)

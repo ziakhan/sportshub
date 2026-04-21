@@ -234,7 +234,7 @@ model Team {
   // Relationships
   players           TeamPlayer[]
   staff             UserRole[]
-  leagues           LeagueTeam[]
+  seasonSubmissions TeamSubmission[]
   homeGames         Game[]           @relation("HomeTeam")
   awayGames         Game[]           @relation("AwayTeam")
   practices         Practice[]
@@ -286,7 +286,7 @@ model Player {
   offers              Offer[]
   houseLeagueSignups  HouseLeagueSignup[]
   campSignups         CampSignup[]
-  leagueRosterEntries LeagueRosterPlayer[]
+  seasonRosterEntries SeasonRosterPlayer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -522,162 +522,188 @@ enum OfferStatus {
 }
 
 // ============================================
-// LEAGUES & GAMES
+// LEAGUES, SEASONS & GAMES
 // ============================================
 
 model League {
-  id          String  @id @default(uuid())
-  name        String
-  description String? @db.Text
-  season      String // "Fall 2026", "Winter 2026-27"
-
-  ownerId String
-
-  // Season dates
-  startDate            DateTime?
-  endDate              DateTime?
-  registrationDeadline DateTime? // Clubs must submit by this date
-
-  // Age Group Cutoff
-  ageGroupCutoffDate DateTime? // e.g., "Aug 31, 2026"
-
-  // Pricing
-  teamFee  Decimal? @db.Decimal(10, 2) // Per team registration fee
-  currency String   @default("CAD")
-
-  // Season details
-  gamesGuaranteed Int? // Regular season games guaranteed
-  gamesPerSession Int  @default(1) // Games per weekend/session
-
-  // Game format
-  gameSlotMinutes     Int    @default(90) // Schedule slot duration (including warmup, breaks)
-  gameLengthMinutes   Int    @default(40) // Actual game length
-  gamePeriods         String @default("HALVES") // "HALVES" (2x) or "QUARTERS" (4x)
-  periodLengthMinutes Int? // e.g. 20 for halves, 10 for quarters — required before scheduling
-
-  // Scheduling preferences (required before generating schedule)
-  idealGamesPerDayPerTeam Int    @default(1) // Scheduler tries not to schedule more than this per team per day
-  defaultVenueOpenTime    String @default("09:00") // HH:MM — default venue availability start (overridden by session)
-  defaultVenueCloseTime   String @default("20:00") // HH:MM — default venue availability end
-  defaultCourtsPerVenue   Int? // Courts available across assigned venues — required before scheduling
-
-  // Playoffs (optional — can be defined later)
-  playoffFormat String? // "SINGLE_ELIMINATION", "DOUBLE_ELIMINATION", "ROUND_ROBIN"
-  playoffTeams  Int? // Number of teams that advance to playoffs
-
-  // Status
-  leagueStatus LeagueSeasonStatus @default(DRAFT)
-
-  // Stripe
+  id              String  @id @default(uuid())
+  name            String
+  description     String? @db.Text
+  ownerId         String
+  currency        String  @default("CAD")
   stripeAccountId String? @unique
 
-  // Relationships
-  divisions    LeagueDivision[]
-  teams        LeagueTeam[]
-  games        Game[]
-  staff        UserRole[]
-  reviews      Review[]
-  sessions     LeagueSession[]
-  leagueVenues LeagueVenue[]
-  rosters      LeagueRoster[]
+  seasons Season[]
+  staff   UserRole[]
+  reviews Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Season {
+  id       String @id @default(uuid())
+  leagueId String
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  label String
+  type  SeasonType @default(FALL_WINTER)
+
+  startDate            DateTime?
+  endDate              DateTime?
+  registrationDeadline DateTime?
+  ageGroupCutoffDate   DateTime?
+
+  teamFee  Decimal? @db.Decimal(10, 2)
+  currency String   @default("CAD")
+
+  gameSlotMinutes     Int    @default(90)
+  gameLengthMinutes   Int    @default(40)
+  gamePeriods         String @default("HALVES")
+  periodLengthMinutes Int?
+
+  gamesGuaranteed         Int?
+  targetGamesPerSession   Int?
+  idealGamesPerDayPerTeam Int  @default(1)
+
+  defaultVenueOpenTime  String @default("09:00")
+  defaultVenueCloseTime String @default("20:00")
+
+  schedulingPhilosophy         SchedulingPhilosophy @default(FAMILY_FRIENDLY)
+  allowCrossDivisionScheduling Boolean              @default(false)
+
+  tiebreakerOrder     String[]  @default([])
+  tiebreakersLockedAt DateTime?
+
+  status SeasonStatus @default(DRAFT)
+
+  playoffFormat String?
+  playoffTeams  Int?
+
+  divisions        Division[]
+  teamSubmissions  TeamSubmission[]
+  sessions         SeasonSession[]
+  seasonVenues     SeasonVenue[]
+  rosters          SeasonRoster[]
+  games            Game[]
+  schedulingGroups SchedulingGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([season])
-  @@index([leagueStatus])
-}
-
-enum LeagueSeasonStatus {
-  DRAFT // League admin building the season
-  REGISTRATION // Published, clubs can register teams
-  REGISTRATION_CLOSED // Deadline passed, reviewing submissions
-  FINALIZED // Rosters locked, ready for scheduling
-  IN_PROGRESS // Games being played
-  COMPLETED // Season over
-}
-
-model LeagueDivision {
-  id       String @id @default(uuid())
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-
-  name     String // "U14 Boys Division A"
-  ageGroup String // "U14", "Junior", "Senior"
-  gender   Gender?
-  tier     Int     @default(1) // 1 = top division, 2 = second, etc.
-  maxTeams Int? // Optional capacity for registration control
-
-  teams LeagueTeam[]
-
   @@index([leagueId])
+  @@index([status])
 }
 
-model LeagueTeam {
+enum SeasonStatus {
+  DRAFT
+  REGISTRATION
+  REGISTRATION_CLOSED
+  FINALIZED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum SeasonType {
+  FALL_WINTER
+  SUMMER
+  SPRING
+  CUSTOM
+}
+
+enum SchedulingPhilosophy {
+  FAMILY_FRIENDLY
+  SPREAD_DAYS
+}
+
+model Division {
   id       String @id @default(uuid())
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  name     String
+  ageGroup String
+  gender   Gender?
+  tier     Int     @default(1)
+  maxTeams Int?
+
+  teamSubmissions  TeamSubmission[]
+  schedulingGroups SchedulingGroupDivision[]
+
+  @@index([seasonId])
+}
+
+model TeamSubmission {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   divisionId String?
-  division   LeagueDivision? @relation(fields: [divisionId], references: [id])
+  division   Division? @relation(fields: [divisionId], references: [id])
 
   teamId String
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  status          LeagueTeamStatus @default(PENDING)
-  registrationFee Decimal?         @db.Decimal(10, 2)
-  paymentId       String?          @unique
-  payment         Payment?         @relation(fields: [paymentId], references: [id])
+  status          TeamSubmissionStatus      @default(PENDING)
+  paymentStatus   RegistrationPaymentStatus @default(UNPAID)
+  registrationFee Decimal?                  @db.Decimal(10, 2)
+  paymentId       String?                   @unique
+  payment         Payment?                  @relation(fields: [paymentId], references: [id])
 
-  // Frozen roster for this league
-  roster LeagueRoster?
+  roster    SeasonRoster?
+  blackouts SeasonTeamBlackout[]
 
   createdAt DateTime @default(now())
 
-  @@unique([leagueId, teamId])
-  @@index([leagueId])
+  @@unique([seasonId, teamId])
+  @@index([seasonId])
   @@index([teamId])
 }
 
-enum LeagueTeamStatus {
+enum TeamSubmissionStatus {
   PENDING
   APPROVED
   REJECTED
   WITHDRAWN
 }
 
-// Frozen roster snapshot for a team in a league
-model LeagueRoster {
+enum RegistrationPaymentStatus {
+  UNPAID
+  PAID_MANUAL
+  PAID_STRIPE
+  WAIVED
+}
+
+model SeasonRoster {
   id       String @id @default(uuid())
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
-  leagueTeamId String     @unique
-  leagueTeam   LeagueTeam @relation(fields: [leagueTeamId], references: [id], onDelete: Cascade)
+  teamSubmissionId String         @unique
+  teamSubmission   TeamSubmission @relation(fields: [teamSubmissionId], references: [id], onDelete: Cascade)
 
-  isLocked Boolean @default(false) // Locked once league finalizes
-
-  players LeagueRosterPlayer[]
-
+  isLocked    Boolean   @default(false)
   submittedAt DateTime?
   lockedAt    DateTime?
+
+  players SeasonRosterPlayer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([leagueId])
+  @@index([seasonId])
 }
 
-model LeagueRosterPlayer {
+model SeasonRosterPlayer {
   id       String       @id @default(uuid())
   rosterId String
-  roster   LeagueRoster @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+  roster   SeasonRoster @relation(fields: [rosterId], references: [id], onDelete: Cascade)
 
   playerId String
   player   Player @relation(fields: [playerId], references: [id])
 
   jerseyNumber Int?
-  position     String? // Position for this league
+  position     String?
 
   createdAt DateTime @default(now())
 
@@ -686,59 +712,146 @@ model LeagueRosterPlayer {
   @@index([playerId])
 }
 
-// A session is a multi-day weekend (e.g., Fri-Sat-Sun)
-model LeagueSession {
+model SeasonSession {
   id       String @id @default(uuid())
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
-  label String? // "Week 1", "Session 3", etc.
+  label              String?
+  phase              SessionPhase @default(REGULAR)
+  targetGamesPerTeam Int?
 
-  venueId String?
-  venue   Venue?  @relation(fields: [venueId], references: [id])
-
-  // Session days (each day has its own date + times)
-  days LeagueSessionDay[]
+  days  SeasonSessionDay[]
+  games Game[]
 
   createdAt DateTime @default(now())
 
-  @@index([leagueId])
+  @@index([seasonId])
 }
 
-// Individual day within a session (e.g., Friday of Week 1)
-model LeagueSessionDay {
+enum SessionPhase {
+  REGULAR
+  PLAYOFF
+}
+
+model SeasonSessionDay {
   id        String        @id @default(uuid())
   sessionId String
-  session   LeagueSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session   SeasonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  date      DateTime // The specific date
-  startTime String // "18:00" (6pm Friday) or "09:00" (9am Saturday)
-  endTime   String // "21:00" or "17:00"
+  date DateTime
+
+  dayVenues SeasonSessionDayVenue[]
+  games     Game[]
 
   @@index([sessionId])
   @@index([date])
 }
 
-// Venues assigned to a league
-model LeagueVenue {
+model SeasonSessionDayVenue {
+  id    String           @id @default(uuid())
+  dayId String
+  day   SeasonSessionDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  venueId String
+  venue   Venue  @relation(fields: [venueId], references: [id])
+
+  startTime String?
+  endTime   String?
+
+  courts SeasonSessionDayVenueCourt[]
+  games  Game[]
+
+  @@index([dayId])
+  @@index([venueId])
+}
+
+model SeasonSessionDayVenueCourt {
+  id         String                @id @default(uuid())
+  dayVenueId String
+  dayVenue   SeasonSessionDayVenue @relation(fields: [dayVenueId], references: [id], onDelete: Cascade)
+
+  courtId String
+  court   Court  @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  @@unique([dayVenueId, courtId])
+  @@index([dayVenueId])
+  @@index([courtId])
+}
+
+model SeasonVenue {
   id       String @id @default(uuid())
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   venueId String
   venue   Venue  @relation(fields: [venueId], references: [id])
 
   isPrimary       Boolean @default(false)
-  courtsAvailable Int? // Override: courts this league uses at this specific venue
+  courtsAvailable Int?
 
-  @@unique([leagueId, venueId])
-  @@index([leagueId])
+  @@unique([seasonId, venueId])
+  @@index([seasonId])
+}
+
+model SchedulingGroup {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  name      String
+  divisions SchedulingGroupDivision[]
+
+  createdAt DateTime @default(now())
+
+  @@index([seasonId])
+}
+
+model SchedulingGroupDivision {
+  schedulingGroupId String
+  schedulingGroup   SchedulingGroup @relation(fields: [schedulingGroupId], references: [id], onDelete: Cascade)
+
+  divisionId String
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@id([schedulingGroupId, divisionId])
+  @@index([divisionId])
+}
+
+model SeasonTeamBlackout {
+  id               String         @id @default(uuid())
+  teamSubmissionId String
+  teamSubmission   TeamSubmission @relation(fields: [teamSubmissionId], references: [id], onDelete: Cascade)
+
+  date      DateTime
+  startTime String?
+  endTime   String?
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([teamSubmissionId])
 }
 
 model Game {
-  id       String  @id @default(uuid())
-  leagueId String? // Null for exhibition games
-  league   League? @relation(fields: [leagueId], references: [id])
+  id String @id @default(uuid())
+
+  seasonId String?
+  season   Season? @relation(fields: [seasonId], references: [id])
+
+  phase SessionPhase?
+
+  sessionId String?
+  session   SeasonSession? @relation(fields: [sessionId], references: [id])
+
+  dayId String?
+  day   SeasonSessionDay? @relation(fields: [dayId], references: [id])
+
+  dayVenueId String?
+  dayVenue   SeasonSessionDayVenue? @relation(fields: [dayVenueId], references: [id])
+
+  courtId String?
+  court   Court?  @relation(fields: [courtId], references: [id])
 
   homeTeamId String
   homeTeam   Team   @relation("HomeTeam", fields: [homeTeamId], references: [id])
@@ -750,14 +863,15 @@ model Game {
   venue   Venue?  @relation(fields: [venueId], references: [id])
 
   scheduledAt DateTime
-  duration    Int        @default(90) // minutes
+  duration    Int        @default(90)
   status      GameStatus @default(SCHEDULED)
 
-  // Scoring
   homeScore Int?
   awayScore Int?
 
-  // Relationships
+  isLocked    Boolean @default(false)
+  defaultedBy String?
+
   events       GameEvent[]
   stats        PlayerStat[]
   scorekeepers UserRole[]
@@ -767,7 +881,9 @@ model Game {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([leagueId])
+  @@index([seasonId])
+  @@index([sessionId])
+  @@index([dayId])
   @@index([homeTeamId])
   @@index([awayTeamId])
   @@index([scheduledAt])
@@ -780,6 +896,7 @@ enum GameStatus {
   COMPLETED
   CANCELLED
   POSTPONED
+  DEFAULTED
 }
 
 model GameEvent {
@@ -863,13 +980,15 @@ model Venue {
   longitude Float?
 
   capacity Int?
-  courts   Int? // Total number of courts/courts in the facility
+  courts   Int? // Legacy count — courts[] is the source of truth going forward
   notes    String? @db.Text
 
   games            Game[]
   practices        Practice[]
-  leagueSessions   LeagueSession[]
-  leagueVenues     LeagueVenue[]
+  seasonVenues     SeasonVenue[]
+  dayVenues        SeasonSessionDayVenue[]
+  courtList        Court[]
+  venueHours       VenueHours[]
   tournamentVenues TournamentVenue[]
 
   createdAt DateTime @default(now())
@@ -878,6 +997,35 @@ model Venue {
   @@index([tenantId])
   @@index([city])
   @@index([name])
+}
+
+model Court {
+  id      String @id @default(uuid())
+  venueId String
+  venue   Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  name         String
+  displayOrder Int    @default(0)
+
+  dayVenueCourts SeasonSessionDayVenueCourt[]
+  games          Game[]
+
+  createdAt DateTime @default(now())
+
+  @@index([venueId])
+}
+
+model VenueHours {
+  id      String @id @default(uuid())
+  venueId String
+  venue   Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // 0 = Sunday ... 6 = Saturday
+  openTime  String? // null = closed that day
+  closeTime String?
+
+  @@unique([venueId, dayOfWeek])
+  @@index([venueId])
 }
 
 model Practice {
@@ -949,8 +1097,8 @@ model Payment {
   description String?
 
   // Relationships
-  tryoutSignup TryoutSignup?
-  leagueTeam   LeagueTeam?
+  tryoutSignup   TryoutSignup?
+  teamSubmission TeamSubmission?
 
   // Refund
   refundedAt   DateTime?

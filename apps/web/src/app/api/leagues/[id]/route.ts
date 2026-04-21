@@ -7,15 +7,16 @@ import { prisma } from "@youthbasketballhub/db"
 export const dynamic = "force-dynamic"
 
 /**
- * GET /api/leagues/[id] — Get league details
+ * GET /api/leagues/[id] — Get season details (Phase 0: [id] is a Season.id)
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
       include: {
+        league: { select: { id: true, name: true, description: true, ownerId: true } },
         divisions: { orderBy: { ageGroup: "asc" } },
-        teams: {
+        teamSubmissions: {
           include: {
             team: {
               select: {
@@ -29,21 +30,31 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             division: { select: { id: true, name: true } },
           },
         },
-        _count: { select: { teams: true, games: true, sessions: true } },
+        _count: { select: { teamSubmissions: true, games: true, sessions: true } },
       },
     })
 
-    if (!league) {
+    if (!season) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
+    const { league, teamSubmissions, _count, ...rest } = season as any
     return NextResponse.json({
-      ...league,
-      teamFee: league.teamFee ? Number(league.teamFee) : null,
-      teams: league.teams.map((t: any) => ({
+      ...rest,
+      id: season.id,
+      name: league?.name,
+      description: league?.description,
+      ownerId: league?.ownerId,
+      leagueId: league?.id,
+      season: season.label,
+      leagueStatus: season.status,
+      teamFee: season.teamFee ? Number(season.teamFee) : null,
+      teams: teamSubmissions.map((t: any) => ({
         ...t,
+        leagueId: season.id,
         registrationFee: t.registrationFee ? Number(t.registrationFee) : null,
       })),
+      _count: { teams: _count.teamSubmissions, games: _count.games, sessions: _count.sessions },
     })
   } catch (error) {
     console.error("Get league error:", error)
@@ -52,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 /**
- * PATCH /api/leagues/[id] — Update league (including status changes)
+ * PATCH /api/leagues/[id] — Update season (Phase 0: [id] is a Season.id)
  */
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -61,29 +72,31 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { leagueId: true, league: { select: { ownerId: true } } },
     })
-    if (!league) {
+    if (!season) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    // Verify ownership (impersonation-aware)
-    const isOwner = league.ownerId === sessionInfo.userId
+    const isOwner = season.league.ownerId === sessionInfo.userId
     if (!isOwner && !sessionInfo.isPlatformAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const body = await request.json()
-    const updateData: Record<string, any> = {}
+    const seasonUpdate: Record<string, any> = {}
+    const leagueUpdate: Record<string, any> = {}
 
-    const fields = [
-      "name",
-      "description",
-      "season",
+    // League-level fields (persistent entity)
+    if (body.name !== undefined) leagueUpdate.name = body.name
+    if (body.description !== undefined) leagueUpdate.description = body.description
+
+    // Season-level fields
+    if (body.season !== undefined) seasonUpdate.label = body.season
+    const seasonFields = [
       "gamesGuaranteed",
-      "gamesPerSession",
       "gameSlotMinutes",
       "gameLengthMinutes",
       "gamePeriods",
@@ -91,50 +104,47 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "idealGamesPerDayPerTeam",
       "defaultVenueOpenTime",
       "defaultVenueCloseTime",
-      "defaultCourtsPerVenue",
       "playoffFormat",
       "playoffTeams",
-      "leagueStatus",
     ]
-    for (const field of fields) {
-      if (body[field] !== undefined) updateData[field] = body[field]
+    for (const field of seasonFields) {
+      if (body[field] !== undefined) seasonUpdate[field] = body[field]
     }
-    if (body.teamFee !== undefined) updateData.teamFee = body.teamFee
-    if (body.startDate) updateData.startDate = new Date(body.startDate)
-    if (body.endDate) updateData.endDate = new Date(body.endDate)
+    if (body.gamesPerSession !== undefined) seasonUpdate.targetGamesPerSession = body.gamesPerSession
+    if (body.leagueStatus !== undefined) seasonUpdate.status = body.leagueStatus
+    if (body.teamFee !== undefined) seasonUpdate.teamFee = body.teamFee
+    if (body.startDate) seasonUpdate.startDate = new Date(body.startDate)
+    if (body.endDate) seasonUpdate.endDate = new Date(body.endDate)
     if (body.registrationDeadline)
-      updateData.registrationDeadline = new Date(body.registrationDeadline)
-    if (body.ageGroupCutoffDate) updateData.ageGroupCutoffDate = new Date(body.ageGroupCutoffDate)
+      seasonUpdate.registrationDeadline = new Date(body.registrationDeadline)
+    if (body.ageGroupCutoffDate) seasonUpdate.ageGroupCutoffDate = new Date(body.ageGroupCutoffDate)
 
     // If transitioning to FINALIZED, run preflight checks then lock rosters
     if (body.leagueStatus === "FINALIZED") {
-      const preflight = await (prisma as any).league.findUnique({
+      const preflight = await (prisma as any).season.findUnique({
         where: { id: params.id },
         include: {
           divisions: { select: { id: true } },
           sessions: { select: { id: true } },
-          leagueVenues: { select: { id: true } },
-          teams: { select: { id: true, status: true } },
+          seasonVenues: { select: { id: true } },
+          teamSubmissions: { select: { id: true, status: true } },
         },
       })
 
-      // Merge DB values with values being set in this same request
-      const effective = { ...(preflight as any), ...updateData }
+      const effective = { ...(preflight as any), ...seasonUpdate }
       const missing: string[] = []
 
       if (!effective.gamesGuaranteed)
         missing.push("Max games per team per season must be set in Scheduling Settings")
       if (!effective.periodLengthMinutes)
         missing.push("Period / half length (minutes) must be set in Scheduling Settings")
-      if (!effective.defaultCourtsPerVenue)
-        missing.push("Default courts per venue must be set in Scheduling Settings")
-      if ((preflight as any).divisions.length === 0)
+      if (preflight.divisions.length === 0)
         missing.push("At least one division is required")
-      if ((preflight as any).sessions.length === 0)
+      if (preflight.sessions.length === 0)
         missing.push("At least one game session is required")
-      if ((preflight as any).leagueVenues.length === 0)
+      if (preflight.seasonVenues.length === 0)
         missing.push("At least one venue must be assigned")
-      const pendingCount = (preflight as any).teams.filter(
+      const pendingCount = preflight.teamSubmissions.filter(
         (t: any) => t.status === "PENDING"
       ).length
       if (pendingCount > 0)
@@ -149,21 +159,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         )
       }
 
-      await (prisma as any).leagueRoster.updateMany({
-        where: { leagueId: params.id },
+      await (prisma as any).seasonRoster.updateMany({
+        where: { seasonId: params.id },
         data: { isLocked: true, lockedAt: new Date() },
       })
     }
 
-    const updated = await prisma.league.update({
-      where: { id: params.id },
-      data: updateData as any,
+    const updated = await prisma.$transaction(async (tx: any) => {
+      if (Object.keys(leagueUpdate).length > 0) {
+        await tx.league.update({ where: { id: season.leagueId }, data: leagueUpdate })
+      }
+      return tx.season.update({
+        where: { id: params.id },
+        data: seasonUpdate,
+        include: { league: { select: { name: true, description: true, ownerId: true, id: true } } },
+      })
     })
 
     return NextResponse.json({
       success: true,
       ...(updated as any),
-      teamFee: (updated as any).teamFee ? Number((updated as any).teamFee) : null,
+      name: updated.league?.name,
+      description: updated.league?.description,
+      ownerId: updated.league?.ownerId,
+      leagueId: updated.league?.id,
+      season: updated.label,
+      leagueStatus: updated.status,
+      teamFee: updated.teamFee ? Number(updated.teamFee) : null,
     })
   } catch (error) {
     console.error("Update league error:", error)

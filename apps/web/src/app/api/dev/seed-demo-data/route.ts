@@ -34,6 +34,67 @@ export async function GET() {
 
     const results: string[] = []
 
+    // ── 0. Create league + season + divisions (main seed skips on stale client) ──
+    const leagueOwner = await prisma.user.findUnique({ where: { email: "league@sportshub.test" } })
+    if (leagueOwner) {
+      const league = await prisma.league.upsert({
+        where: { id: "seed-league-001" },
+        create: {
+          id: "seed-league-001",
+          name: "Metro Youth Basketball League",
+          description: "Regional competitive league spanning multiple seasons",
+          ownerId: leagueOwner.id,
+        },
+        update: { name: "Metro Youth Basketball League" },
+      })
+
+      const season = await (prisma as any).season.upsert({
+        where: { id: "seed-season-001" },
+        create: {
+          id: "seed-season-001",
+          leagueId: league.id,
+          label: "Spring 2026",
+          type: "FALL_WINTER",
+          status: "DRAFT",
+          ageGroupCutoffDate: new Date("2026-08-31"),
+        },
+        update: { label: "Spring 2026" },
+      })
+
+      const existingOwnerRole = await prisma.userRole.findFirst({
+        where: { userId: leagueOwner.id, role: "LeagueOwner", leagueId: league.id },
+      })
+      if (!existingOwnerRole) {
+        await prisma.userRole.create({
+          data: { userId: leagueOwner.id, role: "LeagueOwner", leagueId: league.id },
+        })
+      }
+
+      await (prisma as any).division.upsert({
+        where: { id: "seed-division-u12" },
+        create: {
+          id: "seed-division-u12",
+          seasonId: season.id,
+          name: "U12 Boys Division A",
+          ageGroup: "U12",
+          gender: "MALE",
+        },
+        update: {},
+      })
+      await (prisma as any).division.upsert({
+        where: { id: "seed-division-u14" },
+        create: {
+          id: "seed-division-u14",
+          seasonId: season.id,
+          name: "U14 Girls Division A",
+          ageGroup: "U14",
+          gender: "FEMALE",
+        },
+        update: {},
+      })
+      results.push("Seeded league + Spring 2026 season + 2 divisions")
+    }
+
     // ── 1. Create additional teams (some without coaches) ──────────────────
     const extraTeams = [
       { id: "seed-team-u10", name: "Warriors U10 Boys", ageGroup: "U10", gender: "MALE" as const, season: "Spring 2026" },

@@ -417,20 +417,29 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
     }
   }
 
-  // LeagueOwner / LeagueManager data
+  // LeagueOwner / LeagueManager data — one card per Season under the user's leagues.
   if (roleNames.includes("LeagueOwner") || roleNames.includes("LeagueManager")) {
     const leagueIds = user.roles
       .filter((r) => (r.role === "LeagueOwner" || r.role === "LeagueManager") && r.leagueId)
       .map((r) => r.leagueId!)
 
     if (leagueIds.length > 0) {
-      const leagues = await prisma.league.findMany({
-        where: { id: { in: leagueIds } },
+      const seasons = await prisma.season.findMany({
+        where: { leagueId: { in: leagueIds } },
         include: {
-          _count: { select: { teams: true, games: true } },
+          league: { select: { name: true } },
+          _count: { select: { teamSubmissions: true, games: true } },
         },
+        orderBy: { createdAt: "desc" },
       })
-      data.leagueOwner = { leagues }
+      data.leagueOwner = {
+        leagues: seasons.map((s: any) => ({
+          id: s.id,
+          name: s.league.name,
+          season: s.label,
+          _count: { teams: s._count.teamSubmissions, games: s._count.games },
+        })),
+      }
     } else {
       data.leagueOwner = { leagues: [] }
     }

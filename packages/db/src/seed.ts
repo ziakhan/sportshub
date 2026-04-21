@@ -360,20 +360,33 @@ async function main() {
   })
   console.log(`  OK  Tryout: ${tryout.title}`)
 
-  // ── 9. Create a League ────────────────────────────────────────────────────
-  console.log("\nCreating demo league...")
+  // ── 9. Create a League + Season ───────────────────────────────────────────
+  console.log("\nCreating demo league + season...")
   const league = await prisma.league.upsert({
     where: { id: "seed-league-001" },
     create: {
       id: "seed-league-001",
       name: "Metro Youth Basketball League",
-      description: "Regional competitive league for Spring 2026",
-      season: "Spring 2026",
+      description: "Regional competitive league spanning multiple seasons",
       ownerId: dbUsers.leagueOwner,
-      ageGroupCutoffDate: new Date("2026-08-31"),
     },
     update: {
       name: "Metro Youth Basketball League",
+    },
+  })
+
+  const season = await prisma.season.upsert({
+    where: { id: "seed-season-001" },
+    create: {
+      id: "seed-season-001",
+      leagueId: league.id,
+      label: "Spring 2026",
+      type: "FALL_WINTER",
+      status: "DRAFT",
+      ageGroupCutoffDate: new Date("2026-08-31"),
+    },
+    update: {
+      label: "Spring 2026",
     },
   })
 
@@ -394,11 +407,11 @@ async function main() {
     })
   }
 
-  await prisma.leagueDivision.upsert({
+  await prisma.division.upsert({
     where: { id: "seed-division-u12" },
     create: {
       id: "seed-division-u12",
-      leagueId: league.id,
+      seasonId: season.id,
       name: "U12 Boys Division A",
       ageGroup: "U12",
       gender: "MALE",
@@ -406,11 +419,11 @@ async function main() {
     update: {},
   })
 
-  await prisma.leagueDivision.upsert({
+  await prisma.division.upsert({
     where: { id: "seed-division-u14" },
     create: {
       id: "seed-division-u14",
-      leagueId: league.id,
+      seasonId: season.id,
       name: "U14 Girls Division A",
       ageGroup: "U14",
       gender: "FEMALE",
@@ -418,7 +431,7 @@ async function main() {
     update: {},
   })
 
-  console.log(`  OK  League: ${league.name}`)
+  console.log(`  OK  League: ${league.name} (season ${season.label})`)
 
   // ── Print summary ──────────────────────────────────────────────────────────
   console.log("\n" + "=".repeat(60))

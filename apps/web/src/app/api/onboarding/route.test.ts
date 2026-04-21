@@ -30,6 +30,10 @@ vi.mock("@youthbasketballhub/db", () => ({
     league: {
       create: vi.fn(),
     },
+    season: {
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -75,8 +79,12 @@ describe("POST /api/onboarding", () => {
     })
   })
 
-  it("creates and scopes a league owner profile", async () => {
-    vi.mocked(prisma.league.create).mockResolvedValue({ id: "league-1" } as any)
+  it("creates and scopes a league owner profile (league + first season)", async () => {
+    const tx = {
+      league: { create: vi.fn().mockResolvedValue({ id: "league-1" }) },
+      season: { create: vi.fn().mockResolvedValue({ id: "season-1" }) },
+    }
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => cb(tx))
 
     const response = await POST(
       new Request("http://localhost:3000/api/onboarding", {
@@ -95,12 +103,18 @@ describe("POST /api/onboarding", () => {
     )
 
     expect(response.status).toBe(200)
-    expect(prisma.league.create).toHaveBeenCalledWith({
+    expect(tx.league.create).toHaveBeenCalledWith({
       data: {
         name: "Ontario Elite League",
-        season: "2026",
         description: "Competitive league",
         ownerId: "user-1",
+      },
+    })
+    expect(tx.season.create).toHaveBeenCalledWith({
+      data: {
+        leagueId: "league-1",
+        label: "2026",
+        status: "DRAFT",
       },
     })
     expect(prisma.userRole.updateMany).toHaveBeenCalledWith({

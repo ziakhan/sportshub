@@ -7,11 +7,11 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const createLeagueSeasonSchema = z.object({
-  leagueId: z.string().optional(), // If updating existing league
-  name: z.string().min(3).max(200),
+const createSeasonSchema = z.object({
+  seasonId: z.string().optional(), // If updating an existing season
+  name: z.string().min(3).max(200), // League name
   description: z.string().optional(),
-  season: z.string().min(1),
+  season: z.string().min(1), // Season label, e.g. "Fall 2026"
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   registrationDeadline: z.string().datetime().optional(),
@@ -27,7 +27,8 @@ const createLeagueSeasonSchema = z.object({
 })
 
 /**
- * POST /api/leagues — Create a new league season
+ * POST /api/leagues — Create a new league + first season (v2: League is persistent, Season owns scheduling/pricing)
+ * Returns the Season id so existing /leagues/[id]/... URLs keep working until Phase 1.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -38,9 +39,8 @@ export async function POST(request: NextRequest) {
     const userId = sessionInfo.userId
 
     const body = await request.json()
-    const data = createLeagueSeasonSchema.parse(body)
+    const data = createSeasonSchema.parse(body)
 
-    // Verify user is LeagueOwner or PlatformAdmin
     const hasAccess = await prisma.userRole.findFirst({
       where: {
         userId,
@@ -55,29 +55,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const league = await prisma.league.create({
-      data: {
-        name: data.name,
-        description: data.description || null,
-        season: data.season,
-        ownerId: userId,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
-        registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
-        ageGroupCutoffDate: data.ageGroupCutoffDate ? new Date(data.ageGroupCutoffDate) : null,
-        teamFee: data.teamFee ?? null,
-        gamesGuaranteed: data.gamesGuaranteed ?? null,
-        gamesPerSession: data.gamesPerSession,
-        gameSlotMinutes: data.gameSlotMinutes,
-        gameLengthMinutes: data.gameLengthMinutes,
-        gamePeriods: data.gamePeriods,
-        playoffFormat: data.playoffFormat || null,
-        playoffTeams: data.playoffTeams ?? null,
-        leagueStatus: "DRAFT",
-      } as any,
+    const season = await prisma.$transaction(async (tx: any) => {
+      const league = await tx.league.create({
+        data: {
+          name: data.name,
+          description: data.description || null,
+          ownerId: userId,
+        },
+      })
+      return tx.season.create({
+        data: {
+          leagueId: league.id,
+          label: data.season,
+          startDate: data.startDate ? new Date(data.startDate) : null,
+          endDate: data.endDate ? new Date(data.endDate) : null,
+          registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
+          ageGroupCutoffDate: data.ageGroupCutoffDate ? new Date(data.ageGroupCutoffDate) : null,
+          teamFee: data.teamFee ?? null,
+          gamesGuaranteed: data.gamesGuaranteed ?? null,
+          targetGamesPerSession: data.gamesPerSession,
+          gameSlotMinutes: data.gameSlotMinutes,
+          gameLengthMinutes: data.gameLengthMinutes,
+          gamePeriods: data.gamePeriods,
+          playoffFormat: data.playoffFormat || null,
+          playoffTeams: data.playoffTeams ?? null,
+          status: "DRAFT",
+        },
+      })
     })
 
-    return NextResponse.json({ success: true, id: league.id }, { status: 201 })
+    return NextResponse.json({ success: true, id: season.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
@@ -88,9 +95,9 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/leagues — List leagues
- * ?mine=true — leagues owned/managed by current user
- * ?public=true — published leagues open for registration
+ * GET /api/leagues — List seasons (Phase 0: still keyed by Season.id for UI continuity)
+ * ?mine=true — seasons under leagues owned by current user
+ * ?public=true — seasons accepting registration or in progress
  */
 export async function GET(request: NextRequest) {
   try {
@@ -98,21 +105,19 @@ export async function GET(request: NextRequest) {
     const isPublic = request.nextUrl.searchParams.get("public") === "true"
 
     if (isPublic) {
-      const leagues = await prisma.league.findMany({
+      const seasons = await prisma.season.findMany({
         where: {
-          leagueStatus: { in: ["REGISTRATION", "IN_PROGRESS"] },
+          status: { in: ["REGISTRATION", "IN_PROGRESS"] },
         } as any,
         include: {
+          league: { select: { id: true, name: true, description: true, ownerId: true } },
           divisions: true,
-          _count: { select: { teams: true, games: true } },
+          _count: { select: { teamSubmissions: true, games: true } },
         },
         orderBy: { createdAt: "desc" },
       })
       return NextResponse.json({
-        leagues: leagues.map((l: any) => ({
-          ...l,
-          teamFee: l.teamFee ? Number(l.teamFee) : null,
-        })),
+        leagues: seasons.map(serializeSeasonAsLeague),
       })
     }
 
@@ -122,22 +127,23 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
 
-      // PlatformAdmin sees all leagues
-      const where = sessionInfo.isPlatformAdmin ? {} : { ownerId: sessionInfo.userId }
+      const where = sessionInfo.isPlatformAdmin
+        ? {}
+        : { league: { ownerId: sessionInfo.userId } }
 
-      const leagues = await prisma.league.findMany({
+      const seasons = await prisma.season.findMany({
         where,
         include: {
+          league: { select: { id: true, name: true, description: true, ownerId: true } },
           divisions: true,
-          _count: { select: { teams: true, games: true } },
+          _count: { select: { teamSubmissions: true, games: true } },
         },
         orderBy: { createdAt: "desc" },
       })
 
-      // Fetch owner info if admin
       let ownerMap: Record<string, { firstName: string | null; lastName: string | null; email: string }> = {}
       if (sessionInfo.isPlatformAdmin) {
-        const ownerIds = [...new Set(leagues.map((l: any) => l.ownerId))]
+        const ownerIds = [...new Set(seasons.map((s: any) => s.league.ownerId as string))] as string[]
         const owners = await prisma.user.findMany({
           where: { id: { in: ownerIds } },
           select: { id: true, firstName: true, lastName: true, email: true },
@@ -145,11 +151,10 @@ export async function GET(request: NextRequest) {
         ownerMap = Object.fromEntries(owners.map((o: any) => [o.id, o]))
       }
       return NextResponse.json({
-        leagues: leagues.map((l: any) => {
-          const owner = ownerMap[l.ownerId]
+        leagues: seasons.map((s: any) => {
+          const owner = ownerMap[s.league.ownerId]
           return {
-            ...l,
-            teamFee: l.teamFee ? Number(l.teamFee) : null,
+            ...serializeSeasonAsLeague(s),
             owner: owner ? {
               name: [owner.firstName, owner.lastName].filter(Boolean).join(" ") || "Unknown",
               email: owner.email,
@@ -163,5 +168,24 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Get leagues error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+// Collapses a Season + its League back into the shape the UI still expects
+// (flat "league" object with name/description from League + everything else from Season).
+// Phase 1 will replace this with proper League+Season-shaped responses.
+function serializeSeasonAsLeague(s: any) {
+  const { league, _count, ...rest } = s
+  return {
+    ...rest,
+    id: s.id,
+    name: league?.name,
+    description: league?.description,
+    ownerId: league?.ownerId,
+    leagueId: league?.id,
+    season: s.label,
+    leagueStatus: s.status,
+    teamFee: s.teamFee ? Number(s.teamFee) : null,
+    _count: _count ? { teams: _count.teamSubmissions, games: _count.games } : undefined,
   }
 }

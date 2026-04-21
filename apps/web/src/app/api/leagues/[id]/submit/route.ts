@@ -12,13 +12,10 @@ const submitTeamSchema = z.object({
 })
 
 /**
- * POST /api/leagues/[id]/submit — Club submits a team to the league
- * Creates LeagueTeam + LeagueRoster with frozen player snapshot
+ * POST /api/leagues/[id]/submit — Club submits a team to the season (Phase 0: [id] is a Season.id)
+ * Creates TeamSubmission + SeasonRoster with frozen player snapshot.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -28,30 +25,31 @@ export async function POST(
     const body = await request.json()
     const data = submitTeamSchema.parse(body)
 
-    // Get the league
-    const league = await prisma.league.findUnique({
+    const season = (await prisma.season.findUnique({
       where: { id: params.id },
       select: {
         id: true,
-        leagueStatus: true,
+        status: true,
         registrationDeadline: true,
         teamFee: true,
       } as any,
-    }) as any
+    })) as any
 
-    if (!league) {
+    if (!season) {
       return NextResponse.json({ error: "League not found" }, { status: 404 })
     }
 
-    if (league.leagueStatus !== "REGISTRATION") {
-      return NextResponse.json({ error: "This league is not currently accepting registrations" }, { status: 400 })
+    if (season.status !== "REGISTRATION") {
+      return NextResponse.json(
+        { error: "This league is not currently accepting registrations" },
+        { status: 400 }
+      )
     }
 
-    if (league.registrationDeadline && new Date(league.registrationDeadline) < new Date()) {
+    if (season.registrationDeadline && new Date(season.registrationDeadline) < new Date()) {
       return NextResponse.json({ error: "Registration deadline has passed" }, { status: 400 })
     }
 
-    // Verify the team exists and user has club access
     const team = await prisma.team.findUnique({
       where: { id: data.teamId },
       select: { id: true, name: true, tenantId: true },
@@ -70,16 +68,18 @@ export async function POST(
       },
     })
     if (!hasAccess) {
-      return NextResponse.json({ error: "Only club owners/managers can submit teams" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only club owners/managers can submit teams" },
+        { status: 403 }
+      )
     }
 
-    // Check division exists
-    const division = await prisma.leagueDivision.findFirst({
-      where: { id: data.divisionId, leagueId: params.id },
+    const division = await prisma.division.findFirst({
+      where: { id: data.divisionId, seasonId: params.id },
       include: {
         _count: {
           select: {
-            teams: {
+            teamSubmissions: {
               where: {
                 status: { in: ["PENDING", "APPROVED"] },
               },
@@ -93,7 +93,7 @@ export async function POST(
     }
 
     if (division.maxTeams !== null && division.maxTeams !== undefined) {
-      const activeTeams = division._count?.teams ?? 0
+      const activeTeams = division._count?.teamSubmissions ?? 0
       if (activeTeams >= division.maxTeams) {
         return NextResponse.json(
           {
@@ -104,15 +104,16 @@ export async function POST(
       }
     }
 
-    // Check if team already submitted
-    const existing = await prisma.leagueTeam.findUnique({
-      where: { leagueId_teamId: { leagueId: params.id, teamId: data.teamId } },
+    const existing = await prisma.teamSubmission.findUnique({
+      where: { seasonId_teamId: { seasonId: params.id, teamId: data.teamId } },
     })
     if (existing) {
-      return NextResponse.json({ error: "This team is already submitted to this league" }, { status: 409 })
+      return NextResponse.json(
+        { error: "This team is already submitted to this league" },
+        { status: 409 }
+      )
     }
 
-    // Get current team players for the roster snapshot
     const teamPlayers = await prisma.teamPlayer.findMany({
       where: { teamId: data.teamId, status: "ACTIVE" },
       include: {
@@ -120,30 +121,28 @@ export async function POST(
       },
     })
 
-    // Create LeagueTeam + LeagueRoster + LeagueRosterPlayers in a transaction
     const result = await prisma.$transaction(async (tx: any) => {
-      const leagueTeam = await tx.leagueTeam.create({
+      const submission = await tx.teamSubmission.create({
         data: {
-          leagueId: params.id,
+          seasonId: params.id,
           teamId: data.teamId,
           divisionId: data.divisionId,
           status: "PENDING",
-          registrationFee: league.teamFee ? Number(league.teamFee) : null,
+          registrationFee: season.teamFee ? Number(season.teamFee) : null,
         },
       })
 
-      const roster = await (tx as any).leagueRoster.create({
+      const roster = await tx.seasonRoster.create({
         data: {
-          leagueId: params.id,
-          leagueTeamId: leagueTeam.id,
+          seasonId: params.id,
+          teamSubmissionId: submission.id,
           isLocked: false,
           submittedAt: new Date(),
         },
       })
 
-      // Snapshot players
       if (teamPlayers.length > 0) {
-        await (tx as any).leagueRosterPlayer.createMany({
+        await tx.seasonRosterPlayer.createMany({
           data: teamPlayers.map((tp: any) => ({
             rosterId: roster.id,
             playerId: tp.playerId,
@@ -153,17 +152,27 @@ export async function POST(
         })
       }
 
-      return { leagueTeamId: leagueTeam.id, rosterId: roster.id, playerCount: teamPlayers.length }
+      return {
+        leagueTeamId: submission.id, // keep legacy key for UI compat
+        rosterId: roster.id,
+        playerCount: teamPlayers.length,
+      }
     })
 
-    return NextResponse.json({
-      success: true,
-      ...result,
-      message: `${team.name} submitted with ${result.playerCount} players. Pending league approval.`,
-    }, { status: 201 })
+    return NextResponse.json(
+      {
+        success: true,
+        ...result,
+        message: `${team.name} submitted with ${result.playerCount} players. Pending league approval.`,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Submit team error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

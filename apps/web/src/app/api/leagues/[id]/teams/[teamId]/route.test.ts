@@ -9,14 +9,14 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
-    league: {
+    season: {
       findUnique: vi.fn(),
     },
     userRole: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
     },
-    leagueTeam: {
+    teamSubmission: {
       findFirst: vi.fn(),
       update: vi.fn(),
     },
@@ -33,13 +33,13 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
       userId: "league-owner-1",
       isPlatformAdmin: false,
     })
-    vi.mocked(prisma.league.findUnique).mockResolvedValue({
-      id: "league-1",
-      ownerId: "league-owner-1",
-      name: "NPH Spring League",
+    vi.mocked(prisma.season.findUnique).mockResolvedValue({
+      id: "season-1",
+      leagueId: "league-1",
+      league: { ownerId: "league-owner-1", name: "NPH Spring League" },
     } as any)
-    vi.mocked(prisma.leagueTeam.findFirst).mockResolvedValue({
-      id: "league-team-1",
+    vi.mocked(prisma.teamSubmission.findFirst).mockResolvedValue({
+      id: "submission-1",
       team: {
         id: "team-1",
         name: "Warriors U12",
@@ -47,9 +47,10 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
         tenant: { name: "Warriors Club" },
       },
     } as any)
-    vi.mocked(prisma.leagueTeam.update).mockResolvedValue({
-      id: "league-team-1",
+    vi.mocked(prisma.teamSubmission.update).mockResolvedValue({
+      id: "submission-1",
       status: "APPROVED",
+      paymentStatus: "UNPAID",
     } as any)
     vi.mocked(prisma.userRole.findMany).mockResolvedValue([{ userId: "club-owner-1" }] as any)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 } as any)
@@ -57,17 +58,17 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
 
   it("approves a team submission and notifies club managers", async () => {
     const response = await PATCH(
-      new Request("http://localhost:3000/api/leagues/league-1/teams/league-team-1", {
+      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: "APPROVED" }),
       }) as any,
-      { params: { id: "league-1", teamId: "league-team-1" } }
+      { params: { id: "season-1", teamId: "submission-1" } }
     )
 
     expect(response.status).toBe(200)
-    expect(prisma.leagueTeam.update).toHaveBeenCalledWith({
-      where: { id: "league-team-1" },
+    expect(prisma.teamSubmission.update).toHaveBeenCalledWith({
+      where: { id: "submission-1" },
       data: { status: "APPROVED" },
     })
     expect(prisma.notification.createMany).toHaveBeenCalledWith({
@@ -77,9 +78,9 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
           type: "league_registration_status",
           title: "League Registration Approved",
           message: "Warriors U12 was approved for NPH Spring League.",
-          link: "/leagues/league-1/manage",
-          referenceId: "league-team-1",
-          referenceType: "LeagueTeam",
+          link: "/leagues/season-1/manage",
+          referenceId: "submission-1",
+          referenceType: "TeamSubmission",
         },
       ],
     })
@@ -90,15 +91,39 @@ describe("PATCH /api/leagues/[id]/teams/[teamId]", () => {
     vi.mocked(prisma.userRole.findFirst).mockResolvedValue(null)
 
     const response = await PATCH(
-      new Request("http://localhost:3000/api/leagues/league-1/teams/league-team-1", {
+      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: "REJECTED" }),
       }) as any,
-      { params: { id: "league-1", teamId: "league-team-1" } }
+      { params: { id: "season-1", teamId: "submission-1" } }
     )
 
     expect(response.status).toBe(403)
     await expect(response.json()).resolves.toEqual({ error: "Forbidden" })
+  })
+
+  it("accepts paymentStatus-only updates without touching notifications", async () => {
+    vi.mocked(prisma.teamSubmission.update).mockResolvedValue({
+      id: "submission-1",
+      status: "APPROVED",
+      paymentStatus: "PAID_MANUAL",
+    } as any)
+
+    const response = await PATCH(
+      new Request("http://localhost:3000/api/leagues/season-1/teams/submission-1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ paymentStatus: "PAID_MANUAL" }),
+      }) as any,
+      { params: { id: "season-1", teamId: "submission-1" } }
+    )
+
+    expect(response.status).toBe(200)
+    expect(prisma.teamSubmission.update).toHaveBeenCalledWith({
+      where: { id: "submission-1" },
+      data: { paymentStatus: "PAID_MANUAL" },
+    })
+    expect(prisma.notification.createMany).not.toHaveBeenCalled()
   })
 })

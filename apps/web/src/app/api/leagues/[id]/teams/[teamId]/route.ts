@@ -5,13 +5,17 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const updateLeagueTeamStatusSchema = z.object({
-  status: z.enum(["APPROVED", "REJECTED", "WITHDRAWN"]),
+const updateTeamSubmissionSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED", "WITHDRAWN"]).optional(),
+  paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
+}).refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
+  message: "Provide status or paymentStatus",
 })
 
 /**
  * PATCH /api/leagues/[id]/teams/[teamId]
- * League owner/manager approves, rejects, or withdraws a submitted team.
+ * League owner/manager approves, rejects, or withdraws a submitted team, and/or updates its payment status.
+ * (Phase 0: [id] is a Season.id.)
  */
 export async function PATCH(
   request: NextRequest,
@@ -24,13 +28,17 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const data = updateLeagueTeamStatusSchema.parse(body)
+    const data = updateTeamSubmissionSchema.parse(body)
 
-    const league = await prisma.league.findUnique({
+    const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { id: true, ownerId: true, name: true },
+      select: {
+        id: true,
+        leagueId: true,
+        league: { select: { ownerId: true, name: true } },
+      },
     })
-    if (!league) {
+    if (!season) {
       return NextResponse.json({ error: "League not found" }, { status: 404 })
     }
 
@@ -38,19 +46,19 @@ export async function PATCH(
       where: {
         userId: sessionInfo.userId,
         OR: [
-          { leagueId: params.id, role: { in: ["LeagueOwner", "LeagueManager"] } },
+          { leagueId: season.leagueId, role: { in: ["LeagueOwner", "LeagueManager"] } },
           { role: "PlatformAdmin" },
         ],
       },
     })
 
-    const isOwner = league.ownerId === sessionInfo.userId
+    const isOwner = season.league.ownerId === sessionInfo.userId
     if (!isOwner && !sessionInfo.isPlatformAdmin && !hasLeagueManagerAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const leagueTeam = await prisma.leagueTeam.findFirst({
-      where: { id: params.teamId, leagueId: params.id },
+    const submission = await prisma.teamSubmission.findFirst({
+      where: { id: params.teamId, seasonId: params.id },
       include: {
         team: {
           select: {
@@ -63,53 +71,63 @@ export async function PATCH(
       },
     })
 
-    if (!leagueTeam) {
-      return NextResponse.json({ error: "League team submission not found" }, { status: 404 })
+    if (!submission) {
+      return NextResponse.json({ error: "Team submission not found" }, { status: 404 })
     }
 
-    const updated = await prisma.leagueTeam.update({
-      where: { id: leagueTeam.id },
-      data: { status: data.status },
+    const updateData: Record<string, any> = {}
+    if (data.status !== undefined) updateData.status = data.status
+    if (data.paymentStatus !== undefined) updateData.paymentStatus = data.paymentStatus
+
+    const updated = await prisma.teamSubmission.update({
+      where: { id: submission.id },
+      data: updateData,
     })
 
-    const clubManagers = await prisma.userRole.findMany({
-      where: {
-        tenantId: leagueTeam.team.tenantId,
-        role: { in: ["ClubOwner", "ClubManager"] },
-      },
-      select: { userId: true },
-      distinct: ["userId"],
-    })
-
-    if (clubManagers.length > 0) {
-      const title =
-        data.status === "APPROVED"
-          ? "League Registration Approved"
-          : data.status === "REJECTED"
-            ? "League Registration Rejected"
-            : "League Registration Updated"
-
-      const message =
-        data.status === "APPROVED"
-          ? `${leagueTeam.team.name} was approved for ${league.name}.`
-          : data.status === "REJECTED"
-            ? `${leagueTeam.team.name} was not approved for ${league.name}.`
-            : `${leagueTeam.team.name} registration status was updated for ${league.name}.`
-
-      await prisma.notification.createMany({
-        data: clubManagers.map((manager: any) => ({
-          userId: manager.userId,
-          type: "league_registration_status",
-          title,
-          message,
-          link: `/leagues/${params.id}/manage`,
-          referenceId: leagueTeam.id,
-          referenceType: "LeagueTeam",
-        })),
+    if (data.status !== undefined) {
+      const clubManagers = await prisma.userRole.findMany({
+        where: {
+          tenantId: submission.team.tenantId,
+          role: { in: ["ClubOwner", "ClubManager"] },
+        },
+        select: { userId: true },
+        distinct: ["userId"],
       })
+
+      if (clubManagers.length > 0) {
+        const title =
+          data.status === "APPROVED"
+            ? "League Registration Approved"
+            : data.status === "REJECTED"
+              ? "League Registration Rejected"
+              : "League Registration Updated"
+
+        const message =
+          data.status === "APPROVED"
+            ? `${submission.team.name} was approved for ${season.league.name}.`
+            : data.status === "REJECTED"
+              ? `${submission.team.name} was not approved for ${season.league.name}.`
+              : `${submission.team.name} registration status was updated for ${season.league.name}.`
+
+        await prisma.notification.createMany({
+          data: clubManagers.map((manager: any) => ({
+            userId: manager.userId,
+            type: "league_registration_status",
+            title,
+            message,
+            link: `/leagues/${params.id}/manage`,
+            referenceId: submission.id,
+            referenceType: "TeamSubmission",
+          })),
+        })
+      }
     }
 
-    return NextResponse.json({ success: true, status: updated.status })
+    return NextResponse.json({
+      success: true,
+      status: updated.status,
+      paymentStatus: updated.paymentStatus,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -117,7 +135,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    console.error("Update league team status error:", error)
+    console.error("Update team submission error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

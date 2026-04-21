@@ -13,7 +13,7 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
-    league: {
+    season: {
       findUnique: vi.fn(),
     },
     team: {
@@ -22,10 +22,10 @@ vi.mock("@youthbasketballhub/db", () => ({
     userRole: {
       findFirst: vi.fn(),
     },
-    leagueDivision: {
+    division: {
       findFirst: vi.fn(),
     },
-    leagueTeam: {
+    teamSubmission: {
       findUnique: vi.fn(),
     },
     teamPlayer: {
@@ -39,9 +39,9 @@ describe("POST /api/leagues/[id]/submit", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getServerSession).mockResolvedValue({ user: { id: "club-owner-1" } } as any)
-    vi.mocked(prisma.league.findUnique).mockResolvedValue({
-      id: "league-1",
-      leagueStatus: "REGISTRATION",
+    vi.mocked(prisma.season.findUnique).mockResolvedValue({
+      id: "season-1",
+      status: "REGISTRATION",
       registrationDeadline: new Date("2100-01-01T00:00:00.000Z"),
       teamFee: 3500,
     } as any)
@@ -51,26 +51,26 @@ describe("POST /api/leagues/[id]/submit", () => {
       tenantId: "tenant-1",
     } as any)
     vi.mocked(prisma.userRole.findFirst).mockResolvedValue({ id: "role-1" } as any)
-    vi.mocked(prisma.leagueTeam.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.teamSubmission.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.teamPlayer.findMany).mockResolvedValue([] as any)
   })
 
   it("rejects submission when division capacity is full", async () => {
-    vi.mocked(prisma.leagueDivision.findFirst).mockResolvedValue({
+    vi.mocked(prisma.division.findFirst).mockResolvedValue({
       id: "division-1",
       maxTeams: 2,
       _count: {
-        teams: 2,
+        teamSubmissions: 2,
       },
     } as any)
 
     const response = await POST(
-      new Request("http://localhost:3000/api/leagues/league-1/submit", {
+      new Request("http://localhost:3000/api/leagues/season-1/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ teamId: "team-1", divisionId: "division-1" }),
       }) as any,
-      { params: { id: "league-1" } }
+      { params: { id: "season-1" } }
     )
 
     expect(response.status).toBe(409)
@@ -80,22 +80,22 @@ describe("POST /api/leagues/[id]/submit", () => {
   })
 
   it("submits successfully when division has available spots", async () => {
-    vi.mocked(prisma.leagueDivision.findFirst).mockResolvedValue({
+    vi.mocked(prisma.division.findFirst).mockResolvedValue({
       id: "division-1",
       maxTeams: 4,
       _count: {
-        teams: 1,
+        teamSubmissions: 1,
       },
     } as any)
 
     const tx = {
-      leagueTeam: {
-        create: vi.fn().mockResolvedValue({ id: "league-team-1" }),
+      teamSubmission: {
+        create: vi.fn().mockResolvedValue({ id: "submission-1" }),
       },
-      leagueRoster: {
+      seasonRoster: {
         create: vi.fn().mockResolvedValue({ id: "roster-1" }),
       },
-      leagueRosterPlayer: {
+      seasonRosterPlayer: {
         createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     }
@@ -103,18 +103,18 @@ describe("POST /api/leagues/[id]/submit", () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
-      new Request("http://localhost:3000/api/leagues/league-1/submit", {
+      new Request("http://localhost:3000/api/leagues/season-1/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ teamId: "team-1", divisionId: "division-1" }),
       }) as any,
-      { params: { id: "league-1" } }
+      { params: { id: "season-1" } }
     )
 
     expect(response.status).toBe(201)
-    expect(tx.leagueTeam.create).toHaveBeenCalledWith({
+    expect(tx.teamSubmission.create).toHaveBeenCalledWith({
       data: {
-        leagueId: "league-1",
+        seasonId: "season-1",
         teamId: "team-1",
         divisionId: "division-1",
         status: "PENDING",
