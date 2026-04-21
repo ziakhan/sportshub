@@ -89,7 +89,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const sessions = await prisma.seasonSession.findMany({
+    const sessions = await (prisma as any).seasonSession.findMany({
       where: { seasonId: params.id },
       include: {
         days: {
@@ -98,6 +98,7 @@ export async function GET(
             dayVenues: {
               include: {
                 venue: { select: { id: true, name: true, address: true, city: true } },
+                courts: { select: { id: true } },
               },
             },
           },
@@ -106,15 +107,20 @@ export async function GET(
       orderBy: { createdAt: "asc" },
     })
     // Flatten back to the legacy { venue, days: [{ date, startTime, endTime }] } shape
-    // so existing UI reads continue to work until Phase 3.
+    // so existing UI reads continue to work until Phase 3. Also expose an
+    // `isUsable` flag for the expanded finalize preflight.
     const flattened = sessions.map((s: any) => {
       const firstDayVenue = s.days[0]?.dayVenues[0]
+      const isUsable = s.days.some((d: any) =>
+        (d.dayVenues ?? []).some((dv: any) => (dv.courts ?? []).length > 0)
+      )
       return {
         id: s.id,
         label: s.label,
         leagueId: params.id,
         venueId: firstDayVenue?.venueId ?? null,
         venue: firstDayVenue?.venue ?? null,
+        isUsable,
         days: s.days.map((d: any) => {
           const dv = d.dayVenues[0]
           return {
@@ -123,6 +129,13 @@ export async function GET(
             date: d.date,
             startTime: dv?.startTime ?? "",
             endTime: dv?.endTime ?? "",
+            dayVenues: (d.dayVenues ?? []).map((x: any) => ({
+              id: x.id,
+              venueId: x.venueId,
+              startTime: x.startTime,
+              endTime: x.endTime,
+              courts: x.courts ?? [],
+            })),
           }
         }),
         createdAt: s.createdAt,

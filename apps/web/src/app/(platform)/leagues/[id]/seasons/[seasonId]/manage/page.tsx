@@ -102,6 +102,7 @@ export default function LeagueManagePage() {
   })
   const [schedSaving, setSchedSaving] = useState(false)
   const [finalizeErrors, setFinalizeErrors] = useState<string[]>([])
+  const [finalizeWarnings, setFinalizeWarnings] = useState<string[]>([])
 
   const panelClass =
     "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
@@ -164,9 +165,12 @@ export default function LeagueManagePage() {
     if (res.status === 422) {
       const data = await res.json()
       setFinalizeErrors(data.missing || [data.error])
+      setFinalizeWarnings(Array.isArray(data.warnings) ? data.warnings : [])
       return
     }
     setFinalizeErrors([])
+    const ok = await res.json().catch(() => ({}))
+    setFinalizeWarnings(Array.isArray(ok?.warnings) ? ok.warnings : [])
     fetchAll()
   }
 
@@ -364,11 +368,22 @@ export default function LeagueManagePage() {
   const unpaidCount = allTeams.filter((t: any) => !isPaid(t)).length
   const paidCount = allTeams.length - unpaidCount
 
+  const sessionHasUsableDay = (s: any) =>
+    (s.days ?? []).some((d: any) =>
+      (d.dayVenues ?? []).some((dv: any) => (dv.courts ?? []).length > 0)
+    )
+  const sessionsAllUsable =
+    sessions.length > 0 && sessions.every((s: any) => sessionHasUsableDay(s))
+
   const preflightChecks =
     nextStatus === "FINALIZED"
       ? [
           { label: "At least one division created", ok: divisions.length > 0 },
           { label: "At least one game session scheduled", ok: sessions.length > 0 },
+          {
+            label: "Every session has a day with venue + court",
+            ok: sessionsAllUsable,
+          },
           { label: "At least one venue assigned", ok: venues.length > 0 },
           {
             label: "No teams pending approval",
@@ -376,6 +391,10 @@ export default function LeagueManagePage() {
           },
           { label: "Max games per season defined", ok: !!league.gamesGuaranteed },
           { label: "Period / half length defined", ok: !!league.periodLengthMinutes },
+          {
+            label: "Tiebreaker order configured",
+            ok: Array.isArray(league.tiebreakerOrder) && league.tiebreakerOrder.length > 0,
+          },
         ]
       : null
   const canFinalize = !preflightChecks || preflightChecks.every((c) => c.ok)
@@ -462,6 +481,16 @@ export default function LeagueManagePage() {
               {finalizeErrors.map((e, i) => (
                 <p key={i} className="text-hoop-600 text-xs">
                   • {e}
+                </p>
+              ))}
+            </div>
+          )}
+          {finalizeWarnings.length > 0 && (
+            <div className="mt-3 border-t border-amber-200 pt-2">
+              <p className="text-amber-700 mb-1 text-xs font-semibold">Warnings:</p>
+              {finalizeWarnings.map((w, i) => (
+                <p key={i} className="text-amber-600 text-xs">
+                  • {w}
                 </p>
               ))}
             </div>
