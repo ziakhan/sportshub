@@ -6,6 +6,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { VenueSelector } from "@/components/venue-selector"
+import { VenueEditor } from "@/components/venue-editor"
 
 const STATUS_FLOW = [
   "DRAFT",
@@ -36,6 +37,7 @@ export default function LeagueManagePage() {
   const [teamStatusFilter, setTeamStatusFilter] = useState<
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
   >("ALL")
+  const [expandedVenueId, setExpandedVenueId] = useState<string | null>(null)
 
   // Division form
   const [divName, setDivName] = useState("")
@@ -541,37 +543,61 @@ export default function LeagueManagePage() {
         {/* Venues */}
         <div className={panelClass}>
           <h3 className="text-ink-900 mb-4 font-semibold">Venues</h3>
-          {venues.map((v: any) => (
-            <div
-              key={v.id}
-              className="border-court-100 bg-court-50 mb-2 flex items-center justify-between rounded-xl border px-3 py-2"
-            >
-              <div>
-                <span className="text-ink-900 font-medium">{v.venue.name}</span>
-                <span className="text-ink-500 ml-2 text-xs">
-                  {v.venue.address}, {v.venue.city}
-                </span>
-                <div className="text-ink-400 mt-0.5 text-xs">
-                  {v.courtsAvailable
-                    ? `${v.courtsAvailable} court${v.courtsAvailable !== 1 ? "s" : ""} (league override)`
-                    : v.venue.courts
-                      ? `${v.venue.courts} court${v.venue.courts !== 1 ? "s" : ""}`
-                      : "Courts: use league default"}
-                </div>
-              </div>
-              <button
-                onClick={async () => {
-                  await fetch(`/api/seasons/${seasonId}/venues?leagueVenueId=${v.id}`, {
-                    method: "DELETE",
-                  })
-                  fetchAll()
-                }}
-                className="hover:text-hoop-700 text-xs text-red-500"
+          {venues.map((v: any) => {
+            const expanded = expandedVenueId === v.id
+            const courtCount = v.venue.courtList?.length ?? 0
+            return (
+              <div
+                key={v.id}
+                className="border-court-100 bg-court-50 mb-2 rounded-xl border px-3 py-2"
               >
-                Remove
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-ink-900 font-medium">{v.venue.name}</span>
+                    <span className="text-ink-500 ml-2 text-xs">
+                      {v.venue.address}, {v.venue.city}
+                    </span>
+                    <div className="text-ink-400 mt-0.5 text-xs">
+                      {courtCount > 0
+                        ? `${courtCount} court${courtCount !== 1 ? "s" : ""}`
+                        : "No courts defined"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setExpandedVenueId(expanded ? null : v.id)}
+                      className="text-play-700 hover:text-play-800 text-xs font-semibold"
+                    >
+                      {expanded ? "Close" : "Edit courts & hours"}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await fetch(
+                          `/api/seasons/${seasonId}/venues?leagueVenueId=${v.id}`,
+                          { method: "DELETE" }
+                        )
+                        fetchAll()
+                      }}
+                      className="hover:text-hoop-700 text-xs text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                {expanded && (
+                  <div className="border-ink-200 mt-3 border-t pt-3">
+                    <VenueEditor
+                      venueId={v.venue.id}
+                      venueName={v.venue.name}
+                      courts={v.venue.courtList ?? []}
+                      hours={v.venue.venueHours ?? []}
+                      onChange={fetchAll}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          })}
           <div className="border-ink-200 mt-4 space-y-2 border-t pt-4">
             <VenueSelector
               value={selectedVenueId}

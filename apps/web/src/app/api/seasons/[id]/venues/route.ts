@@ -91,7 +91,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const venues = await prisma.seasonVenue.findMany({
+    const venues = await (prisma as any).seasonVenue.findMany({
       where: { seasonId: params.id },
       include: {
         venue: {
@@ -103,6 +103,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             state: true,
             capacity: true,
             courts: true,
+            courtList: {
+              orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+              select: { id: true, name: true, displayOrder: true },
+            },
+            venueHours: {
+              orderBy: { dayOfWeek: "asc" },
+              select: {
+                id: true,
+                dayOfWeek: true,
+                openTime: true,
+                closeTime: true,
+              },
+            },
           },
         },
       },
