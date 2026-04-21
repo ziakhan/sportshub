@@ -37,8 +37,12 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 const SEASON_TYPE_LABELS: Record<string, string> = {
   FALL_WINTER: "Fall / Winter",
-  SPRING_SUMMER: "Spring / Summer",
+  SPRING: "Spring",
+  SUMMER: "Summer",
+  CUSTOM: "Custom",
 }
+
+type SeasonTypeKey = "FALL_WINTER" | "SPRING" | "SUMMER" | "CUSTOM"
 
 export default function LeagueDashboardPage() {
   const params = useParams()
@@ -52,7 +56,7 @@ export default function LeagueDashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [label, setLabel] = useState("")
-  const [type, setType] = useState<"FALL_WINTER" | "SPRING_SUMMER">("FALL_WINTER")
+  const [type, setType] = useState<SeasonTypeKey>("FALL_WINTER")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [registrationDeadline, setRegistrationDeadline] = useState("")
@@ -165,11 +169,13 @@ export default function LeagueDashboardPage() {
                 <label className={labelClass}>Season Type</label>
                 <select
                   value={type}
-                  onChange={(e) => setType(e.target.value as "FALL_WINTER" | "SPRING_SUMMER")}
+                  onChange={(e) => setType(e.target.value as SeasonTypeKey)}
                   className={inputClass}
                 >
                   <option value="FALL_WINTER">Fall / Winter</option>
-                  <option value="SPRING_SUMMER">Spring / Summer</option>
+                  <option value="SPRING">Spring</option>
+                  <option value="SUMMER">Summer</option>
+                  <option value="CUSTOM">Custom</option>
                 </select>
               </div>
             </div>

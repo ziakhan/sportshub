@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 
 const createSeasonSchema = z.object({
   label: z.string().min(1).max(100),
-  type: z.enum(["FALL_WINTER", "SPRING_SUMMER"]).default("FALL_WINTER"),
+  type: z.enum(["FALL_WINTER", "SPRING", "SUMMER", "CUSTOM"]).default("FALL_WINTER"),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   registrationDeadline: z.string().datetime().optional(),

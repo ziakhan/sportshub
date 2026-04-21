@@ -25,6 +25,27 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: "Completed",
 }
 
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "divisions", label: "Divisions" },
+  { key: "venues", label: "Venues" },
+  { key: "sessions", label: "Sessions" },
+  { key: "scheduling", label: "Scheduling" },
+  { key: "tiebreakers", label: "Tiebreakers" },
+  { key: "teams", label: "Teams" },
+] as const
+
+type TabKey = (typeof TABS)[number]["key"]
+
+const TIEBREAKER_OPTIONS: { key: string; label: string }[] = [
+  { key: "HEAD_TO_HEAD", label: "Head-to-head record" },
+  { key: "POINT_DIFFERENTIAL", label: "Point differential" },
+  { key: "POINTS_SCORED", label: "Points scored" },
+  { key: "POINTS_ALLOWED", label: "Points allowed (fewest)" },
+  { key: "WINS", label: "Total wins" },
+  { key: "COIN_FLIP", label: "Coin flip (last resort)" },
+]
+
 export default function LeagueManagePage() {
   const params = useParams()
   const leagueId = params?.id as string
@@ -33,11 +54,20 @@ export default function LeagueManagePage() {
   const [divisions, setDivisions] = useState<any[]>([])
   const [sessions, setSessions] = useState<any[]>([])
   const [venues, setVenues] = useState<any[]>([])
+  const [schedulingGroups, setSchedulingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<TabKey>("overview")
   const [teamStatusFilter, setTeamStatusFilter] = useState<
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
   >("ALL")
   const [expandedVenueId, setExpandedVenueId] = useState<string | null>(null)
+
+  // Scheduling group form
+  const [newGroupName, setNewGroupName] = useState("")
+  const [newGroupDivisionIds, setNewGroupDivisionIds] = useState<string[]>([])
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
+  const [editGroupName, setEditGroupName] = useState("")
+  const [editGroupDivisionIds, setEditGroupDivisionIds] = useState<string[]>([])
 
   // Division form
   const [divName, setDivName] = useState("")
@@ -78,16 +108,18 @@ export default function LeagueManagePage() {
     "rounded-xl border border-ink-200 px-2 py-1.5 text-sm text-ink-900 focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
   const fetchAll = async () => {
-    const [leagueRes, divRes, sessRes, venRes] = await Promise.all([
+    const [leagueRes, divRes, sessRes, venRes, groupRes] = await Promise.all([
       fetch(`/api/seasons/${seasonId}`),
       fetch(`/api/seasons/${seasonId}/divisions`),
       fetch(`/api/seasons/${seasonId}/sessions`),
       fetch(`/api/seasons/${seasonId}/venues`),
+      fetch(`/api/seasons/${seasonId}/scheduling-groups`),
     ])
     const seasonData = await leagueRes.json()
     const divData = await divRes.json()
     const sessData = await sessRes.json()
     const venData = await venRes.json()
+    const groupData = groupRes.ok ? await groupRes.json() : { groups: [] }
     // Map new Season shape into legacy names this page already uses
     const leagueData = {
       ...seasonData,
@@ -114,6 +146,7 @@ export default function LeagueManagePage() {
     setDivisions(divData.divisions || [])
     setSessions(sessData.sessions || [])
     setVenues(venData.venues || [])
+    setSchedulingGroups(groupData.groups || [])
     setLoading(false)
   }
 
@@ -159,6 +192,73 @@ export default function LeagueManagePage() {
     })
     setSchedSaving(false)
     fetchAll()
+  }
+
+  const patchSeason = async (body: Record<string, any>) => {
+    await fetch(`/api/seasons/${seasonId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    fetchAll()
+  }
+
+  const createSchedulingGroup = async () => {
+    if (!newGroupName.trim()) return
+    await fetch(`/api/seasons/${seasonId}/scheduling-groups`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newGroupName.trim(), divisionIds: newGroupDivisionIds }),
+    })
+    setNewGroupName("")
+    setNewGroupDivisionIds([])
+    fetchAll()
+  }
+
+  const startEditGroup = (group: any) => {
+    setEditingGroupId(group.id)
+    setEditGroupName(group.name)
+    setEditGroupDivisionIds((group.divisions ?? []).map((d: any) => d.divisionId ?? d.division?.id))
+  }
+
+  const saveEditGroup = async () => {
+    if (!editingGroupId) return
+    await fetch(`/api/seasons/${seasonId}/scheduling-groups/${editingGroupId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editGroupName, divisionIds: editGroupDivisionIds }),
+    })
+    setEditingGroupId(null)
+    setEditGroupName("")
+    setEditGroupDivisionIds([])
+    fetchAll()
+  }
+
+  const deleteSchedulingGroup = async (groupId: string) => {
+    if (!confirm("Remove this scheduling group?")) return
+    await fetch(`/api/seasons/${seasonId}/scheduling-groups/${groupId}`, { method: "DELETE" })
+    if (editingGroupId === groupId) setEditingGroupId(null)
+    fetchAll()
+  }
+
+  const moveTiebreaker = (idx: number, direction: -1 | 1) => {
+    const order: string[] = Array.isArray(league?.tiebreakerOrder) ? [...league.tiebreakerOrder] : []
+    const target = idx + direction
+    if (target < 0 || target >= order.length) return
+    ;[order[idx], order[target]] = [order[target], order[idx]]
+    patchSeason({ tiebreakerOrder: order })
+  }
+
+  const addTiebreaker = (key: string) => {
+    const order: string[] = Array.isArray(league?.tiebreakerOrder) ? [...league.tiebreakerOrder] : []
+    if (order.includes(key)) return
+    order.push(key)
+    patchSeason({ tiebreakerOrder: order })
+  }
+
+  const removeTiebreaker = (key: string) => {
+    const order: string[] = Array.isArray(league?.tiebreakerOrder) ? [...league.tiebreakerOrder] : []
+    patchSeason({ tiebreakerOrder: order.filter((k) => k !== key) })
   }
 
   const addDivision = async () => {
@@ -301,8 +401,25 @@ export default function LeagueManagePage() {
         )}
       </div>
 
+      {/* Tab nav */}
+      <div className="mb-6 flex flex-wrap gap-1 overflow-x-auto border-b border-ink-100">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${
+              activeTab === tab.key
+                ? "border-play-600 text-play-700"
+                : "border-transparent text-ink-500 hover:text-ink-700"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Finalization preflight checklist */}
-      {preflightChecks && (
+      {activeTab === "overview" && preflightChecks && (
         <div
           className={`mb-6 rounded-2xl border p-4 ${canFinalize ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}
         >
@@ -334,27 +451,30 @@ export default function LeagueManagePage() {
         </div>
       )}
 
-      {/* Stats bar */}
-      <div className="mb-8 grid grid-cols-4 gap-4">
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-play-700 text-2xl font-bold">{divisions.length}</div>
-          <div className="text-ink-500 text-xs">Divisions</div>
+      {/* Stats bar — overview only */}
+      {activeTab === "overview" && (
+        <div className="mb-8 grid grid-cols-4 gap-4">
+          <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
+            <div className="text-play-700 text-2xl font-bold">{divisions.length}</div>
+            <div className="text-ink-500 text-xs">Divisions</div>
+          </div>
+          <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
+            <div className="text-2xl font-bold text-green-600">{league.teams?.length || 0}</div>
+            <div className="text-ink-500 text-xs">Teams</div>
+          </div>
+          <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
+            <div className="text-hoop-600 text-2xl font-bold">{sessions.length}</div>
+            <div className="text-ink-500 text-xs">Sessions</div>
+          </div>
+          <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
+            <div className="text-play-700 text-2xl font-bold">{venues.length}</div>
+            <div className="text-ink-500 text-xs">Venues</div>
+          </div>
         </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-2xl font-bold text-green-600">{league.teams?.length || 0}</div>
-          <div className="text-ink-500 text-xs">Teams</div>
-        </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-hoop-600 text-2xl font-bold">{sessions.length}</div>
-          <div className="text-ink-500 text-xs">Sessions</div>
-        </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-play-700 text-2xl font-bold">{venues.length}</div>
-          <div className="text-ink-500 text-xs">Venues</div>
-        </div>
-      </div>
+      )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {activeTab === "divisions" && (
+      <div className="grid gap-6">
         {/* Divisions */}
         <div className={panelClass}>
           <h3 className="text-ink-900 mb-4 font-semibold">Divisions</h3>
@@ -452,7 +572,11 @@ export default function LeagueManagePage() {
             </button>
           </div>
         </div>
+      </div>
+      )}
 
+      {activeTab === "sessions" && (
+      <div className="grid gap-6">
         {/* Sessions */}
         <div className={panelClass}>
           <h3 className="text-ink-900 mb-4 font-semibold">Sessions (Game Days)</h3>
@@ -539,7 +663,11 @@ export default function LeagueManagePage() {
             </button>
           </div>
         </div>
+      </div>
+      )}
 
+      {activeTab === "venues" && (
+      <div className="grid gap-6">
         {/* Venues */}
         <div className={panelClass}>
           <h3 className="text-ink-900 mb-4 font-semibold">Venues</h3>
@@ -621,7 +749,11 @@ export default function LeagueManagePage() {
             )}
           </div>
         </div>
+      </div>
+      )}
 
+      {activeTab === "teams" && (
+      <div className="grid gap-6">
         {/* Registered Teams */}
         <div className={panelClass}>
           <div className="mb-4 flex items-center justify-between gap-2">
@@ -707,9 +839,230 @@ export default function LeagueManagePage() {
           )}
         </div>
       </div>
+      )}
+
+      {activeTab === "scheduling" && (
+      <div className="space-y-6">
+        {/* Philosophy + cross-division + groups */}
+        <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+          <h3 className="text-ink-900 mb-4 font-semibold">Scheduling approach</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="text-ink-700 mb-2 block text-xs font-medium">Philosophy</label>
+              <div className="space-y-2">
+                {[
+                  {
+                    key: "FAMILY_FRIENDLY",
+                    label: "Family-friendly",
+                    hint: "Pack each team's games into fewer days so families spend less time at venues.",
+                  },
+                  {
+                    key: "SPREAD_DAYS",
+                    label: "Spread days",
+                    hint: "Distribute each team's games across more session days for more player rest.",
+                  },
+                ].map((opt) => (
+                  <label
+                    key={opt.key}
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                      league.schedulingPhilosophy === opt.key
+                        ? "border-play-400 bg-play-50"
+                        : "border-ink-200 hover:border-ink-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="schedulingPhilosophy"
+                      value={opt.key}
+                      checked={league.schedulingPhilosophy === opt.key}
+                      onChange={() => patchSeason({ schedulingPhilosophy: opt.key })}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="text-ink-900 block font-medium">{opt.label}</span>
+                      <span className="text-ink-500 block text-xs">{opt.hint}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <label className="border-ink-200 hover:border-ink-300 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition">
+              <input
+                type="checkbox"
+                checked={!!league.allowCrossDivisionScheduling}
+                onChange={(e) =>
+                  patchSeason({ allowCrossDivisionScheduling: e.target.checked })
+                }
+                className="mt-0.5"
+              />
+              <span>
+                <span className="text-ink-900 block font-medium">
+                  Allow cross-division scheduling
+                </span>
+                <span className="text-ink-500 block text-xs">
+                  When enabled, the scheduler may place games between teams in different
+                  divisions (within a scheduling group) to fill the slate.
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Scheduling groups */}
+        <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+          <div className="mb-3 flex items-start justify-between">
+            <div>
+              <h3 className="text-ink-900 font-semibold">Scheduling groups</h3>
+              <p className="text-ink-500 mt-0.5 text-xs">
+                Group divisions that can share a slate (e.g. nearby age groups). Games still
+                follow division rules unless cross-division scheduling is on.
+              </p>
+            </div>
+          </div>
+
+          {schedulingGroups.length === 0 ? (
+            <p className="text-ink-500 text-sm">No groups yet. Create one below.</p>
+          ) : (
+            <div className="space-y-2">
+              {schedulingGroups.map((g: any) => {
+                const editing = editingGroupId === g.id
+                const groupDivisions = (g.divisions ?? []).map(
+                  (d: any) => d.division ?? d
+                ) as any[]
+                return (
+                  <div
+                    key={g.id}
+                    className="border-court-100 bg-court-50 rounded-xl border px-3 py-2"
+                  >
+                    {editing ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={editGroupName}
+                          onChange={(e) => setEditGroupName(e.target.value)}
+                          className={inputClass + " w-full"}
+                        />
+                        <div className="grid grid-cols-2 gap-1">
+                          {divisions.map((d: any) => (
+                            <label
+                              key={d.id}
+                              className="bg-white text-ink-700 flex items-center gap-2 rounded-lg px-2 py-1 text-xs"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={editGroupDivisionIds.includes(d.id)}
+                                onChange={(e) =>
+                                  setEditGroupDivisionIds((ids) =>
+                                    e.target.checked
+                                      ? [...ids, d.id]
+                                      : ids.filter((x) => x !== d.id)
+                                  )
+                                }
+                              />
+                              {d.name}{" "}
+                              <span className="text-ink-400">
+                                ({d.ageGroup}
+                                {d.gender ? `·${d.gender}` : ""})
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={saveEditGroup}
+                            className="bg-play-600 hover:bg-play-700 rounded-lg px-3 py-1 text-xs font-semibold text-white"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingGroupId(null)}
+                            className="text-ink-500 hover:text-ink-700 text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-ink-900 font-medium">{g.name}</span>
+                          <div className="text-ink-500 mt-0.5 text-xs">
+                            {groupDivisions.length === 0
+                              ? "No divisions"
+                              : groupDivisions
+                                  .map((d: any) => d?.name)
+                                  .filter(Boolean)
+                                  .join(", ")}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => startEditGroup(g)}
+                            className="text-play-700 hover:text-play-800 text-xs font-semibold"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteSchedulingGroup(g.id)}
+                            className="hover:text-hoop-700 text-xs text-red-500"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="border-ink-200 mt-4 space-y-2 border-t pt-4">
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="Group name (e.g. U10 + U12 boys)"
+              className={inputClass + " w-full"}
+            />
+            {divisions.length > 0 && (
+              <div className="grid grid-cols-2 gap-1">
+                {divisions.map((d: any) => (
+                  <label
+                    key={d.id}
+                    className="bg-ink-50 text-ink-700 flex items-center gap-2 rounded-lg px-2 py-1 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={newGroupDivisionIds.includes(d.id)}
+                      onChange={(e) =>
+                        setNewGroupDivisionIds((ids) =>
+                          e.target.checked ? [...ids, d.id] : ids.filter((x) => x !== d.id)
+                        )
+                      }
+                    />
+                    {d.name}{" "}
+                    <span className="text-ink-400">
+                      ({d.ageGroup}
+                      {d.gender ? `·${d.gender}` : ""})
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={createSchedulingGroup}
+              disabled={!newGroupName.trim()}
+              className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
+            >
+              Add scheduling group
+            </button>
+          </div>
+        </div>
 
       {/* Scheduling Settings */}
-      <div className="border-ink-100 mt-6 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
         <div className="mb-5 flex items-center justify-between">
           <div>
             <h3 className="text-ink-900 font-semibold">Scheduling Settings</h3>
@@ -936,8 +1289,93 @@ export default function LeagueManagePage() {
           </div>
         </div>
       </div>
+      </div>
+      )}
+
+      {activeTab === "tiebreakers" && (
+      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+        <div className="mb-3 flex items-start justify-between">
+          <div>
+            <h3 className="text-ink-900 font-semibold">Tiebreaker order</h3>
+            <p className="text-ink-500 mt-0.5 text-xs">
+              Used to rank teams with identical records. Applied top-to-bottom until one team
+              wins the tiebreaker.
+            </p>
+          </div>
+          {league.tiebreakersLockedAt && (
+            <span className="bg-hoop-50 text-hoop-700 rounded-full px-3 py-1 text-xs font-medium">
+              Locked {format(new Date(league.tiebreakersLockedAt), "MMM d, yyyy")}
+            </span>
+          )}
+        </div>
+
+        {Array.isArray(league.tiebreakerOrder) && league.tiebreakerOrder.length > 0 ? (
+          <ol className="space-y-2">
+            {league.tiebreakerOrder.map((key: string, idx: number) => {
+              const opt = TIEBREAKER_OPTIONS.find((o) => o.key === key)
+              const locked = !!league.tiebreakersLockedAt
+              return (
+                <li
+                  key={key}
+                  className="border-court-100 bg-court-50 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm"
+                >
+                  <span className="text-ink-900">
+                    <span className="text-ink-400 mr-2 font-mono text-xs">{idx + 1}.</span>
+                    {opt?.label ?? key}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => moveTiebreaker(idx, -1)}
+                      disabled={idx === 0 || locked}
+                      className="text-ink-500 hover:text-ink-700 text-xs disabled:opacity-30"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveTiebreaker(idx, 1)}
+                      disabled={idx === league.tiebreakerOrder.length - 1 || locked}
+                      className="text-ink-500 hover:text-ink-700 text-xs disabled:opacity-30"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      onClick={() => removeTiebreaker(key)}
+                      disabled={locked}
+                      className="text-xs text-red-500 hover:text-red-600 disabled:opacity-30"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        ) : (
+          <p className="text-ink-500 text-sm">No tiebreakers configured.</p>
+        )}
+
+        <div className="border-ink-200 mt-4 border-t pt-4">
+          <p className="text-ink-600 mb-2 text-xs font-medium">Add a tiebreaker</p>
+          <div className="flex flex-wrap gap-2">
+            {TIEBREAKER_OPTIONS.filter(
+              (o) => !(league.tiebreakerOrder ?? []).includes(o.key)
+            ).map((opt) => (
+              <button
+                key={opt.key}
+                disabled={!!league.tiebreakersLockedAt}
+                onClick={() => addTiebreaker(opt.key)}
+                className="border-ink-200 text-ink-700 hover:border-play-300 hover:text-play-700 rounded-full border px-3 py-1 text-xs transition disabled:opacity-50"
+              >
+                + {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      )}
 
       {/* Season Info */}
+      {activeTab === "overview" && (
       <div className="border-ink-100 mt-6 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
         <h3 className="text-ink-900 mb-3 font-semibold">Season Summary</h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
@@ -977,6 +1415,7 @@ export default function LeagueManagePage() {
           )}
         </div>
       </div>
+      )}
     </div>
   )
 }
