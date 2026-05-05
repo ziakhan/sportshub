@@ -24,6 +24,9 @@ export const addPlayerSchema = z.object({
   height: z.string().max(10).optional(),
   weight: z.coerce.number().min(1).max(500).optional(),
   position: z.string().max(50).optional(),
+  // COPPA: required (and must be true) when adding a child under 13.
+  // The route enforces this conditionally based on dateOfBirth.
+  parentalConsentGiven: z.boolean().optional(),
 })
 
 export type AddPlayerFormData = z.infer<typeof addPlayerSchema>

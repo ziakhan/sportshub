@@ -76,6 +76,24 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const update: Record<string, any> = {}
 
+    // Tiebreaker order locks at finalize via tiebreakersLockedAt. Reject any
+    // attempt to mutate it after the lock is set.
+    if (body.tiebreakerOrder !== undefined) {
+      const seasonLock = await (prisma as any).season.findUnique({
+        where: { id: params.id },
+        select: { tiebreakersLockedAt: true },
+      })
+      if (seasonLock?.tiebreakersLockedAt) {
+        return NextResponse.json(
+          {
+            error: "Tiebreakers are locked for this season and cannot be edited.",
+            tiebreakersLockedAt: seasonLock.tiebreakersLockedAt,
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     if (body.label !== undefined) update.label = body.label
     const passThrough = [
       "type",

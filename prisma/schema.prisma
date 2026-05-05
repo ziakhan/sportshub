@@ -276,6 +276,10 @@ model Player {
   consentGivenAt       DateTime?
   canLogin             Boolean   @default(false) // Only true if 13+
 
+  // Soft delete — set when parent removes the child. Preserves history (offers,
+  // tryout signups, team rosters) but excludes from active listings.
+  deletedAt DateTime?
+
   // Parent/Guardian
   parentId String
   parent   User   @relation("ParentPlayers", fields: [parentId], references: [id], onDelete: Cascade)

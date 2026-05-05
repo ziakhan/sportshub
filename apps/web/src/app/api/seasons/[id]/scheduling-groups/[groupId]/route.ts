@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 
 export const dynamic = "force-dynamic"
 
@@ -13,10 +14,11 @@ const patchGroupSchema = z.object({
 async function assertSeasonOwner(seasonId: string, userId: string, isAdmin: boolean) {
   const season = await (prisma as any).season.findUnique({
     where: { id: seasonId },
-    select: { league: { select: { ownerId: true } } },
+    select: { status: true, league: { select: { ownerId: true } } },
   })
-  if (!season) return "notfound"
-  if (season.league.ownerId !== userId && !isAdmin) return "forbidden"
+  if (!season) return { kind: "notfound" as const }
+  if (season.league.ownerId !== userId && !isAdmin) return { kind: "forbidden" as const }
+  if (isSeasonLocked(season.status)) return { kind: "locked" as const, status: season.status }
   return null
 }
 
@@ -32,8 +34,9 @@ export async function PATCH(
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const err = await assertSeasonOwner(params.id, sessionInfo.userId, sessionInfo.isPlatformAdmin)
-    if (err === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (err === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (err?.kind === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (err?.kind === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (err?.kind === "locked") return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: err.status }, { status: 409 })
 
     const group = await (prisma as any).schedulingGroup.findUnique({
       where: { id: params.groupId },
@@ -93,8 +96,9 @@ export async function DELETE(
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const err = await assertSeasonOwner(params.id, sessionInfo.userId, sessionInfo.isPlatformAdmin)
-    if (err === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (err === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (err?.kind === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (err?.kind === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (err?.kind === "locked") return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: err.status }, { status: 409 })
 
     const group = await (prisma as any).schedulingGroup.findUnique({
       where: { id: params.groupId },

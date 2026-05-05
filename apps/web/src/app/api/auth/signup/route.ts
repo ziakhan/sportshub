@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     const passwordHash = await bcrypt.hash(data.password, 12)
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
         passwordHash,
@@ -46,7 +46,47 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ success: true })
+    // Attach any pending StaffInvitations sent to this email so the new user
+    // can find and accept them. Without this, invitations to fresh emails
+    // sit with invitedUserId=null and the accept PATCH rejects with 403.
+    const pendingInvites = await prisma.staffInvitation.findMany({
+      where: {
+        invitedEmail: { equals: normalizedEmail, mode: "insensitive" },
+        invitedUserId: null,
+        status: "PENDING",
+      },
+      select: { id: true, tenantId: true, role: true },
+    })
+
+    if (pendingInvites.length > 0) {
+      await prisma.staffInvitation.updateMany({
+        where: { id: { in: pendingInvites.map((i) => i.id) } },
+        data: { invitedUserId: user.id },
+      })
+      // Surface them via the standard notification bell so the user sees
+      // them on first dashboard load.
+      const tenants = await prisma.tenant.findMany({
+        where: { id: { in: pendingInvites.map((i) => i.tenantId) } },
+        select: { id: true, name: true },
+      })
+      const tenantNameById = new Map(tenants.map((t) => [t.id, t.name]))
+      await prisma.notification.createMany({
+        data: pendingInvites.map((inv) => ({
+          userId: user.id,
+          type: "staff_invite",
+          title: "Staff Invitation",
+          message: `${tenantNameById.get(inv.tenantId) || "A club"} has invited you to join as ${inv.role}.`,
+          link: "/notifications",
+          referenceId: inv.id,
+          referenceType: "StaffInvitation",
+        })),
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      pendingInvitations: pendingInvites.length,
+    })
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors[0].message }, { status: 400 })

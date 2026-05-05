@@ -170,11 +170,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       },
     })
 
-    // Send invitation email
+    // Send invitation email — unified public landing page handles both
+    // signed-in and signed-out invitees (Gap 0.1.2 fix).
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    const inviteLink = invitedUser
-      ? `${appUrl}/notifications`
-      : `${appUrl}/auth/signup?invite=${invitation.id}`
+    const inviteLink = `${appUrl}/invitations/${invitation.id}/accept`
     try {
       await sendStaffInviteEmail({
         to: normalizedEmail,

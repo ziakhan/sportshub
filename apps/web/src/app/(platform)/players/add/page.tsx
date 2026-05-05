@@ -7,6 +7,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 
+function calcAge(dobStr: string | undefined): number | null {
+  if (!dobStr) return null
+  const dob = new Date(dobStr)
+  if (isNaN(dob.getTime())) return null
+  return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+}
+
 function AddPlayerForm() {
   const searchParams = useSearchParams()
   const redirectTo = searchParams?.get("redirect") ?? null
@@ -22,10 +29,16 @@ function AddPlayerForm() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<AddPlayerFormData>({
     resolver: zodResolver(addPlayerSchema),
   })
+
+  const watchedDob = watch("dateOfBirth")
+  const watchedConsent = watch("parentalConsentGiven")
+  const age = calcAge(watchedDob)
+  const isMinor = age !== null && age < 13
 
   const onSubmit = async (data: AddPlayerFormData) => {
     setIsSubmitting(true)
@@ -242,6 +255,24 @@ function AddPlayerForm() {
               </div>
             </div>
 
+            {isMinor && (
+              <div className="border-play-200 bg-play-50 rounded-xl border p-4">
+                <p className="text-ink-700 mb-3 text-sm">
+                  This child is under 13. Federal law (COPPA) requires a parent or guardian to give explicit consent before we can collect or store their information.
+                </p>
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    {...register("parentalConsentGiven")}
+                    type="checkbox"
+                    className="mt-1"
+                  />
+                  <span className="text-ink-700">
+                    I am the parent or legal guardian and I consent to registering this child.
+                  </span>
+                </label>
+              </div>
+            )}
+
             <div className="flex gap-4 pt-2">
               <Link
                 href={redirectTo || "/players"}
@@ -251,7 +282,7 @@ function AddPlayerForm() {
               </Link>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || (isMinor && !watchedConsent)}
                 className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Adding..." : "Add Player"}

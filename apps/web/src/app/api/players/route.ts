@@ -26,7 +26,7 @@ export async function GET() {
   }
 
   const players = await prisma.player.findMany({
-    where: { parentId: user.id },
+    where: { parentId: user.id, deletedAt: null },
     select: {
       id: true,
       firstName: true,
@@ -72,6 +72,18 @@ export async function POST(req: Request) {
     const ageInYears = Math.floor(
       (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
     )
+    const isMinor = ageInYears < 13
+
+    // COPPA: parental consent is required when adding a child under 13.
+    if (isMinor && data.parentalConsentGiven !== true) {
+      return NextResponse.json(
+        {
+          error: "Parental consent is required to register a child under 13.",
+          code: "COPPA_CONSENT_REQUIRED",
+        },
+        { status: 400 }
+      )
+    }
 
     const player = await prisma.player.create({
       data: {
@@ -84,8 +96,10 @@ export async function POST(req: Request) {
         weight: data.weight || null,
         position: data.position || null,
         parentId: user.id,
-        isMinor: ageInYears < 13,
+        isMinor,
         canLogin: ageInYears >= 13,
+        parentalConsentGiven: isMinor ? true : null,
+        consentGivenAt: isMinor ? new Date() : null,
       },
       select: {
         id: true,

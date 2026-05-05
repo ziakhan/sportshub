@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 
 export const dynamic = "force-dynamic"
 
@@ -34,10 +35,13 @@ export async function POST(
 
     const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { league: { select: { ownerId: true } } },
+      select: { status: true, league: { select: { ownerId: true } } },
     })
     if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    if (isSeasonLocked(season.status)) {
+      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
     }
 
     const body = await request.json()
@@ -160,10 +164,13 @@ export async function DELETE(
 
     const season = await prisma.season.findUnique({
       where: { id: params.id },
-      select: { league: { select: { ownerId: true } } },
+      select: { status: true, league: { select: { ownerId: true } } },
     })
     if (!season || (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+    if (isSeasonLocked(season.status)) {
+      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
     }
 
     const sessionId = request.nextUrl.searchParams.get("sessionId")

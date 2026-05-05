@@ -29,7 +29,7 @@ export async function GET(
   }
 
   const player = await prisma.player.findFirst({
-    where: { id: params.id, parentId: user.id },
+    where: { id: params.id, parentId: user.id, deletedAt: null },
     select: {
       id: true,
       firstName: true,
@@ -74,9 +74,9 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Verify ownership
+    // Verify ownership (and that the player isn't soft-deleted)
     const existing = await prisma.player.findFirst({
-      where: { id: params.id, parentId: user.id },
+      where: { id: params.id, parentId: user.id, deletedAt: null },
     })
 
     if (!existing) {
@@ -132,4 +132,39 @@ export async function PATCH(
       { status: 500 }
     )
   }
+}
+
+/**
+ * Soft-delete a player. Parent-only. Sets deletedAt; preserves all historical
+ * relations (offers, signups, roster entries) so audit/history isn't lost.
+ * DELETE /api/players/[id]
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const player = await prisma.player.findFirst({
+    where: { id: params.id, parentId: session.user.id },
+    select: { id: true, deletedAt: true },
+  })
+
+  if (!player) {
+    return NextResponse.json({ error: "Player not found" }, { status: 404 })
+  }
+
+  if (player.deletedAt) {
+    return NextResponse.json({ error: "Player already removed" }, { status: 400 })
+  }
+
+  await prisma.player.update({
+    where: { id: params.id },
+    data: { deletedAt: new Date() },
+  })
+
+  return NextResponse.json({ success: true })
 }

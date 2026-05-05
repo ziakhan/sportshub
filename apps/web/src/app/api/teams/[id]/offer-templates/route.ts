@@ -99,6 +99,7 @@ export async function POST(
 
     const template = await prisma.offerTemplate.create({
       data: {
+        tenantId: team.tenantId,
         teamId: params.id,
         ...data,
       },

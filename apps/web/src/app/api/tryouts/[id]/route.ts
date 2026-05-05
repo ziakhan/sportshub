@@ -17,6 +17,7 @@ const updateTryoutSchema = z.object({
   fee: z.number().min(0).optional(),
   maxParticipants: z.number().nullable().optional(),
   isPublic: z.boolean().optional(),
+  isPublished: z.boolean().optional(),
   teamId: z.string().nullable().optional(),
 })
 
@@ -172,6 +173,7 @@ export async function PATCH(
     if (validatedData.fee !== undefined) data.fee = validatedData.fee
     if (validatedData.maxParticipants !== undefined) data.maxParticipants = validatedData.maxParticipants
     if (validatedData.isPublic !== undefined) data.isPublic = validatedData.isPublic
+    if (validatedData.isPublished !== undefined) data.isPublished = validatedData.isPublished
     if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
 
     await prisma.tryout.update({

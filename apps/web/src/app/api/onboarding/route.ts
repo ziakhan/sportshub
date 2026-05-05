@@ -76,6 +76,18 @@ export async function POST(req: Request) {
 
         case "Player": {
           const dob = new Date(profileData.dateOfBirth)
+          // COPPA: under-13 cannot self-register. A parent must add them via /players/add.
+          const ageMs = Date.now() - dob.getTime()
+          const ageYears = ageMs / (365.25 * 24 * 60 * 60 * 1000)
+          if (ageYears < 13) {
+            return NextResponse.json(
+              {
+                error: "Players under 13 cannot self-register. A parent or guardian must register and add you as a child.",
+                code: "COPPA_UNDER_13",
+              },
+              { status: 403 }
+            )
+          }
           // Save city/state/country to user record
           await prisma.user.update({
             where: { id: user.id },

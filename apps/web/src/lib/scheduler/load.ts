@@ -30,7 +30,7 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
             include: {
               dayVenues: {
                 include: {
-                  courts: { select: { id: true } },
+                  courts: { select: { courtId: true } },
                 },
               },
             },
@@ -89,7 +89,7 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
           venueId: dv.venueId,
           startTime: dv.startTime ?? null,
           endTime: dv.endTime ?? null,
-          courts: (dv.courts ?? []).map((c: any) => ({ id: c.id })),
+          courts: (dv.courts ?? []).map((c: any) => ({ id: c.courtId })),
         })),
       })),
     })),
