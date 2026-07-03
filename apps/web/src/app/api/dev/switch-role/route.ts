@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { auditSafe } from "@/lib/audit"
 
 /**
  * DEV ONLY: Switch the current user's role for testing
@@ -59,6 +60,17 @@ export async function POST(req: Request) {
         role: role,
         tenantId: needsTenant && tenant ? tenant.id : null,
       },
+    })
+
+    await auditSafe({
+      actorId: user.id,
+      actorRole: role,
+      action: "ROLE_SWITCH",
+      resource: "UserRole",
+      resourceId: newRole.id,
+      changes: { switchedTo: role, destructive: true },
+      metadata: { devTool: true },
+      request: req,
     })
 
     return NextResponse.json({

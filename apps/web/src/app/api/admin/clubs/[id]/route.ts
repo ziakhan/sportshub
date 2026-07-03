@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { audit, auditSafe } from "@/lib/audit"
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions)
@@ -42,6 +43,15 @@ export async function PATCH(
           where: { id: clubId },
           data: { status: "SUSPENDED" },
         })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "CLUB_SUSPEND",
+          resource: "Tenant",
+          resourceId: clubId,
+          tenantId: clubId,
+          request,
+        })
         return NextResponse.json({ success: true, message: "Club suspended" })
       }
 
@@ -49,6 +59,15 @@ export async function PATCH(
         await prisma.tenant.update({
           where: { id: clubId },
           data: { status: "ACTIVE" },
+        })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "CLUB_REACTIVATE",
+          resource: "Tenant",
+          resourceId: clubId,
+          tenantId: clubId,
+          request,
         })
         return NextResponse.json({ success: true, message: "Club reactivated" })
       }
@@ -60,6 +79,16 @@ export async function PATCH(
         await prisma.tenant.update({
           where: { id: clubId },
           data: { plan: data.plan },
+        })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "CLUB_PLAN_CHANGE",
+          resource: "Tenant",
+          resourceId: clubId,
+          tenantId: clubId,
+          changes: { plan: data.plan },
+          request,
         })
         return NextResponse.json({ success: true, message: `Plan changed to ${data.plan}` })
       }
@@ -89,6 +118,17 @@ export async function PATCH(
               role: "ClubOwner",
               tenantId: clubId,
             },
+          })
+
+          await audit(tx, {
+            actorId: adminId,
+            actorRole: "PlatformAdmin",
+            action: "CLUB_OWNERSHIP_TRANSFER",
+            resource: "Tenant",
+            resourceId: clubId,
+            tenantId: clubId,
+            changes: { newOwnerId: newOwner.id, newOwnerEmail: data.newOwnerEmail },
+            request,
           })
         })
         return NextResponse.json({ success: true, message: "Ownership transferred" })

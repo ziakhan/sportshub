@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { auditSafe } from "@/lib/audit"
 import bcrypt from "bcryptjs"
 
 async function requireAdmin() {
@@ -51,6 +52,15 @@ export async function PATCH(
           where: { id: userId },
           data: { status: "SUSPENDED" },
         })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "USER_STATUS_CHANGE",
+          resource: "User",
+          resourceId: userId,
+          changes: { status: "SUSPENDED" },
+          request,
+        })
         return NextResponse.json({ success: true, message: "User suspended" })
       }
 
@@ -58,6 +68,15 @@ export async function PATCH(
         await prisma.user.update({
           where: { id: userId },
           data: { status: "ACTIVE" },
+        })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "USER_STATUS_CHANGE",
+          resource: "User",
+          resourceId: userId,
+          changes: { status: "ACTIVE" },
+          request,
         })
         return NextResponse.json({ success: true, message: "User reactivated" })
       }
@@ -68,6 +87,15 @@ export async function PATCH(
         await prisma.user.update({
           where: { id: userId },
           data: { passwordHash: hash },
+        })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "USER_UPDATE",
+          resource: "User",
+          resourceId: userId,
+          changes: { field: "passwordHash" },
+          request,
         })
         return NextResponse.json({
           success: true,
@@ -87,6 +115,15 @@ export async function PATCH(
             tenantId: data.tenantId || null,
           },
         })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "ROLE_GRANT",
+          resource: "User",
+          resourceId: userId,
+          changes: { role: data.role, tenantId: data.tenantId || null },
+          request,
+        })
         return NextResponse.json({ success: true, message: "Role added" })
       }
 
@@ -95,6 +132,15 @@ export async function PATCH(
           return NextResponse.json({ error: "roleId is required" }, { status: 400 })
         }
         await prisma.userRole.delete({ where: { id: data.roleId } })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: "ROLE_REVOKE",
+          resource: "User",
+          resourceId: userId,
+          changes: { roleId: data.roleId },
+          request,
+        })
         return NextResponse.json({ success: true, message: "Role removed" })
       }
 

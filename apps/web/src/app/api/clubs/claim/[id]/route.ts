@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { audit } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
 
@@ -196,6 +197,17 @@ export async function PATCH(
           role: "ClubOwner",
           tenantId: params.id,
         },
+      })
+
+      await audit(tx, {
+        actorId: sessionInfo.userId,
+        actorRole: "ClubOwner",
+        action: "CLAIM_VERIFY_CODE",
+        resource: "ClubClaim",
+        resourceId: claim.id,
+        tenantId: params.id,
+        changes: { status: "APPROVED", grantedRole: "ClubOwner" },
+        metadata: { method: "email-code" },
       })
     })
 

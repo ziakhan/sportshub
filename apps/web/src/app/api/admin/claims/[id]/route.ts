@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { audit } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
 
@@ -82,6 +83,18 @@ export async function PATCH(
           })
         }
 
+        await audit(tx, {
+          actorId: session.user!.id,
+          actorRole: "PlatformAdmin",
+          action: "CLAIM_APPROVE",
+          resource: "ClubClaim",
+          resourceId: claim.id,
+          tenantId: claim.tenantId,
+          changes: { status: "APPROVED", grantedRole: "ClubOwner", grantedTo: claim.userId },
+          metadata: { note: data.note || null },
+          request,
+        })
+
         // Notify the user
         await tx.notification.create({
           data: {
@@ -105,6 +118,17 @@ export async function PATCH(
             reviewNote: data.note || "Rejected by admin",
             reviewedAt: new Date(),
           },
+        })
+
+        await audit(tx, {
+          actorId: session.user!.id,
+          actorRole: "PlatformAdmin",
+          action: "CLAIM_REJECT",
+          resource: "ClubClaim",
+          resourceId: claim.id,
+          tenantId: claim.tenantId,
+          metadata: { note: data.note || null },
+          request,
         })
 
         await tx.notification.create({

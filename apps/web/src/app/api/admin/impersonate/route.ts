@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { cookies } from "next/headers"
+import { auditSafe } from "@/lib/audit"
 
 const IMPERSONATE_COOKIE = "admin-impersonate-uid"
 
@@ -46,6 +47,16 @@ export async function POST(request: NextRequest) {
     maxAge: 60 * 60, // 1 hour
   })
 
+  await auditSafe({
+    actorId: adminId,
+    actorRole: "PlatformAdmin",
+    action: "IMPERSONATE_START",
+    resource: "User",
+    resourceId: userId,
+    metadata: { targetEmail: user.email },
+    request,
+  })
+
   return NextResponse.json({
     success: true,
     message: `Now impersonating ${user.firstName} ${user.lastName} (${user.email})`,
@@ -61,7 +72,16 @@ export async function DELETE() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const impersonatedUid = cookies().get(IMPERSONATE_COOKIE)?.value
   cookies().delete(IMPERSONATE_COOKIE)
+
+  await auditSafe({
+    actorId: adminId,
+    actorRole: "PlatformAdmin",
+    action: "IMPERSONATE_STOP",
+    resource: "User",
+    resourceId: impersonatedUid || "unknown",
+  })
 
   return NextResponse.json({ success: true, message: "Impersonation ended" })
 }
