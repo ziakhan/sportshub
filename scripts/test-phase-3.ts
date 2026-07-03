@@ -36,6 +36,10 @@ async function cleanup() {
   }
   if (userIds.length > 0) {
     await prisma.userRole.deleteMany({ where: { userId: { in: userIds } } })
+    // Claim approvals/rejections write AuditLog rows (WS1.4) — clear them
+    // or user deletion trips the FK on re-runs.
+    await prisma.auditLog.deleteMany({ where: { userId: { in: userIds } } })
+    await prisma.notification.deleteMany({ where: { userId: { in: userIds } } })
     await prisma.user.deleteMany({ where: { id: { in: userIds } } })
   }
   console.log(`🧹 Cleaned up ${users.length} users, ${tenants.length} tenants`)
