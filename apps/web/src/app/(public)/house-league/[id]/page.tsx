@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
+import { Badge, Card } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -52,60 +53,60 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-lg bg-white p-8 shadow border border-gray-200">
+            <Card className="p-8">
               <div className="mb-4 flex items-center gap-3">
-                {isPast && <span className="rounded-full bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700">Ended</span>}
-                {!isPast && !isFull && <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Open</span>}
-                {isFull && !isPast && <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">Full</span>}
-                {league.season && <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700">{league.season}</span>}
+                {isPast && <Badge tone="neutral">Ended</Badge>}
+                {!isPast && !isFull && <Badge tone="court">Open</Badge>}
+                {isFull && !isPast && <Badge tone="danger">Full</Badge>}
+                {league.season && <Badge tone="hoop">{league.season}</Badge>}
               </div>
 
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{league.name}</h1>
-              <p className="text-gray-500 mb-4">
+              <h1 className="text-3xl font-bold text-ink-950 mb-2">{league.name}</h1>
+              <p className="text-ink-500 mb-4">
                 {league.ageGroups.split(",").join(", ")}{league.gender ? ` • ${league.gender}` : ""}
               </p>
 
               {league.description && (
-                <p className="text-gray-700 mb-6">{league.description}</p>
+                <p className="text-ink-700 mb-6">{league.description}</p>
               )}
 
               {/* Schedule */}
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-500 mb-1">Dates</div>
-                  <div className="text-gray-900">
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="text-sm font-medium text-ink-500 mb-1">Dates</div>
+                  <div className="text-ink-950">
                     {format(new Date(league.startDate), "MMM d")} - {format(new Date(league.endDate), "MMM d, yyyy")}
                   </div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-500 mb-1">Weekly Schedule</div>
-                  <div className="text-gray-900">
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="text-sm font-medium text-ink-500 mb-1">Weekly Schedule</div>
+                  <div className="text-ink-950">
                     {days.join(", ")} {league.startTime} - {league.endTime}
                   </div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-500 mb-1">Location</div>
-                  <div className="text-gray-900">{league.location}</div>
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="text-sm font-medium text-ink-500 mb-1">Location</div>
+                  <div className="text-ink-950">{league.location}</div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="text-sm font-medium text-gray-500 mb-1">Spots</div>
-                  <div className="text-gray-900">
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="text-sm font-medium text-ink-500 mb-1">Spots</div>
+                  <div className="text-ink-950">
                     {league._count.signups} registered
-                    {spotsLeft !== null && <span className="text-sm text-gray-500"> ({spotsLeft} left)</span>}
+                    {spotsLeft !== null && <span className="text-sm text-ink-500"> ({spotsLeft} left)</span>}
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Details / What's Included */}
             {(league.details || included.length > 0) && (
-              <div className="rounded-lg bg-white p-8 shadow border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">What&apos;s Included</h2>
+              <Card className="p-8">
+                <h2 className="text-lg font-bold text-ink-950 mb-4">What&apos;s Included</h2>
 
                 {included.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {included.map((item: any) => (
-                      <span key={item as string} className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+                      <span key={item as string} className="rounded-full bg-court-50 px-3 py-1 text-sm font-medium text-court-700">
                         {item}
                       </span>
                     ))}
@@ -113,45 +114,45 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                 )}
 
                 {league.details && (
-                  <div className="text-gray-700 whitespace-pre-line">{league.details}</div>
+                  <div className="text-ink-700 whitespace-pre-line">{league.details}</div>
                 )}
-              </div>
+              </Card>
             )}
           </div>
 
           {/* Sidebar */}
           <div>
-            <div className="rounded-lg bg-white p-6 shadow border border-gray-200 sticky top-4">
+            <Card className="sticky top-4">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-hoop-600">
                   {league.fee === 0 ? "FREE" : formatCurrency(league.fee, currency)}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">per player</p>
+                <p className="text-xs text-ink-500 mt-1">per player</p>
               </div>
 
               {isPast ? (
-                <div className="rounded-md bg-gray-100 p-4 text-center text-sm text-gray-600">
+                <div className="rounded-2xl bg-ink-100 p-4 text-center text-sm text-ink-600">
                   This program has ended.
                 </div>
               ) : isFull ? (
-                <div className="rounded-md bg-red-50 p-4 text-center text-sm text-red-600">
+                <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">
                   This program is full.
                 </div>
               ) : (
                 <Link
                   href={`/sign-in?callbackUrl=/dashboard`}
-                  className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
+                  className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
                 >
                   Sign Up
                 </Link>
               )}
 
               <div className="mt-4 text-center">
-                <Link href={`/club/${league.tenant.slug}`} className="text-sm text-orange-600 hover:underline">
+                <Link href={`/club/${league.tenant.slug}`} className="text-sm text-hoop-600 hover:underline">
                   View {league.tenant.name} &rarr;
                 </Link>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

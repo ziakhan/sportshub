@@ -145,16 +145,16 @@ export default function EventsPage() {
   })
 
   const typeBadge: Record<string, { bg: string; text: string; label: string }> = {
-    tryout: { bg: "bg-orange-100", text: "text-orange-700", label: "Tryout" },
-    "house-league": { bg: "bg-green-100", text: "text-green-700", label: "House League" },
-    camp: { bg: "bg-purple-100", text: "text-purple-700", label: "Camp" },
+    tryout: { bg: "bg-hoop-50", text: "text-hoop-600", label: "Tryout" },
+    "house-league": { bg: "bg-court-50", text: "text-court-700", label: "House League" },
+    camp: { bg: "bg-violet-100", text: "text-violet-700", label: "Camp" },
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Find Programs &amp; Tryouts</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-3xl font-bold text-ink-950">Find Programs &amp; Tryouts</h1>
+        <p className="mt-2 text-ink-600">
           Browse tryouts, house leagues, and camps to find the right fit for your player.
         </p>
       </div>
@@ -172,7 +172,7 @@ export default function EventsPage() {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                filter === f.key ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                filter === f.key ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
               }`}
             >
               {f.label}
@@ -184,16 +184,16 @@ export default function EventsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, club, or location..."
-          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+          className="flex-1 rounded-xl border border-ink-200 px-4 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
         />
       </div>
 
       {loading ? (
-        <div className="text-gray-500 py-12 text-center">Loading programs...</div>
+        <div className="text-ink-500 py-12 text-center">Loading programs...</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No programs found</h3>
-          <p className="text-gray-600">Try adjusting your filters or search terms.</p>
+        <div className="rounded-[28px] border-2 border-dashed border-ink-200 bg-white p-12 text-center">
+          <h3 className="text-lg font-bold text-ink-950 mb-2">No programs found</h3>
+          <p className="text-ink-600">Try adjusting your filters or search terms.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -203,7 +203,7 @@ export default function EventsPage() {
               <Link
                 key={`${event.type}-${event.id}`}
                 href={event.href}
-                className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md"
+                className="card-lift rounded-[28px] border border-ink-100 bg-white overflow-hidden shadow-soft"
               >
                 <div className="h-2" style={{ backgroundColor: event.primaryColor }} />
                 <div className="p-5">
@@ -211,13 +211,13 @@ export default function EventsPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.bg} ${badge.text}`}>
                       {badge.label}
                     </span>
-                    <span className="text-xs text-gray-400">{event.spotsInfo}</span>
+                    <span className="text-xs text-ink-400">{event.spotsInfo}</span>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 mb-1">{event.name}</h3>
-                  <p className="text-sm text-gray-500 mb-2">{event.clubName}</p>
+                  <h3 className="font-semibold text-ink-950 mb-1">{event.name}</h3>
+                  <p className="text-sm text-ink-500 mb-2">{event.clubName}</p>
 
-                  <div className="space-y-1 text-xs text-gray-500">
+                  <div className="space-y-1 text-xs text-ink-500">
                     <div>
                       {format(new Date(event.startDate), "MMM d, yyyy")}
                       {event.endDate && ` - ${format(new Date(event.endDate), "MMM d, yyyy")}`}
@@ -229,8 +229,8 @@ export default function EventsPage() {
                     {event.extra && <div>{event.extra}</div>}
                   </div>
 
-                  <div className="mt-3 pt-3 border-t flex items-center justify-between">
-                    <span className="text-lg font-bold text-orange-600">
+                  <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between">
+                    <span className="text-lg font-bold text-hoop-600">
                       {event.fee === 0 ? "FREE" : formatCurrency(event.fee, event.currency)}
                     </span>
                   </div>

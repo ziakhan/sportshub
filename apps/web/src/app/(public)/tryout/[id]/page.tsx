@@ -5,6 +5,7 @@ import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { Badge, Card } from "@/components/ui"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -62,106 +63,100 @@ export default async function PublicTryoutDetailPage({
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2">
-            <div className="rounded-lg bg-white p-8 shadow border border-gray-200">
+            <Card className="p-8">
               <div className="mb-4 flex flex-wrap items-center gap-3">
-                {isPast && (
-                  <span className="rounded-full bg-gray-200 px-3 py-1 text-sm font-medium text-gray-700">Closed</span>
-                )}
-                {isFull && !isPast && (
-                  <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700">Full</span>
-                )}
-                {!isPast && !isFull && (
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">Open</span>
-                )}
+                {isPast && <Badge tone="neutral">Closed</Badge>}
+                {isFull && !isPast && <Badge tone="danger">Full</Badge>}
+                {!isPast && !isFull && <Badge tone="court">Open</Badge>}
               </div>
 
-              <h1 className="mb-4 text-3xl font-bold text-gray-900">{tryout.title}</h1>
+              <h1 className="mb-4 text-3xl font-bold text-ink-950">{tryout.title}</h1>
 
               {tryout.description && (
-                <p className="mb-6 text-gray-700">{tryout.description}</p>
+                <p className="mb-6 text-ink-700">{tryout.description}</p>
               )}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">Date &amp; Time</div>
-                  <div className="text-gray-900">{format(new Date(tryout.scheduledAt), "EEEE, MMMM d, yyyy")}</div>
-                  <div className="text-sm text-gray-600">
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="mb-1 text-sm font-medium text-ink-500">Date &amp; Time</div>
+                  <div className="text-ink-950">{format(new Date(tryout.scheduledAt), "EEEE, MMMM d, yyyy")}</div>
+                  <div className="text-sm text-ink-600">
                     {format(new Date(tryout.scheduledAt), "h:mm a")}
                     {tryout.duration && ` (${tryout.duration} min)`}
                   </div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">Location</div>
-                  <div className="text-gray-900">{tryout.location}</div>
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="mb-1 text-sm font-medium text-ink-500">Location</div>
+                  <div className="text-ink-950">{tryout.location}</div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">Age Group &amp; Gender</div>
-                  <div className="text-gray-900">
-                    {tryout.ageGroup}{tryout.gender ? ` \u2022 ${tryout.gender}` : ""}
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="mb-1 text-sm font-medium text-ink-500">Age Group &amp; Gender</div>
+                  <div className="text-ink-950">
+                    {tryout.ageGroup}{tryout.gender ? ` • ${tryout.gender}` : ""}
                   </div>
                 </div>
-                <div className="rounded-md bg-gray-50 p-4">
-                  <div className="mb-1 text-sm font-medium text-gray-500">Spots</div>
-                  <div className="text-gray-900">
+                <div className="rounded-2xl bg-ink-50 p-4">
+                  <div className="mb-1 text-sm font-medium text-ink-500">Spots</div>
+                  <div className="text-ink-950">
                     {tryout._count.signups} signed up
                     {spotsLeft !== null && (
-                      <span className="text-sm text-gray-500"> ({spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} left)</span>
+                      <span className="text-sm text-ink-500"> ({spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} left)</span>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div>
-            <div className="rounded-lg bg-white p-6 shadow border border-gray-200">
+            <Card>
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-hoop-600">
                   {fee === 0 ? "FREE" : formatCurrency(fee, currency)}
                 </div>
-                {fee > 0 && <p className="mt-1 text-xs text-gray-500">per player</p>}
+                {fee > 0 && <p className="mt-1 text-xs text-ink-500">per player</p>}
               </div>
 
               {isPast ? (
-                <div className="rounded-md bg-gray-100 p-4 text-center text-sm text-gray-600">
+                <div className="rounded-2xl bg-ink-100 p-4 text-center text-sm text-ink-600">
                   This tryout has already taken place.
                 </div>
               ) : isFull ? (
-                <div className="rounded-md bg-red-50 p-4 text-center text-sm text-red-600">
+                <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">
                   This tryout is full.
                 </div>
               ) : session ? (
                 <Link
                   href={`/tryouts/${params.id}`}
-                  className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
+                  className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
                 >
                   Sign Up Now
                 </Link>
               ) : (
                 <div className="text-center">
-                  <p className="mb-4 text-sm text-gray-600">
+                  <p className="mb-4 text-sm text-ink-600">
                     Sign in to register your player for this tryout.
                   </p>
                   <Link
                     href={`/sign-in?callbackUrl=/tryouts/${params.id}`}
-                    className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
+                    className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
                   >
                     Sign In to Sign Up
                   </Link>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* Club link */}
-            <div className="mt-4 rounded-lg bg-white p-6 shadow border border-gray-200 text-center">
+            <Card className="mt-4 text-center">
               <Link
                 href={`/club/${tryout.tenant.slug}`}
-                className="text-orange-600 font-semibold hover:underline"
+                className="text-hoop-600 font-semibold hover:underline"
               >
                 View {tryout.tenant.name} Profile &rarr;
               </Link>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
