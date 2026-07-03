@@ -258,9 +258,23 @@ export function computeStandings(input: StandingsInput): DivisionStandings[] {
             applyGame(away, g.awayScore, g.homeScore, "T")
           }
         } else if (home)
-          applyGame(home, g.homeScore, g.awayScore, g.homeScore >= g.awayScore ? "W" : "L")
+          // Cross-division game (only one team in this roster): credit a W/L
+          // only on a strict score difference — an equal score is a tie, same
+          // as the both-teams-present branch. Previously `>=` counted a tie
+          // as a win for the present team.
+          applyGame(
+            home,
+            g.homeScore,
+            g.awayScore,
+            g.homeScore > g.awayScore ? "W" : g.homeScore < g.awayScore ? "L" : "T"
+          )
         else if (away)
-          applyGame(away, g.awayScore, g.homeScore, g.awayScore >= g.homeScore ? "W" : "L")
+          applyGame(
+            away,
+            g.awayScore,
+            g.homeScore,
+            g.awayScore > g.homeScore ? "W" : g.awayScore < g.homeScore ? "L" : "T"
+          )
       } else if (g.status === "DEFAULTED" && g.defaultedBy) {
         const loser = rowsById.get(g.defaultedBy)
         const winnerId = g.defaultedBy === g.homeTeamId ? g.awayTeamId : g.homeTeamId
