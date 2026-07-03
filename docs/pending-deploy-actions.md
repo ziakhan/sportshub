@@ -2,9 +2,11 @@
 
 Manual steps to run on production (Neon) **before** the next Vercel deploy of master. Each action lists the linked code change, the production command, and how to verify it landed.
 
+> **History:** Entries 1–3 (the 0.1.x gap deploys) all ran on 2026-05-05 ahead of commits `30d92ed` + `3a60477`. Left in this file as a worked example for future migrations.
+
 ---
 
-## 1. Backfill `OfferTemplate.tenantId` (Gap 0.1.7)
+## ✅ 1. Backfill `OfferTemplate.tenantId` (Gap 0.1.7) — applied 2026-05-05
 
 **Linked code change:** [apps/web/src/app/api/teams/[id]/offer-templates/route.ts](../apps/web/src/app/api/teams/[id]/offer-templates/route.ts) — POST handler now sets `tenantId: team.tenantId` on new templates.
 
@@ -58,7 +60,10 @@ Once Neon is clean, `git push` master and let Vercel auto-deploy. Verify on the 
 
 ---
 
-## 2. Push `Player.deletedAt` schema field (Gap 0.1.4)
+## ✅ 2. Push `Player.deletedAt` schema field (Gap 0.1.4) — applied 2026-05-05
+
+> Note: `prisma db push` refused due to drift on the unrelated Neon onboarding table `playing_with_neon`. Applied the additive column surgically via raw `ALTER TABLE "Player" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);` instead. The `playing_with_neon` sample table is harmless leftover and remains in the DB; drop manually if desired.
+
 
 **Linked code change:** [prisma/schema.prisma](../prisma/schema.prisma) — added `deletedAt DateTime?` to the `Player` model. [apps/web/src/app/api/players/[id]/route.ts](../apps/web/src/app/api/players/[id]/route.ts) — new `DELETE` handler soft-deletes via `deletedAt`. List/detail GETs now filter `deletedAt: null`.
 
@@ -90,8 +95,13 @@ WHERE table_name = 'Player' AND column_name = 'deletedAt';
 
 ---
 
-## 3. Push the `OfferTemplate.tenantId` and `Player.deletedAt` changes together if convenient
+## ✅ 3. Push the `OfferTemplate.tenantId` and `Player.deletedAt` changes together if convenient — applied 2026-05-05
 
 If you're running both #1 and #2 in the same session, the order doesn't matter — they're independent. Both are non-destructive.
 
 After the schema push (#2), still run the OfferTemplate backfill SQL (#1) — that one is data-only, not schema.
+
+---
+
+<!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->
+
