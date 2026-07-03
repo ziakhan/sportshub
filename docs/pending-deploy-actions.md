@@ -105,3 +105,48 @@ After the schema push (#2), still run the OfferTemplate backfill SQL (#1) — th
 
 <!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->
 
+
+## ⬜ 4. Schema-hardening batch (architecture review WS1.5 + WS4) — July 2026
+
+**Linked code change:** `prisma/schema.prisma` (OfferTemplate.tenantId NOT NULL,
+CoachDesignation enum, TryoutSignup.playerId + uniques, Season/Team natural keys,
+Game venue indexes, RefereeProfile FK, Payment.currency default) +
+`prisma/sql/2026-07-authz-integrity.sql` (UserRole partial uniques + scope CHECK,
+Review one-per-target). Local DB already migrated + verified.
+
+**Run order on Neon (before deploying this code):**
+
+### Step 1 — Pre-check (all should return 0 rows / 0 counts)
+```sql
+SELECT COUNT(*) FROM "OfferTemplate" WHERE "tenantId" IS NULL;
+SELECT "leagueId", label, COUNT(*) FROM "Season" GROUP BY 1,2 HAVING COUNT(*)>1;
+SELECT "tenantId", name, "ageGroup", season, COUNT(*) FROM "Team" GROUP BY 1,2,3,4 HAVING COUNT(*)>1;
+SELECT COUNT(*) FROM "Review" WHERE num_nonnulls("tenantId","leagueId","revieweeId") <> 1;
+SELECT role, COUNT(*) FROM "UserRole" WHERE NOT (
+  ("gameId" IS NULL OR role IN ('Scorekeeper','Referee'))
+  AND ("leagueId" IS NULL OR role IN ('LeagueOwner','LeagueManager'))
+  AND ("teamId" IS NULL OR role IN ('Staff','TeamManager','Player'))
+  AND ("tenantId" IS NULL OR role IN ('ClubOwner','ClubManager','Staff','TeamManager','Scorekeeper'))
+) GROUP BY 1;
+-- Also dedupe any NULL-porous duplicate UserRole grants before step 2:
+SELECT "userId", role, "tenantId", COUNT(*) FROM "UserRole"
+  WHERE "teamId" IS NULL AND "leagueId" IS NULL AND "gameId" IS NULL
+  GROUP BY 1,2,3 HAVING COUNT(*)>1;
+```
+
+### Step 2 — Push schema
+```bash
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate
+```
+Expect: OfferTemplate.tenantId NOT NULL, new CoachDesignation enum, TryoutSignup.playerId
+column + uniques/indexes, Season/Team uniques, Game indexes, RefereeProfile FK.
+(`playing_with_neon` sample-table drift may again require applying pieces via SQL editor —
+see entry #2's precedent.)
+
+### Step 3 — Apply the raw-SQL integrity file
+Run the whole of `prisma/sql/2026-07-authz-integrity.sql` in the Neon SQL editor
+(idempotent). Then `UPDATE "Payment" SET currency='CAD' WHERE currency='usd';`
+
+### Step 4 — Push code
+Deploy master. New signups begin writing `TryoutSignup.playerId`.

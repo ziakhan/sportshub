@@ -57,6 +57,7 @@ model User {
 
   @@index([email])
   @@index([status])
+  refereeProfile RefereeProfile?
 }
 
 enum UserStatus {
@@ -86,7 +87,7 @@ model UserRole {
   gameId String? // For temporary scorekeeper role
   game   Game?   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  designation String? // "HeadCoach", "AssistantCoach" — for Coach roles on a team
+  designation CoachDesignation? // coaching sub-type for team-scoped Staff/TeamManager
   expiresAt   DateTime? // For temporary roles
 
   createdAt DateTime @default(now())
@@ -96,6 +97,11 @@ model UserRole {
   @@index([tenantId])
   @@index([teamId])
   @@index([leagueId])
+}
+
+enum CoachDesignation {
+  HeadCoach
+  AssistantCoach
 }
 
 enum Role {
@@ -249,6 +255,7 @@ model Team {
 
   @@index([tenantId])
   @@index([ageGroup])
+  @@unique([tenantId, name, ageGroup, season])
 }
 
 enum Gender {
@@ -297,6 +304,7 @@ model Player {
 
   @@index([parentId])
   @@index([isMinor])
+  tryoutSignups TryoutSignup[]
 }
 
 model TeamPlayer {
@@ -334,6 +342,7 @@ enum TeamPlayerStatus {
 model RefereeProfile {
   id     String @id @default(uuid())
   userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Certifications
   certificationLevel  String? // "Level 1", "Level 2", etc.
@@ -406,6 +415,12 @@ model TryoutSignup {
   userId String // Parent
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Identity thread to the real Player (restores tryout->offer linkage);
+  // nullable because a signup may predate the Player record. Name/age stay
+  // as a point-in-time snapshot.
+  playerId String?
+  player   Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
   playerName   String
   playerAge    Int
   playerGender Gender
@@ -423,8 +438,10 @@ model TryoutSignup {
   updatedAt DateTime @updatedAt
 
   @@unique([tryoutId, userId, playerName])
+  @@unique([tryoutId, playerId])
   @@index([tryoutId])
   @@index([userId])
+  @@index([playerId])
 }
 
 enum TryoutSignupStatus {
@@ -436,9 +453,9 @@ enum TryoutSignupStatus {
 }
 
 model OfferTemplate {
-  id       String  @id @default(uuid())
-  tenantId String?
-  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   // Legacy: was team-scoped, now club-scoped. Kept nullable for existing data.
   teamId String?
@@ -597,6 +614,7 @@ model Season {
 
   @@index([leagueId])
   @@index([status])
+  @@unique([leagueId, label])
 }
 
 enum SeasonStatus {
@@ -888,6 +906,9 @@ model Game {
   @@index([seasonId])
   @@index([sessionId])
   @@index([dayId])
+  @@index([dayVenueId])
+  @@index([courtId])
+  @@index([venueId])
   @@index([homeTeamId])
   @@index([awayTeamId])
   @@index([scheduledAt])
@@ -1086,7 +1107,7 @@ model Payment {
 
   // Payment Details
   amount      Decimal  @db.Decimal(10, 2)
-  currency    String   @default("usd")
+  currency    String   @default("CAD") // ISO 4217, uppercase like every other money field
   platformFee Decimal? @db.Decimal(10, 2)
 
   status PaymentStatus @default(PENDING)
@@ -1234,7 +1255,7 @@ model StaffInvitation {
 
   role        Role
   teamId      String?
-  designation String? // "HeadCoach", "AssistantCoach" — carried through on accept
+  designation CoachDesignation? // carried through on accept
   message     String? @db.Text
 
   type   InvitationType

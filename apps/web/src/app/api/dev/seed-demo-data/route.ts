@@ -842,26 +842,9 @@ export async function GET() {
     }
     results.push("Submitted 3 Warriors teams to Spring Invitational (2 approved, 1 pending)")
 
-    // ── 11. Migrate any existing team-scoped templates to club-scoped ──────
-    const orphanedTemplates = await prisma.offerTemplate.findMany({
-      where: { tenantId: null, teamId: { not: null } },
-      select: { id: true, teamId: true },
-    })
-    for (const t of orphanedTemplates as any[]) {
-      const team = await prisma.team.findUnique({
-        where: { id: t.teamId },
-        select: { tenantId: true },
-      })
-      if (team) {
-        await prisma.offerTemplate.update({
-          where: { id: t.id },
-          data: { tenantId: team.tenantId },
-        })
-      }
-    }
-    if (orphanedTemplates.length > 0) {
-      results.push(`Migrated ${orphanedTemplates.length} team-scoped templates to club-scoped`)
-    }
+    // (Former step 11 — orphaned-template migration — removed: OfferTemplate.tenantId
+    // is NOT NULL as of the 2026-07 schema hardening, so null-tenant templates
+    // can no longer exist by construction.)
 
     return NextResponse.json({
       success: true,

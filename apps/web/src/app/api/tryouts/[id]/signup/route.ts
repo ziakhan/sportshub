@@ -38,6 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         parentId: user.id,
       },
       select: {
+        id: true,
         firstName: true,
         lastName: true,
         dateOfBirth: true,
@@ -109,6 +110,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         tryoutId: params.id,
         userId: user.id,
+        // Identity thread to the real Player (schema hardening WS4.3) —
+        // name/age remain a point-in-time snapshot.
+        playerId: player.id,
         playerName,
         playerAge,
         playerGender: player.gender,
