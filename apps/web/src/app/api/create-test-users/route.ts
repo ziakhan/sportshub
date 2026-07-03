@@ -9,6 +9,9 @@ import bcrypt from "bcryptjs"
  * DELETE THIS IN PRODUCTION
  */
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production" }, { status: 404 })
+  }
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {

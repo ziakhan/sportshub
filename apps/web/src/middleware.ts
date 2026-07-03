@@ -6,11 +6,16 @@ import { isPublicPath } from "@/lib/public-paths"
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Auth check for protected routes
-  if (!isPublicPath(pathname) && !pathname.startsWith("/api/auth")) {
+  // Auth check for protected routes. Method-aware: public API namespaces
+  // are readable anonymously, but their mutating methods still require auth.
+  if (!isPublicPath(pathname, req.method)) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
 
     if (!token) {
+      if (pathname.startsWith("/api/")) {
+        // API callers get a JSON 401, not a redirect to an HTML sign-in page.
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
       const signInUrl = new URL("/sign-in", req.url)
       signInUrl.searchParams.set("callbackUrl", pathname)
       return NextResponse.redirect(signInUrl)
