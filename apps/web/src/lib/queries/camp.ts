@@ -1,4 +1,4 @@
-import { cache } from "react"
+import { cache } from "./request-cache"
 import { prisma } from "@youthbasketballhub/db"
 
 /**

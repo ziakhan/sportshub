@@ -6,6 +6,9 @@ import { assignJerseys } from "@/lib/teams/assign-jerseys"
 
 export const dynamic = "force-dynamic"
 
+/** G1: fewer than this and a game lineup can't be fielded — warn, don't block. */
+const MIN_ROSTER_SIZE = 5
+
 /**
  * Finalize team roster - assign jersey numbers based on preferences (first-come-first-served)
  * POST /api/teams/[id]/finalize
@@ -132,6 +135,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     })
 
+    // G1: under-roster warning (non-blocking, by owner decision) — accepted
+    // offers upsert TeamPlayer rows, so the ACTIVE count is the final roster.
+    const activeRosterCount = await prisma.teamPlayer.count({
+      where: { teamId: params.id, status: "ACTIVE" },
+    })
+    const warnings: string[] = []
+    if (activeRosterCount < MIN_ROSTER_SIZE) {
+      warnings.push(
+        `Roster has ${activeRosterCount} player(s) — below the minimum of ${MIN_ROSTER_SIZE} needed to field a lineup.`
+      )
+    }
+
     return NextResponse.json({
       success: true,
       assignments: assignments.map((a: any) => ({
@@ -140,6 +155,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         status: a.jerseyNumber !== null ? "assigned" : "no_preference_available",
       })),
       expiredPendingOffers: true,
+      warnings,
     })
   } catch (error) {
     console.error("Finalize team error:", error)

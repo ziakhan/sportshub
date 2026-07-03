@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -125,7 +126,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const tryout = await prisma.tryout.findUnique({
       where: { id: params.id },
-      select: { id: true, tenantId: true },
+      select: { id: true, tenantId: true, title: true, isPublished: true },
     })
 
     if (!tryout) {
@@ -166,9 +167,31 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (validatedData.isPublished !== undefined) data.isPublished = validatedData.isPublished
     if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
 
-    await prisma.tryout.update({
-      where: { id: params.id },
-      data,
+    // G7: unpublishing a tryout that families already signed up for used to
+    // be silent — tell every non-cancelled signup's parent.
+    const unpublishing = tryout.isPublished && validatedData.isPublished === false
+
+    await prisma.$transaction(async (tx: any) => {
+      await tx.tryout.update({
+        where: { id: params.id },
+        data,
+      })
+
+      if (unpublishing) {
+        const signups = await tx.tryoutSignup.findMany({
+          where: { tryoutId: params.id, status: { not: "CANCELLED" } },
+          select: { userId: true },
+        })
+        const parentIds: string[] = Array.from(new Set(signups.map((s: any) => s.userId)))
+        await notifyMany(tx, parentIds, {
+          type: "tryout_unpublished",
+          title: "Tryout No Longer Available",
+          message: `"${tryout.title}" has been unpublished by the club. Your signup is on hold — the club will follow up if it is rescheduled.`,
+          link: `/tryouts/${tryout.id}`,
+          referenceId: tryout.id,
+          referenceType: "Tryout",
+        })
+      }
     })
 
     return NextResponse.json({ success: true })

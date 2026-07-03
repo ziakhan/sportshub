@@ -17,6 +17,11 @@ import { getServerSession } from "next-auth"
  * Seed registry — every suite needs a unique world seed so runId namespaces
  * never collide if suites ever run concurrently:
  *   1101 seasons/[id]/submit
+ *   1102 seasons/[id] finalize-preflight
+ *   1103 teams/[id]/finalize
+ *   1104 tryouts/[id]
+ *   1105 games/[id]
+ *   1106 players/[id]
  */
 
 export function actAs(userId: string | null): void {

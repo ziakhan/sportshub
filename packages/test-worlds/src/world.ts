@@ -32,6 +32,10 @@ export interface BuiltWorld {
 
 export async function buildWorld(spec: WorldSpec = {}): Promise<BuiltWorld> {
   const ctx = createWorldContext(spec.seed ?? 1)
+  // Self-heal: a previous run of this seed that died mid-build leaves rows
+  // the deterministic namespace would collide with. Destroy is a no-op on a
+  // clean namespace.
+  await destroyWorld(ctx)
   const clubs: BuiltWorld["clubs"] = []
   const leagues: BuiltLeague[] = []
 

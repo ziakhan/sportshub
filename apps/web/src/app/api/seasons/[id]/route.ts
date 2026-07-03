@@ -202,12 +202,31 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       }
 
+      // NEW (G5): warning — a division with fewer than 2 teams that isn't
+      // pooled into a cross-division group can never be scheduled; the
+      // generator silently drops it. Non-blocking by owner decision.
+      for (const d of preflight.divisions as any[]) {
+        const teamCount = d?._count?.teamSubmissions ?? 0
+        const pooled =
+          effective.allowCrossDivisionScheduling && (d.schedulingGroups ?? []).length > 0
+        if (!pooled && teamCount < 2) {
+          warnings.push(
+            `Division "${d.name}" has ${teamCount} team(s) — the scheduler will skip it (needs at least 2).`
+          )
+        }
+      }
+
       // NEW: feasibility warning — court-minutes available vs. required
       const gameSlotMinutes: number = effective.gameSlotMinutes ?? 90
       const gamesGuaranteed: number = effective.gamesGuaranteed ?? 0
       const approvedTeamCount = preflight.teamSubmissions.filter(
         (t: any) => t.status === "APPROVED"
       ).length
+
+      // NEW (H17): a season with zero approved teams has nothing to schedule
+      if (approvedTeamCount === 0) {
+        missing.push("No approved teams — approve at least one team before finalizing")
+      }
       const requiredGameCount = Math.ceil((approvedTeamCount * gamesGuaranteed) / 2)
       const requiredCourtMinutes = requiredGameCount * gameSlotMinutes
 

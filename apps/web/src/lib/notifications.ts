@@ -35,6 +35,10 @@ export type NotificationType =
   | "schedule_published"
   // Program signups
   | "signup_received"
+  | "tryout_unpublished"
+  // Game changes
+  | "game_cancelled"
+  | "game_rescheduled"
 
 export interface NotificationInput {
   userId: string

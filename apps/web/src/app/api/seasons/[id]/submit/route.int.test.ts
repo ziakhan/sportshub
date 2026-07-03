@@ -102,7 +102,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await destroyWorld(world.ctx)
+  if (world) await destroyWorld(world.ctx)
 })
 
 describe("POST /api/seasons/[id]/submit (integration)", () => {

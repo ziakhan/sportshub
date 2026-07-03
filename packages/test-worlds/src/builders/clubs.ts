@@ -60,7 +60,9 @@ export async function createClub(
     const team = await prisma.team.create({
       data: {
         tenantId: tenant.id,
-        name: ctx.name(teamName(ctx.rng)),
+        // Counter suffix: rng names have only 100 combos, and
+        // Team(tenantId, name, ageGroup, season) is a natural key.
+        name: ctx.name(`${teamName(ctx.rng)} ${ctx.next()}`),
         ageGroup: spec.ageGroup ?? "U12",
         gender: (spec.gender ?? "MALE") as any,
         season: spec.season ?? "Test Season",

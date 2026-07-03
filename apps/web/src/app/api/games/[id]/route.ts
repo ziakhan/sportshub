@@ -2,8 +2,43 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notifyMany, type NotificationType } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
+
+/**
+ * G8: game cancellations/reschedules used to be silent — fan out to the
+ * club managers of both teams. League owners already know (they did it).
+ */
+async function notifyBothClubs(
+  game: { id: string; seasonId: string | null; homeTeamId: string; awayTeamId: string },
+  type: NotificationType,
+  title: string,
+  message: string
+) {
+  const teams = await prisma.team.findMany({
+    where: { id: { in: [game.homeTeamId, game.awayTeamId] } },
+    select: { tenantId: true },
+  })
+  const roles = await prisma.userRole.findMany({
+    where: {
+      tenantId: { in: Array.from(new Set(teams.map((t) => t.tenantId))) },
+      role: { in: ["ClubOwner", "ClubManager"] },
+    },
+    select: { userId: true },
+  })
+  await notifyMany(prisma, Array.from(new Set(roles.map((r) => r.userId))), {
+    type,
+    title,
+    message,
+    link: game.seasonId ? `/browse-leagues/${game.seasonId}` : null,
+    referenceId: game.id,
+    referenceType: "Game",
+  })
+}
+
+const matchupLabel = (g: { homeTeam?: { name?: string }; awayTeam?: { name?: string } }) =>
+  `${g.homeTeam?.name ?? "Home"} vs ${g.awayTeam?.name ?? "Away"}`
 
 const patchSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
@@ -150,6 +185,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         court: { select: { id: true, name: true } },
       },
     })
+
+    // G8 notifications — compare against the pre-update row
+    const becameInactive =
+      data.status !== undefined &&
+      ["CANCELLED", "POSTPONED"].includes(data.status) &&
+      game.status !== data.status
+    const timeChanged =
+      data.scheduledAt !== undefined &&
+      new Date(data.scheduledAt).getTime() !== new Date(game.scheduledAt).getTime()
+    const placeChanged =
+      (data.venueId !== undefined && data.venueId !== game.venueId) ||
+      (data.courtId !== undefined && data.courtId !== game.courtId)
+
+    if (becameInactive) {
+      await notifyBothClubs(
+        game,
+        "game_cancelled",
+        data.status === "POSTPONED" ? "Game Postponed" : "Game Cancelled",
+        `${matchupLabel(updated)} on ${new Date(game.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })} has been ${data.status === "POSTPONED" ? "postponed" : "cancelled"} by the league.`
+      )
+    } else if ((timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
+      await notifyBothClubs(
+        game,
+        "game_rescheduled",
+        "Game Rescheduled",
+        `${matchupLabel(updated)} has moved to ${new Date(updated.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}${updated.venue?.name ? ` at ${updated.venue.name}` : ""}${updated.court?.name ? ` (${updated.court.name})` : ""}.`
+      )
+    }
+
     return NextResponse.json({ game: updated })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -184,7 +248,21 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     const updated = await (prisma as any).game.update({
       where: { id: params.id },
       data: { status: "CANCELLED" },
+      include: {
+        homeTeam: { select: { id: true, name: true } },
+        awayTeam: { select: { id: true, name: true } },
+      },
     })
+
+    if (game.status !== "CANCELLED") {
+      await notifyBothClubs(
+        game,
+        "game_cancelled",
+        "Game Cancelled",
+        `${matchupLabel(updated)} on ${new Date(game.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })} has been cancelled by the league.`
+      )
+    }
+
     return NextResponse.json({ game: updated })
   } catch (error) {
     console.error("Game DELETE error:", error)

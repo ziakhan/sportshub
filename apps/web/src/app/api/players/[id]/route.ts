@@ -146,9 +146,41 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ error: "Player already removed" }, { status: 400 })
   }
 
-  await prisma.player.update({
-    where: { id: params.id },
-    data: { deletedAt: new Date() },
+  // G10: a child on an active roster must be released by the club first —
+  // soft-deleting them would leave a ghost occupying a roster spot.
+  const activeRoster = await prisma.teamPlayer.findFirst({
+    where: { playerId: params.id, status: "ACTIVE" },
+    include: { team: { select: { name: true } } },
+  })
+  if (activeRoster) {
+    return NextResponse.json(
+      {
+        error: `Cannot remove this player while they are on the active roster of ${activeRoster.team.name}. Ask the club to release them first.`,
+        code: "ACTIVE_ROSTER",
+      },
+      { status: 409 }
+    )
+  }
+
+  // G10: don't leave dangling commitments behind — decline open offers and
+  // cancel signups for tryouts that haven't happened yet.
+  await prisma.$transaction(async (tx: any) => {
+    await tx.player.update({
+      where: { id: params.id },
+      data: { deletedAt: new Date() },
+    })
+    await tx.offer.updateMany({
+      where: { playerId: params.id, status: "PENDING" },
+      data: { status: "DECLINED", respondedAt: new Date() },
+    })
+    await tx.tryoutSignup.updateMany({
+      where: {
+        playerId: params.id,
+        status: { not: "CANCELLED" },
+        tryout: { scheduledAt: { gt: new Date() } },
+      },
+      data: { status: "CANCELLED" },
+    })
   })
 
   return NextResponse.json({ success: true })
