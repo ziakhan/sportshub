@@ -1,10 +1,10 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { getPublicCamp } from "@/lib/queries/camp"
+
+export const dynamic = "force-dynamic"
 
 const CAMP_TYPE_LABELS: Record<string, string> = {
   MARCH_BREAK: "March Break Camp",
@@ -13,22 +13,18 @@ const CAMP_TYPE_LABELS: Record<string, string> = {
   WEEKLY: "Weekly Camp",
 }
 
-export default function PublicCampDetailPage() {
-  const params = useParams()
-  const id = params?.id as string
-  const [camp, setCamp] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const camp = await getPublicCamp(params.id)
+  if (!camp) return { title: "Camp not found — SportsHub" }
+  const description = camp.description
+    ? String(camp.description).slice(0, 150)
+    : `${camp.name} — youth basketball camp by ${camp.tenant.name} on SportsHub.`
+  return { title: `${camp.name} — SportsHub`, description }
+}
 
-  useEffect(() => {
-    fetch(`/api/camps/${id}`)
-      .then((res) => res.json())
-      .then((data) => { if (data.id) setCamp(data) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
-
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
-  if (!camp) return <div className="text-gray-500 py-12 text-center">Camp not found.</div>
+export default async function PublicCampDetailPage({ params }: { params: { id: string } }) {
+  const camp = await getPublicCamp(params.id)
+  if (!camp) notFound()
 
   const isPast = new Date(camp.endDate) < new Date()
   const isFull = camp.maxParticipants && camp._count.signups >= camp.maxParticipants
@@ -71,7 +67,7 @@ export default function PublicCampDetailPage() {
               </div>
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{camp.name}</h1>
-              <p className="text-gray-500 mb-4">{camp.ageGroup}{camp.gender ? ` \u2022 ${camp.gender}` : ""}</p>
+              <p className="text-gray-500 mb-4">{camp.ageGroup}{camp.gender ? ` • ${camp.gender}` : ""}</p>
 
               {camp.description && <p className="text-gray-700 mb-6">{camp.description}</p>}
 
@@ -106,7 +102,7 @@ export default function PublicCampDetailPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">What&apos;s Included</h2>
                 {included.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {included.map((item) => (
+                    {included.map((item: any) => (
                       <span key={item as string} className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">{item}</span>
                     ))}
                   </div>

@@ -1,29 +1,24 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { getPublicSeason } from "@/lib/queries/season"
 
-export default function PublicSeasonPage() {
-  const params = useParams()
-  const id = params?.id as string
-  const [season, setSeason] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+export const dynamic = "force-dynamic"
 
-  useEffect(() => {
-    fetch(`/api/seasons/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.id) setSeason(data)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const season = await getPublicSeason(params.id)
+  if (!season) return { title: "Season not found — SportsHub" }
+  const name = season.league?.name || "League Season"
+  const description = season.league?.description
+    ? String(season.league.description).slice(0, 150)
+    : `${name} — youth basketball league season on SportsHub.`
+  return { title: `${name} — SportsHub`, description }
+}
 
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
-  if (!season) return <div className="text-gray-500 py-12 text-center">Season not found.</div>
+export default async function PublicSeasonPage({ params }: { params: { id: string } }) {
+  const season = await getPublicSeason(params.id)
+  if (!season) notFound()
 
   const leagueName = season.league?.name
   const leagueDescription = season.league?.description
@@ -116,8 +111,8 @@ export default function PublicSeasonPage() {
                     <h3 className="font-medium text-gray-900">{d.name}</h3>
                     <p className="text-sm text-gray-500">
                       {d.ageGroup}
-                      {d.gender ? ` \u2022 ${d.gender}` : ""}
-                      {d.tier > 1 ? ` \u2022 Tier ${d.tier}` : ""}
+                      {d.gender ? ` • ${d.gender}` : ""}
+                      {d.tier > 1 ? ` • Tier ${d.tier}` : ""}
                     </p>
                   </div>
                 ))}
@@ -170,7 +165,7 @@ export default function PublicSeasonPage() {
 
             {isOpen && !deadlinePassed ? (
               <Link
-                href={`/browse-leagues/${id}`}
+                href={`/browse-leagues/${params.id}`}
                 className="block w-full rounded-md bg-orange-500 px-4 py-3 text-center font-semibold text-white hover:bg-orange-600"
               >
                 Register Your Team

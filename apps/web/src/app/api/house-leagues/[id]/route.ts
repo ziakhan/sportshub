@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
+import { getPublicHouseLeague } from "@/lib/queries/house-league"
 
 export const dynamic = "force-dynamic"
 
@@ -10,27 +11,13 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const league = await (prisma as any).houseLeague.findUnique({
-      where: { id: params.id },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            currency: true,
-            branding: { select: { primaryColor: true } },
-          },
-        },
-        _count: { select: { signups: true } },
-      },
-    })
+    const league = await getPublicHouseLeague(params.id)
 
     if (!league) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ ...league, fee: Number(league.fee) })
+    return NextResponse.json(league)
   } catch (error) {
     console.error("Get house league error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

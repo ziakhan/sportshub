@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { getPublicTournament } from "@/lib/queries/tournament"
 
 export const dynamic = "force-dynamic"
 
@@ -9,40 +10,13 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const tournament = await (prisma as any).tournament.findUnique({
-      where: { id: params.id },
-      include: {
-        divisions: { orderBy: { ageGroup: "asc" } },
-        teams: {
-          include: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-                ageGroup: true,
-                gender: true,
-                tenant: { select: { id: true, name: true, slug: true } },
-              },
-            },
-            division: { select: { id: true, name: true } },
-          },
-        },
-        _count: { select: { teams: true } },
-      },
-    })
+    const tournament = await getPublicTournament(params.id)
 
     if (!tournament) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    return NextResponse.json({
-      ...tournament,
-      teamFee: tournament.teamFee ? Number(tournament.teamFee) : null,
-      teams: tournament.teams.map((t: any) => ({
-        ...t,
-        registrationFee: t.registrationFee ? Number(t.registrationFee) : null,
-      })),
-    })
+    return NextResponse.json(tournament)
   } catch (error) {
     console.error("Get tournament error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

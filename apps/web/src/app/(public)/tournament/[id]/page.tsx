@@ -1,29 +1,23 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { getPublicTournament } from "@/lib/queries/tournament"
 
-export default function PublicTournamentPage() {
-  const params = useParams()
-  const id = params?.id as string
-  const [tournament, setTournament] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+export const dynamic = "force-dynamic"
 
-  useEffect(() => {
-    fetch(`/api/tournaments/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.id) setTournament(data)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const tournament = await getPublicTournament(params.id)
+  if (!tournament) return { title: "Tournament not found — SportsHub" }
+  const description = tournament.description
+    ? String(tournament.description).slice(0, 150)
+    : `${tournament.name} — youth basketball tournament${tournament.city ? ` in ${tournament.city}` : ""} on SportsHub.`
+  return { title: `${tournament.name} — SportsHub`, description }
+}
 
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
-  if (!tournament) return <div className="text-gray-500 py-12 text-center">Tournament not found.</div>
+export default async function PublicTournamentPage({ params }: { params: { id: string } }) {
+  const tournament = await getPublicTournament(params.id)
+  if (!tournament) notFound()
 
   const isOpen = tournament.status === "REGISTRATION"
   const deadlinePassed =
@@ -109,7 +103,7 @@ export default function PublicTournamentPage() {
                     <div key={d.id} className="rounded-md border border-gray-100 bg-gray-50 p-3">
                       <span className="font-medium text-gray-900">{d.name}</span>
                       <span className="ml-2 text-xs text-gray-500">
-                        {d.ageGroup}{d.gender ? ` \u2022 ${d.gender}` : ""}
+                        {d.ageGroup}{d.gender ? ` • ${d.gender}` : ""}
                       </span>
                       {d.maxTeams && (
                         <span className="ml-2 text-xs text-gray-400">(max {d.maxTeams})</span>

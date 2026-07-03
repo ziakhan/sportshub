@@ -1,60 +1,23 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { getPublicHouseLeague } from "@/lib/queries/house-league"
 
-interface HouseLeagueDetail {
-  id: string
-  name: string
-  description: string | null
-  details: string | null
-  ageGroups: string
-  gender: string | null
-  season: string | null
-  startDate: string
-  endDate: string
-  daysOfWeek: string
-  startTime: string
-  endTime: string
-  location: string
-  fee: number
-  maxParticipants: number | null
-  includesUniform: boolean
-  includesJersey: boolean
-  includesBall: boolean
-  includesMedal: boolean
-  isPublished: boolean
-  _count: { signups: number }
-  tenant: {
-    id: string
-    name: string
-    slug: string
-    currency: string
-    branding: { primaryColor: string } | null
-  }
+export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const league = await getPublicHouseLeague(params.id)
+  if (!league) return { title: "Program not found — SportsHub" }
+  const description = league.description
+    ? String(league.description).slice(0, 150)
+    : `${league.name} — youth basketball house league by ${league.tenant.name} on SportsHub.`
+  return { title: `${league.name} — SportsHub`, description }
 }
 
-export default function PublicHouseLeaguePage() {
-  const params = useParams()
-  const id = params?.id as string
-  const [league, setLeague] = useState<HouseLeagueDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`/api/house-leagues/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.id) setLeague(data)
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [id])
-
-  if (loading) return <div className="text-gray-500 py-12 text-center">Loading...</div>
-  if (!league) return <div className="text-gray-500 py-12 text-center">Program not found.</div>
+export default async function PublicHouseLeaguePage({ params }: { params: { id: string } }) {
+  const league = await getPublicHouseLeague(params.id)
+  if (!league) notFound()
 
   const isPast = new Date(league.endDate) < new Date()
   const isFull = league.maxParticipants !== null && league._count.signups >= league.maxParticipants
@@ -69,7 +32,7 @@ export default function PublicHouseLeaguePage() {
     league.includesMedal && "Medal/Trophy",
   ].filter(Boolean)
 
-  const days = league.daysOfWeek.split(",").map((d) => d.trim())
+  const days = league.daysOfWeek.split(",").map((d: string) => d.trim())
 
   return (
     <>
@@ -99,7 +62,7 @@ export default function PublicHouseLeaguePage() {
 
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{league.name}</h1>
               <p className="text-gray-500 mb-4">
-                {league.ageGroups.split(",").join(", ")}{league.gender ? ` \u2022 ${league.gender}` : ""}
+                {league.ageGroups.split(",").join(", ")}{league.gender ? ` • ${league.gender}` : ""}
               </p>
 
               {league.description && (
@@ -141,7 +104,7 @@ export default function PublicHouseLeaguePage() {
 
                 {included.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {included.map((item) => (
+                    {included.map((item: any) => (
                       <span key={item as string} className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
                         {item}
                       </span>

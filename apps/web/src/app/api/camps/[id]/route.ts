@@ -2,34 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
+import { getPublicCamp } from "@/lib/queries/camp"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const camp = await (prisma as any).camp.findUnique({
-      where: { id: params.id },
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            currency: true,
-            branding: { select: { primaryColor: true } },
-          },
-        },
-        _count: { select: { signups: true } },
-      },
-    })
+    const camp = await getPublicCamp(params.id)
     if (!camp) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
-    return NextResponse.json({
-      ...camp,
-      weeklyFee: Number(camp.weeklyFee),
-      fullCampFee: camp.fullCampFee ? Number(camp.fullCampFee) : null,
-    })
+    return NextResponse.json(camp)
   } catch (error) {
     console.error("Get camp error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { getPublicSeason } from "@/lib/queries/season"
 
 export const dynamic = "force-dynamic"
 
@@ -9,41 +10,13 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const season = await (prisma as any).season.findUnique({
-      where: { id: params.id },
-      include: {
-        league: { select: { id: true, name: true, description: true, ownerId: true } },
-        divisions: { orderBy: { ageGroup: "asc" } },
-        teamSubmissions: {
-          include: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-                ageGroup: true,
-                gender: true,
-                tenant: { select: { id: true, name: true, slug: true } },
-              },
-            },
-            division: { select: { id: true, name: true } },
-          },
-        },
-        _count: { select: { teamSubmissions: true, games: true, sessions: true } },
-      },
-    })
+    const season = await getPublicSeason(params.id)
 
     if (!season) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    return NextResponse.json({
-      ...season,
-      teamFee: season.teamFee ? Number(season.teamFee) : null,
-      teamSubmissions: season.teamSubmissions.map((t: any) => ({
-        ...t,
-        registrationFee: t.registrationFee ? Number(t.registrationFee) : null,
-      })),
-    })
+    return NextResponse.json(season)
   } catch (error) {
     console.error("Get season error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
