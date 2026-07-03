@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Pin the product timezone so DST-boundary scheduler tests (I14) exercise
+    // the same wall-clock math on every machine and in CI.
+    env: { TZ: "America/Toronto" },
   },
 })
