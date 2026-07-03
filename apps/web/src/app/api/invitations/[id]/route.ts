@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notify } from "@/lib/notifications"
 
 const respondSchema = z.object({
   action: z.enum(["accept", "decline"]),
@@ -146,30 +147,26 @@ export async function PATCH(
 
       if (invitation.type === "INVITE") {
         // Notify the club owner who sent the invite
-        await prisma.notification.create({
-          data: {
+        await notify(prisma, {
             userId: invitation.invitedById,
             type: "invite_accepted",
             title: "Invitation Accepted",
             message: `${userName} has accepted your invitation to join ${invitation.tenant.name} as ${roleToAssign}.`,
             link: `/clubs/${invitation.tenantId}/staff`,
             referenceId: invitation.id,
-            referenceType: "StaffInvitation",
-          },
-        })
+            referenceType: "StaffInvitation"
+      })
       } else {
         // Notify the user whose request was accepted
-        await prisma.notification.create({
-          data: {
+        await notify(prisma, {
             userId: targetUserId,
             type: "request_accepted",
             title: "Request Accepted",
             message: `Your request to join ${invitation.tenant.name} has been accepted! You've been assigned the ${roleToAssign} role.`,
             link: `/dashboard`,
             referenceId: invitation.id,
-            referenceType: "StaffInvitation",
-          },
-        })
+            referenceType: "StaffInvitation"
+      })
       }
 
       return NextResponse.json({ status: "accepted" })
@@ -184,30 +181,26 @@ export async function PATCH(
 
       if (invitation.type === "INVITE") {
         // Notify club owner
-        await prisma.notification.create({
-          data: {
+        await notify(prisma, {
             userId: invitation.invitedById,
             type: "invite_declined",
             title: "Invitation Declined",
             message: `${userName} has declined your invitation to join ${invitation.tenant.name}.`,
             link: `/clubs/${invitation.tenantId}/staff`,
             referenceId: invitation.id,
-            referenceType: "StaffInvitation",
-          },
-        })
+            referenceType: "StaffInvitation"
+      })
       } else {
         // Notify the requesting user
         if (invitation.invitedUserId) {
-          await prisma.notification.create({
-            data: {
+          await notify(prisma, {
               userId: invitation.invitedUserId,
               type: "request_declined",
               title: "Request Declined",
               message: `Your request to join ${invitation.tenant.name} has been declined.`,
               referenceId: invitation.id,
-              referenceType: "StaffInvitation",
-            },
-          })
+              referenceType: "StaffInvitation"
+      })
         }
       }
 

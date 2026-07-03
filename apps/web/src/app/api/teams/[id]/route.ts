@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
+import { notify } from "@/lib/notifications"
 
 const staffEntrySchema = z
   .object({
@@ -244,17 +245,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                       ? "Team Manager"
                       : entry.role
 
-              await tx.notification.create({
-                data: {
+              await notify(tx, {
                   userId: invitedUser.id,
                   type: "staff_invite",
                   title: "Team Staff Invitation",
                   message: `${tenant?.name || "A club"} has invited you to join team "${team.name}" as ${roleLabel}.`,
                   link: `/notifications`,
                   referenceId: invitation.id,
-                  referenceType: "StaffInvitation",
-                },
-              })
+                  referenceType: "StaffInvitation"
+      })
             }
           }
         }

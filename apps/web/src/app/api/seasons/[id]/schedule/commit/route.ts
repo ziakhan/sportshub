@@ -5,6 +5,7 @@ import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
 import { canCommitSchedule, COMMIT_NOT_READY_MESSAGE } from "@/lib/seasons/season-lock"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -83,6 +84,33 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
       return { removed, created: created.count }
     })
+
+    // Notify every approved club that the schedule is live (gap: silent before).
+    const submissions = await (prisma as any).teamSubmission.findMany({
+      where: { seasonId: params.id, status: "APPROVED" },
+      select: { team: { select: { tenantId: true } } },
+    })
+    const tenantIds: string[] = Array.from(
+      new Set(submissions.map((s: any) => s.team.tenantId as string))
+    )
+    if (tenantIds.length > 0) {
+      const managers = await prisma.userRole.findMany({
+        where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager"] } },
+        select: { userId: true },
+      })
+      await notifyMany(
+        prisma,
+        Array.from(new Set(managers.map((m) => m.userId))),
+        {
+          type: "schedule_published",
+          title: "Season Schedule Published",
+          message: "The game schedule for your league season has been published.",
+          link: `/browse-leagues/${params.id}`,
+          referenceId: params.id,
+          referenceType: "Season",
+        }
+      )
+    }
 
     return NextResponse.json({
       success: true,

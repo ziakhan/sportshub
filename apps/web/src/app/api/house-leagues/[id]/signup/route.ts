@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -68,6 +69,24 @@ export async function POST(
         notes: data.notes || null,
       },
     })
+
+    // Notify the club that a new signup arrived (gap: signups were silent).
+    const staff = await prisma.userRole.findMany({
+      where: { tenantId: league.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+      select: { userId: true },
+    })
+    await notifyMany(
+      prisma,
+      staff.map((r) => r.userId),
+      {
+        type: "signup_received",
+        title: "New House League Signup",
+        message: `A new player signed up for "${league.name}".`,
+        link: `/clubs/${league.tenantId}/house-leagues`,
+        referenceId: signup.id,
+        referenceType: "HouseLeagueSignup",
+      }
+    )
 
     return NextResponse.json({ success: true, id: signup.id }, { status: 201 })
   } catch (error) {

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notifyMany } from "@/lib/notifications"
 
 const requestSchema = z.object({
   role: z.enum(["ClubManager", "Staff"]),
@@ -99,17 +100,18 @@ export async function POST(
 
     const userName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
 
-    await prisma.notification.createMany({
-      data: clubOwners.map((owner: any) => ({
-        userId: owner.userId,
+    await notifyMany(
+      prisma,
+      clubOwners.map((owner: any) => owner.userId),
+      {
         type: "staff_request",
         title: "Staff Request",
         message: `${userName} has requested to join ${tenant.name} as ${data.role}.`,
         link: `/clubs/${params.id}/staff`,
         referenceId: invitation.id,
         referenceType: "StaffInvitation",
-      })),
-    })
+      }
+    )
 
     return NextResponse.json(invitation, { status: 201 })
   } catch (error) {

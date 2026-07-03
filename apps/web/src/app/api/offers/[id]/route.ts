@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notify } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -214,17 +215,15 @@ export async function PATCH(
         })
 
         if (clubOwner) {
-          await tx.notification.create({
-            data: {
+          await notify(tx, {
               userId: clubOwner.userId,
               type: "offer_accepted",
               title: "Offer Accepted",
               message: `${offer.player.firstName} ${offer.player.lastName} has accepted the offer to join ${offer.team.name}.`,
               link: `/clubs/${offer.team.tenantId}/offers`,
               referenceId: updated.id,
-              referenceType: "Offer",
-            },
-          })
+              referenceType: "Offer"
+      })
         }
 
         return updated
@@ -256,17 +255,15 @@ export async function PATCH(
         })
 
         if (clubOwner) {
-          await tx.notification.create({
-            data: {
+          await notify(tx, {
               userId: clubOwner.userId,
               type: "offer_declined",
               title: "Offer Declined",
               message: `${offer.player.firstName} ${offer.player.lastName} has declined the offer to join ${offer.team.name}.`,
               link: `/clubs/${offer.team.tenantId}/offers`,
               referenceId: updated.id,
-              referenceType: "Offer",
-            },
-          })
+              referenceType: "Offer"
+      })
         }
 
         return updated

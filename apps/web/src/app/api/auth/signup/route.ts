@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
+import { notifyBatch } from "@/lib/notifications"
 
 const signupSchema = z.object({
   email: normalizedEmailSchema("Invalid email address"),
@@ -70,17 +71,18 @@ export async function POST(request: Request) {
         select: { id: true, name: true },
       })
       const tenantNameById = new Map(tenants.map((t) => [t.id, t.name]))
-      await prisma.notification.createMany({
-        data: pendingInvites.map((inv) => ({
+      await notifyBatch(
+        prisma,
+        pendingInvites.map((inv) => ({
           userId: user.id,
-          type: "staff_invite",
+          type: "staff_invite" as const,
           title: "Staff Invitation",
           message: `${tenantNameById.get(inv.tenantId) || "A club"} has invited you to join as ${inv.role}.`,
           link: "/notifications",
           referenceId: inv.id,
           referenceType: "StaffInvitation",
-        })),
-      })
+        }))
+      )
     }
 
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notify } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -161,16 +162,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Create notification for the parent
-      await tx.notification.create({
-        data: {
+      await notify(tx, {
           userId: player.parentId,
           type: "offer_received",
           title: "New Team Offer",
           message: `${team.tenant.name} has sent an offer for ${player.firstName} ${player.lastName} to join ${team.name}.`,
           link: `/offers`,
           referenceId: offer.id,
-          referenceType: "Offer",
-        },
+          referenceType: "Offer"
       })
 
       return offer

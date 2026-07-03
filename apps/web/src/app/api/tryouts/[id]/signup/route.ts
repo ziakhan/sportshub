@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { tryoutSignupSchema } from "@/lib/validations/tryout-signup"
 import { z } from "zod"
+import { notifyMany } from "@/lib/notifications"
 
 /**
  * Sign up for a tryout
@@ -136,6 +137,24 @@ export async function POST(
         createdAt: true,
       },
     })
+
+    // Notify the club that a new signup arrived (gap: signups were silent).
+    const staff = await prisma.userRole.findMany({
+      where: { tenantId: tryout.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+      select: { userId: true },
+    })
+    await notifyMany(
+      prisma,
+      staff.map((r) => r.userId),
+      {
+        type: "signup_received",
+        title: "New Tryout Signup",
+        message: `${playerName} signed up for "${tryout.title}".`,
+        link: `/clubs/${tryout.tenantId}/tryouts`,
+        referenceId: signup.id,
+        referenceType: "TryoutSignup",
+      }
+    )
 
     return NextResponse.json(signup, { status: 201 })
   } catch (error) {

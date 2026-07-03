@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { audit } from "@/lib/audit"
+import { notify } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -110,16 +111,14 @@ export async function POST(
       select: { userId: true },
     })
     for (const admin of admins) {
-      await prisma.notification.create({
-        data: {
+      await notify(prisma, {
           userId: admin.userId,
           type: "club_claim",
           title: "New Club Claim Request",
           message: `A user has requested to claim "${tenant.name}".`,
           link: "/dashboard/admin/claims",
           referenceId: claim.id,
-          referenceType: "ClubClaim",
-        },
+          referenceType: "ClubClaim"
       })
     }
 

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { audit } from "@/lib/audit"
+import { notify } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -96,17 +97,15 @@ export async function PATCH(
         })
 
         // Notify the user
-        await tx.notification.create({
-          data: {
+        await notify(tx, {
             userId: claim.userId,
             type: "claim_approved",
             title: "Club Claim Approved",
             message: `Your claim for "${claim.tenant.name}" has been approved. You are now the owner!`,
             link: `/clubs/${claim.tenantId}`,
             referenceId: claim.id,
-            referenceType: "ClubClaim",
-          },
-        })
+            referenceType: "ClubClaim"
+      })
       })
     } else {
       await prisma.$transaction(async (tx: any) => {
@@ -131,17 +130,15 @@ export async function PATCH(
           request,
         })
 
-        await tx.notification.create({
-          data: {
+        await notify(tx, {
             userId: claim.userId,
             type: "claim_rejected",
             title: "Club Claim Rejected",
             message: `Your claim for "${claim.tenant.name}" was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
             link: `/clubs/find`,
             referenceId: claim.id,
-            referenceType: "ClubClaim",
-          },
-        })
+            referenceType: "ClubClaim"
+      })
       })
     }
 

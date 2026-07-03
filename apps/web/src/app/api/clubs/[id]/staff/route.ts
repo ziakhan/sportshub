@@ -5,6 +5,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { sendStaffInviteEmail } from "@/lib/email"
 import { normalizedEmailSchema } from "@/lib/validations/email"
+import { notify } from "@/lib/notifications"
 
 const inviteSchema = z.object({
   email: normalizedEmailSchema("Enter a valid email"),
@@ -189,16 +190,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Create notification for the invited user (if they exist)
     if (invitedUser) {
-      await prisma.notification.create({
-        data: {
+      await notify(prisma, {
           userId: invitedUser.id,
           type: "staff_invite",
           title: "Staff Invitation",
           message: `${tenant?.name || "A club"} has invited you to join as ${data.role}.`,
           link: `/notifications`,
           referenceId: invitation.id,
-          referenceType: "StaffInvitation",
-        },
+          referenceType: "StaffInvitation"
       })
     }
 

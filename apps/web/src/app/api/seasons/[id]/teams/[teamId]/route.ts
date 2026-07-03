@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -108,17 +109,18 @@ export async function PATCH(
               ? `${submission.team.name} was not approved for ${season.league.name}.`
               : `${submission.team.name} registration status was updated for ${season.league.name}.`
 
-        await prisma.notification.createMany({
-          data: clubManagers.map((manager: any) => ({
-            userId: manager.userId,
+        await notifyMany(
+          prisma,
+          clubManagers.map((manager: any) => manager.userId),
+          {
             type: "league_registration_status",
             title,
             message,
             link: `/browse-leagues/${params.id}`,
             referenceId: submission.id,
             referenceType: "TeamSubmission",
-          })),
-        })
+          }
+        )
       }
     }
 

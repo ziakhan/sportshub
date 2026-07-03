@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { notify } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -129,17 +130,15 @@ export async function POST(
       for (const offer of acceptedOffers) {
         const assignment = assignments.find((a: any) => a.offerId === offer.id)
         if (assignment?.jerseyNumber !== null) {
-          await tx.notification.create({
-            data: {
+          await notify(tx, {
               userId: offer.player.parentId,
               type: "jersey_assigned",
               title: "Jersey Number Assigned",
               message: `${assignment!.playerName} has been assigned jersey #${assignment!.jerseyNumber} on ${team.name}.`,
               link: `/offers`,
               referenceId: offer.id,
-              referenceType: "Offer",
-            },
-          })
+              referenceType: "Offer"
+      })
         }
       }
     })
