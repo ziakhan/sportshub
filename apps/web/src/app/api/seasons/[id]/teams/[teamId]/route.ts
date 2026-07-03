@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
+import { isSeasonLocked } from "@/lib/seasons/season-lock"
 
 export const dynamic = "force-dynamic"
 
@@ -37,6 +38,7 @@ export async function PATCH(
       select: {
         id: true,
         leagueId: true,
+        status: true,
         league: { select: { ownerId: true, name: true } },
       },
     })
@@ -77,14 +79,91 @@ export async function PATCH(
       return NextResponse.json({ error: "Team submission not found" }, { status: 404 })
     }
 
+    // G4/H19 lock guard: once the season structure is locked, approving or
+    // rejecting teams would desync the committed schedule. Withdrawing stays
+    // allowed — teams do quit mid-season — and cascades below.
+    if (
+      isSeasonLocked(season.status) &&
+      data.status !== undefined &&
+      data.status !== "WITHDRAWN"
+    ) {
+      return NextResponse.json(
+        {
+          error: "Season is finalized — team submissions can only be withdrawn now.",
+          code: "SEASON_LOCKED",
+        },
+        { status: 409 }
+      )
+    }
+
     const updateData: Record<string, any> = {}
     if (data.status !== undefined) updateData.status = data.status
     if (data.paymentStatus !== undefined) updateData.paymentStatus = data.paymentStatus
 
-    const updated = await prisma.teamSubmission.update({
-      where: { id: submission.id },
-      data: updateData,
+    // G4 cascade: withdrawing a team cancels its FUTURE games atomically with
+    // the status flip. Played/past games stay for standings.
+    const withdrawing = data.status === "WITHDRAWN" && submission.status !== "WITHDRAWN"
+    let cancelledGames: { id: string; homeTeamId: string; awayTeamId: string; scheduledAt: Date }[] = []
+
+    const updated = await prisma.$transaction(async (tx: any) => {
+      const row = await tx.teamSubmission.update({
+        where: { id: submission.id },
+        data: updateData,
+      })
+      if (withdrawing) {
+        cancelledGames = await tx.game.findMany({
+          where: {
+            seasonId: params.id,
+            status: { in: ["SCHEDULED", "POSTPONED"] },
+            scheduledAt: { gt: new Date() },
+            OR: [{ homeTeamId: submission.team.id }, { awayTeamId: submission.team.id }],
+          },
+          select: { id: true, homeTeamId: true, awayTeamId: true, scheduledAt: true },
+        })
+        if (cancelledGames.length > 0) {
+          await tx.game.updateMany({
+            where: { id: { in: cancelledGames.map((g) => g.id) } },
+            data: { status: "CANCELLED" },
+          })
+        }
+      }
+      return row
     })
+
+    // Notify the opposing club of every cancelled game
+    if (cancelledGames.length > 0) {
+      const opponentTeamIds = Array.from(
+        new Set(
+          cancelledGames.map((g) =>
+            g.homeTeamId === submission.team.id ? g.awayTeamId : g.homeTeamId
+          )
+        )
+      )
+      const opponentTeams = await prisma.team.findMany({
+        where: { id: { in: opponentTeamIds } },
+        select: { tenantId: true },
+      })
+      const opponentManagers = await prisma.userRole.findMany({
+        where: {
+          tenantId: { in: Array.from(new Set(opponentTeams.map((t) => t.tenantId))) },
+          role: { in: ["ClubOwner", "ClubManager"] },
+        },
+        select: { userId: true },
+        distinct: ["userId"],
+      })
+      await notifyMany(
+        prisma,
+        opponentManagers.map((m: any) => m.userId),
+        {
+          type: "game_cancelled",
+          title: "Games Cancelled — Opponent Withdrew",
+          message: `${submission.team.name} has withdrawn from ${season.league.name}. ${cancelledGames.length} upcoming game(s) against them have been cancelled.`,
+          link: `/browse-leagues/${params.id}`,
+          referenceId: submission.id,
+          referenceType: "TeamSubmission",
+        }
+      )
+    }
 
     if (data.status !== undefined) {
       const clubManagers = await prisma.userRole.findMany({
@@ -130,6 +209,7 @@ export async function PATCH(
       success: true,
       status: updated.status,
       paymentStatus: updated.paymentStatus,
+      cancelledGames: cancelledGames.length,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {

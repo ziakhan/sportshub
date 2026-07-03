@@ -23,6 +23,7 @@ vi.mock("@youthbasketballhub/db", () => ({
     notification: {
       createMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -55,6 +56,9 @@ describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
     } as any)
     vi.mocked(prisma.userRole.findMany).mockResolvedValue([{ userId: "club-owner-1" }] as any)
     vi.mocked(prisma.notification.createMany).mockResolvedValue({ count: 1 } as any)
+    // The route wraps the status flip (and the G4 withdraw cascade) in a
+    // transaction — hand the callback the same mocked client.
+    vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) => cb(prisma))
   })
 
   it("approves a team submission and notifies club managers", async () => {

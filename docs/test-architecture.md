@@ -57,16 +57,16 @@ needs product work before its scenario can pass.
 
 | # | Edge case (owner's list) | Today's behavior | Verdict |
 |---|---|---|---|
-| G1 | Finalize with too few players | Any count ≥1 finalizes; **no min/max roster concept** on Team | 🆕 add `minRoster` warning (non-blocking) at finalize |
+| G1 | Finalize with too few players | Any count ≥1 finalizes; **no min/max roster concept** on Team | ✅ **SHIPPED 2026-07-03** — finalize warns below 5 ACTIVE players (teams/[id]/finalize); L2 tested |
 | G2 | Offer to arbitrary player | Any club can offer to **any Player in the system** (incl. other clubs'), no tryout required | ⚠️ decide: feature (recruiting) or restrict; at minimum test + audit-log it |
 | G3 | Invite player by email (owner: "manually add players / tell them to sign up") | **No path exists** — StaffInvitation is staff-only; offers need an existing playerId | 🆕 **PlayerInvitation** (email → parent signs up → child linked → offer auto-attached), mirroring the staff-invite pattern |
-| G4 | Team withdraws mid-season | Status flips; **scheduled games linger untouched; no season-lock guard** | 🆕 withdraw cascade: future games → CANCELLED (or DEFAULTED per league policy) + notify opponents + lock-aware guard |
-| G5 | Division with 1 team | Scheduler silently drops it (games=0); finalize passes unless cross-division on | 🆕 preflight *warning* ("division X cannot be scheduled") |
+| G4 | Team withdraws mid-season | Status flips; **scheduled games linger untouched; no season-lock guard** | ✅ **SHIPPED 2026-07-03** — withdraw cancels FUTURE games atomically (played kept), notifies opponent clubs; locked seasons block approve/reject (409 SEASON_LOCKED), withdraw stays open; L2 tested |
+| G5 | Division with 1 team | Scheduler silently drops it (games=0); finalize passes unless cross-division on | ✅ **SHIPPED 2026-07-03** — finalize preflight warns per ungrouped <2-team division; also H17: zero approved teams now BLOCKS; L2 tested |
 | G6 | Same venue, two leagues, same time | **Undetected** — conflict checks are season-scoped | 🆕 global court+time conflict check (= `checkVenueConflict` from docs/club-venue-architecture.md §4.2 — same keystone) |
-| G7 | Unpublish tryout with signups | Signups untouched, **parents never notified** | 🆕 notify signed-up parents on unpublish |
-| G8 | Cancel game | Standings correctly ignore it; **no notification to either club** | 🆕 notify both clubs on cancel/reschedule |
+| G7 | Unpublish tryout with signups | Signups untouched, **parents never notified** | ✅ **SHIPPED 2026-07-03** — `tryout_unpublished` fan-out to non-cancelled signups; L2 tested |
+| G8 | Cancel game | Standings correctly ignore it; **no notification to either club** | ✅ **SHIPPED 2026-07-03** — `game_cancelled`/`game_rescheduled` to both clubs' owners/managers on PATCH/DELETE; L2 tested |
 | G9 | Odd team count (bye) | No bye model; manifests as under-target warnings + unscheduled pairings | ✅ acceptable v1 — test the warnings; document |
-| G10 | Delete child with active roster/offers | Soft-delete succeeds; ACTIVE roster spots + PENDING offers linger | 🆕 guard: block if ACTIVE TeamPlayer; auto-decline PENDING offers + cancel future signups on delete |
+| G10 | Delete child with active roster/offers | Soft-delete succeeds; ACTIVE roster spots + PENDING offers linger | ✅ **SHIPPED 2026-07-03** — 409 while on ACTIVE roster; else soft-delete + decline PENDING offers + cancel future signups; L2 tested |
 
 ## 3. The scenario catalog
 
