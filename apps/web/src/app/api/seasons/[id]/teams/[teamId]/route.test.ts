@@ -31,6 +31,7 @@ describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
     vi.clearAllMocks()
     vi.mocked(getSessionUserId).mockResolvedValue({
       userId: "league-owner-1",
+      realUserId: "league-owner-1",
       isPlatformAdmin: false,
     })
     vi.mocked(prisma.season.findUnique).mockResolvedValue({
@@ -87,7 +88,11 @@ describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
   })
 
   it("returns 403 when user is not league owner, manager, or platform admin", async () => {
-    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "club-user-1", isPlatformAdmin: false })
+    vi.mocked(getSessionUserId).mockResolvedValue({
+      userId: "club-user-1",
+      realUserId: "club-user-1",
+      isPlatformAdmin: false,
+    })
     vi.mocked(prisma.userRole.findFirst).mockResolvedValue(null)
 
     const response = await PATCH(

@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: league.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create league error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -95,16 +98,23 @@ export async function GET(request: NextRequest) {
         include: {
           seasons: {
             orderBy: { createdAt: "desc" },
-            include: { _count: { select: { teamSubmissions: true, games: true, divisions: true } } },
+            include: {
+              _count: { select: { teamSubmissions: true, games: true, divisions: true } },
+            },
           },
           _count: { select: { seasons: true } },
         },
         orderBy: { createdAt: "desc" },
       })
 
-      let ownerMap: Record<string, { firstName: string | null; lastName: string | null; email: string }> = {}
+      let ownerMap: Record<
+        string,
+        { firstName: string | null; lastName: string | null; email: string }
+      > = {}
       if (sessionInfo.isPlatformAdmin) {
-        const ownerIds = Array.from(new Set(leagues.map((l: any) => l.ownerId as string))) as string[]
+        const ownerIds = Array.from(
+          new Set(leagues.map((l: any) => l.ownerId as string))
+        ) as string[]
         const owners = await prisma.user.findMany({
           where: { id: { in: ownerIds } },
           select: { id: true, firstName: true, lastName: true, email: true },

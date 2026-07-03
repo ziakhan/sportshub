@@ -48,7 +48,10 @@ export async function PATCH(
 
     const isAdmin = await verifyClubAdmin(params.id, session.user.id)
     if (!isAdmin) {
-      return NextResponse.json({ error: "Only club owners and managers can edit templates" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only club owners and managers can edit templates" },
+        { status: 403 }
+      )
     }
 
     const template = await prisma.offerTemplate.findFirst({
@@ -100,7 +103,10 @@ export async function DELETE(
 
     const isAdmin = await verifyClubAdmin(params.id, session.user.id)
     if (!isAdmin) {
-      return NextResponse.json({ error: "Only club owners and managers can archive templates" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only club owners and managers can archive templates" },
+        { status: 403 }
+      )
     }
 
     const template = await prisma.offerTemplate.findFirst({

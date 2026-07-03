@@ -6,12 +6,14 @@ import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
-const updateTeamSubmissionSchema = z.object({
-  status: z.enum(["APPROVED", "REJECTED", "WITHDRAWN"]).optional(),
-  paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
-}).refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
-  message: "Provide status or paymentStatus",
-})
+const updateTeamSubmissionSchema = z
+  .object({
+    status: z.enum(["APPROVED", "REJECTED", "WITHDRAWN"]).optional(),
+    paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
+  })
+  .refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
+    message: "Provide status or paymentStatus",
+  })
 
 /**
  * PATCH /api/seasons/[id]/teams/[teamId]

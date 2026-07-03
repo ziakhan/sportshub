@@ -13,10 +13,7 @@ const updateSettingsSchema = z.object({
   enabledCountries: z
     .array(z.string().length(2))
     .min(1, "At least one country must be enabled")
-    .refine(
-      (codes) => codes.every((c) => validCountryCodes.includes(c)),
-      "Invalid country code"
-    ),
+    .refine((codes) => codes.every((c) => validCountryCodes.includes(c)), "Invalid country code"),
 })
 
 async function verifyPlatformAdmin(userId: string) {

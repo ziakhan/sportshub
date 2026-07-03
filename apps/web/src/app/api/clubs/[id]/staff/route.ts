@@ -7,6 +7,8 @@ import { sendStaffInviteEmail } from "@/lib/email"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
 
+export const dynamic = "force-dynamic"
+
 const inviteSchema = z.object({
   email: normalizedEmailSchema("Enter a valid email"),
   role: z.enum(["ClubManager", "Staff", "TeamManager"]),
@@ -191,13 +193,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Create notification for the invited user (if they exist)
     if (invitedUser) {
       await notify(prisma, {
-          userId: invitedUser.id,
-          type: "staff_invite",
-          title: "Staff Invitation",
-          message: `${tenant?.name || "A club"} has invited you to join as ${data.role}.`,
-          link: `/notifications`,
-          referenceId: invitation.id,
-          referenceType: "StaffInvitation"
+        userId: invitedUser.id,
+        type: "staff_invite",
+        title: "Staff Invitation",
+        message: `${tenant?.name || "A club"} has invited you to join as ${data.role}.`,
+        link: `/notifications`,
+        referenceId: invitation.id,
+        referenceType: "StaffInvitation",
       })
     }
 

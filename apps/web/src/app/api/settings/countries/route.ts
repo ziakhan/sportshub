@@ -18,7 +18,16 @@ export async function GET() {
     console.error("Get enabled countries error:", error)
     // Fallback to CA only
     return NextResponse.json({
-      countries: [{ code: "CA", name: "Canada", currency: "CAD", currencySymbol: "CA$", postalLabel: "Postal Code", subdivisionLabel: "Province" }],
+      countries: [
+        {
+          code: "CA",
+          name: "Canada",
+          currency: "CAD",
+          currencySymbol: "CA$",
+          postalLabel: "Postal Code",
+          subdivisionLabel: "Province",
+        },
+      ],
       singleCountry: "CA",
     })
   }

@@ -36,7 +36,11 @@ export async function PATCH(
     const err = await assertSeasonOwner(params.id, sessionInfo.userId, sessionInfo.isPlatformAdmin)
     if (err?.kind === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
     if (err?.kind === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    if (err?.kind === "locked") return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: err.status }, { status: 409 })
+    if (err?.kind === "locked")
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: err.status },
+        { status: 409 }
+      )
 
     const group = await (prisma as any).schedulingGroup.findUnique({
       where: { id: params.groupId },
@@ -98,7 +102,11 @@ export async function DELETE(
     const err = await assertSeasonOwner(params.id, sessionInfo.userId, sessionInfo.isPlatformAdmin)
     if (err?.kind === "notfound") return NextResponse.json({ error: "Not found" }, { status: 404 })
     if (err?.kind === "forbidden") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    if (err?.kind === "locked") return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: err.status }, { status: 409 })
+    if (err?.kind === "locked")
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: err.status },
+        { status: 409 }
+      )
 
     const group = await (prisma as any).schedulingGroup.findUnique({
       where: { id: params.groupId },

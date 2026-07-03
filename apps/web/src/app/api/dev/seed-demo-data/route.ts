@@ -21,7 +21,10 @@ export async function GET() {
       where: { slug: "warriors-demo" },
     })
     if (!tenant) {
-      return NextResponse.json({ error: "Warriors demo club not found. Run the main seed first." }, { status: 404 })
+      return NextResponse.json(
+        { error: "Warriors demo club not found. Run the main seed first." },
+        { status: 404 }
+      )
     }
 
     const clubId = tenant.id
@@ -32,7 +35,10 @@ export async function GET() {
     const owner = await prisma.user.findUnique({ where: { email: "owner@sportshub.test" } })
 
     if (!parent || !parent2 || !owner) {
-      return NextResponse.json({ error: "Seed users not found. Run main seed first." }, { status: 404 })
+      return NextResponse.json(
+        { error: "Seed users not found. Run main seed first." },
+        { status: 404 }
+      )
     }
 
     const results: string[] = []
@@ -100,10 +106,34 @@ export async function GET() {
 
     // ── 1. Create additional teams (some without coaches) ──────────────────
     const extraTeams = [
-      { id: "seed-team-u10", name: "Warriors U10 Boys", ageGroup: "U10", gender: "MALE" as const, season: "Spring 2026" },
-      { id: "seed-team-u16", name: "Warriors U16 Boys", ageGroup: "U16", gender: "MALE" as const, season: "Spring 2026" },
-      { id: "seed-team-u14b", name: "Warriors U14 Boys", ageGroup: "U14", gender: "MALE" as const, season: "Spring 2026" },
-      { id: "seed-team-u12g", name: "Warriors U12 Girls", ageGroup: "U12", gender: "FEMALE" as const, season: "Spring 2026" },
+      {
+        id: "seed-team-u10",
+        name: "Warriors U10 Boys",
+        ageGroup: "U10",
+        gender: "MALE" as const,
+        season: "Spring 2026",
+      },
+      {
+        id: "seed-team-u16",
+        name: "Warriors U16 Boys",
+        ageGroup: "U16",
+        gender: "MALE" as const,
+        season: "Spring 2026",
+      },
+      {
+        id: "seed-team-u14b",
+        name: "Warriors U14 Boys",
+        ageGroup: "U14",
+        gender: "MALE" as const,
+        season: "Spring 2026",
+      },
+      {
+        id: "seed-team-u12g",
+        name: "Warriors U12 Girls",
+        ageGroup: "U12",
+        gender: "FEMALE" as const,
+        season: "Spring 2026",
+      },
     ]
 
     for (const t of extraTeams) {
@@ -155,7 +185,13 @@ export async function GET() {
       { first: "Mason", last: "Wilson", gender: "MALE" as const, dob: "2013-04-20" },
     ]
 
-    const playerRecords: { id: string; firstName: string; lastName: string; parentId: string; gender: string }[] = []
+    const playerRecords: {
+      id: string
+      firstName: string
+      lastName: string
+      parentId: string
+      gender: string
+    }[] = []
 
     // Add existing seed players
     const existingPlayers = await prisma.player.findMany({
@@ -186,7 +222,13 @@ export async function GET() {
         },
         update: {},
       })
-      playerRecords.push({ id: player.id, firstName: pn.first, lastName: pn.last, parentId, gender: pn.gender })
+      playerRecords.push({
+        id: player.id,
+        firstName: pn.first,
+        lastName: pn.last,
+        parentId,
+        gender: pn.gender,
+      })
     }
     results.push(`Created ${playerNames.length} extra players`)
 
@@ -194,7 +236,8 @@ export async function GET() {
     const now = new Date()
 
     // Tryout for U12 Boys - published, with signups needing offers
-    const tryout2Date = new Date(now); tryout2Date.setDate(now.getDate() + 7)
+    const tryout2Date = new Date(now)
+    tryout2Date.setDate(now.getDate() + 7)
     const tryout2 = await prisma.tryout.upsert({
       where: { id: "seed-tryout-u12-002" },
       create: {
@@ -203,18 +246,22 @@ export async function GET() {
         teamId: "seed-team-u12",
         title: "U12 Boys Second Tryout",
         description: "Second evaluation session",
-        ageGroup: "U12", gender: "MALE",
+        ageGroup: "U12",
+        gender: "MALE",
         location: "Warriors Training Facility",
         scheduledAt: tryout2Date,
-        duration: 90, fee: 25.0,
+        duration: 90,
+        fee: 25.0,
         maxParticipants: 20,
-        isPublished: true, isPublic: true,
+        isPublished: true,
+        isPublic: true,
       },
       update: {},
     })
 
     // Tryout for U14 Girls - published, with signups
-    const tryout3Date = new Date(now); tryout3Date.setDate(now.getDate() + 10)
+    const tryout3Date = new Date(now)
+    tryout3Date.setDate(now.getDate() + 10)
     const tryout3 = await prisma.tryout.upsert({
       where: { id: "seed-tryout-u14-001" },
       create: {
@@ -223,18 +270,22 @@ export async function GET() {
         teamId: "seed-team-u14",
         title: "U14 Girls Spring Tryout",
         description: "Open tryout for U14 Girls team",
-        ageGroup: "U14", gender: "FEMALE",
+        ageGroup: "U14",
+        gender: "FEMALE",
         location: "Springfield Community Center",
         scheduledAt: tryout3Date,
-        duration: 120, fee: 40.0,
+        duration: 120,
+        fee: 40.0,
         maxParticipants: 25,
-        isPublished: true, isPublic: true,
+        isPublished: true,
+        isPublic: true,
       },
       update: {},
     })
 
     // Draft tryout (unpublished)
-    const tryout4Date = new Date(now); tryout4Date.setDate(now.getDate() + 21)
+    const tryout4Date = new Date(now)
+    tryout4Date.setDate(now.getDate() + 21)
     await prisma.tryout.upsert({
       where: { id: "seed-tryout-u10-draft" },
       create: {
@@ -243,17 +294,21 @@ export async function GET() {
         teamId: "seed-team-u10",
         title: "U10 Boys Development Tryout",
         description: "Tryout for new U10 development program",
-        ageGroup: "U10", gender: "MALE",
+        ageGroup: "U10",
+        gender: "MALE",
         location: "Warriors Training Facility",
         scheduledAt: tryout4Date,
-        duration: 60, fee: 0,
-        isPublished: false, isPublic: true,
+        duration: 60,
+        fee: 0,
+        isPublished: false,
+        isPublic: true,
       },
       update: {},
     })
 
     // Another draft
-    const tryout5Date = new Date(now); tryout5Date.setDate(now.getDate() + 28)
+    const tryout5Date = new Date(now)
+    tryout5Date.setDate(now.getDate() + 28)
     await prisma.tryout.upsert({
       where: { id: "seed-tryout-u16-draft" },
       create: {
@@ -262,12 +317,15 @@ export async function GET() {
         teamId: "seed-team-u16",
         title: "U16 Boys Elite Tryout",
         description: "Competitive team selection",
-        ageGroup: "U16", gender: "MALE",
+        ageGroup: "U16",
+        gender: "MALE",
         location: "City Sports Complex",
         scheduledAt: tryout5Date,
-        duration: 120, fee: 60.0,
+        duration: 120,
+        fee: 60.0,
         maxParticipants: 15,
-        isPublished: false, isPublic: true,
+        isPublished: false,
+        isPublic: true,
       },
       update: {},
     })
@@ -276,7 +334,7 @@ export async function GET() {
 
     // ── 4. Create signups on the tryouts ───────────────────────────────────
     // U12 tryout signups
-    const u12MalePlayers = playerRecords.filter(p => p.gender === "MALE")
+    const u12MalePlayers = playerRecords.filter((p) => p.gender === "MALE")
     for (let i = 0; i < Math.min(u12MalePlayers.length, 5); i++) {
       const player = u12MalePlayers[i]
       const signupId = `seed-signup-u12-${i}`
@@ -296,7 +354,7 @@ export async function GET() {
     }
 
     // U14 tryout signups
-    const u14FemalePlayers = playerRecords.filter(p => p.gender === "FEMALE")
+    const u14FemalePlayers = playerRecords.filter((p) => p.gender === "FEMALE")
     for (let i = 0; i < Math.min(u14FemalePlayers.length, 3); i++) {
       const player = u14FemalePlayers[i]
       const signupId = `seed-signup-u14-${i}`
@@ -337,8 +395,10 @@ export async function GET() {
     results.push("Created tryout signups (5 on U12, 3 on U14, 3 on original)")
 
     // ── 5. Create offers in various states ─────────────────────────────────
-    const expiresAt = new Date(now); expiresAt.setDate(now.getDate() + 14)
-    const pastExpiry = new Date(now); pastExpiry.setDate(now.getDate() - 3)
+    const expiresAt = new Date(now)
+    expiresAt.setDate(now.getDate() + 14)
+    const pastExpiry = new Date(now)
+    pastExpiry.setDate(now.getDate() - 3)
 
     // Pending offers on U12 team
     if (u12MalePlayers.length >= 3) {
@@ -509,8 +569,10 @@ export async function GET() {
       {
         id: "seed-hl-fall-u8u10",
         name: "Saturday Fall House League",
-        description: "Fun recreational basketball every Saturday morning. Focus on fundamentals, teamwork, and having a great time!",
-        details: "10 weeks of games and skills development. Teams are drafted for balanced play. All players receive equal playing time.",
+        description:
+          "Fun recreational basketball every Saturday morning. Focus on fundamentals, teamwork, and having a great time!",
+        details:
+          "10 weeks of games and skills development. Teams are drafted for balanced play. All players receive equal playing time.",
         ageGroups: "U8,U9,U10",
         gender: null,
         season: "Fall 2026",
@@ -531,8 +593,10 @@ export async function GET() {
       {
         id: "seed-hl-fall-u11u13",
         name: "Saturday Fall House League (Older)",
-        description: "Intermediate recreational league for older players. More competitive play with referee officiating.",
-        details: "10 weeks. Full court games with scorekeeping. Skills clinics before games. End-of-season tournament.",
+        description:
+          "Intermediate recreational league for older players. More competitive play with referee officiating.",
+        details:
+          "10 weeks. Full court games with scorekeeping. Skills clinics before games. End-of-season tournament.",
         ageGroups: "U11,U12,U13",
         gender: null,
         season: "Fall 2026",
@@ -553,7 +617,8 @@ export async function GET() {
       {
         id: "seed-hl-winter-u6u7",
         name: "Winter Mini-Ballers",
-        description: "Introduction to basketball for our youngest players. Fun games, basic skills, and lots of energy!",
+        description:
+          "Introduction to basketball for our youngest players. Fun games, basic skills, and lots of energy!",
         ageGroups: "U5,U6,U7",
         gender: null,
         season: "Winter 2027",
@@ -588,8 +653,10 @@ export async function GET() {
       {
         id: "seed-camp-marchbreak-jr",
         name: "March Break Basketball Camp (Junior)",
-        description: "A week of basketball fun during March Break! Skills development, games, and team activities.",
-        details: "Daily schedule: 9AM warm-up, skills stations, team games, lunch break, afternoon scrimmages. Snacks provided. Bring your own lunch.",
+        description:
+          "A week of basketball fun during March Break! Skills development, games, and team activities.",
+        details:
+          "Daily schedule: 9AM warm-up, skills stations, team games, lunch break, afternoon scrimmages. Snacks provided. Bring your own lunch.",
         campType: "MARCH_BREAK",
         ageGroup: "U8,U9,U10",
         gender: null,
@@ -611,8 +678,10 @@ export async function GET() {
       {
         id: "seed-camp-marchbreak-sr",
         name: "March Break Elite Skills Camp",
-        description: "Intensive skills camp for competitive players. Focus on position-specific training, game IQ, and advanced techniques.",
-        details: "Led by our competitive coaching staff. Video analysis sessions. 3-on-3 tournament on Friday. Each player receives a skills evaluation report.",
+        description:
+          "Intensive skills camp for competitive players. Focus on position-specific training, game IQ, and advanced techniques.",
+        details:
+          "Led by our competitive coaching staff. Video analysis sessions. 3-on-3 tournament on Friday. Each player receives a skills evaluation report.",
         campType: "MARCH_BREAK",
         ageGroup: "U12,U13,U14",
         gender: null,
@@ -634,8 +703,10 @@ export async function GET() {
       {
         id: "seed-camp-summer",
         name: "Summer Basketball Academy",
-        description: "Multi-week summer program with weekly sessions. Sign up for one week or all four at a discount!",
-        details: "Each week has a different theme: Week 1 - Ball Handling, Week 2 - Shooting, Week 3 - Defense, Week 4 - Game Play. Guest coaches and special events.",
+        description:
+          "Multi-week summer program with weekly sessions. Sign up for one week or all four at a discount!",
+        details:
+          "Each week has a different theme: Week 1 - Ball Handling, Week 2 - Shooting, Week 3 - Defense, Week 4 - Game Play. Guest coaches and special events.",
         campType: "SUMMER",
         ageGroup: "U10,U11,U12,U13,U14",
         gender: null,
@@ -671,7 +742,8 @@ export async function GET() {
       {
         id: "seed-tournament-spring",
         name: "Warriors Spring Invitational",
-        description: "Annual spring tournament hosted by Warriors Basketball. Teams from across the GTA compete over one exciting weekend.",
+        description:
+          "Annual spring tournament hosted by Warriors Basketball. Teams from across the GTA compete over one exciting weekend.",
         city: "Toronto",
         state: "Ontario",
         country: "CA",
@@ -690,7 +762,8 @@ export async function GET() {
       {
         id: "seed-tournament-summer-slam",
         name: "Summer Slam Classic",
-        description: "End-of-summer tournament to wrap up the season. All age groups welcome. Great competition and community.",
+        description:
+          "End-of-summer tournament to wrap up the season. All age groups welcome. Great competition and community.",
         city: "Mississauga",
         state: "Ontario",
         country: "CA",
@@ -739,9 +812,24 @@ export async function GET() {
 
     // Submit Warriors teams to the Spring Invitational
     const teamSubmissions = [
-      { id: "seed-tt-u10", teamId: "seed-team-u10", divisionId: "seed-tdiv-u10b", status: "APPROVED" },
-      { id: "seed-tt-u14b", teamId: "seed-team-u14b", divisionId: "seed-tdiv-u14b", status: "APPROVED" },
-      { id: "seed-tt-u12g", teamId: "seed-team-u12g", divisionId: "seed-tdiv-u12g", status: "PENDING" },
+      {
+        id: "seed-tt-u10",
+        teamId: "seed-team-u10",
+        divisionId: "seed-tdiv-u10b",
+        status: "APPROVED",
+      },
+      {
+        id: "seed-tt-u14b",
+        teamId: "seed-team-u14b",
+        divisionId: "seed-tdiv-u14b",
+        status: "APPROVED",
+      },
+      {
+        id: "seed-tt-u12g",
+        teamId: "seed-team-u12g",
+        divisionId: "seed-tdiv-u12g",
+        status: "PENDING",
+      },
     ]
 
     for (const ts of teamSubmissions) {

@@ -8,16 +8,19 @@ export const dynamic = "force-dynamic"
 /**
  * GET /api/tournaments/[id]/teams — List registered teams
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teams = await (prisma as any).tournamentTeam.findMany({
       where: { tournamentId: params.id },
       include: {
         team: {
-          select: { id: true, name: true, ageGroup: true, gender: true, tenant: { select: { id: true, name: true } } },
+          select: {
+            id: true,
+            name: true,
+            ageGroup: true,
+            gender: true,
+            tenant: { select: { id: true, name: true } },
+          },
         },
         division: { select: { id: true, name: true, ageGroup: true } },
       },
@@ -39,10 +42,7 @@ export async function GET(
 /**
  * PATCH /api/tournaments/[id]/teams — Update team status (approve/reject)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {

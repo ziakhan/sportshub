@@ -5,14 +5,13 @@ import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Get a single player
  * GET /api/players/[id]
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -54,10 +53,7 @@ export async function GET(
  * Update a player
  * PATCH /api/players/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -87,9 +83,7 @@ export async function PATCH(
     const data = addPlayerSchema.parse(body)
 
     const dob = new Date(data.dateOfBirth)
-    const ageInYears = Math.floor(
-      (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    )
+    const ageInYears = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 
     const player = await prisma.player.update({
       where: { id: params.id },
@@ -121,16 +115,10 @@ export async function PATCH(
     return NextResponse.json(player)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Update player error:", error)
-    return NextResponse.json(
-      { error: "Failed to update player" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update player" }, { status: 500 })
   }
 }
 
@@ -139,10 +127,7 @@ export async function PATCH(
  * relations (offers, signups, roster entries) so audit/history isn't lost.
  * DELETE /api/players/[id]
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

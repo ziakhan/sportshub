@@ -19,10 +19,7 @@ const verifySchema = z.object({
  * Request to claim an unclaimed club
  * POST /api/clubs/claim/[id]
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -112,28 +109,34 @@ export async function POST(
     })
     for (const admin of admins) {
       await notify(prisma, {
-          userId: admin.userId,
-          type: "club_claim",
-          title: "New Club Claim Request",
-          message: `A user has requested to claim "${tenant.name}".`,
-          link: "/dashboard/admin/claims",
-          referenceId: claim.id,
-          referenceType: "ClubClaim"
+        userId: admin.userId,
+        type: "club_claim",
+        title: "New Club Claim Request",
+        message: `A user has requested to claim "${tenant.name}".`,
+        link: "/dashboard/admin/claims",
+        referenceId: claim.id,
+        referenceType: "ClubClaim",
       })
     }
 
-    return NextResponse.json({
-      success: true,
-      claimId: claim.id,
-      status: claim.status,
-      hasEmail: !!tenant.contactEmail,
-      message: tenant.contactEmail
-        ? "A verification code has been sent to the club's email address."
-        : "Your claim has been submitted for admin review.",
-    }, { status: 201 })
+    return NextResponse.json(
+      {
+        success: true,
+        claimId: claim.id,
+        status: claim.status,
+        hasEmail: !!tenant.contactEmail,
+        message: tenant.contactEmail
+          ? "A verification code has been sent to the club's email address."
+          : "Your claim has been submitted for admin review.",
+      },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Claim club error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -144,10 +147,7 @@ export async function POST(
  * Verify claim with email code
  * PATCH /api/clubs/claim/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -166,7 +166,10 @@ export async function PATCH(
     }
 
     if (claim.status !== "EMAIL_SENT") {
-      return NextResponse.json({ error: "This claim is not awaiting email verification" }, { status: 400 })
+      return NextResponse.json(
+        { error: "This claim is not awaiting email verification" },
+        { status: 400 }
+      )
     }
 
     if (claim.verificationCode !== code) {
@@ -216,7 +219,10 @@ export async function PATCH(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Verify claim error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -6,6 +6,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
 import { calculateAge, isCoppaMinor, COPPA_MIN_AGE } from "@/lib/coppa"
 
+export const dynamic = "force-dynamic"
+
 /**
  * List parent's players
  * GET /api/players
@@ -128,15 +130,9 @@ export async function POST(req: Request) {
     return NextResponse.json(player, { status: 201 })
   } catch (error) {
     if (error instanceof (await import("zod")).ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Add player error:", error)
-    return NextResponse.json(
-      { error: "Failed to add player" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to add player" }, { status: 500 })
   }
 }

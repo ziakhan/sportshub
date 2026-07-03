@@ -43,10 +43,7 @@ async function verifyTeamAccess(teamId: string, userId: string) {
  * GET /api/teams/[id]/offer-templates
  * List active offer templates for a team
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -79,10 +76,7 @@ export async function GET(
  * POST /api/teams/[id]/offer-templates
  * Create an offer template for a team
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {

@@ -3,13 +3,12 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 
+export const dynamic = "force-dynamic"
+
 /**
  * GET /api/clubs/[id] — Club details with branding
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -30,10 +29,7 @@ export async function GET(
 /**
  * PATCH /api/clubs/[id] — Update club name, slug, branding, timezone
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -91,9 +87,6 @@ export async function PATCH(
     return NextResponse.json({ club: tenant })
   } catch (error) {
     console.error("Update club error:", error)
-    return NextResponse.json(
-      { error: "Failed to update club" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update club" }, { status: 500 })
   }
 }

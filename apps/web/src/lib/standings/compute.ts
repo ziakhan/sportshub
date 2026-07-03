@@ -100,17 +100,12 @@ function applyGame(row: TeamRow, my: number, opp: number, result: "W" | "L" | "T
 
 function finalize(row: TeamRow) {
   row.differential = row.pointsFor - row.pointsAgainst
-  row.winPct =
-    row.gamesPlayed === 0 ? 0 : (row.wins + 0.5 * row.ties) / row.gamesPlayed
+  row.winPct = row.gamesPlayed === 0 ? 0 : (row.wins + 0.5 * row.ties) / row.gamesPlayed
 }
 
 // ---------- tiebreakers ----------
 
-function headToHeadScore(
-  teamId: string,
-  tied: Set<string>,
-  games: StandingsGame[]
-): number {
+function headToHeadScore(teamId: string, tied: Set<string>, games: StandingsGame[]): number {
   // +1 for each win against any other team in the tied set, -1 for each loss
   let score = 0
   for (const g of games) {
@@ -126,8 +121,8 @@ function headToHeadScore(
       else score += 1
       continue
     }
-    const my = isHome ? g.homeScore ?? 0 : g.awayScore ?? 0
-    const opp = isHome ? g.awayScore ?? 0 : g.homeScore ?? 0
+    const my = isHome ? (g.homeScore ?? 0) : (g.awayScore ?? 0)
+    const opp = isHome ? (g.awayScore ?? 0) : (g.homeScore ?? 0)
     if (my > opp) score += 1
     else if (my < opp) score -= 1
   }
@@ -262,12 +257,13 @@ export function computeStandings(input: StandingsInput): DivisionStandings[] {
             applyGame(home, g.homeScore, g.awayScore, "T")
             applyGame(away, g.awayScore, g.homeScore, "T")
           }
-        } else if (home) applyGame(home, g.homeScore, g.awayScore, g.homeScore >= g.awayScore ? "W" : "L")
-        else if (away) applyGame(away, g.awayScore, g.homeScore, g.awayScore >= g.homeScore ? "W" : "L")
+        } else if (home)
+          applyGame(home, g.homeScore, g.awayScore, g.homeScore >= g.awayScore ? "W" : "L")
+        else if (away)
+          applyGame(away, g.awayScore, g.homeScore, g.awayScore >= g.homeScore ? "W" : "L")
       } else if (g.status === "DEFAULTED" && g.defaultedBy) {
         const loser = rowsById.get(g.defaultedBy)
-        const winnerId =
-          g.defaultedBy === g.homeTeamId ? g.awayTeamId : g.homeTeamId
+        const winnerId = g.defaultedBy === g.homeTeamId ? g.awayTeamId : g.homeTeamId
         const winner = rowsById.get(winnerId)
         if (winner) applyGame(winner, 0, 0, "W")
         if (loser) applyGame(loser, 0, 0, "L")

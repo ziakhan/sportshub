@@ -5,15 +5,20 @@ import { prisma } from "@youthbasketballhub/db"
 
 export const dynamic = "force-dynamic"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const camp = await (prisma as any).camp.findUnique({
       where: { id: params.id },
       include: {
-        tenant: { select: { id: true, name: true, slug: true, currency: true, branding: { select: { primaryColor: true } } } },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            currency: true,
+            branding: { select: { primaryColor: true } },
+          },
+        },
         _count: { select: { signups: true } },
       },
     })
@@ -31,10 +36,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -66,10 +68,22 @@ export async function PATCH(
     const updateData: Record<string, any> = {}
 
     const fields = [
-      "name", "description", "details", "campType", "ageGroup", "gender",
-      "dailyStartTime", "dailyEndTime", "location", "numberOfWeeks",
-      "maxParticipants", "includesLunch", "includesSnacks", "includesJersey",
-      "includesBall", "isPublished",
+      "name",
+      "description",
+      "details",
+      "campType",
+      "ageGroup",
+      "gender",
+      "dailyStartTime",
+      "dailyEndTime",
+      "location",
+      "numberOfWeeks",
+      "maxParticipants",
+      "includesLunch",
+      "includesSnacks",
+      "includesJersey",
+      "includesBall",
+      "isPublished",
     ]
     for (const field of fields) {
       if (body[field] !== undefined) updateData[field] = body[field]

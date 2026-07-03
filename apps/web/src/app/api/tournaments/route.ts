@@ -66,7 +66,9 @@ export async function POST(request: NextRequest) {
         country: data.country,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
-        registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
+        registrationDeadline: data.registrationDeadline
+          ? new Date(data.registrationDeadline)
+          : null,
         teamFee: data.teamFee,
         currency: data.currency,
         gamesGuaranteed: data.gamesGuaranteed,
@@ -81,7 +83,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: tournament.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create tournament error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -137,7 +142,10 @@ export async function GET(request: NextRequest) {
       })
 
       // Fetch owner info if admin
-      let ownerMap: Record<string, { firstName: string | null; lastName: string | null; email: string }> = {}
+      let ownerMap: Record<
+        string,
+        { firstName: string | null; lastName: string | null; email: string }
+      > = {}
       if (sessionInfo.isPlatformAdmin) {
         const ownerIds = [...new Set(tournaments.map((t: any) => t.ownerId))]
         const owners = await prisma.user.findMany({
@@ -153,10 +161,12 @@ export async function GET(request: NextRequest) {
           return {
             ...t,
             teamFee: t.teamFee ? Number(t.teamFee) : null,
-            owner: owner ? {
-              name: [owner.firstName, owner.lastName].filter(Boolean).join(" ") || "Unknown",
-              email: owner.email,
-            } : undefined,
+            owner: owner
+              ? {
+                  name: [owner.firstName, owner.lastName].filter(Boolean).join(" ") || "Unknown",
+                  email: owner.email,
+                }
+              : undefined,
           }
         }),
       })

@@ -119,8 +119,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (body.teamFee !== undefined) update.teamFee = body.teamFee
     if (body.startDate) update.startDate = new Date(body.startDate)
     if (body.endDate) update.endDate = new Date(body.endDate)
-    if (body.registrationDeadline)
-      update.registrationDeadline = new Date(body.registrationDeadline)
+    if (body.registrationDeadline) update.registrationDeadline = new Date(body.registrationDeadline)
     if (body.ageGroupCutoffDate) update.ageGroupCutoffDate = new Date(body.ageGroupCutoffDate)
 
     let finalizeWarnings: string[] = []
@@ -179,12 +178,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         missing.push("Max games per team per season must be set in Scheduling Settings")
       if (!effective.periodLengthMinutes)
         missing.push("Period / half length (minutes) must be set in Scheduling Settings")
-      if (preflight.divisions.length === 0)
-        missing.push("At least one division is required")
-      if (preflight.sessions.length === 0)
-        missing.push("At least one game session is required")
-      if (preflight.seasonVenues.length === 0)
-        missing.push("At least one venue must be assigned")
+      if (preflight.divisions.length === 0) missing.push("At least one division is required")
+      if (preflight.sessions.length === 0) missing.push("At least one game session is required")
+      if (preflight.seasonVenues.length === 0) missing.push("At least one venue must be assigned")
       const pendingCount = preflight.teamSubmissions.filter(
         (t: any) => t.status === "PENDING"
       ).length
@@ -210,7 +206,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ? effective.tiebreakerOrder
         : []
       if (effectiveTiebreakers.length === 0)
-        missing.push("Tiebreaker order is empty — configure at least one rule in the Tiebreakers tab")
+        missing.push(
+          "Tiebreaker order is empty — configure at least one rule in the Tiebreakers tab"
+        )
 
       // NEW: every division in a scheduling group has ≥2 teams (only when cross-division scheduling is on)
       if (effective.allowCrossDivisionScheduling) {

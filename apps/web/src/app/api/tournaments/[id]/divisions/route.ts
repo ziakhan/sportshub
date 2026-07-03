@@ -15,10 +15,7 @@ const createDivisionSchema = z.object({
 /**
  * POST /api/tournaments/[id]/divisions — Create a division
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -29,7 +26,10 @@ export async function POST(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!tournament || (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (
+      !tournament ||
+      (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -49,7 +49,10 @@ export async function POST(
     return NextResponse.json({ success: true, id: division.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create tournament division error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -59,10 +62,7 @@ export async function POST(
 /**
  * GET /api/tournaments/[id]/divisions — List divisions
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const divisions = await (prisma as any).tournamentDivision.findMany({
       where: { tournamentId: params.id },
@@ -79,10 +79,7 @@ export async function GET(
 /**
  * DELETE /api/tournaments/[id]/divisions?divisionId=xxx — Delete a division
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -93,7 +90,10 @@ export async function DELETE(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!tournament || (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (
+      !tournament ||
+      (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

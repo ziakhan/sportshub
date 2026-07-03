@@ -20,9 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     const tenant = await prisma.tenant.findFirst({
-      where: slug
-        ? { slug }
-        : { customDomain: domain },
+      where: slug ? { slug } : { customDomain: domain },
       include: {
         branding: true,
         features: true,
@@ -30,10 +28,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!tenant) {
-      return NextResponse.json(
-        { error: "Tenant not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Tenant not found" }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -48,9 +43,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Tenant lookup error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

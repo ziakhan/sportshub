@@ -48,7 +48,12 @@ export interface NotificationInput {
 
 type DbClient =
   | Pick<typeof prisma, "notification">
-  | { notification: { create: (args: any) => Promise<unknown>; createMany: (args: any) => Promise<unknown> } }
+  | {
+      notification: {
+        create: (args: any) => Promise<unknown>
+        createMany: (args: any) => Promise<unknown>
+      }
+    }
 
 /** Create one notification. Use inside transactions by passing the tx client. */
 export async function notify(db: DbClient, input: NotificationInput): Promise<void> {

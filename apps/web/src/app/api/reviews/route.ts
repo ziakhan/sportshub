@@ -5,17 +5,18 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const createReviewSchema = z.object({
-  tenantId: z.string().optional(),
-  leagueId: z.string().optional(),
-  revieweeId: z.string().optional(),
-  rating: z.number().int().min(1).max(5),
-  title: z.string().max(100).optional(),
-  content: z.string().max(2000).optional(),
-}).refine(
-  (data) => data.tenantId || data.leagueId || data.revieweeId,
-  { message: "Must review a club, league, or individual" }
-)
+const createReviewSchema = z
+  .object({
+    tenantId: z.string().optional(),
+    leagueId: z.string().optional(),
+    revieweeId: z.string().optional(),
+    rating: z.number().int().min(1).max(5),
+    title: z.string().max(100).optional(),
+    content: z.string().max(2000).optional(),
+  })
+  .refine((data) => data.tenantId || data.leagueId || data.revieweeId, {
+    message: "Must review a club, league, or individual",
+  })
 
 /**
  * Create a review (auth required)
@@ -64,7 +65,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: review.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create review error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -82,7 +86,10 @@ export async function GET(request: NextRequest) {
     const revieweeId = request.nextUrl.searchParams.get("revieweeId")
 
     if (!tenantId && !leagueId && !revieweeId) {
-      return NextResponse.json({ error: "tenantId, leagueId, or revieweeId is required" }, { status: 400 })
+      return NextResponse.json(
+        { error: "tenantId, leagueId, or revieweeId is required" },
+        { status: 400 }
+      )
     }
 
     const where: any = { status: "PUBLISHED" }
@@ -117,7 +124,9 @@ export async function GET(request: NextRequest) {
       reviews: reviews.map((r: any) => ({
         ...r,
         reviewer: {
-          name: [r.reviewer.firstName, r.reviewer.lastName?.[0] ? `${r.reviewer.lastName[0]}.` : ""].filter(Boolean).join(" "),
+          name: [r.reviewer.firstName, r.reviewer.lastName?.[0] ? `${r.reviewer.lastName[0]}.` : ""]
+            .filter(Boolean)
+            .join(" "),
         },
       })),
       averageRating: aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : null,

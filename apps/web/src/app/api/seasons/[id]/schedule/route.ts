@@ -40,10 +40,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       select: { league: { select: { ownerId: true } } },
     })
     if (!season) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      season.league.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const nonSchedCount = await (prisma as any).game.count({

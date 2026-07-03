@@ -26,10 +26,7 @@ const updateTryoutSchema = z.object({
  * GET /api/tryouts/[id]
  * Public for published tryouts; includes user's signup if authenticated
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const tryout = await prisma.tryout.findUnique({
       where: { id: params.id },
@@ -65,10 +62,7 @@ export async function GET(
       const hasAccess = await prisma.userRole.findFirst({
         where: {
           userId: session.user.id,
-          OR: [
-            { tenantId: tryout.tenantId },
-            { role: "PlatformAdmin" },
-          ],
+          OR: [{ tenantId: tryout.tenantId }, { role: "PlatformAdmin" }],
         },
       })
       if (!hasAccess) {
@@ -114,10 +108,7 @@ export async function GET(
     })
   } catch (error) {
     console.error("Get tryout error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -125,10 +116,7 @@ export async function GET(
  * Update tryout
  * PATCH /api/tryouts/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -168,10 +156,12 @@ export async function PATCH(
     if (validatedData.ageGroup !== undefined) data.ageGroup = validatedData.ageGroup
     if (validatedData.gender !== undefined) data.gender = validatedData.gender
     if (validatedData.location !== undefined) data.location = validatedData.location
-    if (validatedData.scheduledAt !== undefined) data.scheduledAt = new Date(validatedData.scheduledAt)
+    if (validatedData.scheduledAt !== undefined)
+      data.scheduledAt = new Date(validatedData.scheduledAt)
     if (validatedData.duration !== undefined) data.duration = validatedData.duration
     if (validatedData.fee !== undefined) data.fee = validatedData.fee
-    if (validatedData.maxParticipants !== undefined) data.maxParticipants = validatedData.maxParticipants
+    if (validatedData.maxParticipants !== undefined)
+      data.maxParticipants = validatedData.maxParticipants
     if (validatedData.isPublic !== undefined) data.isPublic = validatedData.isPublic
     if (validatedData.isPublished !== undefined) data.isPublished = validatedData.isPublished
     if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
@@ -187,7 +177,12 @@ export async function PATCH(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error: " + error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", "), details: error.errors },
+        {
+          error:
+            "Validation error: " +
+            error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", "),
+          details: error.errors,
+        },
         { status: 400 }
       )
     }

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { audit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
+import { withAuth, requirePlatformAdmin, apiError } from "@/lib/api/handler"
 
 export const dynamic = "force-dynamic"
 
@@ -16,23 +15,14 @@ const reviewSchema = z.object({
 /**
  * Admin: approve or reject a club claim
  * PATCH /api/admin/claims/[id]
+ *
+ * Exemplar for the withAuth wrapper pattern: session resolution, zod-error
+ * and error-envelope handling live in the wrapper; the handler only holds
+ * business logic + explicit scope checks.
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const isAdmin = await prisma.userRole.findFirst({
-      where: { userId: session.user.id, role: "PlatformAdmin" },
-    })
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
+  async (request, { params }, session) => {
+    requirePlatformAdmin(session)
 
     const claim = await prisma.clubClaim.findUnique({
       where: { id: params.id },
@@ -43,11 +33,11 @@ export async function PATCH(
     })
 
     if (!claim) {
-      return NextResponse.json({ error: "Claim not found" }, { status: 404 })
+      return apiError(404, "Claim not found", "NOT_FOUND")
     }
 
     if (claim.status === "APPROVED" || claim.status === "REJECTED") {
-      return NextResponse.json({ error: "This claim has already been reviewed" }, { status: 400 })
+      return apiError(400, "This claim has already been reviewed", "ALREADY_REVIEWED")
     }
 
     const body = await request.json()
@@ -59,7 +49,7 @@ export async function PATCH(
           where: { id: params.id },
           data: {
             status: "APPROVED",
-            reviewedById: session.user!.id,
+            reviewedById: session.realUserId,
             reviewNote: data.note || "Approved by admin",
             reviewedAt: new Date(),
           },
@@ -85,7 +75,7 @@ export async function PATCH(
         }
 
         await audit(tx, {
-          actorId: session.user!.id,
+          actorId: session.realUserId,
           actorRole: "PlatformAdmin",
           action: "CLAIM_APPROVE",
           resource: "ClubClaim",
@@ -98,14 +88,14 @@ export async function PATCH(
 
         // Notify the user
         await notify(tx, {
-            userId: claim.userId,
-            type: "claim_approved",
-            title: "Club Claim Approved",
-            message: `Your claim for "${claim.tenant.name}" has been approved. You are now the owner!`,
-            link: `/clubs/${claim.tenantId}`,
-            referenceId: claim.id,
-            referenceType: "ClubClaim"
-      })
+          userId: claim.userId,
+          type: "claim_approved",
+          title: "Club Claim Approved",
+          message: `Your claim for "${claim.tenant.name}" has been approved. You are now the owner!`,
+          link: `/clubs/${claim.tenantId}`,
+          referenceId: claim.id,
+          referenceType: "ClubClaim",
+        })
       })
     } else {
       await prisma.$transaction(async (tx: any) => {
@@ -113,14 +103,14 @@ export async function PATCH(
           where: { id: params.id },
           data: {
             status: "REJECTED",
-            reviewedById: session.user!.id,
+            reviewedById: session.realUserId,
             reviewNote: data.note || "Rejected by admin",
             reviewedAt: new Date(),
           },
         })
 
         await audit(tx, {
-          actorId: session.user!.id,
+          actorId: session.realUserId,
           actorRole: "PlatformAdmin",
           action: "CLAIM_REJECT",
           resource: "ClubClaim",
@@ -131,14 +121,14 @@ export async function PATCH(
         })
 
         await notify(tx, {
-            userId: claim.userId,
-            type: "claim_rejected",
-            title: "Club Claim Rejected",
-            message: `Your claim for "${claim.tenant.name}" was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
-            link: `/clubs/find`,
-            referenceId: claim.id,
-            referenceType: "ClubClaim"
-      })
+          userId: claim.userId,
+          type: "claim_rejected",
+          title: "Club Claim Rejected",
+          message: `Your claim for "${claim.tenant.name}" was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
+          link: `/clubs/find`,
+          referenceId: claim.id,
+          referenceType: "ClubClaim",
+        })
       })
     }
 
@@ -146,11 +136,5 @@ export async function PATCH(
       success: true,
       action: data.action,
     })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
-    }
-    console.error("Review claim error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
-}
+)

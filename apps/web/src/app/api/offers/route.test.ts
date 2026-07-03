@@ -36,7 +36,11 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("POST /api/offers", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "club-user-1", isPlatformAdmin: false })
+    vi.mocked(getSessionUserId).mockResolvedValue({
+      userId: "club-user-1",
+      realUserId: "club-user-1",
+      isPlatformAdmin: false,
+    })
     vi.mocked(prisma.team.findUnique).mockResolvedValue({
       id: "team-1",
       tenantId: "tenant-1",

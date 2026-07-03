@@ -14,10 +14,7 @@ const submitTeamSchema = z.object({
  * POST /api/tournaments/[id]/submit — Club submits a team to the tournament
  * Creates TournamentTeam with status PENDING
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -43,7 +40,10 @@ export async function POST(
     }
 
     if (tournament.status !== "REGISTRATION") {
-      return NextResponse.json({ error: "This tournament is not currently accepting registrations" }, { status: 400 })
+      return NextResponse.json(
+        { error: "This tournament is not currently accepting registrations" },
+        { status: 400 }
+      )
     }
 
     if (tournament.registrationDeadline && new Date(tournament.registrationDeadline) < new Date()) {
@@ -69,7 +69,10 @@ export async function POST(
       },
     })
     if (!hasAccess) {
-      return NextResponse.json({ error: "Only club owners/managers can submit teams" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only club owners/managers can submit teams" },
+        { status: 403 }
+      )
     }
 
     // Check division exists and belongs to this tournament
@@ -85,7 +88,10 @@ export async function POST(
       where: { tournamentId_teamId: { tournamentId: params.id, teamId: data.teamId } },
     })
     if (existing) {
-      return NextResponse.json({ error: "This team is already submitted to this tournament" }, { status: 409 })
+      return NextResponse.json(
+        { error: "This team is already submitted to this tournament" },
+        { status: 409 }
+      )
     }
 
     // Create TournamentTeam with PENDING status
@@ -99,14 +105,20 @@ export async function POST(
       },
     })
 
-    return NextResponse.json({
-      success: true,
-      tournamentTeamId: tournamentTeam.id,
-      message: `${team.name} submitted to tournament. Pending approval.`,
-    }, { status: 201 })
+    return NextResponse.json(
+      {
+        success: true,
+        tournamentTeamId: tournamentTeam.id,
+        message: `${team.name} submitted to tournament. Pending approval.`,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Submit tournament team error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

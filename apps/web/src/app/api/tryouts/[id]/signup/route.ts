@@ -5,14 +5,13 @@ import { tryoutSignupSchema } from "@/lib/validations/tryout-signup"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Sign up for a tryout
  * POST /api/tryouts/[id]/signup
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -55,9 +54,7 @@ export async function POST(
 
     // Calculate player age
     const dob = new Date(player.dateOfBirth)
-    const playerAge = Math.floor(
-      (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    )
+    const playerAge = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     const playerName = `${player.firstName} ${player.lastName}`
 
     // Fetch tryout and validate
@@ -75,27 +72,15 @@ export async function POST(
     })
 
     if (!tryout || !tryout.isPublished) {
-      return NextResponse.json(
-        { error: "Tryout not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
     if (new Date(tryout.scheduledAt) < new Date()) {
-      return NextResponse.json(
-        { error: "This tryout has already passed" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "This tryout has already passed" }, { status: 400 })
     }
 
-    if (
-      tryout.maxParticipants &&
-      tryout._count.signups >= tryout.maxParticipants
-    ) {
-      return NextResponse.json(
-        { error: "This tryout is full" },
-        { status: 400 }
-      )
+    if (tryout.maxParticipants && tryout._count.signups >= tryout.maxParticipants) {
+      return NextResponse.json({ error: "This tryout is full" }, { status: 400 })
     }
 
     // Check for duplicate signup
@@ -159,16 +144,10 @@ export async function POST(
     return NextResponse.json(signup, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Tryout signup error:", error)
-    return NextResponse.json(
-      { error: "Failed to sign up" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to sign up" }, { status: 500 })
   }
 }
 
@@ -176,10 +155,7 @@ export async function POST(
  * Cancel a tryout signup
  * DELETE /api/tryouts/[id]/signup?signupId=xxx
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -198,10 +174,7 @@ export async function DELETE(
 
     const signupId = request.nextUrl.searchParams.get("signupId")
     if (!signupId) {
-      return NextResponse.json(
-        { error: "signupId is required" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "signupId is required" }, { status: 400 })
     }
 
     const signup = await prisma.tryoutSignup.findFirst({
@@ -213,10 +186,7 @@ export async function DELETE(
     })
 
     if (!signup) {
-      return NextResponse.json(
-        { error: "Signup not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Signup not found" }, { status: 404 })
     }
 
     if (signup.status === "PAID") {
@@ -227,10 +197,7 @@ export async function DELETE(
     }
 
     if (signup.status === "CANCELLED") {
-      return NextResponse.json(
-        { error: "Signup is already cancelled" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Signup is already cancelled" }, { status: 400 })
     }
 
     const updated = await prisma.tryoutSignup.update({
@@ -245,9 +212,6 @@ export async function DELETE(
     return NextResponse.json(updated)
   } catch (error) {
     console.error("Cancel signup error:", error)
-    return NextResponse.json(
-      { error: "Failed to cancel signup" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to cancel signup" }, { status: 500 })
   }
 }

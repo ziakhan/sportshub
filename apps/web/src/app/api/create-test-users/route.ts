@@ -4,6 +4,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import bcrypt from "bcryptjs"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Create test users with different roles for development/testing
  * DELETE THIS IN PRODUCTION
@@ -32,24 +34,18 @@ export async function POST(req: Request) {
       })
 
       if (!currentDbUser) {
-        return NextResponse.json(
-          { error: "Current user not found in database" },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: "Current user not found in database" }, { status: 404 })
       }
 
       // Find a club where this user is a ClubOwner
-      const ownerRole = currentDbUser.roles.find(
-        (r: any) => r.role === "ClubOwner" && r.tenantId
-      )
+      const ownerRole = currentDbUser.roles.find((r: any) => r.role === "ClubOwner" && r.tenantId)
 
       if (ownerRole && ownerRole.tenantId) {
         clubId = ownerRole.tenantId
       } else {
         return NextResponse.json(
           {
-            error:
-              "No club found. Please create a club first or provide a club ID.",
+            error: "No club found. Please create a club first or provide a club ID.",
           },
           { status: 400 }
         )
@@ -62,10 +58,7 @@ export async function POST(req: Request) {
     })
 
     if (!club) {
-      return NextResponse.json(
-        { error: "Club not found with ID: " + clubId },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Club not found with ID: " + clubId }, { status: 404 })
     }
 
     // Define test users to create

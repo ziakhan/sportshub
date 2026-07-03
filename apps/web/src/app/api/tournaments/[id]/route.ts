@@ -7,10 +7,7 @@ export const dynamic = "force-dynamic"
 /**
  * GET /api/tournaments/[id] — Get tournament details
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const tournament = await (prisma as any).tournament.findUnique({
       where: { id: params.id },
@@ -55,10 +52,7 @@ export async function GET(
 /**
  * PATCH /api/tournaments/[id] — Update tournament (including status changes)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -83,9 +77,18 @@ export async function PATCH(
     const updateData: Record<string, any> = {}
 
     const fields = [
-      "name", "description", "city", "state", "country", "currency",
-      "gamesGuaranteed", "gameSlotMinutes", "gameLengthMinutes", "gamePeriods",
-      "playoffFormat", "status",
+      "name",
+      "description",
+      "city",
+      "state",
+      "country",
+      "currency",
+      "gamesGuaranteed",
+      "gameSlotMinutes",
+      "gameLengthMinutes",
+      "gamePeriods",
+      "playoffFormat",
+      "status",
     ]
     for (const field of fields) {
       if (body[field] !== undefined) updateData[field] = body[field]
@@ -93,7 +96,8 @@ export async function PATCH(
     if (body.teamFee !== undefined) updateData.teamFee = body.teamFee
     if (body.startDate) updateData.startDate = new Date(body.startDate)
     if (body.endDate) updateData.endDate = new Date(body.endDate)
-    if (body.registrationDeadline) updateData.registrationDeadline = new Date(body.registrationDeadline)
+    if (body.registrationDeadline)
+      updateData.registrationDeadline = new Date(body.registrationDeadline)
     if (body.tenantId !== undefined) updateData.tenantId = body.tenantId || null
 
     const updated = await (prisma as any).tournament.update({

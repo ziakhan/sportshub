@@ -14,10 +14,7 @@ const signupSchema = z.object({
 /**
  * POST /api/house-leagues/[id]/signup — Parent signs up player
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -91,7 +88,10 @@ export async function POST(
     return NextResponse.json({ success: true, id: signup.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("House league signup error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

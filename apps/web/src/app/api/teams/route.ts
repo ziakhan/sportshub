@@ -7,6 +7,8 @@ import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
 
+export const dynamic = "force-dynamic"
+
 const staffEntrySchema = z
   .object({
     type: z.enum(["assign", "invite"]),
@@ -156,14 +158,14 @@ export async function POST(request: NextRequest) {
                     : entry.role
 
             await notify(tx, {
-                userId: invitedUser.id,
-                type: "staff_invite",
-                title: "Team Staff Invitation",
-                message: `${tenant?.name || "A club"} has invited you to join team "${team.name}" as ${roleLabel}.`,
-                link: `/notifications`,
-                referenceId: invitation.id,
-                referenceType: "StaffInvitation"
-      })
+              userId: invitedUser.id,
+              type: "staff_invite",
+              title: "Team Staff Invitation",
+              message: `${tenant?.name || "A club"} has invited you to join team "${team.name}" as ${roleLabel}.`,
+              link: `/notifications`,
+              referenceId: invitation.id,
+              referenceType: "StaffInvitation",
+            })
           }
         }
       }

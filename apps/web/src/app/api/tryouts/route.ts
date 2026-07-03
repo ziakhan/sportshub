@@ -44,7 +44,10 @@ export async function POST(request: NextRequest) {
         roles: {
           where: {
             OR: [
-              { tenantId: validatedData.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
+              {
+                tenantId: validatedData.tenantId,
+                role: { in: ["ClubOwner", "ClubManager", "Staff"] },
+              },
               { role: "PlatformAdmin" },
             ],
           },
@@ -81,11 +84,8 @@ export async function POST(request: NextRequest) {
     console.error("Tryout creation error:", error)
 
     if (error instanceof z.ZodError) {
-      const details = error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join(", ")
-      return NextResponse.json(
-        { error: "Validation error: " + details },
-        { status: 400 }
-      )
+      const details = error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")
+      return NextResponse.json({ error: "Validation error: " + details }, { status: 400 })
     }
 
     const message = error instanceof Error ? error.message : "Internal server error"

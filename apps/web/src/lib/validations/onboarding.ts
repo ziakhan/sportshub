@@ -12,10 +12,11 @@ export const parentOnboardingSchema = z.object({
 export const playerOnboardingSchema = z.object({
   type: z.literal("Player"),
   country: z.string().length(2).default("CA"),
-  dateOfBirth: z.string().refine(
-    (val) => calculateAge(new Date(val)) >= COPPA_MIN_AGE,
-    { message: "You must be at least 13 years old to create an account" }
-  ),
+  dateOfBirth: z
+    .string()
+    .refine((val) => calculateAge(new Date(val)) >= COPPA_MIN_AGE, {
+      message: "You must be at least 13 years old to create an account",
+    }),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
   jerseyNumber: z.string().optional(),
   city: z.string().min(1, "City is required").max(100),

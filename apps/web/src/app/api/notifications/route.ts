@@ -4,6 +4,8 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 
+export const dynamic = "force-dynamic"
+
 /**
  * List user's notifications
  * GET /api/notifications?unread=true
@@ -84,9 +86,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Mark notifications error:", error)
-    return NextResponse.json(
-      { error: "Failed to update notifications" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 })
   }
 }

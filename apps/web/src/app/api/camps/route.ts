@@ -83,7 +83,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, id: camp.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create camp error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -103,7 +106,15 @@ export async function GET(request: NextRequest) {
           ...(tenantId ? { tenantId } : {}),
         },
         include: {
-          tenant: { select: { id: true, name: true, slug: true, currency: true, branding: { select: { primaryColor: true } } } },
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              currency: true,
+              branding: { select: { primaryColor: true } },
+            },
+          },
           _count: { select: { signups: true } },
         },
         orderBy: { startDate: "asc" },

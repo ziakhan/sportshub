@@ -28,10 +28,7 @@ export async function GET() {
         tenant: { select: { id: true, name: true, city: true, contactEmail: true } },
         user: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
-      orderBy: [
-        { status: "asc" },
-        { createdAt: "desc" },
-      ],
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     })
 
     return NextResponse.json({ claims })

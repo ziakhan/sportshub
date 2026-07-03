@@ -22,7 +22,11 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("PATCH /api/teams/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "admin-1", isPlatformAdmin: false })
+    vi.mocked(getSessionUserId).mockResolvedValue({
+      userId: "admin-1",
+      realUserId: "admin-1",
+      isPlatformAdmin: false,
+    })
     vi.mocked(prisma.team.findUnique).mockResolvedValue({
       id: "team-1",
       tenantId: "tenant-1",

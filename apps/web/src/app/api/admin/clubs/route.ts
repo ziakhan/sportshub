@@ -1,7 +1,8 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { getSessionUserId } from "@/lib/auth-helpers"
+
+export const dynamic = "force-dynamic"
 
 const ALLOWED_TENANT_STATUSES = new Set(["ACTIVE", "UNCLAIMED", "SUSPENDED"])
 
@@ -11,12 +12,11 @@ function toPositivePage(value: string | null) {
 }
 
 async function requireAdmin() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) return null
-  const role = await prisma.userRole.findFirst({
-    where: { userId: session.user.id, role: "PlatformAdmin" },
-  })
-  return role ? session.user.id : null
+  // Impersonation-aware: returns the REAL admin account id (audit-correct
+  // even while the admin is impersonating another user).
+  const session = await getSessionUserId()
+  if (!session?.isPlatformAdmin) return null
+  return session.realUserId
 }
 
 /**

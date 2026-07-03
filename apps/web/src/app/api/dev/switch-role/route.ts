@@ -4,6 +4,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { auditSafe } from "@/lib/audit"
 
+export const dynamic = "force-dynamic"
+
 /**
  * DEV ONLY: Switch the current user's role for testing
  * DELETE THIS IN PRODUCTION
@@ -24,12 +26,24 @@ export async function POST(req: Request) {
     const { role } = await req.json()
 
     const validRoles = [
-      "ClubOwner", "ClubManager", "Staff", "TeamManager", "Scorekeeper",
-      "LeagueOwner", "LeagueManager", "Parent", "Player", "Referee", "PlatformAdmin",
+      "ClubOwner",
+      "ClubManager",
+      "Staff",
+      "TeamManager",
+      "Scorekeeper",
+      "LeagueOwner",
+      "LeagueManager",
+      "Parent",
+      "Player",
+      "Referee",
+      "PlatformAdmin",
     ]
 
     if (!validRoles.includes(role)) {
-      return NextResponse.json({ error: `Invalid role. Must be one of: ${validRoles.join(", ")}` }, { status: 400 })
+      return NextResponse.json(
+        { error: `Invalid role. Must be one of: ${validRoles.join(", ")}` },
+        { status: 400 }
+      )
     }
 
     // Find user in database
@@ -51,7 +65,13 @@ export async function POST(req: Request) {
     })
 
     // Determine if role needs tenant scope
-    const needsTenant = ["ClubOwner", "ClubManager", "Staff", "TeamManager", "Scorekeeper"].includes(role)
+    const needsTenant = [
+      "ClubOwner",
+      "ClubManager",
+      "Staff",
+      "TeamManager",
+      "Scorekeeper",
+    ].includes(role)
 
     // Create new role
     const newRole = await prisma.userRole.create({

@@ -12,10 +12,7 @@ const signupSchema = z.object({
   notes: z.string().optional(),
 })
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -50,7 +47,10 @@ export async function POST(
     }
 
     if (data.weeksSelected > camp.numberOfWeeks) {
-      return NextResponse.json({ error: "Cannot select more weeks than available" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Cannot select more weeks than available" },
+        { status: 400 }
+      )
     }
 
     const existing = await (prisma as any).campSignup.findUnique({
@@ -103,7 +103,10 @@ export async function POST(
     return NextResponse.json({ success: true, id: signup.id, totalFee }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Camp signup error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

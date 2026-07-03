@@ -5,9 +5,15 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const createTenantSchema = z.object({
   name: z.string().min(3).max(100),
-  slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().optional(),
   timezone: z.string().optional().default("America/New_York"),
   phoneNumber: z.string().min(7).max(20),
@@ -30,10 +36,7 @@ export async function POST(request: NextRequest) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const userId = sessionInfo.userId
 
@@ -46,10 +49,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingTenant) {
-      return NextResponse.json(
-        { error: "Slug already taken" },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: "Slug already taken" }, { status: 409 })
     }
 
     // Get user
@@ -58,10 +58,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     // Create tenant with default branding and features
@@ -117,14 +114,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
-      id: tenant.id,
-      slug: tenant.slug,
-      name: tenant.name,
-      subdomain: `${tenant.slug}.youthbasketballhub.com`,
-      plan: tenant.plan,
-      createdAt: tenant.createdAt,
-    }, { status: 201 })
+    return NextResponse.json(
+      {
+        id: tenant.id,
+        slug: tenant.slug,
+        name: tenant.name,
+        subdomain: `${tenant.slug}.youthbasketballhub.com`,
+        plan: tenant.plan,
+        createdAt: tenant.createdAt,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error("Tenant creation error:", error)
 
@@ -135,10 +135,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
@@ -150,10 +147,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
     const userId = session.user.id
 
@@ -190,9 +184,6 @@ export async function GET() {
     return NextResponse.json({ tenants })
   } catch (error) {
     console.error("Get tenants error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

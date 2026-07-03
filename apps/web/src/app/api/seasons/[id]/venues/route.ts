@@ -34,7 +34,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     if (isSeasonLocked(season.status)) {
-      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: season.status },
+        { status: 409 }
+      )
     }
 
     const body = await request.json()
@@ -146,7 +149,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     if (isSeasonLocked(season.status)) {
-      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: season.status },
+        { status: 409 }
+      )
     }
 
     const seasonVenueId =

@@ -20,16 +20,13 @@ const createTemplateSchema = z.object({
 
 async function verifyClubAccess(clubId: string, userId: string, requireAdmin: boolean) {
   const allowedRoles = requireAdmin
-    ? ["ClubOwner", "ClubManager"] as any
-    : ["ClubOwner", "ClubManager", "Staff", "TeamManager"] as any
+    ? (["ClubOwner", "ClubManager"] as any)
+    : (["ClubOwner", "ClubManager", "Staff", "TeamManager"] as any)
 
   const hasAccess = await prisma.userRole.findFirst({
     where: {
       userId,
-      OR: [
-        { tenantId: clubId, role: { in: allowedRoles } },
-        { role: "PlatformAdmin" as any },
-      ],
+      OR: [{ tenantId: clubId, role: { in: allowedRoles } }, { role: "PlatformAdmin" as any }],
     },
   })
   return !!hasAccess
@@ -40,10 +37,7 @@ async function verifyClubAccess(clubId: string, userId: string, requireAdmin: bo
  * List active offer templates for a club
  * Access: any club role
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -77,10 +71,7 @@ export async function GET(
  * Create an offer template for a club
  * Access: ClubOwner / ClubManager only
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -89,7 +80,10 @@ export async function POST(
 
     const hasAccess = await verifyClubAccess(params.id, session.user.id, true)
     if (!hasAccess) {
-      return NextResponse.json({ error: "Only club owners and managers can create templates" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only club owners and managers can create templates" },
+        { status: 403 }
+      )
     }
 
     const body = await request.json()

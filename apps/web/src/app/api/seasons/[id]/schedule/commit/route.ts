@@ -29,10 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       select: { status: true, league: { select: { ownerId: true } } },
     })
     if (!season) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      season.league.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     if (!canCommitSchedule(season.status)) {
       return NextResponse.json(
@@ -98,18 +95,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager"] } },
         select: { userId: true },
       })
-      await notifyMany(
-        prisma,
-        Array.from(new Set(managers.map((m) => m.userId))),
-        {
-          type: "schedule_published",
-          title: "Season Schedule Published",
-          message: "The game schedule for your league season has been published.",
-          link: `/browse-leagues/${params.id}`,
-          referenceId: params.id,
-          referenceType: "Season",
-        }
-      )
+      await notifyMany(prisma, Array.from(new Set(managers.map((m) => m.userId))), {
+        type: "schedule_published",
+        title: "Season Schedule Published",
+        message: "The game schedule for your league season has been published.",
+        link: `/browse-leagues/${params.id}`,
+        referenceId: params.id,
+        referenceType: "Season",
+      })
     }
 
     return NextResponse.json({

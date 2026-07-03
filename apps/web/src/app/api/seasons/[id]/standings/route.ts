@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
-import {
-  computeStandings,
-  type StandingsGame,
-  type TiebreakerKey,
-} from "@/lib/standings/compute"
+import { computeStandings, type StandingsGame, type TiebreakerKey } from "@/lib/standings/compute"
 
 export const dynamic = "force-dynamic"
 

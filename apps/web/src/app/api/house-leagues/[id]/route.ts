@@ -8,16 +8,19 @@ export const dynamic = "force-dynamic"
 /**
  * GET /api/house-leagues/[id] — Get single house league
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const league = await (prisma as any).houseLeague.findUnique({
       where: { id: params.id },
       include: {
         tenant: {
-          select: { id: true, name: true, slug: true, currency: true, branding: { select: { primaryColor: true } } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            currency: true,
+            branding: { select: { primaryColor: true } },
+          },
         },
         _count: { select: { signups: true } },
       },
@@ -37,10 +40,7 @@ export async function GET(
 /**
  * PATCH /api/house-leagues/[id] — Update (including publish/unpublish)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -73,9 +73,22 @@ export async function PATCH(
 
     // Allow updating any field
     const fields = [
-      "name", "description", "details", "ageGroups", "gender", "season",
-      "daysOfWeek", "startTime", "endTime", "location", "maxParticipants",
-      "includesUniform", "includesJersey", "includesBall", "includesMedal", "isPublished",
+      "name",
+      "description",
+      "details",
+      "ageGroups",
+      "gender",
+      "season",
+      "daysOfWeek",
+      "startTime",
+      "endTime",
+      "location",
+      "maxParticipants",
+      "includesUniform",
+      "includesJersey",
+      "includesBall",
+      "includesMedal",
+      "isPublished",
     ]
     for (const field of fields) {
       if (body[field] !== undefined) updateData[field] = body[field]

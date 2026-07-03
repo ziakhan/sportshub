@@ -9,10 +9,7 @@ export const dynamic = "force-dynamic"
  * Finalize team roster - assign jersey numbers based on preferences (first-come-first-served)
  * POST /api/teams/[id]/finalize
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -60,10 +57,7 @@ export async function POST(
     })
 
     if (acceptedOffers.length === 0) {
-      return NextResponse.json(
-        { error: "No accepted offers to finalize" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "No accepted offers to finalize" }, { status: 400 })
     }
 
     // Track assigned jersey numbers
@@ -79,7 +73,12 @@ export async function POST(
     })
 
     // Assign jersey numbers based on preferences
-    const assignments: { offerId: string; playerId: string; playerName: string; jerseyNumber: number | null }[] = []
+    const assignments: {
+      offerId: string
+      playerId: string
+      playerName: string
+      jerseyNumber: number | null
+    }[] = []
 
     for (const offer of acceptedOffers) {
       let assignedNumber: number | null = null
@@ -111,7 +110,9 @@ export async function POST(
         if (assignment.jerseyNumber !== null) {
           await tx.offer.update({
             where: { id: assignment.offerId },
-            data: { /* mark as processed - no extra field needed, status already ACCEPTED */ },
+            data: {
+              /* mark as processed - no extra field needed, status already ACCEPTED */
+            },
           })
 
           await tx.teamPlayer.updateMany({
@@ -131,14 +132,14 @@ export async function POST(
         const assignment = assignments.find((a: any) => a.offerId === offer.id)
         if (assignment?.jerseyNumber !== null) {
           await notify(tx, {
-              userId: offer.player.parentId,
-              type: "jersey_assigned",
-              title: "Jersey Number Assigned",
-              message: `${assignment!.playerName} has been assigned jersey #${assignment!.jerseyNumber} on ${team.name}.`,
-              link: `/offers`,
-              referenceId: offer.id,
-              referenceType: "Offer"
-      })
+            userId: offer.player.parentId,
+            type: "jersey_assigned",
+            title: "Jersey Number Assigned",
+            message: `${assignment!.playerName} has been assigned jersey #${assignment!.jerseyNumber} on ${team.name}.`,
+            link: `/offers`,
+            referenceId: offer.id,
+            referenceType: "Offer",
+          })
         }
       }
     })

@@ -23,10 +23,7 @@ const createSessionSchema = z.object({
  * We persist it as SeasonSession + SeasonSessionDay + SeasonSessionDayVenue rows so the UI keeps
  * working before Phase 3 rewrites this API to expose the day-venue-court substrate directly.
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -41,7 +38,10 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     if (isSeasonLocked(season.status)) {
-      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: season.status },
+        { status: 409 }
+      )
     }
 
     const body = await request.json()
@@ -81,17 +81,17 @@ export async function POST(
     return NextResponse.json({ success: true, id: result.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create session error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessions = await (prisma as any).seasonSession.findMany({
       where: { seasonId: params.id },
@@ -152,10 +152,7 @@ export async function GET(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -170,7 +167,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     if (isSeasonLocked(season.status)) {
-      return NextResponse.json({ error: SEASON_LOCKED_MESSAGE, status: season.status }, { status: 409 })
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: season.status },
+        { status: 409 }
+      )
     }
 
     const sessionId = request.nextUrl.searchParams.get("sessionId")

@@ -65,10 +65,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const game = await loadGameWithOwner(params.id)
     if (!game) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      game.season?.league?.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (game.season?.league?.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const body = await request.json()
@@ -83,16 +80,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const newAwayTeamId = data.awayTeamId ?? game.awayTeamId
 
     if (newHomeTeamId === newAwayTeamId) {
-      return NextResponse.json(
-        { error: "Home and away team must differ" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Home and away team must differ" }, { status: 400 })
     }
 
     // Conflict check only applies when the game is still active
     const nextStatus = data.status ?? game.status
-    const checkConflicts =
-      game.seasonId && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)
+    const checkConflicts = game.seasonId && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)
 
     if (checkConflicts) {
       const overlappers = await (prisma as any).game.findMany({
@@ -129,10 +122,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           conflicts.push(`Court double-booked against game ${g.id}`)
       }
       if (conflicts.length > 0) {
-        return NextResponse.json(
-          { error: "Conflict detected", conflicts },
-          { status: 409 }
-        )
+        return NextResponse.json({ error: "Conflict detected", conflicts }, { status: 409 })
       }
     }
 
@@ -184,17 +174,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
 
     const game = await loadGameWithOwner(params.id)
     if (!game) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      game.season?.league?.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (game.season?.league?.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     if (game.status === "COMPLETED") {
-      return NextResponse.json(
-        { error: "Cannot cancel a completed game" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Cannot cancel a completed game" }, { status: 400 })
     }
 
     const updated = await (prisma as any).game.update({

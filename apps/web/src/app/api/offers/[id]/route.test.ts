@@ -20,7 +20,11 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("PATCH /api/offers/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "parent-1", isPlatformAdmin: false })
+    vi.mocked(getSessionUserId).mockResolvedValue({
+      userId: "parent-1",
+      realUserId: "parent-1",
+      isPlatformAdmin: false,
+    })
   })
 
   it("accepts an offer, creates or updates the team roster entry, and notifies the club", async () => {

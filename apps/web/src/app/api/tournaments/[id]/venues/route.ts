@@ -20,10 +20,7 @@ const addVenueSchema = z.object({
 /**
  * POST /api/tournaments/[id]/venues — Add a venue to the tournament
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -34,7 +31,10 @@ export async function POST(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!tournament || (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (
+      !tournament ||
+      (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -85,7 +85,10 @@ export async function POST(
     return NextResponse.json({ success: true, id: tournamentVenue.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Add tournament venue error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -95,15 +98,14 @@ export async function POST(
 /**
  * GET /api/tournaments/[id]/venues — List tournament venues
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const venues = await (prisma as any).tournamentVenue.findMany({
       where: { tournamentId: params.id },
       include: {
-        venue: { select: { id: true, name: true, address: true, city: true, state: true, capacity: true } },
+        venue: {
+          select: { id: true, name: true, address: true, city: true, state: true, capacity: true },
+        },
       },
     })
     return NextResponse.json({ venues })
@@ -116,10 +118,7 @@ export async function GET(
 /**
  * DELETE /api/tournaments/[id]/venues?tournamentVenueId=xxx — Remove a venue
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -130,7 +129,10 @@ export async function DELETE(
       where: { id: params.id },
       select: { ownerId: true },
     })
-    if (!tournament || (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)) {
+    if (
+      !tournament ||
+      (tournament.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

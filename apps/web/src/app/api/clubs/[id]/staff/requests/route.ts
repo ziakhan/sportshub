@@ -5,6 +5,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
 
+export const dynamic = "force-dynamic"
+
 const requestSchema = z.object({
   role: z.enum(["ClubManager", "Staff"]),
   message: z.string().max(500).optional(),
@@ -14,10 +16,7 @@ const requestSchema = z.object({
  * User requests to join a club as staff
  * POST /api/clubs/[id]/staff/requests
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -116,15 +115,9 @@ export async function POST(
     return NextResponse.json(invitation, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Staff request error:", error)
-    return NextResponse.json(
-      { error: "Failed to send request" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to send request" }, { status: 500 })
   }
 }

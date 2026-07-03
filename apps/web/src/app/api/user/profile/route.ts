@@ -5,6 +5,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const updateProfileSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
@@ -68,15 +70,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json(user)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Profile update error:", error)
-    return NextResponse.json(
-      { error: "Failed to update profile" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
   }
 }

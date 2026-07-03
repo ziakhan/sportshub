@@ -52,6 +52,7 @@ describe("auth helpers", () => {
 
     await expect(getSessionUserId()).resolves.toEqual({
       userId: "user-99",
+      realUserId: "admin-1",
       isPlatformAdmin: true,
     })
   })
@@ -62,6 +63,7 @@ describe("auth helpers", () => {
 
     await expect(getSessionUserId()).resolves.toEqual({
       userId: "user-1",
+      realUserId: "user-1",
       isPlatformAdmin: false,
     })
   })

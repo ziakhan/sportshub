@@ -21,10 +21,7 @@ const respondSchema = z.object({
  * Get a single offer
  * GET /api/offers/[id]
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -36,14 +33,23 @@ export async function GET(
       include: {
         team: {
           select: {
-            id: true, name: true, ageGroup: true, gender: true, season: true,
+            id: true,
+            name: true,
+            ageGroup: true,
+            gender: true,
+            season: true,
             tenant: { select: { id: true, name: true } },
           },
         },
         player: {
           select: {
-            id: true, firstName: true, lastName: true, parentId: true,
-            dateOfBirth: true, gender: true, position: true,
+            id: true,
+            firstName: true,
+            lastName: true,
+            parentId: true,
+            dateOfBirth: true,
+            gender: true,
+            position: true,
           },
         },
         tryoutSignup: {
@@ -86,10 +92,7 @@ export async function GET(
  * Respond to an offer (accept or decline)
  * PATCH /api/offers/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) {
@@ -119,7 +122,10 @@ export async function PATCH(
 
     // Only the parent can respond
     if (offer.player.parentId !== userId) {
-      return NextResponse.json({ error: "Only the parent/guardian can respond to this offer" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Only the parent/guardian can respond to this offer" },
+        { status: 403 }
+      )
     }
 
     if (offer.status !== "PENDING") {
@@ -147,10 +153,7 @@ export async function PATCH(
         )
       }
       if (offer.includesShoes && !data.shoeSize) {
-        return NextResponse.json(
-          { error: "Shoe size is required for this offer" },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: "Shoe size is required for this offer" }, { status: 400 })
       }
       if (offer.includesTracksuit && !data.tracksuitSize) {
         return NextResponse.json(
@@ -216,14 +219,14 @@ export async function PATCH(
 
         if (clubOwner) {
           await notify(tx, {
-              userId: clubOwner.userId,
-              type: "offer_accepted",
-              title: "Offer Accepted",
-              message: `${offer.player.firstName} ${offer.player.lastName} has accepted the offer to join ${offer.team.name}.`,
-              link: `/clubs/${offer.team.tenantId}/offers`,
-              referenceId: updated.id,
-              referenceType: "Offer"
-      })
+            userId: clubOwner.userId,
+            type: "offer_accepted",
+            title: "Offer Accepted",
+            message: `${offer.player.firstName} ${offer.player.lastName} has accepted the offer to join ${offer.team.name}.`,
+            link: `/clubs/${offer.team.tenantId}/offers`,
+            referenceId: updated.id,
+            referenceType: "Offer",
+          })
         }
 
         return updated
@@ -256,14 +259,14 @@ export async function PATCH(
 
         if (clubOwner) {
           await notify(tx, {
-              userId: clubOwner.userId,
-              type: "offer_declined",
-              title: "Offer Declined",
-              message: `${offer.player.firstName} ${offer.player.lastName} has declined the offer to join ${offer.team.name}.`,
-              link: `/clubs/${offer.team.tenantId}/offers`,
-              referenceId: updated.id,
-              referenceType: "Offer"
-      })
+            userId: clubOwner.userId,
+            type: "offer_declined",
+            title: "Offer Declined",
+            message: `${offer.player.firstName} ${offer.player.lastName} has declined the offer to join ${offer.team.name}.`,
+            link: `/clubs/${offer.team.tenantId}/offers`,
+            referenceId: updated.id,
+            referenceType: "Offer",
+          })
         }
 
         return updated

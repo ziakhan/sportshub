@@ -21,10 +21,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       select: { league: { select: { ownerId: true } } },
     })
     if (!owner) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      owner.league.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (owner.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const { input, errors } = await loadSchedulerInput(params.id)
@@ -36,8 +33,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
 
     // Enrich output with team names so UI can render without extra lookups
     const teamNameById = new Map<string, string>()
-    for (const d of input.divisions)
-      for (const t of d.teams) teamNameById.set(t.teamId, t.name)
+    for (const d of input.divisions) for (const t of d.teams) teamNameById.set(t.teamId, t.name)
 
     return NextResponse.json({
       games: result.games.map((g) => ({

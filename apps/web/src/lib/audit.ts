@@ -51,7 +51,9 @@ function clientInfo(request?: Request): { ipAddress: string; userAgent: string }
   }
 }
 
-type DbClient = Pick<typeof prisma, "auditLog"> | { auditLog: { create: (args: any) => Promise<unknown> } }
+type DbClient =
+  | Pick<typeof prisma, "auditLog">
+  | { auditLog: { create: (args: any) => Promise<unknown> } }
 
 export async function audit(db: DbClient, entry: AuditEntry): Promise<void> {
   const { ipAddress, userAgent } = clientInfo(entry.request)

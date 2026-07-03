@@ -100,7 +100,13 @@ export async function POST(req: Request) {
         },
       })
 
-      const needsTenant = ["ClubOwner", "ClubManager", "Staff", "TeamManager", "Scorekeeper"].includes(testUser.role)
+      const needsTenant = [
+        "ClubOwner",
+        "ClubManager",
+        "Staff",
+        "TeamManager",
+        "Scorekeeper",
+      ].includes(testUser.role)
 
       await prisma.userRole.create({
         data: {

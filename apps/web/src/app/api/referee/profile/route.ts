@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
+export const dynamic = "force-dynamic"
+
 const updateRefereeSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]).optional(),
   standardFee: z.number().min(0).optional(),
@@ -143,15 +145,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json(profile)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Referee profile update error:", error)
-    return NextResponse.json(
-      { error: "Failed to update referee profile" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to update referee profile" }, { status: 500 })
   }
 }

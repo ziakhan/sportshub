@@ -3,6 +3,8 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 
+export const dynamic = "force-dynamic"
+
 /**
  * Get staff members available for team assignment
  * GET /api/clubs/[id]/staff/available
@@ -10,10 +12,7 @@ import { prisma } from "@youthbasketballhub/db"
  * Returns users who have Staff or TeamManager roles for this club,
  * along with their current team assignments.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -60,18 +59,21 @@ export async function GET(
     })
 
     // Group roles by user
-    const staffMap = new Map<string, {
-      userId: string
-      firstName: string | null
-      lastName: string | null
-      email: string
-      roles: Array<{
-        role: string
-        teamId: string | null
-        teamName: string | null
-        designation: string | null
-      }>
-    }>()
+    const staffMap = new Map<
+      string,
+      {
+        userId: string
+        firstName: string | null
+        lastName: string | null
+        email: string
+        roles: Array<{
+          role: string
+          teamId: string | null
+          teamName: string | null
+          designation: string | null
+        }>
+      }
+    >()
 
     for (const sr of staffRoles) {
       if (!staffMap.has(sr.userId)) {
@@ -94,9 +96,6 @@ export async function GET(
     return NextResponse.json({ staff: Array.from(staffMap.values()) })
   } catch (error) {
     console.error("Available staff error:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch available staff" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to fetch available staff" }, { status: 500 })
   }
 }

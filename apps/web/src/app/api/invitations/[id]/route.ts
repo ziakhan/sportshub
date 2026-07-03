@@ -5,6 +5,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notify } from "@/lib/notifications"
 
+export const dynamic = "force-dynamic"
+
 const respondSchema = z.object({
   action: z.enum(["accept", "decline"]),
   role: z.enum(["ClubManager", "Staff", "TeamManager"]).optional(),
@@ -14,10 +16,7 @@ const respondSchema = z.object({
  * Accept or decline an invitation/request
  * PATCH /api/invitations/[id]
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -47,10 +46,7 @@ export async function PATCH(
     })
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: "Invitation not found" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Invitation not found" }, { status: 404 })
     }
 
     if (invitation.status !== "PENDING") {
@@ -84,13 +80,9 @@ export async function PATCH(
     }
 
     if (data.action === "accept") {
-      const roleToAssign = invitation.type === "REQUEST" && data.role
-        ? data.role
-        : invitation.role
+      const roleToAssign = invitation.type === "REQUEST" && data.role ? data.role : invitation.role
 
-      const targetUserId = invitation.type === "INVITE"
-        ? user.id
-        : invitation.invitedUserId
+      const targetUserId = invitation.type === "INVITE" ? user.id : invitation.invitedUserId
 
       if (!targetUserId) {
         return NextResponse.json(
@@ -148,25 +140,25 @@ export async function PATCH(
       if (invitation.type === "INVITE") {
         // Notify the club owner who sent the invite
         await notify(prisma, {
-            userId: invitation.invitedById,
-            type: "invite_accepted",
-            title: "Invitation Accepted",
-            message: `${userName} has accepted your invitation to join ${invitation.tenant.name} as ${roleToAssign}.`,
-            link: `/clubs/${invitation.tenantId}/staff`,
-            referenceId: invitation.id,
-            referenceType: "StaffInvitation"
-      })
+          userId: invitation.invitedById,
+          type: "invite_accepted",
+          title: "Invitation Accepted",
+          message: `${userName} has accepted your invitation to join ${invitation.tenant.name} as ${roleToAssign}.`,
+          link: `/clubs/${invitation.tenantId}/staff`,
+          referenceId: invitation.id,
+          referenceType: "StaffInvitation",
+        })
       } else {
         // Notify the user whose request was accepted
         await notify(prisma, {
-            userId: targetUserId,
-            type: "request_accepted",
-            title: "Request Accepted",
-            message: `Your request to join ${invitation.tenant.name} has been accepted! You've been assigned the ${roleToAssign} role.`,
-            link: `/dashboard`,
-            referenceId: invitation.id,
-            referenceType: "StaffInvitation"
-      })
+          userId: targetUserId,
+          type: "request_accepted",
+          title: "Request Accepted",
+          message: `Your request to join ${invitation.tenant.name} has been accepted! You've been assigned the ${roleToAssign} role.`,
+          link: `/dashboard`,
+          referenceId: invitation.id,
+          referenceType: "StaffInvitation",
+        })
       }
 
       return NextResponse.json({ status: "accepted" })
@@ -182,25 +174,25 @@ export async function PATCH(
       if (invitation.type === "INVITE") {
         // Notify club owner
         await notify(prisma, {
-            userId: invitation.invitedById,
-            type: "invite_declined",
-            title: "Invitation Declined",
-            message: `${userName} has declined your invitation to join ${invitation.tenant.name}.`,
-            link: `/clubs/${invitation.tenantId}/staff`,
-            referenceId: invitation.id,
-            referenceType: "StaffInvitation"
-      })
+          userId: invitation.invitedById,
+          type: "invite_declined",
+          title: "Invitation Declined",
+          message: `${userName} has declined your invitation to join ${invitation.tenant.name}.`,
+          link: `/clubs/${invitation.tenantId}/staff`,
+          referenceId: invitation.id,
+          referenceType: "StaffInvitation",
+        })
       } else {
         // Notify the requesting user
         if (invitation.invitedUserId) {
           await notify(prisma, {
-              userId: invitation.invitedUserId,
-              type: "request_declined",
-              title: "Request Declined",
-              message: `Your request to join ${invitation.tenant.name} has been declined.`,
-              referenceId: invitation.id,
-              referenceType: "StaffInvitation"
-      })
+            userId: invitation.invitedUserId,
+            type: "request_declined",
+            title: "Request Declined",
+            message: `Your request to join ${invitation.tenant.name} has been declined.`,
+            referenceId: invitation.id,
+            referenceType: "StaffInvitation",
+          })
         }
       }
 
@@ -208,15 +200,9 @@ export async function PATCH(
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }
     console.error("Invitation response error:", error)
-    return NextResponse.json(
-      { error: "Failed to process response" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to process response" }, { status: 500 })
   }
 }

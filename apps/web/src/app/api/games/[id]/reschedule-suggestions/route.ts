@@ -33,12 +33,8 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
         season: { select: { league: { select: { ownerId: true } } } },
       },
     })) as any
-    if (!game || !game.seasonId)
-      return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (
-      game.season?.league?.ownerId !== sessionInfo.userId &&
-      !sessionInfo.isPlatformAdmin
-    )
+    if (!game || !game.seasonId) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (game.season?.league?.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const { input, errors } = await loadSchedulerInput(game.seasonId)

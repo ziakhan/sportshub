@@ -7,6 +7,8 @@ import { profileDataSchema } from "@/lib/validations/onboarding"
 import { getOnboardingNextStep, onboardingRoleEnum } from "@/lib/onboarding-next-step"
 import { isCoppaMinor } from "@/lib/coppa"
 
+export const dynamic = "force-dynamic"
+
 const onboardingSchema = z.object({
   roles: z.array(z.enum(onboardingRoleEnum)).min(1, "Select at least one role"),
   profileData: profileDataSchema.optional(),
@@ -81,7 +83,8 @@ export async function POST(req: Request) {
           if (isCoppaMinor(dob)) {
             return NextResponse.json(
               {
-                error: "Players under 13 cannot self-register. A parent or guardian must register and add you as a child.",
+                error:
+                  "Players under 13 cannot self-register. A parent or guardian must register and add you as a child.",
                 code: "COPPA_UNDER_13",
               },
               { status: 403 }

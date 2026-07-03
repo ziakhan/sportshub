@@ -163,13 +163,13 @@ export async function POST(request: NextRequest) {
 
       // Create notification for the parent
       await notify(tx, {
-          userId: player.parentId,
-          type: "offer_received",
-          title: "New Team Offer",
-          message: `${team.tenant.name} has sent an offer for ${player.firstName} ${player.lastName} to join ${team.name}.`,
-          link: `/offers`,
-          referenceId: offer.id,
-          referenceType: "Offer"
+        userId: player.parentId,
+        type: "offer_received",
+        title: "New Team Offer",
+        message: `${team.tenant.name} has sent an offer for ${player.firstName} ${player.lastName} to join ${team.name}.`,
+        link: `/offers`,
+        referenceId: offer.id,
+        referenceType: "Offer",
       })
 
       return offer
@@ -198,10 +198,7 @@ export async function POST(request: NextRequest) {
       console.error("Failed to send offer email:", emailError)
     }
 
-    return NextResponse.json(
-      { success: true, id: result.id },
-      { status: 201 }
-    )
+    return NextResponse.json({ success: true, id: result.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -261,7 +258,14 @@ export async function GET(request: NextRequest) {
         where: { teamId },
         include: {
           player: {
-            select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true, position: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              dateOfBirth: true,
+              gender: true,
+              position: true,
+            },
           },
           tryoutSignup: {
             select: { id: true, playerName: true, notes: true },
@@ -293,7 +297,14 @@ export async function GET(request: NextRequest) {
         include: {
           team: { select: { id: true, name: true } },
           player: {
-            select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true, position: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              dateOfBirth: true,
+              gender: true,
+              position: true,
+            },
           },
           tryoutSignup: {
             select: { id: true, playerName: true, notes: true },
@@ -321,7 +332,13 @@ export async function GET(request: NextRequest) {
         where: { playerId: { in: playerIds } },
         include: {
           team: {
-            select: { id: true, name: true, ageGroup: true, gender: true, tenant: { select: { name: true, currency: true } } },
+            select: {
+              id: true,
+              name: true,
+              ageGroup: true,
+              gender: true,
+              tenant: { select: { name: true, currency: true } },
+            },
           },
           player: {
             select: { id: true, firstName: true, lastName: true },

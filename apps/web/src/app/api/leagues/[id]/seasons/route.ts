@@ -71,7 +71,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         type: data.type,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
-        registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
+        registrationDeadline: data.registrationDeadline
+          ? new Date(data.registrationDeadline)
+          : null,
         ageGroupCutoffDate: data.ageGroupCutoffDate ? new Date(data.ageGroupCutoffDate) : null,
         teamFee: data.teamFee ?? null,
         gamesGuaranteed: data.gamesGuaranteed ?? null,
@@ -86,7 +88,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ success: true, id: season.id }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      )
     }
     console.error("Create season error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

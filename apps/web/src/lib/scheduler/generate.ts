@@ -127,12 +127,7 @@ function toMinutes(d: Date): number {
   return Math.floor(d.getTime() / 60000)
 }
 
-function overlaps(
-  aStart: Date,
-  aEnd: Date,
-  bStart: Date,
-  bEnd: Date
-): boolean {
+function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return aStart < bEnd && bStart < aEnd
 }
 
@@ -158,12 +153,8 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
 
         for (const court of dv.courts) {
           for (let i = 0; i < slotsPerCourt; i++) {
-            const startAt = new Date(
-              dayStart.getTime() + i * input.gameSlotMinutes * 60000
-            )
-            const endAt = new Date(
-              startAt.getTime() + input.gameSlotMinutes * 60000
-            )
+            const startAt = new Date(dayStart.getTime() + i * input.gameSlotMinutes * 60000)
+            const endAt = new Date(startAt.getTime() + input.gameSlotMinutes * 60000)
             slots.push({
               sessionId: s.id,
               dayId: d.id,
@@ -229,10 +220,7 @@ function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`
 }
 
-function buildPairings(
-  unit: SchedulerUnit,
-  gamesGuaranteed: number
-): Pairing[] {
+function buildPairings(unit: SchedulerUnit, gamesGuaranteed: number): Pairing[] {
   const n = unit.teams.length
   if (n < 2) return []
   const targetGames = Math.ceil((n * gamesGuaranteed) / 2)
@@ -265,9 +253,7 @@ function buildPairings(
     while (pool.length < targetGames) {
       const p = uniquePairs[i % uniquePairs.length]
       pool.push(
-        flip
-          ? { unitKey: p.unitKey, homeTeamId: p.awayTeamId, awayTeamId: p.homeTeamId }
-          : p
+        flip ? { unitKey: p.unitKey, homeTeamId: p.awayTeamId, awayTeamId: p.homeTeamId } : p
       )
       i++
       if (i % uniquePairs.length === 0) flip = !flip
@@ -292,8 +278,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
 
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
-  const teamBookings: Record<string, Array<{ start: Date; end: Date; dayId: string }>> =
-    {}
+  const teamBookings: Record<string, Array<{ start: Date; end: Date; dayId: string }>> = {}
   const courtBookings: Record<string, Array<{ start: Date; end: Date }>> = {}
   const playedPairCount: Record<string, number> = {}
 
@@ -413,9 +398,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     for (const t of u.teams) {
       const count = teamGameCount[t.teamId] ?? 0
       if (count < input.gamesGuaranteed) {
-        warnings.push(
-          `${u.label}: ${t.name} has ${count} games (target ${input.gamesGuaranteed}).`
-        )
+        warnings.push(`${u.label}: ${t.name} has ${count} games (target ${input.gamesGuaranteed}).`)
       }
     }
   }
