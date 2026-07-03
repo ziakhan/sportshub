@@ -3,10 +3,17 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import {
+  buildNavSections,
+  type IconKey,
+  type NavItem,
+  type NavSection,
+  type NavTenant,
+} from "./nav-config"
 
 interface MobileNavProps {
   roles: string[]
-  tenants: Array<{ id: string; name: string; slug: string; role?: string }>
+  tenants: Array<Pick<NavTenant, "id" | "name" | "slug" | "role">>
 }
 
 export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
@@ -30,16 +37,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
     }
   }, [open])
 
-  const hasRole = (role: string) => roles.includes(role)
-  const isAdmin = hasRole("ClubOwner") || hasRole("ClubManager")
-  const isStaff = hasRole("Staff") || hasRole("TeamManager")
-
-  const uniqueTenants = Array.from(new Map(tenants.map((t) => [t.id, t])).values())
-  const adminTenantIds = new Set(
-    tenants.filter((t) => t.role === "ClubOwner" || t.role === "ClubManager").map((t) => t.id)
-  )
-  const staffOnlyTenants = uniqueTenants.filter((t) => !adminTenantIds.has(t.id))
-  const adminTenants = uniqueTenants.filter((t) => adminTenantIds.has(t.id))
+  const sections = buildNavSections({ roles, tenants, homeLabel: "Home" })
 
   return (
     <>
@@ -90,299 +88,55 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
             </div>
 
             <div className="space-y-1 p-4">
-              <NavLink
-                href="/dashboard"
-                label="Home"
-                pathname={pathname}
-                icon={<IconDashboard />}
-              />
-
-              {hasRole("PlatformAdmin") && (
-                <div className="mb-4">
-                  <NavHeader label="Admin" />
-                  <NavLink
-                    href="/dashboard/admin/users"
-                    label="Users"
-                    pathname={pathname}
-                    icon={<IconUsers />}
-                  />
-                  <NavLink
-                    href="/dashboard/admin/clubs"
-                    label="Clubs"
-                    pathname={pathname}
-                    icon={<IconClub />}
-                  />
-                  <NavLink
-                    href="/leagues"
-                    label="Leagues"
-                    pathname={pathname}
-                    icon={<IconStar />}
-                  />
-                  <NavLink
-                    href="/dashboard/admin/claims"
-                    label="Claims"
-                    pathname={pathname}
-                    icon={<IconClipboard />}
-                  />
-                  <NavLink
-                    href="/dashboard/admin/settings"
-                    label="Settings"
-                    pathname={pathname}
-                    icon={<IconSettings />}
-                  />
-                </div>
-              )}
-
-              {hasRole("Parent") && (
-                <div className="mb-4">
-                  <NavHeader label="Parent" />
-                  <NavLink
-                    href="/players"
-                    label="My Players"
-                    pathname={pathname}
-                    icon={<IconUsers />}
-                  />
-                  <NavLink
-                    href="/offers"
-                    label="Offers Received"
-                    pathname={pathname}
-                    icon={<IconFlag />}
-                  />
-                  <NavLink
-                    href="/events"
-                    label="Browse Programs"
-                    pathname={pathname}
-                    icon={<IconSearch />}
-                  />
-                  <NavLink
-                    href="/notifications"
-                    label="Payments & Alerts"
-                    pathname={pathname}
-                    icon={<IconCard />}
-                  />
-                </div>
-              )}
-
-              {isAdmin && (
-                <div className="mb-4">
-                  <NavHeader label="Club" />
-                  {adminTenants.length > 0 ? (
-                    adminTenants.map((t) => (
-                      <div key={t.id} className="mb-2">
-                        <NavLink
-                          href={`/clubs/${t.id}`}
-                          label={t.name}
-                          pathname={pathname}
-                          icon={<IconDashboard />}
-                        />
-                        <div className="ml-4 space-y-1">
-                          <NavSubLink
-                            href={`/clubs/${t.id}/teams`}
-                            label="Teams"
-                            pathname={pathname}
-                            icon={<IconUsers />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/tryouts`}
-                            label="Tryouts"
-                            pathname={pathname}
-                            icon={<IconClipboard />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/offers`}
-                            label="Offers"
-                            pathname={pathname}
-                            icon={<IconFlag />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/offer-templates`}
-                            label="Templates"
-                            pathname={pathname}
-                            icon={<IconClipboard />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/house-leagues`}
-                            label="House League"
-                            pathname={pathname}
-                            icon={<IconStar />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/camps`}
-                            label="Camps"
-                            pathname={pathname}
-                            icon={<IconCalendar />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/tournaments`}
-                            label="Tournaments"
-                            pathname={pathname}
-                            icon={<IconPlay />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/staff`}
-                            label="Staff"
-                            pathname={pathname}
-                            icon={<IconAddUser />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/settings`}
-                            label="Settings"
-                            pathname={pathname}
-                            icon={<IconSettings />}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <>
-                      <NavLink
-                        href="/clubs/create"
-                        label="Create Club"
-                        pathname={pathname}
-                        icon={<IconPlus />}
-                      />
-                      <NavLink
-                        href="/clubs/find"
-                        label="Find & Claim Club"
-                        pathname={pathname}
-                        icon={<IconSearch />}
-                      />
-                    </>
-                  )}
-                </div>
-              )}
-
-              {isStaff && (
-                <div className="mb-4">
-                  <NavHeader label="Staff" />
-                  {staffOnlyTenants.length > 0 ? (
-                    staffOnlyTenants.map((t) => (
-                      <div key={t.id} className="mb-2">
-                        <NavLink
-                          href={`/clubs/${t.id}`}
-                          label={t.name}
-                          pathname={pathname}
-                          icon={<IconDashboard />}
-                        />
-                        <div className="ml-4 space-y-1">
-                          <NavSubLink
-                            href={`/clubs/${t.id}/teams`}
-                            label="Teams"
-                            pathname={pathname}
-                            icon={<IconUsers />}
-                          />
-                          <NavSubLink
-                            href={`/clubs/${t.id}/tryouts`}
-                            label="Tryouts"
-                            pathname={pathname}
-                            icon={<IconClipboard />}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <NavLink
-                      href="/teams"
-                      label="My Teams"
-                      pathname={pathname}
-                      icon={<IconUsers />}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Browse — visible to anyone with a club or staff role */}
-              {(isAdmin || isStaff) && (
-                <div className="mb-4">
-                  <NavHeader label="Browse" />
-                  <NavLink
-                    href="/browse-leagues"
-                    label="Leagues"
-                    pathname={pathname}
-                    icon={<IconSearch />}
-                  />
-                  <NavLink
-                    href="/browse-tournaments"
-                    label="Tournaments"
-                    pathname={pathname}
-                    icon={<IconStar />}
-                  />
-                </div>
-              )}
-
-              {hasRole("Referee") && (
-                <div className="mb-4">
-                  <NavHeader label="Referee" />
-                  <NavLink
-                    href="/browse-leagues"
-                    label="Available Games"
-                    pathname={pathname}
-                    icon={<IconCalendar />}
-                  />
-                  <NavLink
-                    href="/referee/profile"
-                    label="My Profile"
-                    pathname={pathname}
-                    icon={<IconUsers />}
-                  />
-                </div>
-              )}
-
-              {hasRole("Player") && (
-                <div className="mb-4">
-                  <NavHeader label="Player" />
-                  <NavLink
-                    href="/teams"
-                    label="My Teams"
-                    pathname={pathname}
-                    icon={<IconUsers />}
-                  />
-                  <NavLink
-                    href="/browse-tournaments"
-                    label="Schedule"
-                    pathname={pathname}
-                    icon={<IconCalendar />}
-                  />
-                  <NavLink
-                    href="/dashboard"
-                    label="My Stats"
-                    pathname={pathname}
-                    icon={<IconDashboard />}
-                  />
-                </div>
-              )}
-
-              {(hasRole("LeagueOwner") || hasRole("LeagueManager")) && (
-                <div className="mb-4">
-                  <NavHeader label="League" />
-                  <NavLink
-                    href="/leagues"
-                    label="My Leagues"
-                    pathname={pathname}
-                    icon={<IconStar />}
-                  />
-                </div>
-              )}
-
-              <div className="border-ink-100 border-t pt-4">
-                <NavLink
-                  href="/notifications"
-                  label="Notifications"
-                  pathname={pathname}
-                  icon={<IconBell />}
-                />
-                <NavLink
-                  href="/settings/profile"
-                  label="Profile"
-                  pathname={pathname}
-                  icon={<IconUsers />}
-                />
-              </div>
+              {sections.map((section) => (
+                <MobileSection key={section.key} section={section} pathname={pathname} />
+              ))}
             </div>
           </nav>
         </div>
       )}
     </>
+  )
+}
+
+function MobileSection({ section, pathname }: { section: NavSection; pathname: string | null }) {
+  if (section.key === "home") {
+    return (
+      <>
+        {section.items.map((item) => (
+          <NavLink key={item.href} item={item} pathname={pathname} />
+        ))}
+      </>
+    )
+  }
+
+  if (section.key === "footer") {
+    return (
+      <div className="border-ink-100 border-t pt-4">
+        {section.items.map((item) => (
+          <NavLink key={item.href} item={item} pathname={pathname} />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-4">
+      {section.label && <NavHeader label={section.label} />}
+      {section.workspaces?.map((workspace) => (
+        <div key={workspace.key} className="mb-2">
+          <NavLink item={workspace.root} pathname={pathname} />
+          <div className="ml-4 space-y-1">
+            {workspace.subItems.map((item) => (
+              <NavSubLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </div>
+        </div>
+      ))}
+      {section.items.map((item) => (
+        <NavLink key={item.href} item={item} pathname={pathname} />
+      ))}
+    </div>
   )
 }
 
@@ -394,17 +148,8 @@ function NavHeader({ label }: { label: string }) {
   )
 }
 
-function NavLink({
-  href,
-  label,
-  pathname,
-  icon,
-}: {
-  href: string
-  label: string
-  pathname: string | null
-  icon: React.ReactNode
-}) {
+function NavLink({ item, pathname }: { item: NavItem; pathname: string | null }) {
+  const { href, label } = item
   const active = pathname === href || (pathname?.startsWith(`${href}/`) ?? false)
 
   return (
@@ -417,24 +162,15 @@ function NavLink({
       <span
         className={`flex h-8 w-8 items-center justify-center rounded-xl ${active ? "text-play-600 bg-white" : "bg-ink-50 text-ink-500"}`}
       >
-        {icon}
+        <NavIcon icon={item.icon} />
       </span>
       <span>{label}</span>
     </Link>
   )
 }
 
-function NavSubLink({
-  href,
-  label,
-  pathname,
-  icon,
-}: {
-  href: string
-  label: string
-  pathname: string | null
-  icon: React.ReactNode
-}) {
+function NavSubLink({ item, pathname }: { item: NavItem; pathname: string | null }) {
+  const { href, label } = item
   const active = pathname === href || (pathname?.startsWith(`${href}/`) ?? false)
 
   return (
@@ -447,11 +183,16 @@ function NavSubLink({
       <span
         className={`flex h-5 w-5 items-center justify-center rounded-lg ${active ? "text-play-600 bg-white" : "bg-ink-50 text-ink-400"}`}
       >
-        {icon}
+        <NavIcon icon={item.icon} />
       </span>
       <span>{label}</span>
     </Link>
   )
+}
+
+function NavIcon({ icon }: { icon: IconKey }) {
+  const Icon = ICONS[icon]
+  return <Icon />
 }
 
 function IconDashboard() {
@@ -585,4 +326,21 @@ function IconCard() {
       <line x1="2" y1="10" x2="22" y2="10" />
     </svg>
   )
+}
+
+const ICONS: Record<IconKey, () => JSX.Element> = {
+  dashboard: IconDashboard,
+  users: IconUsers,
+  club: IconClub,
+  clipboard: IconClipboard,
+  flag: IconFlag,
+  calendar: IconCalendar,
+  star: IconStar,
+  play: IconPlay,
+  addUser: IconAddUser,
+  search: IconSearch,
+  bell: IconBell,
+  settings: IconSettings,
+  plus: IconPlus,
+  card: IconCard,
 }

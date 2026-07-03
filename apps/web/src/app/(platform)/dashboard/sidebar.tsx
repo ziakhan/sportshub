@@ -2,16 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import {
+  buildNavSections,
+  type IconKey,
+  type NavItem,
+  type NavSection,
+  type NavTenant,
+} from "./nav-config"
 
 interface SidebarProps {
   roles: string[]
-  tenants?: Array<{
-    id: string
-    name: string
-    slug: string
-    role?: string
-    counts?: { teams: number; tryouts: number; offers: number }
-  }>
+  tenants?: NavTenant[]
   userName: string
   userInitials: string
   primaryRole: string
@@ -25,19 +26,7 @@ export function Sidebar({
   primaryRole,
 }: SidebarProps) {
   const pathname = usePathname()
-  const hasRole = (role: string) => roles.includes(role)
-
-  const isAdmin = hasRole("ClubOwner") || hasRole("ClubManager")
-  const isStaff = hasRole("Staff") || hasRole("TeamManager")
-
-  const uniqueTenants = Array.from(new Map(tenants.map((tenant) => [tenant.id, tenant])).values())
-  const adminTenantIds = new Set(
-    tenants
-      .filter((tenant) => tenant.role === "ClubOwner" || tenant.role === "ClubManager")
-      .map((tenant) => tenant.id)
-  )
-  const staffOnlyTenants = uniqueTenants.filter((tenant) => !adminTenantIds.has(tenant.id))
-  const adminTenants = uniqueTenants.filter((tenant) => adminTenantIds.has(tenant.id))
+  const sections = buildNavSections({ roles, tenants })
 
   return (
     <aside className="border-ink-100 hidden w-[268px] flex-shrink-0 border-r bg-[#fcfcfc] lg:flex lg:flex-col">
@@ -58,303 +47,9 @@ export function Sidebar({
       </div>
 
       <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">
-        <div className="mb-5">
-          <SidebarLink
-            href="/dashboard"
-            label="Dashboard"
-            pathname={pathname}
-            icon={<IconDashboard />}
-          />
-        </div>
-
-        {hasRole("PlatformAdmin") && (
-          <div className="mb-5">
-            <SidebarHeader label="Admin" />
-            <SidebarLink
-              href="/dashboard/admin/users"
-              label="Users"
-              pathname={pathname}
-              icon={<IconUsers />}
-            />
-            <SidebarLink
-              href="/dashboard/admin/clubs"
-              label="Clubs"
-              pathname={pathname}
-              icon={<IconClub />}
-            />
-            <SidebarLink href="/leagues" label="Leagues" pathname={pathname} icon={<IconStar />} />
-            <SidebarLink
-              href="/dashboard/admin/claims"
-              label="Claims"
-              pathname={pathname}
-              icon={<IconClipboard />}
-            />
-            <SidebarLink
-              href="/dashboard/admin/settings"
-              label="Settings"
-              pathname={pathname}
-              icon={<IconSettings />}
-            />
-          </div>
-        )}
-
-        {hasRole("Parent") && (
-          <div className="mb-5">
-            <SidebarHeader label="Parent" />
-            <SidebarLink
-              href="/players"
-              label="My Players"
-              pathname={pathname}
-              icon={<IconUsers />}
-            />
-            <SidebarLink
-              href="/offers"
-              label="Offers Received"
-              pathname={pathname}
-              icon={<IconFlag />}
-            />
-            <SidebarLink
-              href="/events"
-              label="Browse Programs"
-              pathname={pathname}
-              icon={<IconSearch />}
-            />
-            <SidebarLink
-              href="/notifications"
-              label="Payments & Alerts"
-              pathname={pathname}
-              icon={<IconCard />}
-            />
-          </div>
-        )}
-
-        {isAdmin && (
-          <div className="mb-5">
-            <SidebarHeader label="Club" />
-            {adminTenants.length > 0 ? (
-              adminTenants.map((tenant) => (
-                <div
-                  key={tenant.id}
-                  className="border-ink-100 shadow-soft mb-3 rounded-2xl border bg-white p-2.5"
-                >
-                  <div className="text-ink-400 mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.16em]">
-                    Club workspace
-                  </div>
-                  <SidebarLink
-                    href={`/clubs/${tenant.id}`}
-                    label={tenant.name}
-                    pathname={pathname}
-                    icon={<IconDashboard />}
-                  />
-                  <div className="border-ink-100 ml-4 mt-1 space-y-1 border-l pl-3">
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/teams`}
-                      label="Teams"
-                      pathname={pathname}
-                      icon={<IconUsers />}
-                      badge={tenant.counts?.teams}
-                      badgeTone="bg-court-50 text-court-600"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/tryouts`}
-                      label="Tryouts"
-                      pathname={pathname}
-                      icon={<IconClipboard />}
-                      badge={tenant.counts?.tryouts}
-                      badgeTone="bg-hoop-50 text-hoop-600"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/offers`}
-                      label="Offers"
-                      pathname={pathname}
-                      icon={<IconFlag />}
-                      badge={tenant.counts?.offers}
-                      badgeTone="bg-violet-50 text-violet-600"
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/offer-templates`}
-                      label="Templates"
-                      pathname={pathname}
-                      icon={<IconClipboard />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/house-leagues`}
-                      label="House League"
-                      pathname={pathname}
-                      icon={<IconStar />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/camps`}
-                      label="Camps"
-                      pathname={pathname}
-                      icon={<IconCalendar />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/tournaments`}
-                      label="Tournaments"
-                      pathname={pathname}
-                      icon={<IconPlay />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/staff`}
-                      label="Staff"
-                      pathname={pathname}
-                      icon={<IconAddUser />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/settings`}
-                      label="Settings"
-                      pathname={pathname}
-                      icon={<IconSettings />}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                <SidebarLink
-                  href="/clubs/create"
-                  label="Create Club"
-                  pathname={pathname}
-                  icon={<IconPlus />}
-                />
-                <SidebarLink
-                  href="/clubs/find"
-                  label="Find & Claim Club"
-                  pathname={pathname}
-                  icon={<IconSearch />}
-                />
-              </>
-            )}
-          </div>
-        )}
-
-        {isStaff && (
-          <div className="mb-5">
-            <SidebarHeader label="Staff" />
-            {staffOnlyTenants.length > 0 ? (
-              staffOnlyTenants.map((tenant) => (
-                <div
-                  key={tenant.id}
-                  className="border-ink-100 shadow-soft mb-3 rounded-2xl border bg-white p-2.5"
-                >
-                  <div className="text-ink-400 mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.16em]">
-                    Staff workspace
-                  </div>
-                  <SidebarLink
-                    href={`/clubs/${tenant.id}`}
-                    label={tenant.name}
-                    pathname={pathname}
-                    icon={<IconDashboard />}
-                  />
-                  <div className="border-ink-100 ml-4 mt-1 space-y-1 border-l pl-3">
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/teams`}
-                      label="Teams"
-                      pathname={pathname}
-                      icon={<IconUsers />}
-                    />
-                    <SidebarSubLink
-                      href={`/clubs/${tenant.id}/tryouts`}
-                      label="Tryouts"
-                      pathname={pathname}
-                      icon={<IconClipboard />}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <SidebarLink
-                href="/teams"
-                label="My Teams"
-                pathname={pathname}
-                icon={<IconUsers />}
-              />
-            )}
-          </div>
-        )}
-
-        {(isAdmin || isStaff) && (
-          <div className="mb-5">
-            <SidebarHeader label="Browse" />
-            <SidebarLink
-              href="/browse-leagues"
-              label="Leagues"
-              pathname={pathname}
-              icon={<IconSearch />}
-            />
-            <SidebarLink
-              href="/browse-tournaments"
-              label="Tournaments"
-              pathname={pathname}
-              icon={<IconStar />}
-            />
-          </div>
-        )}
-
-        {hasRole("Referee") && (
-          <div className="mb-5">
-            <SidebarHeader label="Referee" />
-            <SidebarLink
-              href="/browse-leagues"
-              label="Available Games"
-              pathname={pathname}
-              icon={<IconCalendar />}
-            />
-            <SidebarLink
-              href="/referee/profile"
-              label="My Profile"
-              pathname={pathname}
-              icon={<IconUsers />}
-            />
-          </div>
-        )}
-
-        {hasRole("Player") && (
-          <div className="mb-5">
-            <SidebarHeader label="Player" />
-            <SidebarLink href="/teams" label="My Teams" pathname={pathname} icon={<IconUsers />} />
-            <SidebarLink
-              href="/browse-tournaments"
-              label="Schedule"
-              pathname={pathname}
-              icon={<IconCalendar />}
-            />
-            <SidebarLink
-              href="/dashboard"
-              label="My Stats"
-              pathname={pathname}
-              icon={<IconDashboard />}
-            />
-          </div>
-        )}
-
-        {(hasRole("LeagueOwner") || hasRole("LeagueManager")) && (
-          <div className="mb-5">
-            <SidebarHeader label="League" />
-            <SidebarLink
-              href="/leagues"
-              label="My Leagues"
-              pathname={pathname}
-              icon={<IconStar />}
-            />
-          </div>
-        )}
-
-        <div className="border-ink-100 mt-5 border-t pt-4">
-          <SidebarLink
-            href="/notifications"
-            label="Notifications"
-            pathname={pathname}
-            icon={<IconBell />}
-          />
-          <SidebarLink
-            href="/settings/profile"
-            label="Profile"
-            pathname={pathname}
-            icon={<IconUsers />}
-          />
-        </div>
+        {sections.map((section) => (
+          <SidebarSection key={section.key} section={section} pathname={pathname} />
+        ))}
       </nav>
 
       <div className="border-ink-100 border-t px-3 py-3">
@@ -372,6 +67,43 @@ export function Sidebar({
   )
 }
 
+function SidebarSection({ section, pathname }: { section: NavSection; pathname: string | null }) {
+  if (section.key === "footer") {
+    return (
+      <div className="border-ink-100 mt-5 border-t pt-4">
+        {section.items.map((item) => (
+          <SidebarLink key={item.href} item={item} pathname={pathname} />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-5">
+      {section.label && <SidebarHeader label={section.label} />}
+      {section.workspaces?.map((workspace) => (
+        <div
+          key={workspace.key}
+          className="border-ink-100 shadow-soft mb-3 rounded-2xl border bg-white p-2.5"
+        >
+          <div className="text-ink-400 mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.16em]">
+            {workspace.kindLabel}
+          </div>
+          <SidebarLink item={workspace.root} pathname={pathname} />
+          <div className="border-ink-100 ml-4 mt-1 space-y-1 border-l pl-3">
+            {workspace.subItems.map((item) => (
+              <SidebarSubLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </div>
+        </div>
+      ))}
+      {section.items.map((item) => (
+        <SidebarLink key={item.href} item={item} pathname={pathname} />
+      ))}
+    </div>
+  )
+}
+
 function SidebarHeader({ label }: { label: string }) {
   return (
     <div className="text-ink-400 mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.12em]">
@@ -380,17 +112,8 @@ function SidebarHeader({ label }: { label: string }) {
   )
 }
 
-function SidebarLink({
-  href,
-  label,
-  pathname,
-  icon,
-}: {
-  href: string
-  label: string
-  pathname: string | null
-  icon: React.ReactNode
-}) {
+function SidebarLink({ item, pathname }: { item: NavItem; pathname: string | null }) {
+  const { href, label } = item
   const active = pathname === href || (pathname?.startsWith(`${href}/`) ?? false)
   const shouldPrefetch = process.env.NODE_ENV === "production"
 
@@ -407,31 +130,17 @@ function SidebarLink({
       <span
         className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl ${active ? "text-play-600 bg-white" : "bg-ink-50 text-ink-500"}`}
       >
-        {icon}
+        <NavIcon icon={item.icon} />
       </span>
       <span>{label}</span>
     </Link>
   )
 }
 
-function SidebarSubLink({
-  href,
-  label,
-  pathname,
-  icon,
-  badge,
-  badgeTone,
-}: {
-  href: string
-  label: string
-  pathname: string | null
-  icon: React.ReactNode
-  badge?: number
-  badgeTone?: string
-}) {
+function SidebarSubLink({ item, pathname }: { item: NavItem; pathname: string | null }) {
+  const { href, label, badge } = item
   const active = pathname === href || (pathname?.startsWith(`${href}/`) ?? false)
   const shouldPrefetch = process.env.NODE_ENV === "production"
-  const showBadge = typeof badge === "number" && badge > 0
 
   return (
     <Link
@@ -444,18 +153,23 @@ function SidebarSubLink({
       <span
         className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-lg ${active ? "text-play-600 bg-white" : "bg-ink-50 text-ink-400"}`}
       >
-        {icon}
+        <NavIcon icon={item.icon} />
       </span>
       <span className="flex-1">{label}</span>
-      {showBadge && (
+      {badge && (
         <span
-          className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${badgeTone || "bg-ink-100 text-ink-600"}`}
+          className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${badge.toneClass || "bg-ink-100 text-ink-600"}`}
         >
-          {badge}
+          {badge.count}
         </span>
       )}
     </Link>
   )
+}
+
+function NavIcon({ icon }: { icon: IconKey }) {
+  const Icon = ICONS[icon]
+  return <Icon />
 }
 
 function IconDashboard() {
@@ -589,4 +303,21 @@ function IconCard() {
       <line x1="2" y1="10" x2="22" y2="10" />
     </svg>
   )
+}
+
+const ICONS: Record<IconKey, () => JSX.Element> = {
+  dashboard: IconDashboard,
+  users: IconUsers,
+  club: IconClub,
+  clipboard: IconClipboard,
+  flag: IconFlag,
+  calendar: IconCalendar,
+  star: IconStar,
+  play: IconPlay,
+  addUser: IconAddUser,
+  search: IconSearch,
+  bell: IconBell,
+  settings: IconSettings,
+  plus: IconPlus,
+  card: IconCard,
 }
