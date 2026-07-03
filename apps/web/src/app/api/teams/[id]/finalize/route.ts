@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
+import { assignJerseys } from "@/lib/teams/assign-jerseys"
 
 export const dynamic = "force-dynamic"
 
@@ -60,49 +61,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "No accepted offers to finalize" }, { status: 400 })
     }
 
-    // Track assigned jersey numbers
-    const assignedNumbers = new Set<number>()
-
-    // Get any existing jersey numbers on the team (from previously finalized players)
+    // Numbers already taken by previously finalized players on this team
     const existingPlayers = await prisma.teamPlayer.findMany({
       where: { teamId: params.id, jerseyNumber: { not: null } },
       select: { jerseyNumber: true },
     })
-    existingPlayers.forEach((p: any) => {
-      if (p.jerseyNumber !== null) assignedNumbers.add(p.jerseyNumber)
-    })
+    const takenNumbers = existingPlayers
+      .map((p: any) => p.jerseyNumber)
+      .filter((n: number | null): n is number => n !== null)
 
-    // Assign jersey numbers based on preferences
-    const assignments: {
-      offerId: string
-      playerId: string
-      playerName: string
-      jerseyNumber: number | null
-    }[] = []
-
-    for (const offer of acceptedOffers) {
-      let assignedNumber: number | null = null
-
-      // Try preferences in order
-      const prefs = [offer.jerseyPref1, offer.jerseyPref2, offer.jerseyPref3].filter(
-        (n): n is number => n !== null
-      )
-
-      for (const pref of prefs) {
-        if (!assignedNumbers.has(pref)) {
-          assignedNumber = pref
-          assignedNumbers.add(pref)
-          break
-        }
-      }
-
-      assignments.push({
+    // Pure allocation — first-come-first-served over stated preferences
+    const assignments = assignJerseys(
+      acceptedOffers.map((offer: any) => ({
         offerId: offer.id,
         playerId: offer.player.id,
         playerName: `${offer.player.firstName} ${offer.player.lastName}`,
-        jerseyNumber: assignedNumber,
-      })
-    }
+        jerseyPrefs: [offer.jerseyPref1, offer.jerseyPref2, offer.jerseyPref3],
+      })),
+      takenNumbers
+    )
 
     // Update TeamPlayer records with assigned jersey numbers
     await prisma.$transaction(async (tx: any) => {
@@ -142,15 +119,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           })
         }
       }
-    })
 
-    // Expire any remaining pending offers for this team
-    await prisma.offer.updateMany({
-      where: {
-        teamId: params.id,
-        status: "PENDING",
-      },
-      data: { status: "EXPIRED" },
+      // Expire remaining pending offers atomically with the jersey writes —
+      // previously this ran AFTER the transaction, leaving a partial-write
+      // window (jerseys assigned but stale offers still pending on failure).
+      await tx.offer.updateMany({
+        where: {
+          teamId: params.id,
+          status: "PENDING",
+        },
+        data: { status: "EXPIRED" },
+      })
     })
 
     return NextResponse.json({

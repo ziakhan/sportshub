@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { notify } from "@/lib/notifications"
+import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/respond-to-offer"
 
 export const dynamic = "force-dynamic"
 
@@ -145,133 +145,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     if (data.action === "accept") {
-      // Validate required fields based on what's included in the offer
-      if (offer.includesUniform && !data.uniformSize) {
-        return NextResponse.json(
-          { error: "Uniform size is required for this offer" },
-          { status: 400 }
-        )
-      }
-      if (offer.includesShoes && !data.shoeSize) {
-        return NextResponse.json({ error: "Shoe size is required for this offer" }, { status: 400 })
-      }
-      if (offer.includesTracksuit && !data.tracksuitSize) {
-        return NextResponse.json(
-          { error: "Tracksuit size is required for this offer" },
-          { status: 400 }
-        )
-      }
-      if (data.jerseyPref1 === undefined) {
-        return NextResponse.json(
-          { error: "At least one jersey number preference is required" },
-          { status: 400 }
-        )
-      }
-
-      const result = await prisma.$transaction(async (tx: any) => {
-        // Update the offer
-        const updated = await tx.offer.update({
-          where: { id: params.id },
-          data: {
-            status: "ACCEPTED",
-            uniformSize: data.uniformSize || null,
-            shoeSize: data.shoeSize || null,
-            tracksuitSize: data.tracksuitSize || null,
-            jerseyPref1: data.jerseyPref1,
-            jerseyPref2: data.jerseyPref2 ?? null,
-            jerseyPref3: data.jerseyPref3 ?? null,
-            respondedAt: new Date(),
-          },
-        })
-
-        // Create TeamPlayer record (player joins the team) with all sizes
-        await tx.teamPlayer.upsert({
-          where: {
-            teamId_playerId: {
-              teamId: offer.teamId,
-              playerId: offer.playerId,
-            },
-          },
-          create: {
-            teamId: offer.teamId,
-            playerId: offer.playerId,
-            uniformSize: data.uniformSize || null,
-            shoeSize: data.shoeSize || null,
-            tracksuitSize: data.tracksuitSize || null,
-            status: "ACTIVE",
-          },
-          update: {
-            status: "ACTIVE",
-            uniformSize: data.uniformSize || null,
-            shoeSize: data.shoeSize || null,
-            tracksuitSize: data.tracksuitSize || null,
-          },
-        })
-
-        // Notify the club
-        const clubOwner = await tx.userRole.findFirst({
-          where: {
-            tenantId: offer.team.tenantId,
-            role: { in: ["ClubOwner", "ClubManager"] },
-          },
-          select: { userId: true },
-        })
-
-        if (clubOwner) {
-          await notify(tx, {
-            userId: clubOwner.userId,
-            type: "offer_accepted",
-            title: "Offer Accepted",
-            message: `${offer.player.firstName} ${offer.player.lastName} has accepted the offer to join ${offer.team.name}.`,
-            link: `/clubs/${offer.team.tenantId}/offers`,
-            referenceId: updated.id,
-            referenceType: "Offer",
-          })
-        }
-
-        return updated
-      })
-
+      const result = await acceptOffer(offer as any, data)
       return NextResponse.json({
         success: true,
         status: result.status,
         message: "Offer accepted! The player has been added to the team.",
       })
     } else {
-      // Decline
-      const result = await prisma.$transaction(async (tx: any) => {
-        const updated = await tx.offer.update({
-          where: { id: params.id },
-          data: {
-            status: "DECLINED",
-            respondedAt: new Date(),
-          },
-        })
-
-        // Notify the club
-        const clubOwner = await tx.userRole.findFirst({
-          where: {
-            tenantId: offer.team.tenantId,
-            role: { in: ["ClubOwner", "ClubManager"] },
-          },
-          select: { userId: true },
-        })
-
-        if (clubOwner) {
-          await notify(tx, {
-            userId: clubOwner.userId,
-            type: "offer_declined",
-            title: "Offer Declined",
-            message: `${offer.player.firstName} ${offer.player.lastName} has declined the offer to join ${offer.team.name}.`,
-            link: `/clubs/${offer.team.tenantId}/offers`,
-            referenceId: updated.id,
-            referenceType: "Offer",
-          })
-        }
-
-        return updated
-      })
-
+      const result = await declineOffer(offer as any)
       return NextResponse.json({
         success: true,
         status: result.status,
@@ -284,6 +165,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         { error: "Validation error", details: error.errors },
         { status: 400 }
       )
+    }
+    if (error instanceof OfferResponseError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 })
     }
     console.error("Respond to offer error:", error)
     const message = error instanceof Error ? error.message : "Internal server error"
