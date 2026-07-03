@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { POST } from "@/app/api/seasons/[id]/submit/route"
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
-}))
-
-vi.mock("@/lib/auth", () => ({
-  authOptions: {},
+vi.mock("@/lib/auth-helpers", () => ({
+  getSessionUserId: vi.fn(),
 }))
 
 vi.mock("@youthbasketballhub/db", () => ({
@@ -38,7 +34,7 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("POST /api/seasons/[id]/submit", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: "club-owner-1" } } as any)
+    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "club-owner-1", isPlatformAdmin: false })
     vi.mocked(prisma.season.findUnique).mockResolvedValue({
       id: "season-1",
       status: "REGISTRATION",

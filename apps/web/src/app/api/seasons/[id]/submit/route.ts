@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canSubmitTeams, SUBMIT_CLOSED_MESSAGE } from "@/lib/seasons/season-lock"
@@ -18,8 +17,8 @@ const submitTeamSchema = z.object({
  */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const hasAccess = await prisma.userRole.findFirst({
       where: {
-        userId: session.user.id,
+        userId: sessionInfo.userId,
         OR: [
           { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
           { role: "PlatformAdmin" },

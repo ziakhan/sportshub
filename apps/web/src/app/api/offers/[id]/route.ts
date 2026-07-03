@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -26,8 +25,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -57,10 +56,10 @@ export async function GET(
     }
 
     // Verify access: must be the parent of the player OR club staff
-    const isParent = offer.player.parentId === session.user.id
+    const isParent = offer.player.parentId === sessionInfo.userId
     const isClubStaff = await prisma.userRole.findFirst({
       where: {
-        userId: session.user.id,
+        userId: sessionInfo.userId,
         OR: [
           { tenantId: offer.team.tenant.id, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
           { role: "PlatformAdmin" },
@@ -91,11 +90,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const body = await request.json()
     const data = respondSchema.parse(body)

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
@@ -34,8 +33,8 @@ const updateTeamSchema = z.object({
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -76,7 +75,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Verify user has access to this tenant (or is PlatformAdmin)
     const userRole = await prisma.userRole.findFirst({
       where: {
-        userId: session.user.id,
+        userId: sessionInfo.userId,
         OR: [{ tenantId: team.tenantId }, { role: "PlatformAdmin" }],
       },
     })
@@ -98,11 +97,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  */
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const team = await prisma.team.findUnique({
       where: { id: params.id },
@@ -116,7 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Verify ClubOwner, ClubManager, or PlatformAdmin
     const userRole = await prisma.userRole.findFirst({
       where: {
-        userId: session.user.id,
+        userId: sessionInfo.userId,
         OR: [
           { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
           { role: "PlatformAdmin" },

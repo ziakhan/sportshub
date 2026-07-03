@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -23,11 +22,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: params.id },
@@ -150,8 +149,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -159,7 +158,7 @@ export async function PATCH(
     const { code } = verifySchema.parse(body)
 
     const claim = await prisma.clubClaim.findUnique({
-      where: { tenantId_userId: { tenantId: params.id, userId: session.user.id } },
+      where: { tenantId_userId: { tenantId: params.id, userId: sessionInfo.userId } },
     })
 
     if (!claim) {
@@ -193,7 +192,7 @@ export async function PATCH(
 
       await tx.userRole.create({
         data: {
-          userId: session.user!.id,
+          userId: sessionInfo.userId,
           role: "ClubOwner",
           tenantId: params.id,
         },

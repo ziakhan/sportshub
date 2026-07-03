@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 
 export const dynamic = "force-dynamic"
@@ -14,11 +13,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     // Get the team
     const team = await prisma.team.findUnique({

@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { PATCH } from "@/app/api/offers/[id]/route"
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
-}))
-
-vi.mock("@/lib/auth", () => ({
-  authOptions: {},
+vi.mock("@/lib/auth-helpers", () => ({
+  getSessionUserId: vi.fn(),
 }))
 
 vi.mock("@youthbasketballhub/db", () => ({
@@ -24,7 +20,7 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("PATCH /api/offers/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: "parent-1" } } as any)
+    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "parent-1", isPlatformAdmin: false })
   })
 
   it("accepts an offer, creates or updates the team roster entry, and notifies the club", async () => {

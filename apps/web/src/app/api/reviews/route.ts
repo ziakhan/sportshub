@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -24,8 +23,8 @@ const createReviewSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -33,14 +32,14 @@ export async function POST(request: NextRequest) {
     const data = createReviewSchema.parse(body)
 
     // Can't review yourself
-    if (data.revieweeId === session.user.id) {
+    if (data.revieweeId === sessionInfo.userId) {
       return NextResponse.json({ error: "Cannot review yourself" }, { status: 400 })
     }
 
     // Check for existing review (one per user per target)
     const existing = await prisma.review.findFirst({
       where: {
-        reviewerId: session.user.id,
+        reviewerId: sessionInfo.userId,
         tenantId: data.tenantId || null,
         leagueId: data.leagueId || null,
         revieweeId: data.revieweeId || null,
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const review = await prisma.review.create({
       data: {
-        reviewerId: session.user.id,
+        reviewerId: sessionInfo.userId,
         tenantId: data.tenantId || null,
         leagueId: data.leagueId || null,
         revieweeId: data.revieweeId || null,

@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { PATCH } from "@/app/api/teams/[id]/route"
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
-}))
-
-vi.mock("@/lib/auth", () => ({
-  authOptions: {},
+vi.mock("@/lib/auth-helpers", () => ({
+  getSessionUserId: vi.fn(),
 }))
 
 vi.mock("@youthbasketballhub/db", () => ({
@@ -26,7 +22,7 @@ vi.mock("@youthbasketballhub/db", () => ({
 describe("PATCH /api/teams/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(getServerSession).mockResolvedValue({ user: { id: "admin-1" } } as any)
+    vi.mocked(getSessionUserId).mockResolvedValue({ userId: "admin-1", isPlatformAdmin: false })
     vi.mocked(prisma.team.findUnique).mockResolvedValue({
       id: "team-1",
       tenantId: "tenant-1",

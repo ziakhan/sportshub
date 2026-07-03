@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -19,8 +18,8 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -29,7 +28,7 @@ export async function POST(
 
     // Verify player belongs to this parent
     const player = await prisma.player.findFirst({
-      where: { id: data.playerId, parentId: session.user.id },
+      where: { id: data.playerId, parentId: sessionInfo.userId },
     })
     if (!player) {
       return NextResponse.json({ error: "Player not found" }, { status: 403 })
@@ -64,7 +63,7 @@ export async function POST(
     const signup = await (prisma as any).houseLeagueSignup.create({
       data: {
         houseLeagueId: params.id,
-        userId: session.user.id,
+        userId: sessionInfo.userId,
         playerId: data.playerId,
         notes: data.notes || null,
       },
