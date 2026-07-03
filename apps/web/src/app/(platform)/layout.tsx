@@ -7,6 +7,7 @@ import { Sidebar } from "./dashboard/sidebar"
 import { MobileNav } from "./dashboard/mobile-nav"
 import { NotificationBell } from "./dashboard/notification-bell"
 import { UserMenu } from "./dashboard/user-menu"
+import { CreateMenu } from "./dashboard/create-menu"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -144,6 +145,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82.33v.16a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15v-.16a2 2 0 0 1 4 0v.09c.08.63.5 1.16 1.08 1.41" />
               </svg>
             </Link>
+            <CreateMenu />
             <NotificationBell />
             <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
           </div>

@@ -9,6 +9,7 @@ import { StaffSection } from "./sections/staff-section"
 import { RefereeSection } from "./sections/referee-section"
 import { LeagueSection } from "./sections/league-section"
 import { PlayerSection } from "./sections/player-section"
+import { DoMoreSection } from "./sections/do-more-section"
 
 export default async function DashboardPage() {
   const dbUser = await getCurrentUser()
@@ -78,6 +79,13 @@ export default async function DashboardPage() {
       {hasPlayerRole && dashboardData.player && <PlayerSection data={dashboardData.player} />}
 
       {hasParentRole && dashboardData.parent && <ParentSection data={dashboardData.parent} />}
+
+      <DoMoreSection
+        hasParent={hasParentRole}
+        hasClub={hasClubRole}
+        hasLeague={hasLeagueRole}
+        hasReferee={hasRefereeRole}
+      />
     </div>
   )
 }

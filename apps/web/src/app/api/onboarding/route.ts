@@ -160,10 +160,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Mark user as onboarded
+    // Mark user as onboarded. Preserve the original timestamp so this endpoint
+    // is safe to call again when an existing user adds a role from settings.
     await prisma.user.update({
       where: { id: user.id },
-      data: { onboardedAt: new Date() },
+      data: { onboardedAt: user.onboardedAt ?? new Date() },
     })
 
     // Determine next step based on selected roles

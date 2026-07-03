@@ -270,8 +270,8 @@ export default function StaffPage() {
                 onChange={(e) => setInviteRole(e.target.value as "ClubManager" | "Staff")}
                 className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
               >
-                <option value="Staff">Staff</option>
-                <option value="ClubManager">Manager</option>
+                <option value="Staff">Staff — a coach or team member</option>
+                <option value="ClubManager">Manager — helps run the whole club</option>
               </select>
             </div>
             <div className="flex items-end">
@@ -283,6 +283,26 @@ export default function StaffPage() {
                 {inviting ? "Sending..." : "Send Invite"}
               </button>
             </div>
+          </div>
+
+          <div className="border-ink-100 bg-ink-50 text-ink-600 flex items-start gap-2 rounded-xl border p-3 text-xs leading-5">
+            <svg
+              className="text-ink-400 mt-0.5 h-4 w-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            <span>
+              <strong className="text-ink-700 font-semibold">Staff</strong> are the people you
+              assign to teams — you&apos;ll choose their role (Head Coach, Assistant Coach, or Team
+              Manager) when adding them to a team.{" "}
+              <strong className="text-ink-700 font-semibold">Managers</strong> can help run the
+              entire club: managing teams, tryouts, and staff.
+            </span>
           </div>
           <div>
             <label className="text-ink-700 block text-sm font-medium">

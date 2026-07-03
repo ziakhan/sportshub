@@ -114,6 +114,18 @@ export async function POST(req: Request) {
       },
     })
 
+    // Adding a child makes you a parent. Grant the Parent role implicitly if
+    // the user doesn't already hold it — roles accrue from actions, they aren't
+    // picked from a list. (Unscoped role: tenant/team are null, so we check
+    // explicitly rather than rely on createMany's null-distinct uniqueness.)
+    const hasParentRole = await prisma.userRole.findFirst({
+      where: { userId: user.id, role: "Parent" },
+      select: { id: true },
+    })
+    if (!hasParentRole) {
+      await prisma.userRole.create({ data: { userId: user.id, role: "Parent" } })
+    }
+
     return NextResponse.json(player, { status: 201 })
   } catch (error) {
     if (error instanceof (await import("zod")).ZodError) {

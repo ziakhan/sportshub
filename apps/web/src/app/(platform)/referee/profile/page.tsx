@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -19,6 +20,11 @@ export default function RefereeProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  // Whether a referee profile already exists. When false, this page is the
+  // "Become a referee" flow — submitting creates the profile and grants the
+  // Referee role. When true, it edits the existing profile.
+  const [hasProfile, setHasProfile] = useState(false)
+  const router = useRouter()
   const labelClass = "block text-sm font-medium text-ink-700"
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
@@ -38,6 +44,7 @@ export default function RefereeProfilePage() {
         const res = await fetch("/api/referee/profile")
         if (res.ok) {
           const data = await res.json()
+          setHasProfile(true)
           reset({
             certificationLevel: data.certificationLevel || "",
             standardFee: Number(data.standardFee) || 0,
@@ -60,7 +67,7 @@ export default function RefereeProfilePage() {
 
     try {
       const res = await fetch("/api/referee/profile", {
-        method: "PATCH",
+        method: hasProfile ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
@@ -77,6 +84,12 @@ export default function RefereeProfilePage() {
       }
 
       setSuccess(true)
+      if (!hasProfile) {
+        // Just became a referee — reflect new state and refresh server data so
+        // the new role shows up in nav/dashboard.
+        setHasProfile(true)
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -101,9 +114,13 @@ export default function RefereeProfilePage() {
       </div>
 
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-        <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Referee Profile</h1>
+        <h1 className="text-ink-900 mb-2 text-2xl font-semibold">
+          {hasProfile ? "Referee Profile" : "Become a Referee"}
+        </h1>
         <p className="text-ink-600 mb-6 text-sm">
-          Update your certification, fee, and availability.
+          {hasProfile
+            ? "Update your certification, fee, and availability."
+            : "Set your certification, fee, and availability to start officiating games."}
         </p>
 
         {error && (
@@ -114,7 +131,9 @@ export default function RefereeProfilePage() {
 
         {success && (
           <div className="bg-court-50 text-court-700 mb-4 rounded-lg border border-green-200 p-3 text-sm">
-            Profile updated successfully!
+            {hasProfile
+              ? "Profile updated successfully!"
+              : "You're now a referee! Your profile has been created."}
           </div>
         )}
 
@@ -185,7 +204,11 @@ export default function RefereeProfilePage() {
               disabled={isSubmitting}
               className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting
+                ? "Saving..."
+                : hasProfile
+                  ? "Save Changes"
+                  : "Become a Referee"}
             </button>
           </div>
         </form>

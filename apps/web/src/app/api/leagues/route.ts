@@ -19,22 +19,23 @@ export async function POST(request: NextRequest) {
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const userId = sessionInfo.userId
 
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [{ role: "LeagueOwner" }, { role: "LeagueManager" }, { role: "PlatformAdmin" }],
-      },
-    })
-    if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-
     const data = createLeagueSchema.parse(await request.json())
 
-    const league = await (prisma as any).league.create({
-      data: {
-        name: data.name,
-        description: data.description || null,
-        ownerId: userId,
-      },
+    // Creating a league makes you its owner. Any authenticated user can create
+    // one; the LeagueOwner role is granted as a side-effect, scoped to the new
+    // league — no pre-existing role required.
+    const league = await prisma.$transaction(async (tx: any) => {
+      const l = await tx.league.create({
+        data: {
+          name: data.name,
+          description: data.description || null,
+          ownerId: userId,
+        },
+      })
+      await tx.userRole.create({
+        data: { userId, role: "LeagueOwner", leagueId: l.id },
+      })
+      return l
     })
 
     return NextResponse.json({ success: true, id: league.id }, { status: 201 })

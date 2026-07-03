@@ -266,8 +266,8 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
       <h1 className="text-ink-900 mb-2 text-3xl font-semibold">Welcome, {userName}!</h1>
       <p className="text-ink-700 mb-8">
-        What best describes you? Pick your primary role to get started. You can add more roles later
-        from your settings.
+        What best describes you? Pick your primary role to get started. You can take on more roles
+        anytime — just add a child, create a club or league, or become a referee.
       </p>
 
       <div className="space-y-3">
