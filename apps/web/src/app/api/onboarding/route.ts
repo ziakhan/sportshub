@@ -5,6 +5,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { profileDataSchema } from "@/lib/validations/onboarding"
 import { getOnboardingNextStep, onboardingRoleEnum } from "@/lib/onboarding-next-step"
+import { isCoppaMinor } from "@/lib/coppa"
 
 const onboardingSchema = z.object({
   roles: z.array(z.enum(onboardingRoleEnum)).min(1, "Select at least one role"),
@@ -77,9 +78,7 @@ export async function POST(req: Request) {
         case "Player": {
           const dob = new Date(profileData.dateOfBirth)
           // COPPA: under-13 cannot self-register. A parent must add them via /players/add.
-          const ageMs = Date.now() - dob.getTime()
-          const ageYears = ageMs / (365.25 * 24 * 60 * 60 * 1000)
-          if (ageYears < 13) {
+          if (isCoppaMinor(dob)) {
             return NextResponse.json(
               {
                 error: "Players under 13 cannot self-register. A parent or guardian must register and add you as a child.",

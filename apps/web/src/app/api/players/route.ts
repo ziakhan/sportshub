@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
+import { calculateAge, isCoppaMinor, COPPA_MIN_AGE } from "@/lib/coppa"
 
 /**
  * List parent's players
@@ -69,10 +70,8 @@ export async function POST(req: Request) {
     const data = addPlayerSchema.parse(body)
 
     const dob = new Date(data.dateOfBirth)
-    const ageInYears = Math.floor(
-      (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-    )
-    const isMinor = ageInYears < 13
+    const ageInYears = calculateAge(dob)
+    const isMinor = isCoppaMinor(dob)
 
     // COPPA: parental consent is required when adding a child under 13.
     if (isMinor && data.parentalConsentGiven !== true) {
@@ -97,7 +96,7 @@ export async function POST(req: Request) {
         position: data.position || null,
         parentId: user.id,
         isMinor,
-        canLogin: ageInYears >= 13,
+        canLogin: ageInYears >= COPPA_MIN_AGE,
         parentalConsentGiven: isMinor ? true : null,
         consentGivenAt: isMinor ? new Date() : null,
       },

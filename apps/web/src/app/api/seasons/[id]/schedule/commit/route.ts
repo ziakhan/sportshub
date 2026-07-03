@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
+import { canCommitSchedule, COMMIT_NOT_READY_MESSAGE } from "@/lib/seasons/season-lock"
 
 export const dynamic = "force-dynamic"
 
@@ -32,9 +33,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       !sessionInfo.isPlatformAdmin
     )
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    if (!["FINALIZED", "IN_PROGRESS"].includes(season.status)) {
+    if (!canCommitSchedule(season.status)) {
       return NextResponse.json(
-        { error: "Season must be FINALIZED before committing a schedule" },
+        { error: COMMIT_NOT_READY_MESSAGE, code: "SEASON_NOT_READY" },
         { status: 400 }
       )
     }

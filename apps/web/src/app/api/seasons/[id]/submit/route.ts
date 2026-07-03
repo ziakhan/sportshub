@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { canSubmitTeams, SUBMIT_CLOSED_MESSAGE } from "@/lib/seasons/season-lock"
 
 export const dynamic = "force-dynamic"
 
@@ -39,9 +40,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "League not found" }, { status: 404 })
     }
 
-    if (season.status !== "REGISTRATION") {
+    if (!canSubmitTeams(season.status)) {
       return NextResponse.json(
-        { error: "This league is not currently accepting registrations" },
+        { error: SUBMIT_CLOSED_MESSAGE, code: "SEASON_NOT_OPEN" },
         { status: 400 }
       )
     }

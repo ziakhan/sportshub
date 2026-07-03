@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { calculateAge, COPPA_MIN_AGE } from "@/lib/coppa"
 
 export const parentOnboardingSchema = z.object({
   type: z.literal("Parent"),
@@ -12,16 +13,7 @@ export const playerOnboardingSchema = z.object({
   type: z.literal("Player"),
   country: z.string().length(2).default("CA"),
   dateOfBirth: z.string().refine(
-    (val) => {
-      const dob = new Date(val)
-      const today = new Date()
-      let age = today.getFullYear() - dob.getFullYear()
-      const monthDiff = today.getMonth() - dob.getMonth()
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-        age--
-      }
-      return age >= 13
-    },
+    (val) => calculateAge(new Date(val)) >= COPPA_MIN_AGE,
     { message: "You must be at least 13 years old to create an account" }
   ),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]),
