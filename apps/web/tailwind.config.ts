@@ -114,6 +114,22 @@ const config = {
           800: "#3730a3",
           900: "#312e81",
         },
+        // Reserved strictly for live/in-progress states (live score dot, "LIVE"
+        // badge). Scarcity keeps it meaningful — do not use as a general red.
+        live: {
+          50: "#fef2f2",
+          100: "#fee2e2",
+          500: "#ef4444",
+          600: "#dc2626",
+        },
+        // Highlight / featured / standings-leader accent. Used sparingly.
+        gold: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          400: "#fbbf24",
+          500: "#f59e0b",
+          600: "#d97706",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],
