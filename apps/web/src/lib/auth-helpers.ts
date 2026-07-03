@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "./auth"
 import { prisma } from "@youthbasketballhub/db"
-import { defineAbilitiesFor } from "./permissions"
 import { cookies } from "next/headers"
 
 const IMPERSONATE_COOKIE = "admin-impersonate-uid"
@@ -91,26 +90,6 @@ export async function getSessionUserId(): Promise<{ userId: string; isPlatformAd
     userId: session.user.id,
     isPlatformAdmin,
   }
-}
-
-/**
- * Get user's abilities based on their roles
- */
-export async function getUserAbilities() {
-  const user = await getCurrentUser()
-
-  if (!user) {
-    return null
-  }
-
-  const roles = user.roles.map((role: any) => ({
-    role: role.role,
-    tenantId: role.tenantId,
-    teamId: role.teamId,
-    leagueId: role.leagueId,
-  }))
-
-  return defineAbilitiesFor(user.id, roles)
 }
 
 /**

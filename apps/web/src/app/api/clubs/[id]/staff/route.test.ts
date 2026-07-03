@@ -106,7 +106,7 @@ describe("POST /api/clubs/[id]/staff", () => {
       clubName: "Warriors Club",
       role: "Staff",
       inviterName: "Morgan Lee",
-      inviteLink: "http://localhost:3000/notifications",
+      inviteLink: "http://localhost:3000/invitations/invite-1/accept",
       message: "Please join us",
     })
     expect(prisma.notification.create).toHaveBeenCalledWith({

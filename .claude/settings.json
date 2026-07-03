@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"\\\\.test\\\\.ts$\" /Users/ziakhan/zia/personal/sportshub/apps/web/src --include=\"*.test.ts\")",
+      "Bash(tee /tmp/tsc-out.txt)",
+      "Read(//tmp/**)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_ZRGD4UBHPi8F@ep-soft-forest-ane71gcu-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx prisma db push --schema=/Users/ziakhan/zia/personal/sportshub/prisma/schema.prisma --accept-data-loss --skip-generate)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_ZRGD4UBHPi8F@ep-soft-forest-ane71gcu-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx /Users/ziakhan/zia/personal/sportshub/packages/db/src/seed.ts)",
+      "Bash(npx vitest *)",
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(rm -f /tmp/commit-msg.txt)",
+      "Read(//private/tmp/**)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git mv *)",
+      "Bash(grep -cE '^[[:space:]]*\\\\\\)\\\\}$' /Users/ziakhan/zia/personal/sportshub/apps/web/src/app/\\\\\\(platform\\\\\\)/leagues/\\\\[id\\\\]/seasons/\\\\[seasonId\\\\]/manage/page.tsx)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(kill -9 69114)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/private/tmp",
+      "/Users/ziakhan/zia/personal/sportshub/apps/web/src/app/(platform)/leagues/[id]/seasons",
+      "/Users/ziakhan/zia/personal/sportshub/apps/web/src/app/api/games/[id]"
+    ]
+  }
+}

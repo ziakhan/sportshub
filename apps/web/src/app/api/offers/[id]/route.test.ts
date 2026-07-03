@@ -31,7 +31,9 @@ describe("PATCH /api/offers/[id]", () => {
     vi.mocked(prisma.offer.findUnique).mockResolvedValue({
       id: "offer-1",
       status: "PENDING",
-      expiresAt: new Date("2026-05-01T00:00:00.000Z"),
+      // Relative future date — a hardcoded date here becomes a time bomb the
+      // moment the calendar passes it (this test broke itself in May 2026).
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       includesUniform: true,
       includesShoes: false,
       includesTracksuit: false,

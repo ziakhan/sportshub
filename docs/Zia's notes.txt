@@ -1,0 +1,2 @@
+Prompt for contination for league 2
+I'm picking up leagues v2. Read docs/league-v2-plan.md and docs/league-v2-design-qa.md end-to-end, skim prisma/schema.prisma for the current league models, then confirm you have full context before we start Phase 0.
