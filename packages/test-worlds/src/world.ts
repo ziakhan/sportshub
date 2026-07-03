@@ -3,6 +3,7 @@ import { createWorldContext, type WorldContext } from "./context"
 import { createClub, type BuiltClub, type TeamSpec } from "./builders/clubs"
 import { createTryout, createOffer, type BuiltTryout } from "./builders/programs"
 import { createParentWithChildren } from "./builders/users"
+import { createLeague, type BuiltLeague, type SeasonSpec } from "./builders/leagues"
 
 /**
  * buildWorld — one call, one reproducible universe.
@@ -17,6 +18,8 @@ export interface WorldSpec {
     /** PENDING offers from team[0] to fresh parent+child pairs. */
     pendingOffers?: number
   }[]
+  /** League worlds: seasons with divisions, feeder teams, venue and sessions. */
+  leagues?: { seasons?: SeasonSpec[] }[]
   /** Standalone parent+children (not tied to any club). */
   families?: { children: { age: number }[] }[]
 }
@@ -24,11 +27,13 @@ export interface WorldSpec {
 export interface BuiltWorld {
   ctx: WorldContext
   clubs: (BuiltClub & { tryouts: BuiltTryout[] })[]
+  leagues: BuiltLeague[]
 }
 
 export async function buildWorld(spec: WorldSpec = {}): Promise<BuiltWorld> {
   const ctx = createWorldContext(spec.seed ?? 1)
   const clubs: BuiltWorld["clubs"] = []
+  const leagues: BuiltLeague[] = []
 
   for (const clubSpec of spec.clubs ?? []) {
     const club = await createClub(ctx, { teams: clubSpec.teams })
@@ -51,11 +56,15 @@ export async function buildWorld(spec: WorldSpec = {}): Promise<BuiltWorld> {
     clubs.push({ ...club, tryouts })
   }
 
+  for (const leagueSpec of spec.leagues ?? []) {
+    leagues.push(await createLeague(ctx, { seasons: leagueSpec.seasons }))
+  }
+
   for (const fam of spec.families ?? []) {
     await createParentWithChildren(ctx, fam)
   }
 
-  return { ctx, clubs }
+  return { ctx, clubs, leagues }
 }
 
 /** Delete everything namespaced by this world's runId. FK-safe order. */
@@ -71,8 +80,23 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
     select: { id: true },
   })
   const tenantIds = tenants.map((t) => t.id)
+  const leagues = await prisma.league.findMany({
+    where: { ownerId: { in: userIds } },
+    select: { id: true },
+  })
+  const leagueIds = leagues.map((l) => l.id)
 
   // Children first, parents last — mirrors the phase-runner cleanup pattern.
+  // Games block team deletion (required FK, no cascade); events/stats cascade.
+  await prisma.game.deleteMany({
+    where: {
+      OR: [
+        { season: { leagueId: { in: leagueIds } } },
+        { homeTeam: { tenantId: { in: tenantIds } } },
+        { awayTeam: { tenantId: { in: tenantIds } } },
+      ],
+    },
+  })
   await prisma.offer.deleteMany({
     where: { OR: [{ player: { parentId: { in: userIds } } }, { team: { tenantId: { in: tenantIds } } }] },
   })
@@ -83,6 +107,13 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
     where: { OR: [{ player: { parentId: { in: userIds } } }, { team: { tenantId: { in: tenantIds } } }] },
   })
   await prisma.tryout.deleteMany({ where: { tenantId: { in: tenantIds } } })
+  // League cascade wipes seasons → divisions, submissions, rosters (and their
+  // SeasonRosterPlayer rows, which would otherwise block player deletion),
+  // sessions/days/day-venues, seasonVenues, scheduling groups.
+  await prisma.league.deleteMany({ where: { id: { in: leagueIds } } })
+  // World venues are global rows namespaced by display name; courts and
+  // hours cascade. Must follow league deletion (day-venues reference venues).
+  await prisma.venue.deleteMany({ where: { name: { startsWith: `[${ctx.runId}] ` } } })
   await prisma.player.deleteMany({ where: { parentId: { in: userIds } } })
   await prisma.offerTemplate.deleteMany({ where: { tenantId: { in: tenantIds } } })
   await prisma.staffInvitation.deleteMany({ where: { tenantId: { in: tenantIds } } })
