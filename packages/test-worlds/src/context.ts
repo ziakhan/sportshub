@@ -25,28 +25,41 @@ export interface WorldContext {
   runId: string
   seed: number
   rng: Rng
+  /**
+   * Realistic mode (simulation worlds): display names carry NO runId prefix
+   * so the data reads like a real deployment in the UI. Teardown still works —
+   * users/tenants keep namespaced emails/slugs, and destroyWorld resolves
+   * venues through league linkage instead of name matching.
+   */
+  realistic: boolean
   /** e.g. email("owner") -> "owner@w7f3k2.world" */
   email(local: string): string
   /** e.g. slug("warriors") -> "w7f3k2-warriors" */
   slug(base: string): string
-  /** Prefix a display name so destroyWorld can match it. */
+  /** Display name; prefixed with the runId unless realistic. */
   name(base: string): string
   /** Monotonic per-world counter for uniqueness. */
   next(): number
 }
 
-export function createWorldContext(seed = 1): WorldContext {
+export interface WorldContextOptions {
+  realistic?: boolean
+}
+
+export function createWorldContext(seed = 1, opts: WorldContextOptions = {}): WorldContext {
   const rng = mulberry32(seed)
   // runId derives from the seed — same seed, same namespace, same world.
   const runId = "w" + ((seed * 2654435761) >>> 0).toString(36).slice(0, 6)
+  const realistic = opts.realistic ?? false
   let counter = 0
   return {
     runId,
     seed,
     rng,
+    realistic,
     email: (local) => `${local}-${++counter}@${runId}.world`.toLowerCase(),
     slug: (base) => `${runId}-${base}-${++counter}`.toLowerCase(),
-    name: (base) => `[${runId}] ${base}`,
+    name: (base) => (realistic ? base : `[${runId}] ${base}`),
     next: () => ++counter,
   }
 }

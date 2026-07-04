@@ -42,6 +42,26 @@ export async function createUser(
   return { id: user.id, email: user.email, firstName, lastName }
 }
 
+/** A referee: user + Referee role + RefereeProfile. */
+export async function createReferee(
+  ctx: WorldContext,
+  opts: { certificationLevel?: string; standardFee?: number; regions?: string[] } = {}
+): Promise<BuiltUser> {
+  const referee = await createUser(ctx, {
+    localPart: "referee",
+    roles: [{ role: "Referee" }],
+  })
+  await prisma.refereeProfile.create({
+    data: {
+      userId: referee.id,
+      certificationLevel: opts.certificationLevel ?? `Level ${1 + (ctx.next() % 3)}`,
+      standardFee: opts.standardFee ?? 40 + (ctx.next() % 4) * 10,
+      availableRegions: opts.regions ?? ["Ontario"],
+    },
+  })
+  return referee
+}
+
 export interface BuiltPlayer {
   id: string
   firstName: string

@@ -16,6 +16,13 @@ states, team finalization, leagues/seasons, schedule management, venues, and
 last-minute changes (cancellations, withdrawals, reschedules). Where an edge
 case reveals missing product behavior, **add the functionality**, not just a test.
 
+**Volume requirement (owner, restated 2026-07-03):** be able to simulate a
+realistic deployment at scale — hundreds of clubs, thousands to tens of
+thousands of players/parents, hundreds of referees, multiple leagues with
+clubs participating in several at once, schedules and all. Data generation
+goes **directly through the builders/APIs, never the UI**; UI-driven tests
+exist to verify correctness, not to produce volume. See §3.5.
+
 ## 1. Architecture — four layers + one scenario engine
 
 | Layer | What | Runs | Speed |
@@ -182,6 +189,31 @@ Status: ✅ covered by existing runner · ☐ uncovered (needs test + world) ·
 | K5 | Notification fires per NotificationType map | L2 per event | ☐ (partially in E/J) |
 | K6 | Public-path matrix (namespace × method) | L1 (exists, extend) | ✅ |
 | K7 | CASL-replacement matrix: role × endpoint 403 sweep | L2 generated matrix | ☐ |
+
+## 3.5 Simulation harness (volume worlds)
+
+`scripts/simulate.ts` — realistic populated universes via the world builders
+(Prisma-direct, no UI, no HTTP):
+
+```
+npx tsx scripts/simulate.ts --clubs 100 --families 800 --referees 40 --leagues 4
+npx tsx scripts/simulate.ts --summary          # counts for the seed's namespace
+npx tsx scripts/simulate.ts --wipe             # exact teardown
+```
+
+- **Realistic mode** (`createWorldContext(seed, { realistic: true })`): display
+  names carry no test prefix — clubs like "Maplewood Storm Basketball Club",
+  players like "Harper Carter" — so the app reads like a real deployment.
+  Teardown remains exact via namespaced emails/slugs + venue-by-league-linkage.
+- Every generated user's password is TestPass123!; the run prints sample
+  owner/league logins.
+- One namespace per `--seed` (default 7777); re-running a seed wipes and
+  rebuilds it. Multiple seeds = multiple coexisting worlds.
+- Measured 2026-07-03: 100 clubs / 1,377 users / 3,532 players / 460 teams /
+  4 leagues / 200 multi-league submissions in **13.7s** local. Scale linearly
+  with `--families`; tens of thousands of players ≈ a few minutes.
+- Guard: refuses to run when DATABASE_URL looks like production (`neon|amazonaws|vercel`)
+  unless `--force-remote`.
 
 ## 4. CI plan
 

@@ -12,6 +12,8 @@ import { createLeague, type BuiltLeague, type SeasonSpec } from "./builders/leag
 
 export interface WorldSpec {
   seed?: number
+  /** Simulation worlds: realistic display names (no runId prefix). */
+  realistic?: boolean
   clubs?: {
     teams?: TeamSpec[]
     tryouts?: { teamIndex?: number; capacity?: number; signups?: number; published?: boolean }[]
@@ -31,7 +33,7 @@ export interface BuiltWorld {
 }
 
 export async function buildWorld(spec: WorldSpec = {}): Promise<BuiltWorld> {
-  const ctx = createWorldContext(spec.seed ?? 1)
+  const ctx = createWorldContext(spec.seed ?? 1, { realistic: spec.realistic })
   // Self-heal: a previous run of this seed that died mid-build leaves rows
   // the deterministic namespace would collide with. Destroy is a no-op on a
   // clean namespace.
@@ -90,6 +92,21 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
   })
   const leagueIds = leagues.map((l) => l.id)
 
+  // Venues must be resolved BEFORE the league cascade removes the
+  // SeasonVenue linkage. Two match paths: display-name prefix (classic
+  // namespaced worlds) and league linkage (realistic/simulation worlds,
+  // whose venue names carry no prefix).
+  const worldVenues = await prisma.venue.findMany({
+    where: {
+      OR: [
+        { name: { startsWith: `[${ctx.runId}] ` } },
+        { seasonVenues: { some: { season: { leagueId: { in: leagueIds } } } } },
+      ],
+    },
+    select: { id: true },
+  })
+  const venueIds = worldVenues.map((v) => v.id)
+
   // Children first, parents last — mirrors the phase-runner cleanup pattern.
   // Games block team deletion (required FK, no cascade); events/stats cascade.
   await prisma.game.deleteMany({
@@ -126,9 +143,9 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
   // SeasonRosterPlayer rows, which would otherwise block player deletion),
   // sessions/days/day-venues, seasonVenues, scheduling groups.
   await prisma.league.deleteMany({ where: { id: { in: leagueIds } } })
-  // World venues are global rows namespaced by display name; courts and
-  // hours cascade. Must follow league deletion (day-venues reference venues).
-  await prisma.venue.deleteMany({ where: { name: { startsWith: `[${ctx.runId}] ` } } })
+  // World venues are global rows; courts and hours cascade. Must follow
+  // league deletion (day-venues reference venues). Ids were resolved above.
+  await prisma.venue.deleteMany({ where: { id: { in: venueIds } } })
   await prisma.player.deleteMany({ where: { parentId: { in: userIds } } })
   await prisma.offerTemplate.deleteMany({ where: { tenantId: { in: tenantIds } } })
   await prisma.staffInvitation.deleteMany({ where: { tenantId: { in: tenantIds } } })
