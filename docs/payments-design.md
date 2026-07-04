@@ -76,7 +76,7 @@ OUT OF SCOPE forever (volunteers / club payroll — not marketplace payments).
 | # | Flow | Fee source | Notes |
 |---|---|---|---|
 | B1 | Season team-submission fee (per team) | `Season.teamFee` | league owners become the SECOND merchant type — validates polymorphic payee immediately |
-| B2 | Tournament entry fee (per team) | `Tournament.teamFee` | organizer may be club or league |
+| B2 | Tournament entry fee (per team) | `Tournament.teamFee` | organizer may be a club or a league — so **club → club** payments are a first-class phase-2 flow (a club hosting a tournament collects entry fees from other clubs). Any club is both payer and payee. |
 | B-R | Refund organizer → Club | | rejected/withdrawn before finalize |
 
 ### C. Club/League → Platform (phase 2 — our revenue)
