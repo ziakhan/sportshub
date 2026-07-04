@@ -62,7 +62,7 @@ needs product work before its scenario can pass.
 | G3 | Invite player by email (owner: "manually add players / tell them to sign up") | **No path exists** — StaffInvitation is staff-only; offers need an existing playerId | ✅ **SHIPPED 2026-07-03** — PlayerInvitation model + `/api/player-invitations` (create/list/respond/revoke); attaches at creation for existing accounts (F8) or at signup (F6/F7); accept converts into a real Offer via shared `lib/offers/create-offer.ts`; expiry + revoke (F9); L2 tested (18 cases). Neon: pending-deploy-actions entry #5 |
 | G4 | Team withdraws mid-season | Status flips; **scheduled games linger untouched; no season-lock guard** | ✅ **SHIPPED 2026-07-03** — withdraw cancels FUTURE games atomically (played kept), notifies opponent clubs; locked seasons block approve/reject (409 SEASON_LOCKED), withdraw stays open; L2 tested |
 | G5 | Division with 1 team | Scheduler silently drops it (games=0); finalize passes unless cross-division on | ✅ **SHIPPED 2026-07-03** — finalize preflight warns per ungrouped <2-team division; also H17: zero approved teams now BLOCKS; L2 tested |
-| G6 | Same venue, two leagues, same time | **Undetected** — conflict checks are season-scoped | 🆕 global court+time conflict check (= `checkVenueConflict` from docs/club-venue-architecture.md §4.2 — same keystone) |
+| G6 | Same venue, two leagues, same time | **Undetected** — conflict checks are season-scoped | ❎ **DESCOPED by owner (2026-07-03)** — venues are booked by many parties outside the platform (schools, municipalities, families); the platform cannot know true availability, so guaranteeing no double-booking is not its responsibility. Leagues/clubs own availability. Future direction instead: **venue-provider marketplace** (venues onboard, publish availability, take bookings) — see backlog note in §6 |
 | G7 | Unpublish tryout with signups | Signups untouched, **parents never notified** | ✅ **SHIPPED 2026-07-03** — `tryout_unpublished` fan-out to non-cancelled signups; L2 tested |
 | G8 | Cancel game | Standings correctly ignore it; **no notification to either club** | ✅ **SHIPPED 2026-07-03** — `game_cancelled`/`game_rescheduled` to both clubs' owners/managers on PATCH/DELETE; L2 tested |
 | G9 | Odd team count (bye) | No bye model; manifests as under-target warnings + unscheduled pairings | ✅ acceptable v1 — test the warnings; document |
@@ -156,7 +156,7 @@ Status: ✅ covered by existing runner · ☐ uncovered (needs test + world) ·
 | I1–I8 | Phase-13/14 sets (preview, commit, wipe, edit, suggestions, lock) | — | ✅ |
 | I9 | **Scheduler unit battery**: odd counts/byes, unreachable gamesGuaranteed, philosophy A/B compare (13.6), slot exhaustion, cross-division pooling, home/away balance | pure inputs | ☐ **L1 (generate.ts)** |
 | I10 | Double-book guard: force 2 games same court+time via PATCH (14.5) | committed world | ☐ L2 |
-| I11 | Cross-season venue conflict (two leagues, one gym) | 2-league world | 🆕 G6 |
+| I11 | Cross-season venue conflict (two leagues, one gym) | 2-league world | ❎ descoped with G6 (external bookings unknowable; owner 2026-07-03) |
 | I12 | Venue with closed days / window smaller than slot | crafted hours | ☐ L1 (buildSlots) |
 | I13 | Reschedule suggestions respect existing commitments | busy world | ✅ (basic) / ☐ (assert constraints) |
 | I14 | DST-boundary session day (America/Toronto) | Nov world | ☐ L1 |
@@ -224,3 +224,13 @@ Steps 1–2 first (everything else consumes them); 3–5 can interleave.
    test-first once the L2 harness exists.
 4. **CI database: Docker Postgres** (postgres:16 service); Neon branches later
    only if prod-parity drift appears.
+5. **G6 descoped (2026-07-03): venue double-booking is NOT the platform's
+   responsibility.** Real gyms are booked by schools, municipalities, and
+   families entirely outside the platform, so the system can never know true
+   availability — a conflict guard would give false confidence. Leagues and
+   clubs own availability, as they do today.
+   **Backlog instead — venue-provider marketplace**: venue providers join the
+   platform as first-class participants, publish their availability, and take
+   bookings through it (at which point conflict detection becomes possible
+   because the platform IS the booking system). Large feature; folds into
+   docs/club-venue-architecture.md when that plan resumes. Not part of WS2.
