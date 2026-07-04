@@ -108,6 +108,7 @@ function clubWorkspace(tenant: NavTenant): NavWorkspace {
       { label: "House League", href: `/clubs/${tenant.id}/house-leagues`, icon: "star" },
       { label: "Camps", href: `/clubs/${tenant.id}/camps`, icon: "calendar" },
       { label: "Tournaments", href: `/clubs/${tenant.id}/tournaments`, icon: "play" },
+      { label: "Payments", href: `/clubs/${tenant.id}/payments`, icon: "card" },
       { label: "Staff", href: `/clubs/${tenant.id}/staff`, icon: "addUser" },
       { label: "Settings", href: `/clubs/${tenant.id}/settings`, icon: "settings" },
     ],
@@ -174,7 +175,7 @@ export function buildNavSections({
         { label: "My Players", href: "/players", icon: "users" },
         { label: "Offers Received", href: "/offers", icon: "flag" },
         { label: "Browse Programs", href: "/events", icon: "search" },
-        { label: "Payments & Alerts", href: "/notifications", icon: "card" },
+        { label: "My Payments", href: "/payments", icon: "card" },
       ],
     })
   }

@@ -135,12 +135,20 @@ export default function LeagueDashboardPage() {
               <p className="text-ink-500 mt-1 text-sm">{league.description}</p>
             )}
           </div>
-          <button
-            onClick={() => setShowCreate((v) => !v)}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-          >
-            {showCreate ? "Cancel" : "New Season"}
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/leagues/${leagueId}/payments`}
+              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
+            >
+              Payments
+            </Link>
+            <button
+              onClick={() => setShowCreate((v) => !v)}
+              className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+            >
+              {showCreate ? "Cancel" : "New Season"}
+            </button>
+          </div>
         </div>
       </div>
 
