@@ -8,15 +8,13 @@ Design: `docs/payments-design.md`. Deploy runbook: `docs/pending-deploy-actions.
 
 ## Blocked on the owner (minutes each)
 
-1. **Enable Stripe Connect on the test account** — dashboard-login-only step,
-   there is NO API for it (verified 2026-07-04: `accounts.create` in every
-   style returns "sign up for Connect"; API keys are not enough).
-   → https://dashboard.stripe.com/test/connect, complete the platform profile.
-   Then run: `npx tsx scripts/verify-stripe-live.ts`
-   — it auto-creates an activated test payout account and proves the full
-   destination-charge chain (real card → instant transfer + fee → webhook →
-   obligation PAID → refund with transfer reversal). This is the LAST
-   unverified piece of stage 4.
+1. ✅ **DONE 2026-07-04 — Stripe Connect enabled** (owner completed the
+   platform profile: "you collect payments and pay the recipient" → Start
+   testing). **LIVE DESTINATION-CHARGE VERIFICATION PASSED** same day:
+   `verify-stripe-live.ts` → account acct_1TpYv4EXS5HHuobj auto-created +
+   activated, $25 destination charge with $0.93 fee exact, webhook →
+   obligation PAID, refund with transfer reversal trr_… — stage 4 fully
+   proven. Re-run anytime: `npx tsx scripts/verify-stripe-live.ts`.
 2. **Owner demo click-through** — /clubs/[id]/payments (club books), /payments
    (payer view), /dashboard/admin/payments (posture console). Local dev only;
    test accounts in seed docs (password TestPass123!).
