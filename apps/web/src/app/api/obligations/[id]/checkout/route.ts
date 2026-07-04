@@ -136,6 +136,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         currency: obligation.currency.toLowerCase(),
         description: obligation.description,
         metadata: { obligationId: obligation.id },
+        // Card-style methods only (no redirect flows) — lets the UI confirm
+        // without a return_url; revisit when adding redirect-based methods.
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
         ...(direct && feeCents > 0 ? { application_fee_amount: feeCents } : {}),
       },
       requestOptions as any
