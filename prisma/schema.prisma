@@ -1108,6 +1108,8 @@ model Payment {
   // Stripe
   stripePaymentIntentId String? @unique
   stripeChargeId        String? @unique
+  // Connected account the charge lives on (CONNECT_DIRECT) — null = platform
+  stripeAccountId       String?
 
   // Parties — payer may be a person (family flows) or an organization via
   // the obligation (club→league team fees), hence nullable.

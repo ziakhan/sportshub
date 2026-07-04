@@ -76,6 +76,14 @@ function paidTotal(payments: Array<{ status: string; amount: any; refundAmount: 
     .reduce((sum, p) => sum + Number(p.amount) - Number(p.refundAmount ?? 0), 0)
 }
 
+/** What's still owed on an obligation (needs its payments loaded). */
+export function remainingAmount(obligation: {
+  amount: any
+  payments: Array<{ status: string; amount: any; refundAmount: any }>
+}): number {
+  return Number(obligation.amount) - paidTotal(obligation.payments)
+}
+
 /** Recompute and persist the obligation's status from its payments. */
 export async function recomputeObligationStatus(db: any, obligationId: string) {
   const obligation = await db.paymentObligation.findUniqueOrThrow({
@@ -86,13 +94,13 @@ export async function recomputeObligationStatus(db: any, obligationId: string) {
   if (["WAIVED", "CANCELLED"].includes(obligation.status)) return obligation
 
   const paid = paidTotal(obligation.payments)
-  const hadFullRefund =
-    paid <= 0 && obligation.payments.some((p: any) => Number(p.refundAmount ?? 0) > 0)
 
+  // Status reflects paid-vs-owed only: refunds REOPEN the debt (the fee is
+  // still owed unless the club waives/cancels it). The REFUNDED status is
+  // reserved for explicit product flows, never derived here.
   let status: string
   if (paid >= Number(obligation.amount)) status = "PAID"
   else if (paid > 0) status = "PARTIALLY_PAID"
-  else if (hadFullRefund) status = "REFUNDED"
   else status = "PENDING"
 
   if (status === obligation.status) return obligation
@@ -252,7 +260,7 @@ export async function refundOfflinePayment(
   return updated
 }
 
-function referenceToPaymentType(referenceType: string): string {
+export function referenceToPaymentType(referenceType: string): string {
   switch (referenceType) {
     case "TryoutSignup":
       return "TRYOUT_FEE"

@@ -127,6 +127,32 @@ OUT OF SCOPE forever (volunteers / club payroll — not marketplace payments).
 3. E4 — what exactly is the influencer product?
 4. Refund policy: platform-mandated defaults or fully club-defined?
 
+## Stage 3 backend — BUILT 2026-07-04 (Stripe SDK mocked; live test-mode verification pending owner keys)
+
+- `lib/payments/stripe.ts` — the single SDK boundary, env-gated: without
+  `STRIPE_SECRET_KEY` every online route answers 503 STRIPE_NOT_CONFIGURED and
+  offline mode is unaffected. Tests mock THIS module.
+- **Connect onboarding**: `POST /api/clubs/[id]/payment-config/connect` →
+  Express account + Stripe-hosted onboarding link; `account.updated` webhook
+  flips `stripeAccountStatus` to active when charges are enabled.
+- **Checkout**: `POST /api/obligations/[id]/checkout { amount? }` — payer-side;
+  partial amounts = manual installments. CONNECT_DIRECT → PaymentIntent ON the
+  connected account with `application_fee_amount` from the club's config;
+  PLATFORM_COLLECT → platform-account intent, fee recorded for settlement.
+  Reuses a still-confirmable intent; supersedes stale ones.
+- **Webhooks**: `POST /api/webhooks/stripe` (signature-verified, session-exempt;
+  `stripe listen --forward-to localhost:3000/api/webhooks/stripe`). Idempotent
+  handlers: `payment_intent.succeeded/failed`, `charge.refunded`,
+  `account.updated` — all drive the SAME obligation engine as cash.
+- **Online refunds**: `PATCH /api/payments/[id] {action:"refund"}` routes
+  Stripe payments through `refunds.create` on the right account; refunds
+  REOPEN the obligation (debt still owed unless waived/cancelled).
+- **Env**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (from `stripe listen`
+  locally; dashboard endpoint secret in prod).
+- Deferred to stage 5: auto-charging installment schedules (saved payment
+  methods + test clocks); today installments are paid manually via partial
+  checkout amounts.
+
 ## Sequencing note
 
 Start with OFFLINE + CONNECT_DIRECT (zero-custody pair — covers "flexible" and

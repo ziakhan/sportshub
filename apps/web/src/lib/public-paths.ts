@@ -39,8 +39,9 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/health",
 ] as const
 
-/** API namespaces public for ALL methods (NextAuth flows + signup are POSTs). */
-const PUBLIC_API_ANY_METHOD_PREFIXES = ["/api/auth"] as const
+/** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;
+ * Stripe webhooks authenticate via signature, not session). */
+const PUBLIC_API_ANY_METHOD_PREFIXES = ["/api/auth", "/api/webhooks/stripe"] as const
 
 /** Dev-only utilities — never public in production. */
 const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users"] as const
