@@ -81,6 +81,8 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
     sessions: (season.sessions ?? []).map((s: any) => ({
       id: s.id,
       phase: s.phase,
+      label: s.label ?? null,
+      targetGamesPerTeam: s.targetGamesPerTeam ?? null,
       days: (s.days ?? []).map((d: any) => ({
         id: d.id,
         date: new Date(d.date).toISOString(),

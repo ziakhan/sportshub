@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
 
 export const dynamic = "force-dynamic"
+
+const previewSchema = z.object({
+  // sessionId → unit keys that session hosts (capacity planning); a session
+  // absent from the map hosts any unit.
+  sessionUnits: z.record(z.array(z.string())).optional(),
+})
 
 /**
  * POST /api/seasons/[id]/schedule/preview
  * Runs the scheduler and returns the proposed game list + warnings.
  * Does NOT write anything.
  */
-export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -24,10 +31,14 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     if (owner.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    const body = await request.json().catch(() => ({}))
+    const { sessionUnits } = previewSchema.parse(body ?? {})
+
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot preview", errors }, { status: 422 })
     }
+    if (sessionUnits) input.sessionUnitFilter = sessionUnits
 
     const result = generateSchedule(input)
 

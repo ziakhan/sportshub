@@ -63,6 +63,8 @@ export interface SchedulerInput {
   sessions: Array<{
     id: string
     phase: "REGULAR" | "PLAYOFF"
+    label?: string | null
+    targetGamesPerTeam?: number | null
     days: Array<{
       id: string
       date: string // ISO date
@@ -75,6 +77,12 @@ export interface SchedulerInput {
       }>
     }>
   }>
+  /**
+   * Optional per-session include list (sessionId → unit keys). A session with
+   * an entry only hosts those units; sessions without an entry host any unit.
+   * This is how the owner squeezes divisions into the sessions they fit in.
+   */
+  sessionUnitFilter?: Record<string, string[]>
 }
 
 export interface ProposedGame {
@@ -175,7 +183,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
 
 // ---------- scheduling units ----------
 
-function buildUnits(input: SchedulerInput): SchedulerUnit[] {
+export function buildUnits(input: SchedulerInput): SchedulerUnit[] {
   const divisionsById = new Map(input.divisions.map((d) => [d.id, d]))
 
   if (input.allowCrossDivisionScheduling && input.schedulingGroups.length > 0) {
@@ -272,9 +280,28 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   if (slots.length === 0) warnings.push("No usable slots were generated.")
   if (units.length === 0) warnings.push("No scheduling units with ≥ 2 teams.")
 
+  // Units the filter excludes from EVERY session can never place a game —
+  // skip their pairings entirely and say so, instead of emitting one
+  // "unscheduled" row per pairing.
+  const filter = input.sessionUnitFilter
+  const sessionIds = input.sessions.filter((s) => s.phase === "REGULAR").map((s) => s.id)
+  const unitAllowedSomewhere = (unitKey: string): boolean => {
+    if (!filter) return true
+    return sessionIds.some((sid) => {
+      const allowed = filter[sid]
+      return !allowed || allowed.includes(unitKey)
+    })
+  }
+
   // Build all pairings across all units
   const pairingPool: Pairing[] = []
-  for (const u of units) pairingPool.push(...buildPairings(u, input.gamesGuaranteed))
+  for (const u of units) {
+    if (!unitAllowedSomewhere(u.key)) {
+      warnings.push(`${u.label}: not included in any session — no games scheduled.`)
+      continue
+    }
+    pairingPool.push(...buildPairings(u, input.gamesGuaranteed))
+  }
 
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
@@ -298,12 +325,27 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return (teamBookings[teamId] ?? []).filter((b) => b.dayId === dayId).length
   }
 
+  // Clustering state: keep similar games together (soft). Tracks which unit
+  // played last on each court (by end time) and how many games each unit has
+  // at each day-venue.
+  const courtLastUnit: Record<string, { endMs: number; unitKey: string }> = {}
+  const dayVenueUnitGames: Record<string, number> = {}
+
   const scoreCandidate = (
     pairing: Pairing,
     slot: SchedulerSlot
   ): { score: number; blockReason?: string } => {
     const { homeTeamId, awayTeamId } = pairing
     if (homeTeamId === awayTeamId) return { score: -Infinity, blockReason: "same team" }
+
+    // Hard: session include-filter — the owner decided which units this
+    // session hosts (capacity planning); everything else waits its turn.
+    if (filter) {
+      const allowed = filter[slot.sessionId]
+      if (allowed && !allowed.includes(pairing.unitKey)) {
+        return { score: -Infinity, blockReason: "unit not included in this session" }
+      }
+    }
 
     // Hard: no double-booked team, no double-booked court
     if (teamIsBooked(homeTeamId, slot.startAt, slot.endAt))
@@ -333,6 +375,16 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const pKey = pairKey(homeTeamId, awayTeamId)
     const timesPlayed = playedPairCount[pKey] ?? 0
     score -= timesPlayed * 3
+
+    // Soft: cluster similar games — same unit back-to-back on a court, and
+    // same unit gathered at the same venue that day. Preference only.
+    const last = courtLastUnit[slot.courtId]
+    if (last && last.endMs === slot.startAt.getTime() && last.unitKey === pairing.unitKey) {
+      score += 4
+    }
+    if ((dayVenueUnitGames[`${slot.dayVenueId}|${pairing.unitKey}`] ?? 0) > 0) {
+      score += 2
+    }
 
     // Philosophy
     if (input.schedulingPhilosophy === "FAMILY_FRIENDLY") {
@@ -385,6 +437,9 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     ]
     const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
     playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
+    courtLastUnit[slot.courtId] = { endMs: slot.endAt.getTime(), unitKey: pairing.unitKey }
+    const dvKey = `${slot.dayVenueId}|${pairing.unitKey}`
+    dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
   }
 
   // Utilization

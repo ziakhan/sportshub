@@ -1,8 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { panelClass } from "./types"
+
+interface CapacityUnit {
+  unitKey: string
+  label: string
+  teams: number
+  gamesNeeded: number
+}
+
+interface CapacitySession {
+  sessionId: string
+  label: string | null
+  days: number
+  courts: number
+  slotsTotal: number
+  gamesPerTeam: number
+  units: CapacityUnit[]
+  gamesNeededAll: number
+  surplusSlots: number
+  maxTeamsSupportable: number
+}
 
 export function ScheduleTab({
   seasonId,
@@ -24,15 +44,55 @@ export function ScheduleTab({
   const [previewLoading, setPreviewLoading] = useState(false)
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
+  const [capacity, setCapacity] = useState<CapacitySession[] | null>(null)
+  // sessionId → unit keys the owner UNCHECKED (default: everything included)
+  const [excluded, setExcluded] = useState<Record<string, Set<string>>>({})
   const [openGameId, setOpenGameId] = useState<string | null>(null)
   const [suggestionsFor, setSuggestionsFor] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
 
+  useEffect(() => {
+    fetch(`/api/seasons/${seasonId}/schedule/capacity`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCapacity(data?.sessions ?? null))
+      .catch(() => setCapacity(null))
+  }, [seasonId])
+
+  // sessionId → included unit keys, only for sessions where something is
+  // excluded (untouched sessions host everything).
+  const sessionUnits = useMemo(() => {
+    if (!capacity) return undefined
+    const map: Record<string, string[]> = {}
+    for (const s of capacity) {
+      const ex = excluded[s.sessionId]
+      if (ex && ex.size > 0) {
+        map[s.sessionId] = s.units.map((u) => u.unitKey).filter((k) => !ex.has(k))
+      }
+    }
+    return Object.keys(map).length > 0 ? map : undefined
+  }, [capacity, excluded])
+
+  const toggleUnit = (sessionId: string, unitKey: string) => {
+    setExcluded((prev) => {
+      const next = { ...prev }
+      const set = new Set(next[sessionId] ?? [])
+      if (set.has(unitKey)) set.delete(unitKey)
+      else set.add(unitKey)
+      next[sessionId] = set
+      return next
+    })
+    setPreview(null) // stale against the new plan
+  }
+
   const runPreview = async () => {
     setPreviewLoading(true)
     setScheduleError(null)
-    const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, { method: "POST" })
+    const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionUnits }),
+    })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       setScheduleError(
@@ -52,7 +112,7 @@ export function ScheduleTab({
     const res = await fetch(`/api/seasons/${seasonId}/schedule/commit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ replaceExisting: true }),
+      body: JSON.stringify({ replaceExisting: true, sessionUnits }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -185,6 +245,76 @@ export function ScheduleTab({
         {scheduleError && (
           <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-3 rounded-xl border px-3 py-2 text-xs">
             {scheduleError}
+          </div>
+        )}
+
+        {capacity && capacity.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <div>
+              <p className="text-ink-900 text-sm font-semibold">Capacity planner</p>
+              <p className="text-ink-500 mt-0.5 text-xs">
+                What each session can hold vs what your divisions need. Untick a division to
+                leave it out of a session — the preview and commit follow this plan.
+              </p>
+            </div>
+            {capacity.map((s) => {
+              const ex = excluded[s.sessionId] ?? new Set<string>()
+              const includedDemand = s.units
+                .filter((u) => !ex.has(u.unitKey))
+                .reduce((sum, u) => sum + u.gamesNeeded, 0)
+              const spare = s.slotsTotal - includedDemand
+              const tone =
+                spare < 0
+                  ? "border-hoop-200 bg-hoop-50"
+                  : spare <= Math.ceil(s.slotsTotal * 0.1)
+                    ? "border-amber-200 bg-amber-50"
+                    : "border-court-200 bg-court-50"
+              return (
+                <div key={s.sessionId} className={`rounded-xl border p-3 ${tone}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-ink-900 text-xs font-semibold">
+                      {s.label || "Session"} · {s.days} day{s.days === 1 ? "" : "s"} · {s.courts}{" "}
+                      court{s.courts === 1 ? "" : "s"} · {s.gamesPerTeam} game
+                      {s.gamesPerTeam === 1 ? "" : "s"}/team
+                    </p>
+                    <p className="text-ink-700 text-xs font-semibold">
+                      {includedDemand} of {s.slotsTotal} slots needed ·{" "}
+                      {spare >= 0 ? (
+                        <span className="text-court-700">{spare} spare</span>
+                      ) : (
+                        <span className="text-hoop-700">{-spare} short</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {s.units.map((u) => {
+                      const off = ex.has(u.unitKey)
+                      return (
+                        <label
+                          key={u.unitKey}
+                          className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] ${
+                            off
+                              ? "border-ink-200 bg-white text-ink-400 line-through"
+                              : "border-ink-200 bg-white text-ink-700"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!off}
+                            onChange={() => toggleUnit(s.sessionId, u.unitKey)}
+                          />
+                          {u.label} · {u.teams} teams · {u.gamesNeeded} games
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <p className="text-ink-500 mt-1.5 text-[11px]">
+                    This session can carry up to {s.maxTeamsSupportable} teams at {s.gamesPerTeam}{" "}
+                    game{s.gamesPerTeam === 1 ? "" : "s"} each.
+                  </p>
+                </div>
+              )
+            })}
           </div>
         )}
 

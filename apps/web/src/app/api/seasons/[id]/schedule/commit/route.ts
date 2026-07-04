@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic"
 const commitSchema = z.object({
   // If true, wipe existing REGULAR games for this season first.
   replaceExisting: z.boolean().default(true),
+  // sessionId → unit keys that session hosts (must match the previewed plan).
+  sessionUnits: z.record(z.array(z.string())).optional(),
 })
 
 /**
@@ -39,12 +41,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { replaceExisting } = commitSchema.parse(body)
+    const { replaceExisting, sessionUnits } = commitSchema.parse(body)
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot commit", errors }, { status: 422 })
     }
+    if (sessionUnits) input.sessionUnitFilter = sessionUnits
 
     const result = generateSchedule(input)
 
