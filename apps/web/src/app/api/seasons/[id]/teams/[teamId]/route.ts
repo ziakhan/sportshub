@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
 import { isSeasonLocked } from "@/lib/seasons/season-lock"
+import { cancelObligationIfUnpaid, ensureObligation } from "@/lib/payments/obligations"
 
 export const dynamic = "force-dynamic"
 
@@ -39,7 +40,9 @@ export async function PATCH(
         id: true,
         leagueId: true,
         status: true,
-        league: { select: { ownerId: true, name: true } },
+        teamFee: true,
+        label: true,
+        league: { select: { ownerId: true, name: true, currency: true } },
       },
     })
     if (!season) {
@@ -103,6 +106,7 @@ export async function PATCH(
     // G4 cascade: withdrawing a team cancels its FUTURE games atomically with
     // the status flip. Played/past games stay for standings.
     const withdrawing = data.status === "WITHDRAWN" && submission.status !== "WITHDRAWN"
+    const approving = data.status === "APPROVED" && submission.status !== "APPROVED"
     let cancelledGames: { id: string; homeTeamId: string; awayTeamId: string; scheduledAt: Date }[] = []
 
     const updated = await prisma.$transaction(async (tx: any) => {
@@ -110,6 +114,24 @@ export async function PATCH(
         where: { id: submission.id },
         data: updateData,
       })
+      // Approval is what creates the club→league team-fee debt (B1 in
+      // docs/payments-design.md) — the league is the merchant here.
+      if (approving && season.teamFee !== null) {
+        await ensureObligation(tx, {
+          payerTenantId: submission.team.tenantId,
+          payeeLeagueId: season.leagueId,
+          referenceType: "TeamSubmission",
+          referenceId: submission.id,
+          description: `Team fee — ${season.league.name} ${season.label} (${submission.team.name})`,
+          amount: Number(season.teamFee),
+          currency: season.league.currency,
+        })
+      }
+      // A withdrawing team's unpaid fee dies with the submission; paid fees
+      // stay for the league to refund explicitly.
+      if (withdrawing) {
+        await cancelObligationIfUnpaid(tx, "TeamSubmission", submission.id)
+      }
       if (withdrawing) {
         cancelledGames = await tx.game.findMany({
           where: {

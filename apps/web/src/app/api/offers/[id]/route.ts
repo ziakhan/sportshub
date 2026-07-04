@@ -111,7 +111,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           select: { id: true, parentId: true, firstName: true, lastName: true },
         },
         team: {
-          select: { id: true, name: true, tenantId: true, tenant: { select: { name: true } } },
+          select: { id: true, name: true, tenantId: true, tenant: { select: { name: true, currency: true } } },
         },
       },
     })

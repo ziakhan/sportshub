@@ -1109,9 +1109,10 @@ model Payment {
   stripePaymentIntentId String? @unique
   stripeChargeId        String? @unique
 
-  // Parties
-  payerId String
-  payer   User   @relation("PayerPayments", fields: [payerId], references: [id])
+  // Parties — payer may be a person (family flows) or an organization via
+  // the obligation (club→league team fees), hence nullable.
+  payerId String?
+  payer   User?   @relation("PayerPayments", fields: [payerId], references: [id])
 
   payeeId String? // Club/League owner
   payee   User?   @relation("PayeePayments", fields: [payeeId], references: [id])

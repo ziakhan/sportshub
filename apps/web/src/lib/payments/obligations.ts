@@ -115,6 +115,21 @@ async function syncReferenceStatus(db: any, obligation: { referenceType: string;
       data: { status: "PAID" },
     })
   }
+  if (obligation.referenceType === "TeamSubmission") {
+    // Legacy per-product tracker predates the engine; keep it truthful.
+    // Stage 2 (Stripe) refines PAID_MANUAL vs PAID_STRIPE by method.
+    if (obligation.status === "PAID") {
+      await db.teamSubmission.updateMany({
+        where: { id: obligation.referenceId },
+        data: { paymentStatus: "PAID_MANUAL" },
+      })
+    } else if (obligation.status === "WAIVED") {
+      await db.teamSubmission.updateMany({
+        where: { id: obligation.referenceId },
+        data: { paymentStatus: "WAIVED" },
+      })
+    }
+  }
 }
 
 export interface RecordOfflinePaymentInput {
@@ -185,10 +200,12 @@ export async function waiveObligation(
       "OBLIGATION_CLOSED"
     )
   }
-  return db.paymentObligation.update({
+  const updated = await db.paymentObligation.update({
     where: { id: input.obligationId },
     data: { status: "WAIVED", waivedAt: new Date(), waivedReason: input.reason ?? null },
   })
+  await syncReferenceStatus(db, updated)
+  return updated
 }
 
 /**

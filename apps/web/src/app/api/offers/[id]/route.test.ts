@@ -39,6 +39,8 @@ describe("PATCH /api/offers/[id]", () => {
       includesTracksuit: false,
       teamId: "team-1",
       playerId: "player-1",
+      seasonFee: 450,
+      installments: 1,
       player: {
         id: "player-1",
         parentId: "parent-1",
@@ -49,7 +51,7 @@ describe("PATCH /api/offers/[id]", () => {
         id: "team-1",
         name: "Warriors U12",
         tenantId: "tenant-1",
-        tenant: { name: "Warriors Club" },
+        tenant: { name: "Warriors Club", currency: "CAD" },
       },
     } as any)
 
@@ -62,6 +64,11 @@ describe("PATCH /api/offers/[id]", () => {
       },
       userRole: {
         findFirst: vi.fn().mockResolvedValue({ userId: "club-owner-1" }),
+      },
+      // acceptOffer mints the season-fee obligation inside the tx now
+      paymentObligation: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: "obligation-1" }),
       },
       notification: {
         create: vi.fn().mockResolvedValue({ id: "notification-1" }),

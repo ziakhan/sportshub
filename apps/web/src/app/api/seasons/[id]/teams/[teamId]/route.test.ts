@@ -38,7 +38,10 @@ describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
     vi.mocked(prisma.season.findUnique).mockResolvedValue({
       id: "season-1",
       leagueId: "league-1",
-      league: { ownerId: "league-owner-1", name: "NPH Spring League" },
+      // teamFee null → approval creates no obligation in these unit tests
+      teamFee: null,
+      label: "Season 1",
+      league: { ownerId: "league-owner-1", name: "NPH Spring League", currency: "CAD" },
     } as any)
     vi.mocked(prisma.teamSubmission.findFirst).mockResolvedValue({
       id: "submission-1",

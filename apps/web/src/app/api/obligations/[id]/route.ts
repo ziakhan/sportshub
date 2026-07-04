@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { ObligationError, waiveObligation } from "@/lib/payments/obligations"
+import { merchantAccess } from "@/lib/payments/authz"
 
 export const dynamic = "force-dynamic"
 
@@ -23,27 +24,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const obligation = await prisma.paymentObligation.findUnique({
       where: { id: params.id },
-      select: { id: true, payeeTenantId: true },
+      select: {
+        id: true,
+        payeeTenantId: true,
+        payeeLeagueId: true,
+        payeeLeague: { select: { ownerId: true } },
+      },
     })
     if (!obligation) return NextResponse.json({ error: "Obligation not found" }, { status: 404 })
 
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [
-          ...(obligation.payeeTenantId
-            ? [
-                {
-                  tenantId: obligation.payeeTenantId,
-                  role: { in: ["ClubOwner", "ClubManager"] as any },
-                },
-              ]
-            : []),
-          { role: "PlatformAdmin" as any },
-        ],
-      },
-    })
-    if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Waiving money is an owner/manager decision — no Staff.
+    if (!(await merchantAccess(userId, obligation, { tenantRoles: ["ClubOwner", "ClubManager"] }))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const data = actionSchema.parse(await request.json())
 

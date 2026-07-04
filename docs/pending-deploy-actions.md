@@ -182,8 +182,9 @@ export PATH="/usr/local/opt/node@18/bin:$PATH"
 DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate
 ```
 Expect: new tables `PaymentConfig` + `PaymentObligation`; `Payment` gains
-`obligationId`/`method`/`recordedById`/`note`; new enums `PaymentMethod`,
-`OnlineMode`, `ObligationStatus`. All additive — Payment table had 0 rows.
+`obligationId`/`method`/`recordedById`/`note` and `payerId` becomes NULLABLE
+(org payers); new enums `PaymentMethod`, `OnlineMode`, `ObligationStatus`.
+All additive — Payment table had 0 rows.
 
 ### Step 2 — Nothing to backfill
 New tables + nullable columns; no data migration.

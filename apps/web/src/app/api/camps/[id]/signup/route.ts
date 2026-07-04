@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
+import { ensureObligation } from "@/lib/payments/obligations"
 
 export const dynamic = "force-dynamic"
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const camp = await (prisma as any).camp.findUnique({
       where: { id: params.id },
-      include: { _count: { select: { signups: true } } },
+      include: { tenant: { select: { currency: true } }, _count: { select: { signups: true } } },
     })
 
     if (!camp || !camp.isPublished) {
@@ -71,15 +72,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       totalFee = weeklyFee * data.weeksSelected
     }
 
-    const signup = await (prisma as any).campSignup.create({
-      data: {
-        campId: params.id,
-        userId: sessionInfo.userId,
-        playerId: data.playerId,
-        weeksSelected: data.weeksSelected,
-        totalFee,
-        notes: data.notes || null,
-      },
+    const signup = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.campSignup.create({
+        data: {
+          campId: params.id,
+          userId: sessionInfo.userId,
+          playerId: data.playerId,
+          weeksSelected: data.weeksSelected,
+          totalFee,
+          notes: data.notes || null,
+        },
+      })
+      await ensureObligation(tx, {
+        payerUserId: sessionInfo.userId,
+        payeeTenantId: camp.tenantId,
+        referenceType: "CampSignup",
+        referenceId: created.id,
+        description: `Camp fee — ${camp.name} (${data.weeksSelected} week${data.weeksSelected > 1 ? "s" : ""})`,
+        amount: totalFee,
+        currency: camp.tenant?.currency ?? "CAD",
+      })
+      return created
     })
 
     // Notify the club that a new signup arrived (gap: signups were silent).

@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
+import { ensureObligation } from "@/lib/payments/obligations"
 
 export const dynamic = "force-dynamic"
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Get league and check availability
     const league = await (prisma as any).houseLeague.findUnique({
       where: { id: params.id },
-      include: { _count: { select: { signups: true } } },
+      include: { tenant: { select: { currency: true } }, _count: { select: { signups: true } } },
     })
 
     if (!league || !league.isPublished) {
@@ -58,13 +59,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "This player is already registered" }, { status: 409 })
     }
 
-    const signup = await (prisma as any).houseLeagueSignup.create({
-      data: {
-        houseLeagueId: params.id,
-        userId: sessionInfo.userId,
-        playerId: data.playerId,
-        notes: data.notes || null,
-      },
+    const signup = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.houseLeagueSignup.create({
+        data: {
+          houseLeagueId: params.id,
+          userId: sessionInfo.userId,
+          playerId: data.playerId,
+          notes: data.notes || null,
+        },
+      })
+      await ensureObligation(tx, {
+        payerUserId: sessionInfo.userId,
+        payeeTenantId: league.tenantId,
+        referenceType: "HouseLeagueSignup",
+        referenceId: created.id,
+        description: `House league fee — ${league.name} (${player.firstName} ${player.lastName})`,
+        amount: Number(league.fee),
+        currency: league.tenant?.currency ?? "CAD",
+      })
+      return created
     })
 
     // Notify the club that a new signup arrived (gap: signups were silent).

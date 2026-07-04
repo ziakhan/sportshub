@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
+import { ensureObligation } from "@/lib/payments/obligations"
 
 /**
  * Offer response domain service — accept/decline with roster formation.
@@ -13,11 +14,13 @@ export interface OfferForResponse {
   id: string
   teamId: string
   playerId: string
+  seasonFee: unknown // Prisma Decimal
+  installments: number
   includesUniform: boolean
   includesShoes: boolean
   includesTracksuit: boolean
   player: { id: string; parentId: string; firstName: string; lastName: string }
-  team: { id: string; name: string; tenantId: string; tenant: { name: string } }
+  team: { id: string; name: string; tenantId: string; tenant: { name: string; currency: string } }
 }
 
 export interface AcceptOfferInput {
@@ -131,6 +134,22 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
         shoeSize: data.shoeSize || null,
         tracksuitSize: data.tracksuitSize || null,
       },
+    })
+
+    // Accepting the offer is what creates the season-fee debt (the flagship
+    // family→club flow, docs/payments-design.md A2). Installments are the
+    // payment schedule against ONE obligation, not separate debts.
+    const playerName = `${offer.player.firstName} ${offer.player.lastName}`
+    await ensureObligation(tx, {
+      payerUserId: offer.player.parentId,
+      payeeTenantId: offer.team.tenantId,
+      referenceType: "Offer",
+      referenceId: offer.id,
+      description:
+        `Season fee — ${offer.team.name} (${playerName})` +
+        (offer.installments > 1 ? `, ${offer.installments} installments` : ""),
+      amount: Number(offer.seasonFee),
+      currency: offer.team.tenant.currency,
     })
 
     await notifyClubOfResponse(tx, offer, updated.id, true)

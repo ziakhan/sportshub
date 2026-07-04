@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { merchantAccess } from "@/lib/payments/authz"
 
 export const dynamic = "force-dynamic"
 
 /**
  * List payment obligations.
  * GET /api/obligations?tenantId=x [&status=PENDING] — club side (what's owed to us)
+ * GET /api/obligations?leagueId=x [&status=…]       — league side (team fees owed to us)
  * GET /api/obligations?mine=true                    — payer side (what I owe)
  */
 export async function GET(request: NextRequest) {
@@ -17,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const tenantId = searchParams.get("tenantId")
+    const leagueId = searchParams.get("leagueId")
     const mine = searchParams.get("mine") === "true"
     const status = searchParams.get("status")
 
@@ -43,6 +46,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ obligations: obligations.map(simplify) })
     }
 
+    if (leagueId) {
+      const league = await prisma.league.findUnique({
+        where: { id: leagueId },
+        select: { ownerId: true },
+      })
+      if (!league) return NextResponse.json({ error: "League not found" }, { status: 404 })
+      const ok = await merchantAccess(userId, {
+        payeeTenantId: null,
+        payeeLeagueId: leagueId,
+        payeeLeague: league,
+      })
+      if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+      const obligations = await prisma.paymentObligation.findMany({
+        where: { payeeLeagueId: leagueId, ...(status ? { status: status as any } : {}) },
+        include: {
+          payerTenant: { select: { id: true, name: true } },
+          payments: { orderBy: { createdAt: "asc" } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+      return NextResponse.json({ obligations: obligations.map(simplify) })
+    }
+
     if (mine) {
       const obligations = await prisma.paymentObligation.findMany({
         where: { payerUserId: userId, ...(status ? { status: status as any } : {}) },
@@ -57,7 +84,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Either tenantId or mine=true parameter is required" },
+      { error: "Either tenantId, leagueId, or mine=true parameter is required" },
       { status: 400 }
     )
   } catch (error) {

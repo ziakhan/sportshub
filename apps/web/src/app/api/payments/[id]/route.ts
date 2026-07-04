@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { ObligationError, refundOfflinePayment } from "@/lib/payments/obligations"
+import { merchantAccess } from "@/lib/payments/authz"
 
 export const dynamic = "force-dynamic"
 
@@ -24,22 +25,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const payment = await prisma.payment.findUnique({
       where: { id: params.id },
-      select: { id: true, tenantId: true },
+      select: {
+        id: true,
+        tenantId: true,
+        obligation: {
+          select: {
+            payeeTenantId: true,
+            payeeLeagueId: true,
+            payeeLeague: { select: { ownerId: true } },
+          },
+        },
+      },
     })
     if (!payment) return NextResponse.json({ error: "Payment not found" }, { status: 404 })
 
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [
-          ...(payment.tenantId
-            ? [{ tenantId: payment.tenantId, role: { in: ["ClubOwner", "ClubManager"] as any } }]
-            : []),
-          { role: "PlatformAdmin" as any },
-        ],
-      },
-    })
-    if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const scope = payment.obligation ?? {
+      payeeTenantId: payment.tenantId,
+      payeeLeagueId: null,
+      payeeLeague: null,
+    }
+    if (!(await merchantAccess(userId, scope, { tenantRoles: ["ClubOwner", "ClubManager"] }))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const data = actionSchema.parse(await request.json())
 

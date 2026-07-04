@@ -26,6 +26,7 @@ import { getServerSession } from "next-auth"
  *   1108 player-invitations
  *   1109 offers (cross-club recruiting audit)
  *   1110 obligations / offline payments
+ *   1111 obligations product wiring (offers/camps/HL/submissions)
  */
 
 export function actAs(userId: string | null): void {
