@@ -13,8 +13,28 @@ const updateSettingsSchema = z.object({
   enabledCountries: z
     .array(z.string().length(2))
     .min(1, "At least one country must be enabled")
-    .refine((codes) => codes.every((c) => validCountryCodes.includes(c)), "Invalid country code"),
+    .refine((codes) => codes.every((c) => validCountryCodes.includes(c)), "Invalid country code")
+    .optional(),
+  // Platform-wide payment policy — the defaults every merchant inherits
+  payOfflineAllowed: z.boolean().optional(),
+  payConnectAllowed: z.boolean().optional(),
+  payPlatformCollectAllowed: z.boolean().optional(),
+  payDefaultOnlineMode: z.enum(["NONE", "CONNECT_DIRECT", "PLATFORM_COLLECT"]).optional(),
+  payPlatformFeeBps: z.number().int().min(0).max(5000).optional(),
+  payPlatformFeeFlat: z.number().min(0).optional(),
 })
+
+function serializeSettings(settings: any) {
+  return {
+    enabledCountries: settings.enabledCountries,
+    payOfflineAllowed: settings.payOfflineAllowed,
+    payConnectAllowed: settings.payConnectAllowed,
+    payPlatformCollectAllowed: settings.payPlatformCollectAllowed,
+    payDefaultOnlineMode: settings.payDefaultOnlineMode,
+    payPlatformFeeBps: settings.payPlatformFeeBps,
+    payPlatformFeeFlat: Number(settings.payPlatformFeeFlat),
+  }
+}
 
 async function verifyPlatformAdmin(userId: string) {
   const role = await prisma.userRole.findFirst({
@@ -49,7 +69,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      enabledCountries: settings.enabledCountries,
+      ...serializeSettings(settings),
       availableCountries: SUPPORTED_COUNTRIES,
     })
   } catch (error) {
@@ -78,14 +98,11 @@ export async function PATCH(request: NextRequest) {
 
     const settings = await prisma.platformSettings.upsert({
       where: { id: "default" },
-      create: { id: "default", enabledCountries: data.enabledCountries },
-      update: { enabledCountries: data.enabledCountries },
+      create: { id: "default", enabledCountries: ["CA"], ...data },
+      update: data,
     })
 
-    return NextResponse.json({
-      success: true,
-      enabledCountries: settings.enabledCountries,
-    })
+    return NextResponse.json({ success: true, ...serializeSettings(settings) })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

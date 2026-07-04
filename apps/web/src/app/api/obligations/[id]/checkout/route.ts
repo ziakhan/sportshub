@@ -19,8 +19,11 @@ const checkoutSchema = z.object({
  *
  * CONNECT_DIRECT — PaymentIntent on the club's connected account (direct
  * charge); money settles to the club, our application fee is skimmed.
- * PLATFORM_COLLECT — PaymentIntent on the platform account; our fee is
- * recorded on the Payment row and withheld at settlement.
+ * PLATFORM_COLLECT — destination charge: PaymentIntent on the platform
+ * account with transfer_data.destination, so our fee is withheld and the
+ * club's share transfers to their connected account at charge time — no
+ * deferred settlement, no held balances. Both modes therefore require the
+ * club to have finished Stripe Connect onboarding.
  *
  * Returns { clientSecret } for Stripe Elements/confirmCardPayment.
  */
@@ -82,7 +85,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
     const direct = config.onlineMode === "CONNECT_DIRECT"
-    if (direct && (!config.stripeAccountId || config.stripeAccountStatus !== "active")) {
+    // Both modes need a ready connected account: direct charges live on it,
+    // destination charges transfer the club's share into it at charge time.
+    if (!config.stripeAccountId || config.stripeAccountStatus !== "active") {
       return NextResponse.json(
         { error: "This organization's payment account is not ready yet", code: "ACCOUNT_NOT_READY" },
         { status: 400 }
@@ -139,7 +144,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         // Card-style methods only (no redirect flows) — lets the UI confirm
         // without a return_url; revisit when adding redirect-based methods.
         automatic_payment_methods: { enabled: true, allow_redirects: "never" },
-        ...(direct && feeCents > 0 ? { application_fee_amount: feeCents } : {}),
+        ...(feeCents > 0 ? { application_fee_amount: feeCents } : {}),
+        ...(direct
+          ? {}
+          : {
+              // Destination charge: club's share (amount - fee) transfers to
+              // their account at charge time; they're the settlement merchant.
+              transfer_data: { destination: config.stripeAccountId },
+              on_behalf_of: config.stripeAccountId,
+            }),
       },
       requestOptions as any
     )
@@ -155,6 +168,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         method: "STRIPE",
         stripePaymentIntentId: intent.id,
         stripeAccountId: stripeAccount,
+        stripeDestinationAccountId: direct ? null : config.stripeAccountId,
         platformFee: feeCents > 0 ? feeCents / 100 : null,
         paymentType: referenceToPaymentType(obligation.referenceType) as any,
         description: obligation.description,

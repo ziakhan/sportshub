@@ -40,6 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         obligationId: true,
         stripePaymentIntentId: true,
         stripeAccountId: true,
+        stripeDestinationAccountId: true,
         obligation: {
           select: {
             payeeTenantId: true,
@@ -83,6 +84,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         {
           payment_intent: payment.stripePaymentIntentId!,
           amount: Math.round(amount * 100),
+          // Destination charges (PLATFORM_COLLECT): pull the club's share
+          // back from their account and return our fee, proportionally —
+          // otherwise the platform balance eats the whole refund.
+          ...(payment.stripeDestinationAccountId
+            ? { reverse_transfer: true, refund_application_fee: true }
+            : {}),
         },
         payment.stripeAccountId ? ({ stripeAccount: payment.stripeAccountId } as any) : undefined
       )

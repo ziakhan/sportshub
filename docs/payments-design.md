@@ -27,7 +27,7 @@
 |---|---|---|---|---|
 | `OFFLINE` | cash / e-transfer / cheque, recorded in-app | club directly, off-platform | none (plan revenue instead) | none |
 | `CONNECT_DIRECT` | Stripe Connect **direct charges** on the club's connected account (Standard via OAuth for existing accounts, Express for new) | club's Stripe → club's bank; club pays Stripe processing fees | `application_fee_amount` per charge, configurable per club | none — platform never holds funds |
-| `PLATFORM_COLLECT` | charges on the platform account + Connect **separate charges & transfers** for payout | platform Stripe, then transfer to club | withheld from the transfer | platform holds funds — offer selectively; do payouts INSIDE Connect (never ad-hoc bank e-transfers — money-transmitter risk in CA) |
+| `PLATFORM_COLLECT` | Stripe Connect **destination charges** on the platform account (`transfer_data.destination` + `on_behalf_of`) | club's share transfers to their connected account AT CHARGE TIME — no deferred settlement, no held balances | `application_fee_amount` withheld from the transfer | effectively none — Stripe moves the club's share instantly; refunds use `reverse_transfer` + `refund_application_fee` so the reversal is symmetric. Payouts stay INSIDE Connect (never ad-hoc bank e-transfers — money-transmitter risk in CA). Club must complete Express onboarding to RECEIVE transfers, same as CONNECT_DIRECT |
 
 Verified against Stripe docs 2026-07: direct charges + application fees are the
 exact "own gateway, platform takes a fee" model
@@ -152,6 +152,44 @@ OUT OF SCOPE forever (volunteers / club payroll — not marketplace payments).
 - Deferred to stage 5: auto-charging installment schedules (saved payment
   methods + test clocks); today installments are paid manually via partial
   checkout amounts.
+
+## Stage 4 — configurable policy + PLATFORM_COLLECT — BUILT 2026-07-04
+
+Owner directive: the whole system must be configurable — system-wide default
+plus per-club/per-merchant override; a club may be FORCED through the
+platform, FORCED onto its own Stripe account, or given the choice; offline
+(cash / pay-later) may be banned platform-wide or per club so every payment
+goes online.
+
+- **Two-layer config**: `PlatformSettings.pay*` (singleton policy: which modes
+  exist, default mode, default fee bps+flat) → `PaymentConfig` per-merchant
+  overrides where every policy field is NULLABLE (null = inherit).
+  `lib/payments/config.ts` resolves the layers; `onlineMode` in the resolved
+  config is the EFFECTIVE mode — a merchant choice the allowlist has since
+  revoked clamps to the other allowed mode (or NONE), so a banned mode can
+  never keep charging.
+- **Forcing semantics**: allow only PLATFORM_COLLECT → forced through us;
+  allow only CONNECT_DIRECT → must bring their own account; allow both → club
+  picks; `payOfflineAllowed=false` (or per-club `offlineAllowed=false`) →
+  online-only, record-offline API rejects with OFFLINE_NOT_AVAILABLE.
+- **PLATFORM_COLLECT = instant settlement** (supersedes the separate
+  charges & transfers sketch): destination charges with
+  `transfer_data.destination` + `on_behalf_of` + `application_fee_amount`.
+  No settlement engine, no held balances, nothing to batch. Refunds send
+  `reverse_transfer: true, refund_application_fee: true` so club share and
+  platform fee both come back proportionally. `Payment.stripeDestinationAccountId`
+  marks these (charge lives on the platform account, so refunds do NOT use a
+  stripeAccount request option).
+- **Connect onboarding is required in BOTH online modes** (destination
+  charges need a transfer target); the connect route now gates on
+  `connectAllowed || platformCollectAllowed`.
+- **Admin console**: `/dashboard/admin/payments` — platform defaults form +
+  per-club override editor (tri-state inherit/yes/no per flag, fee override,
+  effective-mode display). Admin fields on the club config API accept null =
+  return to inheritance.
+- **Tests**: `platform-policy.int.test.ts` (seed 1113) — inheritance,
+  destination-charge params, reverse-transfer refunds, offline bans,
+  tri-state admin API. Neon runbook entry #7.
 
 ## Sequencing note
 

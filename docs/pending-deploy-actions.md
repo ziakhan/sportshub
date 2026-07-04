@@ -188,3 +188,42 @@ All additive — Payment table had 0 rows.
 
 ### Step 2 — Nothing to backfill
 New tables + nullable columns; no data migration.
+
+## ⬜ 7. Configurable payment policy + destination charges — July 2026
+
+Ships with the payment-policy commit (platform-wide defaults, per-club
+overrides, PLATFORM_COLLECT instant settlement). Same `prisma db push`
+covers entries #4–#7 if executed together.
+
+### Step 1 — Push schema
+```bash
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate
+```
+Expect:
+- `PlatformSettings` gains `payOfflineAllowed`, `payConnectAllowed`,
+  `payPlatformCollectAllowed`, `payDefaultOnlineMode`, `payPlatformFeeBps`,
+  `payPlatformFeeFlat` (all with defaults — additive).
+- `PaymentConfig`: `offlineAllowed`/`connectAllowed`/`platformCollectAllowed`/
+  `onlineMode`/`platformFeeBps`/`platformFeeFlat` become NULLABLE and lose
+  their column defaults (null now means "inherit the platform policy").
+- `Payment` gains nullable `stripeDestinationAccountId`.
+
+### Step 2 — Convert existing PaymentConfig rows to inheritance (optional but recommended)
+Existing rows carry the old hard defaults as explicit per-club overrides.
+Null them out wherever they still equal the old defaults so those clubs
+follow the platform policy going forward:
+```sql
+UPDATE "PaymentConfig" SET "offlineAllowed" = NULL WHERE "offlineAllowed" = true;
+UPDATE "PaymentConfig" SET "connectAllowed" = NULL WHERE "connectAllowed" = true;
+UPDATE "PaymentConfig" SET "platformCollectAllowed" = NULL WHERE "platformCollectAllowed" = false;
+UPDATE "PaymentConfig" SET "platformFeeBps" = NULL WHERE "platformFeeBps" = 0;
+UPDATE "PaymentConfig" SET "platformFeeFlat" = NULL WHERE "platformFeeFlat" = 0;
+-- Keep onlineMode as-is: a club that already chose a mode keeps that choice.
+```
+Skip any UPDATE where the value was a deliberate per-club override (none
+exist in production as of July 2026 — Stripe hasn't launched there).
+
+### Step 3 — Nothing else to backfill
+`PlatformSettings.pay*` defaults reproduce the previous hardcoded behaviour
+exactly (offline on, connect allowed, platform-collect off, no fee).

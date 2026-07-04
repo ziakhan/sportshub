@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation"
 
 /**
  * Club payment settings (admin only): offline methods, online mode within the
- * platform allowlist, and the Stripe Connect onboarding button.
+ * platform allowlist, and the Stripe Connect onboarding button. When policy
+ * leaves the club no choice (mode forced, offline banned) the UI says so
+ * instead of offering dead options.
  */
 
 export interface PaymentConfigView {
@@ -15,6 +17,7 @@ export interface PaymentConfigView {
   offlineEnabled: boolean
   offlineMethods: string[]
   onlineMode: "NONE" | "CONNECT_DIRECT" | "PLATFORM_COLLECT"
+  chosenOnlineMode: "NONE" | "CONNECT_DIRECT" | "PLATFORM_COLLECT" | null
   stripeAccountId: string | null
   stripeAccountStatus: string | null
 }
@@ -74,6 +77,14 @@ export function PaymentSettingsCard({
   }
 
   const connectActive = config.stripeAccountStatus === "active"
+  const anyOnlineAllowed = config.connectAllowed || config.platformCollectAllowed
+  // Exactly one online mode allowed + offline banned = the club has no choice
+  const onlyMode =
+    config.connectAllowed && !config.platformCollectAllowed
+      ? "CONNECT_DIRECT"
+      : !config.connectAllowed && config.platformCollectAllowed
+        ? "PLATFORM_COLLECT"
+        : null
 
   return (
     <div className="rounded-xl border border-ink-200 bg-white p-5">
@@ -88,61 +99,91 @@ export function PaymentSettingsCard({
       <div className="mt-4 grid gap-6 md:grid-cols-2">
         <div>
           <h4 className="text-sm font-medium text-ink-700">Offline payments</h4>
-          <p className="mt-0.5 text-xs text-ink-500">
-            Families pay you directly; you record it on the payment.
-          </p>
-          <label className="mt-3 flex items-center gap-2 text-sm text-ink-700">
-            <input
-              type="checkbox"
-              checked={offlineEnabled}
-              disabled={!config.offlineAllowed}
-              onChange={(e) => setOfflineEnabled(e.target.checked)}
-            />
-            Accept offline payments
-          </label>
-          <div className="mt-2 space-y-1.5 pl-6">
-            {OFFLINE_METHODS.map((m) => (
-              <label key={m.value} className="flex items-center gap-2 text-sm text-ink-600">
+          {config.offlineAllowed ? (
+            <>
+              <p className="mt-0.5 text-xs text-ink-500">
+                Families pay you directly; you record it on the payment.
+              </p>
+              <label className="mt-3 flex items-center gap-2 text-sm text-ink-700">
                 <input
                   type="checkbox"
-                  disabled={!offlineEnabled}
-                  checked={methods.includes(m.value)}
-                  onChange={(e) =>
-                    setMethods((prev) =>
-                      e.target.checked ? [...prev, m.value] : prev.filter((x) => x !== m.value)
-                    )
-                  }
+                  checked={offlineEnabled}
+                  onChange={(e) => setOfflineEnabled(e.target.checked)}
                 />
-                {m.label}
+                Accept offline payments
               </label>
-            ))}
-          </div>
+              <div className="mt-2 space-y-1.5 pl-6">
+                {OFFLINE_METHODS.map((m) => (
+                  <label key={m.value} className="flex items-center gap-2 text-sm text-ink-600">
+                    <input
+                      type="checkbox"
+                      disabled={!offlineEnabled}
+                      checked={methods.includes(m.value)}
+                      onChange={(e) =>
+                        setMethods((prev) =>
+                          e.target.checked ? [...prev, m.value] : prev.filter((x) => x !== m.value)
+                        )
+                      }
+                    />
+                    {m.label}
+                  </label>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-2 rounded-md bg-ink-50 p-3 text-sm text-ink-600">
+              Offline payments are turned off by the platform — all payments to your club are made
+              online.
+            </p>
+          )}
         </div>
 
         <div>
           <h4 className="text-sm font-medium text-ink-700">Online payments</h4>
           <p className="mt-0.5 text-xs text-ink-500">
-            Card payments through the platform. Your choice of how money flows.
+            Card payments through the platform. Your share arrives in your Stripe account either
+            way.
           </p>
-          <select
-            value={onlineMode}
-            onChange={(e) => setOnlineMode(e.target.value as PaymentConfigView["onlineMode"])}
-            className="mt-3 w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
-          >
-            <option value="NONE">Off — offline only</option>
-            {config.connectAllowed && (
-              <option value="CONNECT_DIRECT">Your own Stripe account (recommended)</option>
-            )}
-            {config.platformCollectAllowed && (
-              <option value="PLATFORM_COLLECT">Platform collects, pays you out</option>
-            )}
-          </select>
+          {!anyOnlineAllowed ? (
+            <p className="mt-3 rounded-md bg-ink-50 p-3 text-sm text-ink-600">
+              Online payments are not enabled for your club. Contact the platform to turn them on.
+            </p>
+          ) : (
+            <select
+              value={onlineMode}
+              onChange={(e) => setOnlineMode(e.target.value as PaymentConfigView["onlineMode"])}
+              className="mt-3 w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
+            >
+              {config.offlineAllowed && <option value="NONE">Off — offline only</option>}
+              {!config.offlineAllowed && onlineMode === "NONE" && (
+                <option value="NONE" disabled>
+                  Choose an online mode…
+                </option>
+              )}
+              {config.connectAllowed && (
+                <option value="CONNECT_DIRECT">Your own Stripe account</option>
+              )}
+              {config.platformCollectAllowed && (
+                <option value="PLATFORM_COLLECT">
+                  Through the platform — your share transfers to you instantly
+                </option>
+              )}
+            </select>
+          )}
+          {onlyMode && !config.offlineAllowed && (
+            <p className="mt-1 text-xs text-ink-500">
+              This is the payment mode set by the platform for your club.
+            </p>
+          )}
 
-          {onlineMode === "CONNECT_DIRECT" && (
+          {onlineMode !== "NONE" && anyOnlineAllowed && (
             <div className="mt-3 rounded-md bg-ink-50 p-3 text-sm">
               {connectActive ? (
                 <p className="text-court-700">
-                  ✓ Stripe account connected — payments go straight to your bank.
+                  ✓ Stripe account connected —{" "}
+                  {onlineMode === "CONNECT_DIRECT"
+                    ? "payments go straight to your bank."
+                    : "your share of each payment transfers to your bank automatically."}
                 </p>
               ) : config.stripeAccountId ? (
                 <>
@@ -160,7 +201,9 @@ export function PaymentSettingsCard({
               ) : (
                 <>
                   <p className="text-ink-600">
-                    Connect your Stripe account so card payments land directly in your bank.
+                    {onlineMode === "CONNECT_DIRECT"
+                      ? "Connect your Stripe account so card payments land directly in your bank."
+                      : "Set up your Stripe account so the platform can transfer your share of each payment to your bank."}
                   </p>
                   <button
                     onClick={connect}

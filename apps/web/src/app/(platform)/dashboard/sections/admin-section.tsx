@@ -66,12 +66,20 @@ export function AdminSection({ data }: AdminSectionProps) {
             The highest-signal admin metrics and newest activity across the platform.
           </p>
         </div>
-        <Link
-          href="/dashboard/admin/settings"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-        >
-          Admin settings
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/admin/payments"
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+          >
+            Payments
+          </Link>
+          <Link
+            href="/dashboard/admin/settings"
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+          >
+            Admin settings
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

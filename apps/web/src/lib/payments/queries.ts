@@ -1,5 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
-import { getPaymentConfig, offlineAvailable, type ResolvedPaymentConfig } from "./config"
+import { getPaymentConfig, offlineAvailable, onlineReady, type ResolvedPaymentConfig } from "./config"
 import type { ObligationRow } from "@/components/payments/types"
 
 /**
@@ -94,10 +94,7 @@ export async function payerObligations(
   const out: ObligationRow[] = []
   for (const o of rows as any[]) {
     const config = await configFor(o)
-    const payOnline =
-      !!config &&
-      (config.onlineMode === "PLATFORM_COLLECT" ||
-        (config.onlineMode === "CONNECT_DIRECT" && config.stripeAccountStatus === "active"))
+    const payOnline = !!config && onlineReady(config)
     out.push({
       id: o.id,
       description: o.description,

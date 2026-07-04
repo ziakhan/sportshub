@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { ObligationError, recordOfflinePayment } from "@/lib/payments/obligations"
 import { merchantAccess } from "@/lib/payments/authz"
+import { getPaymentConfig, offlineAvailable } from "@/lib/payments/config"
 
 export const dynamic = "force-dynamic"
 
@@ -40,6 +41,29 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const data = recordSchema.parse(await request.json())
+
+    // Policy gate: the platform (or the club itself) may have turned offline
+    // collection off — then every payment must go through the online rail.
+    const config = obligation.payeeTenantId
+      ? await getPaymentConfig({ tenantId: obligation.payeeTenantId })
+      : obligation.payeeLeagueId
+        ? await getPaymentConfig({ leagueId: obligation.payeeLeagueId })
+        : null
+    if (config && !offlineAvailable(config)) {
+      return NextResponse.json(
+        {
+          error: "Offline payments are turned off for this organization — payments must be made online",
+          code: "OFFLINE_NOT_AVAILABLE",
+        },
+        { status: 400 }
+      )
+    }
+    if (config && !config.offlineMethods.includes(data.method)) {
+      return NextResponse.json(
+        { error: `${data.method} is not an accepted payment method here`, code: "METHOD_NOT_ALLOWED" },
+        { status: 400 }
+      )
+    }
 
     const payment = await prisma.$transaction((tx: any) =>
       recordOfflinePayment(tx, {

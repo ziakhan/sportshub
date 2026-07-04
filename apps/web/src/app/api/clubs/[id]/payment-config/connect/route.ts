@@ -37,8 +37,10 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     })
     if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    // A connected account is needed in BOTH online modes: direct charges
+    // live on it, and platform-collect destination charges transfer into it.
     const config = await getPaymentConfig({ tenantId: params.id })
-    if (!config.connectAllowed) {
+    if (!config.connectAllowed && !config.platformCollectAllowed) {
       return NextResponse.json(
         { error: "Online payments via Stripe are not enabled for this club", code: "MODE_NOT_ALLOWED" },
         { status: 400 }

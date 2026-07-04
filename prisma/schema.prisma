@@ -1110,6 +1110,9 @@ model Payment {
   stripeChargeId        String? @unique
   // Connected account the charge lives on (CONNECT_DIRECT) — null = platform
   stripeAccountId       String?
+  // PLATFORM_COLLECT destination charges: the connected account the club's
+  // share transfers to at charge time; refunds must reverse_transfer.
+  stripeDestinationAccountId String?
 
   // Parties — payer may be a person (family flows) or an organization via
   // the obligation (club→league team fees), hence nullable.
@@ -1220,19 +1223,19 @@ model PaymentConfig {
   leagueId String? @unique
   league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  // Platform-admin allowlist
-  offlineAllowed         Boolean @default(true)
-  connectAllowed         Boolean @default(true)
-  platformCollectAllowed Boolean @default(false)
+  // Platform-admin allowlist overrides — null inherits PlatformSettings.pay*
+  offlineAllowed         Boolean?
+  connectAllowed         Boolean?
+  platformCollectAllowed Boolean?
 
   // Merchant choices (validated against the allowlist)
   offlineEnabled Boolean         @default(true)
   offlineMethods PaymentMethod[] @default([CASH, ETRANSFER])
-  onlineMode     OnlineMode      @default(NONE)
+  onlineMode     OnlineMode? // null inherits payDefaultOnlineMode
 
-  // Platform fee on ONLINE charges through this merchant
-  platformFeeBps  Int     @default(0)
-  platformFeeFlat Decimal @default(0) @db.Decimal(10, 2)
+  // Platform fee overrides on ONLINE charges — null inherits PlatformSettings
+  platformFeeBps  Int?
+  platformFeeFlat Decimal? @db.Decimal(10, 2)
 
   // Stripe Connect (stage 2)
   stripeAccountId     String? @unique
@@ -1686,8 +1689,18 @@ enum CampSignupStatus {
 model PlatformSettings {
   id               String   @id @default("default")
   enabledCountries String[] // ISO codes: ["US", "CA"]
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  // Platform-wide payment policy — the defaults every merchant inherits.
+  // Per-merchant PaymentConfig rows override field-by-field (null = inherit).
+  payOfflineAllowed         Boolean    @default(true)
+  payConnectAllowed         Boolean    @default(true)
+  payPlatformCollectAllowed Boolean    @default(false)
+  payDefaultOnlineMode      OnlineMode @default(NONE)
+  payPlatformFeeBps         Int        @default(0)
+  payPlatformFeeFlat        Decimal    @default(0) @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================
