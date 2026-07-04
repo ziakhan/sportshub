@@ -59,7 +59,7 @@ needs product work before its scenario can pass.
 |---|---|---|---|
 | G1 | Finalize with too few players | Any count ≥1 finalizes; **no min/max roster concept** on Team | ✅ **SHIPPED 2026-07-03** — finalize warns below 5 ACTIVE players (teams/[id]/finalize); L2 tested |
 | G2 | Offer to arbitrary player | Any club can offer to **any Player in the system** (incl. other clubs'), no tryout required | ⚠️ decide: feature (recruiting) or restrict; at minimum test + audit-log it |
-| G3 | Invite player by email (owner: "manually add players / tell them to sign up") | **No path exists** — StaffInvitation is staff-only; offers need an existing playerId | 🆕 **PlayerInvitation** (email → parent signs up → child linked → offer auto-attached), mirroring the staff-invite pattern |
+| G3 | Invite player by email (owner: "manually add players / tell them to sign up") | **No path exists** — StaffInvitation is staff-only; offers need an existing playerId | ✅ **SHIPPED 2026-07-03** — PlayerInvitation model + `/api/player-invitations` (create/list/respond/revoke); attaches at creation for existing accounts (F8) or at signup (F6/F7); accept converts into a real Offer via shared `lib/offers/create-offer.ts`; expiry + revoke (F9); L2 tested (18 cases). Neon: pending-deploy-actions entry #5 |
 | G4 | Team withdraws mid-season | Status flips; **scheduled games linger untouched; no season-lock guard** | ✅ **SHIPPED 2026-07-03** — withdraw cancels FUTURE games atomically (played kept), notifies opponent clubs; locked seasons block approve/reject (409 SEASON_LOCKED), withdraw stays open; L2 tested |
 | G5 | Division with 1 team | Scheduler silently drops it (games=0); finalize passes unless cross-division on | ✅ **SHIPPED 2026-07-03** — finalize preflight warns per ungrouped <2-team division; also H17: zero approved teams now BLOCKS; L2 tested |
 | G6 | Same venue, two leagues, same time | **Undetected** — conflict checks are season-scoped | 🆕 global court+time conflict check (= `checkVenueConflict` from docs/club-venue-architecture.md §4.2 — same keystone) |
@@ -125,7 +125,7 @@ Status: ✅ covered by existing runner · ☐ uncovered (needs test + world) ·
 | ID | Scenario | World | Status |
 |---|---|---|---|
 | F1 | Tryout ends with 3 signups for 10-slot team → offers to all 3 → finalize under-roster | signups:3 | 🆕 G1 (warning) — behavior test today ☐ |
-| F2 | Club invites unaffiliated player by email → parent signs up → offer auto-attached | PlayerInvitation world | 🆕 G3 (the feature) |
+| F2 | Club invites unaffiliated player by email → parent signs up → offer auto-attached | PlayerInvitation world | ✅ L2 (G3 shipped; F6–F9 covered in player-invitations suite) |
 | F3 | Club re-publishes tryout / extends deadline after under-supply | stale tryout | ☐ L3 |
 | F4 | Merge under-supplied team's accepted players into sibling team (offer to already-rostered player) | 2 teams | ☐ L2 |
 | F5 | Finalize with exactly 1 accepted offer (floor) | 1-offer world | ✅ (allowed today) — assert warning post-G1 |

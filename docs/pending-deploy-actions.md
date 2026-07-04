@@ -150,3 +150,23 @@ Run the whole of `prisma/sql/2026-07-authz-integrity.sql` in the Neon SQL editor
 
 ### Step 4 — Push code
 Deploy master. New signups begin writing `TryoutSignup.playerId`.
+
+## ⬜ 5. PlayerInvitation table (Gap G3) — July 2026
+
+Ships with the WS2 Wave-3 commits. Runs AFTER (or together with) entry #4 —
+same `prisma db push` invocation covers both if executed at once.
+
+### Step 1 — Push schema
+```bash
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate
+```
+Expect: new `PlayerInvitation` table (FKs to Tenant/Team/User/OfferTemplate/Offer),
+`InvitationStatus` enum gains `EXPIRED` (additive — safe), `Offer` unchanged.
+
+### Step 2 — Apply the raw-SQL integrity file
+Run `prisma/sql/2026-07-player-invitation.sql` in the Neon SQL editor (idempotent):
+partial unique = one PENDING invitation per (teamId, lower(invitedEmail)).
+
+### Step 3 — Nothing to backfill
+New table; no existing rows to migrate.

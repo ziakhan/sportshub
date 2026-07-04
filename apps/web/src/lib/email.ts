@@ -62,6 +62,40 @@ export async function sendStaffInviteEmail({
   return sendEmail({ to, subject, html })
 }
 
+export async function sendPlayerInviteEmail({
+  to,
+  clubName,
+  teamName,
+  playerName,
+  inviterName,
+  inviteLink,
+  message,
+}: {
+  to: string
+  clubName: string
+  teamName: string
+  playerName?: string | null
+  inviterName: string
+  inviteLink: string
+  message?: string | null
+}) {
+  const subject = `${clubName} wants ${playerName || "a player in your family"} to join ${teamName}`
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Player Invitation</h2>
+      <p><strong>${inviterName}</strong> from <strong>${clubName}</strong> is inviting ${playerName ? `<strong>${playerName}</strong>` : "a player in your family"} to join <strong>${teamName}</strong>.</p>
+      ${message ? `<p style="padding: 12px; background: #f5f5f5; border-radius: 6px; font-style: italic;">"${message}"</p>` : ""}
+      <p>
+        <a href="${inviteLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+          View Invitation
+        </a>
+      </p>
+      <p style="color: #666; font-size: 14px;">If you don't have an account yet, sign up with this email address and the invitation will be waiting for you. Once you accept, you'll receive a team offer to review.</p>
+    </div>
+  `
+  return sendEmail({ to, subject, html })
+}
+
 export async function sendOfferEmail({
   to,
   parentName,

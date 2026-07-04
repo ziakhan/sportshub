@@ -101,6 +101,17 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
       ],
     },
   })
+  // Before offers: invitations reference offers (offerId SetNull would also
+  // work, but explicit beats implicit) and invitedById blocks user deletion.
+  await prisma.playerInvitation.deleteMany({
+    where: {
+      OR: [
+        { tenantId: { in: tenantIds } },
+        { invitedById: { in: userIds } },
+        { invitedUserId: { in: userIds } },
+      ],
+    },
+  })
   await prisma.offer.deleteMany({
     where: { OR: [{ player: { parentId: { in: userIds } } }, { team: { tenantId: { in: tenantIds } } }] },
   })

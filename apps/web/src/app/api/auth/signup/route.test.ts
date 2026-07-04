@@ -20,6 +20,11 @@ vi.mock("@youthbasketballhub/db", () => ({
       findMany: vi.fn(),
       updateMany: vi.fn(),
     },
+    // ...and pending player invitations (gap G3)
+    playerInvitation: {
+      findMany: vi.fn(),
+      updateMany: vi.fn(),
+    },
     tenant: {
       findMany: vi.fn(),
     },
@@ -38,6 +43,7 @@ describe("POST /api/auth/signup", () => {
     vi.mocked(prisma.user.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.user.create).mockResolvedValue({ id: "user-1" } as any)
     vi.mocked(prisma.staffInvitation.findMany).mockResolvedValue([])
+    vi.mocked(prisma.playerInvitation.findMany).mockResolvedValue([])
     vi.mocked(bcrypt.hash).mockResolvedValue("hashed-password" as never)
 
     const response = await POST(
@@ -71,7 +77,7 @@ describe("POST /api/auth/signup", () => {
         status: "ACTIVE",
       },
     })
-    await expect(response.json()).resolves.toEqual({ success: true, pendingInvitations: 0 })
+    await expect(response.json()).resolves.toEqual({ success: true, pendingInvitations: 0, pendingPlayerInvitations: 0 })
   })
 
   it("returns 409 when a case-insensitive duplicate already exists", async () => {

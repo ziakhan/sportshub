@@ -25,6 +25,11 @@ export type NotificationType =
   | "staff_request"
   | "request_accepted"
   | "request_declined"
+  // Player invitations (G3)
+  | "player_invite"
+  | "player_invite_accepted"
+  | "player_invite_declined"
+  | "player_invite_cancelled"
   // Club claims
   | "club_claim"
   | "claim_approved"

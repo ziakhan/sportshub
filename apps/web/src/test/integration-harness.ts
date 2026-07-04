@@ -22,6 +22,8 @@ import { getServerSession } from "next-auth"
  *   1104 tryouts/[id]
  *   1105 games/[id]
  *   1106 players/[id]
+ *   1107 seasons/[id]/teams/[teamId]
+ *   1108 player-invitations
  */
 
 export function actAs(userId: string | null): void {

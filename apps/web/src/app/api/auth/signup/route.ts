@@ -85,9 +85,46 @@ export async function POST(request: Request) {
       )
     }
 
+    // Same auto-attach for PlayerInvitations (Gap G3): a club invited this
+    // email before the account existed; attach so the new user (parent or
+    // 13+ player) can accept and receive the offer.
+    const pendingPlayerInvites = await prisma.playerInvitation.findMany({
+      where: {
+        invitedEmail: { equals: normalizedEmail, mode: "insensitive" },
+        invitedUserId: null,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+        playerName: true,
+        tenant: { select: { name: true } },
+        team: { select: { name: true } },
+      },
+    })
+
+    if (pendingPlayerInvites.length > 0) {
+      await prisma.playerInvitation.updateMany({
+        where: { id: { in: pendingPlayerInvites.map((i) => i.id) } },
+        data: { invitedUserId: user.id },
+      })
+      await notifyBatch(
+        prisma,
+        pendingPlayerInvites.map((inv) => ({
+          userId: user.id,
+          type: "player_invite" as const,
+          title: "Player Invitation",
+          message: `${inv.tenant.name} has invited ${inv.playerName || "a player in your family"} to join ${inv.team.name}.`,
+          link: "/notifications",
+          referenceId: inv.id,
+          referenceType: "PlayerInvitation",
+        }))
+      )
+    }
+
     return NextResponse.json({
       success: true,
       pendingInvitations: pendingInvites.length,
+      pendingPlayerInvitations: pendingPlayerInvites.length,
     })
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -4,7 +4,11 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { notify } from "@/lib/notifications"
+import {
+  createOfferForPlayer,
+  resolveOfferTerms,
+  OfferCreationError,
+} from "@/lib/offers/create-offer"
 
 export const dynamic = "force-dynamic"
 
@@ -80,100 +84,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 })
     }
 
-    // Check for existing pending offer for this player on this team
-    const existingOffer = await prisma.offer.findFirst({
-      where: {
-        teamId: data.teamId,
-        playerId: data.playerId,
-        status: "PENDING",
+    // Resolve terms (template + explicit overrides) via the shared service
+    const { terms } = await resolveOfferTerms(prisma, {
+      tenantId: team.tenantId,
+      templateId: data.templateId,
+      overrides: {
+        seasonFee: data.seasonFee,
+        installments: data.installments,
+        practiceSessions: data.practiceSessions,
+        includesBall: data.includesBall,
+        includesBag: data.includesBag,
+        includesShoes: data.includesShoes,
+        includesUniform: data.includesUniform,
+        includesTracksuit: data.includesTracksuit,
       },
     })
 
-    if (existingOffer) {
-      return NextResponse.json(
-        { error: "A pending offer already exists for this player on this team" },
-        { status: 409 }
-      )
-    }
-
-    // Load template if provided
-    let templateValues = {
-      seasonFee: 0,
-      installments: 1,
-      practiceSessions: 0,
-      includesBall: false,
-      includesBag: false,
-      includesShoes: false,
-      includesUniform: false,
-      includesTracksuit: false,
-    }
-
-    if (data.templateId) {
-      const template = await prisma.offerTemplate.findFirst({
-        where: { id: data.templateId, tenantId: team.tenantId, isActive: true },
-      })
-      if (!template) {
-        return NextResponse.json({ error: "Template not found" }, { status: 404 })
-      }
-      templateValues = {
-        seasonFee: Number(template.seasonFee),
-        installments: template.installments,
-        practiceSessions: template.practiceSessions,
-        includesBall: template.includesBall,
-        includesBag: template.includesBag,
-        includesShoes: template.includesShoes,
-        includesUniform: template.includesUniform,
-        includesTracksuit: template.includesTracksuit,
-      }
-    }
-
-    // Merge: explicit values override template defaults
-    const offerData = {
-      seasonFee: data.seasonFee ?? templateValues.seasonFee,
-      installments: data.installments ?? templateValues.installments,
-      practiceSessions: data.practiceSessions ?? templateValues.practiceSessions,
-      includesBall: data.includesBall ?? templateValues.includesBall,
-      includesBag: data.includesBag ?? templateValues.includesBag,
-      includesShoes: data.includesShoes ?? templateValues.includesShoes,
-      includesUniform: data.includesUniform ?? templateValues.includesUniform,
-      includesTracksuit: data.includesTracksuit ?? templateValues.includesTracksuit,
-    }
-
     // Create the offer + notification + update signup status in a transaction
-    const result = await prisma.$transaction(async (tx: any) => {
-      const offer = await tx.offer.create({
-        data: {
-          teamId: data.teamId,
-          playerId: data.playerId,
-          tryoutSignupId: data.tryoutSignupId || null,
-          templateId: data.templateId || null,
-          ...offerData,
-          message: data.message || null,
-          expiresAt: new Date(data.expiresAt),
-        },
+    const result = await prisma.$transaction(async (tx: any) =>
+      createOfferForPlayer(tx, {
+        teamId: data.teamId,
+        playerId: data.playerId,
+        tryoutSignupId: data.tryoutSignupId,
+        templateId: data.templateId,
+        terms,
+        message: data.message,
+        expiresAt: new Date(data.expiresAt),
+        player,
+        clubName: team.tenant.name,
+        teamName: team.name,
       })
-
-      // Update tryout signup status to OFFERED
-      if (data.tryoutSignupId) {
-        await tx.tryoutSignup.update({
-          where: { id: data.tryoutSignupId },
-          data: { status: "OFFERED" },
-        })
-      }
-
-      // Create notification for the parent
-      await notify(tx, {
-        userId: player.parentId,
-        type: "offer_received",
-        title: "New Team Offer",
-        message: `${team.tenant.name} has sent an offer for ${player.firstName} ${player.lastName} to join ${team.name}.`,
-        link: `/offers`,
-        referenceId: offer.id,
-        referenceType: "Offer",
-      })
-
-      return offer
-    })
+    )
+    const offerData = terms
 
     // Send email notification (don't fail if email fails)
     try {
@@ -204,6 +146,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Validation error", details: error.errors },
         { status: 400 }
+      )
+    }
+    if (error instanceof OfferCreationError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.code === "TEMPLATE_NOT_FOUND" ? 404 : 409 }
       )
     }
     console.error("Create offer error:", error)

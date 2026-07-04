@@ -62,6 +62,8 @@ describe("POST /api/offers", () => {
   it("creates an offer, updates signup status, creates a notification, and sends email", async () => {
     const tx = {
       offer: {
+        // duplicate-pending guard runs inside the transaction now
+        findFirst: vi.fn().mockResolvedValue(null),
         create: vi.fn().mockResolvedValue({ id: "offer-1" }),
       },
       tryoutSignup: {
@@ -133,7 +135,13 @@ describe("POST /api/offers", () => {
   })
 
   it("rejects creating a duplicate pending offer for the same player and team", async () => {
-    vi.mocked(prisma.offer.findFirst).mockResolvedValue({ id: "offer-existing" } as any)
+    const tx = {
+      offer: {
+        findFirst: vi.fn().mockResolvedValue({ id: "offer-existing" }),
+        create: vi.fn(),
+      },
+    }
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request("http://localhost:3000/api/offers", {
@@ -150,6 +158,8 @@ describe("POST /api/offers", () => {
     expect(response.status).toBe(409)
     await expect(response.json()).resolves.toEqual({
       error: "A pending offer already exists for this player on this team",
+      code: "DUPLICATE_PENDING_OFFER",
     })
+    expect(tx.offer.create).not.toHaveBeenCalled()
   })
 })
