@@ -185,10 +185,10 @@ Status: ✅ covered by existing runner · ☐ uncovered (needs test + world) ·
 
 ## 4. CI plan
 
-1. `services: postgres:16` in ci.yml → `prisma db push` + integrity SQL + `buildWorld` smoke.
-2. Job A (fast, every push): L1 + L2 + static K1/K2.
-3. Job B (gate, every PR): `next start` → phase runners (L3).
-4. Job C (nightly): Playwright (L4) + full K-sweeps.
+1. ✅ `services: postgres:16` in ci.yml → `prisma db push` + integrity SQL + `buildWorld` smoke.
+2. ✅ Job A (fast, every push): L1 (incl. static K1/K2 in `src/test/static-conformance.test.ts`) + L2 `integration` job.
+3. ✅ Job B (`e2e-gate`, every push/PR): production build → `next start` → all 9 phase runners + role-actions. Rehearsed locally vs next start 2026-07-03: 105/0.
+4. ☐ Job C (nightly): Playwright (L4) + full K-sweeps (K3 Decimal sweep, K4 audit sweep, K5 notification map, K7 role×endpoint matrix).
 5. Neon branch-per-PR later if prod-parity issues appear (the `playing_with_neon`
    drift class); docker Postgres is the pragmatic start.
 
