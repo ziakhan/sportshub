@@ -85,6 +85,18 @@ export async function getPaymentConfig(merchant: MerchantRef): Promise<ResolvedP
   const platformCollectAllowed = row?.platformCollectAllowed ?? policy.payPlatformCollectAllowed
   const chosen = (row?.onlineMode as OnlineModeValue | null) ?? null
 
+  let onlineMode = effectiveOnlineMode(chosen ?? policy.payDefaultOnlineMode, {
+    connect: connectAllowed,
+    platformCollect: platformCollectAllowed,
+  })
+  // Online-required posture: with offline banned, NONE would strand the
+  // merchant unpayable — elevate to the single allowed rail. When both rails
+  // are allowed we can't pick for them; NONE stands until the club chooses.
+  if (!offlineAllowed && onlineMode === "NONE") {
+    if (connectAllowed && !platformCollectAllowed) onlineMode = "CONNECT_DIRECT"
+    else if (platformCollectAllowed && !connectAllowed) onlineMode = "PLATFORM_COLLECT"
+  }
+
   return {
     id: row?.id ?? null,
     offlineAllowed,
@@ -92,10 +104,7 @@ export async function getPaymentConfig(merchant: MerchantRef): Promise<ResolvedP
     platformCollectAllowed,
     offlineEnabled: row?.offlineEnabled ?? true,
     offlineMethods: (row?.offlineMethods as string[] | undefined) ?? ["CASH", "ETRANSFER"],
-    onlineMode: effectiveOnlineMode(chosen ?? policy.payDefaultOnlineMode, {
-      connect: connectAllowed,
-      platformCollect: platformCollectAllowed,
-    }),
+    onlineMode,
     chosenOnlineMode: chosen,
     platformFeeBps: row?.platformFeeBps ?? policy.payPlatformFeeBps,
     platformFeeFlat:

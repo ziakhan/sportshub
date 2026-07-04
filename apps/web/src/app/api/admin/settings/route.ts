@@ -96,6 +96,32 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const data = updateSettingsSchema.parse(body)
 
+    // Coherence guards — the posture UI can't produce these, but the API is
+    // callable directly. At least one collection path must exist, and the
+    // default mode must be one the allowlist permits.
+    const current = await prisma.platformSettings.findUnique({ where: { id: "default" } })
+    const effective = {
+      offline: data.payOfflineAllowed ?? current?.payOfflineAllowed ?? true,
+      connect: data.payConnectAllowed ?? current?.payConnectAllowed ?? true,
+      platformCollect: data.payPlatformCollectAllowed ?? current?.payPlatformCollectAllowed ?? false,
+      defaultMode: data.payDefaultOnlineMode ?? current?.payDefaultOnlineMode ?? "NONE",
+    }
+    if (!effective.offline && !effective.connect && !effective.platformCollect) {
+      return NextResponse.json(
+        { error: "At least one payment path must be allowed", code: "NO_PAYMENT_PATH" },
+        { status: 400 }
+      )
+    }
+    if (
+      (effective.defaultMode === "CONNECT_DIRECT" && !effective.connect) ||
+      (effective.defaultMode === "PLATFORM_COLLECT" && !effective.platformCollect)
+    ) {
+      return NextResponse.json(
+        { error: "The default online mode must be an allowed mode", code: "DEFAULT_MODE_NOT_ALLOWED" },
+        { status: 400 }
+      )
+    }
+
     const settings = await prisma.platformSettings.upsert({
       where: { id: "default" },
       create: { id: "default", enabledCountries: ["CA"], ...data },

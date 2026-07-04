@@ -15,6 +15,7 @@ import {
   GET as configGet,
   PATCH as configPatch,
 } from "@/app/api/clubs/[id]/payment-config/route"
+import { PATCH as adminSettingsPatch } from "@/app/api/admin/settings/route"
 import { handleStripeEvent } from "@/lib/payments/stripe-webhooks"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
@@ -296,6 +297,28 @@ describe("per-club override API (tri-state)", () => {
     expect((await res.json()).code).toBe("MODE_NOT_ALLOWED")
   })
 
+  it("online-required with a single rail elevates an unchosen mode to that rail", async () => {
+    // ONLINE_PLATFORM posture: offline banned, only platform-collect allowed.
+    await setPolicy({
+      payOfflineAllowed: false,
+      payConnectAllowed: false,
+      payPlatformCollectAllowed: true,
+      payDefaultOnlineMode: "NONE",
+    })
+    await prisma.paymentConfig.update({ where: { tenantId }, data: { onlineMode: null } })
+
+    actAs(ownerId)
+    const res = await configGet(
+      jsonRequest(`/api/clubs/${tenantId}/payment-config`, undefined, "GET") as any,
+      { params: { id: tenantId } }
+    )
+    const body = await res.json()
+    // NONE would strand the club unpayable — the resolver must elevate.
+    expect(body.config.onlineMode).toBe("PLATFORM_COLLECT")
+
+    await setPolicy(POLICY_DEFAULTS)
+  })
+
   it("GET exposes resolved config, raw overrides, and the platform policy", async () => {
     actAs(ownerId)
     const res = await configGet(
@@ -307,5 +330,47 @@ describe("per-club override API (tri-state)", () => {
     expect(body.config.onlineMode).toBeDefined()
     expect(body.policy.payOfflineAllowed).toBe(true)
     expect(body.overrides).not.toBeUndefined()
+  })
+})
+
+describe("coherence guards (the posture UI can't produce these; the raw API must refuse them)", () => {
+  it("platform policy cannot turn every payment path off", async () => {
+    await prisma.userRole.create({ data: { userId: ownerId, role: "PlatformAdmin" } })
+    actAs(ownerId)
+
+    const res = await adminSettingsPatch(
+      jsonRequest("/api/admin/settings", {
+        payOfflineAllowed: false,
+        payConnectAllowed: false,
+        payPlatformCollectAllowed: false,
+      }, "PATCH") as any
+    )
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe("NO_PAYMENT_PATH")
+  })
+
+  it("platform default mode must be an allowed mode", async () => {
+    actAs(ownerId)
+    const res = await adminSettingsPatch(
+      jsonRequest("/api/admin/settings", {
+        payConnectAllowed: false,
+        payDefaultOnlineMode: "CONNECT_DIRECT",
+      }, "PATCH") as any
+    )
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe("DEFAULT_MODE_NOT_ALLOWED")
+  })
+
+  it("a per-club override cannot remove every payment path either", async () => {
+    actAs(ownerId)
+    const res = await patchConfig({
+      offlineAllowed: false,
+      connectAllowed: false,
+      platformCollectAllowed: false,
+    })
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe("NO_PAYMENT_PATH")
+
+    await prisma.userRole.deleteMany({ where: { userId: ownerId, role: "PlatformAdmin" } })
   })
 })

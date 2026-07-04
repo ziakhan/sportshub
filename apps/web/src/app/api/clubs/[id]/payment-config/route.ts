@@ -136,6 +136,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           ? adminData.platformCollectAllowed ?? policy.payPlatformCollectAllowed
           : current.platformCollectAllowed,
     }
+    if (!effective.offlineAllowed && !effective.connectAllowed && !effective.platformCollectAllowed) {
+      return NextResponse.json(
+        { error: "At least one payment path must be allowed for this club", code: "NO_PAYMENT_PATH" },
+        { status: 400 }
+      )
+    }
     if (clubData.offlineEnabled === true && !effective.offlineAllowed) {
       return NextResponse.json(
         { error: "Offline payments are not enabled for this club", code: "MODE_NOT_ALLOWED" },

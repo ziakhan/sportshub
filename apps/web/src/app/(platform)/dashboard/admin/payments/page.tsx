@@ -1,25 +1,18 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { POSTURES, postureByKey, postureFromFlags } from "@/lib/payments/postures"
 
 /**
  * Platform payments console (admin only).
- * Top: the platform-wide policy every merchant inherits — which collection
- * modes exist, the default mode, the default fee.
- * Bottom: per-club overrides — force a club through the platform, force them
- * onto their own Stripe account, allow a choice, ban offline, override fees.
+ * One "collection posture" dropdown per level replaces the raw allow-flags —
+ * only the 7 coherent combinations are offerable, so conflicting states
+ * (nothing allowed, dead-end defaults) can't be configured at all.
+ * Top: the platform-wide posture + fee every club inherits.
+ * Bottom: per-club posture override (or "Platform default") + fee override.
  */
 
 type OnlineMode = "NONE" | "CONNECT_DIRECT" | "PLATFORM_COLLECT"
-
-interface PolicyForm {
-  payOfflineAllowed: boolean
-  payConnectAllowed: boolean
-  payPlatformCollectAllowed: boolean
-  payDefaultOnlineMode: OnlineMode
-  payPlatformFeeBps: number
-  payPlatformFeeFlat: number
-}
 
 interface ClubHit {
   id: string
@@ -49,47 +42,48 @@ interface ResolvedConfig {
 }
 
 const MODE_LABELS: Record<OnlineMode, string> = {
-  NONE: "No online payments",
-  CONNECT_DIRECT: "Club's own Stripe account",
-  PLATFORM_COLLECT: "Platform collects (instant transfer to club)",
+  NONE: "no online payments",
+  CONNECT_DIRECT: "club's own Stripe account",
+  PLATFORM_COLLECT: "through the platform (instant transfer)",
 }
 
-function TriState({
-  label,
-  hint,
+const INHERIT = "INHERIT"
+
+function PostureSelect({
   value,
-  inheritedValue,
   onChange,
+  includeInherit,
+  inheritLabel,
 }: {
-  label: string
-  hint?: string
-  value: boolean | null
-  inheritedValue: boolean
-  onChange: (v: boolean | null) => void
+  value: string
+  onChange: (key: string) => void
+  includeInherit?: boolean
+  inheritLabel?: string
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <div>
-        <div className="text-ink-900 text-sm font-medium">{label}</div>
-        {hint && <div className="text-ink-500 text-xs">{hint}</div>}
-      </div>
-      <select
-        value={value === null ? "inherit" : value ? "yes" : "no"}
-        onChange={(e) =>
-          onChange(e.target.value === "inherit" ? null : e.target.value === "yes")
-        }
-        className="border-ink-200 rounded-md border px-2 py-1.5 text-sm"
-      >
-        <option value="inherit">Platform default ({inheritedValue ? "yes" : "no"})</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="border-ink-200 w-full rounded-md border px-3 py-2 text-sm"
+    >
+      {includeInherit && <option value={INHERIT}>{inheritLabel ?? "Platform default"}</option>}
+      {POSTURES.map((p) => (
+        <option key={p.key} value={p.key}>
+          {p.label}
+        </option>
+      ))}
+    </select>
   )
 }
 
+function feePreview(bps: number, flat: number) {
+  return `${(bps / 100).toFixed(2)}% + $${flat.toFixed(2)}`
+}
+
 export default function AdminPaymentsPage() {
-  const [policy, setPolicy] = useState<PolicyForm | null>(null)
+  const [postureKey, setPostureKey] = useState<string | null>(null)
+  const [feeBps, setFeeBps] = useState(0)
+  const [feeFlat, setFeeFlat] = useState(0)
   const [savingPolicy, setSavingPolicy] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -97,23 +91,25 @@ export default function AdminPaymentsPage() {
   const [search, setSearch] = useState("")
   const [hits, setHits] = useState<ClubHit[]>([])
   const [club, setClub] = useState<ClubHit | null>(null)
-  const [overrides, setOverrides] = useState<Overrides | null>(null)
+  const [clubPosture, setClubPosture] = useState<string>(INHERIT)
+  const [clubFeeBps, setClubFeeBps] = useState<number | null>(null)
+  const [clubFeeFlat, setClubFeeFlat] = useState<number | null>(null)
   const [resolved, setResolved] = useState<ResolvedConfig | null>(null)
   const [savingClub, setSavingClub] = useState(false)
 
   useEffect(() => {
     fetch("/api/admin/settings")
       .then((res) => res.json())
-      .then((data) =>
-        setPolicy({
-          payOfflineAllowed: data.payOfflineAllowed ?? true,
-          payConnectAllowed: data.payConnectAllowed ?? true,
-          payPlatformCollectAllowed: data.payPlatformCollectAllowed ?? false,
-          payDefaultOnlineMode: data.payDefaultOnlineMode ?? "NONE",
-          payPlatformFeeBps: data.payPlatformFeeBps ?? 0,
-          payPlatformFeeFlat: data.payPlatformFeeFlat ?? 0,
+      .then((data) => {
+        const posture = postureFromFlags({
+          offlineAllowed: data.payOfflineAllowed ?? true,
+          connectAllowed: data.payConnectAllowed ?? true,
+          platformCollectAllowed: data.payPlatformCollectAllowed ?? false,
         })
-      )
+        setPostureKey(posture?.key ?? "OFFLINE_CONNECT")
+        setFeeBps(data.payPlatformFeeBps ?? 0)
+        setFeeFlat(data.payPlatformFeeFlat ?? 0)
+      })
       .catch(() => setMessage({ type: "error", text: "Failed to load payment policy" }))
   }, [])
 
@@ -126,9 +122,7 @@ export default function AdminPaymentsPage() {
       fetch(`/api/admin/clubs?search=${encodeURIComponent(search.trim())}`)
         .then((res) => res.json())
         .then((data) =>
-          setHits(
-            (data.clubs || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug }))
-          )
+          setHits((data.clubs || []).map((c: any) => ({ id: c.id, name: c.name, slug: c.slug })))
         )
         .catch(() => setHits([]))
     }, 300)
@@ -139,7 +133,6 @@ export default function AdminPaymentsPage() {
     setClub(hit)
     setHits([])
     setSearch("")
-    setOverrides(null)
     setResolved(null)
     const res = await fetch(`/api/clubs/${hit.id}/payment-config`)
     const data = await res.json()
@@ -148,25 +141,42 @@ export default function AdminPaymentsPage() {
       return
     }
     setResolved(data.config)
-    setOverrides(
-      data.overrides ?? {
-        offlineAllowed: null,
-        connectAllowed: null,
-        platformCollectAllowed: null,
-        platformFeeBps: null,
-        platformFeeFlat: null,
-      }
-    )
+    const o: Overrides | null = data.overrides
+    const hasFlagOverride =
+      o &&
+      (o.offlineAllowed !== null || o.connectAllowed !== null || o.platformCollectAllowed !== null)
+    if (hasFlagOverride && o) {
+      // Partially-overridden rows (possible via the raw API) resolve against
+      // the platform policy before matching a posture.
+      const posture = postureFromFlags({
+        offlineAllowed: o.offlineAllowed ?? data.policy.payOfflineAllowed,
+        connectAllowed: o.connectAllowed ?? data.policy.payConnectAllowed,
+        platformCollectAllowed: o.platformCollectAllowed ?? data.policy.payPlatformCollectAllowed,
+      })
+      setClubPosture(posture?.key ?? INHERIT)
+    } else {
+      setClubPosture(INHERIT)
+    }
+    setClubFeeBps(o?.platformFeeBps ?? null)
+    setClubFeeFlat(o?.platformFeeFlat ?? null)
   }, [])
 
   async function savePolicy() {
-    if (!policy) return
+    const posture = postureKey ? postureByKey(postureKey) : null
+    if (!posture) return
     setSavingPolicy(true)
     setMessage(null)
     const res = await fetch("/api/admin/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(policy),
+      body: JSON.stringify({
+        payOfflineAllowed: posture.offlineAllowed,
+        payConnectAllowed: posture.connectAllowed,
+        payPlatformCollectAllowed: posture.platformCollectAllowed,
+        payDefaultOnlineMode: posture.defaultOnlineMode,
+        payPlatformFeeBps: feeBps,
+        payPlatformFeeFlat: feeFlat,
+      }),
     })
     const data = await res.json().catch(() => ({}))
     setSavingPolicy(false)
@@ -179,30 +189,37 @@ export default function AdminPaymentsPage() {
   }
 
   async function saveClub() {
-    if (!club || !overrides) return
+    if (!club) return
+    const posture = clubPosture === INHERIT ? null : postureByKey(clubPosture)
     setSavingClub(true)
     setMessage(null)
     const res = await fetch(`/api/clubs/${club.id}/payment-config`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(overrides),
+      body: JSON.stringify({
+        offlineAllowed: posture ? posture.offlineAllowed : null,
+        connectAllowed: posture ? posture.connectAllowed : null,
+        platformCollectAllowed: posture ? posture.platformCollectAllowed : null,
+        platformFeeBps: clubFeeBps,
+        platformFeeFlat: clubFeeFlat,
+      }),
     })
     const data = await res.json().catch(() => ({}))
     setSavingClub(false)
     if (!res.ok) {
-      setMessage({ type: "error", text: data.error || "Failed to save club overrides" })
+      setMessage({ type: "error", text: data.error || "Failed to save club override" })
       return
     }
     setResolved(data.config)
-    setMessage({ type: "success", text: `Saved payment overrides for ${club.name}` })
+    setMessage({ type: "success", text: `Saved payment policy for ${club.name}` })
   }
 
-  if (!policy) {
+  if (!postureKey) {
     return <div className="text-ink-500 py-12 text-center">Loading payment policy...</div>
   }
 
-  const feePreview = (bps: number, flat: number) =>
-    `${(bps / 100).toFixed(2)}% + $${flat.toFixed(2)}`
+  const platformPosture = postureByKey(postureKey)
+  const selectedClubPosture = clubPosture === INHERIT ? null : postureByKey(clubPosture)
 
   return (
     <div className="space-y-5">
@@ -212,7 +229,7 @@ export default function AdminPaymentsPage() {
         </div>
         <h2 className="font-display text-ink-950 text-2xl font-bold">Payments</h2>
         <p className="text-ink-500 mt-1 text-sm">
-          The platform-wide policy every club inherits, and per-club overrides.
+          How money is collected — one policy every club inherits, overridable per club.
         </p>
       </div>
 
@@ -224,63 +241,28 @@ export default function AdminPaymentsPage() {
         </div>
       )}
 
-      {/* Platform defaults */}
+      {/* Platform posture */}
       <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-        <h3 className="font-display text-ink-950 text-lg font-semibold">Platform defaults</h3>
+        <h3 className="font-display text-ink-950 text-lg font-semibold">Platform policy</h3>
         <p className="text-ink-500 mb-4 mt-1 text-sm">
-          Applies to every club unless overridden below. Turning a mode off here turns it off for
-          all clubs without an explicit override.
+          Applies to every club without an override below.
         </p>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm text-ink-700">
-              <input
-                type="checkbox"
-                checked={policy.payOfflineAllowed}
-                onChange={(e) => setPolicy({ ...policy, payOfflineAllowed: e.target.checked })}
-              />
-              Allow offline payments (cash / e-transfer / pay later)
-            </label>
-            <label className="flex items-center gap-2 text-sm text-ink-700">
-              <input
-                type="checkbox"
-                checked={policy.payConnectAllowed}
-                onChange={(e) => setPolicy({ ...policy, payConnectAllowed: e.target.checked })}
-              />
-              Allow clubs to use their own Stripe account
-            </label>
-            <label className="flex items-center gap-2 text-sm text-ink-700">
-              <input
-                type="checkbox"
-                checked={policy.payPlatformCollectAllowed}
-                onChange={(e) =>
-                  setPolicy({ ...policy, payPlatformCollectAllowed: e.target.checked })
-                }
-              />
-              Allow platform-collected payments (instant transfer to club)
-            </label>
-
-            <div className="pt-2">
-              <label className="text-ink-700 text-sm font-medium">Default online mode</label>
-              <select
-                value={policy.payDefaultOnlineMode}
-                onChange={(e) =>
-                  setPolicy({ ...policy, payDefaultOnlineMode: e.target.value as OnlineMode })
-                }
-                className="border-ink-200 mt-1 w-full rounded-md border px-3 py-2 text-sm"
-              >
-                {(Object.keys(MODE_LABELS) as OnlineMode[]).map((m) => (
-                  <option key={m} value={m}>
-                    {MODE_LABELS[m]}
-                  </option>
-                ))}
-              </select>
-              <p className="text-ink-500 mt-1 text-xs">
-                What a club starts on before making a choice. If the mode isn&apos;t allowed above,
-                it falls back automatically.
-              </p>
+          <div>
+            <label className="text-ink-700 text-sm font-medium">Collection posture</label>
+            <div className="mt-1">
+              <PostureSelect value={postureKey} onChange={setPostureKey} />
             </div>
+            {platformPosture && (
+              <p className="text-ink-500 mt-1 text-xs">{platformPosture.hint}</p>
+            )}
+            {platformPosture && !platformPosture.offlineAllowed && (
+              <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-700">
+                Online required: clubs cannot collect anything until they finish Stripe
+                onboarding{platformPosture.defaultOnlineMode === "NONE" ? " and pick a rail" : ""}.
+              </p>
+            )}
           </div>
 
           <div>
@@ -293,13 +275,8 @@ export default function AdminPaymentsPage() {
                 min={0}
                 max={50}
                 step={0.05}
-                value={policy.payPlatformFeeBps / 100}
-                onChange={(e) =>
-                  setPolicy({
-                    ...policy,
-                    payPlatformFeeBps: Math.round(Number(e.target.value || 0) * 100),
-                  })
-                }
+                value={feeBps / 100}
+                onChange={(e) => setFeeBps(Math.round(Number(e.target.value || 0) * 100))}
                 className="border-ink-200 w-24 rounded-md border px-3 py-2 text-sm"
               />
               <span className="text-ink-500 text-sm">% +</span>
@@ -307,17 +284,14 @@ export default function AdminPaymentsPage() {
                 type="number"
                 min={0}
                 step={0.25}
-                value={policy.payPlatformFeeFlat}
-                onChange={(e) =>
-                  setPolicy({ ...policy, payPlatformFeeFlat: Number(e.target.value || 0) })
-                }
+                value={feeFlat}
+                onChange={(e) => setFeeFlat(Number(e.target.value || 0))}
                 className="border-ink-200 w-24 rounded-md border px-3 py-2 text-sm"
               />
               <span className="text-ink-500 text-sm">$ per charge</span>
             </div>
             <p className="text-ink-500 mt-1 text-xs">
-              Current default: {feePreview(policy.payPlatformFeeBps, policy.payPlatformFeeFlat)}.
-              Applied in both online modes — skimmed from direct charges, withheld from
+              Current: {feePreview(feeBps, feeFlat)}. Skimmed from direct charges, withheld from
               platform-collected transfers.
             </p>
           </div>
@@ -329,18 +303,18 @@ export default function AdminPaymentsPage() {
             disabled={savingPolicy}
             className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {savingPolicy ? "Saving..." : "Save platform defaults"}
+            {savingPolicy ? "Saving..." : "Save platform policy"}
           </button>
         </div>
       </div>
 
-      {/* Per-club overrides */}
+      {/* Per-club override */}
       <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-        <h3 className="font-display text-ink-950 text-lg font-semibold">Per-club overrides</h3>
+        <h3 className="font-display text-ink-950 text-lg font-semibold">Per-club policy</h3>
         <p className="text-ink-500 mb-4 mt-1 text-sm">
-          Force a club through the platform, force them onto their own Stripe account, give them
-          the choice, ban offline, or set a custom fee. &ldquo;Platform default&rdquo; means the
-          club follows the settings above.
+          Give one club a different posture — force them through the platform, require their own
+          Stripe account, or hand them the choice. &ldquo;Platform default&rdquo; follows the
+          policy above.
         </p>
 
         <div className="relative max-w-md">
@@ -367,68 +341,62 @@ export default function AdminPaymentsPage() {
           )}
         </div>
 
-        {club && overrides && resolved && (
+        {club && resolved && (
           <div className="border-ink-100 bg-ink-50 mt-4 rounded-xl border p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h4 className="text-ink-950 font-semibold">{club.name}</h4>
               <div className="text-ink-500 text-xs">
-                Effective mode: <span className="font-medium">{MODE_LABELS[resolved.onlineMode]}</span>
-                {" · "}Stripe account:{" "}
+                Currently: <span className="font-medium">{MODE_LABELS[resolved.onlineMode]}</span>
+                {resolved.offlineAllowed && resolved.offlineEnabled ? " + offline" : ""}
+                {" · "}Stripe:{" "}
                 <span className="font-medium">
                   {resolved.stripeAccountStatus === "active"
-                    ? "active"
+                    ? "connected"
                     : resolved.stripeAccountId
                       ? "onboarding incomplete"
-                      : "none"}
+                      : "not set up"}
                 </span>
               </div>
             </div>
 
-            <div className="divide-ink-100 mt-2 divide-y">
-              <TriState
-                label="Offline payments allowed"
-                hint="No = every payment to this club must go through the online rail"
-                value={overrides.offlineAllowed}
-                inheritedValue={policy.payOfflineAllowed}
-                onChange={(v) => setOverrides({ ...overrides, offlineAllowed: v })}
-              />
-              <TriState
-                label="Own Stripe account allowed"
-                hint="No + platform-collect yes = club is forced through the platform"
-                value={overrides.connectAllowed}
-                inheritedValue={policy.payConnectAllowed}
-                onChange={(v) => setOverrides({ ...overrides, connectAllowed: v })}
-              />
-              <TriState
-                label="Platform-collect allowed"
-                hint="Yes + own-account no = forced; both yes = the club picks"
-                value={overrides.platformCollectAllowed}
-                inheritedValue={policy.payPlatformCollectAllowed}
-                onChange={(v) => setOverrides({ ...overrides, platformCollectAllowed: v })}
-              />
-
-              <div className="flex items-center justify-between gap-3 py-2">
-                <div>
-                  <div className="text-ink-900 text-sm font-medium">Platform fee override</div>
-                  <div className="text-ink-500 text-xs">
-                    Blank = platform default (
-                    {feePreview(policy.payPlatformFeeBps, policy.payPlatformFeeFlat)})
-                  </div>
+            <div className="mt-3 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-ink-700 text-sm font-medium">Posture for this club</label>
+                <div className="mt-1">
+                  <PostureSelect
+                    value={clubPosture}
+                    onChange={setClubPosture}
+                    includeInherit
+                    inheritLabel={`Platform default (${platformPosture?.label ?? "…"})`}
+                  />
                 </div>
-                <div className="flex items-center gap-2">
+                {selectedClubPosture && (
+                  <p className="text-ink-500 mt-1 text-xs">{selectedClubPosture.hint}</p>
+                )}
+                {selectedClubPosture &&
+                  !selectedClubPosture.offlineAllowed &&
+                  resolved.stripeAccountStatus !== "active" && (
+                    <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-700">
+                      This club hasn&apos;t finished Stripe onboarding — with offline banned,
+                      nobody can pay them until they do.
+                    </p>
+                  )}
+              </div>
+
+              <div>
+                <label className="text-ink-700 text-sm font-medium">Fee override</label>
+                <div className="mt-1 flex items-center gap-2">
                   <input
                     type="number"
                     min={0}
                     max={50}
                     step={0.05}
                     placeholder="%"
-                    value={overrides.platformFeeBps === null ? "" : overrides.platformFeeBps / 100}
+                    value={clubFeeBps === null ? "" : clubFeeBps / 100}
                     onChange={(e) =>
-                      setOverrides({
-                        ...overrides,
-                        platformFeeBps:
-                          e.target.value === "" ? null : Math.round(Number(e.target.value) * 100),
-                      })
+                      setClubFeeBps(
+                        e.target.value === "" ? null : Math.round(Number(e.target.value) * 100)
+                      )
                     }
                     className="border-ink-200 w-20 rounded-md border px-2 py-1.5 text-sm"
                   />
@@ -438,17 +406,17 @@ export default function AdminPaymentsPage() {
                     min={0}
                     step={0.25}
                     placeholder="$"
-                    value={overrides.platformFeeFlat === null ? "" : overrides.platformFeeFlat}
+                    value={clubFeeFlat === null ? "" : clubFeeFlat}
                     onChange={(e) =>
-                      setOverrides({
-                        ...overrides,
-                        platformFeeFlat: e.target.value === "" ? null : Number(e.target.value),
-                      })
+                      setClubFeeFlat(e.target.value === "" ? null : Number(e.target.value))
                     }
                     className="border-ink-200 w-20 rounded-md border px-2 py-1.5 text-sm"
                   />
                   <span className="text-ink-500 text-xs">$</span>
                 </div>
+                <p className="text-ink-500 mt-1 text-xs">
+                  Blank = platform default ({feePreview(feeBps, feeFlat)})
+                </p>
               </div>
             </div>
 
@@ -458,7 +426,7 @@ export default function AdminPaymentsPage() {
                 disabled={savingClub}
                 className="bg-ink-900 hover:bg-ink-800 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
-                {savingClub ? "Saving..." : "Save club overrides"}
+                {savingClub ? "Saving..." : "Save club policy"}
               </button>
             </div>
           </div>
