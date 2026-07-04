@@ -40,6 +40,8 @@ model User {
   tryoutSignups       TryoutSignup[]
   paymentsAsPayer     Payment[]           @relation("PayerPayments")
   paymentsAsPayee     Payment[]           @relation("PayeePayments")
+  paymentsRecorded    Payment[]           @relation("RecordedPayments")
+  obligations         PaymentObligation[] @relation("UserObligations")
   auditLogs           AuditLog[]
   reviews             Review[]            @relation("ReviewsWritten")
   reviewsReceived     Review[]            @relation("ReviewsReceived")
@@ -162,6 +164,9 @@ model Tenant {
   venues           Venue[]
   announcements    Announcement[]
   payments         Payment[]         @relation("TenantPayments")
+  paymentConfig    PaymentConfig?
+  payerObligations PaymentObligation[] @relation("TenantPayerObligations")
+  payeeObligations PaymentObligation[] @relation("TenantPayeeObligations")
   reviews          Review[]
   staffInvitations StaffInvitation[]
   playerInvitations PlayerInvitation[]
@@ -564,6 +569,8 @@ model League {
   seasons Season[]
   staff   UserRole[]
   reviews Review[]
+  paymentConfig PaymentConfig?
+  obligations   PaymentObligation[] @relation("LeagueObligations")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1128,6 +1135,15 @@ model Payment {
   paymentType PaymentType
   description String?
 
+  // Obligation thread + rail (docs/payments-design.md)
+  obligationId String?
+  obligation   PaymentObligation? @relation(fields: [obligationId], references: [id])
+  method       PaymentMethod      @default(STRIPE)
+  // Club staff who recorded an offline payment (cash/e-transfer bookkeeping)
+  recordedById String?
+  recordedBy   User?   @relation("RecordedPayments", fields: [recordedById], references: [id])
+  note         String?
+
   // Relationships
   tryoutSignup   TryoutSignup?
   teamSubmission TeamSubmission?
@@ -1146,6 +1162,7 @@ model Payment {
   @@index([paymentType])
   @@index([dueDate])
   @@index([relatedOfferId])
+  @@index([obligationId])
 }
 
 enum PaymentStatus {
@@ -1164,6 +1181,106 @@ enum PaymentType {
   TOURNAMENT_FEE
   REFEREE_FEE
   OTHER
+}
+
+enum PaymentMethod {
+  STRIPE
+  CASH
+  ETRANSFER
+  CHEQUE
+  OTHER
+}
+
+enum OnlineMode {
+  NONE
+  CONNECT_DIRECT
+  PLATFORM_COLLECT
+}
+
+enum ObligationStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  WAIVED
+  CANCELLED
+  REFUNDED
+}
+
+// Per-merchant payment configuration (docs/payments-design.md). A merchant is
+// a club (tenant) today; leagues join in phase 2 — hence the polymorphic
+// owner, exactly one of tenantId/leagueId set. Platform admin controls the
+// allowlist + fees; the merchant chooses within it.
+model PaymentConfig {
+  id       String  @id @default(uuid())
+  tenantId String? @unique
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leagueId String? @unique
+  league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  // Platform-admin allowlist
+  offlineAllowed         Boolean @default(true)
+  connectAllowed         Boolean @default(true)
+  platformCollectAllowed Boolean @default(false)
+
+  // Merchant choices (validated against the allowlist)
+  offlineEnabled Boolean         @default(true)
+  offlineMethods PaymentMethod[] @default([CASH, ETRANSFER])
+  onlineMode     OnlineMode      @default(NONE)
+
+  // Platform fee on ONLINE charges through this merchant
+  platformFeeBps  Int     @default(0)
+  platformFeeFlat Decimal @default(0) @db.Decimal(10, 2)
+
+  // Stripe Connect (stage 2)
+  stripeAccountId     String? @unique
+  stripeAccountStatus String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// What is OWED, separate from the payments made against it. One obligation
+// per product row (tryout signup, offer, camp signup, …); payments — cash or
+// Stripe alike — reference it, so offline and online revenue report the same.
+model PaymentObligation {
+  id String @id @default(uuid())
+
+  // Payer — a person (family flows) or a club (club→league/club flows, phase 2)
+  payerUserId   String?
+  payerUser     User?   @relation("UserObligations", fields: [payerUserId], references: [id])
+  payerTenantId String?
+  payerTenant   Tenant? @relation("TenantPayerObligations", fields: [payerTenantId], references: [id])
+
+  // Merchant (payee) — club now, league in phase 2
+  payeeTenantId String?
+  payeeTenant   Tenant? @relation("TenantPayeeObligations", fields: [payeeTenantId], references: [id])
+  payeeLeagueId String?
+  payeeLeague   League? @relation("LeagueObligations", fields: [payeeLeagueId], references: [id])
+
+  // What it's for
+  referenceType String // "TryoutSignup" | "Offer" | "CampSignup" | "HouseLeagueSignup" | "TeamSubmission" | "TournamentEntry"
+  referenceId   String
+  description   String
+
+  amount   Decimal @db.Decimal(10, 2)
+  currency String  @default("CAD")
+
+  status  ObligationStatus @default(PENDING)
+  dueDate DateTime?
+
+  waivedAt     DateTime?
+  waivedReason String?
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([referenceType, referenceId])
+  @@index([payeeTenantId, status])
+  @@index([payeeLeagueId, status])
+  @@index([payerUserId, status])
+  @@index([payerTenantId, status])
 }
 
 // ============================================

@@ -82,7 +82,13 @@ export async function getSessionUserId(): Promise<{
 
   // Check for impersonation
   if (isPlatformAdmin) {
-    const impersonateUid = cookies().get(IMPERSONATE_COOKIE)?.value
+    let impersonateUid: string | undefined
+    try {
+      impersonateUid = cookies().get(IMPERSONATE_COOKIE)?.value
+    } catch {
+      // cookies() throws outside a request scope (e.g. direct handler
+      // invocation in integration tests) — treat as "not impersonating".
+    }
     if (impersonateUid) {
       return {
         userId: impersonateUid, // Return impersonated user's ID

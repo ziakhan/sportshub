@@ -25,6 +25,7 @@ import { getServerSession } from "next-auth"
  *   1107 seasons/[id]/teams/[teamId]
  *   1108 player-invitations
  *   1109 offers (cross-club recruiting audit)
+ *   1110 obligations / offline payments
  */
 
 export function actAs(userId: string | null): void {

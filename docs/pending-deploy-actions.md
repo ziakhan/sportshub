@@ -170,3 +170,20 @@ partial unique = one PENDING invitation per (teamId, lower(invitedEmail)).
 
 ### Step 3 — Nothing to backfill
 New table; no existing rows to migrate.
+
+## ⬜ 6. Payments phase-1 schema (offline mode) — July 2026
+
+Ships with the payments phase-1 commit. Same `prisma db push` covers entries
+#4/#5/#6 if executed together.
+
+### Step 1 — Push schema
+```bash
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate
+```
+Expect: new tables `PaymentConfig` + `PaymentObligation`; `Payment` gains
+`obligationId`/`method`/`recordedById`/`note`; new enums `PaymentMethod`,
+`OnlineMode`, `ObligationStatus`. All additive — Payment table had 0 rows.
+
+### Step 2 — Nothing to backfill
+New tables + nullable columns; no data migration.

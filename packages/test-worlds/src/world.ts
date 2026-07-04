@@ -132,6 +132,27 @@ export async function destroyWorld(ctx: WorldContext): Promise<void> {
   await prisma.offer.deleteMany({
     where: { OR: [{ player: { parentId: { in: userIds } } }, { team: { tenantId: { in: tenantIds } } }] },
   })
+  // Payments before obligations (obligationId is SetNull but explicit order
+  // reads clearer); both before users/tenants (required payer FKs).
+  await prisma.payment.deleteMany({
+    where: {
+      OR: [
+        { payerId: { in: userIds } },
+        { tenantId: { in: tenantIds } },
+        { recordedById: { in: userIds } },
+      ],
+    },
+  })
+  await prisma.paymentObligation.deleteMany({
+    where: {
+      OR: [
+        { payerUserId: { in: userIds } },
+        { payerTenantId: { in: tenantIds } },
+        { payeeTenantId: { in: tenantIds } },
+        { payeeLeagueId: { in: leagueIds } },
+      ],
+    },
+  })
   await prisma.tryoutSignup.deleteMany({
     where: { OR: [{ userId: { in: userIds } }, { tryout: { tenantId: { in: tenantIds } } }] },
   })

@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { tryoutSignupSchema } from "@/lib/validations/tryout-signup"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
+import { cancelObligationIfUnpaid, ensureObligation } from "@/lib/payments/obligations"
 
 export const dynamic = "force-dynamic"
 
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const tryout = await prisma.tryout.findUnique({
       where: { id: params.id },
       include: {
+        tenant: { select: { currency: true } },
         _count: {
           select: {
             signups: {
@@ -106,25 +108,42 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const isFree = Number(tryout.fee) === 0
     const status = isFree ? "CONFIRMED" : "PENDING"
 
-    const signup = await prisma.tryoutSignup.create({
-      data: {
-        tryoutId: params.id,
-        userId: user.id,
-        // Identity thread to the real Player (schema hardening WS4.3) —
-        // name/age remain a point-in-time snapshot.
-        playerId: player.id,
-        playerName,
-        playerAge,
-        playerGender: player.gender,
-        status,
-        notes: data.notes || null,
-      },
-      select: {
-        id: true,
-        playerName: true,
-        status: true,
-        createdAt: true,
-      },
+    const signup = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.tryoutSignup.create({
+        data: {
+          tryoutId: params.id,
+          userId: user.id,
+          // Identity thread to the real Player (schema hardening WS4.3) —
+          // name/age remain a point-in-time snapshot.
+          playerId: player.id,
+          playerName,
+          playerAge,
+          playerGender: player.gender,
+          status,
+          notes: data.notes || null,
+        },
+        select: {
+          id: true,
+          playerName: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+
+      // Paid tryout → the signup owes the club its fee. How it gets paid
+      // (at the door, e-transfer, or Stripe later) is the club's payment
+      // config; the obligation is the same either way.
+      await ensureObligation(tx, {
+        payerUserId: user.id,
+        payeeTenantId: tryout.tenantId,
+        referenceType: "TryoutSignup",
+        referenceId: created.id,
+        description: `Tryout fee — ${tryout.title} (${playerName})`,
+        amount: Number(tryout.fee),
+        currency: tryout.tenant.currency,
+      })
+
+      return created
     })
 
     // Notify the club that a new signup arrived (gap: signups were silent).
@@ -204,13 +223,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Signup is already cancelled" }, { status: 400 })
     }
 
-    const updated = await prisma.tryoutSignup.update({
-      where: { id: signupId },
-      data: { status: "CANCELLED" },
-      select: {
-        id: true,
-        status: true,
-      },
+    const updated = await prisma.$transaction(async (tx: any) => {
+      const cancelled = await tx.tryoutSignup.update({
+        where: { id: signupId },
+        data: { status: "CANCELLED" },
+        select: {
+          id: true,
+          status: true,
+        },
+      })
+      // The unpaid fee dies with the signup; paid ones keep their obligation
+      // (refund is the club's explicit action).
+      await cancelObligationIfUnpaid(tx, "TryoutSignup", signupId)
+      return cancelled
     })
 
     return NextResponse.json(updated)
