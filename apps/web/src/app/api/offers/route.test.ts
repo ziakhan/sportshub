@@ -26,6 +26,9 @@ vi.mock("@youthbasketballhub/db", () => ({
     offer: {
       findFirst: vi.fn(),
     },
+    teamPlayer: {
+      findMany: vi.fn(),
+    },
     offerTemplate: {
       findFirst: vi.fn(),
     },
@@ -57,6 +60,7 @@ describe("POST /api/offers", () => {
       lastName: "Lee",
     } as any)
     vi.mocked(prisma.offer.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.teamPlayer.findMany).mockResolvedValue([])
   })
 
   it("creates an offer, updates signup status, creates a notification, and sends email", async () => {

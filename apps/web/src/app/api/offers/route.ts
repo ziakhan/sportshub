@@ -9,6 +9,7 @@ import {
   resolveOfferTerms,
   OfferCreationError,
 } from "@/lib/offers/create-offer"
+import { audit } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
 
@@ -84,6 +85,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 })
     }
 
+    // G2 (owner decision): offering to a player rostered at ANOTHER club is a
+    // recruiting feature — allowed, but audited per offer.
+    const rivalRosterSpots = await prisma.teamPlayer.findMany({
+      where: {
+        playerId: data.playerId,
+        status: "ACTIVE",
+        team: { tenantId: { not: team.tenantId } },
+      },
+      select: {
+        team: {
+          select: { id: true, name: true, tenantId: true, tenant: { select: { name: true } } },
+        },
+      },
+    })
+
     // Resolve terms (template + explicit overrides) via the shared service
     const { terms } = await resolveOfferTerms(prisma, {
       tenantId: team.tenantId,
@@ -101,8 +117,8 @@ export async function POST(request: NextRequest) {
     })
 
     // Create the offer + notification + update signup status in a transaction
-    const result = await prisma.$transaction(async (tx: any) =>
-      createOfferForPlayer(tx, {
+    const result = await prisma.$transaction(async (tx: any) => {
+      const offer = await createOfferForPlayer(tx, {
         teamId: data.teamId,
         playerId: data.playerId,
         tryoutSignupId: data.tryoutSignupId,
@@ -114,7 +130,29 @@ export async function POST(request: NextRequest) {
         clubName: team.tenant.name,
         teamName: team.name,
       })
-    )
+
+      if (rivalRosterSpots.length > 0) {
+        await audit(tx, {
+          actorId: sessionInfo.realUserId,
+          actorRole: user.roles[0].role,
+          action: "OFFER_CROSS_CLUB_RECRUIT",
+          resource: "Offer",
+          resourceId: offer.id,
+          tenantId: team.tenantId,
+          metadata: {
+            playerId: player.id,
+            recruitedFrom: rivalRosterSpots.map((s: any) => ({
+              tenantId: s.team.tenantId,
+              clubName: s.team.tenant.name,
+              teamName: s.team.name,
+            })),
+          },
+          request,
+        })
+      }
+
+      return offer
+    })
     const offerData = terms
 
     // Send email notification (don't fail if email fails)

@@ -58,7 +58,7 @@ needs product work before its scenario can pass.
 | # | Edge case (owner's list) | Today's behavior | Verdict |
 |---|---|---|---|
 | G1 | Finalize with too few players | Any count ≥1 finalizes; **no min/max roster concept** on Team | ✅ **SHIPPED 2026-07-03** — finalize warns below 5 ACTIVE players (teams/[id]/finalize); L2 tested |
-| G2 | Offer to arbitrary player | Any club can offer to **any Player in the system** (incl. other clubs'), no tryout required | ⚠️ decide: feature (recruiting) or restrict; at minimum test + audit-log it |
+| G2 | Offer to arbitrary player | Any club can offer to **any Player in the system** (incl. other clubs'), no tryout required | ✅ **SHIPPED 2026-07-03** — kept as a recruiting feature per owner decision §6.1; offers to players ACTIVE on another club's roster write an `OFFER_CROSS_CLUB_RECRUIT` AuditLog row (actor, tenant, recruitedFrom metadata) inside the offer tx; parent notification unchanged (fires for every offer); L2 tested (offers suite, seed 1109) |
 | G3 | Invite player by email (owner: "manually add players / tell them to sign up") | **No path exists** — StaffInvitation is staff-only; offers need an existing playerId | ✅ **SHIPPED 2026-07-03** — PlayerInvitation model + `/api/player-invitations` (create/list/respond/revoke); attaches at creation for existing accounts (F8) or at signup (F6/F7); accept converts into a real Offer via shared `lib/offers/create-offer.ts`; expiry + revoke (F9); L2 tested (18 cases). Neon: pending-deploy-actions entry #5 |
 | G4 | Team withdraws mid-season | Status flips; **scheduled games linger untouched; no season-lock guard** | ✅ **SHIPPED 2026-07-03** — withdraw cancels FUTURE games atomically (played kept), notifies opponent clubs; locked seasons block approve/reject (409 SEASON_LOCKED), withdraw stays open; L2 tested |
 | G5 | Division with 1 team | Scheduler silently drops it (games=0); finalize passes unless cross-division on | ✅ **SHIPPED 2026-07-03** — finalize preflight warns per ungrouped <2-team division; also H17: zero approved teams now BLOCKS; L2 tested |
@@ -116,7 +116,7 @@ Status: ✅ covered by existing runner · ☐ uncovered (needs test + world) ·
 |---|---|---|---|
 | E1–E11 | Phase-7 set (templates, send, overrides, accept+gear, decline, expire-on-read, re-offer, pipeline) | — | ✅ |
 | E12 | Offer to player of ANOTHER club (cross-tenant recruiting) | 2-club world | ⚠️ G2 — test current behavior + decide |
-| E13 | Offer to player with no tryout signup (direct offer) | offer-only world | ☐ L2 (allowed today — assert + audit) |
+| E13 | Offer to player with no tryout signup (direct offer) | offer-only world | ✅ L2 (works on purpose; cross-club variant audited — G2) |
 | E14 | Accept after team finalized (late accept) | finalized world | ☐ L2 |
 | E15 | Parallel accept+decline race on same offer | — | ☐ L2 concurrency |
 | E16 | Expiry boundary: accept at expiresAt ± 1s | relative-date world | ☐ L1/L2 |

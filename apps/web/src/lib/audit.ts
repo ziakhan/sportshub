@@ -26,6 +26,9 @@ export type AuditAction =
   | "CLUB_OWNERSHIP_TRANSFER"
   | "USER_UPDATE"
   | "USER_STATUS_CHANGE"
+  // G2 (owner decision): cross-club recruiting offers are allowed on purpose,
+  // but every one leaves a trail.
+  | "OFFER_CROSS_CLUB_RECRUIT"
 
 interface AuditEntry {
   /** The REAL actor (for impersonation events: the admin, not the target). */
