@@ -84,7 +84,9 @@ jobs:
         run: npx prisma db push --schema=prisma/schema.prisma --skip-generate
 
       - name: Apply integrity SQL
-        run: npx prisma db execute --schema=prisma/schema.prisma --file prisma/sql/2026-07-authz-integrity.sql
+        run: |
+          npx prisma db execute --schema=prisma/schema.prisma --file prisma/sql/2026-07-authz-integrity.sql
+          npx prisma db execute --schema=prisma/schema.prisma --file prisma/sql/2026-07-player-invitation.sql
 
       - name: World-builder smoke
         run: npx tsx scripts/smoke-worlds.ts
@@ -92,3 +94,74 @@ jobs:
       - name: Integration tests
         run: npm run test:integration
         working-directory: apps/web
+
+  e2e-gate:
+    name: E2E gate (phase runners vs next start)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sportshub_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/sportshub_e2e
+      NEXTAUTH_SECRET: ci-e2e-secret
+      NEXTAUTH_URL: http://localhost:3000
+      BASE_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run db:generate
+
+      - name: Push schema + integrity SQL
+        run: |
+          npx prisma db push --schema=prisma/schema.prisma --skip-generate
+          npx prisma db execute --schema=prisma/schema.prisma --file prisma/sql/2026-07-authz-integrity.sql
+          npx prisma db execute --schema=prisma/schema.prisma --file prisma/sql/2026-07-player-invitation.sql
+
+      - name: Build
+        run: npm run build
+
+      - name: Start server
+        run: |
+          npx next start &
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:3000 && exit 0
+            sleep 1
+          done
+          echo "server did not come up" && exit 1
+        working-directory: apps/web
+
+      - name: Phase runners
+        run: |
+          set -e
+          for runner in scripts/test-phase-1.ts scripts/test-phase-2.ts scripts/test-phase-3.ts \
+                        scripts/test-phase-4.ts scripts/test-phase-5.ts scripts/test-phase-6.ts \
+                        scripts/test-phase-7.ts scripts/test-phase-8.ts scripts/test-phase-9-15.ts \
+                        scripts/test-role-actions.ts; do
+            echo "::group::$runner"
+            npx tsx "$runner"
+            echo "::endgroup::"
+          done
