@@ -691,7 +691,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     return (
       <button
         onClick={() => tapAction(type, made)}
-        className={`rounded-xl px-2 py-3 text-sm font-bold transition ${
+        className={`min-w-0 flex-1 rounded-xl px-1 py-3 text-sm font-bold transition max-md:py-2.5 ${
           active ? "ring-play-500 ring-2 " : ""
         }${tone}`}
       >
@@ -704,14 +704,154 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const subsRoster = subsTeamId === game.homeTeam.id ? rosters.home : rosters.away
   const subsOnFloor = subsTeamId === game.homeTeam.id ? fold.onFloor.home : fold.onFloor.away
 
+  // Phone layout: a team's five as ONE row of jersey chips (numbers only —
+  // names live in the subs sheet). Collapses ~300px of tiles into ~110px so
+  // the whole console fits a phone screen without scrolling.
+  const chipRow = (teamId: string, side: "home" | "away") => {
+    const ids = side === "home" ? fold.onFloor.home : fold.onFloor.away
+    const accent = side === "home" ? "border-b-play-400" : "border-b-court-400"
+    const subsTone =
+      side === "home"
+        ? "border-play-300 text-play-700 hover:bg-play-50"
+        : "border-court-300 text-court-700 hover:bg-court-50"
+    return (
+      <div className="flex items-stretch gap-1.5">
+        <button
+          onClick={() => {
+            setSubsFor(teamId)
+            setStagedSwaps([])
+            setSubOut(null)
+          }}
+          aria-label={`Substitutions — ${side === "home" ? game.homeTeam.name : game.awayTeam.name}`}
+          className={`w-11 shrink-0 rounded-xl border-2 border-dashed text-base font-bold ${subsTone}`}
+        >
+          ⇄
+        </button>
+        {ids.map((pid) => {
+          const line = fold.players[pid]
+          const selected = pendingPlayer?.playerId === pid
+          return (
+            <button
+              key={pid}
+              onClick={() => tapPlayer(pid, teamId)}
+              disabled={line?.fouledOut}
+              className={`relative h-12 min-w-0 flex-1 rounded-xl border border-b-4 bg-white text-lg font-bold text-ink-950 ${accent} ${
+                selected
+                  ? "border-play-500 bg-play-100"
+                  : pendingAction
+                    ? "border-play-300 animate-pulse"
+                    : "border-ink-200"
+              } ${line?.fouledOut ? "opacity-40" : ""}`}
+            >
+              {jerseyOf(pid)}
+              <span className="text-ink-400 absolute right-1 top-0 text-[8px]">
+                {"•".repeat(Math.min(line?.fouls ?? 0, FOUL_LIMIT))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const actionPad = (
+    <div className="sticky bottom-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-sm">
+      {/* Status strip: FIXED height, content swaps — never inserts.
+          Hosts the idle hint, the two-tap hint, or the chain prompt. */}
+      <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1 max-md:min-h-[46px]">
+        {chain ? (
+          <>
+            <span className="text-play-800 whitespace-nowrap text-xs font-semibold">
+              {chain.kind === "assist" ? "Assist by?" : "Rebound by?"}
+            </span>
+            {(chain.kind === "assist"
+              ? (chain.shooterTeamId === game.homeTeam.id
+                  ? fold.onFloor.home
+                  : fold.onFloor.away
+                ).filter((pid) => pid !== chain.shooterId)
+              : [...fold.onFloor.home, ...fold.onFloor.away]
+            ).map((pid) => {
+              const teamId = fold.onFloor.home.includes(pid)
+                ? game.homeTeam.id
+                : game.awayTeam.id
+              return (
+                <button
+                  key={pid}
+                  onClick={() => chainPick(pid, teamId)}
+                  className={`min-h-[44px] min-w-[44px] shrink-0 rounded-lg border bg-white text-sm font-bold ${
+                    teamId === game.homeTeam.id
+                      ? "border-play-300 text-play-800 hover:bg-play-50"
+                      : "border-court-300 text-court-800 hover:bg-court-50"
+                  }`}
+                >
+                  #{jerseyOf(pid)}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => setChain(null)}
+              className="text-ink-500 min-h-[44px] whitespace-nowrap px-2 text-xs hover:underline"
+            >
+              skip
+            </button>
+          </>
+        ) : pendingAction ? (
+          <p className="text-play-700 text-xs font-semibold">
+            {EVENT_LABELS[pendingAction.type]}
+            {pendingAction.made === false ? " miss" : ""} — now tap the player
+          </p>
+        ) : pendingPlayer ? (
+          <p className="text-play-700 text-xs font-semibold">
+            #{jerseyOf(pendingPlayer.playerId)} — now tap an action
+          </p>
+        ) : (
+          <p className="text-ink-400 text-xs">
+            Tap an action, then a player — either order works
+          </p>
+        )}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {actionBtn("+2", "SCORE_2PT", true, "bg-court-600 text-white hover:bg-court-700")}
+        {actionBtn("+3", "SCORE_3PT", true, "bg-court-600 text-white hover:bg-court-700")}
+        {actionBtn("FT ✓", "SCORE_FT", true, "bg-court-500 text-white hover:bg-court-600")}
+        {showMisses && (
+          <>
+            {actionBtn("2 ✗", "SCORE_2PT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
+            {actionBtn("3 ✗", "SCORE_3PT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
+            {actionBtn("FT ✗", "SCORE_FT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
+          </>
+        )}
+      </div>
+      <div className="mt-1.5 flex gap-1.5">
+        {showMisses && (
+          <>
+            {actionBtn("REB", "REBOUND", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
+            {actionBtn("AST", "ASSIST", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
+          </>
+        )}
+        {showHustle && (
+          <>
+            {actionBtn("STL", "STEAL", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
+            {actionBtn("BLK", "BLOCK", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
+            {actionBtn("TO", "TURNOVER", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
+          </>
+        )}
+        {actionBtn("FOUL", "FOUL", undefined, "bg-amber-100 text-amber-800 hover:bg-amber-200")}
+      </div>
+    </div>
+  )
+
   return (
-    <div className="mx-auto max-w-6xl p-3">
+    <div className="mx-auto max-w-6xl p-3 max-md:p-2">
       {/* header */}
-      <div className="rounded-2xl border border-ink-200 bg-white p-3">
+      <div className="rounded-2xl border border-ink-200 bg-white p-3 max-md:p-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1 text-left">
-            <div className="text-ink-500 truncate text-[11px]">{game.homeTeam.name}</div>
-            <div className="text-ink-950 text-3xl font-bold">{fold.homeScore}</div>
+            <div className="truncate text-[11px]">
+              <span className="bg-play-400 mr-1 inline-block h-2 w-2 rounded-full align-middle" />
+              <span className="text-ink-500">{game.homeTeam.name}</span>
+            </div>
+            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl">{fold.homeScore}</div>
             <div className="text-ink-400 text-[10px]">
               fouls {fold.teamFouls[game.homeTeam.id]?.[fold.period] ?? 0}
               {(fold.teamFouls[game.homeTeam.id]?.[fold.period] ?? 0) >= 7 ? " · bonus" : ""}
@@ -775,8 +915,11 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             </div>
           </div>
           <div className="min-w-0 flex-1 text-right">
-            <div className="text-ink-500 truncate text-[11px]">{game.awayTeam.name}</div>
-            <div className="text-ink-950 text-3xl font-bold">{fold.awayScore}</div>
+            <div className="truncate text-[11px]">
+              <span className="text-ink-500">{game.awayTeam.name}</span>
+              <span className="bg-court-400 ml-1 inline-block h-2 w-2 rounded-full align-middle" />
+            </div>
+            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl">{fold.awayScore}</div>
             <div className="text-ink-400 text-[10px]">
               fouls {fold.teamFouls[game.awayTeam.id]?.[fold.period] ?? 0}
               {(fold.teamFouls[game.awayTeam.id]?.[fold.period] ?? 0) >= 7 ? " · bonus" : ""}
@@ -786,13 +929,13 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
 
         {/* ticker + sync + undo */}
         <div className="border-ink-100 mt-2 flex items-center justify-between gap-2 border-t pt-2">
-          <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+          <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
             {lastThree.map((e) => (
               <button
                 key={(e as QueuedEvent).clientEventId}
                 onClick={() => voidEvent((e as QueuedEvent).clientEventId)}
                 title="Tap to undo this event"
-                className="bg-ink-50 text-ink-600 hover:bg-hoop-50 hover:text-hoop-700 rounded-full px-2 py-0.5 text-[10px]"
+                className="bg-ink-50 text-ink-600 hover:bg-hoop-50 hover:text-hoop-700 shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[10px]"
               >
                 {e.eventType.startsWith("SCORE") && e.made === false ? "miss " : ""}
                 {EVENT_LABELS[e.eventType]}
@@ -845,98 +988,18 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         </div>
       </div>
 
-      {/* main grid */}
-      <div className="mt-2 grid grid-cols-[1fr_2fr_1fr] gap-2 max-md:grid-cols-2">
-        <div className="max-md:order-1">{floorTiles(game.homeTeam.id, "home")}</div>
+      {/* phone: jersey-chip rows + pad — everything on one screen */}
+      <div className="mt-2 space-y-1.5 md:hidden">
+        {chipRow(game.homeTeam.id, "home")}
+        {chipRow(game.awayTeam.id, "away")}
+        {actionPad}
+      </div>
 
-        <div className="max-md:order-3 max-md:col-span-2">
-          <div className="sticky bottom-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-sm">
-            {/* Status strip: FIXED height, content swaps — never inserts.
-                Hosts the idle hint, the two-tap hint, or the chain prompt. */}
-            <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1">
-              {chain ? (
-                <>
-                  <span className="text-play-800 whitespace-nowrap text-xs font-semibold">
-                    {chain.kind === "assist" ? "Assist by?" : "Rebound by?"}
-                  </span>
-                  {(chain.kind === "assist"
-                    ? (chain.shooterTeamId === game.homeTeam.id
-                        ? fold.onFloor.home
-                        : fold.onFloor.away
-                      ).filter((pid) => pid !== chain.shooterId)
-                    : [...fold.onFloor.home, ...fold.onFloor.away]
-                  ).map((pid) => {
-                    const teamId = fold.onFloor.home.includes(pid)
-                      ? game.homeTeam.id
-                      : game.awayTeam.id
-                    return (
-                      <button
-                        key={pid}
-                        onClick={() => chainPick(pid, teamId)}
-                        className={`min-h-[44px] min-w-[44px] rounded-lg border bg-white text-sm font-bold ${
-                          teamId === game.homeTeam.id
-                            ? "border-play-300 text-play-800 hover:bg-play-50"
-                            : "border-court-300 text-court-800 hover:bg-court-50"
-                        }`}
-                      >
-                        #{jerseyOf(pid)}
-                      </button>
-                    )
-                  })}
-                  <button
-                    onClick={() => setChain(null)}
-                    className="text-ink-500 min-h-[44px] whitespace-nowrap px-2 text-xs hover:underline"
-                  >
-                    skip
-                  </button>
-                </>
-              ) : pendingAction ? (
-                <p className="text-play-700 text-xs font-semibold">
-                  {EVENT_LABELS[pendingAction.type]}
-                  {pendingAction.made === false ? " miss" : ""} — now tap the player
-                </p>
-              ) : pendingPlayer ? (
-                <p className="text-play-700 text-xs font-semibold">
-                  #{jerseyOf(pendingPlayer.playerId)} — now tap an action
-                </p>
-              ) : (
-                <p className="text-ink-400 text-xs">
-                  Tap an action, then a player — either order works
-                </p>
-              )}
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              {actionBtn("+2", "SCORE_2PT", true, "bg-court-600 text-white hover:bg-court-700")}
-              {actionBtn("+3", "SCORE_3PT", true, "bg-court-600 text-white hover:bg-court-700")}
-              {actionBtn("FT ✓", "SCORE_FT", true, "bg-court-500 text-white hover:bg-court-600")}
-              {showMisses && (
-                <>
-                  {actionBtn("2 ✗", "SCORE_2PT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
-                  {actionBtn("3 ✗", "SCORE_3PT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
-                  {actionBtn("FT ✗", "SCORE_FT", false, "bg-ink-100 text-ink-700 hover:bg-ink-200")}
-                </>
-              )}
-            </div>
-            <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-              {showMisses && (
-                <>
-                  {actionBtn("REB", "REBOUND", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
-                  {actionBtn("AST", "ASSIST", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
-                </>
-              )}
-              {showHustle && (
-                <>
-                  {actionBtn("STL", "STEAL", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
-                  {actionBtn("BLK", "BLOCK", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
-                  {actionBtn("TO", "TURNOVER", undefined, "bg-play-50 text-play-700 hover:bg-play-100")}
-                </>
-              )}
-              {actionBtn("FOUL", "FOUL", undefined, "bg-amber-100 text-amber-800 hover:bg-amber-200")}
-            </div>
-          </div>
-        </div>
-
-        <div className="max-md:order-2">{floorTiles(game.awayTeam.id, "away")}</div>
+      {/* tablet / desktop: scorer's-table three-column layout */}
+      <div className="mt-2 hidden gap-2 md:grid md:grid-cols-[1fr_2fr_1fr]">
+        <div>{floorTiles(game.homeTeam.id, "home")}</div>
+        <div>{actionPad}</div>
+        <div>{floorTiles(game.awayTeam.id, "away")}</div>
       </div>
 
       {/* subs panel */}
