@@ -43,7 +43,9 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   roster w/ DNP/ABSENT rows. Pre-game ATTENDANCE step shipped (roll call →
   starters; ATTENDANCE events) — season stats must use it for games-played
   denominators when built. Public game page = sports-app style (leaders +
-  box/PBP tabs).
+  box/PBP tabs). Server-side PDF: GET /api/scoresheet/[gameId] (pdfkit,
+  landscape, vector marks) — Download button on the sheet page; sheet page
+  is chrome-free in a bare (sheet) layout.
 - Season stat lines + box-score archive on public league/team pages
   (per-game live page + box exist; season AGGREGATES not built)
 - Deferred by owner: scorekeeper assignment (Game.scorekeepers reserved),
@@ -62,6 +64,10 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   leagues) — clustering asserted in tests, not yet human-reviewed
 
 ## 5. Platform / carried over
+- Post-auth deep-link redirect SHIPPED (2026-07-05): middleware keeps query,
+  sign-in/sign-up/onboarding thread callbackUrl, public header AuthLinks.
+  NOT yet covered: in-content sign-in links on product pages (tryout/camp
+  registration CTAs) — audit those to use components/auth-link.tsx
 - Player invitations UI (API shipped G3; no UI)
 - Review system built but hidden (`{false && ...}`) — enable end of season
 - UI redesign D2 (public pages) / D3 (/team/[id] hub) / D5 (nav) / D6
