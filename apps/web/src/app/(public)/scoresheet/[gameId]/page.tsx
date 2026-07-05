@@ -51,6 +51,7 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
         status: "APPROVED",
       },
       select: {
+        teamId: true,
         roster: {
           select: {
             players: {
@@ -79,13 +80,17 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
   const fold = foldEvents(events, { homeTeamId: game.homeTeamId, awayTeamId: game.awayTeamId })
 
   const nameById = new Map<string, { name: string; jersey: string }>()
+  const rosterByTeam = new Map<string, string[]>()
   for (const s of submissions) {
+    const ids: string[] = []
     for (const p of s.roster?.players ?? []) {
       nameById.set(p.playerId, {
         name: `${p.player.firstName} ${p.player.lastName}`.trim(),
         jersey: p.jerseyNumber != null ? String(p.jerseyNumber) : "?",
       })
+      ids.push(p.playerId)
     }
+    rosterByTeam.set(s.teamId, ids)
   }
 
   // Quarter-by-quarter line score from the (non-voided) scoring events
@@ -152,12 +157,46 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
   }
 
   const teamBlock = (teamId: string, teamName: string) => {
-    const lines = Object.values(fold.players)
+    // Real sheets list the WHOLE roster: players with action get their
+    // stat line, present-but-unused players read DNP, absentees ABSENT.
+    const attendance = fold.attendance[teamId]
+    const rosterIds = rosterByTeam.get(teamId) ?? []
+    const foldIds = Object.values(fold.players)
       .filter((l) => l.teamId === teamId)
-      .sort(
-        (a, b) =>
-          Number(nameById.get(a.playerId)?.jersey) - Number(nameById.get(b.playerId)?.jersey)
-      )
+      .map((l) => l.playerId)
+    const allIds = Array.from(new Set([...rosterIds, ...foldIds])).sort(
+      (a, b) => Number(nameById.get(a)?.jersey ?? 999) - Number(nameById.get(b)?.jersey ?? 999)
+    )
+    const emptyLine = (playerId: string) => ({
+      playerId,
+      teamId,
+      points: 0,
+      fgMade2: 0,
+      fgMiss2: 0,
+      fgMade3: 0,
+      fgMiss3: 0,
+      ftMade: 0,
+      ftMiss: 0,
+      offRebounds: 0,
+      defRebounds: 0,
+      assists: 0,
+      steals: 0,
+      blocks: 0,
+      turnovers: 0,
+      fouls: 0,
+      technicalFouls: 0,
+      secondsPlayed: 0,
+      periodsPlayed: 0,
+      onFloor: false,
+      fouledOut: false,
+    })
+    const statusOf = (playerId: string): "played" | "dnp" | "absent" => {
+      if (attendance?.absent.includes(playerId)) return "absent"
+      const l = fold.players[playerId]
+      if (!l || (l.periodsPlayed === 0 && l.points === 0 && l.fouls === 0)) return "dnp"
+      return "played"
+    }
+    const lines = allIds.map((id) => fold.players[id] ?? emptyLine(id))
     const totals = lines.reduce(
       (t, l) => ({
         pts: t.pts + l.points,
@@ -196,28 +235,47 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
           <tbody>
             {lines.map((l) => {
               const info = nameById.get(l.playerId)
+              const status = statusOf(l.playerId)
               return (
-                <tr key={l.playerId} className="border-b border-gray-400">
+                <tr
+                  key={l.playerId}
+                  className={`border-b border-gray-400 ${status === "absent" ? "text-gray-400" : ""}`}
+                >
                   <td className="w-8 py-1 pr-1 font-bold">#{info?.jersey ?? "?"}</td>
                   <td className="max-w-[130px] truncate py-1 pr-1">
                     {info?.name ?? l.playerId.slice(0, 8)}
                   </td>
                   <td className="whitespace-nowrap px-1 text-center font-mono tracking-widest">
-                    {Array.from({ length: FOUL_LIMIT }, (_, i) =>
-                      i < l.fouls ? (i < l.fouls - l.technicalFouls ? "☒" : "Ⓣ") : "☐"
-                    ).join("")}
+                    {status === "played"
+                      ? Array.from({ length: FOUL_LIMIT }, (_, i) =>
+                          i < l.fouls ? (i < l.fouls - l.technicalFouls ? "☒" : "Ⓣ") : "☐"
+                        ).join("")
+                      : ""}
                   </td>
-                  {periods.map((p) => (
+                  {status === "played" ? (
+                    periods.map((p) => (
+                      <td
+                        key={p}
+                        className="min-w-[70px] space-x-0.5 border-l border-gray-400 px-1 text-center align-top leading-tight tracking-wide"
+                      >
+                        {renderMarks(l.playerId, p)}
+                      </td>
+                    ))
+                  ) : (
                     <td
-                      key={p}
-                      className="min-w-[70px] space-x-0.5 border-l border-gray-400 px-1 text-center align-top leading-tight tracking-wide"
+                      colSpan={periods.length}
+                      className="border-l border-gray-400 px-1 text-center text-[10px] font-semibold uppercase tracking-widest text-gray-500"
                     >
-                      {renderMarks(l.playerId, p)}
+                      {status === "absent" ? "Absent" : "DNP — did not play"}
                     </td>
-                  ))}
-                  <td className="border-l border-gray-400 px-1 text-right">{totalRebounds(l)}</td>
-                  <td className="px-1 text-right">{l.assists}</td>
-                  <td className="px-1 text-right font-bold">{l.points}</td>
+                  )}
+                  <td className="border-l border-gray-400 px-1 text-right">
+                    {status === "played" ? totalRebounds(l) : ""}
+                  </td>
+                  <td className="px-1 text-right">{status === "played" ? l.assists : ""}</td>
+                  <td className="px-1 text-right font-bold">
+                    {status === "played" ? l.points : ""}
+                  </td>
                 </tr>
               )
             })}

@@ -181,6 +181,28 @@ describe("foldEvents — lineups and substitutions", () => {
   })
 })
 
+describe("foldEvents — attendance", () => {
+  it("records the roll call per team; absent players never gain a stat line", () => {
+    const r = foldEvents(
+      [
+        ev({
+          eventType: "ATTENDANCE",
+          teamId: HOME,
+          metadata: { presentIds: ["h1", "h2", "h3", "h4", "h5", "h6"], absentIds: ["h7", "h8"] },
+        }),
+        ...lineupBoth(),
+        ev({ eventType: "SCORE_2PT", teamId: HOME, playerId: "h1", made: true }),
+      ],
+      ctx
+    )
+    expect(r.attendance[HOME].present).toHaveLength(6)
+    expect(r.attendance[HOME].absent).toEqual(["h7", "h8"])
+    expect(r.players.h7).toBeUndefined()
+    // present but unused: also no line — the sheet renders DNP from absence of one
+    expect(r.players.h6).toBeUndefined()
+  })
+})
+
 describe("foldEvents — clock and minutes", () => {
   it("credits on-floor seconds between CLOCK_START and CLOCK_STOP", () => {
     const t0 = 1_000_000

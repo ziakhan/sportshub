@@ -22,6 +22,7 @@ export type FoldEventType =
   | "TIMEOUT"
   | "SUBSTITUTION"
   | "LINEUP"
+  | "ATTENDANCE"
   | "PERIOD_START"
   | "PERIOD_END"
   | "CLOCK_START"
@@ -42,6 +43,8 @@ export interface FoldEvent {
     inPlayerId?: string
     outPlayerId?: string
     playerIds?: string[]
+    presentIds?: string[]
+    absentIds?: string[]
     offensive?: boolean
     technical?: boolean
   } | null
@@ -80,6 +83,8 @@ export interface FoldResult {
   /** Seconds remaining in the period at the last clock event (display base). */
   clockSecondsAtLastEvent: number | null
   onFloor: { home: string[]; away: string[] }
+  /** Pre-game roll call per team — feeds DNP/absent on the sheet and season games-played. */
+  attendance: Record<string, { present: string[]; absent: string[] }>
   teamFouls: Record<string, Record<number, number>> // teamId → period → fouls
   players: Record<string, PlayerLine>
   /** Non-voided events, in fold order (play-by-play). */
@@ -111,6 +116,7 @@ export function foldEvents(
     [ctx.homeTeamId]: {},
     [ctx.awayTeamId]: {},
   }
+  const attendance: Record<string, { present: string[]; absent: string[] }> = {}
   const periodsSeen: Record<string, Set<number>> = {}
 
   let homeScore = 0
@@ -200,6 +206,14 @@ export function foldEvents(
         clockRunning = false
         clockRunSinceMs = null
         clockSecondsAtLastEvent = e.clockSeconds ?? clockSecondsAtLastEvent
+        break
+      }
+      case "ATTENDANCE": {
+        if (!teamId) break
+        attendance[teamId] = {
+          present: e.metadata?.presentIds ?? [],
+          absent: e.metadata?.absentIds ?? [],
+        }
         break
       }
       case "LINEUP": {
@@ -304,6 +318,7 @@ export function foldEvents(
       home: Array.from(onFloor[ctx.homeTeamId] ?? []),
       away: Array.from(onFloor[ctx.awayTeamId] ?? []),
     },
+    attendance,
     teamFouls,
     players,
     playByPlay: ordered,

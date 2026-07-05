@@ -115,6 +115,13 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     home: [],
     away: [],
   })
+  // Pre-game roll call: absent players can't start or sub in, show as
+  // ABSENT on the sheet, and won't count a game played in season stats.
+  const [pregameStep, setPregameStep] = useState<"attendance" | "starters">("attendance")
+  const [absentees, setAbsentees] = useState<{ home: Set<string>; away: Set<string> }>({
+    home: new Set(),
+    away: new Set(),
+  })
   const [finalizing, setFinalizing] = useState(false)
   const [finalized, setFinalized] = useState(false)
   const [reviewing, setReviewing] = useState(false)
@@ -529,7 +536,74 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     )
   }
 
-  // ---------- pre-game: pick starting fives ----------
+  // ---------- pre-game: attendance, then starting fives ----------
+  if (!started && pregameStep === "attendance") {
+    const rollCall = (roster: RosterEntry[], key: "home" | "away") => (
+      <div className="flex-1 rounded-xl border border-ink-200 bg-white p-4">
+        <h3 className="text-ink-900 text-sm font-semibold">
+          {key === "home" ? game.homeTeam.name : game.awayTeam.name}
+          <span className="text-ink-400 ml-2 text-xs">
+            {roster.length - absentees[key].size} here · {absentees[key].size} absent
+          </span>
+        </h3>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {roster.map((p) => {
+            const absent = absentees[key].has(p.playerId)
+            return (
+              <button
+                key={p.playerId}
+                onClick={() =>
+                  setAbsentees((prev) => {
+                    const set = new Set(prev[key])
+                    absent ? set.delete(p.playerId) : set.add(p.playerId)
+                    return { ...prev, [key]: set }
+                  })
+                }
+                className={`rounded-lg border p-2 text-left text-xs ${
+                  absent
+                    ? "border-hoop-300 bg-hoop-50 text-hoop-700 line-through"
+                    : "border-court-300 bg-court-50 text-ink-800"
+                }`}
+              >
+                <span className="text-base font-bold">#{p.jerseyNumber ?? "?"}</span>
+                <span className="ml-1.5">{p.name}</span>
+                <span className="block pl-0.5 text-[9px] font-semibold uppercase">
+                  {absent ? "absent" : "present"}
+                </span>
+              </button>
+            )
+          })}
+          {roster.length === 0 && (
+            <p className="text-ink-500 col-span-3 text-xs">No roster found for this team.</p>
+          )}
+        </div>
+      </div>
+    )
+    return (
+      <div className="mx-auto max-w-5xl space-y-4 p-4">
+        <div>
+          <h2 className="text-ink-950 text-lg font-bold">
+            Attendance — {game.homeTeam.name} vs {game.awayTeam.name}
+          </h2>
+          <p className="text-ink-500 text-xs">
+            Everyone starts as present — tap whoever is missing. Absent players show on the
+            scoresheet and don&apos;t count a game played in their season stats.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 md:flex-row">
+          {rollCall(rosters.home, "home")}
+          {rollCall(rosters.away, "away")}
+        </div>
+        <button
+          onClick={() => setPregameStep("starters")}
+          className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-4 py-3 text-sm font-bold text-white"
+        >
+          Continue to starting lineups →
+        </button>
+      </div>
+    )
+  }
+
   if (!started) {
     const pickList = (teamId: string, roster: RosterEntry[], key: "home" | "away") => (
       <div className="flex-1 rounded-xl border border-ink-200 bg-white p-4">
@@ -586,20 +660,49 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           </p>
         </div>
         <div className="flex flex-col gap-4 md:flex-row">
-          {pickList(game.homeTeam.id, rosters.home, "home")}
-          {pickList(game.awayTeam.id, rosters.away, "away")}
+          {pickList(
+            game.homeTeam.id,
+            rosters.home.filter((p) => !absentees.home.has(p.playerId)),
+            "home"
+          )}
+          {pickList(
+            game.awayTeam.id,
+            rosters.away.filter((p) => !absentees.away.has(p.playerId)),
+            "away"
+          )}
         </div>
-        <button
-          disabled={starters.home.length !== 5 || starters.away.length !== 5}
-          onClick={() => {
-            append("LINEUP", { teamId: game.homeTeam.id, metadata: { playerIds: starters.home } })
-            append("LINEUP", { teamId: game.awayTeam.id, metadata: { playerIds: starters.away } })
-            append("PERIOD_START", { period: 1 })
-          }}
-          className="bg-court-600 hover:bg-court-700 w-full rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-40"
-        >
-          Start game
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setPregameStep("attendance")}
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-3 text-sm font-semibold"
+          >
+            ← Attendance
+          </button>
+          <button
+            disabled={starters.home.length !== 5 || starters.away.length !== 5}
+            onClick={() => {
+              for (const side of ["home", "away"] as const) {
+                const teamId = side === "home" ? game.homeTeam.id : game.awayTeam.id
+                const roster = side === "home" ? rosters.home : rosters.away
+                append("ATTENDANCE", {
+                  teamId,
+                  metadata: {
+                    presentIds: roster
+                      .map((p) => p.playerId)
+                      .filter((id) => !absentees[side].has(id)),
+                    absentIds: Array.from(absentees[side]),
+                  },
+                })
+              }
+              append("LINEUP", { teamId: game.homeTeam.id, metadata: { playerIds: starters.home } })
+              append("LINEUP", { teamId: game.awayTeam.id, metadata: { playerIds: starters.away } })
+              append("PERIOD_START", { period: 1 })
+            }}
+            className="bg-court-600 hover:bg-court-700 flex-1 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-40"
+          >
+            Start game
+          </button>
+        </div>
         <p className="text-ink-400 text-center text-xs">
           Fewer than 5 marked players? Tap the ones who are here — you can fix lineups with SUBS
           any time.
@@ -1394,7 +1497,10 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
                 .filter(
                   (r) =>
                     !subsOnFloor.includes(r.playerId) &&
-                    !stagedSwaps.some((s) => s.in === r.playerId)
+                    !stagedSwaps.some((s) => s.in === r.playerId) &&
+                    !(subsTeamId ? fold.attendance[subsTeamId]?.absent ?? [] : []).includes(
+                      r.playerId
+                    )
                 )
                 .map((r) => {
                   const fouledOut = fold.players[r.playerId]?.fouledOut
