@@ -252,3 +252,31 @@ Expect:
 - `RefereeProfile` gains `signoffPinHash String?`.
 
 Nothing to backfill.
+
+## ⬜ 9. Public content & follows schema — July 2026 (P1 content plan)
+
+Ships with the public-site P1 commits (docs/public-site-content-plan.md).
+Same `prisma db push` covers entries #4–#9 if executed together. All
+additive — nothing renamed, nothing dropped:
+- New tables: `Post` (kind/status enums PostKind, PostStatus; unique `slug`),
+  `PostTag` (polymorphic distribution tags → team/tenant/league/game/player,
+  all cascade), `Follow` (userId + one of teamId/tenantId/leagueId; partial
+  compound uniques).
+- New enum `MediaConsent` (UNSET/GRANTED/DENIED); `Player.mediaConsent`
+  defaults UNSET (= public pages show "First L." until a parent opts in).
+- `Announcement.isPublic Boolean @default(false)` + index — nothing becomes
+  public retroactively.
+
+### Post-push steps
+1. **Env (Vercel, optional):** `ANTHROPIC_API_KEY` enables Claude-written
+   recaps (`RECAP_AI_MODEL` overrides the default `claude-opus-4-8`).
+   WITHOUT the key the deterministic template engine writes every recap —
+   fully functional, no action required.
+2. **Backfill recaps** for games completed before this ships:
+   ```bash
+   DATABASE_URL='<neon-url>' npx tsx scripts/backfill-recaps.ts
+   ```
+   Going forward, finalize auto-publishes a recap per game (re-finalize
+   regenerates in place).
+
+Nothing else to backfill.

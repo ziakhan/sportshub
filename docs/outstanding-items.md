@@ -46,8 +46,9 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   box/PBP tabs). Server-side PDF: GET /api/scoresheet/[gameId] (pdfkit,
   landscape, vector marks) — Download button on the sheet page; sheet page
   is chrome-free in a bare (sheet) layout.
-- Season stat lines + box-score archive on public league/team pages
-  (per-game live page + box exist; season AGGREGATES not built)
+- Season stat lines + box-score archive on public league/team pages —
+  ✅ SHIPPED 2026-07-05 with content P1 (lib/stats/season.ts, league
+  leaders page, team/player public pages)
 - Deferred by owner: scorekeeper assignment (Game.scorekeepers reserved),
   referee assignment + sign-off, timeouts, possession arrow, flagrant
   grades, shot locations (→ shot charts, phase-2 AI alignment)
@@ -63,18 +64,30 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
 - Capacity planner: eyeball a realistic schedule (seed-7777 world has
   leagues) — clustering asserted in tests, not yet human-reviewed
 
-## 4b. Public site & content ecosystem — DRAFT plan, DISCUSSION FIRST
-**NEXT SESSION'S OPENING AGENDA: owner wants to discuss the public-pages
-strategy before anything is built.** Draft: docs/public-site-content-plan.md
-- Homepage rebuild (scoreboard strip / news feed / leaders rail / highlights /
-  Your-teams rail + Follow model) — P1 also delivers season stats & leaders
-- Creator content lifecycle (CreatorProfile/Post/MediaAsset/PostTag, media
-  consent for minors, approval queues) — P2
+## 4b. Public site & content ecosystem — PLAN APPROVED, **P1 SHIPPED 2026-07-05**
+Strategy discussion held 2026-07-05; plan approved with amendments (§0) and
+monetization model (§12) — docs/public-site-content-plan.md.
+- ✅ **P1 SHIPPED**: schema (Post/PostTag/Follow/Player.mediaConsent/
+  Announcement.isPublic); season stats lib + league leaders page; AI recaps
+  auto-publish on finalize (Claude via ANTHROPIC_API_KEY, deterministic
+  template fallback — scripts/backfill-recaps.ts for old games); public
+  /team/[id] + /player/[id] pages w/ consent-gated naming; /news feed +
+  post pages; homepage v1 (scoreboard strip, Your-teams rail, news+leaders,
+  density-graceful); Follow model + buttons; /for-clubs + /for-leagues;
+  hasFamilyPass() entitlement stub. Neon runbook entry #9 before deploy.
+- P1 leftovers: announcement form has no "public" checkbox yet (flag exists);
+  RECAP_AI posts orphan if their game is deleted (tags cascade, post stays);
+  /api/live box scores still show full names (authed surfaces do — decide
+  whether the public live page should abbreviate too)
+- P2 next: creator content (org-vetted creators per §0.4 — no open
+  independent signup; photo upload via Vercel Blob + YouTube embeds,
+  approval queues, report/takedown)
 - OWNER VISION: central content hub w/ social syndication (post once →
-  YouTube/Instagram/TikTok/Snapchat via linked accounts) — P3/P4; platform
-  API app-review processes must start early
-- DECISIONS CONFIRMED: minors = first name + initial publicly; AI recaps
-  auto-publish; embeds first then native+syndication
+  YouTube/Instagram/TikTok/Snapchat) — P4 is now the PAID syndication hub;
+  reviews slid to P5; platform API app-reviews must start early
+- MONETIZATION (§12): record free / relationship premium; Family Pass
+  launches P3 (~$10/mo anchor); club-bundled pass via obligation engine;
+  season keepsakes as one-time purchases; syndication hub = paid club add-on
 
 ## 5. Platform / carried over
 - Post-auth deep-link redirect SHIPPED (2026-07-05): middleware keeps query,
@@ -83,8 +96,8 @@ strategy before anything is built.** Draft: docs/public-site-content-plan.md
   registration CTAs) — audit those to use components/auth-link.tsx
 - Player invitations UI (API shipped G3; no UI)
 - Review system built but hidden (`{false && ...}`) — enable end of season
-- UI redesign D2 (public pages) / D3 (/team/[id] hub) / D5 (nav) / D6
-  (content) — docs/design-strategy.md
+- UI redesign D2 (public pages) / D5 (nav) / D6 (content) —
+  docs/design-strategy.md. D3 (/team/[id] hub) ✅ shipped with content P1.
 - Club/venue architecture: 5 owner forks undecided (docs/club-venue-architecture.md)
 - Nightly Playwright job C (optional hardening)
 - Seeder unification fork — largely superseded by scripts/simulate.ts; ASK
