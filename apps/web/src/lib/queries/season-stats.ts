@@ -423,7 +423,19 @@ export const getTeamPublicData = cache(async (teamId: string) => {
 
   const posts = await (prisma as any).post.findMany({
     where: { status: "PUBLISHED", tags: { some: { teamId } } },
-    select: { id: true, title: true, slug: true, body: true, publishedAt: true, kind: true },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      body: true,
+      publishedAt: true,
+      kind: true,
+      media: {
+        select: { type: true, url: true, posterUrl: true },
+        orderBy: { sortOrder: "asc" },
+        take: 1,
+      },
+    },
     orderBy: { publishedAt: "desc" },
     take: 6,
   })

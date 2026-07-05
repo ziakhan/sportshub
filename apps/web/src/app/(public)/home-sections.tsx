@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { format } from "date-fns"
 import { Badge, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
-import type { FeedItem, ScoreboardGame } from "@/lib/queries/content"
+import type { FeedItem, HighlightItem, ScoreboardGame } from "@/lib/queries/content"
 import type { SeasonLeaders } from "@/lib/queries/season-stats"
 import type { YourTeamCard } from "@/lib/queries/home"
 import { playerDisplayName } from "@/lib/privacy/names"
@@ -82,6 +82,7 @@ export function NewsAndLeaders({
                     key={`${item.type}-${item.id}`}
                     title={item.title}
                     excerpt={item.excerpt}
+                    coverUrl={item.coverUrl}
                     dateLabel={format(new Date(item.dateISO), "MMM d")}
                     author={item.author ?? undefined}
                     href={item.href ?? undefined}
@@ -138,6 +139,57 @@ export function NewsAndLeaders({
               </div>
             </div>
           )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function HighlightsRow({ highlights }: { highlights: HighlightItem[] }) {
+  if (highlights.length === 0) return null
+  return (
+    <section className="bg-ink-950 py-14 sm:py-16">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="mb-6 flex items-end justify-between gap-6">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-3">
+              <span className="bg-hoop-400 h-px w-10" />
+              <span className="text-hoop-300 text-xs font-semibold uppercase tracking-[0.2em]">
+                Highlights
+              </span>
+            </div>
+            <h2 className="text-3xl font-bold text-white sm:text-4xl">Watch the best plays</h2>
+          </div>
+          <Link href="/news" className="text-hoop-300 hover:text-hoop-200 hidden text-sm font-semibold sm:inline-flex">
+            All highlights &rarr;
+          </Link>
+        </div>
+        <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+          {highlights.map((h) => (
+            <Link key={h.id} href={`/news/${h.slug}`} className="group w-80 shrink-0">
+              <div className="relative overflow-hidden rounded-2xl">
+                <div className="bg-ink-800 aspect-video w-full">
+                  {h.posterUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={h.posterUrl}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                    />
+                  )}
+                </div>
+                <span className="absolute inset-0 flex items-center justify-center bg-ink-950/20 transition group-hover:bg-ink-950/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                    <svg className="text-ink-950 ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+                </span>
+              </div>
+              <p className="mt-3 line-clamp-2 text-sm font-semibold text-white">{h.title}</p>
+              <p className="text-ink-400 mt-0.5 text-xs">{format(new Date(h.dateISO), "MMM d, yyyy")}</p>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

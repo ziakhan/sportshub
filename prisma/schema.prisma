@@ -1418,13 +1418,43 @@ model Post {
   // RECAP_AI provenance: "template" or the model id that wrote it
   aiModel String?
 
-  tags PostTag[]
+  tags  PostTag[]
+  media MediaAsset[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status, publishedAt])
   @@index([kind, status, publishedAt])
+}
+
+// Media on a post (plan §5/§9): IMAGE covers photos (Vercel Blob in P2;
+// external URLs fine for embeds/demo), VIDEO_EMBED is YouTube/Vimeo (P2 PoC
+// per §11.3), VIDEO_NATIVE arrives with P3 (Mux/Cloudflare Stream).
+model MediaAsset {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  type      MediaAssetType
+  url       String
+  posterUrl String?
+  title     String?
+  durationS Int?
+  width     Int?
+  height    Int?
+  sortOrder Int    @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([type])
+}
+
+enum MediaAssetType {
+  IMAGE
+  VIDEO_EMBED
+  VIDEO_NATIVE
 }
 
 enum PostKind {

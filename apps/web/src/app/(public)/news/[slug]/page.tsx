@@ -24,6 +24,8 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
   const clubTags = post.tags.filter((t: any) => t.tenant)
   const leagueTag = post.tags.find((t: any) => t.league)
   const leagueSeasonId = leagueTag?.league?.seasons?.[0]?.id
+  const images = (post.media ?? []).filter((m: any) => m.type === "IMAGE")
+  const videos = (post.media ?? []).filter((m: any) => m.type === "VIDEO_EMBED")
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -47,11 +49,49 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           {post.title}
         </h1>
 
+        {images[0] && (
+          <div className="bg-ink-100 mb-6 overflow-hidden rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={images[0].url}
+              alt={images[0].title || post.title}
+              className="aspect-[16/9] w-full object-cover"
+            />
+          </div>
+        )}
+
         <div className="text-ink-700 space-y-4 text-base leading-8">
           {post.body.split(/\n{2,}/).map((para: string, i: number) => (
             <p key={i}>{para}</p>
           ))}
         </div>
+
+        {videos.length > 0 && (
+          <div className="mt-6 space-y-4">
+            {videos.map((v: any) => (
+              <div key={v.id} className="bg-ink-950 overflow-hidden rounded-2xl">
+                <iframe
+                  src={v.url}
+                  title={v.title || post.title}
+                  className="aspect-video w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {images.length > 1 && (
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            {images.slice(1).map((img: any) => (
+              <div key={img.id} className="bg-ink-100 overflow-hidden rounded-2xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.url} alt={img.title || ""} className="aspect-[4/3] w-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {post.kind === "RECAP_AI" && (
           <p className="text-ink-400 mt-6 text-xs">

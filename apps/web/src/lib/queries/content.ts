@@ -16,6 +16,14 @@ export interface FeedItem {
   dateISO: string
   href: string | null
   author: string | null
+  coverUrl: string | null
+}
+
+function coverOf(media: Array<{ type: string; url: string; posterUrl: string | null }>): string | null {
+  const image = media.find((m) => m.type === "IMAGE")
+  if (image) return image.url
+  const video = media.find((m) => m.type === "VIDEO_EMBED" && m.posterUrl)
+  return video?.posterUrl ?? null
 }
 
 function excerptOf(body: string, len = 180): string {
@@ -27,7 +35,19 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
   const [posts, announcements] = await Promise.all([
     (prisma as any).post.findMany({
       where: { status: "PUBLISHED" },
-      select: { id: true, kind: true, title: true, slug: true, body: true, publishedAt: true },
+      select: {
+        id: true,
+        kind: true,
+        title: true,
+        slug: true,
+        body: true,
+        publishedAt: true,
+        media: {
+          select: { type: true, url: true, posterUrl: true },
+          orderBy: { sortOrder: "asc" },
+          take: 3,
+        },
+      },
       orderBy: { publishedAt: "desc" },
       take: limit,
     }),
@@ -55,7 +75,8 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
       excerpt: excerptOf(p.body),
       dateISO: new Date(p.publishedAt ?? Date.now()).toISOString(),
       href: `/news/${p.slug}`,
-      author: p.kind === "RECAP_AI" ? "Game recap" : null,
+      author: p.kind === "RECAP_AI" ? "Game recap" : p.kind === "VIDEO" ? "Highlights" : null,
+      coverUrl: coverOf(p.media ?? []),
     })),
     ...announcements.map((a: any): FeedItem => ({
       id: a.id,
@@ -66,6 +87,7 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
       dateISO: new Date(a.createdAt).toISOString(),
       href: a.tenant?.slug ? `/club/${a.tenant.slug}` : null,
       author: [a.tenant?.name, a.team?.name].filter(Boolean).join(" · ") || null,
+      coverUrl: null,
     })),
   ]
 
@@ -154,6 +176,42 @@ export const getScoreboardGames = cache(async (): Promise<ScoreboardGame[]> => {
   ]
 })
 
+export interface HighlightItem {
+  id: string
+  slug: string
+  title: string
+  posterUrl: string | null
+  dateISO: string
+}
+
+/** Recent published VIDEO posts for the homepage highlights reel (plan §3.5). */
+export const getHighlightPosts = cache(async (limit = 8): Promise<HighlightItem[]> => {
+  const posts = await (prisma as any).post.findMany({
+    where: { status: "PUBLISHED", kind: "VIDEO", media: { some: { type: "VIDEO_EMBED" } } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      publishedAt: true,
+      media: {
+        where: { type: "VIDEO_EMBED" },
+        select: { posterUrl: true },
+        orderBy: { sortOrder: "asc" },
+        take: 1,
+      },
+    },
+    orderBy: { publishedAt: "desc" },
+    take: limit,
+  })
+  return posts.map((p: any) => ({
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    posterUrl: p.media[0]?.posterUrl ?? null,
+    dateISO: new Date(p.publishedAt ?? Date.now()).toISOString(),
+  }))
+})
+
 /** A published post by slug, with its tags resolved for entity links. */
 export const getPublishedPost = cache(async (slug: string) => {
   const post = await (prisma as any).post.findUnique({
@@ -166,6 +224,10 @@ export const getPublishedPost = cache(async (slug: string) => {
       status: true,
       publishedAt: true,
       aiModel: true,
+      media: {
+        select: { id: true, type: true, url: true, posterUrl: true, title: true },
+        orderBy: { sortOrder: "asc" },
+      },
       tags: {
         select: {
           gameId: true,

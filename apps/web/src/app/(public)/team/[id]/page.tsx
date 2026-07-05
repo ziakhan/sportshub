@@ -178,6 +178,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                     key={p.id}
                     title={p.title}
                     excerpt={p.body.replace(/\s+/g, " ").slice(0, 140)}
+                    coverUrl={p.media?.[0]?.url ?? p.media?.[0]?.posterUrl ?? null}
                     dateLabel={p.publishedAt ? format(new Date(p.publishedAt), "MMM d, yyyy") : ""}
                     author={p.kind === "RECAP_AI" ? "Game recap" : undefined}
                     href={`/news/${p.slug}`}

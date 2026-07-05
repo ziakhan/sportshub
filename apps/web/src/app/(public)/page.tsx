@@ -2,12 +2,12 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
+import { getHighlightPosts, getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
 import { getFeaturedSeasonId, getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getYourTeams } from "@/lib/queries/home"
 import { getViewerScope } from "@/lib/privacy/participants"
 import { ClubSearch } from "./club-search"
-import { NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
+import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
 
 export const dynamic = "force-dynamic"
 
@@ -78,11 +78,12 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = (session?.user as any)?.id ?? null
 
-  const [{ featuredClubs, upcomingTryouts, stats }, scoreboard, feed, featuredSeasonId, yourTeams, scope] =
+  const [{ featuredClubs, upcomingTryouts, stats }, scoreboard, feed, highlights, featuredSeasonId, yourTeams, scope] =
     await Promise.all([
       getHomePageData(),
       getScoreboardGames(),
       getPublicFeed(8),
+      getHighlightPosts(8),
       getFeaturedSeasonId(),
       userId ? getYourTeams(userId) : Promise.resolve([]),
       getViewerScope(userId),
@@ -162,6 +163,8 @@ export default async function HomePage() {
       </section>
 
       <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
+
+      <HighlightsRow highlights={highlights} />
 
       <section className="bg-white py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">

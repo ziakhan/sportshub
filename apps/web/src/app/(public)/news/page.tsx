@@ -40,6 +40,7 @@ export default async function NewsIndexPage() {
               key={`${item.type}-${item.id}`}
               title={item.title}
               excerpt={item.excerpt}
+              coverUrl={item.coverUrl}
               dateLabel={format(new Date(item.dateISO), "MMM d, yyyy")}
               author={item.author ?? undefined}
               href={item.href ?? undefined}
