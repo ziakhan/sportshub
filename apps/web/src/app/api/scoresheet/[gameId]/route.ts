@@ -264,7 +264,7 @@ export async function GET(_request: NextRequest, { params }: { params: { gameId:
     y += 16
 
     // sign-off
-    if (game.final && game.requireRefereeApproval && !game.refereeName) {
+    if (game.final && game.requireRefereeApproval && !game.refereeName && !game.refereeSignature) {
       ensureRoom(24)
       doc.rect(M, y, PAGE_W - 2 * M, 18).lineWidth(1.2).stroke("black")
       doc.font("Helvetica-Bold").fontSize(9)
@@ -275,13 +275,24 @@ export async function GET(_request: NextRequest, { params }: { params: { gameId:
       y += 26
     }
 
-    ensureRoom(34)
+    ensureRoom(48)
     const sigW = (PAGE_W - 2 * M - 40) / 2
+    // Drawn signature sits on the referee line
+    if (game.refereeSignature?.startsWith("data:image/png;base64,")) {
+      try {
+        const png = Buffer.from(game.refereeSignature.split(",")[1], "base64")
+        doc.image(png, M + 8, y - 12, { fit: [150, 30] })
+      } catch {
+        // unreadable signature image — leave the line blank
+      }
+    }
     doc.moveTo(M, y + 18).lineTo(M + sigW, y + 18).lineWidth(0.8).stroke("black")
     doc.moveTo(PAGE_W - M - sigW, y + 18).lineTo(PAGE_W - M, y + 18).stroke("black")
     doc.font("Helvetica").fontSize(7)
     doc.text(
       `Referee${game.refereeName ? `: ${game.refereeName}` : ""}${
+        game.refereeVerified ? "  [PIN-VERIFIED]" : ""
+      }${
         game.refereeSignedAt ? ` — signed ${new Date(game.refereeSignedAt).toLocaleString()}` : ""
       }`,
       M,

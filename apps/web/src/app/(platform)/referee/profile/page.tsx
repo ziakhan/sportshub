@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { SignoffPinCard } from "@/components/scoring/signoff-pin-card"
 
 const refereeProfileSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]),
@@ -213,6 +214,12 @@ export default function RefereeProfilePage() {
           </div>
         </form>
       </div>
+
+      {hasProfile && (
+        <div className="mt-4">
+          <SignoffPinCard />
+        </div>
+      )}
     </div>
   )
 }

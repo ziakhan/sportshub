@@ -32,12 +32,12 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   leaving the console)
 - Owner layout proposals → add as entries in the console layout registry
   (Rows/Tiles exist; per-device localStorage choice)
-- Referee sign-off is a TYPED name v1; "finalize without approval" escape
-  hatch stamps the sheet. OWNER-SPECED upgrades when referee assignment
-  ships: (a) signature-pad drawing on the console, (b) referee sets a
-  personal PIN/password in their account, enters it in a popup at finalize,
-  verified server-side against the ASSIGNED referee. Email recipients could
-  extend to team Staff/coaches (currently ClubOwner/ClubManager + league owner)
+- Referee sign-off COMPLETE (2026-07-05 overnight): signature pad (canvas →
+  PNG, on sheet + PDF) AND account PIN verified server-side against the
+  ASSIGNED referee (UserRole role=Referee gameId) → refereeVerified badge;
+  typed name + finalize-without-approval escape hatch retained; referees set
+  their PIN on /referee/profile. STILL OPEN: referee-assignment UI (rows are
+  API/seed-only today); email recipients could extend to team Staff/coaches
 - Scoresheet uses scorebook notation (digit marks + FT circles), prints
   LANDSCAPE (Chrome auto; Safari = manual orientation), lists the FULL
   roster w/ DNP/ABSENT rows. Pre-game ATTENDANCE step shipped (roll call →

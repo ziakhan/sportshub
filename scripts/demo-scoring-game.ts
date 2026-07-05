@@ -7,6 +7,7 @@
  *   npx tsx scripts/demo-scoring-game.ts --wipe
  */
 
+import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
 import {
   buildWorld,
@@ -79,6 +80,28 @@ async function main() {
     },
   })
 
+  // Assigned referee with a sign-off PIN (1234) so the PIN approval path is
+  // demoable at finalize.
+  const refUser = await prisma.user.create({
+    data: {
+      email: `referee-1@${world.ctx.runId}.world`,
+      firstName: "Riley",
+      lastName: "Whistler",
+      passwordHash: await bcrypt.hash("TestPass123!", 12),
+      onboardedAt: new Date(),
+    } as any,
+  })
+  await (prisma as any).refereeProfile.create({
+    data: {
+      userId: refUser.id,
+      standardFee: 40,
+      signoffPinHash: await bcrypt.hash("1234", 12),
+    },
+  })
+  await prisma.userRole.create({
+    data: { userId: refUser.id, role: "Referee" as any, gameId: game.id },
+  })
+
   const owner = world.leagues[0].owner
   console.log("")
   console.log("DEMO GAME READY")
@@ -86,6 +109,7 @@ async function main() {
   console.log(`  scorekeeper list:  http://localhost:3000/score`)
   console.log(`  scoring console:   http://localhost:3000/games/${game.id}/score`)
   console.log(`  public live page:  http://localhost:3000/live/${game.id}   (no login needed)`)
+  console.log(`  assigned referee:  ${refUser.email} — sign-off PIN 1234 (for the PIN approval path)`)
   console.log("")
   console.log("Tip: open the console on your iPad/phone via your Mac's LAN IP instead of")
   console.log("localhost, e.g. http://<your-mac-ip>:3000/… on the same wifi.")

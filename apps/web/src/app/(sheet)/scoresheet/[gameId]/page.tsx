@@ -23,6 +23,8 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
       finalizedAt: true,
       refereeName: true,
       refereeSignedAt: true,
+      refereeSignature: true,
+      refereeVerified: true,
       homeTeamId: true,
       awayTeamId: true,
       homeTeam: { select: { name: true } },
@@ -394,15 +396,27 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
         </p>
 
         {/* signatures */}
-        {final && game.season?.league?.requireRefereeApproval && !game.refereeName && (
-          <p className="mt-4 border-2 border-black p-2 text-center text-sm font-bold uppercase">
-            Finalized without referee approval
-          </p>
-        )}
+        {final &&
+          game.season?.league?.requireRefereeApproval &&
+          !game.refereeName &&
+          !game.refereeSignature && (
+            <p className="mt-4 border-2 border-black p-2 text-center text-sm font-bold uppercase">
+              Finalized without referee approval
+            </p>
+          )}
         <div className="mt-6 grid grid-cols-2 gap-8 text-xs">
           <div>
+            {game.refereeSignature && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={game.refereeSignature}
+                alt="Referee signature"
+                className="mb-[-6px] h-12 object-contain object-left"
+              />
+            )}
             <p className="border-t border-black pt-1">
               Referee{game.refereeName ? `: ${game.refereeName}` : ""}
+              {game.refereeVerified ? " ✓ PIN-verified" : ""}
               {game.refereeSignedAt
                 ? ` — signed ${new Date(game.refereeSignedAt).toLocaleString()}`
                 : ""}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { foldEvents, FOUL_LIMIT, type FoldEvent, type FoldEventType } from "@/lib/scoring/fold"
+import { SignaturePad } from "./signature-pad"
 
 /**
  * The scoring console (docs/live-scoring-design.md).
@@ -39,6 +40,7 @@ interface Bootstrap {
   rosters: { home: RosterEntry[]; away: RosterEntry[] }
   events: Array<FoldEvent & { clientEventId: string | null }>
   lock: { sessionId: string | null; user: string | null; at: string | null }
+  referees: Array<{ userId: string; name: string; hasPin: boolean }>
   me: string
 }
 
@@ -127,6 +129,10 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const [reviewing, setReviewing] = useState(false)
   const [showBox, setShowBox] = useState(false)
   const [refereeName, setRefereeName] = useState("")
+  const [refereeSignature, setRefereeSignature] = useState<string | null>(null)
+  const [refereePin, setRefereePin] = useState("")
+  const [refereeUserId, setRefereeUserId] = useState<string | null>(null)
+  const [approvalMode, setApprovalMode] = useState<"sign" | "pin">("sign")
   const [finalizeError, setFinalizeError] = useState<string | null>(null)
   const [clockDisplay, setClockDisplay] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -754,7 +760,12 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
 
   // ---------- review / finalize ----------
   if (reviewing) {
-    const needsReferee = config.requireRefereeApproval && refereeName.trim().length < 2
+    const pinReferees = boot.referees.filter((r) => r.hasPin)
+    const pinReady = !!refereeUserId && refereePin.length >= 4
+    const hasApproval =
+      (approvalMode === "pin" && pinReady) ||
+      (approvalMode === "sign" && (!!refereeSignature || refereeName.trim().length >= 2))
+    const needsReferee = config.requireRefereeApproval && !hasApproval
     return (
       <div className="mx-auto max-w-5xl space-y-4 p-4">
         <h2 className="text-ink-950 text-center text-lg font-bold">
@@ -765,20 +776,78 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           {boxTable(game.awayTeam.id, game.awayTeam.name)}
         </div>
 
-        {config.requireRefereeApproval && (
-          <div className="border-amber-300 bg-amber-50 rounded-xl border p-3">
-            <label className="text-amber-800 text-xs font-semibold">
-              Referee sign-off (required by this league) — referee types their name to approve
-              this scoresheet:
-            </label>
-            <input
-              type="text"
-              value={refereeName}
-              onChange={(e) => setRefereeName(e.target.value)}
-              placeholder="Referee's full name"
-              className="border-amber-300 mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm"
-            />
-            {needsReferee && (
+        <div className="border-amber-300 bg-amber-50 rounded-xl border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-amber-800 text-xs font-semibold">
+              Referee approval
+              {config.requireRefereeApproval ? " (required by this league)" : " (optional)"}
+            </p>
+            {pinReferees.length > 0 && (
+              <div className="flex rounded-lg bg-white p-0.5">
+                {(
+                  [
+                    ["sign", "Signature"],
+                    ["pin", "Referee PIN"],
+                  ] as const
+                ).map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    onClick={() => setApprovalMode(mode)}
+                    className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
+                      approvalMode === mode ? "bg-amber-100 text-amber-900" : "text-ink-500"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {approvalMode === "pin" && pinReferees.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              <p className="text-ink-600 text-xs">
+                The assigned referee enters their personal PIN — verified against their account,
+                the strongest form of approval.
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {pinReferees.map((r) => (
+                  <button
+                    key={r.userId}
+                    onClick={() => setRefereeUserId(r.userId)}
+                    className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
+                      refereeUserId === r.userId
+                        ? "border-amber-500 bg-amber-100 text-amber-900"
+                        : "border-ink-200 bg-white text-ink-700"
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={refereePin}
+                onChange={(e) => setRefereePin(e.target.value)}
+                placeholder="Referee PIN"
+                className="border-amber-300 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          ) : (
+            <div className="mt-2 space-y-2">
+              <SignaturePad onChange={setRefereeSignature} />
+              <input
+                type="text"
+                value={refereeName}
+                onChange={(e) => setRefereeName(e.target.value)}
+                placeholder="Referee's printed name (optional with a signature)"
+                className="border-amber-300 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          )}
+
+          {config.requireRefereeApproval && needsReferee && (
               <button
                 disabled={finalizing}
                 onClick={async () => {
@@ -814,7 +883,6 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               </button>
             )}
           </div>
-        )}
         {finalizeError && (
           <p className="border-hoop-200 bg-hoop-50 text-hoop-700 rounded-xl border p-3 text-sm">
             {finalizeError}
@@ -841,12 +909,18 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
                 await new Promise((r) => setTimeout(r, 800))
                 await syncTick()
               }
+              const payload: Record<string, unknown> = {}
+              if (approvalMode === "pin" && refereeUserId && refereePin) {
+                payload.refereeUserId = refereeUserId
+                payload.refereePin = refereePin
+              } else {
+                if (refereeName.trim()) payload.refereeName = refereeName.trim()
+                if (refereeSignature) payload.refereeSignature = refereeSignature
+              }
               const res = await fetch(`/api/games/${gameId}/finalize`, {
                 method: "POST",
                 headers: { "content-type": "application/json" },
-                body: JSON.stringify(
-                  refereeName.trim() ? { refereeName: refereeName.trim() } : {}
-                ),
+                body: JSON.stringify(payload),
               })
               setFinalizing(false)
               if (res.ok) {

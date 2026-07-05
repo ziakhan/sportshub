@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import bcrypt from "bcryptjs"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
 import { sendEmail } from "@/lib/email"
@@ -9,12 +10,21 @@ import { sendEmail } from "@/lib/email"
 export const dynamic = "force-dynamic"
 
 const finalizeSchema = z.object({
-  // Referee signature (typed name at the table) — required when the league
-  // demands sign-off, like signing the paper sheet.
+  // Referee approval, three strengths (docs/live-scoring-design.md):
+  //  1. PIN — refereeUserId + refereePin, verified against the ASSIGNED
+  //     referee's account hash → refereeVerified=true (strongest)
+  //  2. Drawn signature (data-URL PNG from the pad) and/or typed name
+  //  3. withoutReferee — explicit escape hatch; the sheet is stamped
+  //     "finalized without referee approval". Sign-off gates the stamp,
+  //     never the game.
   refereeName: z.string().trim().min(2).max(120).optional(),
-  // Explicit escape hatch: the referee left / can't sign. The game still
-  // finalizes but the scoresheet is stamped "finalized without referee
-  // approval" — sign-off can gate the stamp, never the game.
+  refereeSignature: z
+    .string()
+    .regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/)
+    .max(400_000)
+    .optional(),
+  refereeUserId: z.string().optional(),
+  refereePin: z.string().min(4).max(32).optional(),
   withoutReferee: z.boolean().default(false),
 })
 
@@ -72,10 +82,40 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { refereeName, withoutReferee } = finalizeSchema.parse(body ?? {})
+    const { refereeName, refereeSignature, refereeUserId, refereePin, withoutReferee } =
+      finalizeSchema.parse(body ?? {})
+
+    // PIN path: verify against the assigned referee's account
+    let verifiedRefereeName: string | null = null
+    if (refereeUserId && refereePin) {
+      const assignment = await prisma.userRole.findFirst({
+        where: { gameId: params.id, role: "Referee", userId: refereeUserId },
+        select: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              refereeProfile: { select: { signoffPinHash: true } },
+            },
+          },
+        },
+      })
+      const hash = assignment?.user?.refereeProfile?.signoffPinHash
+      if (!assignment || !hash || !(await bcrypt.compare(refereePin, hash))) {
+        return NextResponse.json(
+          { error: "Referee PIN is incorrect", code: "BAD_REFEREE_PIN" },
+          { status: 400 }
+        )
+      }
+      verifiedRefereeName =
+        `${assignment.user?.firstName ?? ""} ${assignment.user?.lastName ?? ""}`.trim() ||
+        "Referee"
+    }
+
+    const hasApproval = !!verifiedRefereeName || !!refereeSignature || !!refereeName
     if (
       game.season?.league?.requireRefereeApproval &&
-      !refereeName &&
+      !hasApproval &&
       !withoutReferee &&
       game.status !== "COMPLETED"
     ) {
@@ -128,7 +168,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           scoringSessionId: null,
           scoringSessionUser: null,
           scoringSessionAt: null,
-          ...(refereeName ? { refereeName, refereeSignedAt: new Date() } : {}),
+          ...(verifiedRefereeName || refereeName || refereeSignature
+            ? {
+                refereeName: verifiedRefereeName ?? refereeName ?? null,
+                refereeSignedAt: new Date(),
+                refereeSignature: refereeSignature ?? null,
+                refereeVerified: !!verifiedRefereeName,
+              }
+            : {}),
         },
       })
       // Recompute-from-scratch semantics: stats rows mirror the fold exactly
@@ -176,6 +223,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
       const title = `${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}`
+      const signedName = verifiedRefereeName ?? refereeName
       await Promise.allSettled(
         recipients.map((to) =>
           sendEmail({
@@ -186,7 +234,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
               <p>${game.season?.league?.name ?? ""} ${game.season?.label ?? ""} · ${new Date(
                 game.scheduledAt
               ).toLocaleDateString()}</p>
-              ${refereeName ? `<p>Referee: <strong>${refereeName}</strong></p>` : ""}
+              ${signedName ? `<p>Referee: <strong>${signedName}</strong>${verifiedRefereeName ? " (PIN-verified)" : ""}</p>` : ""}
               <p><a href="${baseUrl}/scoresheet/${game.id}">View / print the official scoresheet</a></p>
               <p><a href="${baseUrl}/live/${game.id}">Box score &amp; play-by-play</a></p>
             `,

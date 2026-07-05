@@ -30,6 +30,7 @@ import { getServerSession } from "next-auth"
  *   1112 stripe flow (connect/checkout/webhooks, SDK mocked)
  *   1113 platform payment policy (defaults/overrides/destination charges)
  *   1114 live scoring (bootstrap/lock/events/finalize/public read)
+ *   1116 referee sign-off (PIN verify / signature / self-service)
  */
 
 export function actAs(userId: string | null): void {

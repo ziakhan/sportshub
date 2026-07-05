@@ -42,6 +42,8 @@ export interface ScoresheetData {
     requireRefereeApproval: boolean
     refereeName: string | null
     refereeSignedAt: Date | null
+    refereeSignature: string | null
+    refereeVerified: boolean
     finalizedAt: Date | null
   }
   fold: FoldResult
@@ -64,6 +66,8 @@ export async function loadScoresheetData(gameId: string): Promise<ScoresheetData
       finalizedAt: true,
       refereeName: true,
       refereeSignedAt: true,
+      refereeSignature: true,
+      refereeVerified: true,
       homeTeamId: true,
       awayTeamId: true,
       homeTeam: { select: { name: true } },
@@ -225,6 +229,8 @@ export async function loadScoresheetData(gameId: string): Promise<ScoresheetData
       requireRefereeApproval: !!game.season?.league?.requireRefereeApproval,
       refereeName: game.refereeName ?? null,
       refereeSignedAt: game.refereeSignedAt ?? null,
+      refereeSignature: game.refereeSignature ?? null,
+      refereeVerified: !!game.refereeVerified,
       finalizedAt: game.finalizedAt ?? null,
     },
     fold,

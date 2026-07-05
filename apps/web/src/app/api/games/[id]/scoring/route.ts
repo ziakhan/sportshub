@@ -97,9 +97,18 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const [homeRoster, awayRoster, events] = await Promise.all([
+    const [homeRoster, awayRoster, refereeRoles, events] = await Promise.all([
       rosterForTeam(game.seasonId, game.homeTeamId),
       rosterForTeam(game.seasonId, game.awayTeamId),
+      prisma.userRole.findMany({
+        where: { gameId: params.id, role: "Referee" },
+        select: {
+          userId: true,
+          user: {
+            select: { firstName: true, lastName: true, refereeProfile: { select: { signoffPinHash: true } } },
+          },
+        },
+      }),
       (prisma as any).gameEvent.findMany({
         where: { gameId: params.id },
         orderBy: { sequence: "asc" },
@@ -151,6 +160,13 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         user: game.scoringSessionUser,
         at: game.scoringSessionAt,
       },
+      // Referees assigned to THIS game (UserRole role=Referee gameId) — the
+      // PIN sign-off path only offers referees who have set a PIN.
+      referees: refereeRoles.map((r: any) => ({
+        userId: r.userId,
+        name: `${r.user?.firstName ?? ""} ${r.user?.lastName ?? ""}`.trim() || "Referee",
+        hasPin: !!r.user?.refereeProfile?.signoffPinHash,
+      })),
       me: sessionInfo.userId,
     })
   } catch (error) {
