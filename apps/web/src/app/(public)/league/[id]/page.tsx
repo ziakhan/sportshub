@@ -1,9 +1,13 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
+import { getServerSession } from "next-auth"
+import { prisma } from "@youthbasketballhub/db"
+import { authOptions } from "@/lib/auth"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicSeason } from "@/lib/queries/season"
 import { Badge, Card } from "@/components/ui"
+import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
 
@@ -20,6 +24,16 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicSeasonPage({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
   if (!season) notFound()
+
+  const session = await getServerSession(authOptions).catch(() => null)
+  const viewerId = (session?.user as any)?.id ?? null
+  const leagueFollowed =
+    viewerId && season.league?.id
+      ? !!(await (prisma as any).follow.findFirst({
+          where: { userId: viewerId, leagueId: season.league.id },
+          select: { id: true },
+        }))
+      : false
 
   const leagueName = season.league?.name
   const leagueDescription = season.league?.description
@@ -49,6 +63,27 @@ export default async function PublicSeasonPage({ params }: { params: { id: strin
 
             <h1 className="text-3xl font-bold text-ink-950 mb-2">{leagueName}</h1>
             {leagueDescription && <p className="text-ink-700 mb-4">{leagueDescription}</p>}
+
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+              <Link
+                href={`/league/${params.id}/leaders`}
+                className="bg-gold-50 text-gold-700 ring-gold-200 hover:bg-gold-100 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16" />
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                </svg>
+                Stat leaders
+              </Link>
+              {season.league?.id && (
+                <FollowButton
+                  leagueId={season.league.id}
+                  initialFollowing={leagueFollowed}
+                  isAuthenticated={!!viewerId}
+                  variant="light"
+                />
+              )}
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {season.startDate && (

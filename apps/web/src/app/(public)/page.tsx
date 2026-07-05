@@ -1,6 +1,15 @@
 import Link from "next/link"
+import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { authOptions } from "@/lib/auth"
+import { getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
+import { getFeaturedSeasonId, getSeasonLeaders } from "@/lib/queries/season-stats"
+import { getYourTeams } from "@/lib/queries/home"
+import { getViewerScope } from "@/lib/privacy/participants"
 import { ClubSearch } from "./club-search"
+import { NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
+
+export const dynamic = "force-dynamic"
 
 async function getHomePageData() {
   const [featuredClubs, rawUpcomingTryouts, totalClubs, totalTeams, totalTryouts] =
@@ -66,11 +75,26 @@ async function getHomePageData() {
 }
 
 export default async function HomePage() {
-  const { featuredClubs, upcomingTryouts, stats } = await getHomePageData()
+  const session = await getServerSession(authOptions).catch(() => null)
+  const userId = (session?.user as any)?.id ?? null
+
+  const [{ featuredClubs, upcomingTryouts, stats }, scoreboard, feed, featuredSeasonId, yourTeams, scope] =
+    await Promise.all([
+      getHomePageData(),
+      getScoreboardGames(),
+      getPublicFeed(8),
+      getFeaturedSeasonId(),
+      userId ? getYourTeams(userId) : Promise.resolve([]),
+      getViewerScope(userId),
+    ])
+  const leaders = featuredSeasonId ? await getSeasonLeaders(featuredSeasonId, 5) : null
+
   const logoMarquee = featuredClubs.length > 0 ? [...featuredClubs, ...featuredClubs] : []
 
   return (
     <>
+      <YourTeamsRail cards={yourTeams} />
+      <ScoreboardStrip games={scoreboard} />
       <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
         <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
         <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
@@ -125,7 +149,7 @@ export default async function HomePage() {
                 </svg>
               </Link>
               <Link
-                href="/sign-up"
+                href="/for-clubs"
                 className="border-ink-200 text-ink-700 hover:bg-ink-50 inline-flex w-full items-center justify-center rounded-2xl border bg-white px-7 py-3.5 text-[15px] font-semibold transition sm:w-auto"
               >
                 Run your club or league
@@ -136,6 +160,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
 
       <section className="bg-white py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
@@ -188,7 +214,7 @@ export default async function HomePage() {
 
             {/* Clubs */}
             <Link
-              href="/sign-up"
+              href="/for-clubs"
               className="card-lift border-ink-100 shadow-soft group flex flex-col rounded-[28px] border bg-white p-7"
             >
               <span className="bg-play-600 shadow-play-200 mb-5 flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg">
@@ -216,7 +242,7 @@ export default async function HomePage() {
 
             {/* Leagues */}
             <Link
-              href="/sign-up"
+              href="/for-leagues"
               className="card-lift border-ink-100 shadow-soft group flex flex-col rounded-[28px] border bg-white p-7"
             >
               <span className="bg-court-600 shadow-court-200 mb-5 flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg">
