@@ -131,13 +131,27 @@ publish through approval.
   always queue. Platform admin = global takedown + creator suspension.
 - **Report button** on all public content → moderation queue.
 
-### Video strategy (decision)
-- P2-cheap: paste YouTube/Vimeo links (creators already live there) —
-  embed, zero storage cost/risk.
-- P3-native: direct upload → Mux or Cloudflare Stream (per-minute cost,
-  full control, clips can later tie to the AI/Film-Room vision in
-  docs/live-scoring-plan.md phase 2). Photos: Vercel Blob from day one
-  (next.config already anticipates it).
+### Video strategy — OWNER VISION (2026-07-05): the central content hub
+The end-state is bigger than hosting: **this platform becomes the club's
+content headquarters** — official club/team/league creators (and possibly
+platform-employed videographers) upload natively, the content LIVES here,
+and a distribution dashboard **cross-posts to every linked social platform**
+(YouTube, Instagram, TikTok, Snapchat, …) — "post once, everywhere," with
+per-platform status. Clubs get full control of a single pipeline instead of
+juggling five apps.
+
+Staged path (owner-approved to start small):
+- **P2 (PoC)**: YouTube/Vimeo embeds — proves the feed/tagging/approval
+  loop with zero infra. Photos native on Vercel Blob from day one.
+- **P3**: native uploads (Mux or Cloudflare Stream) — content lives here;
+  ties into the AI/Film-Room vision (live-scoring-plan phase 2).
+- **P4 — Syndication hub**: linked social accounts per club/creator (OAuth:
+  YouTube Data API, Instagram Graph, TikTok Content Posting API, Snapchat),
+  a composer that publishes a Post natively AND fans out to selected
+  linked accounts, with per-platform delivery status + retry. New models:
+  SocialAccount(ownerScope, platform, tokens), PostSyndication(postId,
+  platform, status, externalUrl). NOTE: each platform's posting API has an
+  app-review process — start those approvals EARLY when P4 nears.
 
 ## 6. News engine — three sources, one feed
 
@@ -204,14 +218,15 @@ Announcement.public  Boolean @default(false)
 P1 has zero dependencies and directly extends this weekend's work (it IS
 the "season stats" recommendation, now framed as the homepage's engine).
 
-## 11. Owner decisions needed before P1/P2
+## 11. Owner decisions — CONFIRMED 2026-07-05
 
-1. **Minor privacy default on public stats/rosters**: full names vs
-   "first name + last initial" vs jersey-only, absent explicit consent.
-   (Safety guidance favors restraint; MaxPreps shows full names but is
-   high-school. U11 is different.)
-2. **AI recaps**: auto-publish on finalize vs draft-for-league-approval.
-3. **Video v1**: YouTube-embed-only (P2) vs go straight to native hosting.
-4. Reviews scope confirmation when P4 nears (leagues? referees? — §8
-   recommendation stands until then).
-```
+1. **Minor privacy default**: ✅ "first name + last initial" on all public
+   stats/rosters/leaders; full names visible to signed-in participants of
+   that league/club; parents opt INTO public full names via media consent.
+2. **AI recaps**: ✅ auto-publish on finalize (league owners get
+   edit/takedown).
+3. **Video**: ✅ start with embeds as proof of concept, but the committed
+   direction is the central content hub with social syndication (§5) —
+   native hosting, then post-once-distribute-everywhere.
+4. Reviews scope confirmation when the reviews phase nears (leagues?
+   referees? — §8 recommendation stands until then).

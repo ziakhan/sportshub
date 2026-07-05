@@ -63,6 +63,17 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
 - Capacity planner: eyeball a realistic schedule (seed-7777 world has
   leagues) — clustering asserted in tests, not yet human-reviewed
 
+## 4b. Public site & content ecosystem (PLANNED 2026-07-05 — docs/public-site-content-plan.md)
+- Homepage rebuild (scoreboard strip / news feed / leaders rail / highlights /
+  Your-teams rail + Follow model) — P1 also delivers season stats & leaders
+- Creator content lifecycle (CreatorProfile/Post/MediaAsset/PostTag, media
+  consent for minors, approval queues) — P2
+- OWNER VISION: central content hub w/ social syndication (post once →
+  YouTube/Instagram/TikTok/Snapchat via linked accounts) — P3/P4; platform
+  API app-review processes must start early
+- DECISIONS CONFIRMED: minors = first name + initial publicly; AI recaps
+  auto-publish; embeds first then native+syndication
+
 ## 5. Platform / carried over
 - Post-auth deep-link redirect SHIPPED (2026-07-05): middleware keeps query,
   sign-in/sign-up/onboarding thread callbackUrl, public header AuthLinks.
