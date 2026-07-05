@@ -42,6 +42,11 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 const updateLeagueSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().optional().nullable(),
+  // Live-scoring configuration (docs/live-scoring-design.md)
+  statDepth: z.enum(["SCORE_ONLY", "STANDARD", "FULL"]).optional(),
+  gameClockMode: z.enum(["SIMPLE", "OFF"]).optional(),
+  periodType: z.enum(["QUARTERS", "HALVES"]).optional(),
+  periodMinutes: z.number().int().min(1).max(30).optional(),
 })
 
 /**

@@ -280,12 +280,17 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const toggleFullscreen = useCallback(() => {
     const el = document.documentElement as any
     const doc = document as any
-    if (document.fullscreenElement ?? doc.webkitFullscreenElement) {
+    const inFullscreen = !!(document.fullscreenElement ?? doc.webkitFullscreenElement)
+    // Trust EITHER signal — some mobile browsers enter fullscreen without
+    // reporting fullscreenElement, which made exit look impossible.
+    if (inFullscreen || isFullscreen) {
       ;(document.exitFullscreen ?? doc.webkitExitFullscreen)?.call(document)
+      setIsFullscreen(false)
     } else {
       ;(el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el)
+      setIsFullscreen(true)
     }
-  }, [])
+  }, [isFullscreen])
 
   // Clock display tick
   useEffect(() => {
@@ -346,6 +351,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   // ---------- two-tap commit ----------
   const commit = useCallback(
     (action: { type: FoldEventType; made?: boolean }, playerId: string, teamId: string) => {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10)
       if (action.type === "REBOUND") {
         append("REBOUND", { teamId, playerId, metadata: { offensive: false } })
       } else {
@@ -808,17 +814,24 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           <a
             href={`/live/${gameId}`}
             target="_blank"
+            aria-label="Open the public spectator page"
             title="Open the public spectator page (share this one with parents)"
-            className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-2.5 py-2 text-sm"
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 flex min-h-[44px] items-center rounded-xl border px-2.5 text-sm"
           >
-            👁
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
           </a>
           <button
             onClick={toggleFullscreen}
-            title={isFullscreen ? "Exit full screen" : "Full screen"}
-            className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-2.5 py-2 text-sm font-bold"
+            className={`flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold ${
+              isFullscreen
+                ? "border-play-400 bg-play-50 text-play-700 hover:bg-play-100"
+                : "border-ink-200 text-ink-600 hover:bg-ink-50"
+            }`}
           >
-            {isFullscreen ? "⤢" : "⛶"}
+            {isFullscreen ? "Exit full screen" : "Full screen"}
           </button>
           <button
             onClick={() => {
@@ -832,54 +845,66 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         </div>
       </div>
 
-      {/* chain prompt */}
-      {chain && (
-        <div className="border-play-300 bg-play-50 mt-2 flex flex-wrap items-center gap-1.5 rounded-xl border p-2">
-          <span className="text-play-800 text-xs font-semibold">
-            {chain.kind === "assist" ? "Assist by?" : "Rebound by?"}
-          </span>
-          {(chain.kind === "assist"
-            ? (chain.shooterTeamId === game.homeTeam.id ? fold.onFloor.home : fold.onFloor.away
-              ).filter((pid) => pid !== chain.shooterId)
-            : [...fold.onFloor.home, ...fold.onFloor.away]
-          ).map((pid) => {
-            const teamId = fold.onFloor.home.includes(pid) ? game.homeTeam.id : game.awayTeam.id
-            return (
-              <button
-                key={pid}
-                onClick={() => chainPick(pid, teamId)}
-                className="border-ink-200 text-ink-800 rounded-lg border bg-white px-2 py-1 text-xs font-bold hover:bg-play-100"
-              >
-                #{jerseyOf(pid)}
-              </button>
-            )
-          })}
-          <button
-            onClick={() => setChain(null)}
-            className="text-ink-500 ml-auto px-2 py-1 text-xs hover:underline"
-          >
-            skip
-          </button>
-        </div>
-      )}
-
       {/* main grid */}
       <div className="mt-2 grid grid-cols-[1fr_2fr_1fr] gap-2 max-md:grid-cols-2">
         <div className="max-md:order-1">{floorTiles(game.homeTeam.id, "home")}</div>
 
         <div className="max-md:order-3 max-md:col-span-2">
           <div className="sticky bottom-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-sm">
-            {pendingAction && (
-              <p className="text-play-700 mb-1 text-center text-[11px] font-semibold">
-                {EVENT_LABELS[pendingAction.type]}
-                {pendingAction.made === false ? " miss" : ""} — now tap the player
-              </p>
-            )}
-            {pendingPlayer && !pendingAction && (
-              <p className="text-play-700 mb-1 text-center text-[11px] font-semibold">
-                #{jerseyOf(pendingPlayer.playerId)} — now tap an action
-              </p>
-            )}
+            {/* Status strip: FIXED height, content swaps — never inserts.
+                Hosts the idle hint, the two-tap hint, or the chain prompt. */}
+            <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1">
+              {chain ? (
+                <>
+                  <span className="text-play-800 whitespace-nowrap text-xs font-semibold">
+                    {chain.kind === "assist" ? "Assist by?" : "Rebound by?"}
+                  </span>
+                  {(chain.kind === "assist"
+                    ? (chain.shooterTeamId === game.homeTeam.id
+                        ? fold.onFloor.home
+                        : fold.onFloor.away
+                      ).filter((pid) => pid !== chain.shooterId)
+                    : [...fold.onFloor.home, ...fold.onFloor.away]
+                  ).map((pid) => {
+                    const teamId = fold.onFloor.home.includes(pid)
+                      ? game.homeTeam.id
+                      : game.awayTeam.id
+                    return (
+                      <button
+                        key={pid}
+                        onClick={() => chainPick(pid, teamId)}
+                        className={`min-h-[44px] min-w-[44px] rounded-lg border bg-white text-sm font-bold ${
+                          teamId === game.homeTeam.id
+                            ? "border-play-300 text-play-800 hover:bg-play-50"
+                            : "border-court-300 text-court-800 hover:bg-court-50"
+                        }`}
+                      >
+                        #{jerseyOf(pid)}
+                      </button>
+                    )
+                  })}
+                  <button
+                    onClick={() => setChain(null)}
+                    className="text-ink-500 min-h-[44px] whitespace-nowrap px-2 text-xs hover:underline"
+                  >
+                    skip
+                  </button>
+                </>
+              ) : pendingAction ? (
+                <p className="text-play-700 text-xs font-semibold">
+                  {EVENT_LABELS[pendingAction.type]}
+                  {pendingAction.made === false ? " miss" : ""} — now tap the player
+                </p>
+              ) : pendingPlayer ? (
+                <p className="text-play-700 text-xs font-semibold">
+                  #{jerseyOf(pendingPlayer.playerId)} — now tap an action
+                </p>
+              ) : (
+                <p className="text-ink-400 text-xs">
+                  Tap an action, then a player — either order works
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-1.5">
               {actionBtn("+2", "SCORE_2PT", true, "bg-court-600 text-white hover:bg-court-700")}
               {actionBtn("+3", "SCORE_3PT", true, "bg-court-600 text-white hover:bg-court-700")}

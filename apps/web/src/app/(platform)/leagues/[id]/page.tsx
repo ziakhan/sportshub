@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
+import { LeagueScoringSettings } from "@/components/scoring/league-scoring-settings"
 
 interface Season {
   id: string
@@ -24,6 +25,10 @@ interface League {
   description: string | null
   ownerId: string
   seasons: Season[]
+  statDepth?: string
+  gameClockMode?: string
+  periodType?: string
+  periodMinutes?: number
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -151,6 +156,16 @@ export default function LeagueDashboardPage() {
           </div>
         </div>
       </div>
+
+      <LeagueScoringSettings
+        leagueId={leagueId}
+        initial={{
+          statDepth: league.statDepth,
+          gameClockMode: league.gameClockMode,
+          periodType: league.periodType,
+          periodMinutes: league.periodMinutes,
+        }}
+      />
 
       {showCreate && (
         <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
