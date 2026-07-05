@@ -247,6 +247,25 @@ describe("referee sign-off (league-configurable)", () => {
     expect(refused.status).toBe(400)
     expect((await refused.json()).code).toBe("REFEREE_REQUIRED")
 
+    // withoutReferee is the explicit escape hatch: it passes the referee
+    // gate (proven by reaching the NO_EVENTS check on an eventless game).
+    const emptyGame = await prisma.game.create({
+      data: {
+        seasonId,
+        homeTeamId: teamAId,
+        awayTeamId: teamBId,
+        scheduledAt: daysFromNow(1),
+        duration: 60,
+        status: "SCHEDULED",
+      },
+    })
+    const escape = await finalizePost(
+      jsonRequest(`/api/games/${emptyGame.id}/finalize`, { withoutReferee: true }, "POST"),
+      { params: { id: emptyGame.id } }
+    )
+    expect((await escape.json()).code).toBe("NO_EVENTS")
+    await prisma.game.delete({ where: { id: emptyGame.id } })
+
     // turn it back off — the finalize suite below runs signature-free
     await (prisma as any).league.updateMany({
       where: { seasons: { some: { id: seasonId } } },

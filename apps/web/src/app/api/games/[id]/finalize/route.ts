@@ -12,6 +12,10 @@ const finalizeSchema = z.object({
   // Referee signature (typed name at the table) — required when the league
   // demands sign-off, like signing the paper sheet.
   refereeName: z.string().trim().min(2).max(120).optional(),
+  // Explicit escape hatch: the referee left / can't sign. The game still
+  // finalizes but the scoresheet is stamped "finalized without referee
+  // approval" — sign-off can gate the stamp, never the game.
+  withoutReferee: z.boolean().default(false),
 })
 
 /**
@@ -68,8 +72,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { refereeName } = finalizeSchema.parse(body ?? {})
-    if (game.season?.league?.requireRefereeApproval && !refereeName && game.status !== "COMPLETED") {
+    const { refereeName, withoutReferee } = finalizeSchema.parse(body ?? {})
+    if (
+      game.season?.league?.requireRefereeApproval &&
+      !refereeName &&
+      !withoutReferee &&
+      game.status !== "COMPLETED"
+    ) {
       return NextResponse.json(
         {
           error: "This league requires the referee to sign off before finalizing",

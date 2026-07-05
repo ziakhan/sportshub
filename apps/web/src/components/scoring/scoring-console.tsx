@@ -675,6 +675,41 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               placeholder="Referee's full name"
               className="border-amber-300 mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm"
             />
+            {needsReferee && (
+              <button
+                disabled={finalizing}
+                onClick={async () => {
+                  if (
+                    !confirm(
+                      "Finalize WITHOUT referee approval? The scoresheet will be clearly stamped as not approved by the referee."
+                    )
+                  )
+                    return
+                  setFinalizing(true)
+                  setFinalizeError(null)
+                  await syncTick()
+                  for (let i = 0; i < 10; i++) {
+                    if (queue.length === 0 && voidQueue.length === 0) break
+                    await new Promise((r) => setTimeout(r, 800))
+                    await syncTick()
+                  }
+                  const res = await fetch(`/api/games/${gameId}/finalize`, {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({ withoutReferee: true }),
+                  })
+                  setFinalizing(false)
+                  if (res.ok) setFinalized(true)
+                  else {
+                    const body = await res.json().catch(() => ({}))
+                    setFinalizeError(body.error || "Couldn't finalize the game")
+                  }
+                }}
+                className="text-amber-700 mt-2 text-xs underline hover:text-amber-900"
+              >
+                Referee unavailable? Finalize without approval (stamped on the sheet)
+              </button>
+            )}
           </div>
         )}
         {finalizeError && (
