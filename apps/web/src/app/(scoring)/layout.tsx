@@ -1,6 +1,22 @@
 import React from "react"
+import type { Metadata, Viewport } from "next"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
+
+// Add-to-Home-Screen launches the console standalone — no browser chrome at
+// all (the real "full screen" on iPhones, where the fullscreen API is absent).
+export const metadata: Metadata = {
+  title: "Scoring",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Scoring" },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+}
 
 /**
  * Bare layout for the scorer's-table console: signed-in required, but NO

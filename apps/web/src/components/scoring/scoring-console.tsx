@@ -952,6 +952,92 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     <div className="mx-auto max-w-6xl p-3 max-md:p-2">
       {/* header */}
       <div className="rounded-2xl border border-ink-200 bg-white p-3 max-md:p-2.5">
+        {isShort ? (
+          /* Landscape phones: ONE-line bar — every vertical pixel matters */
+          <div className="flex items-center gap-2">
+            <span className="bg-play-400 h-2 w-2 shrink-0 rounded-full" />
+            <span className="text-ink-950 text-xl font-bold">{fold.homeScore}</span>
+            <span className="text-ink-500 max-w-[90px] truncate text-[10px]">
+              {game.homeTeam.name}
+            </span>
+            <div className="mx-auto flex shrink-0 items-center gap-1.5">
+              <span className="text-ink-900 text-xs font-bold">
+                {periodLabel(fold.period, config.periodType)}
+              </span>
+              {config.gameClockMode === "SIMPLE" && (
+                <button
+                  onClick={() => {
+                    if (fold.clockRunning) {
+                      append("CLOCK_STOP", { clockSeconds: clockDisplay ?? 0 })
+                    } else {
+                      append("CLOCK_START", {
+                        clockSeconds: clockDisplay ?? config.periodMinutes * 60,
+                      })
+                    }
+                  }}
+                  className={`rounded-md px-2 py-0.5 font-mono text-sm font-bold ${
+                    fold.clockRunning ? "bg-court-50 text-court-700" : "bg-ink-100 text-ink-700"
+                  }`}
+                >
+                  {fmtClock(clockDisplay ?? config.periodMinutes * 60)}{" "}
+                  {fold.clockRunning ? "⏸" : "▶"}
+                </button>
+              )}
+              {fold.periodOpen ? (
+                <button
+                  onClick={() => {
+                    if (fold.clockRunning) append("CLOCK_STOP", { clockSeconds: clockDisplay ?? 0 })
+                    append("PERIOD_END", {})
+                  }}
+                  className="border-ink-200 text-ink-600 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
+                >
+                  End
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => append("PERIOD_START", { period: fold.period + 1 })}
+                    className="bg-play-600 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                  >
+                    Start {periodLabel(fold.period + 1, config.periodType)}
+                  </button>
+                  {fold.period >= regulationPeriods && (
+                    <button
+                      onClick={() => setReviewing(true)}
+                      className="bg-court-600 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                    >
+                      End game
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            <span className="text-ink-500 max-w-[90px] truncate text-[10px]">
+              {game.awayTeam.name}
+            </span>
+            <span className="text-ink-950 text-xl font-bold">{fold.awayScore}</span>
+            <span className="bg-court-400 h-2 w-2 shrink-0 rounded-full" />
+            <span
+              className={`ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[9px] ${
+                queue.length + voidQueue.length === 0
+                  ? "bg-court-50 text-court-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {queue.length + voidQueue.length === 0 ? "✓" : queue.length + voidQueue.length}
+            </span>
+            <button
+              onClick={() => {
+                const last = lastThree[0] as QueuedEvent | undefined
+                if (last) voidEvent(last.clientEventId)
+              }}
+              className="bg-hoop-600 hover:bg-hoop-700 shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-white"
+            >
+              UNDO
+            </button>
+          </div>
+        ) : (
+          <>
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1 text-left">
             <div className="truncate text-[11px]">
@@ -1104,6 +1190,8 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             UNDO
           </button>
         </div>
+          </>
+        )}
       </div>
 
       {/* Layout by form factor (width AND height). Landscape phones (short)
@@ -1114,9 +1202,18 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           <div>{actionPad}</div>
           <div>{floorTiles(game.awayTeam.id, "away")}</div>
         </div>
+      ) : isShort ? (
+        /* Landscape phones: spend the WIDTH — chips left, pad right */
+        <div className="mt-2 flex items-start gap-2">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            {chipRow(game.homeTeam.id, "home")}
+            {chipRow(game.awayTeam.id, "away")}
+          </div>
+          <div className="w-[46%] shrink-0">{actionPad}</div>
+        </div>
       ) : (
         <div className="mt-2 space-y-1.5">
-          {mobileLayout === "rows" || isShort ? (
+          {mobileLayout === "rows" ? (
             <>
               {chipRow(game.homeTeam.id, "home")}
               {chipRow(game.awayTeam.id, "away")}
