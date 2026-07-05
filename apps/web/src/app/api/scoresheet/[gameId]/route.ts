@@ -182,11 +182,7 @@ export async function GET(_request: NextRequest, { params }: { params: { gameId:
       ensureRoom(40)
       // column header
       doc.font("Helvetica-Bold").fontSize(8).fillColor("black")
-      doc.text(teamName.toUpperCase(), xNum, y, {
-        width: wNum + wName - 8,
-        lineBreak: false,
-        ellipsis: true,
-      })
+      doc.text(teamName.toUpperCase().slice(0, 30), xNum, y, { lineBreak: false })
       doc.fontSize(6).fillColor(GRAY)
       doc.text("FOULS", xFouls, y + 3)
       periods.forEach((p, i) => doc.text(periodLabel(p), xQ + wQ * i + 3, y + 3))
