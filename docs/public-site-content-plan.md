@@ -1,5 +1,11 @@
 # Public Site & Content Ecosystem — Detailed Plan
 
+> **STATUS: DRAFT — NOT BUILD-APPROVED.** Owner wants a strategy discussion
+> on the public-pages approach FIRST (next session's opening agenda item).
+> The three micro-decisions in §11 (minor privacy, AI recap auto-publish,
+> video staging) were answered by the owner and stand; everything else in
+> this document is a proposal to be debated, reshaped, or approved.
+
 Owner brief (2026-07-05): the homepage is the public face — parents and the
 general public land there. It must be a place people COME BACK to and
 consume: news (huge), video highlights, stats, leaders, AI blurbs. Content

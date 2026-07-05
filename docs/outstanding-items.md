@@ -63,7 +63,9 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
 - Capacity planner: eyeball a realistic schedule (seed-7777 world has
   leagues) — clustering asserted in tests, not yet human-reviewed
 
-## 4b. Public site & content ecosystem (PLANNED 2026-07-05 — docs/public-site-content-plan.md)
+## 4b. Public site & content ecosystem — DRAFT plan, DISCUSSION FIRST
+**NEXT SESSION'S OPENING AGENDA: owner wants to discuss the public-pages
+strategy before anything is built.** Draft: docs/public-site-content-plan.md
 - Homepage rebuild (scoreboard strip / news feed / leaders rail / highlights /
   Your-teams rail + Follow model) — P1 also delivers season stats & leaders
 - Creator content lifecycle (CreatorProfile/Post/MediaAsset/PostTag, media
