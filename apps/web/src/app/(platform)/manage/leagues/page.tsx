@@ -56,7 +56,7 @@ export default function LeaguesPage() {
             <p className="text-ink-500 mt-1 text-sm">Manage your leagues and their seasons</p>
           </div>
           <Link
-            href="/leagues/create"
+            href="/manage/leagues/create"
             className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
           >
             Create League
@@ -69,7 +69,7 @@ export default function LeaguesPage() {
           <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">No leagues yet</h3>
           <p className="text-ink-600 mb-6">Create your first league to get started.</p>
           <Link
-            href="/leagues/create"
+            href="/manage/leagues/create"
             className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 text-sm font-semibold text-white"
           >
             Create Your First League
@@ -85,7 +85,7 @@ export default function LeaguesPage() {
             return (
               <Link
                 key={league.id}
-                href={`/leagues/${league.id}`}
+                href={`/manage/leagues/${league.id}`}
                 className="border-ink-100 shadow-soft hover:border-play-200 hover:bg-play-50 block rounded-2xl border bg-white p-6 transition"
               >
                 <div className="flex items-start justify-between">

@@ -21,6 +21,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/camp",
   "/events",
   "/league",
+  "/leagues",
   "/invitations",
   "/live",
   "/scoresheet",

@@ -162,14 +162,20 @@ export default async function ClubProfilePage({
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {teams.map((team: any) => (
-                    <div key={team.id} className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
-                      <h3 className="font-medium text-ink-950">{team.name}</h3>
+                    <Link
+                      key={team.id}
+                      href={`/team/${team.id}`}
+                      className="hover:border-play-200 group rounded-2xl border border-ink-100 bg-ink-50 p-4 transition hover:bg-white"
+                    >
+                      <h3 className="group-hover:text-play-600 font-medium text-ink-950 transition-colors">
+                        {team.name}
+                      </h3>
                       <p className="text-sm text-ink-500">
                         {team.ageGroup}
                         {team.gender ? ` • ${team.gender}` : ""}
                         {team.season ? ` • ${team.season}` : ""}
                       </p>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

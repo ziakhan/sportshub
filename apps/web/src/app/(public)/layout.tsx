@@ -65,10 +65,16 @@ export default async function PublicLayout({ children }: { children: React.React
               Clubs
             </Link>
             <Link
-              href="/browse-leagues"
+              href="/leagues"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
               Leagues
+            </Link>
+            <Link
+              href="/news"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+            >
+              News
             </Link>
             <Link
               href="/marketplace"
@@ -124,10 +130,16 @@ export default async function PublicLayout({ children }: { children: React.React
               Clubs
             </Link>
             <Link
-              href="/browse-leagues"
+              href="/leagues"
               className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
             >
               Leagues
+            </Link>
+            <Link
+              href="/news"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              News
             </Link>
             <Link
               href="/marketplace"
@@ -175,6 +187,12 @@ export default async function PublicLayout({ children }: { children: React.React
               </Link>
               <Link href="/club" className="block transition-colors hover:text-white">
                 Clubs
+              </Link>
+              <Link href="/leagues" className="block transition-colors hover:text-white">
+                Leagues
+              </Link>
+              <Link href="/news" className="block transition-colors hover:text-white">
+                News
               </Link>
               <Link href="/marketplace" className="block transition-colors hover:text-white">
                 Marketplace

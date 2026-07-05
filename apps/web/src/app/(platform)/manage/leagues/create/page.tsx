@@ -39,7 +39,7 @@ export default function CreateLeaguePage() {
       }
 
       const data = await res.json()
-      router.push(`/leagues/${data.id}`)
+      router.push(`/manage/leagues/${data.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -89,7 +89,7 @@ export default function CreateLeaguePage() {
 
           <div className="flex gap-4">
             <Link
-              href="/leagues"
+              href="/manage/leagues"
               className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2 text-sm font-medium transition"
             >
               Cancel

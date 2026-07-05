@@ -160,7 +160,7 @@ export function buildNavSections({
       items: [
         { label: "Users", href: "/dashboard/admin/users", icon: "users" },
         { label: "Clubs", href: "/dashboard/admin/clubs", icon: "club" },
-        { label: "Leagues", href: "/leagues", icon: "star" },
+        { label: "Leagues", href: "/manage/leagues", icon: "star" },
         { label: "Claims", href: "/dashboard/admin/claims", icon: "clipboard" },
         { label: "Settings", href: "/dashboard/admin/settings", icon: "settings" },
       ],
@@ -243,7 +243,7 @@ export function buildNavSections({
     sections.push({
       key: "league",
       label: "League",
-      items: [{ label: "My Leagues", href: "/leagues", icon: "star" }],
+      items: [{ label: "My Leagues", href: "/manage/leagues", icon: "star" }],
     })
   }
 

@@ -19,7 +19,7 @@ const CREATE_ACTIONS = [
     description: "Run teams, tryouts, and offers",
   },
   {
-    href: "/leagues/create",
+    href: "/manage/leagues/create",
     title: "Create a league",
     description: "Organize divisions and schedules",
   },

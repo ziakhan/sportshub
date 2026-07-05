@@ -6,7 +6,11 @@ import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicSeason } from "@/lib/queries/season"
-import { Badge, Card } from "@/components/ui"
+import { getSeasonStandings } from "@/lib/queries/standings"
+import { getSeasonLeaders } from "@/lib/queries/season-stats"
+import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
+import { playerDisplayName } from "@/lib/privacy/names"
+import { Badge, Card, EntityHeader, NewsCard, ScoreCard, SectionHeader, StandingsTable } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -15,202 +19,362 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
   if (!season) return { title: "Season not found — SportsHub" }
   const name = season.league?.name || "League Season"
-  const description = season.league?.description
-    ? String(season.league.description).slice(0, 150)
-    : `${name} — youth basketball league season on SportsHub.`
-  return { title: `${name} — SportsHub`, description }
+  return {
+    title: `${name} ${season.label ?? ""} — Scores, Standings & Leaders — SportsHub`,
+    description: `Live scores, standings, stat leaders, schedule and game recaps for ${name}.`,
+  }
 }
 
-export default async function PublicSeasonPage({ params }: { params: { id: string } }) {
+const gameCardSelect = {
+  id: true,
+  status: true,
+  scheduledAt: true,
+  homeScore: true,
+  awayScore: true,
+  homeTeam: { select: { id: true, name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } } },
+  awayTeam: { select: { id: true, name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } } },
+  venue: { select: { name: true } },
+}
+
+export default async function PublicLeagueHubPage({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
   if (!season) notFound()
+  const leagueId = season.league?.id
+  const leagueName = season.league?.name
 
   const session = await getServerSession(authOptions).catch(() => null)
   const viewerId = (session?.user as any)?.id ?? null
-  const leagueFollowed =
-    viewerId && season.league?.id
-      ? !!(await (prisma as any).follow.findFirst({
-          where: { userId: viewerId, leagueId: season.league.id },
-          select: { id: true },
-        }))
-      : false
 
-  const leagueName = season.league?.name
-  const leagueDescription = season.league?.description
+  const now = new Date()
+  const [standings, leaders, liveGames, recentGames, upcomingGames, posts, scope, leagueFollowed] =
+    await Promise.all([
+      getSeasonStandings(params.id),
+      getSeasonLeaders(params.id, 5),
+      (prisma as any).game.findMany({
+        where: { seasonId: params.id, status: "LIVE" },
+        select: gameCardSelect,
+        orderBy: { scheduledAt: "asc" },
+        take: 4,
+      }),
+      (prisma as any).game.findMany({
+        where: { seasonId: params.id, status: "COMPLETED" },
+        select: gameCardSelect,
+        orderBy: { scheduledAt: "desc" },
+        take: 6,
+      }),
+      (prisma as any).game.findMany({
+        where: { seasonId: params.id, status: "SCHEDULED", scheduledAt: { gte: now } },
+        select: gameCardSelect,
+        orderBy: { scheduledAt: "asc" },
+        take: 4,
+      }),
+      leagueId
+        ? (prisma as any).post.findMany({
+            where: { status: "PUBLISHED", tags: { some: { leagueId } } },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              body: true,
+              publishedAt: true,
+              kind: true,
+              media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
+            },
+            orderBy: { publishedAt: "desc" },
+            take: 4,
+          })
+        : [],
+      getViewerScope(viewerId),
+      viewerId && leagueId
+        ? (prisma as any).follow
+            .findFirst({ where: { userId: viewerId, leagueId }, select: { id: true } })
+            .then((f: any) => !!f)
+        : false,
+    ])
+
+  const participant = leagueId ? isParticipant(scope, { leagueId }) : false
+  const approvedTeams = (season.teamSubmissions ?? []).filter((t: any) => t.status === "APPROVED")
   const isOpen = season.status === "REGISTRATION"
   const deadlinePassed =
     season.registrationDeadline && new Date(season.registrationDeadline) < new Date()
-  const registeredTeams =
-    season.teamSubmissions?.filter((t: any) => t.status === "APPROVED") || []
-  const approvedCount = registeredTeams.length
+  const completedCount = standings
+    ? standings.divisions.reduce((acc, d) => acc + d.rows.reduce((a, r) => a + r.gamesPlayed, 0), 0) / 2
+    : 0
+  const topScorers = leaders?.categories.find((c) => c.key === "ppg")?.rows.slice(0, 3) ?? []
+
+  // Teams grouped by division for the browse grid
+  const teamsByDivision = new Map<string, Array<{ id: string; name: string; clubName?: string; clubSlug?: string }>>()
+  for (const t of approvedTeams) {
+    const key = t.division?.name ?? "Teams"
+    const list = teamsByDivision.get(key) ?? []
+    list.push({ id: t.team.id, name: t.team.name, clubName: t.team.tenant?.name, clubSlug: t.team.tenant?.slug })
+    teamsByDivision.set(key, list)
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link href="/events" className="text-sm text-hoop-600 hover:underline">
-          &larr; Back to Events
+    <div className="container mx-auto px-4 py-10 sm:px-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <Link href="/leagues" className="text-hoop-600 text-sm hover:underline">
+          &larr; All leagues
         </Link>
       </div>
 
+      <EntityHeader
+        name={leagueName ?? "League"}
+        subtitle={season.league?.description ?? undefined}
+        meta={[
+          season.label,
+          `${approvedTeams.length} teams`,
+          `${Math.round(completedCount)} games played`,
+          ...(season.status === "IN_PROGRESS" ? ["Season underway"] : []),
+          ...(isOpen && !deadlinePassed ? ["Registration open"] : []),
+        ].filter(Boolean)}
+        primaryColor="#1d4ed8"
+        crestText={(leagueName ?? "L").slice(0, 1)}
+        action={
+          leagueId ? (
+            <FollowButton leagueId={leagueId} initialFollowing={leagueFollowed} isAuthenticated={!!viewerId} />
+          ) : undefined
+        }
+        className="mb-8"
+      />
+
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="p-8">
-            <div className="flex items-center gap-3 mb-3">
-              {isOpen && <Badge tone="court">Open for Registration</Badge>}
-              {season.status === "IN_PROGRESS" && <Badge tone="play">In Progress</Badge>}
-              {season.label && <Badge tone="hoop">{season.label}</Badge>}
-            </div>
-
-            <h1 className="text-3xl font-bold text-ink-950 mb-2">{leagueName}</h1>
-            {leagueDescription && <p className="text-ink-700 mb-4">{leagueDescription}</p>}
-
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <Link
-                href={`/league/${params.id}/leaders`}
-                className="bg-gold-50 text-gold-700 ring-gold-200 hover:bg-gold-100 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
-              >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16" />
-                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-                </svg>
-                Stat leaders
-              </Link>
-              {season.league?.id && (
-                <FollowButton
-                  leagueId={season.league.id}
-                  initialFollowing={leagueFollowed}
-                  isAuthenticated={!!viewerId}
-                  variant="light"
-                />
-              )}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {season.startDate && (
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Season</div>
-                  <div className="text-ink-950">
-                    {format(new Date(season.startDate), "MMM d")} -{" "}
-                    {season.endDate ? format(new Date(season.endDate), "MMM d, yyyy") : "TBD"}
-                  </div>
-                </div>
-              )}
-              {season.gamesGuaranteed && (
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Games Guaranteed</div>
-                  <div className="text-ink-950">
-                    {season.gamesGuaranteed} regular season games
-                  </div>
-                </div>
-              )}
-              {season.registrationDeadline && (
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">
-                    Registration Deadline
-                  </div>
-                  <div className={`${deadlinePassed ? "text-red-600" : "text-ink-950"}`}>
-                    {format(new Date(season.registrationDeadline), "MMM d, yyyy")}
-                    {deadlinePassed && " (Closed)"}
-                  </div>
-                </div>
-              )}
-              {season.playoffFormat && (
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Playoffs</div>
-                  <div className="text-ink-950">
-                    {season.playoffFormat.replace(/_/g, " ")}
-                    {season.playoffTeams ? ` (Top ${season.playoffTeams})` : ""}
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {season.divisions?.length > 0 && (
-            <Card className="p-8">
-              <h2 className="text-lg font-bold text-ink-950 mb-4">Divisions</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {season.divisions.map((d: any) => (
-                  <div key={d.id} className="rounded-2xl border border-ink-100 bg-ink-50 p-4">
-                    <h3 className="font-medium text-ink-950">{d.name}</h3>
-                    <p className="text-sm text-ink-500">
-                      {d.ageGroup}
-                      {d.gender ? ` • ${d.gender}` : ""}
-                      {d.tier > 1 ? ` • Tier ${d.tier}` : ""}
-                    </p>
-                  </div>
+        <div className="space-y-10 lg:col-span-2">
+          {(liveGames.length > 0 || recentGames.length > 0 || upcomingGames.length > 0) && (
+            <section>
+              <SectionHeader title="Scores & schedule" accent="play" className="mb-5" />
+              <div className="grid gap-4 sm:grid-cols-2">
+                {liveGames.map((g: any) => (
+                  <Link key={g.id} href={`/live/${g.id}`} className="block">
+                    <ScoreCard
+                      status="LIVE"
+                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor, score: g.homeScore }}
+                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
+                      venue={g.venue?.name}
+                      className="hover:border-play-200 transition-colors"
+                    />
+                  </Link>
+                ))}
+                {upcomingGames.map((g: any) => (
+                  <ScoreCard
+                    key={g.id}
+                    status="SCHEDULED"
+                    home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
+                    away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
+                    dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
+                    venue={g.venue?.name}
+                  />
+                ))}
+                {recentGames.map((g: any) => (
+                  <Link key={g.id} href={`/live/${g.id}`} className="block">
+                    <ScoreCard
+                      status="FINAL"
+                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor, score: g.homeScore }}
+                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
+                      venue={g.venue?.name}
+                      className="hover:border-play-200 transition-colors"
+                    />
+                  </Link>
                 ))}
               </div>
-            </Card>
+            </section>
           )}
 
-          {registeredTeams.length > 0 && (
-            <Card className="p-8">
-              <h2 className="text-lg font-bold text-ink-950 mb-4">
-                Registered Teams ({approvedCount})
-              </h2>
-              <div className="space-y-2">
-                {registeredTeams.map((t: any) => (
-                  <div
-                    key={t.id}
-                    className="flex items-center justify-between rounded-xl bg-ink-50 px-4 py-3"
-                  >
-                    <div>
-                      <span className="font-medium text-ink-950">{t.team.name}</span>
-                      {t.team.tenant && (
-                        <Link
-                          href={`/club/${t.team.tenant.slug}`}
-                          className="ml-2 text-xs text-hoop-600 hover:underline"
-                        >
-                          {t.team.tenant.name}
-                        </Link>
-                      )}
+          {standings && standings.divisions.some((d) => d.rows.length > 0) && (
+            <section>
+              <SectionHeader title="Standings" accent="gold" className="mb-5" />
+              <div className="grid gap-6 xl:grid-cols-2">
+                {standings.divisions
+                  .filter((d) => d.rows.length > 0)
+                  .map((division) => (
+                    <div key={division.divisionId}>
+                      <h3 className="text-ink-950 mb-2 px-1 text-sm font-bold uppercase tracking-wide">
+                        {division.divisionName}
+                      </h3>
+                      <StandingsTable
+                        rows={division.rows.map((row, i) => {
+                          const leader = division.rows[0]
+                          const gb = ((leader.wins - row.wins) + (row.losses - leader.losses)) / 2
+                          return {
+                            rank: i + 1,
+                            name: row.name,
+                            wins: row.wins,
+                            losses: row.losses,
+                            pct: row.winPct,
+                            gamesBack: i === 0 ? "—" : gb.toFixed(1).replace(/\.0$/, ""),
+                          }
+                        })}
+                      />
                     </div>
-                    {t.division && (
-                      <span className="text-xs text-ink-500">{t.division.name}</span>
-                    )}
+                  ))}
+              </div>
+            </section>
+          )}
+
+          {posts.length > 0 && (
+            <section>
+              <SectionHeader
+                title="League news"
+                accent="hoop"
+                className="mb-5"
+                action={
+                  <Link href="/news" className="text-play-600 hover:text-play-700 text-sm font-semibold">
+                    All news &rarr;
+                  </Link>
+                }
+              />
+              <div className="grid gap-5 sm:grid-cols-2">
+                {posts.map((p: any) => (
+                  <NewsCard
+                    key={p.id}
+                    title={p.title}
+                    excerpt={p.body.replace(/\s+/g, " ").slice(0, 140)}
+                    coverUrl={p.media?.[0]?.url ?? p.media?.[0]?.posterUrl ?? null}
+                    dateLabel={p.publishedAt ? format(new Date(p.publishedAt), "MMM d, yyyy") : ""}
+                    author={p.kind === "RECAP_AI" ? "Game recap" : p.kind === "VIDEO" ? "Highlights" : undefined}
+                    href={`/news/${p.slug}`}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {teamsByDivision.size > 0 && (
+            <section>
+              <SectionHeader title="Teams" accent="court" className="mb-5" />
+              <div className="space-y-5">
+                {[...teamsByDivision.entries()].map(([divisionName, teams]) => (
+                  <div key={divisionName}>
+                    <h3 className="text-ink-400 mb-2 px-1 text-xs font-bold uppercase tracking-[0.14em]">
+                      {divisionName}
+                    </h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {teams.map((t) => (
+                        <Link
+                          key={t.id}
+                          href={`/team/${t.id}`}
+                          className="border-ink-100 hover:border-play-200 hover:bg-ink-50/50 flex items-center justify-between rounded-xl border bg-white px-4 py-3 transition"
+                        >
+                          <span className="text-ink-950 min-w-0 truncate text-sm font-semibold">{t.name}</span>
+                          {t.clubName && <span className="text-ink-400 ml-3 shrink-0 text-xs">{t.clubName}</span>}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
-            </Card>
+            </section>
           )}
         </div>
 
-        <div>
-          <Card className="sticky top-4">
-            {season.teamFee && (
-              <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-hoop-600">
-                  {formatCurrency(season.teamFee)}
-                </div>
-                <p className="text-xs text-ink-500">per team</p>
+        <div className="space-y-6">
+          {topScorers.length > 0 && (
+            <Card>
+              <div className="mb-3 flex items-baseline justify-between">
+                <h2 className="text-ink-950 text-lg font-bold">Scoring leaders</h2>
+                <span className="text-ink-400 text-[10px] font-semibold uppercase tracking-[0.14em]">PPG</span>
               </div>
-            )}
-
-            {isOpen && !deadlinePassed ? (
+              <ol className="space-y-2">
+                {topScorers.map((row, i) => (
+                  <li key={row.playerId} className="flex items-center gap-2.5 text-sm">
+                    <span className={`w-4 text-center text-xs font-bold ${i === 0 ? "text-gold-600" : "text-ink-300"}`}>
+                      {i + 1}
+                    </span>
+                    <Link
+                      href={`/player/${row.playerId}`}
+                      className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate font-medium"
+                    >
+                      {playerDisplayName(row, participant)}
+                      <span className="text-ink-400 ml-1.5 text-xs font-normal">{row.teamName}</span>
+                    </Link>
+                    <span className="font-display font-bold tabular-nums">{row.value.toFixed(1)}</span>
+                  </li>
+                ))}
+              </ol>
               <Link
-                href={`/browse-leagues/${params.id}`}
-                className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
+                href={`/league/${params.id}/leaders`}
+                className="text-play-600 hover:text-play-700 mt-4 inline-flex text-sm font-semibold"
               >
-                Register Your Team
+                Full leaders board &rarr;
               </Link>
-            ) : (
-              <div className="rounded-2xl bg-ink-100 p-4 text-center text-sm text-ink-600">
-                {deadlinePassed ? "Registration is closed." : "Registration is not open yet."}
-              </div>
-            )}
+            </Card>
+          )}
 
-            <div className="mt-4 space-y-2 text-sm">
+          <Card>
+            <h2 className="text-ink-950 mb-4 text-lg font-bold">Season</h2>
+            <div className="space-y-3 text-sm">
+              {season.startDate && (
+                <div className="flex justify-between">
+                  <span className="text-ink-500">Dates</span>
+                  <span className="font-medium">
+                    {format(new Date(season.startDate), "MMM d")} –{" "}
+                    {season.endDate ? format(new Date(season.endDate), "MMM d") : "TBD"}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-ink-500">Teams Registered</span>
-                <span className="font-medium">{season._count?.teamSubmissions || 0}</span>
+                <span className="text-ink-500">Teams</span>
+                <span className="font-medium tabular-nums">{approvedTeams.length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-ink-500">Divisions</span>
-                <span className="font-medium">{season.divisions?.length || 0}</span>
+                <span className="font-medium tabular-nums">{season.divisions?.length || 0}</span>
               </div>
+              {season.gamesGuaranteed && (
+                <div className="flex justify-between">
+                  <span className="text-ink-500">Games guaranteed</span>
+                  <span className="font-medium tabular-nums">{season.gamesGuaranteed}</span>
+                </div>
+              )}
+              {season.playoffFormat && (
+                <div className="flex justify-between">
+                  <span className="text-ink-500">Playoffs</span>
+                  <span className="font-medium">{season.playoffFormat.replace(/_/g, " ")}</span>
+                </div>
+              )}
             </div>
           </Card>
+
+          {(isOpen || season.teamFee) && (
+            <Card>
+              {season.teamFee && (
+                <div className="mb-4 text-center">
+                  <div className="text-hoop-600 text-3xl font-bold">{formatCurrency(season.teamFee)}</div>
+                  <p className="text-ink-500 text-xs">per team</p>
+                </div>
+              )}
+              {isOpen && !deadlinePassed ? (
+                <>
+                  <Link
+                    href={`/browse-leagues/${params.id}`}
+                    className="bg-play-600 hover:bg-play-700 block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition"
+                  >
+                    Register your team
+                  </Link>
+                  {season.registrationDeadline && (
+                    <p className="text-ink-400 mt-2 text-center text-xs">
+                      Deadline {format(new Date(season.registrationDeadline), "MMM d, yyyy")}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="bg-ink-100 text-ink-600 rounded-2xl p-4 text-center text-sm">
+                  {deadlinePassed ? "Registration is closed." : "Registration is not open."}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {season.status === "IN_PROGRESS" && (
+            <div className="bg-court-50 text-court-800 rounded-2xl p-4 text-sm">
+              <Badge tone="court" className="mb-2">In season</Badge>
+              <p>
+                Games are scored live — tap any final for the full box score and play-by-play, or
+                follow the league to see it on your homepage.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

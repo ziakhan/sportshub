@@ -43,7 +43,7 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <div>
         <Link
-          href={`/leagues/${params.id}`}
+          href={`/manage/leagues/${params.id}`}
           className="text-sm text-ink-500 hover:text-ink-700"
         >
           &larr; {league.name}

@@ -13,7 +13,10 @@ describe("isPublicPath", () => {
   it("does not overmatch lookalike protected routes", () => {
     expect(isPublicPath("/clubs")).toBe(false)
     expect(isPublicPath("/marketplace-admin")).toBe(false)
-    expect(isPublicPath("/leagues/private")).toBe(false)
+    // League MANAGEMENT lives under /manage (public /leagues is the
+    // spectator browse index)
+    expect(isPublicPath("/manage/leagues")).toBe(false)
+    expect(isPublicPath("/manage/leagues/abc/payments")).toBe(false)
   })
 
   it("allows anonymous READS of public API namespaces", () => {

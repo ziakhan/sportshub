@@ -110,7 +110,7 @@ export default function LeagueDashboardPage() {
         throw new Error(data.error || "Failed to create")
       }
       const data = await res.json()
-      router.push(`/leagues/${leagueId}/seasons/${data.id}/manage`)
+      router.push(`/manage/leagues/${leagueId}/seasons/${data.id}/manage`)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -124,7 +124,7 @@ export default function LeagueDashboardPage() {
   return (
     <div className="space-y-6 p-6 md:p-8">
       <div className="mb-2">
-        <Link href="/leagues" className="text-play-700 text-sm font-medium hover:underline">
+        <Link href="/manage/leagues" className="text-play-700 text-sm font-medium hover:underline">
           &larr; Back to Leagues
         </Link>
       </div>
@@ -142,7 +142,7 @@ export default function LeagueDashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href={`/leagues/${leagueId}/payments`}
+              href={`/manage/leagues/${leagueId}/payments`}
               className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
             >
               Payments
@@ -292,7 +292,7 @@ export default function LeagueDashboardPage() {
               return (
                 <Link
                   key={season.id}
-                  href={`/leagues/${leagueId}/seasons/${season.id}/manage`}
+                  href={`/manage/leagues/${leagueId}/seasons/${season.id}/manage`}
                   className="border-ink-100 shadow-soft hover:border-play-200 hover:bg-play-50 block rounded-2xl border bg-white p-5 transition"
                 >
                   <div className="flex items-start justify-between gap-3">

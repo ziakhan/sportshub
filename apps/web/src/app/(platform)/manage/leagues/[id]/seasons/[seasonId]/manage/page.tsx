@@ -194,7 +194,7 @@ export default function LeagueManagePage() {
       {/* Header */}
       <div className="mb-6">
         <Link
-          href={`/leagues/${leagueId}`}
+          href={`/manage/leagues/${leagueId}`}
           className="text-play-700 text-sm font-medium hover:underline"
         >
           &larr; Back to {league.name}

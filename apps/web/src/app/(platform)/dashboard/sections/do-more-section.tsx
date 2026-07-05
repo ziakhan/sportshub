@@ -29,7 +29,7 @@ export function DoMoreSection({ hasParent, hasClub, hasLeague, hasReferee }: DoM
     },
     {
       show: !hasLeague,
-      href: "/leagues/create",
+      href: "/manage/leagues/create",
       title: "Create a league",
       description: "Set up divisions, schedules, and standings for competitive play.",
     },
