@@ -117,6 +117,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const [finalized, setFinalized] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [clockDisplay, setClockDisplay] = useState<number | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const storageKey = `scoring-queue-${gameId}`
 
@@ -256,6 +257,28 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     return () => clearInterval(t)
   }, [gameId, lockedOutBy])
 
+  // Browser fullscreen (webkit fallbacks for iPad Safari)
+  useEffect(() => {
+    const onChange = () =>
+      setIsFullscreen(!!(document.fullscreenElement ?? (document as any).webkitFullscreenElement))
+    document.addEventListener("fullscreenchange", onChange)
+    document.addEventListener("webkitfullscreenchange", onChange)
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange)
+      document.removeEventListener("webkitfullscreenchange", onChange)
+    }
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    const el = document.documentElement as any
+    const doc = document as any
+    if (document.fullscreenElement ?? doc.webkitFullscreenElement) {
+      ;(document.exitFullscreen ?? doc.webkitExitFullscreen)?.call(document)
+    } else {
+      ;(el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el)
+    }
+  }, [])
+
   // Clock display tick
   useEffect(() => {
     if (!boot || boot.config.gameClockMode !== "SIMPLE") return
@@ -344,22 +367,27 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     }
   }
 
-  const tapPlayer = (playerId: string, teamId: string) => {
-    if (chain) {
-      if (chain.kind === "assist") {
-        if (teamId === chain.shooterTeamId && playerId !== chain.shooterId) {
-          append("ASSIST", { teamId, playerId })
-        }
-      } else {
-        append("REBOUND", {
-          teamId,
-          playerId,
-          metadata: { offensive: teamId === chain.shooterTeamId },
-        })
+  /** Taps on the chain toast's own buttons — records the assist/rebound. */
+  const chainPick = (playerId: string, teamId: string) => {
+    if (!chain) return
+    if (chain.kind === "assist") {
+      if (teamId === chain.shooterTeamId && playerId !== chain.shooterId) {
+        append("ASSIST", { teamId, playerId })
       }
-      setChain(null)
-      return
+    } else {
+      append("REBOUND", {
+        teamId,
+        playerId,
+        metadata: { offensive: teamId === chain.shooterTeamId },
+      })
     }
+    setChain(null)
+  }
+
+  /** Taps on the main on-floor tiles — ALWAYS selection. An open chain toast
+   *  is optional by design: tapping a tile dismisses it and selects. */
+  const tapPlayer = (playerId: string, teamId: string) => {
+    if (chain) setChain(null)
     if (pendingAction) {
       commit(pendingAction, playerId, teamId)
     } else {
@@ -602,7 +630,6 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         {ids.map((pid) => {
           const line = fold.players[pid]
           const selected = pendingPlayer?.playerId === pid
-          const chainMode = !!chain
           return (
             <button
               key={pid}
@@ -610,7 +637,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               className={`rounded-xl border p-2 text-left transition ${
                 selected
                   ? "border-play-500 bg-play-100"
-                  : pendingAction || chainMode
+                  : pendingAction
                     ? "border-play-300 bg-white animate-pulse"
                     : "border-ink-200 bg-white"
               } ${line?.fouledOut ? "opacity-40" : ""}`}
@@ -771,6 +798,13 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               : `${queue.length + voidQueue.length} pending`}
           </span>
           <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit full screen" : "Full screen"}
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-2.5 py-2 text-sm font-bold"
+          >
+            {isFullscreen ? "⤢" : "⛶"}
+          </button>
+          <button
             onClick={() => {
               const last = lastThree[0] as QueuedEvent | undefined
               if (last) voidEvent(last.clientEventId)
@@ -797,7 +831,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             return (
               <button
                 key={pid}
-                onClick={() => tapPlayer(pid, teamId)}
+                onClick={() => chainPick(pid, teamId)}
                 className="border-ink-200 text-ink-800 rounded-lg border bg-white px-2 py-1 text-xs font-bold hover:bg-play-100"
               >
                 #{jerseyOf(pid)}
