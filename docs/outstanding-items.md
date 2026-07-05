@@ -38,8 +38,12 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   personal PIN/password in their account, enters it in a popup at finalize,
   verified server-side against the ASSIGNED referee. Email recipients could
   extend to team Staff/coaches (currently ClubOwner/ClubManager + league owner)
-- Scoresheet uses scorebook notation (digit marks + FT circles) as of
-  2026-07-05 close
+- Scoresheet uses scorebook notation (digit marks + FT circles), prints
+  LANDSCAPE (Chrome auto; Safari = manual orientation), lists the FULL
+  roster w/ DNP/ABSENT rows. Pre-game ATTENDANCE step shipped (roll call →
+  starters; ATTENDANCE events) — season stats must use it for games-played
+  denominators when built. Public game page = sports-app style (leaders +
+  box/PBP tabs).
 - Season stat lines + box-score archive on public league/team pages
   (per-game live page + box exist; season AGGREGATES not built)
 - Deferred by owner: scorekeeper assignment (Game.scorekeepers reserved),

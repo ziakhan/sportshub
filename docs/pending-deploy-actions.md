@@ -241,8 +241,8 @@ Expect:
 - `GameEvent`: `quarter` → `period` (rename; table has 0 rows), plus `made`,
   `clockSeconds`, `sequence`, `clientEventId` (unique), `voided`,
   `recordedById`; `teamId` becomes nullable; new index (gameId, sequence).
-- `GameEventType` enum gains LINEUP, PERIOD_START, PERIOD_END, CLOCK_START,
-  CLOCK_STOP (additive).
+- `GameEventType` enum gains LINEUP, ATTENDANCE, PERIOD_START, PERIOD_END,
+  CLOCK_START, CLOCK_STOP (additive).
 - `League` gains `statDepth`/`gameClockMode`/`periodType`/`periodMinutes`
   (new enums StatDepth/ClockMode/PeriodType, all defaulted — additive).
 - `Game` gains nullable `scoringSessionId`/`scoringSessionUser`/
