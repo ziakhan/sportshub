@@ -36,6 +36,15 @@ interface LivePayload {
 export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
   const [error, setError] = useState(false)
+  const [canScore, setCanScore] = useState(false)
+
+  // If the signed-in viewer has scoring access, point them at the console —
+  // this page is read-only for everyone and that confuses scorekeepers.
+  useEffect(() => {
+    fetch(`/api/games/${gameId}/scoring`)
+      .then((res) => setCanScore(res.ok))
+      .catch(() => {})
+  }, [gameId])
 
   useEffect(() => {
     let stop = false
@@ -163,6 +172,14 @@ export function LiveView({ gameId }: { gameId: string }) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-4">
+      {canScore && !final && (
+        <a
+          href={`/games/${gameId}/score`}
+          className="bg-play-600 hover:bg-play-700 block rounded-2xl px-4 py-3 text-center text-sm font-bold text-white"
+        >
+          You can score this game — open the scoring console →
+        </a>
+      )}
       <div className="border-ink-100 rounded-2xl border bg-white p-5 text-center">
         {game.leagueName && <p className="text-ink-400 text-xs">{game.leagueName}</p>}
         <div className="mt-1 flex items-center justify-center gap-4">

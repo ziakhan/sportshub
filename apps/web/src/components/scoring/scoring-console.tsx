@@ -132,7 +132,15 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
       const res = await fetch(`/api/games/${gameId}/scoring`)
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
-        if (!cancelled) setError(body.error || "Couldn't load the game")
+        if (!cancelled) {
+          setError(
+            res.status === 403
+              ? "This account can't score this game. Scoring is open to the league owner and staff of the two competing clubs — sign in with one of those accounts."
+              : res.status === 401
+                ? "You're not signed in — sign in first, then reopen this page."
+                : body.error || "Couldn't load the game"
+          )
+        }
         return
       }
       const data: Bootstrap = await res.json()
@@ -797,6 +805,14 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               ? "synced"
               : `${queue.length + voidQueue.length} pending`}
           </span>
+          <a
+            href={`/live/${gameId}`}
+            target="_blank"
+            title="Open the public spectator page (share this one with parents)"
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-2.5 py-2 text-sm"
+          >
+            👁
+          </a>
           <button
             onClick={toggleFullscreen}
             title={isFullscreen ? "Exit full screen" : "Full screen"}
