@@ -122,10 +122,33 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   // Phone player-area layout — a per-DEVICE preference (scorekeepers pick
   // what fits their hands/screen); persisted locally, more layouts welcome.
   const [mobileLayout, setMobileLayout] = useState<"rows" | "tiles">("rows")
+  // Form factor by width AND height: a phone in landscape is 850px wide but
+  // ~390px tall — width-only breakpoints hand it the desktop layout, which
+  // can never fit. Short viewports always use the compact phone layout.
+  const [isTable, setIsTable] = useState(false)
+  const [isShort, setIsShort] = useState(false)
+  const [fsSupported, setFsSupported] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem("scoring-layout")
     if (saved === "rows" || saved === "tiles") setMobileLayout(saved)
+
+    const tableQ = window.matchMedia("(min-width: 768px) and (min-height: 560px)")
+    const shortQ = window.matchMedia("(max-height: 520px)")
+    const apply = () => {
+      setIsTable(tableQ.matches)
+      setIsShort(shortQ.matches)
+    }
+    apply()
+    tableQ.addEventListener("change", apply)
+    shortQ.addEventListener("change", apply)
+
+    const el = document.documentElement as any
+    setFsSupported(!!(el.requestFullscreen || el.webkitRequestFullscreen))
+    return () => {
+      tableQ.removeEventListener("change", apply)
+      shortQ.removeEventListener("change", apply)
+    }
   }, [])
   const switchLayout = () => {
     const next = mobileLayout === "rows" ? "tiles" : "rows"
@@ -722,7 +745,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     return (
       <button
         onClick={() => tapAction(type, made, technical)}
-        className={`min-w-0 flex-1 rounded-xl px-1 py-3 text-sm font-bold transition max-md:py-2.5 ${
+        className={`min-w-0 flex-1 rounded-xl px-1 py-3 text-sm font-bold transition max-md:py-2.5 [@media(max-height:520px)]:py-1.5 ${
           active ? "ring-play-500 ring-2 " : ""
         }${tone}`}
       >
@@ -766,7 +789,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               key={pid}
               onClick={() => tapPlayer(pid, teamId)}
               disabled={line?.fouledOut}
-              className={`relative h-12 min-w-0 flex-1 rounded-xl border border-b-4 bg-white text-lg font-bold text-ink-950 ${accent} ${
+              className={`relative h-12 min-w-0 flex-1 rounded-xl border border-b-4 bg-white text-lg font-bold text-ink-950 [@media(max-height:520px)]:h-10 ${accent} ${
                 selected
                   ? "border-play-500 bg-play-100"
                   : pendingAction
@@ -789,7 +812,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     <div className="sticky bottom-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-sm">
       {/* Status strip: FIXED height, content swaps — never inserts.
           Hosts the idle hint, the two-tap hint, or the chain prompt. */}
-      <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1 max-md:min-h-[46px]">
+      <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1 max-md:min-h-[46px] [@media(max-height:520px)]:min-h-[40px]">
         {chain ? (
           <>
             <span className="text-play-800 whitespace-nowrap text-xs font-semibold">
@@ -841,7 +864,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           </p>
         )}
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5 [@media(max-height:520px)]:grid-cols-6">
         {actionBtn("+2", "SCORE_2PT", true, "bg-court-600 text-white hover:bg-court-700")}
         {actionBtn("+3", "SCORE_3PT", true, "bg-court-600 text-white hover:bg-court-700")}
         {actionBtn("FT ✓", "SCORE_FT", true, "bg-court-500 text-white hover:bg-court-600")}
@@ -935,7 +958,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               <span className="bg-play-400 mr-1 inline-block h-2 w-2 rounded-full align-middle" />
               <span className="text-ink-500">{game.homeTeam.name}</span>
             </div>
-            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl">{fold.homeScore}</div>
+            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl [@media(max-height:520px)]:text-xl">{fold.homeScore}</div>
             <div className="text-ink-400 text-[10px]">
               fouls {fold.teamFouls[game.homeTeam.id]?.[fold.period] ?? 0}
               {(fold.teamFouls[game.homeTeam.id]?.[fold.period] ?? 0) >= 7 ? " · bonus" : ""}
@@ -1003,7 +1026,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               <span className="text-ink-500">{game.awayTeam.name}</span>
               <span className="bg-court-400 ml-1 inline-block h-2 w-2 rounded-full align-middle" />
             </div>
-            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl">{fold.awayScore}</div>
+            <div className="text-ink-950 text-3xl font-bold max-md:text-2xl [@media(max-height:520px)]:text-xl">{fold.awayScore}</div>
             <div className="text-ink-400 text-[10px]">
               fouls {fold.teamFouls[game.awayTeam.id]?.[fold.period] ?? 0}
               {(fold.teamFouls[game.awayTeam.id]?.[fold.period] ?? 0) >= 7 ? " · bonus" : ""}
@@ -1038,13 +1061,15 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               ? "synced"
               : `${queue.length + voidQueue.length} pending`}
           </span>
-          <button
-            onClick={switchLayout}
-            title="Switch player layout (rows vs tiles)"
-            className="border-ink-200 text-ink-600 hover:bg-ink-50 flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold md:hidden"
-          >
-            {mobileLayout === "rows" ? "Rows" : "Tiles"}
-          </button>
+          {!isTable && !isShort && (
+            <button
+              onClick={switchLayout}
+              title="Switch player layout (rows vs tiles)"
+              className="border-ink-200 text-ink-600 hover:bg-ink-50 flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold"
+            >
+              {mobileLayout === "rows" ? "Rows" : "Tiles"}
+            </button>
+          )}
           <a
             href={`/live/${gameId}`}
             target="_blank"
@@ -1057,16 +1082,18 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               <circle cx="12" cy="12" r="3" />
             </svg>
           </a>
-          <button
-            onClick={toggleFullscreen}
-            className={`flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold ${
-              isFullscreen
-                ? "border-play-400 bg-play-50 text-play-700 hover:bg-play-100"
-                : "border-ink-200 text-ink-600 hover:bg-ink-50"
-            }`}
-          >
-            {isFullscreen ? "Exit full screen" : "Full screen"}
-          </button>
+          {fsSupported && (
+            <button
+              onClick={toggleFullscreen}
+              className={`flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold ${
+                isFullscreen
+                  ? "border-play-400 bg-play-50 text-play-700 hover:bg-play-100"
+                  : "border-ink-200 text-ink-600 hover:bg-ink-50"
+              }`}
+            >
+              {isFullscreen ? "Exit full screen" : "Full screen"}
+            </button>
+          )}
           <button
             onClick={() => {
               const last = lastThree[0] as QueuedEvent | undefined
@@ -1079,28 +1106,30 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         </div>
       </div>
 
-      {/* phone: player area (scorekeeper-chosen layout) + pad — one screen */}
-      <div className="mt-2 space-y-1.5 md:hidden">
-        {mobileLayout === "rows" ? (
-          <>
-            {chipRow(game.homeTeam.id, "home")}
-            {chipRow(game.awayTeam.id, "away")}
-          </>
-        ) : (
-          <div className="grid grid-cols-2 gap-1.5">
-            {compactColumn(game.homeTeam.id, "home")}
-            {compactColumn(game.awayTeam.id, "away")}
-          </div>
-        )}
-        {actionPad}
-      </div>
-
-      {/* tablet / desktop: scorer's-table three-column layout */}
-      <div className="mt-2 hidden gap-2 md:grid md:grid-cols-[1fr_2fr_1fr]">
-        <div>{floorTiles(game.homeTeam.id, "home")}</div>
-        <div>{actionPad}</div>
-        <div>{floorTiles(game.awayTeam.id, "away")}</div>
-      </div>
+      {/* Layout by form factor (width AND height). Landscape phones (short)
+          force the rows layout — it's the only one that fits ~390px. */}
+      {isTable ? (
+        <div className="mt-2 grid gap-2 md:grid-cols-[1fr_2fr_1fr]">
+          <div>{floorTiles(game.homeTeam.id, "home")}</div>
+          <div>{actionPad}</div>
+          <div>{floorTiles(game.awayTeam.id, "away")}</div>
+        </div>
+      ) : (
+        <div className="mt-2 space-y-1.5">
+          {mobileLayout === "rows" || isShort ? (
+            <>
+              {chipRow(game.homeTeam.id, "home")}
+              {chipRow(game.awayTeam.id, "away")}
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-1.5">
+              {compactColumn(game.homeTeam.id, "home")}
+              {compactColumn(game.awayTeam.id, "away")}
+            </div>
+          )}
+          {actionPad}
+        </div>
+      )}
 
       {/* subs panel */}
       {subsTeamId && (
