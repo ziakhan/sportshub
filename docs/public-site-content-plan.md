@@ -1,0 +1,217 @@
+# Public Site & Content Ecosystem — Detailed Plan
+
+Owner brief (2026-07-05): the homepage is the public face — parents and the
+general public land there. It must be a place people COME BACK to and
+consume: news (huge), video highlights, stats, leaders, AI blurbs. Content
+comes from creators (influencers / videographers / photographers — club,
+team, or league affiliated, or independent) tagged to teams. Entity pages
+(league / club / team / player / referee) carry stats and leaders. Later:
+participant-gated star ratings and reviews.
+
+Research grounding: MaxPreps (stats/scores/leaders/news as an SEO content
+destination — nav is literally Stat Leaders · Photos · News · Streams),
+GameChanger (auto game recaps "newspaper-style", auto highlight clips,
+family subscription), youth-safety consent norms (parental media release
+before ANY public image of a minor, revocable, activity-over-child framing).
+
+---
+
+## 1. Strategy — from tool to destination
+
+Today the platform is a TOOL people visit to do a task (register, score,
+manage). The homepage's job is to make it a DESTINATION with a reason to
+return between tasks. The flywheel:
+
+    games get scored (we have this)
+      → stats + recaps + highlights are generated/posted
+        → parents/kids come to consume & share
+          → clubs/leagues see the audience and bring more programs
+            → more games get scored
+
+Two unfair advantages we already own:
+- **The event stream.** Every scored game has play-by-play — we can
+  auto-generate a GameChanger-style recap blurb for EVERY game with zero
+  human effort (AI recap: lead changes, top scorers, key runs).
+- **The trust graph.** We know who's a parent of whom, who played in which
+  game, who coaches what — enabling participant-gated reviews and
+  personalized feeds no generic CMS can do.
+
+## 2. Audiences and their first-30-seconds job
+
+| Visitor | They came to… | Homepage must offer |
+|---|---|---|
+| Parent (signed in) | see MY kid: last game, next game, stats, photos | personalized "Your teams" rail at the very top |
+| Kid/player (13+) | my stats, my highlights, leaders (am I on the board?) | leaders + player pages + highlight reels |
+| General public / grandparent (anonymous) | follow a team/league casually, read news | scores strip, news feed, browse without login |
+| Coach/club staff | scores around the league, own team's content | scores + club/team quick links (they mostly live in dashboard) |
+| Referee | schedule, assignments | a slim "officials" entry point (dashboard is their home) |
+| Club/league shopper (acquisition) | "should my org use this?" | proof: live scores, real content, a "For clubs & leagues" CTA |
+
+Principle: ONE homepage, two states. Anonymous = regional/popular content +
+acquisition CTAs. Signed-in = "Your teams" feed first, general content below.
+No separate marketing site — the product IS the marketing (MaxPreps model).
+
+## 3. Homepage blueprint (section order, with why)
+
+### Anonymous state
+1. **Scoreboard strip** (top, horizontal scroll): today's/live games with
+   live scores (LIVE badge), tap → public game page. WHY: instant proof of
+   life; the single most "come back later" element. (Data exists today.)
+2. **Hero / news lead**: the top story — editorial pick or hottest AI recap
+   with photo. WHY: news is the owner's #1 content bet; lead with it.
+3. **News & recaps feed** (main column, infinite): mix of creator posts,
+   AI game recaps, league announcements. Filter chips: All · My area ·
+   League · Club. WHY: the consumption engine.
+4. **Stat leaders rail** (side column): league leaders (PTS/REB/AST), tab
+   per league; "Full leaders →". WHY: MaxPreps' most-visited surface; kids
+   check ranks obsessively.
+5. **Highlights reel row**: horizontal video cards (creator clips). WHY:
+   video is the highest-engagement format; also the influencer showcase.
+6. **Browse rails**: leagues near you, clubs directory (188 Ontario clubs
+   already imported = SEO surface), upcoming tryouts/camps (existing
+   marketplace data — acquisition tie-in).
+7. **Persona CTA band**: "Run a club?" / "Run a league?" / "Referee?" →
+   targeted onboarding. WHY: acquisition without polluting the content top.
+8. Footer: standard.
+
+### Signed-in state (parent example)
+1. **"Your teams" rail** replacing hero: per followed/child team — last
+   result, next game (time/venue), kid's line from last game ("Maya: 12 PTS
+   · 5 REB"), new photos/clips tagged to their team. WHY: the retention
+   loop; GameChanger's family engine.
+2. Scoreboard strip (their leagues first), then the general feed 3–6.
+
+### Mechanics
+- Follow model: FOLLOW any team/club/league (parents auto-follow kids'
+  teams). Follows drive the feed + (later) notifications/digest emails.
+- Every card deep-links to entity pages (below) — homepage is a router
+  into the site's depth. All public pages = SEO pages.
+
+## 4. Entity page hierarchy
+
+| Page | Contains | Status |
+|---|---|---|
+| League (public) | standings, schedule/scores, leaders board, news tagged to league, teams | standings/schedule exist; leaders + news feed to build |
+| Club | about (exists), teams, news/photos tagged, honors, reviews (later) | public club page exists; content surfaces to build |
+| Team | roster (respecting privacy), schedule/results, team stats, leaders, tagged content | /team hub was UI-redesign D3 (pending) — merge into this plan |
+| Player | season stat line + game log, highlights they're tagged in, (13+ self-managed; minors = consent-gated visibility) | to build; consent model first |
+| Referee | profile, certifications, games officiated (reviews LATER, likely never public — owner unsure) | profile exists (private); public page deferred |
+| Game (public) | already built: live page + box + play-by-play + scoresheet | done ✓ |
+
+## 5. Content lifecycle (creators → tags → approval → distribution)
+
+### Creator roles
+New capability, not a new nav world: a **CreatorProfile** (kind:
+INFLUENCER | VIDEOGRAPHER | PHOTOGRAPHER) attachable to any user.
+Affiliation: club / team / league (via existing UserRole scoping pattern)
+or INDEPENDENT. Affiliated creators are trusted by default; independents
+publish through approval.
+
+### Content model
+- **Post**: kind (ARTICLE | PHOTO_SET | VIDEO | RECAP_AI | ANNOUNCEMENT),
+  title, body (rich text), authorId/creatorProfileId, status
+  (DRAFT | PENDING_REVIEW | PUBLISHED | REJECTED | TAKEN_DOWN), publishedAt.
+- **MediaAsset**: image/video, storage URL, poster, duration; belongs to a
+  Post.
+- **PostTag**: polymorphic — teamId | clubId(tenant) | leagueId | gameId |
+  playerId?. Tags are DISTRIBUTION: a post tagged to a team appears on the
+  team page, its club page, its league feed, followers' homepages.
+
+### Approval & safety (non-negotiable, minors involved)
+- **Media consent per player**: `Player.mediaConsent` (GRANTED | DENIED |
+  UNSET) collected from the parent (registration + settings). Player-tagged
+  content requires consent = GRANTED for every tagged minor. Best practice
+  (CPSU/SafeSport): consent revocable any time → revocation auto-hides
+  tagged content; prefer activity-focused imagery; default to first-name +
+  initial or jersey number for minors in public stats UNLESS consent grants
+  full name (owner decision below).
+- **Approval chain**: content tagged to a team/club → that club's staff
+  approve (queue in club dashboard). League-tagged → league owner. Trusted
+  affiliated creators can be set to auto-publish by their org. Independents
+  always queue. Platform admin = global takedown + creator suspension.
+- **Report button** on all public content → moderation queue.
+
+### Video strategy (decision)
+- P2-cheap: paste YouTube/Vimeo links (creators already live there) —
+  embed, zero storage cost/risk.
+- P3-native: direct upload → Mux or Cloudflare Stream (per-minute cost,
+  full control, clips can later tie to the AI/Film-Room vision in
+  docs/live-scoring-plan.md phase 2). Photos: Vercel Blob from day one
+  (next.config already anticipates it).
+
+## 6. News engine — three sources, one feed
+
+1. **AI game recaps (differentiator, cheap, infinite).** On finalize, a
+   worker turns the event stream into a 120–200-word recap: final, line
+   score, top performers, biggest run, fouls drama. Claude API generates;
+   stored as Post(kind: RECAP_AI, tags: game/teams/league). Owner decision:
+   auto-publish vs draft-for-approval.
+2. **Creator posts** (section 5).
+3. **League/club announcements** — the existing Announcement model gets a
+   `public` flag and flows into the same feed.
+
+## 7. Stats surfaces (P1 — buildable NOW)
+
+- **Season aggregation**: per player per season from PlayerStat +
+  ATTENDANCE events (games-played denominators — built for exactly this).
+  Nightly recompute or on-finalize incremental.
+- **Leaders**: by league (and division): PPG/RPG/APG/SPG/BPG + totals,
+  min-games threshold (e.g., played ≥50% of team games) to keep ranks fair.
+- Surfaces: homepage rail → league leaders page → team stats tab → player
+  page. Same fold-style pure lib + tests as scheduler/standings/fold.
+
+## 8. Ratings & reviews (later phase, design notes)
+
+- Review model EXISTS and is hidden behind `{false && ...}` — reuse.
+- **Participation-gated**: only users provably connected in-season (parent
+  of rostered player ↔ club/coach; club ↔ league) may review; enforced from
+  rosters/registrations. One review per relationship per season (DB unique
+  already patterned in authz-integrity SQL).
+- **End-of-season prompt**: when a season completes, email/notify eligible
+  parents: "rate your experience with {club} / {coach}".
+- Aggregate stars public on club pages once n ≥ 3 (avoid identifying a
+  single reviewer); coach ratings: aggregate-only, never public raw
+  comments (owner instinct: not fully public — respected).
+- Referees/leagues reviewable? OPEN — owner undecided. Recommendation:
+  leagues rateable by club owners only (they're the customers); referees
+  internal-only feedback to the league (assignment quality), never public.
+
+## 9. Data model sketch (new)
+
+```
+CreatorProfile(id, userId, kind, bio, portfolioUrl,
+               tenantId?/teamId?/leagueId?  → null = independent,
+               trusted Boolean, status)
+Post(id, kind, title, slug, body, coverAssetId?, authorId,
+     creatorProfileId?, status, publishedAt, aiModel?)
+MediaAsset(id, postId, type IMAGE|VIDEO_EMBED|VIDEO_NATIVE, url,
+           posterUrl?, durationS?, width?, height?)
+PostTag(id, postId, teamId?, tenantId?, leagueId?, gameId?, playerId?)
+Follow(id, userId, teamId?/tenantId?/leagueId?)
+Player.mediaConsent  MediaConsent @default(UNSET)
+Announcement.public  Boolean @default(false)
+```
+
+## 10. Phasing
+
+| Phase | Scope | Est. |
+|---|---|---|
+| **P1 — Stats + skeleton home** | Season aggregation lib + leaders (league/team/player surfaces); homepage v1: scoreboard strip, leaders rail, news feed seeded by AI recaps + public announcements; Follow model + "Your teams" rail; player pages w/ consent-gated naming | 2–3 sessions |
+| **P2 — Creator content** | CreatorProfile + Post/MediaAsset/PostTag; photo upload (Vercel Blob) + YouTube embeds; approval queues in club/league dashboards; report/takedown; homepage highlights row + full feed | 2–3 sessions |
+| **P3 — Native video + influencer program** | Mux/Cloudflare Stream uploads; creator public profiles & credits; digest emails ("your week in {league}") | 2 sessions |
+| **P4 — Reviews** | Un-hide Review system, participation gating, season-end prompts, club star aggregates | 1–2 sessions |
+
+P1 has zero dependencies and directly extends this weekend's work (it IS
+the "season stats" recommendation, now framed as the homepage's engine).
+
+## 11. Owner decisions needed before P1/P2
+
+1. **Minor privacy default on public stats/rosters**: full names vs
+   "first name + last initial" vs jersey-only, absent explicit consent.
+   (Safety guidance favors restraint; MaxPreps shows full names but is
+   high-school. U11 is different.)
+2. **AI recaps**: auto-publish on finalize vs draft-for-league-approval.
+3. **Video v1**: YouTube-embed-only (P2) vs go straight to native hosting.
+4. Reviews scope confirmation when P4 nears (leagues? referees? — §8
+   recommendation stands until then).
+```
