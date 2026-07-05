@@ -47,6 +47,7 @@ const updateLeagueSchema = z.object({
   gameClockMode: z.enum(["SIMPLE", "OFF"]).optional(),
   periodType: z.enum(["QUARTERS", "HALVES"]).optional(),
   periodMinutes: z.number().int().min(1).max(30).optional(),
+  requireRefereeApproval: z.boolean().optional(),
 })
 
 /**

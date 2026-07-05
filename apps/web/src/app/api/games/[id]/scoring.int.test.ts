@@ -27,6 +27,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
  */
 
 let world: BuiltWorld
+let seasonId: string
 let leagueOwnerId: string
 let clubAOwnerId: string
 let clubBOwnerId: string
@@ -64,6 +65,7 @@ beforeAll(async () => {
     ],
   })
   const season = world.leagues[0].seasons[0]
+  seasonId = season.id
   leagueOwnerId = world.leagues[0].owner.id
   clubAOwnerId = season.feederClub!.owner.id
   const submissionA = season.divisions[0].submissions[0]
@@ -230,6 +232,29 @@ describe("append-only event stream", () => {
   })
 })
 
+describe("referee sign-off (league-configurable)", () => {
+  it("a league that requires it refuses finalize without a signature, accepts with one recorded", async () => {
+    await (prisma as any).league.updateMany({
+      where: { seasons: { some: { id: seasonId } } },
+      data: { requireRefereeApproval: true },
+    })
+
+    actAs(clubAOwnerId)
+    const refused = await finalizePost(
+      jsonRequest(`/api/games/${gameId}/finalize`, {}, "POST"),
+      { params: { id: gameId } }
+    )
+    expect(refused.status).toBe(400)
+    expect((await refused.json()).code).toBe("REFEREE_REQUIRED")
+
+    // turn it back off — the finalize suite below runs signature-free
+    await (prisma as any).league.updateMany({
+      where: { seasons: { some: { id: seasonId } } },
+      data: { requireRefereeApproval: false },
+    })
+  })
+})
+
 describe("finalize", () => {
   it("folds the stream into scores + PlayerStat rows and marks the game COMPLETED", async () => {
     actAs(clubAOwnerId)
@@ -282,6 +307,7 @@ describe("public live read", () => {
   it("is on the anonymous-read allowlist and serves events + rosters with no session", async () => {
     expect(isPublicPath(`/api/live/${gameId}`, "GET")).toBe(true)
     expect(isPublicPath(`/api/live/${gameId}`, "POST")).toBe(false)
+    expect(isPublicPath(`/scoresheet/${gameId}`, "GET")).toBe(true)
 
     actAs(null)
     const res = await liveGet(

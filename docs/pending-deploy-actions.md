@@ -246,6 +246,7 @@ Expect:
 - `League` gains `statDepth`/`gameClockMode`/`periodType`/`periodMinutes`
   (new enums StatDepth/ClockMode/PeriodType, all defaulted — additive).
 - `Game` gains nullable `scoringSessionId`/`scoringSessionUser`/
-  `scoringSessionAt`.
+  `scoringSessionAt`, plus `refereeName`/`refereeSignedAt` (sign-off).
+- `League` also gains `requireRefereeApproval Boolean @default(false)`.
 
 Nothing to backfill.

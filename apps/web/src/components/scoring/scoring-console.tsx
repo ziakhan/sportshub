@@ -34,6 +34,7 @@ interface Bootstrap {
     gameClockMode: "SIMPLE" | "OFF"
     periodType: "QUARTERS" | "HALVES"
     periodMinutes: number
+    requireRefereeApproval: boolean
   }
   rosters: { home: RosterEntry[]; away: RosterEntry[] }
   events: Array<FoldEvent & { clientEventId: string | null }>
@@ -117,6 +118,9 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const [finalizing, setFinalizing] = useState(false)
   const [finalized, setFinalized] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+  const [showBox, setShowBox] = useState(false)
+  const [refereeName, setRefereeName] = useState("")
+  const [finalizeError, setFinalizeError] = useState<string | null>(null)
   const [clockDisplay, setClockDisplay] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   // Phone player-area layout — a per-DEVICE preference (scorekeepers pick
@@ -510,12 +514,17 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         <p className="text-ink-900 mt-2 text-3xl font-bold">
           {game.homeTeam.name} {fold.homeScore} — {fold.awayScore} {game.awayTeam.name}
         </p>
-        <a
-          href={`/live/${gameId}`}
-          className="text-play-600 mt-4 inline-block text-sm font-semibold hover:underline"
-        >
-          View the public box score →
-        </a>
+        <div className="mt-4 flex justify-center gap-4">
+          <a
+            href={`/scoresheet/${gameId}`}
+            className="text-play-600 text-sm font-semibold hover:underline"
+          >
+            Official scoresheet (print) →
+          </a>
+          <a href={`/live/${gameId}`} className="text-play-600 text-sm font-semibold hover:underline">
+            Public box score →
+          </a>
+        </div>
       </div>
     )
   }
@@ -599,54 +608,81 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     )
   }
 
+  // Shared box-score table — used by the review screen AND the in-game
+  // BOX overlay ("how many fouls does #23 have?" without leaving the page).
+  const boxTable = (teamId: string, label: string) => {
+    const lines = Object.values(fold.players)
+      .filter((l) => l.teamId === teamId)
+      .sort((a, b) => b.points - a.points)
+    return (
+      <div className="flex-1 overflow-x-auto rounded-xl border border-ink-200 bg-white p-3">
+        <h3 className="text-ink-900 mb-2 text-sm font-semibold">{label}</h3>
+        <table className="w-full text-xs">
+          <thead className="text-ink-400 text-left text-[10px] uppercase">
+            <tr>
+              <th className="py-1 pr-2">Player</th>
+              <th className="px-1 text-right">PTS</th>
+              <th className="px-1 text-right">REB</th>
+              <th className="px-1 text-right">AST</th>
+              <th className="px-1 text-right">PF</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l) => (
+              <tr key={l.playerId} className="border-ink-100 border-t">
+                <td className="py-1 pr-2">
+                  #{jerseyOf(l.playerId)} {nameOf(l.playerId)}
+                  {l.onFloor ? <span className="text-court-600"> ●</span> : null}
+                </td>
+                <td className="px-1 text-right font-semibold">{l.points}</td>
+                <td className="px-1 text-right">{l.offRebounds + l.defRebounds}</td>
+                <td className="px-1 text-right">{l.assists}</td>
+                <td className={`px-1 text-right ${l.fouls >= FOUL_LIMIT - 1 ? "text-hoop-700 font-bold" : ""}`}>
+                  {l.fouls}
+                  {l.technicalFouls > 0 ? ` (T${l.technicalFouls})` : ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   // ---------- review / finalize ----------
   if (reviewing) {
-    const box = (teamId: string, label: string) => {
-      const lines = Object.values(fold.players)
-        .filter((l) => l.teamId === teamId)
-        .sort((a, b) => b.points - a.points)
-      return (
-        <div className="flex-1 overflow-x-auto rounded-xl border border-ink-200 bg-white p-3">
-          <h3 className="text-ink-900 mb-2 text-sm font-semibold">{label}</h3>
-          <table className="w-full text-xs">
-            <thead className="text-ink-400 text-left text-[10px] uppercase">
-              <tr>
-                <th className="py-1 pr-2">Player</th>
-                <th className="px-1 text-right">PTS</th>
-                <th className="px-1 text-right">REB</th>
-                <th className="px-1 text-right">AST</th>
-                <th className="px-1 text-right">PF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lines.map((l) => (
-                <tr key={l.playerId} className="border-ink-100 border-t">
-                  <td className="py-1 pr-2">
-                    #{jerseyOf(l.playerId)} {nameOf(l.playerId)}
-                  </td>
-                  <td className="px-1 text-right font-semibold">{l.points}</td>
-                  <td className="px-1 text-right">{l.offRebounds + l.defRebounds}</td>
-                  <td className="px-1 text-right">{l.assists}</td>
-                  <td className="px-1 text-right">
-                    {l.fouls}
-                    {l.technicalFouls > 0 ? ` (T${l.technicalFouls})` : ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    }
+    const needsReferee = config.requireRefereeApproval && refereeName.trim().length < 2
     return (
       <div className="mx-auto max-w-5xl space-y-4 p-4">
         <h2 className="text-ink-950 text-center text-lg font-bold">
           Review: {game.homeTeam.name} {fold.homeScore} — {fold.awayScore} {game.awayTeam.name}
         </h2>
         <div className="flex flex-col gap-4 md:flex-row">
-          {box(game.homeTeam.id, game.homeTeam.name)}
-          {box(game.awayTeam.id, game.awayTeam.name)}
+          {boxTable(game.homeTeam.id, game.homeTeam.name)}
+          {boxTable(game.awayTeam.id, game.awayTeam.name)}
         </div>
+
+        {config.requireRefereeApproval && (
+          <div className="border-amber-300 bg-amber-50 rounded-xl border p-3">
+            <label className="text-amber-800 text-xs font-semibold">
+              Referee sign-off (required by this league) — referee types their name to approve
+              this scoresheet:
+            </label>
+            <input
+              type="text"
+              value={refereeName}
+              onChange={(e) => setRefereeName(e.target.value)}
+              placeholder="Referee's full name"
+              className="border-amber-300 mt-1.5 w-full rounded-lg border bg-white px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+        {finalizeError && (
+          <p className="border-hoop-200 bg-hoop-50 text-hoop-700 rounded-xl border p-3 text-sm">
+            {finalizeError}
+          </p>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={() => setReviewing(false)}
@@ -655,9 +691,11 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             ← Back to scoring
           </button>
           <button
-            disabled={finalizing}
+            disabled={finalizing || needsReferee}
+            title={needsReferee ? "The referee must sign off first" : ""}
             onClick={async () => {
               setFinalizing(true)
+              setFinalizeError(null)
               await syncTick()
               // ensure queue fully flushed before finalizing
               for (let i = 0; i < 10; i++) {
@@ -665,9 +703,20 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
                 await new Promise((r) => setTimeout(r, 800))
                 await syncTick()
               }
-              const res = await fetch(`/api/games/${gameId}/finalize`, { method: "POST" })
+              const res = await fetch(`/api/games/${gameId}/finalize`, {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(
+                  refereeName.trim() ? { refereeName: refereeName.trim() } : {}
+                ),
+              })
               setFinalizing(false)
-              if (res.ok) setFinalized(true)
+              if (res.ok) {
+                setFinalized(true)
+              } else {
+                const body = await res.json().catch(() => ({}))
+                setFinalizeError(body.error || "Couldn't finalize the game")
+              }
             }}
             className="bg-court-600 hover:bg-court-700 flex-1 rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
           >
@@ -1027,6 +1076,12 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               {queue.length + voidQueue.length === 0 ? "✓" : queue.length + voidQueue.length}
             </span>
             <button
+              onClick={() => setShowBox(true)}
+              className="border-ink-200 text-ink-600 shrink-0 rounded-lg border px-2 py-1 text-[10px] font-semibold"
+            >
+              BOX
+            </button>
+            <button
               onClick={() => {
                 const last = lastThree[0] as QueuedEvent | undefined
                 if (last) voidEvent(last.clientEventId)
@@ -1147,6 +1202,13 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               ? "synced"
               : `${queue.length + voidQueue.length} pending`}
           </span>
+          <button
+            onClick={() => setShowBox(true)}
+            title="Box score — points, rebounds, assists, fouls"
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold"
+          >
+            BOX
+          </button>
           {!isTable && !isShort && (
             <button
               onClick={switchLayout}
@@ -1224,6 +1286,39 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             </div>
           )}
           {actionPad}
+        </div>
+      )}
+
+      {/* in-game box score — answer "how many fouls?" without leaving */}
+      {showBox && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center"
+          onClick={() => setShowBox(false)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl bg-white p-4 md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-ink-900 text-sm font-semibold">
+                Box score — {game.homeTeam.name} {fold.homeScore} · {fold.awayScore}{" "}
+                {game.awayTeam.name}
+              </h3>
+              <button
+                onClick={() => setShowBox(false)}
+                className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-lg border px-3 py-1.5 text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex flex-col gap-3 md:flex-row">
+              {boxTable(game.homeTeam.id, game.homeTeam.name)}
+              {boxTable(game.awayTeam.id, game.awayTeam.name)}
+            </div>
+            <p className="text-ink-400 mt-2 text-[10px]">
+              ● = on the floor · red PF = one foul from fouling out. Live — updates as you score.
+            </p>
+          </div>
         </div>
       )}
 

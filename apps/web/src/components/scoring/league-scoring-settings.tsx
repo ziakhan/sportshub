@@ -31,12 +31,16 @@ export function LeagueScoringSettings({
     gameClockMode?: string
     periodType?: string
     periodMinutes?: number
+    requireRefereeApproval?: boolean
   }
 }) {
   const [statDepth, setStatDepth] = useState(initial.statDepth ?? "STANDARD")
   const [gameClockMode, setGameClockMode] = useState(initial.gameClockMode ?? "SIMPLE")
   const [periodType, setPeriodType] = useState(initial.periodType ?? "QUARTERS")
   const [periodMinutes, setPeriodMinutes] = useState(initial.periodMinutes ?? 10)
+  const [requireRefereeApproval, setRequireRefereeApproval] = useState(
+    initial.requireRefereeApproval ?? false
+  )
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -48,7 +52,13 @@ export function LeagueScoringSettings({
     const res = await fetch(`/api/leagues/${leagueId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ statDepth, gameClockMode, periodType, periodMinutes }),
+      body: JSON.stringify({
+        statDepth,
+        gameClockMode,
+        periodType,
+        periodMinutes,
+        requireRefereeApproval,
+      }),
     })
     setSaving(false)
     if (!res.ok) {
@@ -139,6 +149,22 @@ export function LeagueScoringSettings({
             />
             <span className="text-ink-500 text-xs">min</span>
           </div>
+
+          <label className="mt-4 flex items-start gap-2 text-sm text-ink-700">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={requireRefereeApproval}
+              onChange={(e) => setRequireRefereeApproval(e.target.checked)}
+            />
+            <span>
+              Require referee sign-off
+              <span className="text-ink-500 block text-xs">
+                The referee types their name at the table before a game can be finalized —
+                like signing the paper scoresheet. The signature appears on the printed sheet.
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

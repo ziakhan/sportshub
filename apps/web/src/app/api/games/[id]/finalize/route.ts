@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { z } from "zod"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
+import { sendEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
+
+const finalizeSchema = z.object({
+  // Referee signature (typed name at the table) — required when the league
+  // demands sign-off, like signing the paper sheet.
+  refereeName: z.string().trim().min(2).max(120).optional(),
+})
 
 /**
  * POST /api/games/[id]/finalize — fold the event stream server-side, write
@@ -13,7 +21,7 @@ export const dynamic = "force-dynamic"
  * corrections path: void/add events, then re-run) is restricted to the
  * league owner or a platform admin.
  */
-export async function POST(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -26,7 +34,17 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
         homeTeamId: true,
         awayTeamId: true,
         status: true,
-        season: { select: { league: { select: { ownerId: true } } } },
+        scheduledAt: true,
+        homeTeam: { select: { name: true, tenantId: true } },
+        awayTeam: { select: { name: true, tenantId: true } },
+        season: {
+          select: {
+            label: true,
+            league: {
+              select: { ownerId: true, name: true, requireRefereeApproval: true },
+            },
+          },
+        },
       },
     })
     if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 })
@@ -47,6 +65,18 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
           { status: 403 }
         )
       }
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const { refereeName } = finalizeSchema.parse(body ?? {})
+    if (game.season?.league?.requireRefereeApproval && !refereeName && game.status !== "COMPLETED") {
+      return NextResponse.json(
+        {
+          error: "This league requires the referee to sign off before finalizing",
+          code: "REFEREE_REQUIRED",
+        },
+        { status: 400 }
+      )
     }
 
     const rows = await (prisma as any).gameEvent.findMany({
@@ -89,6 +119,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
           scoringSessionId: null,
           scoringSessionUser: null,
           scoringSessionAt: null,
+          ...(refereeName ? { refereeName, refereeSignedAt: new Date() } : {}),
         },
       })
       // Recompute-from-scratch semantics: stats rows mirror the fold exactly
@@ -110,6 +141,53 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
         })
       }
     })
+
+    // Distribute the scoresheet — club managers of BOTH teams + the league
+    // owner. Best-effort: a mail hiccup never blocks the final whistle.
+    try {
+      const tenantIds = [game.homeTeam.tenantId, game.awayTeam.tenantId].filter(Boolean)
+      const [managers, leagueOwner] = await Promise.all([
+        prisma.userRole.findMany({
+          where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager"] } },
+          select: { user: { select: { email: true } } },
+        }),
+        game.season?.league?.ownerId
+          ? prisma.user.findUnique({
+              where: { id: game.season.league.ownerId },
+              select: { email: true },
+            })
+          : null,
+      ])
+      const recipients = Array.from(
+        new Set(
+          [...managers.map((m: any) => m.user?.email), leagueOwner?.email].filter(
+            (e): e is string => !!e
+          )
+        )
+      )
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+      const title = `${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}`
+      await Promise.allSettled(
+        recipients.map((to) =>
+          sendEmail({
+            to,
+            subject: `Final: ${title}`,
+            html: `
+              <h2>Final: ${title}</h2>
+              <p>${game.season?.league?.name ?? ""} ${game.season?.label ?? ""} · ${new Date(
+                game.scheduledAt
+              ).toLocaleDateString()}</p>
+              ${refereeName ? `<p>Referee: <strong>${refereeName}</strong></p>` : ""}
+              <p><a href="${baseUrl}/scoresheet/${game.id}">View / print the official scoresheet</a></p>
+              <p><a href="${baseUrl}/live/${game.id}">Box score &amp; play-by-play</a></p>
+            `,
+            text: `Final: ${title}\nScoresheet: ${baseUrl}/scoresheet/${game.id}`,
+          })
+        )
+      )
+    } catch (mailErr) {
+      console.error("Scoresheet email failed:", mailErr)
+    }
 
     return NextResponse.json({
       success: true,

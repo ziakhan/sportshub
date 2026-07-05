@@ -164,6 +164,7 @@ export default function LeagueDashboardPage() {
           gameClockMode: league.gameClockMode,
           periodType: league.periodType,
           periodMinutes: league.periodMinutes,
+          requireRefereeApproval: (league as any).requireRefereeApproval,
         }}
       />
 

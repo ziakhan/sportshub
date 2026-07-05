@@ -210,6 +210,12 @@ export function LiveView({ gameId }: { gameId: string }) {
           </div>
         </div>
         {game.venueName && <p className="text-ink-400 mt-1 text-xs">{game.venueName}</p>}
+        <a
+          href={`/scoresheet/${game.id}`}
+          className="text-play-600 mt-2 inline-block text-xs font-semibold hover:underline"
+        >
+          Official scoresheet (print) →
+        </a>
       </div>
 
       {!live && !final && fold.playByPlay.length === 0 && (

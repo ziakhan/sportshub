@@ -572,6 +572,8 @@ model League {
   gameClockMode ClockMode  @default(SIMPLE)
   periodType    PeriodType @default(QUARTERS)
   periodMinutes Int        @default(10)
+  // Referee signs the scoresheet before a game can be finalized
+  requireRefereeApproval Boolean @default(false)
 
   seasons Season[]
   staff   UserRole[]
@@ -919,6 +921,10 @@ model Game {
   scoringSessionId   String?
   scoringSessionUser String?
   scoringSessionAt   DateTime?
+
+  // Referee sign-off at finalize (paper-scoresheet style; league-configurable)
+  refereeName     String?
+  refereeSignedAt DateTime?
 
   events       GameEvent[]
   stats        PlayerStat[]

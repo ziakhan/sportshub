@@ -84,6 +84,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
                 gameClockMode: true,
                 periodType: true,
                 periodMinutes: true,
+                requireRefereeApproval: true,
               },
             },
           },
@@ -138,6 +139,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         gameClockMode: league?.gameClockMode ?? "SIMPLE",
         periodType: league?.periodType ?? "QUARTERS",
         periodMinutes: league?.periodMinutes ?? 10,
+        requireRefereeApproval: league?.requireRefereeApproval ?? false,
       },
       rosters: { home: homeRoster, away: awayRoster },
       events: events.map((e: any) => ({

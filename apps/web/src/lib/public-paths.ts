@@ -23,6 +23,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/league",
   "/invitations",
   "/live",
+  "/scoresheet",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
