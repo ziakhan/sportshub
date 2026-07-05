@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
+import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
 
 /**
- * Public live scoreboard — polls the read API every 10s and folds the event
- * stream client-side with the SAME engine the console uses, so the numbers
- * can never disagree.
+ * Public game page, sports-app style (Bleacher Report / theScore / Yahoo):
+ * score header with line score, Game Leaders, then Box Score / Play-by-Play
+ * tabs with a team switcher. Polls every 10s and folds the event stream
+ * client-side with the SAME engine the console uses.
  */
 
 interface LivePlayer {
@@ -33,13 +34,15 @@ interface LivePayload {
   players: LivePlayer[]
 }
 
+type Tab = "box" | "plays"
+
 export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
   const [error, setError] = useState(false)
   const [canScore, setCanScore] = useState(false)
+  const [tab, setTab] = useState<Tab>("box")
+  const [boxSide, setBoxSide] = useState<"home" | "away">("home")
 
-  // If the signed-in viewer has scoring access, point them at the console —
-  // this page is read-only for everyone and that confuses scorekeepers.
   useEffect(() => {
     fetch(`/api/games/${gameId}/scoring`)
       .then((res) => setCanScore(res.ok))
@@ -90,9 +93,11 @@ export function LiveView({ gameId }: { gameId: string }) {
 
   const { game } = data
   const byId = new Map(data.players.map((p) => [p.playerId, p]))
-  const label = (pid?: string | null) => {
-    const p = pid ? byId.get(pid) : null
-    return p ? `#${p.jerseyNumber ?? "?"} ${p.name}` : ""
+  const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
+  const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
+  const shortName = (pid: string) => {
+    const parts = (nameOf(pid) || "").split(" ")
+    return parts.length > 1 ? `${parts[0][0]}. ${parts.slice(-1)[0]}` : parts[0] || "—"
   }
 
   const live = game.status === "LIVE"
@@ -100,51 +105,86 @@ export function LiveView({ gameId }: { gameId: string }) {
   const homeScore = final && game.homeScore != null ? game.homeScore : fold.homeScore
   const awayScore = final && game.awayScore != null ? game.awayScore : fold.awayScore
 
-  const box = (teamId: string, teamName: string) => {
-    const lines = Object.values(fold.players)
+  const periods = Array.from(
+    new Set(fold.playByPlay.filter((e) => e.period).map((e) => e.period as number))
+  ).sort((a, b) => a - b)
+  const periodPoints = (teamId: string, p: number) =>
+    fold.playByPlay
+      .filter(
+        (e) =>
+          e.teamId === teamId &&
+          e.period === p &&
+          e.made !== false &&
+          ["SCORE_2PT", "SCORE_3PT", "SCORE_FT"].includes(e.eventType)
+      )
+      .reduce(
+        (s, e) => s + (e.eventType === "SCORE_2PT" ? 2 : e.eventType === "SCORE_3PT" ? 3 : 1),
+        0
+      )
+
+  const teamLines = (teamId: string) =>
+    Object.values(fold.players)
       .filter((l) => l.teamId === teamId)
       .sort((a, b) => b.points - a.points)
+
+  const leaderOf = (teamId: string, stat: (l: PlayerLine) => number): PlayerLine | null => {
+    const lines = teamLines(teamId).filter((l) => stat(l) > 0)
     if (lines.length === 0) return null
-    return (
-      <div className="border-ink-100 flex-1 overflow-x-auto rounded-2xl border bg-white p-4">
-        <h3 className="text-ink-900 mb-2 text-sm font-semibold">{teamName}</h3>
-        <table className="w-full text-xs">
-          <thead className="text-ink-400 text-left text-[10px] uppercase tracking-wide">
-            <tr>
-              <th className="py-1 pr-2">Player</th>
-              <th className="px-1 text-right">PTS</th>
-              <th className="px-1 text-right">REB</th>
-              <th className="px-1 text-right">AST</th>
-              <th className="px-1 text-right">PF</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l) => (
-              <tr key={l.playerId} className="border-ink-100 border-t">
-                <td className="text-ink-800 py-1 pr-2">
-                  {label(l.playerId) || l.playerId.slice(0, 6)}
-                  {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
-                </td>
-                <td className="px-1 text-right font-semibold">{l.points}</td>
-                <td className="px-1 text-right">{totalRebounds(l)}</td>
-                <td className="px-1 text-right">{l.assists}</td>
-                <td className="px-1 text-right">{l.fouls}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )
+    return lines.reduce((best, l) => (stat(l) > stat(best) ? l : best))
   }
+
+  const LEADER_STATS: Array<{ label: string; get: (l: PlayerLine) => number }> = [
+    { label: "Points", get: (l) => l.points },
+    { label: "Rebounds", get: (l) => totalRebounds(l) },
+    { label: "Assists", get: (l) => l.assists },
+  ]
+
+  const hasAnyStats = Object.keys(fold.players).length > 0
+
+  const leaderCell = (l: PlayerLine | null, value: number | null, align: "left" | "right") => (
+    <div className={`flex-1 ${align === "right" ? "text-right" : ""}`}>
+      {l ? (
+        <>
+          <p className="text-ink-900 truncate text-xs font-semibold">
+            #{jerseyOf(l.playerId)} {shortName(l.playerId)}
+          </p>
+          <p className="text-ink-950 text-lg font-bold">{value}</p>
+        </>
+      ) : (
+        <p className="text-ink-300 text-xs">—</p>
+      )}
+    </div>
+  )
+
+  const boxTeamId = boxSide === "home" ? game.homeTeamId : game.awayTeamId
+  const boxLines = teamLines(boxTeamId)
+  const showMinutes = boxLines.some((l) => l.secondsPlayed > 0)
+  const totals = boxLines.reduce(
+    (t, l) => ({
+      pts: t.pts + l.points,
+      reb: t.reb + totalRebounds(l),
+      ast: t.ast + l.assists,
+      stl: t.stl + l.steals,
+      blk: t.blk + l.blocks,
+      to: t.to + l.turnovers,
+      pf: t.pf + l.fouls,
+    }),
+    { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
+  )
 
   const playByPlay = [...fold.playByPlay]
     .filter((e) =>
-      ["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "FOUL", "SUBSTITUTION", "PERIOD_START", "PERIOD_END"].includes(
-        e.eventType
-      )
+      [
+        "SCORE_2PT",
+        "SCORE_3PT",
+        "SCORE_FT",
+        "FOUL",
+        "SUBSTITUTION",
+        "PERIOD_START",
+        "PERIOD_END",
+      ].includes(e.eventType)
     )
     .reverse()
-    .slice(0, 40)
 
   const describe = (e: FoldEvent): string => {
     switch (e.eventType) {
@@ -152,26 +192,39 @@ export function LiveView({ gameId }: { gameId: string }) {
       case "SCORE_3PT":
       case "SCORE_FT": {
         const pts = e.eventType === "SCORE_2PT" ? 2 : e.eventType === "SCORE_3PT" ? 3 : 1
-        const who = label(e.playerId)
+        const who = e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "—"
         return e.made === false
           ? `${who} misses ${e.eventType === "SCORE_FT" ? "a free throw" : `a ${pts}-pointer`}`
-          : `${who} scores ${pts === 1 ? "a free throw" : `${pts}`}`
+          : `${who} ${e.eventType === "SCORE_FT" ? "makes a free throw" : `scores ${pts}`}`
       }
       case "FOUL":
-        return `Foul on ${label(e.playerId)}`
+        return `Foul on ${e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "team"}${
+          e.metadata?.technical ? " (technical)" : ""
+        }`
       case "SUBSTITUTION":
-        return `Sub: ${label(e.metadata?.inPlayerId)} in for ${label(e.metadata?.outPlayerId)}`
+        return `Sub: ${e.metadata?.inPlayerId ? `#${jerseyOf(e.metadata.inPlayerId)}` : "?"} in, ${
+          e.metadata?.outPlayerId ? `#${jerseyOf(e.metadata.outPlayerId)}` : "?"
+        } out`
       case "PERIOD_START":
-        return `Period ${e.period} begins`
+        return `— Period ${e.period} —`
       case "PERIOD_END":
-        return "Period ends"
+        return "— End of period —"
       default:
         return e.eventType
     }
   }
 
+  const sideDot = (teamId?: string | null) =>
+    teamId === game.homeTeamId ? (
+      <span className="bg-play-400 mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
+    ) : teamId === game.awayTeamId ? (
+      <span className="bg-court-400 mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
+    ) : (
+      <span className="mr-3" />
+    )
+
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-4">
+    <div className="mx-auto max-w-3xl space-y-3 p-3">
       {canScore && !final && (
         <a
           href={`/games/${gameId}/score`}
@@ -180,11 +233,17 @@ export function LiveView({ gameId }: { gameId: string }) {
           You can score this game — open the scoring console →
         </a>
       )}
-      <div className="border-ink-100 rounded-2xl border bg-white p-5 text-center">
-        {game.leagueName && <p className="text-ink-400 text-xs">{game.leagueName}</p>}
-        <div className="mt-1 flex items-center justify-center gap-4">
+
+      {/* score header */}
+      <div className="border-ink-100 rounded-2xl border bg-white p-4">
+        {game.leagueName && (
+          <p className="text-ink-400 text-center text-[11px]">{game.leagueName}</p>
+        )}
+        <div className="mt-1 flex items-center justify-center gap-5">
           <div className="flex-1 text-right">
-            <p className="text-ink-600 text-sm">{game.homeTeamName}</p>
+            <p className="text-ink-700 text-sm font-semibold">
+              {game.homeTeamName} <span className="bg-play-400 ml-1 inline-block h-2 w-2 rounded-full" />
+            </p>
             <p className="text-ink-950 text-4xl font-bold">{homeScore}</p>
           </div>
           <div className="text-center">
@@ -205,46 +264,214 @@ export function LiveView({ gameId }: { gameId: string }) {
             )}
           </div>
           <div className="flex-1 text-left">
-            <p className="text-ink-600 text-sm">{game.awayTeamName}</p>
+            <p className="text-ink-700 text-sm font-semibold">
+              <span className="bg-court-400 mr-1 inline-block h-2 w-2 rounded-full" /> {game.awayTeamName}
+            </p>
             <p className="text-ink-950 text-4xl font-bold">{awayScore}</p>
           </div>
         </div>
-        {game.venueName && <p className="text-ink-400 mt-1 text-xs">{game.venueName}</p>}
-        <a
-          href={`/scoresheet/${game.id}`}
-          className="text-play-600 mt-2 inline-block text-xs font-semibold hover:underline"
-        >
-          Official scoresheet (print) →
-        </a>
+
+        {/* line score */}
+        {periods.length > 0 && (
+          <table className="mx-auto mt-3 border-collapse text-center text-xs">
+            <thead>
+              <tr className="text-ink-400 text-[10px]">
+                <th className="px-2 py-0.5 text-left"></th>
+                {periods.map((p) => (
+                  <th key={p} className="px-2 py-0.5 font-semibold">
+                    {p <= 4 ? `Q${p}` : `OT${p - 4}`}
+                  </th>
+                ))}
+                <th className="px-2 py-0.5 font-bold">T</th>
+              </tr>
+            </thead>
+            <tbody className="text-ink-700">
+              <tr className="border-ink-100 border-t">
+                <td className="px-2 py-0.5 text-left font-semibold">
+                  {game.homeTeamName.slice(0, 14)}
+                </td>
+                {periods.map((p) => (
+                  <td key={p} className="px-2 py-0.5">
+                    {periodPoints(game.homeTeamId, p)}
+                  </td>
+                ))}
+                <td className="px-2 py-0.5 font-bold">{homeScore}</td>
+              </tr>
+              <tr className="border-ink-100 border-t">
+                <td className="px-2 py-0.5 text-left font-semibold">
+                  {game.awayTeamName.slice(0, 14)}
+                </td>
+                {periods.map((p) => (
+                  <td key={p} className="px-2 py-0.5">
+                    {periodPoints(game.awayTeamId, p)}
+                  </td>
+                ))}
+                <td className="px-2 py-0.5 font-bold">{awayScore}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+
+        {game.venueName && (
+          <p className="text-ink-400 mt-2 text-center text-[10px]">{game.venueName}</p>
+        )}
+        <p className="mt-1 text-center">
+          <a
+            href={`/scoresheet/${game.id}`}
+            className="text-play-600 text-[11px] font-semibold hover:underline"
+          >
+            Official scoresheet (print) →
+          </a>
+        </p>
       </div>
 
       {!live && !final && fold.playByPlay.length === 0 && (
         <div className="border-ink-100 rounded-2xl border bg-white p-6 text-center">
           <p className="text-ink-900 text-sm font-semibold">This game hasn&apos;t started yet</p>
           <p className="text-ink-500 mt-1 text-xs">
-            Tip-off {new Date(game.scheduledAt).toLocaleString()}. The live score, box score and
-            play-by-play will appear here automatically once the scorekeeper starts the game —
-            keep this page open, it refreshes on its own.
+            Tip-off {new Date(game.scheduledAt).toLocaleString()}. Live score, leaders and the box
+            score will appear here automatically — this page refreshes on its own.
           </p>
         </div>
       )}
 
-      <div className="flex flex-col gap-4 md:flex-row">
-        {box(game.homeTeamId, game.homeTeamName)}
-        {box(game.awayTeamId, game.awayTeamName)}
-      </div>
-
-      {playByPlay.length > 0 && (
+      {/* game leaders */}
+      {hasAnyStats && (
         <div className="border-ink-100 rounded-2xl border bg-white p-4">
-          <h3 className="text-ink-900 mb-2 text-sm font-semibold">Play-by-play</h3>
-          <ul className="space-y-1">
-            {playByPlay.map((e, i) => (
-              <li key={i} className="text-ink-600 border-ink-50 border-b pb-1 text-xs">
-                <span className="text-ink-400 mr-2">P{e.period ?? "–"}</span>
-                {describe(e)}
-              </li>
+          <h3 className="text-ink-400 mb-2 text-[10px] font-bold uppercase tracking-wider">
+            Game leaders
+          </h3>
+          <div className="space-y-2">
+            {LEADER_STATS.map(({ label, get }) => {
+              const h = leaderOf(game.homeTeamId, get)
+              const a = leaderOf(game.awayTeamId, get)
+              if (!h && !a) return null
+              return (
+                <div key={label} className="border-ink-50 flex items-center gap-3 border-b pb-2 last:border-0 last:pb-0">
+                  {leaderCell(h, h ? get(h) : null, "left")}
+                  <p className="text-ink-400 w-20 shrink-0 text-center text-[10px] font-semibold uppercase">
+                    {label}
+                  </p>
+                  {leaderCell(a, a ? get(a) : null, "right")}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* tabs */}
+      {hasAnyStats && (
+        <div className="border-ink-100 rounded-2xl border bg-white">
+          <div className="border-ink-100 flex border-b">
+            {(
+              [
+                ["box", "Box score"],
+                ["plays", "Play-by-play"],
+              ] as Array<[Tab, string]>
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex-1 py-2.5 text-sm font-semibold ${
+                  tab === key
+                    ? "text-play-700 border-play-600 border-b-2"
+                    : "text-ink-400 hover:text-ink-600"
+                }`}
+              >
+                {label}
+              </button>
             ))}
-          </ul>
+          </div>
+
+          {tab === "box" && (
+            <div className="p-3">
+              {/* team switcher */}
+              <div className="bg-ink-50 mb-2 flex rounded-xl p-0.5">
+                {(["home", "away"] as const).map((side) => (
+                  <button
+                    key={side}
+                    onClick={() => setBoxSide(side)}
+                    className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
+                      boxSide === side ? "text-ink-900 bg-white shadow-sm" : "text-ink-500"
+                    }`}
+                  >
+                    {side === "home" ? game.homeTeamName : game.awayTeamName}
+                  </button>
+                ))}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="text-ink-400 text-left text-[10px] uppercase">
+                    <tr>
+                      <th className="py-1.5 pr-2">Player</th>
+                      {showMinutes && <th className="px-1.5 text-right">MIN</th>}
+                      <th className="px-1.5 text-right">PTS</th>
+                      <th className="px-1.5 text-right">REB</th>
+                      <th className="px-1.5 text-right">AST</th>
+                      <th className="px-1.5 text-right">STL</th>
+                      <th className="px-1.5 text-right">BLK</th>
+                      <th className="px-1.5 text-right">TO</th>
+                      <th className="px-1.5 text-right">PF</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {boxLines.map((l) => (
+                      <tr key={l.playerId} className="border-ink-100 border-t">
+                        <td className="text-ink-800 whitespace-nowrap py-1.5 pr-2">
+                          <span className="text-ink-400 mr-1">#{jerseyOf(l.playerId)}</span>
+                          {shortName(l.playerId)}
+                          {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
+                        </td>
+                        {showMinutes && (
+                          <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>
+                        )}
+                        <td className="px-1.5 text-right font-semibold">{l.points}</td>
+                        <td className="px-1.5 text-right">{totalRebounds(l)}</td>
+                        <td className="px-1.5 text-right">{l.assists}</td>
+                        <td className="px-1.5 text-right">{l.steals}</td>
+                        <td className="px-1.5 text-right">{l.blocks}</td>
+                        <td className="px-1.5 text-right">{l.turnovers}</td>
+                        <td className="px-1.5 text-right">
+                          {l.fouls}
+                          {l.technicalFouls > 0 ? "T" : ""}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="border-ink-200 text-ink-900 border-t font-bold">
+                      <td className="py-1.5 pr-2">Team</td>
+                      {showMinutes && <td />}
+                      <td className="px-1.5 text-right">{totals.pts}</td>
+                      <td className="px-1.5 text-right">{totals.reb}</td>
+                      <td className="px-1.5 text-right">{totals.ast}</td>
+                      <td className="px-1.5 text-right">{totals.stl}</td>
+                      <td className="px-1.5 text-right">{totals.blk}</td>
+                      <td className="px-1.5 text-right">{totals.to}</td>
+                      <td className="px-1.5 text-right">{totals.pf}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {tab === "plays" && (
+            <ul className="max-h-[420px] overflow-y-auto p-3">
+              {playByPlay.map((e, i) => (
+                <li
+                  key={i}
+                  className={`border-ink-50 border-b py-1.5 text-xs last:border-0 ${
+                    e.eventType.startsWith("PERIOD")
+                      ? "text-ink-400 text-center font-semibold"
+                      : "text-ink-700"
+                  }`}
+                >
+                  {!e.eventType.startsWith("PERIOD") && sideDot(e.teamId)}
+                  {describe(e)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

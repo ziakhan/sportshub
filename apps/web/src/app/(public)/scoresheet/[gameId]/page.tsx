@@ -130,14 +130,21 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
     byPeriod.set(period, list)
     marks.set(e.playerId, byPeriod)
   }
+  // Small marks that WRAP — a hot quarter fills a cell fast, so the cell
+  // grows downward instead of blowing out the row width.
   const renderMarks = (playerId: string, period: number) => {
     const list = marks.get(playerId)?.get(period) ?? []
     if (list.length === 0) return <span className="text-gray-300">·</span>
     return list.map((m, i) =>
       m.kind === "ft" ? (
-        <span key={i}>{m.made ? "●" : "○"}</span>
+        <span key={i} className="text-[8px] leading-none">
+          {m.made ? "●" : "○"}
+        </span>
       ) : (
-        <span key={i} className={m.made ? "font-bold" : "text-gray-400 line-through"}>
+        <span
+          key={i}
+          className={`text-[9px] leading-none ${m.made ? "font-bold" : "text-gray-400 line-through"}`}
+        >
           {m.digit}
         </span>
       )
@@ -203,7 +210,7 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
                   {periods.map((p) => (
                     <td
                       key={p}
-                      className="space-x-0.5 whitespace-nowrap border-l border-gray-400 px-1 text-center tracking-wide"
+                      className="min-w-[70px] space-x-0.5 border-l border-gray-400 px-1 text-center align-top leading-tight tracking-wide"
                     >
                       {renderMarks(l.playerId, p)}
                     </td>
@@ -240,7 +247,9 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
   }
 
   return (
-    <div className="mx-auto max-w-3xl bg-white p-6 text-black print:max-w-none print:p-0">
+    <div className="mx-auto max-w-4xl bg-white p-6 text-black print:max-w-none print:p-0">
+      {/* Real scoresheets are landscape — quarter mark cells need the width */}
+      <style>{`@media print { @page { size: letter landscape; margin: 0.35in } }`}</style>
       {!final && (
         <p className="mb-3 rounded border border-amber-400 bg-amber-50 p-2 text-center text-xs font-bold text-amber-800 print:bg-white">
           UNOFFICIAL — GAME NOT FINALIZED
