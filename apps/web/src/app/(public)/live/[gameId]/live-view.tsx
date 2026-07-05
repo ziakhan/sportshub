@@ -195,6 +195,17 @@ export function LiveView({ gameId }: { gameId: string }) {
         {game.venueName && <p className="text-ink-400 mt-1 text-xs">{game.venueName}</p>}
       </div>
 
+      {!live && !final && fold.playByPlay.length === 0 && (
+        <div className="border-ink-100 rounded-2xl border bg-white p-6 text-center">
+          <p className="text-ink-900 text-sm font-semibold">This game hasn&apos;t started yet</p>
+          <p className="text-ink-500 mt-1 text-xs">
+            Tip-off {new Date(game.scheduledAt).toLocaleString()}. The live score, box score and
+            play-by-play will appear here automatically once the scorekeeper starts the game —
+            keep this page open, it refreshes on its own.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row">
         {box(game.homeTeamId, game.homeTeamName)}
         {box(game.awayTeamId, game.awayTeamName)}

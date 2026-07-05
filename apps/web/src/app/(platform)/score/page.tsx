@@ -67,7 +67,7 @@ export default async function ScoreListPage() {
       awayTeam: { select: { name: true } },
       venue: { select: { name: true } },
       court: { select: { name: true } },
-      season: { select: { name: true, league: { select: { name: true } } } },
+      season: { select: { label: true, league: { select: { name: true } } } },
     },
   })
 
