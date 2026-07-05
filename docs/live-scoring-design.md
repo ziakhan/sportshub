@@ -133,11 +133,14 @@ Already in schema: `GameEvent`, `PlayerStat`, `GameStatus.LIVE`,
 
 ## 5. League-level configuration (small, matters a lot)
 
-| Setting | Options | Default |
+| Setting | Options | Default (OWNER-CONFIRMED 2026-07-04) |
 |---|---|---|
 | Stat depth | SCORE_ONLY (score+fouls+subs) · STANDARD (+reb/ast+misses) · FULL (+stl/blk/to) | STANDARD |
-| Game clock | OFF (periods only) · SIMPLE (start/stop) | OFF |
+| Game clock | SIMPLE (start/stop) · OFF (periods only) | **SIMPLE — clock on by default** (owner call; enables minutes-played everywhere; leagues may turn it off) |
 | Periods | quarters / halves, count + length | quarters ×4 |
+
+Owner also confirmed v1 access: league owner + staff of either competing
+club (option 8 in §6 stays deferred).
 
 Scorekeepers are often parents; a league that only wants a reliable score
 should never see eleven stat buttons. The action pad renders only what the
