@@ -14,6 +14,8 @@ export interface YourTeamCard {
   ageGroup: string
   clubName: string | null
   color: string | null
+  /** Viewer's kids on this team — empty means it's here via an explicit follow */
+  kidNames: string[]
   lastGame: {
     gameId: string
     opponent: string
@@ -145,6 +147,7 @@ export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]
         ageGroup: team.ageGroup,
         clubName: team.tenant?.name ?? null,
         color: team.tenant?.branding?.primaryColor ?? null,
+        kidNames: [...new Set(kids.map((k) => k.firstName))],
         lastGame,
         nextGame: next
           ? {

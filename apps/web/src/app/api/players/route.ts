@@ -40,6 +40,21 @@ export async function GET() {
       height: true,
       weight: true,
       position: true,
+      teams: {
+        where: { status: "ACTIVE" },
+        select: {
+          jerseyNumber: true,
+          joinedAt: true,
+          team: {
+            select: {
+              id: true,
+              name: true,
+              ageGroup: true,
+              tenant: { select: { name: true, slug: true } },
+            },
+          },
+        },
+      },
     },
     orderBy: { firstName: "asc" },
   })

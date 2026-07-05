@@ -212,13 +212,22 @@ export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
                 >
                   {card.teamName.slice(0, 1)}
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="text-ink-950 hover:text-play-600 block truncate font-bold transition-colors">
                     {card.teamName}
                   </span>
                   <span className="text-ink-400 block text-xs">
                     {[card.clubName, card.ageGroup].filter(Boolean).join(" · ")}
                   </span>
+                </span>
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                    card.kidNames.length > 0
+                      ? "bg-hoop-50 text-hoop-700 ring-hoop-100 ring-1"
+                      : "bg-ink-100 text-ink-500 ring-ink-200 ring-1"
+                  }`}
+                >
+                  {card.kidNames.length > 0 ? `${card.kidNames.join(" & ")}'s team` : "Following"}
                 </span>
               </Link>
 

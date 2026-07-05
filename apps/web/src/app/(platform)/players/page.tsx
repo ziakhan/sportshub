@@ -3,6 +3,17 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 
+interface PlayerTeam {
+  jerseyNumber: number | null
+  joinedAt: string
+  team: {
+    id: string
+    name: string
+    ageGroup: string
+    tenant: { name: string; slug: string } | null
+  }
+}
+
 interface Player {
   id: string
   firstName: string
@@ -10,6 +21,7 @@ interface Player {
   dateOfBirth: string
   gender: string
   jerseyNumber: string | null
+  teams: PlayerTeam[]
 }
 
 export default function PlayersPage() {
@@ -92,10 +104,9 @@ export default function PlayersPage() {
             const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 
             return (
-              <Link
+              <div
                 key={player.id}
-                href={`/players/${player.id}/edit`}
-                className="border-ink-100 shadow-soft hover:border-play-200 hover:bg-play-50 block rounded-2xl border bg-white p-5 transition"
+                className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -105,16 +116,56 @@ export default function PlayersPage() {
                     <div className="text-ink-600 mt-2 flex flex-wrap gap-2 text-xs font-medium">
                       <span className="bg-ink-100 rounded-full px-2 py-1">Age {age}</span>
                       <span className="bg-ink-100 rounded-full px-2 py-1">{player.gender}</span>
-                      {player.jerseyNumber && (
-                        <span className="bg-ink-100 rounded-full px-2 py-1">
-                          #{player.jerseyNumber}
-                        </span>
-                      )}
                     </div>
                   </div>
-                  <span className="text-play-600 text-sm font-semibold">Edit</span>
+                  <div className="flex shrink-0 items-center gap-3 text-sm font-semibold">
+                    <Link href={`/player/${player.id}`} className="text-ink-600 hover:text-ink-950">
+                      Stats
+                    </Link>
+                    <Link href={`/players/${player.id}/edit`} className="text-play-600 hover:text-play-700">
+                      Edit
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+
+                <div className="border-ink-100 mt-4 border-t pt-3">
+                  {player.teams.length > 0 ? (
+                    <ul className="space-y-2">
+                      {player.teams.map((tp) => (
+                        <li key={tp.team.id}>
+                          <Link
+                            href={`/team/${tp.team.id}`}
+                            className="bg-ink-50 hover:bg-play-50 group flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition"
+                          >
+                            <span className="min-w-0">
+                              <span className="text-ink-950 group-hover:text-play-700 block truncate text-sm font-semibold">
+                                {tp.team.name}
+                                {tp.jerseyNumber != null && (
+                                  <span className="text-ink-400 ml-1.5 font-normal">
+                                    #{tp.jerseyNumber}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-ink-500 block truncate text-xs">
+                                {[tp.team.tenant?.name, tp.team.ageGroup].filter(Boolean).join(" · ")}
+                                {tp.joinedAt &&
+                                  ` · joined ${new Date(tp.joinedAt).toLocaleDateString("en-CA", { month: "short", year: "numeric" })}`}
+                              </span>
+                            </span>
+                            <svg className="text-ink-300 group-hover:text-play-600 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M9 18l6-6-6-6" />
+                            </svg>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-ink-400 text-xs">
+                      Not on a team yet — accepted offers place players on their team automatically.
+                    </p>
+                  )}
+                </div>
+              </div>
             )
           })}
         </div>

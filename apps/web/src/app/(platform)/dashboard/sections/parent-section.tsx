@@ -66,23 +66,40 @@ export function ParentSection({ data }: ParentSectionProps) {
           {data.players.length > 0 ? (
             <ul className="space-y-2">
               {data.players.map((player) => (
-                <li key={player.id}>
-                  <Link
-                    href={`/players/${player.id}/edit`}
-                    className="border-ink-100 bg-ink-50 hover:border-play-200 hover:bg-play-50 block rounded-xl border p-3 transition"
-                  >
+                <li key={player.id} className="border-ink-100 bg-ink-50 rounded-xl border p-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="text-ink-900 font-medium">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-ink-500 text-xs">
-                        {player.teams.length > 0
-                          ? player.teams.map((t) => t.team.name).join(", ")
-                          : "No team yet"}
-                      </span>
-                      <span className="text-play-600 text-xs">Edit</span>
+                    <div className="flex shrink-0 items-center gap-2.5 text-xs font-semibold">
+                      <Link href={`/player/${player.id}`} className="text-ink-500 hover:text-ink-900">
+                        Stats
+                      </Link>
+                      <Link href={`/players/${player.id}/edit`} className="text-play-600 hover:text-play-700">
+                        Edit
+                      </Link>
                     </div>
-                  </Link>
+                  </div>
+                  {player.teams.length > 0 ? (
+                    <div className="mt-1.5 space-y-1">
+                      {player.teams.map((t) => (
+                        <Link
+                          key={t.team.id}
+                          href={`/team/${t.team.id}`}
+                          className="text-ink-600 hover:text-play-700 flex items-center gap-1.5 text-xs font-medium"
+                        >
+                          <svg className="text-ink-400 h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M3 10 12 4l9 6M5 10v9h14v-9" />
+                          </svg>
+                          <span className="truncate">
+                            {t.team.name} · {t.team.ageGroup}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-ink-400 mt-1.5 text-xs">No team yet</div>
+                  )}
                 </li>
               ))}
             </ul>
