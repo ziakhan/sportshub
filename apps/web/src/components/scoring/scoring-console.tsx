@@ -1203,13 +1203,12 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           <div>{floorTiles(game.awayTeam.id, "away")}</div>
         </div>
       ) : isShort ? (
-        /* Landscape phones: spend the WIDTH — chips left, pad right */
-        <div className="mt-2 flex items-start gap-2">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            {chipRow(game.homeTeam.id, "home")}
-            {chipRow(game.awayTeam.id, "away")}
-          </div>
-          <div className="w-[46%] shrink-0">{actionPad}</div>
+        /* Landscape phones: full-width stack — the one-line top bar frees
+           enough height for big chips and the full pad (owner preference) */
+        <div className="mt-2 space-y-1.5">
+          {chipRow(game.homeTeam.id, "home")}
+          {chipRow(game.awayTeam.id, "away")}
+          {actionPad}
         </div>
       ) : (
         <div className="mt-2 space-y-1.5">

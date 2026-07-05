@@ -27,5 +27,11 @@ export const viewport: Viewport = {
 export default async function ScoringLayout({ children }: { children: React.ReactNode }) {
   const dbUser = await getCurrentUser()
   if (!dbUser) redirect("/sign-in")
-  return <div className="bg-ink-50 min-h-screen">{children}</div>
+  return (
+    // viewport-fit=cover extends under the notch/Dynamic Island; these
+    // env() paddings pull the content back into the safe area on every edge.
+    <div className="bg-ink-50 min-h-screen pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]">
+      {children}
+    </div>
+  )
 }
