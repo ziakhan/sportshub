@@ -101,6 +101,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const [pendingAction, setPendingAction] = useState<{
     type: FoldEventType
     made?: boolean
+    technical?: boolean
   } | null>(null)
   const [pendingPlayer, setPendingPlayer] = useState<{ playerId: string; teamId: string } | null>(
     null
@@ -118,6 +119,19 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   const [reviewing, setReviewing] = useState(false)
   const [clockDisplay, setClockDisplay] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  // Phone player-area layout — a per-DEVICE preference (scorekeepers pick
+  // what fits their hands/screen); persisted locally, more layouts welcome.
+  const [mobileLayout, setMobileLayout] = useState<"rows" | "tiles">("rows")
+
+  useEffect(() => {
+    const saved = localStorage.getItem("scoring-layout")
+    if (saved === "rows" || saved === "tiles") setMobileLayout(saved)
+  }, [])
+  const switchLayout = () => {
+    const next = mobileLayout === "rows" ? "tiles" : "rows"
+    setMobileLayout(next)
+    localStorage.setItem("scoring-layout", next)
+  }
 
   const storageKey = `scoring-queue-${gameId}`
 
@@ -323,7 +337,7 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         clockSeconds: clockDisplay ?? undefined,
         timestampMs: Date.now(),
         ...fields,
-      }
+      } as QueuedEvent
       setEvents((prev) => [...prev, e])
       setQueue((prev) => [...prev, e])
       return e
@@ -350,10 +364,16 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
 
   // ---------- two-tap commit ----------
   const commit = useCallback(
-    (action: { type: FoldEventType; made?: boolean }, playerId: string, teamId: string) => {
+    (
+      action: { type: FoldEventType; made?: boolean; technical?: boolean },
+      playerId: string,
+      teamId: string
+    ) => {
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10)
       if (action.type === "REBOUND") {
         append("REBOUND", { teamId, playerId, metadata: { offensive: false } })
+      } else if (action.type === "FOUL" && action.technical) {
+        append("FOUL", { teamId, playerId, metadata: { technical: true } })
       } else {
         append(action.type, { teamId, playerId, made: action.made })
       }
@@ -372,12 +392,16 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     [append]
   )
 
-  const tapAction = (type: FoldEventType, made?: boolean) => {
+  const tapAction = (type: FoldEventType, made?: boolean, technical?: boolean) => {
     setChain(null)
     if (pendingPlayer) {
-      commit({ type, made }, pendingPlayer.playerId, pendingPlayer.teamId)
+      commit({ type, made, technical }, pendingPlayer.playerId, pendingPlayer.teamId)
     } else {
-      setPendingAction((cur) => (cur?.type === type && cur?.made === made ? null : { type, made }))
+      setPendingAction((cur) =>
+        cur?.type === type && cur?.made === made && cur?.technical === technical
+          ? null
+          : { type, made, technical }
+      )
     }
   }
 
@@ -580,7 +604,10 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
                   <td className="px-1 text-right font-semibold">{l.points}</td>
                   <td className="px-1 text-right">{l.offRebounds + l.defRebounds}</td>
                   <td className="px-1 text-right">{l.assists}</td>
-                  <td className="px-1 text-right">{l.fouls}</td>
+                  <td className="px-1 text-right">
+                    {l.fouls}
+                    {l.technicalFouls > 0 ? ` (T${l.technicalFouls})` : ""}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -685,12 +712,16 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
     label: string,
     type: FoldEventType,
     made: boolean | undefined,
-    tone: string
+    tone: string,
+    technical?: boolean
   ) => {
-    const active = pendingAction?.type === type && pendingAction?.made === made
+    const active =
+      pendingAction?.type === type &&
+      pendingAction?.made === made &&
+      pendingAction?.technical === technical
     return (
       <button
-        onClick={() => tapAction(type, made)}
+        onClick={() => tapAction(type, made, technical)}
         className={`min-w-0 flex-1 rounded-xl px-1 py-3 text-sm font-bold transition max-md:py-2.5 ${
           active ? "ring-play-500 ring-2 " : ""
         }${tone}`}
@@ -837,9 +868,62 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
           </>
         )}
         {actionBtn("FOUL", "FOUL", undefined, "bg-amber-100 text-amber-800 hover:bg-amber-200")}
+        {showHustle &&
+          actionBtn("TECH", "FOUL", undefined, "bg-hoop-50 text-hoop-700 hover:bg-hoop-100", true)}
       </div>
     </div>
   )
+
+  // Alternative phone layout: the classic two tile columns, compacted to
+  // h-10 rows (number + last name) so it also fits one screen.
+  const compactColumn = (teamId: string, side: "home" | "away") => {
+    const ids = side === "home" ? fold.onFloor.home : fold.onFloor.away
+    const subsTone =
+      side === "home"
+        ? "border-play-300 text-play-700 hover:bg-play-50"
+        : "border-court-300 text-court-700 hover:bg-court-50"
+    const accent = side === "home" ? "border-l-play-400" : "border-l-court-400"
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => {
+            setSubsFor(teamId)
+            setStagedSwaps([])
+            setSubOut(null)
+          }}
+          className={`w-full rounded-lg border border-dashed py-1 text-[11px] font-semibold ${subsTone}`}
+        >
+          ⇄ {side === "home" ? game.homeTeam.name : game.awayTeam.name}
+        </button>
+        {ids.map((pid) => {
+          const line = fold.players[pid]
+          const selected = pendingPlayer?.playerId === pid
+          return (
+            <button
+              key={pid}
+              onClick={() => tapPlayer(pid, teamId)}
+              disabled={line?.fouledOut}
+              className={`flex h-10 w-full items-center gap-1.5 rounded-lg border border-l-4 bg-white px-2 text-left ${accent} ${
+                selected
+                  ? "border-play-500 bg-play-100"
+                  : pendingAction
+                    ? "border-play-300 animate-pulse"
+                    : "border-ink-200"
+              } ${line?.fouledOut ? "opacity-40" : ""}`}
+            >
+              <span className="text-ink-950 text-sm font-bold">#{jerseyOf(pid)}</span>
+              <span className="text-ink-500 min-w-0 flex-1 truncate text-[10px]">
+                {nameOf(pid).split(" ").slice(-1)[0]}
+              </span>
+              <span className="text-ink-400 text-[8px]">
+                {"•".repeat(Math.min(line?.fouls ?? 0, FOUL_LIMIT))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-3 max-md:p-2">
@@ -954,6 +1038,13 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
               ? "synced"
               : `${queue.length + voidQueue.length} pending`}
           </span>
+          <button
+            onClick={switchLayout}
+            title="Switch player layout (rows vs tiles)"
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 flex min-h-[44px] items-center whitespace-nowrap rounded-xl border px-2.5 text-xs font-semibold md:hidden"
+          >
+            {mobileLayout === "rows" ? "Rows" : "Tiles"}
+          </button>
           <a
             href={`/live/${gameId}`}
             target="_blank"
@@ -988,10 +1079,19 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
         </div>
       </div>
 
-      {/* phone: jersey-chip rows + pad — everything on one screen */}
+      {/* phone: player area (scorekeeper-chosen layout) + pad — one screen */}
       <div className="mt-2 space-y-1.5 md:hidden">
-        {chipRow(game.homeTeam.id, "home")}
-        {chipRow(game.awayTeam.id, "away")}
+        {mobileLayout === "rows" ? (
+          <>
+            {chipRow(game.homeTeam.id, "home")}
+            {chipRow(game.awayTeam.id, "away")}
+          </>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5">
+            {compactColumn(game.homeTeam.id, "home")}
+            {compactColumn(game.awayTeam.id, "away")}
+          </div>
+        )}
         {actionPad}
       </div>
 

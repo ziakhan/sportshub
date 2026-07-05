@@ -110,6 +110,22 @@ describe("foldEvents — fouls", () => {
     expect(r.teamFouls[HOME][1]).toBe(5)
   })
 
+  it("technical fouls count separately, add to personals, and eject at two", () => {
+    const r = foldEvents(
+      [
+        ...lineupBoth(),
+        ev({ eventType: "FOUL", teamId: HOME, playerId: "h2", metadata: { technical: true } }),
+        ev({ eventType: "FOUL", teamId: HOME, playerId: "h2" }),
+        ev({ eventType: "FOUL", teamId: HOME, playerId: "h2", metadata: { technical: true } }),
+      ],
+      ctx
+    )
+    expect(r.players.h2.fouls).toBe(3)
+    expect(r.players.h2.technicalFouls).toBe(2)
+    expect(r.players.h2.fouledOut).toBe(true) // two techs = done
+    expect(r.teamFouls[HOME][1]).toBe(3)
+  })
+
   it("team fouls reset per period", () => {
     const r = foldEvents(
       [

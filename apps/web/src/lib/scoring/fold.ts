@@ -43,6 +43,7 @@ export interface FoldEvent {
     outPlayerId?: string
     playerIds?: string[]
     offensive?: boolean
+    technical?: boolean
   } | null
 }
 
@@ -63,6 +64,7 @@ export interface PlayerLine {
   blocks: number
   turnovers: number
   fouls: number
+  technicalFouls: number
   secondsPlayed: number
   periodsPlayed: number
   onFloor: boolean
@@ -138,6 +140,7 @@ export function foldEvents(
         blocks: 0,
         turnovers: 0,
         fouls: 0,
+        technicalFouls: 0,
         secondsPlayed: 0,
         periodsPlayed: 0,
         onFloor: false,
@@ -277,8 +280,11 @@ export function foldEvents(
         if (e.playerId) {
           const l = line(e.playerId, teamId)
           markPeriodPlayed(e.playerId, teamId)
+          // Technicals count toward the personal total (FIBA/youth style)
+          // AND are tracked separately for display and two-tech ejections.
           l.fouls++
-          if (l.fouls >= FOUL_LIMIT) l.fouledOut = true
+          if (e.metadata?.technical) l.technicalFouls++
+          if (l.fouls >= FOUL_LIMIT || l.technicalFouls >= 2) l.fouledOut = true
         }
         break
       }
