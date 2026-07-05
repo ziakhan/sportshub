@@ -1,8 +1,11 @@
 # Site Information Architecture — Two Worlds, One Account
 
-> **STATUS: DRAFT FOR DISCUSSION (2026-07-06).** Owner brief captured below;
-> research done; nothing here is build-approved. The decision forks in §9
-> need owner calls before any code moves.
+> **STATUS: DECISIONS CONFIRMED (2026-07-06) — build not yet started.**
+> Owner confirmed forks 1–4 (§9): personalized dropdowns; parents/players
+> land on the personalized public homepage; My Hub in N3; full /manage/*
+> migration in N2. Forks 5–6 stand as recommended defaults (league-id
+> canonical URLs in N2; subdomain deferred to deploy time) unless the owner
+> objects. Phasing in §10 is the roadmap.
 
 ## 1. Owner's vision (2026-07-06 brief)
 
@@ -156,26 +159,19 @@ Notes:
 
 Deep links always win over role routing (post-auth redirect already shipped).
 
-## 9. Decision forks (owner)
+## 9. Decision forks — OWNER CONFIRMED 2026-07-06
 
-1. **Nav pattern for Leagues/Clubs**: (a) personalized dropdown + browse-all
-   page (recommended, ESPN model); (b) plain link straight to featured
-   league; (c) keep plain link → directory page (status quo).
-2. **Parent/player post-login landing**: (a) personalized public homepage
-   (recommended now); (b) My Hub once it exists (recommended endgame);
-   (c) keep current dashboard.
-3. **My Hub**: (a) build as its own page in N3 (recommended); (b) keep
-   growing the homepage rail instead; (c) skip.
-4. **`/manage/*` migration of remaining areas** (teams/clubs/players/
-   tryouts/payments/settings/dashboard): (a) do it in N2 with redirects
-   (recommended — unpushed repo makes this nearly free now, very costly
-   after launch); (b) defer until the subdomain decision.
+1. **Nav pattern for Leagues/Clubs**: ✅ (a) personalized dropdown, my
+   leagues/clubs first, "Browse all" keeps the directory pages for SEO.
+2. **Parent/player post-login landing**: ✅ (a) personalized public homepage
+   now; My Hub becomes the landing once N3 ships.
+3. **My Hub**: ✅ (a) build as its own page in N3.
+4. **`/manage/*` migration of remaining areas**: ✅ (a) do it in N2 with
+   redirects, while the repo is unpushed and renames are cheap.
 5. **League URL canonicalization** to `/league/[leagueId]` + season picker:
-   (a) yes in N2 (recommended, better SEO + matches mental model); (b) keep
-   season-id URLs.
-6. **Subdomain split** (`app.`/`my.`): decide at deploy time; namespace work
-   in N2 makes either answer cheap. Recommendation: same domain until real
-   traffic justifies the operational cost.
+   recommended default stands (yes, in N2) — owner may veto.
+6. **Subdomain split** (`app.`/`my.`): deferred to deploy time (default:
+   same domain until traffic justifies it).
 
 ## 10. Phasing (proposed — nothing started)
 
