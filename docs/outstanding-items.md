@@ -25,8 +25,16 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
 - Human review of the payments backend (stage 3+4 built while owner away)
 
 ## 3. Live scoring
+- SHIPPED at close (2026-07-05): public printable scoresheet
+  (/scoresheet/[gameId], signature lines, foul boxes), league-configurable
+  referee sign-off at finalize, finalize emails scoresheet to both clubs'
+  managers + league owner, in-game BOX overlay (live fouls/PTS without
+  leaving the console)
 - Owner layout proposals → add as entries in the console layout registry
   (Rows/Tiles exist; per-device localStorage choice)
+- Referee sign-off is a TYPED name v1 — upgrade to referee-account approval
+  when referee assignment ships; email recipients could extend to team
+  Staff/coaches (currently ClubOwner/ClubManager + league owner)
 - Season stat lines + box-score archive on public league/team pages
   (per-game live page + box exist; season AGGREGATES not built)
 - Deferred by owner: scorekeeper assignment (Game.scorekeepers reserved),
