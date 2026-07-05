@@ -1,10 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 
-export default function SignUpPage() {
+function safeCallbackUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : null
+}
+
+function SignUpForm() {
+  const searchParams = useSearchParams()
+  const callbackUrl = safeCallbackUrl(searchParams?.get("callbackUrl"))
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -53,7 +61,11 @@ export default function SignUpPage() {
       if (result?.error) {
         setError("Account created but sign-in failed. Please sign in manually.")
       } else {
-        window.location.href = "/onboarding"
+        // Carry the intended destination through onboarding — its final
+        // redirect honors callbackUrl instead of parking users on dashboard.
+        window.location.href = callbackUrl
+          ? `/onboarding?callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "/onboarding"
       }
     } catch {
       setError("Something went wrong. Please try again.")
@@ -166,11 +178,24 @@ export default function SignUpPage() {
 
         <p className="text-ink-500 mt-6 text-center text-sm">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-play-600 hover:text-play-700 font-semibold">
+          <Link
+            href={
+              callbackUrl ? `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-in"
+            }
+            className="text-play-600 hover:text-play-700 font-semibold"
+          >
             Sign in
           </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
   )
 }

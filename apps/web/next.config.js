@@ -20,6 +20,9 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+    // pdfkit ships .afm font assets that must load from node_modules at
+    // runtime — bundling it breaks font resolution in the PDF route.
+    serverComponentsExternalPackages: ['pdfkit'],
   },
 }
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type { ProfileData } from "@/lib/validations/onboarding"
 import { ParentForm } from "./forms/parent-form"
 import { PlayerForm } from "./forms/player-form"
@@ -160,6 +160,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  // Deep link the user was chasing before sign-up — honored at the terminal
+  // step so onboarding drops them where they meant to go, not on dashboard.
+  const rawCallback = searchParams?.get("callbackUrl") ?? null
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : null
 
   const handleRoleContinue = async () => {
     if (!selectedRole) {
@@ -204,7 +212,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
-      router.push(data.nextStep)
+      router.push(data.nextStep === "/dashboard" && callbackUrl ? callbackUrl : data.nextStep)
     } catch {
       setError("Network error. Please try again.")
       setIsSubmitting(false)

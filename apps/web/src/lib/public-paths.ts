@@ -40,6 +40,7 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/settings",
   "/api/health",
   "/api/live",
+  "/api/scoresheet",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;

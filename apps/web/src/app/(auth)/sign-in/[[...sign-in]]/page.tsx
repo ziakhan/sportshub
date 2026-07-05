@@ -6,10 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Suspense } from "react"
 
+/** Same-origin relative paths only — anything else falls back to the app. */
+function safeCallbackUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : null
+}
+
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams?.get("callbackUrl") || "/"
+  const rawCallback = safeCallbackUrl(searchParams?.get("callbackUrl"))
+  const callbackUrl = rawCallback ?? "/dashboard"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -103,7 +110,12 @@ function SignInForm() {
 
         <p className="text-ink-500 mt-6 text-center text-sm">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="text-play-600 hover:text-play-700 font-semibold">
+          <Link
+            href={
+              rawCallback ? `/sign-up?callbackUrl=${encodeURIComponent(rawCallback)}` : "/sign-up"
+            }
+            className="text-play-600 hover:text-play-700 font-semibold"
+          >
             Sign up
           </Link>
         </p>

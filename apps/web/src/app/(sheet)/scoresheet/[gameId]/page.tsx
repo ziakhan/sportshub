@@ -417,7 +417,13 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
         </div>
       </div>
 
-      <div className="mt-4 flex justify-center gap-3 print:hidden">
+      <div className="mt-4 flex flex-wrap justify-center gap-3 print:hidden">
+        <a
+          href={`/api/scoresheet/${game.id}`}
+          className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+        >
+          Download PDF (landscape)
+        </a>
         <PrintButton />
         <a
           href={`/live/${game.id}`}

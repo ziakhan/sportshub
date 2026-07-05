@@ -17,7 +17,8 @@ export default async function middleware(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
       const signInUrl = new URL("/sign-in", req.url)
-      signInUrl.searchParams.set("callbackUrl", pathname)
+      // Keep the query string — deep links like /score?date=… must survive
+      signInUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search)
       return NextResponse.redirect(signInUrl)
     }
   }

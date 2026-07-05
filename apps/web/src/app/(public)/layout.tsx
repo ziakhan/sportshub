@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { UserMenu } from "../(platform)/dashboard/user-menu"
+import { AuthLink } from "@/components/auth-link"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -91,18 +92,18 @@ export default async function PublicLayout({ children }: { children: React.React
               </>
             ) : (
               <>
-                <Link
-                  href="/sign-in"
+                <AuthLink
+                  to="sign-in"
                   className="text-ink-600 hover:text-ink-950 px-3 py-1.5 text-[13px] font-medium transition-colors"
                 >
                   Log in
-                </Link>
-                <Link
-                  href="/sign-up"
+                </AuthLink>
+                <AuthLink
+                  to="sign-up"
                   className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors"
                 >
                   Start Free
-                </Link>
+                </AuthLink>
               </>
             )}
           </div>
