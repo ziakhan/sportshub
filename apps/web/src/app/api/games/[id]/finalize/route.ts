@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
 import { sendEmail } from "@/lib/email"
+import { upsertGameRecap } from "@/lib/content/recap-service"
 
 export const dynamic = "force-dynamic"
 
@@ -197,6 +198,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         })
       }
     })
+
+    // Auto-publish the AI game recap (plan §6.1 — owner decision: auto-publish
+    // on finalize; re-finalize regenerates in place). Best-effort: a recap
+    // failure never blocks the final whistle.
+    try {
+      await upsertGameRecap(params.id)
+    } catch (recapErr) {
+      console.error("Recap generation failed:", recapErr)
+    }
 
     // Distribute the scoresheet — club managers of BOTH teams + the league
     // owner. Best-effort: a mail hiccup never blocks the final whistle.
