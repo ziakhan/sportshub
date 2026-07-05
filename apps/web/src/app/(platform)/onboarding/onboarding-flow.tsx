@@ -212,7 +212,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
-      router.push(data.nextStep === "/dashboard" && callbackUrl ? callbackUrl : data.nextStep)
+      if (data.nextStep === "/dashboard") {
+        // Terminal step: deep link wins; otherwise role-aware landing
+        // (operators -> dashboard, parents/players -> public homepage).
+        // Full reload so server layouts pick up the fresh session/roles.
+        window.location.href = callbackUrl ?? "/post-login"
+      } else {
+        router.push(data.nextStep)
+      }
     } catch {
       setError("Network error. Please try again.")
       setIsSubmitting(false)

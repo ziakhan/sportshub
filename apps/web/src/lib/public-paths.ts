@@ -28,6 +28,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/news",
   "/team",
   "/player",
+  "/scores",
   "/for-clubs",
   "/for-leagues",
 ] as const

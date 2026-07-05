@@ -16,7 +16,9 @@ function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = safeCallbackUrl(searchParams?.get("callbackUrl"))
-  const callbackUrl = rawCallback ?? "/dashboard"
+  // No deep link → role-aware landing: operators → dashboard, parents/players
+  // → personalized public homepage (site-ia-plan §8)
+  const callbackUrl = rawCallback ?? "/post-login"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

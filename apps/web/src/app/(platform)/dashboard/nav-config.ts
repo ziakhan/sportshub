@@ -250,6 +250,8 @@ export function buildNavSections({
   sections.push({
     key: "footer",
     items: [
+      // The door back to the PUBLIC world (site-ia-plan §7)
+      { label: "Public site", href: "/", icon: "play" },
       { label: "Notifications", href: "/notifications", icon: "bell" },
       { label: "Profile", href: "/settings/profile", icon: "users" },
     ],

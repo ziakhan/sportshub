@@ -1,12 +1,15 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getPublicNav } from "@/lib/queries/nav"
+import { NavDropdown } from "@/components/nav-dropdown"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { UserMenu } from "../(platform)/dashboard/user-menu"
 import { AuthLink } from "@/components/auth-link"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
+  let userId: string | null = null
   let userName = "User"
   let userEmail = ""
   let userInitials = "U"
@@ -15,6 +18,7 @@ export default async function PublicLayout({ children }: { children: React.React
     const session = await getServerSession(authOptions)
     if (session?.user) {
       isLoggedIn = true
+      userId = (session.user as any).id ?? null
       userName = session.user.name || "User"
       userEmail = session.user.email || ""
       const parts = userName.split(" ")
@@ -28,6 +32,8 @@ export default async function PublicLayout({ children }: { children: React.React
   } catch {
     // Session check failed — render as unauthenticated
   }
+
+  const nav = await getPublicNav(userId)
 
   return (
     <main className="text-ink-950 flex min-h-screen flex-col bg-[#fafafa]">
@@ -53,28 +59,40 @@ export default async function PublicLayout({ children }: { children: React.React
 
           <nav className="hidden items-center gap-1 md:flex">
             <Link
-              href="/events"
+              href="/scores"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
-              Programs
+              Scores
             </Link>
-            <Link
-              href="/club"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
-            >
-              Clubs
-            </Link>
-            <Link
-              href="/leagues"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
-            >
-              Leagues
-            </Link>
+            <NavDropdown
+              label="Leagues"
+              myLabel="My leagues"
+              myEntries={nav.myLeagues}
+              allLabel="Active leagues"
+              allEntries={nav.otherLeagues}
+              browseHref="/leagues"
+              browseLabel="Browse all leagues"
+            />
+            <NavDropdown
+              label="Clubs"
+              myLabel="My clubs"
+              myEntries={nav.myClubs}
+              allLabel="Featured clubs"
+              allEntries={nav.otherClubs}
+              browseHref="/club"
+              browseLabel="Browse all clubs"
+            />
             <Link
               href="/news"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
               News
+            </Link>
+            <Link
+              href="/events"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+            >
+              Programs
             </Link>
             <Link
               href="/marketplace"
@@ -87,12 +105,17 @@ export default async function PublicLayout({ children }: { children: React.React
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
-                <Link
-                  href="/dashboard"
-                  className="border-ink-200 text-ink-700 hover:bg-ink-50 hidden rounded-xl border px-4 py-2 text-[13px] font-semibold transition-colors sm:inline-flex"
-                >
-                  Dashboard
-                </Link>
+                {nav.isOperator && (
+                  <Link
+                    href="/dashboard"
+                    className="bg-ink-950 hover:bg-ink-800 hidden items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors sm:inline-flex"
+                  >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                    Manage
+                  </Link>
+                )}
                 <NotificationBell />
                 <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
               </>
@@ -117,6 +140,12 @@ export default async function PublicLayout({ children }: { children: React.React
 
         <div className="border-ink-100 border-t px-4 py-2 md:hidden">
           <div className="flex gap-2 overflow-x-auto">
+            <Link
+              href="/scores"
+              className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
+            >
+              Scores
+            </Link>
             <Link
               href="/events"
               className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"

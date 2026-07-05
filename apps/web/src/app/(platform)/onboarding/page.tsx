@@ -17,9 +17,9 @@ export default async function OnboardingPage() {
     redirect("/sign-in")
   }
 
-  // If already onboarded, go to dashboard
+  // If already onboarded, role-aware landing (site-ia-plan §8)
   if (dbUser.onboardedAt) {
-    redirect("/dashboard")
+    redirect("/post-login")
   }
 
   return (
