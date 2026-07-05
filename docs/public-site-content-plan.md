@@ -1,10 +1,9 @@
 # Public Site & Content Ecosystem — Detailed Plan
 
-> **STATUS: DRAFT — NOT BUILD-APPROVED.** Owner wants a strategy discussion
-> on the public-pages approach FIRST (next session's opening agenda item).
-> The three micro-decisions in §11 (minor privacy, AI recap auto-publish,
-> video staging) were answered by the owner and stand; everything else in
-> this document is a proposal to be debated, reshaped, or approved.
+> **STATUS: APPROVED — P1 IN BUILD (2026-07-05).** The strategy discussion
+> happened 2026-07-05; the owner approved the plan as drafted PLUS the
+> amendments in §0 and the monetization model in §12. §11's three
+> micro-decisions stand unchanged.
 
 Owner brief (2026-07-05): the homepage is the public face — parents and the
 general public land there. It must be a place people COME BACK to and
@@ -21,6 +20,29 @@ family subscription), youth-safety consent norms (parental media release
 before ANY public image of a minor, revocable, activity-over-child framing).
 
 ---
+
+## 0. Strategy amendments — owner-confirmed 2026-07-05
+
+1. **Density-graceful homepage (cold start).** A destination homepage is only
+   as alive as its content volume, and ours starts thin. Content sections
+   render only when data exists; no feed chrome (filter chips, infinite
+   scroll, follow-ranked feeds) until volume justifies it. Acquisition
+   surfaces (club directory, tryouts) stay prominent while the feed is thin
+   and recede as it fills. AI recaps are the self-generating volume engine.
+2. **Platform-centric feed, club-branded views.** Content lives in ONE
+   platform pool (Post + PostTag distribution); club/team/league pages are
+   branded views into that pool. The "club content headquarters" vision is
+   the dashboard-side story (composer, approval queue, later syndication) —
+   NOT a per-subdomain content silo.
+3. **Acquisition pages.** Dedicated `/for-clubs` and `/for-leagues` pitch
+   pages; the homepage persona CTA band links to them. One site — the
+   product is the marketing — but the B2B pitch gets a proper home.
+4. **Creator vetting (replaces open independents).** Every creator is vetted
+   either by the platform or by a club/team/league — orgs add their own
+   videographers/photographers/writers and grant them upload. No open
+   independent-creator signup at launch; that lifecycle waits for demand.
+5. **P4 reprioritized.** The syndication hub — designed as a PAID club
+   feature from day one — moves ahead of reviews. Reviews become P5.
 
 ## 1. Strategy — from tool to destination
 
@@ -216,10 +238,11 @@ Announcement.public  Boolean @default(false)
 
 | Phase | Scope | Est. |
 |---|---|---|
-| **P1 — Stats + skeleton home** | Season aggregation lib + leaders (league/team/player surfaces); homepage v1: scoreboard strip, leaders rail, news feed seeded by AI recaps + public announcements; Follow model + "Your teams" rail; player pages w/ consent-gated naming | 2–3 sessions |
-| **P2 — Creator content** | CreatorProfile + Post/MediaAsset/PostTag; photo upload (Vercel Blob) + YouTube embeds; approval queues in club/league dashboards; report/takedown; homepage highlights row + full feed | 2–3 sessions |
-| **P3 — Native video + influencer program** | Mux/Cloudflare Stream uploads; creator public profiles & credits; digest emails ("your week in {league}") | 2 sessions |
-| **P4 — Reviews** | Un-hide Review system, participation gating, season-end prompts, club star aggregates | 1–2 sessions |
+| **P1 — Stats + skeleton home** | Season aggregation lib + leaders (league/team/player surfaces); homepage v1: scoreboard strip, leaders rail, news feed seeded by AI recaps + public announcements; Follow model + "Your teams" rail; player pages w/ consent-gated naming; `/for-clubs` + `/for-leagues` pitch pages; `hasFamilyPass()` entitlement stub | 2–3 sessions |
+| **P2 — Creator content** | CreatorProfile (org-vetted per §0.4) + MediaAsset; photo upload (Vercel Blob) + YouTube embeds; approval queues in club/league dashboards; report/takedown; homepage highlights row + full feed | 2–3 sessions |
+| **P3 — Native video + Family Pass launch** | Mux/Cloudflare Stream uploads; creator public profiles & credits; digest emails ("your week in {league}"); real-time "your kid" notifications; premium gating flips on (§12) | 2 sessions |
+| **P4 — Syndication hub (paid club add-on)** | Linked social accounts (OAuth), post-once-distribute-everywhere composer, per-platform delivery status (§5); start platform app-reviews EARLY | 2–3 sessions |
+| **P5 — Reviews** | Un-hide Review system, participation gating, season-end prompts, club star aggregates | 1–2 sessions |
 
 P1 has zero dependencies and directly extends this weekend's work (it IS
 the "season stats" recommendation, now framed as the homepage's engine).
@@ -236,3 +259,43 @@ the "season stats" recommendation, now framed as the homepage's engine).
    native hosting, then post-once-distribute-everywhere.
 4. Reviews scope confirmation when the reviews phase nears (leagues?
    referees? — §8 recommendation stands until then).
+
+## 12. Monetization model — owner-confirmed 2026-07-05
+
+Principle: **the record is free, the relationship is premium.** The public
+record of the game — scores, box totals, standings, leaders, AI recaps,
+schedules — is always free; it is the flywheel, the SEO surface, and the
+viral loop (kids checking ranks). Depth about YOUR kid is the premium
+**Family Pass** (GameChanger-proven ~$10/mo price anchor):
+
+| Free (the flywheel) | Family Pass (the relationship) |
+|---|---|
+| Live scores, box totals, standings | Real-time "your kid scored" push/text + live game thread |
+| AI recaps incl. top performers | Personalized post-game recap: full line, per-quarter splits, season trends |
+| League leader boards | Full game log & season history, efficiency, percentile vs. league |
+| Highlight thumbnail + short preview | Full clips featuring your kid: watch, download, share |
+| Team schedule, roster, team page | Full-depth player profile; shareable/printable player card |
+| — | End-of-season keepsake: auto-generated season report / highlight reel |
+
+- **Teaser mechanics**: free surfaces advertise locked depth in-context at
+  the emotional peak (right after a game): "Maya's season: 8 games,
+  trending ↗ — see her full game log 🔒". Card already on file from
+  registration payments → one-tap unlock; our funnel is shorter than
+  GameChanger's.
+- **Keepsakes as one-time purchases** ($15–25 at season end) monetize
+  non-subscribing families; zero extra content cost.
+- **Club-bundled Family Pass**: clubs can bundle the pass into season fees
+  via the obligation engine at a discounted per-family rate — the club is
+  the hero ("all our families get live alerts and highlights"), we get
+  predictable per-roster revenue, and it defuses club resentment of
+  direct-to-parent upsell. Direct subscription remains for unbundled clubs.
+- **Full revenue stack**: clubs/leagues pay for management (existing
+  payments platform) → families pay Family Pass + keepsakes → coaches pay
+  recruiting tools (later, once player profiles have depth) → syndication
+  hub as a paid club add-on (P4).
+- **Sequencing**: everything FREE through P1/P2 — build the habit and learn
+  from usage which surfaces parents hit hardest, then draw the paywall from
+  evidence. Premium launches with P3 (native video + notifications make the
+  right column real). P1 ships a `hasFamilyPass()` entitlement helper that
+  returns true for everyone, so flipping premium on is a policy change, not
+  a refactor.
