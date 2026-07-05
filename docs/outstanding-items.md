@@ -83,6 +83,18 @@ monetization model (§12) — docs/public-site-content-plan.md.
   rail) + commissioner@showcase.demo, both TestPass123!. Seeder is
   idempotent and scrubs test-world name noise. NOTE: local int-test runs
   re-create bracket-named worlds; re-run the seeder to re-scrub before demos.
+- **Public/dashboard IA separation — STARTED 2026-07-05** (owner direction:
+  two worlds, two menus, NBA/ESPN-style public browsing). Done: league
+  management /leagues → /manage/leagues; public /leagues browse index;
+  /league/[seasonId] rebuilt as spectator hub (scores + standings +
+  news + teams + leaders); nav Leagues→/leagues + News added; club pages
+  link team hubs. **REMAINING IA WORK (needs owner discussion):** move the
+  rest of dashboard management under /manage/* (or /dashboard/*) — /teams,
+  /clubs, /players, /tryouts etc. still squat on pretty URLs; decide
+  public-league canonical URL (league-id hub w/ season picker vs current
+  season-id pages); dashboard sidebar "View public site" cross-links;
+  eventual subdomain split (owner: "maybe we will separate them in the
+  future").
 - P1 leftovers: announcement form has no "public" checkbox yet (flag exists);
   RECAP_AI posts orphan if their game is deleted (tags cascade, post stays);
   /api/live box scores still show full names (authed surfaces do — decide
