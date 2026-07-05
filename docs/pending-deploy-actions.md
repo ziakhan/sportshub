@@ -261,7 +261,8 @@ additive — nothing renamed, nothing dropped:
 - New tables: `Post` (kind/status enums PostKind, PostStatus; unique `slug`),
   `PostTag` (polymorphic distribution tags → team/tenant/league/game/player,
   all cascade), `Follow` (userId + one of teamId/tenantId/leagueId; partial
-  compound uniques).
+  compound uniques), `MediaAsset` (postId cascade; enum MediaAssetType
+  IMAGE/VIDEO_EMBED/VIDEO_NATIVE — photo covers + YouTube embeds).
 - New enum `MediaConsent` (UNSET/GRANTED/DENIED); `Player.mediaConsent`
   defaults UNSET (= public pages show "First L." until a parent opts in).
 - `Announcement.isPublic Boolean @default(false)` + index — nothing becomes

@@ -75,6 +75,14 @@ monetization model (§12) — docs/public-site-content-plan.md.
   post pages; homepage v1 (scoreboard strip, Your-teams rail, news+leaders,
   density-graceful); Follow model + buttons; /for-clubs + /for-leagues;
   hasFamilyPass() entitlement stub. Neon runbook entry #9 before deploy.
+- **Showcase demo world** (2026-07-05, post-P1): `scripts/seed-showcase.ts`
+  builds a living league on 12 REAL Ontario clubs — 60 scored games, 2 LIVE,
+  recaps w/ photo covers, YouTube highlight posts (MediaAsset pulled forward
+  from P2: IMAGE + VIDEO_EMBED), announcements. Homepage now has the §3.5
+  highlights reel. Demo logins: showcase-parent@sportshub.test (Your-teams
+  rail) + commissioner@showcase.demo, both TestPass123!. Seeder is
+  idempotent and scrubs test-world name noise. NOTE: local int-test runs
+  re-create bracket-named worlds; re-run the seeder to re-scrub before demos.
 - P1 leftovers: announcement form has no "public" checkbox yet (flag exists);
   RECAP_AI posts orphan if their game is deleted (tags cascade, post stays);
   /api/live box scores still show full names (authed surfaces do — decide
