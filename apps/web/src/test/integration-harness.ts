@@ -29,6 +29,7 @@ import { getServerSession } from "next-auth"
  *   1111 obligations product wiring (offers/camps/HL/submissions)
  *   1112 stripe flow (connect/checkout/webhooks, SDK mocked)
  *   1113 platform payment policy (defaults/overrides/destination charges)
+ *   1114 live scoring (bootstrap/lock/events/finalize/public read)
  */
 
 export function actAs(userId: string | null): void {

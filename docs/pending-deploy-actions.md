@@ -227,3 +227,25 @@ exist in production as of July 2026 — Stripe hasn't launched there).
 ### Step 3 — Nothing else to backfill
 `PlatformSettings.pay*` defaults reproduce the previous hardcoded behaviour
 exactly (offline on, connect allowed, platform-collect off, no fee).
+
+## ⬜ 8. Live scoring schema — July 2026
+
+Ships with the live-scoring v1 commit. Same `prisma db push` covers entries
+#4–#8 if executed together. GameEvent is empty in production, so the
+column rename is loss-free — but push needs the flag:
+```bash
+export PATH="/usr/local/opt/node@18/bin:$PATH"
+DATABASE_URL='<neon-url>' npx prisma db push --schema=prisma/schema.prisma --skip-generate --accept-data-loss
+```
+Expect:
+- `GameEvent`: `quarter` → `period` (rename; table has 0 rows), plus `made`,
+  `clockSeconds`, `sequence`, `clientEventId` (unique), `voided`,
+  `recordedById`; `teamId` becomes nullable; new index (gameId, sequence).
+- `GameEventType` enum gains LINEUP, PERIOD_START, PERIOD_END, CLOCK_START,
+  CLOCK_STOP (additive).
+- `League` gains `statDepth`/`gameClockMode`/`periodType`/`periodMinutes`
+  (new enums StatDepth/ClockMode/PeriodType, all defaulted — additive).
+- `Game` gains nullable `scoringSessionId`/`scoringSessionUser`/
+  `scoringSessionAt`.
+
+Nothing to backfill.

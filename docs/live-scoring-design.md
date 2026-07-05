@@ -1,5 +1,11 @@
 # Live Scoring — Interface Design (v1)
 
+> **STATUS: v1 BUILT 2026-07-04** — fold engine (`lib/scoring/fold.ts`, 11
+> unit tests), console (`/games/[id]/score`), game-day list (`/score`),
+> public live page (`/live/[gameId]`), APIs (bootstrap / events / lock /
+> finalize / public read), Neon runbook entry #8. L2 suite seed 1114 (9
+> tests). Remaining from §6: deferred items 8–10 unchanged.
+
 Owner brief (2026-07-04): once games are scheduled, a scorekeeper logs in and
 runs the game from a **very easy, intuitive** interface — tablet at the table
 is the primary device, phone (sometimes one-handed) must work. Track scoring

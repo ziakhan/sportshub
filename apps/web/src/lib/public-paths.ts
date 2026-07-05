@@ -22,6 +22,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/events",
   "/league",
   "/invitations",
+  "/live",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
@@ -37,6 +38,7 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/reviews",
   "/api/settings",
   "/api/health",
+  "/api/live",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;

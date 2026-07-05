@@ -566,6 +566,13 @@ model League {
   currency        String  @default("CAD")
   stripeAccountId String? @unique
 
+  // Live-scoring configuration (docs/live-scoring-design.md) — owner-confirmed
+  // defaults: STANDARD depth, simple clock ON.
+  statDepth     StatDepth  @default(STANDARD)
+  gameClockMode ClockMode  @default(SIMPLE)
+  periodType    PeriodType @default(QUARTERS)
+  periodMinutes Int        @default(10)
+
   seasons Season[]
   staff   UserRole[]
   reviews Review[]
@@ -908,6 +915,11 @@ model Game {
   isLocked    Boolean @default(false)
   defaultedBy String?
 
+  // Single active scoring device (soft lock with visible takeover)
+  scoringSessionId   String?
+  scoringSessionUser String?
+  scoringSessionAt   DateTime?
+
   events       GameEvent[]
   stats        PlayerStat[]
   scorekeepers UserRole[]
@@ -938,21 +950,33 @@ enum GameStatus {
   DEFAULTED
 }
 
+// Append-only scoring stream (docs/live-scoring-design.md). Nothing is ever
+// edited or deleted — corrections VOID events. Score, box score, on-floor
+// state and PlayerStat rows are all derived by folding this stream.
 model GameEvent {
   id     String @id @default(uuid())
   gameId String
   game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   eventType GameEventType
-  teamId    String // Team that scored/fouled
+  teamId    String? // scoring/fouling team; null for period/clock events
   playerId  String? // Player involved
 
+  made      Boolean? // shots: made vs missed
   points    Int? // For SCORE events
-  quarter   Int? // 1-4
+  period    Int? // 1-4 (quarters) or 1-2 (halves)
+  clockSeconds Int? // seconds remaining in the period when recorded
   timestamp DateTime @default(now())
 
-  metadata Json? // Additional event data
+  // Per-game monotonic order (server-assigned) + offline idempotency key
+  sequence      Int     @default(0)
+  clientEventId String? @unique
+  voided        Boolean @default(false)
+  recordedById  String?
 
+  metadata Json? // SUBSTITUTION {inPlayerId,outPlayerId}, LINEUP {playerIds}, REBOUND {offensive}
+
+  @@index([gameId, sequence])
   @@index([gameId])
   @@index([teamId])
   @@index([playerId])
@@ -970,6 +994,27 @@ enum GameEventType {
   FOUL
   TIMEOUT
   SUBSTITUTION
+  LINEUP
+  PERIOD_START
+  PERIOD_END
+  CLOCK_START
+  CLOCK_STOP
+}
+
+enum StatDepth {
+  SCORE_ONLY
+  STANDARD
+  FULL
+}
+
+enum ClockMode {
+  SIMPLE
+  OFF
+}
+
+enum PeriodType {
+  QUARTERS
+  HALVES
 }
 
 model PlayerStat {
