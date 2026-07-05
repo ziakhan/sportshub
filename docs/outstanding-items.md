@@ -32,9 +32,14 @@ last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
   leaving the console)
 - Owner layout proposals → add as entries in the console layout registry
   (Rows/Tiles exist; per-device localStorage choice)
-- Referee sign-off is a TYPED name v1 — upgrade to referee-account approval
-  when referee assignment ships; email recipients could extend to team
-  Staff/coaches (currently ClubOwner/ClubManager + league owner)
+- Referee sign-off is a TYPED name v1; "finalize without approval" escape
+  hatch stamps the sheet. OWNER-SPECED upgrades when referee assignment
+  ships: (a) signature-pad drawing on the console, (b) referee sets a
+  personal PIN/password in their account, enters it in a popup at finalize,
+  verified server-side against the ASSIGNED referee. Email recipients could
+  extend to team Staff/coaches (currently ClubOwner/ClubManager + league owner)
+- Scoresheet uses scorebook notation (digit marks + FT circles) as of
+  2026-07-05 close
 - Season stat lines + box-score archive on public league/team pages
   (per-game live page + box exist; season AGGREGATES not built)
 - Deferred by owner: scorekeeper assignment (Game.scorekeepers reserved),
