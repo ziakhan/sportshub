@@ -55,6 +55,8 @@ model User {
   houseLeagueSignups  HouseLeagueSignup[]
   campSignups         CampSignup[]
   tournaments         Tournament[]
+  posts               Post[]
+  follows             Follow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -175,6 +177,8 @@ model Tenant {
   camps            Camp[]
   offerTemplates   OfferTemplate[]
   tournaments      Tournament[]
+  postTags         PostTag[]
+  follows          Follow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -258,6 +262,8 @@ model Team {
   tryouts           Tryout[]
   tournamentEntries TournamentTeam[]
   playerInvitations PlayerInvitation[]
+  postTags          PostTag[]
+  follows           Follow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -292,6 +298,10 @@ model Player {
   consentGivenAt       DateTime?
   canLogin             Boolean   @default(false) // Only true if 13+
 
+  // Parental media consent — gates player-tagged public content AND opts
+  // into full names on public stats/rosters/leaders (plan §5/§11.1)
+  mediaConsent MediaConsent @default(UNSET)
+
   // Soft delete — set when parent removes the child. Preserves history (offers,
   // tryout signups, team rosters) but excludes from active listings.
   deletedAt DateTime?
@@ -307,6 +317,7 @@ model Player {
   houseLeagueSignups  HouseLeagueSignup[]
   campSignups         CampSignup[]
   seasonRosterEntries SeasonRosterPlayer[]
+  postTags            PostTag[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -584,6 +595,8 @@ model League {
   reviews Review[]
   paymentConfig PaymentConfig?
   obligations   PaymentObligation[] @relation("LeagueObligations")
+  postTags      PostTag[]
+  follows       Follow[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -938,6 +951,7 @@ model Game {
   events       GameEvent[]
   stats        PlayerStat[]
   scorekeepers UserRole[]
+  postTags     PostTag[]
 
   finalizedAt DateTime?
 
@@ -1369,6 +1383,9 @@ model Announcement {
   content String @db.Text
 
   isPinned Boolean @default(false)
+  // Public announcements flow into the homepage/entity news feeds
+  // (docs/public-site-content-plan.md §6)
+  isPublic Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1376,6 +1393,121 @@ model Announcement {
   @@index([tenantId])
   @@index([teamId])
   @@index([createdAt])
+  @@index([isPublic, createdAt])
+}
+
+// ============================================
+// PUBLIC CONTENT & FOLLOWS
+// (docs/public-site-content-plan.md — P1: RECAP_AI posts + Follow;
+//  P2 adds creator posts + MediaAsset)
+// ============================================
+
+model Post {
+  id    String   @id @default(uuid())
+  kind  PostKind
+  title String
+  slug  String   @unique
+  body  String   @db.Text
+
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  // RECAP_AI provenance: "template" or the model id that wrote it
+  aiModel String?
+
+  tags PostTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([kind, status, publishedAt])
+}
+
+enum PostKind {
+  ARTICLE
+  PHOTO_SET
+  VIDEO
+  RECAP_AI
+  ANNOUNCEMENT
+}
+
+enum PostStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  TAKEN_DOWN
+}
+
+// Tags are DISTRIBUTION: a post tagged to a team appears on the team page,
+// its club page, its league feed, and followers' homepages.
+model PostTag {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  gameId String?
+  game   Game?   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId String?
+  player   Player? @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([teamId])
+  @@index([tenantId])
+  @@index([leagueId])
+  @@index([gameId])
+  @@index([playerId])
+}
+
+// FOLLOW any team/club/league; parents' kids' teams are auto-included at
+// query time (derived, not materialized). Follows drive the signed-in
+// "Your teams" rail and, later, notifications/digests.
+model Follow {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+  @@unique([userId, tenantId])
+  @@unique([userId, leagueId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([tenantId])
+  @@index([leagueId])
+}
+
+// Parental media consent (docs/public-site-content-plan.md §5). GRANTED also
+// opts the player INTO full names on public surfaces (owner decision §11.1);
+// otherwise public pages show "First L." — participants see full names.
+enum MediaConsent {
+  UNSET
+  GRANTED
+  DENIED
 }
 
 // ============================================
