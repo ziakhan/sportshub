@@ -1,4 +1,10 @@
-# NPH production demo world — seed plan v2 (2026-07-07, for owner review)
+# NPH production demo world — seed plan v2 (2026-07-07)
+
+> **STATUS: BUILT + REHEARSED LOCALLY 2026-07-07.** `scripts/seed-nph-demo.ts`
+> — world builds in ~20s, reset-idempotent. Local noise scrubbed (1,668 test
+> users, sim tenants, old showcase). Full login audit green (§10). Chat v1.5
+> shipped alongside. AWAITING OWNER: deploy train (push + runbook #10) before
+> the prod run (`--report` → `--scrub-noise` → seed with `--yes-prod`).
 
 One deterministic script (`scripts/seed-nph-demo.ts`) that builds a complete,
 believable demo universe: real Toronto + West End NPH clubs, the full
