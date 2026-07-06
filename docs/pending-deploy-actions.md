@@ -2,6 +2,13 @@
 
 Manual steps to run on production (Neon) **before** the next Vercel deploy of master. Each action lists the linked code change, the production command, and how to verify it landed.
 
+> **2026-07-06: entries #4–#9 ALL APPLIED to Neon** (pre-checks clean — 0
+> integrity violations, 0 GameEvents; single `prisma db push
+> --accept-data-loss` + both `prisma/sql/2026-07-*.sql` files via
+> `prisma db execute`; verified: 7 new tables, partial uniques, period
+> rename, `playing_with_neon` drift table dropped). 97 commits pushed to
+> master same day; production showcase seeded.
+
 > **History:** Entries 1–3 (the 0.1.x gap deploys) all ran on 2026-05-05 ahead of commits `30d92ed` + `3a60477`. Left in this file as a worked example for future migrations.
 
 ---
@@ -106,7 +113,7 @@ After the schema push (#2), still run the OfferTemplate backfill SQL (#1) — th
 <!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->
 
 
-## ⬜ 4. Schema-hardening batch (architecture review WS1.5 + WS4) — July 2026
+## ✅ 4. Schema-hardening batch — applied to Neon 2026-07-06 (architecture review WS1.5 + WS4) — July 2026
 
 **Linked code change:** `prisma/schema.prisma` (OfferTemplate.tenantId NOT NULL,
 CoachDesignation enum, TryoutSignup.playerId + uniques, Season/Team natural keys,
@@ -151,7 +158,7 @@ Run the whole of `prisma/sql/2026-07-authz-integrity.sql` in the Neon SQL editor
 ### Step 4 — Push code
 Deploy master. New signups begin writing `TryoutSignup.playerId`.
 
-## ⬜ 5. PlayerInvitation table (Gap G3) — July 2026
+## ✅ 5. PlayerInvitation table (Gap G3) — applied to Neon 2026-07-06
 
 Ships with the WS2 Wave-3 commits. Runs AFTER (or together with) entry #4 —
 same `prisma db push` invocation covers both if executed at once.
@@ -171,7 +178,7 @@ partial unique = one PENDING invitation per (teamId, lower(invitedEmail)).
 ### Step 3 — Nothing to backfill
 New table; no existing rows to migrate.
 
-## ⬜ 6. Payments phase-1 schema (offline mode) — July 2026
+## ✅ 6. Payments phase-1 schema (offline mode) — applied to Neon 2026-07-06
 
 Ships with the payments phase-1 commit. Same `prisma db push` covers entries
 #4/#5/#6 if executed together.
@@ -189,7 +196,7 @@ All additive — Payment table had 0 rows.
 ### Step 2 — Nothing to backfill
 New tables + nullable columns; no data migration.
 
-## ⬜ 7. Configurable payment policy + destination charges — July 2026
+## ✅ 7. Configurable payment policy + destination charges — applied to Neon 2026-07-06 (schema only; PaymentConfig table was empty — no inheritance conversion needed)
 
 Ships with the payment-policy commit (platform-wide defaults, per-club
 overrides, PLATFORM_COLLECT instant settlement). Same `prisma db push`
@@ -228,7 +235,7 @@ exist in production as of July 2026 — Stripe hasn't launched there).
 `PlatformSettings.pay*` defaults reproduce the previous hardcoded behaviour
 exactly (offline on, connect allowed, platform-collect off, no fee).
 
-## ⬜ 8. Live scoring schema — July 2026
+## ✅ 8. Live scoring schema — applied to Neon 2026-07-06 (GameEvent had 0 rows; rename loss-free as predicted)
 
 Ships with the live-scoring v1 commit. Same `prisma db push` covers entries
 #4–#8 if executed together. GameEvent is empty in production, so the
@@ -253,7 +260,7 @@ Expect:
 
 Nothing to backfill.
 
-## ⬜ 9. Public content & follows schema — July 2026 (P1 content plan)
+## ✅ 9. Public content & follows schema — applied to Neon 2026-07-06 (enabledCountries was already ["CA"]; showcase seed run against production)
 
 Ships with the public-site P1 commits (docs/public-site-content-plan.md).
 Same `prisma db push` covers entries #4–#9 if executed together. All
