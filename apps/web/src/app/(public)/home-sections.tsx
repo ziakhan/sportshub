@@ -270,7 +270,10 @@ export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
               ))}
 
               {card.nextGame && (
-                <div className="text-ink-500 flex items-center gap-2 px-1 pt-1 text-sm">
+                <Link
+                  href={`/live/${card.nextGame.gameId}`}
+                  className="text-ink-500 hover:text-play-600 flex items-center gap-2 px-1 pt-1 text-sm transition-colors"
+                >
                   <svg className="text-ink-400 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
@@ -282,7 +285,7 @@ export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
                     {format(new Date(card.nextGame.dateISO), "EEE MMM d, h:mm a")}
                     {card.nextGame.venue ? ` · ${card.nextGame.venue}` : ""}
                   </span>
-                </div>
+                </Link>
               )}
             </div>
           ))}

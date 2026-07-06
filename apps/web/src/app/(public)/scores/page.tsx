@@ -36,12 +36,11 @@ function GameCard({ g }: { g: any }) {
       away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
       dateLabel={status === "SCHEDULED" ? format(new Date(g.scheduledAt), "h:mm a") : undefined}
       venue={[g.season?.league?.name, g.venue?.name].filter(Boolean).join(" · ") || undefined}
-      className={status !== "SCHEDULED" ? "hover:border-play-200 h-full transition-colors" : "h-full"}
+      className="hover:border-play-200 h-full transition-colors"
     />
   )
-  return status === "SCHEDULED" ? (
-    card
-  ) : (
+  // Upcoming games link too — the pre-game page shows rosters + season stats
+  return (
     <Link href={`/live/${g.id}`} className="block h-full">
       {card}
     </Link>

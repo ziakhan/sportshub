@@ -119,14 +119,16 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
               />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {upcoming.slice(0, 4).map((g: any) => (
-                  <ScoreCard
-                    key={g.id}
-                    status="SCHEDULED"
-                    home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
-                    away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
-                    dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
-                    venue={g.venue?.name}
-                  />
+                  <Link key={g.id} href={`/live/${g.id}`} className="block">
+                    <ScoreCard
+                      status="SCHEDULED"
+                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
+                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
+                      dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
+                      venue={g.venue?.name}
+                      className="hover:border-play-200 transition-colors"
+                    />
+                  </Link>
                 ))}
                 {completed.slice(0, 8).map((g: any) => (
                   <Link key={g.id} href={`/live/${g.id}`} className="block">

@@ -157,14 +157,16 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   </Link>
                 ))}
                 {upcomingGames.map((g: any) => (
-                  <ScoreCard
-                    key={g.id}
-                    status="SCHEDULED"
-                    home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
-                    away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
-                    dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
-                    venue={g.venue?.name}
-                  />
+                  <Link key={g.id} href={`/live/${g.id}`} className="block">
+                    <ScoreCard
+                      status="SCHEDULED"
+                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
+                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
+                      dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
+                      venue={g.venue?.name}
+                      className="hover:border-play-200 transition-colors"
+                    />
+                  </Link>
                 ))}
                 {recentGames.map((g: any) => (
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
