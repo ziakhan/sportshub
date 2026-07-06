@@ -75,4 +75,28 @@ a team in every age grade of the same league, so "browse by club" and
 
 ---
 
-_Add new items above this line as OB-004, OB-005, …_
+## OB-004 · 2026-07-06 · /league/[id] + /league/[id]/leaders · Stat leaders mix divisions and genders
+
+**Found:** the league hub's "Scoring leaders" card and the full leaders board
+rank ALL players in the season together — U12 boys against U16 boys against
+U14 girls. Not acceptable: leaders must be comparable cohorts.
+
+**Current behavior (for the discussion):** the leaders engine computes one
+board per season across every division; the eligibility rule (≥50% of team
+games) is division-blind too. Division data exists (each team submission has
+a division carrying age group + gender), so per-division boards are a
+straightforward change to the assembly layer.
+
+**Decision needed:**
+- Default grouping: per DIVISION (encodes age + gender — likely right), or
+  per age group with gender split?
+- The homepage leaders rail features one board — which division gets that
+  spotlight (biggest? rotating? viewer's own division when signed in)?
+- The hub sidebar "Scoring leaders" top-3: per division tabs, or the
+  featured division only?
+
+**Status:** open — likely a fix batch item once grouping is decided.
+
+---
+
+_Add new items above this line as OB-005, OB-006, …_
