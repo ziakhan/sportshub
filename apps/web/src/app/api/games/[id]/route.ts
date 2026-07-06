@@ -3,31 +3,25 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany, type NotificationType } from "@/lib/notifications"
+import { getGameAudienceUserIds } from "@/lib/game-audience"
 
 export const dynamic = "force-dynamic"
 
 /**
- * G8: game cancellations/reschedules used to be silent — fan out to the
- * club managers of both teams. League owners already know (they did it).
+ * A game cancellation/reschedule fans out to EVERYONE affected — both clubs'
+ * front office, both teams' coaches, and every player + parent — in one write.
+ * This is the phone tree the platform replaces: the league changes the game
+ * once, and every family is notified automatically (no club→coach→WhatsApp
+ * relay). League owners already know (they did it), so they're not re-notified.
  */
-async function notifyBothClubs(
+async function notifyGameAudience(
   game: { id: string; seasonId: string | null; homeTeamId: string; awayTeamId: string },
   type: NotificationType,
   title: string,
   message: string
 ) {
-  const teams = await prisma.team.findMany({
-    where: { id: { in: [game.homeTeamId, game.awayTeamId] } },
-    select: { tenantId: true },
-  })
-  const roles = await prisma.userRole.findMany({
-    where: {
-      tenantId: { in: Array.from(new Set(teams.map((t) => t.tenantId))) },
-      role: { in: ["ClubOwner", "ClubManager"] },
-    },
-    select: { userId: true },
-  })
-  await notifyMany(prisma, Array.from(new Set(roles.map((r) => r.userId))), {
+  const userIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
+  await notifyMany(prisma, userIds, {
     type,
     title,
     message,
@@ -199,14 +193,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       (data.courtId !== undefined && data.courtId !== game.courtId)
 
     if (becameInactive) {
-      await notifyBothClubs(
+      await notifyGameAudience(
         game,
         "game_cancelled",
         data.status === "POSTPONED" ? "Game Postponed" : "Game Cancelled",
         `${matchupLabel(updated)} on ${new Date(game.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })} has been ${data.status === "POSTPONED" ? "postponed" : "cancelled"} by the league.`
       )
     } else if ((timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
-      await notifyBothClubs(
+      await notifyGameAudience(
         game,
         "game_rescheduled",
         "Game Rescheduled",
@@ -255,7 +249,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     })
 
     if (game.status !== "CANCELLED") {
-      await notifyBothClubs(
+      await notifyGameAudience(
         game,
         "game_cancelled",
         "Game Cancelled",

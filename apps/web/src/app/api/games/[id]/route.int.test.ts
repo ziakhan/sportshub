@@ -24,6 +24,9 @@ let clubAOwnerId: string
 let clubBOwnerId: string
 let game1Id: string
 let game2Id: string
+let teamAId: string
+let awayTeamId: string
+let seasonId: string
 
 const patchGame = (id: string, body: unknown) =>
   PATCH(jsonRequest(`/api/games/${id}`, body, "PATCH"), { params: { id } })
@@ -46,9 +49,11 @@ beforeAll(async () => {
     ],
   })
   const season = world.leagues[0].seasons[0]
+  seasonId = season.id
   leagueOwnerId = world.leagues[0].owner.id
   clubAOwnerId = season.feederClub!.owner.id
   const teamA = season.divisions[0].submissions[0].teamId
+  teamAId = teamA
 
   // Opponent from a DIFFERENT club — "both clubs" must mean both.
   const clubB = await createClub(world.ctx, {})
@@ -78,6 +83,7 @@ beforeAll(async () => {
     ).id
   game1Id = await mkGame(3)
   game2Id = await mkGame(5)
+  awayTeamId = submissionB.teamId
 })
 
 afterAll(async () => {
@@ -128,5 +134,51 @@ describe("PATCH/DELETE /api/games/[id] (integration)", () => {
     actAs(clubAOwnerId)
     const res = await patchGame(game1Id, { isLocked: false })
     expect(res.status).toBe(403)
+  })
+
+  // The cascade the platform replaces: one cancellation must reach the team's
+  // coach AND every player's parent — not just the club front office.
+  it("cancelling reaches team coaches AND players' parents", async () => {
+    const uniq = `${Date.now()}-${Math.round(1e6 * 0.5)}`
+    const coach = await prisma.user.create({
+      data: { email: `coach-${uniq}@t.test`, passwordHash: "x", firstName: "Cody", lastName: "Coach" },
+    })
+    await prisma.userRole.create({
+      data: { userId: coach.id, role: "Staff", teamId: teamAId, designation: "HeadCoach" },
+    })
+    const parent = await prisma.user.create({
+      data: { email: `parent-${uniq}@t.test`, passwordHash: "x", firstName: "Pat", lastName: "Parent" },
+    })
+    const player = await prisma.player.create({
+      data: {
+        firstName: "Kid",
+        lastName: "Player",
+        dateOfBirth: new Date("2013-01-01"),
+        gender: "MALE",
+        parentId: parent.id,
+      },
+    })
+    await prisma.teamPlayer.create({ data: { teamId: teamAId, playerId: player.id } })
+
+    const game = await prisma.game.create({
+      data: {
+        seasonId,
+        homeTeamId: teamAId,
+        awayTeamId,
+        scheduledAt: daysFromNow(9),
+        duration: 60,
+        status: "SCHEDULED",
+      },
+    })
+
+    actAs(leagueOwnerId)
+    const res = await patchGame(game.id, { status: "CANCELLED" })
+    expect(res.status).toBe(200)
+
+    const notified = (await notificationsOf("game_cancelled", game.id)).map((n) => n.userId)
+    expect(notified).toContain(coach.id)
+    expect(notified).toContain(parent.id)
+    expect(notified).toContain(clubAOwnerId)
+    expect(notified).toContain(clubBOwnerId)
   })
 })
