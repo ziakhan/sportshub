@@ -83,18 +83,25 @@ export function ParentSection({ data }: ParentSectionProps) {
                   {player.teams.length > 0 ? (
                     <div className="mt-1.5 space-y-1">
                       {player.teams.map((t) => (
-                        <Link
-                          key={t.team.id}
-                          href={`/team/${t.team.id}`}
-                          className="text-ink-600 hover:text-play-700 flex items-center gap-1.5 text-xs font-medium"
-                        >
-                          <svg className="text-ink-400 h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M3 10 12 4l9 6M5 10v9h14v-9" />
-                          </svg>
-                          <span className="truncate">
-                            {t.team.name} · {t.team.ageGroup}
-                          </span>
-                        </Link>
+                        <div key={t.team.id} className="flex items-center gap-2 text-xs">
+                          <Link
+                            href={`/team/${t.team.id}`}
+                            className="text-ink-600 hover:text-play-700 flex min-w-0 items-center gap-1.5 font-medium"
+                          >
+                            <svg className="text-ink-400 h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M3 10 12 4l9 6M5 10v9h14v-9" />
+                            </svg>
+                            <span className="truncate">
+                              {t.team.name} · {t.team.ageGroup}
+                            </span>
+                          </Link>
+                          <Link
+                            href={`/teams/${t.team.id}/chat`}
+                            className="text-play-600 hover:text-play-700 shrink-0 font-semibold"
+                          >
+                            Chat
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   ) : (

@@ -32,6 +32,7 @@ import { getServerSession } from "next-auth"
  *   1114 live scoring (bootstrap/lock/events/finalize/public read)
  *   1116 referee sign-off (PIN verify / signature / self-service)
  *   1117 tryout check-in (roll-call toggle / roles / cancelled)
+ *   1118 team chat (membership matrix / send / poll / delete-moderation)
  */
 
 export function actAs(userId: string | null): void {

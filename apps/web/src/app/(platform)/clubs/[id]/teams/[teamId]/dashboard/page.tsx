@@ -387,6 +387,12 @@ export default async function TeamDashboardPage({
               Order Sheet
             </Link>
             <Link
+              href={`/teams/${teamId}/chat`}
+              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
+            >
+              Team Chat
+            </Link>
+            <Link
               href={`/clubs/${clubId}/teams/${teamId}/edit`}
               className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
             >

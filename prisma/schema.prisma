@@ -57,6 +57,7 @@ model User {
   tournaments         Tournament[]
   posts               Post[]
   follows             Follow[]
+  teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -268,12 +269,36 @@ model Team {
   postTags          PostTag[]
   follows           Follow[]
 
+  messages TeamMessage[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
   @@index([ageGroup])
   @@unique([tenantId, name, ageGroup, season])
+}
+
+// Team <-> family chat (TeamSnap-replacement messaging). One channel per
+// team; members = team staff + club owners/managers + parents of rostered
+// players. Soft delete keeps moderation history.
+model TeamMessage {
+  id     String @id @default(uuid())
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation("TeamMessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+
+  body String @db.Text
+
+  deletedAt   DateTime?
+  deletedById String?
+
+  createdAt DateTime @default(now())
+
+  @@index([teamId, createdAt])
+  @@index([senderId])
 }
 
 enum Gender {

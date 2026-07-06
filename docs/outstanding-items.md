@@ -22,8 +22,14 @@ league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
    roll-call page /clubs/[id]/tryouts/[tryoutId]/check-in (progress bar,
    search, optimistic tap-to-toggle) + signups-page button/badges. 7 int
    tests, world seed 1117.
-3. **Team ↔ family chat** — no Message/Chat model exists; TeamSnap-replacement
-   messaging. BIGGEST of the four.
+3. **Team ↔ family chat** — ✅ SHIPPED 2026-07-06. TeamMessage model (soft
+   delete; runbook #10) + GET/POST/DELETE APIs (membership: club owners/
+   managers + team Staff/TeamManager + parents of ACTIVE rostered players;
+   staff moderate any message) + /teams/[teamId]/chat page (5s polling,
+   bubbles, day separators, STAFF badge, load-earlier, take-back/moderate).
+   Entry points: team dashboard quick action, parent dashboard per-team
+   Chat links, member-gated pill on public /team/[id]. 9 int tests, seed
+   1118. V2 later: unread badges, per-message notifications, attachments.
 4. **Sponsored/featured listings + parent discovery** — ✅ SHIPPED 2026-07-06.
    Tenant.isFeatured (runbook #10) + admin Feature/Unfeature toggle (audited
    CLUB_FEATURE/UNFEATURE); /club browse rebuilt: featured spotlight (gold),
@@ -32,8 +38,9 @@ league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
    /club/[slug]: reviews list + avg stars + write-review form (POST
    /api/reviews already existed); At-a-Glance rating. StarRating added to
    the design system.
-Recommended build order: 1, 2, 4, 3. Close 1+2 before the club demo; 4 before
-the parent demo.
+**ALL FOUR SHIPPED 2026-07-06** (order 1, 2, 4, 3; commits local, unpushed).
+Both demo storyboards are now 100% real product — see
+docs/outreach/club-parent-demos.md.
 
 ## 1. Deploy train (biggest risk, fully scripted, owner gate)
 - Run Neon runbook entries **#4 #5 #6 #7 #8** (`docs/pending-deploy-actions.md`)

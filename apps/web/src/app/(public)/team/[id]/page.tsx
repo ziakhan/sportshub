@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { getTeamPublicData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
+import { getChatMembership } from "@/lib/teams/chat-access"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
@@ -41,6 +42,9 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
       }))
     : false
 
+  // Staff + rostered families get a door into the team chat from here
+  const chatMember = viewerId ? await getChatMembership(team.id, viewerId) : null
+
   const primaryColor = team.tenant?.branding?.primaryColor ?? "#4f46e5"
   const completed = games.filter((g: any) => g.status === "COMPLETED" || g.status === "LIVE")
   const upcoming = games
@@ -72,6 +76,14 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
       />
 
       <div className="mb-8 flex flex-wrap gap-2">
+        {chatMember && (
+          <Link
+            href={`/teams/${team.id}/chat`}
+            className="bg-play-600 hover:bg-play-700 rounded-full px-4 py-1.5 text-xs font-semibold text-white transition"
+          >
+            Team Chat
+          </Link>
+        )}
         {seasonInfo && (
           <Link
             href={`/league/${seasonInfo.id}`}

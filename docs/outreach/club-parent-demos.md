@@ -24,7 +24,7 @@ data exists, not the feature).
 | Public club browse / discovery | ✅ Real (basic) | public `/club` browse page |
 | **Tryout check-in on mobile** ("who's supposed to be at the sign-up") | ✅ Real (2026-07-06) | Roll-call page `/clubs/[id]/tryouts/[tryoutId]/check-in` — tap to check in, live X/N progress, search; `TryoutSignup.checkedInAt` |
 | **Inventory / order summary** (what to order per team, totals by size) | ✅ Real (2026-07-06) | Order Sheet at `/clubs/[id]/offers/summary` — per-team + club totals by size, Size-TBD flags, jersey #s, CSV export (`lib/offers/order-rollup.ts`) |
-| **Team ↔ family chat** | ❌ Gap | No `Message`/`Chat` model at all |
+| **Team ↔ family chat** | ✅ Real (2026-07-06) | `TeamMessage` + `/teams/[teamId]/chat` — staff + rostered families, polling chat w/ moderation; doors from team dashboard, parent dashboard, public team hub |
 | **Sponsored / featured club listings** | ✅ Real (2026-07-06) | `Tenant.isFeatured` + admin toggle; gold spotlight section on `/club` browse |
 | **Parent discovery: clubs near me, ranked by rating** | ✅ Real (2026-07-06) | `/club` browse: city pills + filter, star ratings, rated-first sort, featured spotlight |
 
@@ -80,11 +80,10 @@ The story: a parent finds the right club and never misses a moment.
    reviews unhidden, rated-first sort).
 4. **Sponsored/featured listings** — ✅ SHIPPED 2026-07-06 (isFeatured +
    admin toggle + gold spotlight on browse).
-5. **Team ↔ family chat** — the biggest build; TeamSnap-replacement messaging.
+5. **Team ↔ family chat** — ✅ SHIPPED 2026-07-06 (TeamMessage, polling chat
+   page, staff moderation, three entry doors).
 
-Which of these we build before demoing determines whether a scene is "real
-product" or "coming soon." Recommend closing #1 and #2 (cheap) before the club
-demo; #3 before the parent demo.
+**All five closed 2026-07-06 — both demo storyboards are 100% real product.**
 
 ## Strategic note (owner, 2026-07-06)
 
