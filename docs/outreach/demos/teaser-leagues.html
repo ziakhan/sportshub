@@ -1,0 +1,378 @@
+<title>SportsHub — for Leagues</title>
+<style>
+  :root{
+    --stage:#0a0d14; --stage2:#111726;
+    --play:#6366f1; --play-d:#4f46e5; --court:#22c55e; --hoop:#f24e1e;
+    --live:#ef4444; --gold:#f59e0b;
+    --ink-950:#18181b; --ink-700:#4d4d5a; --ink-500:#747486; --ink-400:#9191a1;
+    --ink-200:#d9d9df; --ink-100:#eeeef1; --ink-50:#f7f7f8; --paper:#fafafa;
+    --sans:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #1b2440 0%, transparent 55%),
+      radial-gradient(90% 70% at 50% 120%, #16112a 0%, transparent 50%),
+      var(--stage);
+    color:#fff; font-family:var(--sans);
+    display:flex; align-items:center; justify-content:center;
+    min-height:100%; overflow:hidden; position:relative;
+  }
+  /* faint court arc */
+  .court-lines{position:fixed; inset:0; pointer-events:none; opacity:.06}
+  .court-lines svg{width:100%; height:100%}
+
+  .wrap{position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:22px; padding:24px}
+
+  .brand{display:flex; align-items:center; gap:10px; opacity:.92}
+  .brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--play),var(--play-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(99,102,241,.5)}
+  .brand .mark svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.4}
+  .brand b{font-size:16px;font-weight:800;letter-spacing:-.02em}
+  .brand span{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--play);margin-left:2px}
+
+  /* phone */
+  .phone{
+    width:300px; height:620px; border-radius:42px; padding:12px;
+    background:linear-gradient(160deg,#20283b,#0c1019);
+    box-shadow:0 40px 90px rgba(0,0,0,.6), inset 0 0 0 1.5px rgba(255,255,255,.06);
+    position:relative;
+  }
+  .notch{position:absolute; top:14px; left:50%; transform:translateX(-50%); width:110px; height:22px; background:#0c1019; border-radius:0 0 14px 14px; z-index:5}
+  .screen{position:relative; width:100%; height:100%; border-radius:31px; overflow:hidden; background:var(--paper)}
+
+  /* scenes */
+  .scene{position:absolute; inset:0; opacity:0; transform:translateY(14px) scale(.99); transition:opacity .5s ease, transform .5s ease; pointer-events:none; display:flex; flex-direction:column}
+  .scene.on{opacity:1; transform:none}
+
+  .statusbar{height:38px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 20px 6px; font-size:11px; font-weight:700; color:var(--ink-700)}
+  .appbar{display:flex; align-items:center; gap:8px; padding:8px 16px 12px; border-bottom:1px solid var(--ink-100)}
+  .appbar .logo{width:22px;height:22px;border-radius:7px;background:var(--play-d);display:flex;align-items:center;justify-content:center}
+  .appbar .logo svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.4}
+  .appbar b{font-size:13px;font-weight:800;color:var(--ink-950);letter-spacing:-.01em}
+
+  /* S1 hook — spreadsheet mess */
+  .hook{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px 26px; gap:18px; background:linear-gradient(180deg,#fff, #f1f2f6)}
+  .sheet{width:100%; border:1px solid var(--ink-200); border-radius:8px; overflow:hidden; transform:rotate(-2deg); box-shadow:0 12px 30px rgba(24,24,27,.12)}
+  .sheet .row{display:grid; grid-template-columns:1.4fr .6fr .6fr; font-size:9px; color:var(--ink-500)}
+  .sheet .row>div{padding:5px 7px; border-bottom:1px solid var(--ink-100); border-right:1px solid var(--ink-100); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .sheet .row.h>div{background:#e8eaf0; font-weight:700; color:var(--ink-700)}
+  .hook h2{font-size:22px; font-weight:800; letter-spacing:-.02em; color:var(--ink-950); line-height:1.15}
+  .hook p{font-size:13px; color:var(--ink-500); line-height:1.5}
+  .strike{color:var(--live); font-weight:700}
+
+  /* S2 scoring console */
+  .console{flex:1; background:#0f1320; display:flex; flex-direction:column}
+  .console .top{padding:16px 18px 10px; display:flex; justify-content:space-between; align-items:center}
+  .console .lg{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#7c85a3; font-weight:700}
+  .console .live{display:inline-flex; align-items:center; gap:5px; background:rgba(239,68,68,.16); color:#ff6b6b; font-size:10px; font-weight:800; padding:3px 9px; border-radius:99px}
+  .console .live .dot{width:6px;height:6px;border-radius:50%;background:var(--live); animation:pulse 1.3s infinite}
+  .console .scoreline{display:flex; align-items:center; justify-content:space-between; padding:6px 20px 14px; color:#fff}
+  .console .tm{display:flex; flex-direction:column; gap:3px; font-size:12px; font-weight:700}
+  .console .tm.r{align-items:flex-end}
+  .console .crest{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff}
+  .console .sc{font-size:44px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+  .console .court{flex:1; margin:0 14px 14px; border-radius:16px; background:linear-gradient(160deg,#1a2033,#12172a); border:1px solid rgba(255,255,255,.05); display:flex; flex-direction:column; padding:14px}
+  .pgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:auto}
+  .pbtn{border-radius:12px; padding:12px 0; text-align:center; font-weight:800; font-size:14px; color:#fff; border:1px solid rgba(255,255,255,.08)}
+  .pbtn small{display:block; font-size:9px; font-weight:700; opacity:.7; letter-spacing:.1em; text-transform:uppercase; margin-top:2px}
+  .pbtn.two{background:linear-gradient(135deg,#2b3350,#1c2238)}
+  .pbtn.three{background:linear-gradient(135deg,var(--play-d),#3a2f9e)}
+  .pbtn.ft{background:linear-gradient(135deg,#24324a,#182234)}
+  .pbtn.reb{background:linear-gradient(135deg,#243a2c,#17251b)}
+  .tap-ghost{position:absolute; width:44px;height:44px;border-radius:50%; background:rgba(255,255,255,.5); pointer-events:none; opacity:0}
+
+  /* S3 fan live view */
+  .fan{flex:1; background:var(--paper); overflow:hidden}
+  .card{margin:12px; border:1px solid var(--ink-100); border-radius:16px; background:#fff; box-shadow:0 6px 18px rgba(24,24,27,.05)}
+  .fan .hd{text-align:center; font-size:10px; color:var(--ink-400); padding:12px 0 2px; font-weight:600}
+  .fan .row{display:flex; align-items:center; justify-content:center; gap:14px; padding:6px 16px 14px}
+  .fan .side{flex:1; display:flex; align-items:center; gap:9px}
+  .fan .side.r{flex-direction:row-reverse; text-align:right}
+  .fan .nm{font-size:12px; font-weight:700; color:var(--ink-700)}
+  .fan .big{font-size:38px; font-weight:800; color:var(--ink-950); font-variant-numeric:tabular-nums}
+  .fan .mid{font-size:10px; font-weight:800; color:var(--live); background:rgba(239,68,68,.1); padding:3px 8px; border-radius:99px}
+  .leaders{padding:4px 14px 12px}
+  .leaders h4{font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-400); padding:8px 4px 6px}
+  .lr{display:flex; align-items:center; justify-content:space-between; padding:6px 4px; border-top:1px solid var(--ink-50); font-size:12px}
+  .lr .who{color:var(--ink-700); font-weight:600}
+  .lr .v{font-weight:800; color:var(--ink-950)}
+
+  /* S4 standings */
+  .stand{flex:1; background:var(--paper)}
+  table.st{width:100%; border-collapse:collapse; font-size:12px; margin-top:4px}
+  .st th{font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-400); text-align:right; padding:8px 10px; font-weight:700}
+  .st th:first-child{text-align:left; padding-left:16px}
+  .st td{padding:9px 10px; text-align:right; border-top:1px solid var(--ink-100); color:var(--ink-700); font-variant-numeric:tabular-nums}
+  .st td:first-child{text-align:left; padding-left:16px; color:var(--ink-950); font-weight:600; display:flex; align-items:center; gap:8px}
+  .st .rk{width:16px; color:var(--ink-400); font-weight:700}
+  .st .mini{width:20px;height:20px;border-radius:6px;font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center}
+  .st tr.up td{background:rgba(34,197,94,.08); transition:background .5s}
+  .wl{color:var(--court); font-weight:700}
+
+  /* S5 recap */
+  .recap{flex:1; background:var(--paper); overflow:hidden}
+  .cover{height:180px; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden}
+  .cover .diag{position:absolute; inset:0}
+  .cover .fin{position:relative; color:#fff; font-weight:800; text-align:center}
+  .cover .fin .f{font-size:11px; letter-spacing:.2em; opacity:.85}
+  .cover .fin .s{font-size:30px; font-variant-numeric:tabular-nums; margin-top:2px}
+  .recap .body{padding:14px 16px}
+  .recap .tag{font-size:9px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--play); }
+  .recap h3{font-size:15px; font-weight:800; color:var(--ink-950); line-height:1.25; margin:5px 0 8px; letter-spacing:-.01em}
+  .recap p{font-size:11.5px; color:var(--ink-500); line-height:1.55}
+  .typed::after{content:"▍"; color:var(--play); animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* S6 CTA */
+  .cta{flex:1; background:linear-gradient(165deg,#0f1320,#1a1440); color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:34px 26px; gap:16px}
+  .cta .big{font-size:24px; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+  .cta .sub{font-size:13px; color:#aab2cc; line-height:1.5}
+  .cta .pills{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:2px}
+  .cta .pill{font-size:10px; font-weight:700; padding:5px 11px; border-radius:99px; background:rgba(255,255,255,.08); color:#cdd4e6; border:1px solid rgba(255,255,255,.09)}
+  .cta .btn{margin-top:6px; background:#fff; color:#141024; font-weight:800; font-size:14px; padding:13px 24px; border-radius:14px; box-shadow:0 12px 30px rgba(255,255,255,.15)}
+
+  @keyframes pulse{50%{opacity:.4}}
+
+  /* caption + controls */
+  .caption{max-width:320px; text-align:center; min-height:52px}
+  .caption .k{font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--play); margin-bottom:5px}
+  .caption .t{font-size:16px; font-weight:600; color:#e7eaf3; line-height:1.4}
+  .dots{display:flex; gap:7px}
+  .dot-i{width:22px; height:4px; border-radius:99px; background:rgba(255,255,255,.16); overflow:hidden}
+  .dot-i i{display:block; height:100%; width:0; background:var(--play)}
+  .dot-i.done i{width:100%}
+  .dot-i.active i{animation:fill var(--dur) linear forwards}
+  @keyframes fill{to{width:100%}}
+  .controls{display:flex; align-items:center; gap:14px; color:#8a93ad; font-size:12px}
+  .controls button{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#cfd6ea; font:inherit; font-size:12px; font-weight:600; padding:7px 14px; border-radius:99px; cursor:pointer; transition:background .2s}
+  .controls button:hover{background:rgba(255,255,255,.13)}
+  .hint{font-size:11px; color:#59617a}
+</style>
+
+<div class="court-lines">
+  <svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+    <circle cx="200" cy="400" r="90" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="150" y="0" width="100" height="150" fill="none" stroke="#fff" stroke-width="2"/>
+    <rect x="150" y="650" width="100" height="150" fill="none" stroke="#fff" stroke-width="2"/>
+    <line x1="0" y1="400" x2="400" y2="400" stroke="#fff" stroke-width="2"/>
+  </svg>
+</div>
+
+<div class="wrap">
+  <div class="brand">
+    <span class="mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10"/></svg></span>
+    <b>sportshub</b><span>for leagues</span>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen" id="screen">
+
+      <!-- S1 hook -->
+      <div class="scene" data-s="0">
+        <div class="hook">
+          <div class="sheet">
+            <div class="row h"><div>Team</div><div>W</div><div>L</div></div>
+            <div class="row"><div>Windsor Suns U14</div><div>?</div><div>?</div></div>
+            <div class="row"><div>Central Tech U14</div><div>6</div><div>3</div></div>
+            <div class="row"><div>Gwillimbury U…</div><div></div><div>2</div></div>
+            <div class="row"><div>#REF!</div><div>—</div><div>—</div></div>
+          </div>
+          <h2>Still running your league<br>on <span class="strike">spreadsheets?</span></h2>
+          <p>Schedules in Google Sheets. Standings by hand. Stats nowhere.</p>
+        </div>
+      </div>
+
+      <!-- S2 scoring console -->
+      <div class="scene" data-s="1">
+        <div class="console">
+          <div class="top">
+            <span class="lg">Ontario Youth BL</span>
+            <span class="live"><span class="dot"></span>LIVE · Q3</span>
+          </div>
+          <div class="scoreline">
+            <div class="tm">
+              <span class="crest" style="background:#374151">CT</span>
+              <span>Central Tech</span>
+              <span class="sc" id="cs-home">34</span>
+            </div>
+            <div class="tm r">
+              <span class="crest" style="background:#0891b2">WS</span>
+              <span>Windsor Suns</span>
+              <span class="sc" id="cs-away">36</span>
+            </div>
+          </div>
+          <div class="court">
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7c85a3;font-weight:700">#12 O. Wright — tap the bucket</div>
+            <div class="pgrid">
+              <div class="pbtn two">+2<small>Field goal</small></div>
+              <div class="pbtn three" id="btn3">+3<small>Three</small></div>
+              <div class="pbtn ft">+1<small>Free throw</small></div>
+              <div class="pbtn reb">REB<small>Rebound</small></div>
+            </div>
+          </div>
+        </div>
+        <div class="tap-ghost" id="ghost"></div>
+      </div>
+
+      <!-- S3 fan live view -->
+      <div class="scene" data-s="2">
+        <div class="fan">
+          <div class="appbar"><span class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10"/></svg></span><b>Live</b></div>
+          <div class="card">
+            <div class="hd">Ontario Youth Basketball League</div>
+            <div class="row">
+              <div class="side"><span class="crest" style="background:#374151;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">CT</span><span class="nm">Central Tech</span></div>
+              <div class="big">34</div>
+              <div class="mid">● Q3</div>
+              <div class="big">39</div>
+              <div class="side r"><span class="crest" style="background:#0891b2;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">WS</span><span class="nm">Windsor Suns</span></div>
+            </div>
+          </div>
+          <div class="leaders">
+            <h4>Game leaders</h4>
+            <div class="lr"><span class="who">O. Wright · WS</span><span class="v">17 PTS</span></div>
+            <div class="lr"><span class="who">C. Lewis · CT</span><span class="v">12 PTS</span></div>
+            <div class="lr"><span class="who">E. Roy · WS</span><span class="v">9 REB</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S4 standings -->
+      <div class="scene" data-s="3">
+        <div class="stand">
+          <div class="appbar"><span class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10"/></svg></span><b>Standings · U14 Boys</b></div>
+          <table class="st">
+            <thead><tr><th>Team</th><th>W</th><th>L</th><th>Strk</th></tr></thead>
+            <tbody>
+              <tr class="up" id="row-ws"><td><span class="rk">1</span><span class="mini" style="background:#0891b2">WS</span>Windsor Suns</td><td id="ws-w">10</td><td>2</td><td class="wl">W4</td></tr>
+              <tr><td><span class="rk">2</span><span class="mini" style="background:#7c3aed">CB</span>CBA</td><td>9</td><td>3</td><td class="wl">W2</td></tr>
+              <tr><td><span class="rk">3</span><span class="mini" style="background:#374151">CT</span>Central Tech</td><td>8</td><td>4</td><td style="color:var(--live);font-weight:700">L1</td></tr>
+              <tr><td><span class="rk">4</span><span class="mini" style="background:#16a34a">GU</span>Gwillimbury</td><td>6</td><td>6</td><td class="wl">W1</td></tr>
+              <tr><td><span class="rk">5</span><span class="mini" style="background:#e11d48">SB</span>SBA</td><td>4</td><td>8</td><td style="color:var(--live);font-weight:700">L3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- S5 recap -->
+      <div class="scene" data-s="4">
+        <div class="recap">
+          <div class="cover">
+            <svg class="diag" viewBox="0 0 300 180" preserveAspectRatio="none">
+              <rect width="300" height="180" fill="#141317"/>
+              <path d="M0 0 H175 L130 180 H0 Z" fill="#0891b2"/>
+              <path d="M175 0 H300 V180 H130 Z" fill="#374151"/>
+              <circle cx="70" cy="70" r="26" fill="#fff"/><text x="70" y="79" text-anchor="middle" font-size="22" font-weight="800" fill="#0891b2">WS</text>
+              <circle cx="230" cy="70" r="26" fill="#fff"/><text x="230" y="79" text-anchor="middle" font-size="22" font-weight="800" fill="#374151">CT</text>
+            </svg>
+            <div class="fin"><div class="f">FINAL</div><div class="s">52 – 47</div></div>
+          </div>
+          <div class="body">
+            <div class="tag">AI Recap · auto-published</div>
+            <h3>Wright's fourth-quarter surge lifts Windsor Suns past Central Tech</h3>
+            <p class="typed" id="typed"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- S6 CTA -->
+      <div class="scene" data-s="5">
+        <div class="cta">
+          <div class="brand" style="justify-content:center"><span class="mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10"/></svg></span><b style="font-size:17px">sportshub</b></div>
+          <div class="big">Your whole league,<br>one platform.</div>
+          <div class="pills">
+            <span class="pill">Live scoring</span><span class="pill">Auto standings</span>
+            <span class="pill">Player stats</span><span class="pill">AI recaps</span>
+            <span class="pill">Registration</span><span class="pill">Payments</span>
+          </div>
+          <div class="sub">Games scored from a phone. Everything else runs itself.</div>
+          <div class="btn">Book a 15-minute demo →</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="caption" id="caption"></div>
+  <div class="dots" id="dots"></div>
+  <div class="controls">
+    <button id="playpause">❚❚ Pause</button>
+    <button id="restart">↺ Restart</button>
+    <span class="hint">tap the phone to skip ahead</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var DUR = 4800; // ms per scene
+  var scenes = [
+    {k:"The problem", t:"Most youth leagues still live in spreadsheets and group chats."},
+    {k:"Live scoring", t:"Score every game from a phone at the scorer's table — no hardware."},
+    {k:"Families watching", t:"Scores, box scores & leaders go live instantly, everywhere."},
+    {k:"It runs itself", t:"Standings, stats & streaks update automatically. No manual entry."},
+    {k:"A content engine", t:"An AI recap publishes the moment the buzzer sounds."},
+    {k:"One platform", t:"Scoring → stats → registration → payments. Under your brand."}
+  ];
+  var sceneEls = Array.prototype.slice.call(document.querySelectorAll('.scene'));
+  var caption = document.getElementById('caption');
+  var dotsWrap = document.getElementById('dots');
+  var screen = document.getElementById('screen');
+  var playpause = document.getElementById('playpause');
+  var restart = document.getElementById('restart');
+  document.documentElement.style.setProperty('--dur', DUR+'ms');
+
+  var dotEls = scenes.map(function(_,i){
+    var d = document.createElement('div'); d.className='dot-i'; d.innerHTML='<i></i>';
+    dotsWrap.appendChild(d); return d;
+  });
+
+  var cur = -1, timer = null, playing = true;
+
+  function typeRecap(){
+    var el = document.getElementById('typed');
+    var full = "Windsor Suns 52, Central Tech 47. O. Wright poured in 17 with the go-ahead three in the final minute, and E. Roy controlled the glass with 9 boards as the Suns closed on an 11–4 run.";
+    el.textContent=""; el.classList.add('typed');
+    var i=0; (function tick(){ if(i<=full.length){ el.textContent=full.slice(0,i); i+=2; setTimeout(tick, 22);} else { el.classList.remove('typed'); } })();
+  }
+  function countConsole(){
+    var away=document.getElementById('cs-away'); if(!away) return;
+    var ghost=document.getElementById('ghost'); var btn=document.getElementById('btn3');
+    setTimeout(function(){
+      if(!btn) return; var r=btn.getBoundingClientRect(), sr=screen.getBoundingClientRect();
+      ghost.style.left=(r.left-sr.left+r.width/2-22)+'px'; ghost.style.top=(r.top-sr.top+r.height/2-22)+'px';
+      ghost.style.transition='none'; ghost.style.opacity='.6'; ghost.style.transform='scale(.4)';
+      requestAnimationFrame(function(){ ghost.style.transition='opacity .5s, transform .5s'; ghost.style.opacity='0'; ghost.style.transform='scale(1.6)'; });
+      away.textContent='39';
+    }, 1200);
+  }
+  function bumpStandings(){
+    var w=document.getElementById('ws-w'); if(w){ setTimeout(function(){ w.textContent='11'; }, 900); }
+  }
+
+  function show(n){
+    cur = n;
+    sceneEls.forEach(function(el,i){ el.classList.toggle('on', i===n); });
+    caption.innerHTML = '<div class="k">'+scenes[n].k+'</div><div class="t">'+scenes[n].t+'</div>';
+    dotEls.forEach(function(d,i){ d.classList.remove('active','done'); if(i<n) d.classList.add('done'); });
+    // reset active dot animation
+    var active = dotEls[n]; active.classList.remove('active'); void active.offsetWidth; if(playing) active.classList.add('active');
+    // scene-specific animations
+    if(n===1) countConsole();
+    if(n===3) bumpStandings();
+    if(n===4) typeRecap();
+  }
+  function next(){ show((cur+1) % scenes.length); schedule(); }
+  function schedule(){ clearTimeout(timer); if(playing) timer=setTimeout(next, DUR); }
+
+  screen.addEventListener('click', function(){ if(!playing){ playing=true; playpause.textContent='❚❚ Pause'; } next(); });
+  playpause.addEventListener('click', function(){
+    playing=!playing; playpause.textContent = playing ? '❚❚ Pause' : '► Play';
+    if(playing){ dotEls[cur].classList.add('active'); schedule(); } else { clearTimeout(timer); dotEls[cur].classList.remove('active'); }
+  });
+  restart.addEventListener('click', function(){ playing=true; playpause.textContent='❚❚ Pause'; show(0); schedule(); });
+
+  show(0); schedule();
+})();
+</script>

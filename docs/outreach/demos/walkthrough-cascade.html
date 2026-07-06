@@ -1,0 +1,320 @@
+<title>SportsHub — how it works</title>
+<style>
+  :root{
+    --stage:#0a0d14; --play:#6366f1; --play-d:#4f46e5; --court:#22c55e; --court-d:#16a34a;
+    --hoop:#f24e1e; --live:#ef4444; --gold:#f59e0b;
+    --ink-950:#18181b; --ink-700:#4d4d5a; --ink-500:#747486; --ink-400:#9191a1;
+    --ink-200:#d9d9df; --ink-100:#eeeef1; --ink-50:#f7f7f8; --paper:#fafafa;
+    --sans:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(120% 80% at 50% -10%,#1b2440 0%,transparent 55%),
+      radial-gradient(90% 70% at 50% 120%,#16112a 0%,transparent 50%),var(--stage);
+    color:#fff;font-family:var(--sans);min-height:100%;display:flex;flex-direction:column;
+    align-items:center;padding:26px 16px 40px;
+  }
+  .head{text-align:center;max-width:720px;margin-bottom:6px}
+  .brand{display:inline-flex;align-items:center;gap:9px;margin-bottom:14px}
+  .brand .mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--play),var(--play-d));display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(99,102,241,.5)}
+  .brand .mark svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.4}
+  .brand b{font-size:15px;font-weight:800;letter-spacing:-.02em}
+  .head h1{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15;text-wrap:balance}
+  .head p{color:#9aa3bd;font-size:14px;margin-top:8px;line-height:1.5}
+
+  /* chapter nav */
+  .chapters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:20px 0 18px}
+  .chip{font-size:12px;font-weight:700;padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#aeb6cf;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px}
+  .chip .n{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+  .chip.on{background:linear-gradient(135deg,var(--play-d),#3a2f9e);border-color:transparent;color:#fff}
+  .chip.on .n{background:rgba(255,255,255,.25)}
+
+  .stagewrap{width:100%;max-width:860px;position:relative;min-height:520px}
+  .ch{position:absolute;inset:0;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s;pointer-events:none}
+  .ch.on{opacity:1;transform:none;pointer-events:auto}
+  .ch-cap{text-align:center;max-width:640px;margin:0 auto 16px}
+  .ch-cap .k{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--play);margin-bottom:6px}
+  .ch-cap .t{font-size:16px;color:#dfe4f2;line-height:1.5}
+
+  /* laptop frame */
+  .laptop{width:100%;max-width:680px;margin:0 auto;background:#1a2033;border-radius:16px 16px 0 0;padding:10px 10px 0;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+  .laptop .bar{display:flex;gap:6px;padding:0 4px 9px}
+  .laptop .bar i{width:9px;height:9px;border-radius:50%;background:#3b4560}
+  .laptop .app{background:var(--paper);border-radius:8px;overflow:hidden;min-height:360px}
+  .laptop-base{width:calc(100% + 60px);max-width:740px;height:14px;margin:0 auto;background:linear-gradient(#20283b,#0c1019);border-radius:0 0 12px 12px}
+
+  .appbar{display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid var(--ink-100);background:#fff}
+  .appbar .logo{width:22px;height:22px;border-radius:6px;background:var(--play-d);display:flex;align-items:center;justify-content:center}
+  .appbar .logo svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.4}
+  .appbar b{font-size:13px;font-weight:800;color:var(--ink-950)}
+  .appbar .sp{flex:1}
+  .appbar .who{font-size:11px;color:var(--ink-500);font-weight:600}
+
+  .panel{padding:16px 18px;color:var(--ink-700)}
+  .panel h3{font-size:15px;font-weight:800;color:var(--ink-950);margin-bottom:3px;letter-spacing:-.01em}
+  .panel .sub{font-size:12px;color:var(--ink-500);margin-bottom:14px}
+
+  /* schedule builder */
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .field{flex:1;min-width:120px}
+  .field label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-400);margin-bottom:4px}
+  .field .inp{border:1px solid var(--ink-200);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--ink-800);background:#fff;font-weight:600}
+  .btn{display:inline-flex;align-items:center;gap:7px;background:var(--play-d);color:#fff;font-weight:800;font-size:13px;padding:10px 16px;border-radius:10px;border:none;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--play-d);border:1.5px solid var(--play-d)}
+  .btn.danger{background:var(--live)}
+  .games{margin-top:6px;border:1px solid var(--ink-100);border-radius:10px;overflow:hidden}
+  .grow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--ink-50);font-size:12px;opacity:0;transform:translateX(-8px);transition:.4s}
+  .grow:first-child{border-top:none}
+  .grow.in{opacity:1;transform:none}
+  .grow .t{color:var(--ink-400);width:64px;font-weight:700;font-variant-numeric:tabular-nums}
+  .grow .m{flex:1;color:var(--ink-800);font-weight:600}
+  .grow .mini{width:18px;height:18px;border-radius:5px;font-size:8px;font-weight:800;color:#fff;display:inline-flex;align-items:center;justify-content:center}
+  .pubrow{display:flex;align-items:center;gap:10px;margin-top:14px}
+  .pill-ok{font-size:12px;font-weight:700;color:var(--court-d);background:rgba(34,197,94,.1);padding:6px 12px;border-radius:99px;opacity:0;transition:.4s}
+  .pill-ok.in{opacity:1}
+
+  /* club submit */
+  .club-card{border:1px solid var(--ink-100);border-radius:12px;padding:16px;background:#fff}
+  .roster{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .chip-p{font-size:11px;font-weight:600;color:var(--ink-600);background:var(--ink-50);border:1px solid var(--ink-100);border-radius:99px;padding:5px 10px}
+  .submit-state{margin-top:12px;display:flex;align-items:center;gap:10px}
+  .check{width:34px;height:34px;border-radius:50%;background:var(--court);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:.4s}
+  .check svg{width:18px;height:18px;stroke:#fff;stroke-width:3;fill:none}
+  .check.in{opacity:1;transform:scale(1)}
+
+  /* CASCADE */
+  .cascade{display:grid;grid-template-columns:1fr;gap:18px}
+  .cz{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:center}
+  @media(max-width:720px){.cz{grid-template-columns:1fr}}
+  .action-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+  .action-card .gmrow{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--ink-100)}
+  .action-card .gm{flex:1}
+  .action-card .gm .a{font-size:13px;font-weight:800;color:var(--ink-950)}
+  .action-card .gm .b{font-size:11px;color:var(--ink-500)}
+  .action-card .body{padding:14px 16px}
+  .action-card .lbl{font-size:11px;color:var(--ink-500);margin-bottom:10px}
+
+  .fanout{position:relative;min-height:250px}
+  .devices{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .dev{width:132px;background:#0e1320;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:8px;position:relative;transition:.3s}
+  .dev .role{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7c85a3;text-align:center;padding:3px 0 7px}
+  .dev .scr{background:var(--paper);border-radius:10px;min-height:118px;padding:9px;display:flex;flex-direction:column;gap:6px}
+  .notif{background:#fff;border:1px solid var(--ink-100);border-left:3px solid var(--live);border-radius:8px;padding:7px 8px;opacity:0;transform:translateY(8px) scale(.96);transition:.45s;box-shadow:0 4px 12px rgba(24,24,27,.06)}
+  .notif.in{opacity:1;transform:none}
+  .notif .h{font-size:9px;font-weight:800;color:var(--ink-900);line-height:1.2}
+  .notif .m{font-size:8px;color:var(--ink-500);line-height:1.3;margin-top:2px}
+  .notif .ts{font-size:7px;color:var(--ink-400);margin-top:3px;font-weight:700}
+  .dev.lit{border-color:rgba(239,68,68,.5);box-shadow:0 0 0 1px rgba(239,68,68,.3),0 14px 30px rgba(239,68,68,.18)}
+
+  .oldway{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.14);border-radius:14px;padding:16px 18px}
+  .oldway h4{font-size:12px;font-weight:800;color:#c7cee2;letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .oldway .step{display:flex;align-items:center;gap:9px;font-size:12px;color:#8a93ad;padding:5px 0}
+  .oldway .step .ic{width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:11px}
+  .oldway .miss{color:#ff7a7a;font-weight:700}
+  .arrow{color:#5a627e;text-align:center;font-size:16px;margin:-2px 0}
+
+  .controls{display:flex;align-items:center;gap:12px;margin-top:24px}
+  .controls button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#cfd6ea;font:inherit;font-size:13px;font-weight:700;padding:9px 18px;border-radius:99px;cursor:pointer;transition:.2s}
+  .controls button:hover{background:rgba(255,255,255,.14)}
+  .controls .primary{background:#fff;color:#141024}
+  .badge-real{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#7ee0a0;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);padding:5px 11px;border-radius:99px;margin-top:16px}
+  .badge-real .dot{width:6px;height:6px;border-radius:50%;background:var(--court)}
+</style>
+
+<div class="head">
+  <div class="brand"><span class="mark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10"/></svg></span><b>sportshub</b></div>
+  <h1>One change by the league. Everyone knows. Instantly.</h1>
+  <p>How a season actually runs — build the schedule, clubs submit their teams in one click, and when a game changes, every coach, parent, and player is notified automatically. No phone tree.</p>
+</div>
+
+<div class="chapters" id="chapters"></div>
+
+<div class="stagewrap" id="stage">
+
+  <!-- CH1 schedule -->
+  <div class="ch" data-c="0">
+    <div class="ch-cap"><div class="k">Chapter 1 · The league</div><div class="t">Set your dates and divisions once — the schedule generates itself, then you publish.</div></div>
+    <div class="laptop">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="app">
+        <div class="appbar"><span class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10"/></svg></span><b>Ontario Youth BL · Schedule</b><span class="sp"></span><span class="who">Commissioner</span></div>
+        <div class="panel">
+          <h3>Build schedule — U14 Boys</h3>
+          <div class="sub">6 teams · round robin · Saturdays</div>
+          <div class="form-row">
+            <div class="field"><label>Start</label><div class="inp">Sat, Jan 10</div></div>
+            <div class="field"><label>Weeks</label><div class="inp">5 weekends</div></div>
+            <div class="field"><label>Venue</label><div class="inp">Monarch Park</div></div>
+          </div>
+          <button class="btn" id="gen-btn">⚡ Generate games</button>
+          <div class="games" id="games"></div>
+          <div class="pubrow"><button class="btn ghost" id="pub-btn">Publish schedule</button><span class="pill-ok" id="pub-ok">✓ Published — every club notified</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="laptop-base"></div>
+  </div>
+
+  <!-- CH2 club submit -->
+  <div class="ch" data-c="1">
+    <div class="ch-cap"><div class="k">Chapter 2 · The clubs</div><div class="t">Each club submits its roster to the league in one click — no forms emailed back and forth.</div></div>
+    <div class="laptop">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="app">
+        <div class="appbar"><span class="logo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2c0 5.5 2 8.5 10 10"/></svg></span><b>Windsor Suns · Team</b><span class="sp"></span><span class="who">Club manager</span></div>
+        <div class="panel">
+          <div class="club-card">
+            <h3>Windsor Suns U14 Boys</h3>
+            <div class="sub">Roster locked · 11 players</div>
+            <div class="roster">
+              <span class="chip-p">#4 C. Lewis</span><span class="chip-p">#3 Z. Reid</span><span class="chip-p">#12 O. Wright</span>
+              <span class="chip-p">#7 Y. Robinson</span><span class="chip-p">#15 J. Bakari</span><span class="chip-p">#5 M. Mbeki</span>
+              <span class="chip-p">+5 more</span>
+            </div>
+            <button class="btn" id="submit-btn">Submit roster to Ontario Youth BL →</button>
+            <div class="submit-state"><span class="check" id="check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span><span id="submit-txt" style="font-size:13px;font-weight:700;color:var(--ink-500)"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="laptop-base"></div>
+  </div>
+
+  <!-- CH3 cascade -->
+  <div class="ch" data-c="2">
+    <div class="ch-cap"><div class="k">Chapter 3 · The moment a game changes</div><div class="t">Rain, a double-booked gym, a ref no-show. The league cancels once — watch what happens.</div></div>
+    <div class="cascade">
+      <div class="cz">
+        <div class="action-card">
+          <div class="gmrow">
+            <span class="mini" style="width:26px;height:26px;border-radius:7px;background:#374151;font-size:9px">CT</span>
+            <div class="gm"><div class="a">Central Tech vs Windsor Suns</div><div class="b">Sat Jan 24 · 2:00 PM · Monarch Park</div></div>
+            <span class="mini" style="width:26px;height:26px;border-radius:7px;background:#0891b2;font-size:9px">WS</span>
+          </div>
+          <div class="body">
+            <div class="lbl">The commissioner clicks once:</div>
+            <button class="btn danger" id="cancel-btn">✕ Cancel this game</button>
+          </div>
+        </div>
+        <div class="oldway">
+          <h4>The old way ✕</h4>
+          <div class="step"><span class="ic">📞</span> League phones both clubs</div>
+          <div class="arrow">↓</div>
+          <div class="step"><span class="ic">💬</span> Club texts the team coach</div>
+          <div class="arrow">↓</div>
+          <div class="step"><span class="ic">📱</span> Coach posts to a WhatsApp group</div>
+          <div class="arrow">↓</div>
+          <div class="step miss"><span class="ic">🚗</span> …3 families miss it and drive to the gym</div>
+        </div>
+      </div>
+      <div class="fanout">
+        <div class="devices" id="devices"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="controls">
+  <button id="prev">← Back</button>
+  <button class="primary" id="next">Next →</button>
+  <button id="replay">↺ Replay chapter</button>
+</div>
+<div class="badge-real"><span class="dot"></span>This cascade is live in the product — one action notifies the whole audience.</div>
+
+<script>
+(function(){
+  var chapters=[
+    {k:"Schedule",label:"Schedule"},
+    {k:"Team submit",label:"Team submit"},
+    {k:"Cancellation cascade",label:"The cascade"}
+  ];
+  var chWrap=document.getElementById('chapters');
+  var chEls=Array.prototype.slice.call(document.querySelectorAll('.ch'));
+  chapters.forEach(function(c,i){
+    var b=document.createElement('div'); b.className='chip'; b.innerHTML='<span class="n">'+(i+1)+'</span>'+c.label;
+    b.onclick=function(){go(i)}; chWrap.appendChild(b);
+  });
+  var chips=Array.prototype.slice.call(chWrap.children);
+  var cur=-1;
+
+  // CH1 schedule generation
+  var scheduleGames=[
+    ["9:00","Central Tech","Windsor Suns","#374151","#0891b2"],
+    ["10:30","CBA","416 United","#7c3aed","#2563eb"],
+    ["12:00","Gwillimbury","SBA","#16a34a","#e11d48"],
+    ["1:30","Windsor Suns","CBA","#0891b2","#7c3aed"],
+    ["3:00","416 United","Gwillimbury","#2563eb","#16a34a"]
+  ];
+  function playCh1(){
+    var box=document.getElementById('games'); box.innerHTML='';
+    document.getElementById('pub-ok').classList.remove('in');
+    scheduleGames.forEach(function(g){
+      var r=document.createElement('div'); r.className='grow';
+      r.innerHTML='<span class="t">'+g[0]+'</span><span class="mini" style="background:'+g[3]+'">'+g[1].slice(0,2).toUpperCase()+'</span><span class="m">'+g[1]+' vs '+g[2]+'</span><span class="mini" style="background:'+g[4]+'">'+g[2].slice(0,2).toUpperCase()+'</span>';
+      box.appendChild(r);
+    });
+    var rows=box.querySelectorAll('.grow');
+    setTimeout(function(){ rows.forEach(function(r,i){ setTimeout(function(){ r.classList.add('in'); }, i*180); }); }, 700);
+    setTimeout(function(){ document.getElementById('pub-ok').classList.add('in'); }, 700+rows.length*180+900);
+  }
+  document.getElementById('gen-btn').onclick=playCh1;
+  document.getElementById('pub-btn').onclick=function(){ document.getElementById('pub-ok').classList.add('in'); };
+
+  // CH2 submit
+  function playCh2(){
+    var c=document.getElementById('check'), t=document.getElementById('submit-txt');
+    c.classList.remove('in'); t.textContent='';
+    setTimeout(function(){ c.classList.add('in'); t.textContent='Submitted — the commissioner sees your roster instantly.'; }, 600);
+  }
+  document.getElementById('submit-btn').onclick=playCh2;
+
+  // CH3 cascade
+  var recipients=[
+    {role:"League",h:"Game cancelled",m:"You cancelled Central Tech vs Windsor Suns."},
+    {role:"Club mgr",h:"Game cancelled by league",m:"Central Tech vs Windsor Suns · Sat Jan 24."},
+    {role:"Head coach",h:"Your game is cancelled",m:"Windsor Suns U14 — Sat Jan 24, 2:00 PM."},
+    {role:"Parent · Jaxon",h:"Jaxon's game cancelled",m:"Windsor Suns U14 · Sat Jan 24. No need to drive out."},
+    {role:"Parent · Keisha",h:"Keisha's game cancelled",m:"Windsor Suns U14 · Sat Jan 24."},
+    {role:"Player · 13+",h:"Game cancelled",m:"Your Sat Jan 24 game is off."}
+  ];
+  function buildDevices(){
+    var d=document.getElementById('devices'); d.innerHTML='';
+    recipients.forEach(function(r,i){
+      var el=document.createElement('div'); el.className='dev'; el.dataset.i=i;
+      el.innerHTML='<div class="role">'+r.role+'</div><div class="scr"><div class="notif" data-n="'+i+'"><div class="h">'+r.h+'</div><div class="m">'+r.m+'</div><div class="ts">now · 2:00 PM</div></div></div>';
+      d.appendChild(el);
+    });
+  }
+  function playCh3(){
+    buildDevices();
+  }
+  document.getElementById('cancel-btn').onclick=function(){
+    var devs=document.querySelectorAll('#devices .dev');
+    devs.forEach(function(dev,i){
+      setTimeout(function(){
+        dev.classList.add('lit');
+        dev.querySelector('.notif').classList.add('in');
+        setTimeout(function(){ dev.classList.remove('lit'); }, 900);
+      }, 250 + i*160);
+    });
+  };
+
+  function go(i){
+    if(i<0||i>=chEls.length) return;
+    cur=i;
+    chEls.forEach(function(el,k){ el.classList.toggle('on', k===i); });
+    chips.forEach(function(c,k){ c.classList.toggle('on', k===i); });
+    document.getElementById('prev').style.visibility = i===0 ? 'hidden':'visible';
+    document.getElementById('next').textContent = i===chEls.length-1 ? 'Done ✓' : 'Next →';
+    if(i===0){ playCh1(); }
+    if(i===1){ playCh2(); }
+    if(i===2){ playCh3(); setTimeout(function(){ document.getElementById('cancel-btn').click(); }, 900); }
+  }
+  document.getElementById('next').onclick=function(){ go(Math.min(cur+1, chEls.length-1)); };
+  document.getElementById('prev').onclick=function(){ go(Math.max(cur-1,0)); };
+  document.getElementById('replay').onclick=function(){ go(cur); };
+  go(0);
+})();
+</script>
