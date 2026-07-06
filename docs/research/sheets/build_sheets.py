@@ -177,8 +177,8 @@ with open(f"{S}/team_entries.csv", "w", newline="") as f:
 
 # ---------------- clubs view: master + census totals --------------------------
 CLUB_ALIASES = {
-    "scarborough blues sba": "sba premier scarborough association",
-    "sba blues": "sba premier scarborough association",
+    "scarborough blues sba": "sba premier",
+    "sba blues": "sba premier",
     "east york eagles": "east york",
     "milton stags": "stags",
     "etobicoke thunder": "etobicoke",
