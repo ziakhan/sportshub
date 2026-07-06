@@ -58,6 +58,7 @@ model User {
   posts               Post[]
   follows             Follow[]
   teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
+  teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -269,7 +270,8 @@ model Team {
   postTags          PostTag[]
   follows           Follow[]
 
-  messages TeamMessage[]
+  messages  TeamMessage[]
+  chatReads TeamChatRead[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -299,6 +301,20 @@ model TeamMessage {
 
   @@index([teamId, createdAt])
   @@index([senderId])
+}
+
+// Per-member read cursor for a team chat — unread badges + notification
+// debounce both derive from it.
+model TeamChatRead {
+  userId String
+  user   User   @relation("TeamChatReads", fields: [userId], references: [id], onDelete: Cascade)
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  lastReadAt DateTime @default(now())
+
+  @@id([userId, teamId])
+  @@index([teamId])
 }
 
 enum Gender {

@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { getTeamPublicData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
-import { getChatMembership } from "@/lib/teams/chat-access"
+import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
@@ -44,6 +44,9 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
 
   // Staff + rostered families get a door into the team chat from here
   const chatMember = viewerId ? await getChatMembership(team.id, viewerId) : null
+  const chatUnread = chatMember
+    ? ((await getUnreadChatCounts(viewerId, [team.id])).get(team.id) ?? 0)
+    : 0
 
   const primaryColor = team.tenant?.branding?.primaryColor ?? "#4f46e5"
   const completed = games.filter((g: any) => g.status === "COMPLETED" || g.status === "LIVE")
@@ -79,9 +82,14 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
         {chatMember && (
           <Link
             href={`/teams/${team.id}/chat`}
-            className="bg-play-600 hover:bg-play-700 rounded-full px-4 py-1.5 text-xs font-semibold text-white transition"
+            className="bg-play-600 hover:bg-play-700 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold text-white transition"
           >
             Team Chat
+            {chatUnread > 0 && (
+              <span className="bg-hoop-500 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white">
+                {chatUnread}
+              </span>
+            )}
           </Link>
         )}
         {seasonInfo && (

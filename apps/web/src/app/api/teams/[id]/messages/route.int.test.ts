@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
+import { prisma } from "@youthbasketballhub/db"
 import {
   buildWorld,
   createOffer,
@@ -6,6 +7,7 @@ import {
   destroyWorld,
   type BuiltWorld,
 } from "@youthbasketballhub/test-worlds"
+import { getChatMembers, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { GET, POST } from "./route"
 import { DELETE } from "./[messageId]/route"
@@ -145,5 +147,50 @@ describe("team chat (integration)", () => {
     actAs(familyParentId)
     const feed = await (await list()).json()
     expect(feed.messages.map((m: any) => m.id)).not.toContain(message.id)
+  })
+
+  it("v1.5 — one bell per channel until visited; unread badge counts every message", async () => {
+    const unreadBells = () =>
+      prisma.notification.count({
+        where: { userId: familyParentId, type: "team_chat", referenceId: teamId, isRead: false },
+      })
+
+    // Clean slate: visiting the chat clears cursor + bells
+    actAs(familyParentId)
+    await list()
+    expect(await unreadBells()).toBe(0)
+
+    actAs(coachId)
+    await send({ body: "Bell one." })
+    expect(await unreadBells()).toBe(1)
+    await send({ body: "Bell two — must NOT re-bell." })
+    expect(await unreadBells()).toBe(1)
+
+    // Badge counts both unread messages even though only one bell rang
+    expect((await getUnreadChatCounts(familyParentId, [teamId])).get(teamId)).toBe(2)
+
+    // Visiting clears bell + badge; the next message re-bells
+    actAs(familyParentId)
+    await list()
+    expect(await unreadBells()).toBe(0)
+    expect((await getUnreadChatCounts(familyParentId, [teamId])).get(teamId)).toBeUndefined()
+
+    actAs(coachId)
+    await send({ body: "Bell three." })
+    expect(await unreadBells()).toBe(1)
+  })
+
+  it("v1.5 — members list: coaches are chat admins, families carry player names", async () => {
+    const members = await getChatMembers(teamId, world.clubs[0].tenantId)
+
+    const coach = members.staff.find((s) => s.userId === coachId)
+    expect(coach?.label).toBe("Head Coach")
+    expect(members.staff.some((s) => s.userId === ownerId && s.label === "Club")).toBe(true)
+
+    const family = members.families.find((f) => f.userId === familyParentId)
+    expect(family?.playerNames).toHaveLength(1)
+
+    expect(members.userIds).toContain(familyParentId)
+    expect(members.userIds).not.toContain(outsiderParentId)
   })
 })

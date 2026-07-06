@@ -97,9 +97,14 @@ export function ParentSection({ data }: ParentSectionProps) {
                           </Link>
                           <Link
                             href={`/teams/${t.team.id}/chat`}
-                            className="text-play-600 hover:text-play-700 shrink-0 font-semibold"
+                            className="text-play-600 hover:text-play-700 flex shrink-0 items-center gap-1 font-semibold"
                           >
                             Chat
+                            {(data.unreadChat[t.team.id] ?? 0) > 0 && (
+                              <span className="bg-hoop-500 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white">
+                                {data.unreadChat[t.team.id]}
+                              </span>
+                            )}
                           </Link>
                         </div>
                       ))}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { format, isSameDay, isToday, isYesterday } from "date-fns"
+import type { ChatMembers } from "@/lib/teams/chat-access"
 
 interface ChatMessage {
   id: string
@@ -23,10 +24,12 @@ export function TeamChat({
   teamId,
   currentUserId,
   canModerate,
+  members,
 }: {
   teamId: string
   currentUserId: string
   canModerate: boolean
+  members: ChatMembers
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -34,8 +37,10 @@ export function TeamChat({
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showMembers, setShowMembers] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
+  const memberCount = members.userIds.length
 
   const mergeNewer = useCallback((incoming: ChatMessage[]) => {
     if (incoming.length === 0) return
@@ -164,6 +169,61 @@ export function TeamChat({
 
   return (
     <div className="border-ink-100 shadow-soft flex min-h-0 flex-1 flex-col rounded-2xl border bg-white">
+      {/* Members bar */}
+      <div className="border-ink-100 border-b">
+        <button
+          onClick={() => setShowMembers((v) => !v)}
+          className="text-ink-600 hover:bg-court-50 flex w-full items-center justify-between px-4 py-2 text-xs font-semibold"
+        >
+          <span>
+            {memberCount} member{memberCount !== 1 ? "s" : ""}
+          </span>
+          <span className="text-ink-400">{showMembers ? "Hide ▴" : "Show ▾"}</span>
+        </button>
+        {showMembers && (
+          <div className="bg-court-50/60 max-h-56 space-y-3 overflow-y-auto px-4 py-3">
+            {members.staff.length > 0 && (
+              <div>
+                <p className="text-ink-400 mb-1.5 text-[10px] font-bold uppercase tracking-wider">
+                  Staff — chat admins
+                </p>
+                <div className="space-y-1">
+                  {members.staff.map((s) => (
+                    <div key={s.userId} className="flex items-center justify-between text-xs">
+                      <span className="text-ink-900 font-medium">
+                        {s.name}
+                        {s.userId === currentUserId ? " (you)" : ""}
+                      </span>
+                      <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                        {s.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {members.families.length > 0 && (
+              <div>
+                <p className="text-ink-400 mb-1.5 text-[10px] font-bold uppercase tracking-wider">
+                  Families
+                </p>
+                <div className="space-y-1">
+                  {members.families.map((f) => (
+                    <div key={f.userId} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="text-ink-900 truncate font-medium">
+                        {f.name}
+                        {f.userId === currentUserId ? " (you)" : ""}
+                      </span>
+                      <span className="text-ink-500 truncate">{f.playerNames.join(", ")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto p-4">
         {!loaded ? (
           <p className="text-ink-400 py-10 text-center text-sm">Loading chat…</p>

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
-import { getChatMembership } from "@/lib/teams/chat-access"
+import { getChatMembers, getChatMembership } from "@/lib/teams/chat-access"
 import { TeamChat } from "./team-chat"
 
 /**
@@ -15,6 +15,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
   const membership = await getChatMembership(params.teamId, auth.userId, auth.isPlatformAdmin)
   if (!membership) notFound()
 
+  const members = await getChatMembers(membership.teamId, membership.tenantId)
   const isStaffSide = membership.role !== "family"
 
   return (
@@ -42,6 +43,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
         teamId={membership.teamId}
         currentUserId={auth.userId}
         canModerate={isStaffSide}
+        members={members}
       />
     </div>
   )

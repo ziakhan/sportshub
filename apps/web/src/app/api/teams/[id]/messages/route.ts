@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
-import { getChatMembership, getTeamStaffUserIds } from "@/lib/teams/chat-access"
+import { notifyMany } from "@/lib/notifications"
+import {
+  getChatMembers,
+  getChatMembership,
+  getTeamStaffUserIds,
+  markChatRead,
+} from "@/lib/teams/chat-access"
 
 export const dynamic = "force-dynamic"
 
@@ -64,6 +70,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const staffIds = await getTeamStaffUserIds(membership.teamId, membership.tenantId)
 
+    // Reading advances the cursor: on open, and whenever a poll actually
+    // delivers something new (a poll that returns nothing writes nothing).
+    if (!before && (!after || rows.length > 0)) {
+      await markChatRead(auth.userId, membership.teamId)
+    }
+
     return NextResponse.json({
       messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds)),
       hasMore: !after && rows.length === PAGE_SIZE,
@@ -104,6 +116,41 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         sender: { select: { id: true, firstName: true, lastName: true } },
       },
     })
+
+    // Sending counts as reading your own chat
+    await markChatRead(auth.userId, membership.teamId)
+
+    // Debounced bell: only members with NO unread team_chat notification for
+    // this team get one — a busy thread bells each member once until they
+    // visit the chat (which clears it via markChatRead).
+    const members = await getChatMembers(membership.teamId, membership.tenantId)
+    const candidates = members.userIds.filter((id) => id !== auth.userId)
+    if (candidates.length > 0) {
+      const alreadyBelled = await prisma.notification.findMany({
+        where: {
+          userId: { in: candidates },
+          type: "team_chat",
+          referenceId: membership.teamId,
+          isRead: false,
+        },
+        select: { userId: true },
+      })
+      const belledSet = new Set(alreadyBelled.map((n: { userId: string }) => n.userId))
+      const toNotify = candidates.filter((id) => !belledSet.has(id))
+      const senderName = [message.sender.firstName, message.sender.lastName]
+        .filter(Boolean)
+        .join(" ")
+      const preview =
+        parsed.data.body.length > 80 ? `${parsed.data.body.slice(0, 77)}…` : parsed.data.body
+      await notifyMany(prisma, toNotify, {
+        type: "team_chat",
+        title: `New message in ${membership.teamName} chat`,
+        message: `${senderName}: ${preview}`,
+        link: `/teams/${membership.teamId}/chat`,
+        referenceId: membership.teamId,
+        referenceType: "Team",
+      })
+    }
 
     const staffIds = await getTeamStaffUserIds(membership.teamId, membership.tenantId)
     return NextResponse.json({ message: serialize(message, staffIds) }, { status: 201 })

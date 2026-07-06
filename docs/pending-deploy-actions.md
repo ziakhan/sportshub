@@ -302,6 +302,8 @@ one `prisma db push` covers everything:
   discovery surfaces; admin-toggled (setFeatured action, audited).
 - New table `TeamMessage` (team ↔ family chat): teamId/senderId FKs, body,
   soft-delete fields (deletedAt/deletedById), index (teamId, createdAt).
+- New table `TeamChatRead` (chat v1.5 read cursors): @@id(userId, teamId),
+  lastReadAt — unread badges + debounced `team_chat` bell derive from it.
 
 Nothing to backfill. Note: the same commits UNHID the Review system on
 public club pages (`/club/[slug]`) — no schema change (Review table already

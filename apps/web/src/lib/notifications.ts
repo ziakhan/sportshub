@@ -44,6 +44,8 @@ export type NotificationType =
   // Game changes
   | "game_cancelled"
   | "game_rescheduled"
+  // Team chat (debounced — one unread bell per channel)
+  | "team_chat"
 
 export interface NotificationInput {
   userId: string

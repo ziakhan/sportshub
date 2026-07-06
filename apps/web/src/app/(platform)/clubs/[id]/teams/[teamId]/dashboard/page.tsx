@@ -2,6 +2,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { getUnreadChatCounts } from "@/lib/teams/chat-access"
 
 interface StaffMember {
   id: string
@@ -107,6 +109,11 @@ export default async function TeamDashboardPage({
 }) {
   const data = await getTeamDashboardData(params.teamId, params.id)
   if (!data) notFound()
+
+  const auth = await getSessionUserId()
+  const chatUnread = auth
+    ? ((await getUnreadChatCounts(auth.userId, [params.teamId])).get(params.teamId) ?? 0)
+    : 0
 
   const { team, tryouts, offers } = data
   const clubId = params.id
@@ -388,9 +395,14 @@ export default async function TeamDashboardPage({
             </Link>
             <Link
               href={`/teams/${teamId}/chat`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
+              className="border-ink-200 hover:bg-court-50 relative rounded-xl border p-3 text-center text-sm"
             >
               Team Chat
+              {chatUnread > 0 && (
+                <span className="bg-hoop-500 absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white">
+                  {chatUnread}
+                </span>
+              )}
             </Link>
             <Link
               href={`/clubs/${clubId}/teams/${teamId}/edit`}

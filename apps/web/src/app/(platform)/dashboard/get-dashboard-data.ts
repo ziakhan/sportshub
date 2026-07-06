@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { getUnreadChatCounts } from "@/lib/teams/chat-access"
 
 export interface DashboardData {
   roles: string[]
@@ -49,6 +50,8 @@ export interface DashboardData {
       paymentType: string
       createdAt: Date
     }>
+    /** teamId -> unread team-chat messages (teams with 0 unread omitted) */
+    unreadChat: Record<string, number>
   }
   clubOwner?: {
     tenants: Array<{
@@ -249,6 +252,13 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
       }),
     ])
 
+    const parentTeamIds = [
+      ...new Set(
+        players.flatMap((pl: any) => pl.teams.map((t: any) => t.team.id as string))
+      ),
+    ]
+    const unreadCounts = await getUnreadChatCounts(user.id, parentTeamIds)
+
     data.parent = {
       players,
       tryoutSignups,
@@ -258,6 +268,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
         platformFee: p.platformFee ? Number(p.platformFee) : null,
         refundAmount: p.refundAmount ? Number(p.refundAmount) : null,
       })),
+      unreadChat: Object.fromEntries(unreadCounts),
     }
   }
 
