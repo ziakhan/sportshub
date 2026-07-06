@@ -435,42 +435,40 @@ export function LiveView({ gameId }: { gameId: string }) {
     )
   }
 
+  // Compact one-liner per stat: dot #4 C. Lewis 10 · PTS · 14 O. Wright #3
   const leaderDuel = (label: string, get: (l: PlayerLine) => number) => {
     const h = leaderOf(game.homeTeamId, get)
     const a = leaderOf(game.awayTeamId, get)
     if (!h && !a) return null
     const cell = (l: PlayerLine | null, teamId: string, right: boolean) => (
-      <div className={`flex flex-1 items-center gap-2.5 ${right ? "flex-row-reverse text-right" : ""}`}>
+      <div
+        className={`flex min-w-0 flex-1 items-center gap-1.5 ${right ? "flex-row-reverse text-right" : ""}`}
+      >
         {l ? (
           <>
             <span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-extrabold text-white"
+              className="h-2 w-2 shrink-0 rounded-sm"
               style={{ backgroundColor: colorOf(teamId) }}
-            >
-              {jerseyOf(l.playerId)}
+            />
+            <span className="text-ink-700 min-w-0 truncate text-xs font-semibold">
+              {shortName(l.playerId)}
             </span>
-            <div className="min-w-0">
-              <p className="text-ink-900 truncate text-xs font-bold">{shortName(l.playerId)}</p>
-              <p className="text-ink-950 text-xl font-extrabold tabular-nums leading-tight">
-                {get(l)}
-              </p>
-            </div>
+            <span className="text-ink-950 shrink-0 text-sm font-extrabold tabular-nums">
+              {get(l)}
+            </span>
           </>
         ) : (
-          <p className="text-ink-300 text-xs">—</p>
+          <span className="text-ink-300 text-xs">—</span>
         )}
       </div>
     )
     return (
-      <div key={label} className="border-ink-100 rounded-2xl border bg-white px-4 py-3">
-        <h4 className="text-ink-400 mb-2 text-[10px] font-bold uppercase tracking-[0.14em]">
-          {label}
-        </h4>
-        <div className="flex items-center gap-3">
-          {cell(h, game.homeTeamId, false)}
-          <span className="text-ink-300 text-[10px] font-extrabold">VS</span>
-          {cell(a, game.awayTeamId, true)}
-        </div>
+      <div key={label} className="flex items-center gap-2 px-4 py-2">
+        {cell(h, game.homeTeamId, false)}
+        <span className="text-ink-400 w-10 shrink-0 text-center text-[9px] font-extrabold uppercase tracking-widest">
+          {label.slice(0, 3)}
+        </span>
+        {cell(a, game.awayTeamId, true)}
       </div>
     )
   }
@@ -656,9 +654,9 @@ export function LiveView({ gameId }: { gameId: string }) {
           </>
         )}
 
-        {/* ---------- leaders: head-to-head duels ---------- */}
+        {/* ---------- leaders: one slim strip, three duels ---------- */}
         {hasAnyStats && (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:gap-4">
+          <div className="border-ink-100 divide-ink-50 mt-3 divide-y rounded-2xl border bg-white sm:grid sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {LEADER_STATS.map(({ label, get }) => leaderDuel(label, get))}
           </div>
         )}
@@ -667,7 +665,7 @@ export function LiveView({ gameId }: { gameId: string }) {
         {hasAnyStats && (
           <>
             {/* phone tabs: filled active state, impossible to miss */}
-            <div className="bg-ink-100 mt-4 flex rounded-xl p-1 lg:hidden">
+            <div className="bg-ink-100 mt-3 flex rounded-xl p-1 lg:hidden">
               {(
                 [
                   ["box", "Box score"],
@@ -686,7 +684,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
+            <div className="mt-3 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
               {/* phone: one team behind a color-coded switcher; desktop: both in full */}
               <div className={`${tab === "box" ? "block" : "hidden"} lg:block`}>
                 <div className="bg-ink-100 mb-2 flex rounded-xl p-1 lg:hidden">
@@ -707,13 +705,9 @@ export function LiveView({ gameId }: { gameId: string }) {
                     )
                   })}
                 </div>
-                {/* phone: selected team only */}
+                {/* phone: selected team only — the switcher IS the header
+                    (score already lives in the hero; no repeated bar) */}
                 <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white lg:hidden">
-                  {boxHeader(
-                    boxTeamId,
-                    boxSide === "home" ? game.homeTeamName : game.awayTeamName,
-                    boxSide === "home" ? homeScore : awayScore
-                  )}
                   {statsTable(boxTeamId)}
                 </div>
                 {/* desktop: home box (away box is the next grid cell) */}
@@ -734,8 +728,9 @@ export function LiveView({ gameId }: { gameId: string }) {
                   tab === "plays" ? "block" : "hidden"
                 } lg:block xl:sticky xl:top-[76px] xl:col-start-2 xl:row-start-1 xl:row-span-2 2xl:col-start-3 2xl:row-span-1`}
               >
-                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2.5">
-                  <h3 className="text-ink-400 flex-1 text-[10px] font-bold uppercase tracking-[0.14em]">
+                {/* chips only on phones (the tab already says "Play-by-play") */}
+                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2">
+                  <h3 className="text-ink-400 hidden flex-1 text-[10px] font-bold uppercase tracking-[0.14em] lg:block">
                     Play-by-play
                   </h3>
                   {(
