@@ -291,3 +291,12 @@ additive — nothing renamed, nothing dropped:
    regenerates in place).
 
 Nothing else to backfill.
+
+## 10. Tryout check-in column — NOT YET APPLIED to Neon
+
+Ships with the club-GTM feature-2 commit (tryout mobile check-in,
+2026-07-06). One additive nullable column — `prisma db push` covers it:
+- `TryoutSignup.checkedInAt DateTime?` — tryout-day roll-call timestamp
+  (null = not checked in / no-show; orthogonal to `status`).
+
+Nothing to backfill.

@@ -455,6 +455,10 @@ model TryoutSignup {
 
   notes String? @db.Text
 
+  // Tryout-day roll-call: set when the player arrives, cleared if mis-tapped.
+  // Orthogonal to status (payment/offer pipeline) — null after the tryout = no-show.
+  checkedInAt DateTime?
+
   // Relationships
   offers Offer[]
 

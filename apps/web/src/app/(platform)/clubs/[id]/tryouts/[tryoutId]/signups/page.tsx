@@ -11,6 +11,7 @@ interface TryoutSignup {
   playerGender: string | null
   status: string
   notes: string | null
+  checkedInAt: Date | null
   createdAt: Date
   user: { id: string; email: string; firstName: string | null; lastName: string | null }
   offers: { id: string; status: string }[]
@@ -100,17 +101,27 @@ export default async function TryoutSignupsPage({
         </Link>
       </div>
 
-      <div className="mb-6">
-        <h2 className="text-ink-900 text-xl font-bold">{tryout.title} - Signups</h2>
-        <div className="text-ink-500 mt-1 flex gap-4 text-sm">
-          <span>{format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>
-          <span>{tryout.location}</span>
-          {tryout.team && (
-            <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
-              {tryout.team.name}
-            </span>
-          )}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-ink-900 text-xl font-bold">{tryout.title} - Signups</h2>
+          <div className="text-ink-500 mt-1 flex gap-4 text-sm">
+            <span>{format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>
+            <span>{tryout.location}</span>
+            {tryout.team && (
+              <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                {tryout.team.name}
+              </span>
+            )}
+          </div>
         </div>
+        {signupsWithPlayers.length > 0 && (
+          <Link
+            href={`/clubs/${params.id}/tryouts/${params.tryoutId}/check-in`}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+          >
+            {`Check-in (${signupsWithPlayers.filter((s) => s.checkedInAt).length}/${signupsWithPlayers.length})`}
+          </Link>
+        )}
       </div>
 
       {signupsWithPlayers.length === 0 ? (
@@ -153,7 +164,17 @@ export default async function TryoutSignupsPage({
                 return (
                   <tr key={signup.id}>
                     <td className="whitespace-nowrap px-6 py-4">
-                      <div className="text-ink-900 font-medium">{signup.playerName}</div>
+                      <div className="text-ink-900 flex items-center gap-1.5 font-medium">
+                        {signup.playerName}
+                        {signup.checkedInAt && (
+                          <span
+                            className="bg-court-100 text-court-700 rounded-full px-1.5 py-0.5 text-xs font-medium"
+                            title={`Checked in ${format(new Date(signup.checkedInAt), "h:mm a")}`}
+                          >
+                            ✓ in
+                          </span>
+                        )}
+                      </div>
                       {signup.notes && (
                         <div className="text-ink-500 mt-0.5 text-xs">{signup.notes}</div>
                       )}

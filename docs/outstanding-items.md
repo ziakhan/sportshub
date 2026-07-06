@@ -17,8 +17,11 @@ league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
    assigned jersey # column, CSV export. Pure agg lib
    lib/offers/order-rollup.ts (9 unit tests). Entry points: team dashboard
    quick action + offers-card link, offers page button.
-2. **Tryout mobile check-in** — live roll-call for tryout day (TryoutSignup has
-   status, no check-in surface yet). SMALL.
+2. **Tryout mobile check-in** — ✅ SHIPPED 2026-07-06. TryoutSignup.checkedInAt
+   (runbook #10) + POST check-in API (club roles, cancelled rejected) + phone
+   roll-call page /clubs/[id]/tryouts/[tryoutId]/check-in (progress bar,
+   search, optimistic tap-to-toggle) + signups-page button/badges. 7 int
+   tests, world seed 1117.
 3. **Team ↔ family chat** — no Message/Chat model exists; TeamSnap-replacement
    messaging. BIGGEST of the four.
 4. **Sponsored/featured listings + parent discovery** — "clubs near me, ranked

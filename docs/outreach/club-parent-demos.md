@@ -22,7 +22,7 @@ data exists, not the feature).
 | Lock roster (no changes without league permission) | ✅ Real | `SeasonRoster.isLocked` + `lockedAt` |
 | Reviews / ratings of clubs | ✅ Built, HIDDEN | `Review` (rating 1-5), `Tenant.averageRating`; UI gated `{false && …}` |
 | Public club browse / discovery | ✅ Real (basic) | public `/club` browse page |
-| **Tryout check-in on mobile** ("who's supposed to be at the sign-up") | ⚠️ Gap | `TryoutSignup` has status, but no live roll-call/check-in for tryouts (game-day ATTENDANCE exists for scoring, not tryouts) |
+| **Tryout check-in on mobile** ("who's supposed to be at the sign-up") | ✅ Real (2026-07-06) | Roll-call page `/clubs/[id]/tryouts/[tryoutId]/check-in` — tap to check in, live X/N progress, search; `TryoutSignup.checkedInAt` |
 | **Inventory / order summary** (what to order per team, totals by size) | ✅ Real (2026-07-06) | Order Sheet at `/clubs/[id]/offers/summary` — per-team + club totals by size, Size-TBD flags, jersey #s, CSV export (`lib/offers/order-rollup.ts`) |
 | **Team ↔ family chat** | ❌ Gap | No `Message`/`Chat` model at all |
 | **Sponsored / featured club listings** | ❌ Gap | No `sponsored`/`featured` fields |
@@ -40,7 +40,8 @@ The story: a club runs its whole season setup without a single spreadsheet.
 1. **Post a tryout** — club creates a tryout; it appears on the public
    marketplace where parents find it. *(real)*
 2. **Sign-ups roll in** — parents register their kids from their phones; the
-   club sees the list build live. *(real; add mobile check-in = gap)*
+   club sees the list build live, and takes roll call on a phone on tryout
+   day. *(real — check-in shipped 2026-07-06)*
 3. **Send tailored offers** — pick a template (Standard / Premium / Returning),
    which auto-fills the package (ball, bag, shoes, uniform…) and fee + payment
    plan. One tap per player. *(real)*
@@ -75,7 +76,8 @@ The story: a parent finds the right club and never misses a moment.
 
 1. **Inventory / order roll-up** — ✅ SHIPPED 2026-07-06 (Order Sheet page,
    per-team size/item totals, CSV export).
-2. **Tryout mobile check-in** — a roll-call surface for tryout day.
+2. **Tryout mobile check-in** — ✅ SHIPPED 2026-07-06 (phone roll-call page,
+   tap to check in, live progress).
 3. **Parent discovery surface** — assemble browse + ratings (unhide reviews) +
    "near me" into one find-a-club experience.
 4. **Sponsored/featured listings** — monetization; a `featured` flag + surface.
