@@ -326,7 +326,8 @@ describe("public live read", () => {
   it("is on the anonymous-read allowlist and serves events + rosters with no session", async () => {
     expect(isPublicPath(`/api/live/${gameId}`, "GET")).toBe(true)
     expect(isPublicPath(`/api/live/${gameId}`, "POST")).toBe(false)
-    expect(isPublicPath(`/scoresheet/${gameId}`, "GET")).toBe(true)
+    // Scoresheet went league-only in b12b548 (sign-in + canViewScoresheet)
+    expect(isPublicPath(`/scoresheet/${gameId}`, "GET")).toBe(false)
 
     actAs(null)
     const res = await liveGet(
