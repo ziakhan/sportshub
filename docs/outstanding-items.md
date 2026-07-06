@@ -42,6 +42,19 @@ league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
 Both demo storyboards are now 100% real product — see
 docs/outreach/club-parent-demos.md.
 
+**FOLLOW-ONS SHIPPED 2026-07-07 (owner-directed):**
+- **Chat v1.5** (8fe2951): members panel (coaches = chat admins by default),
+  unread badges (parent dash / team hub / team dash), debounced team_chat
+  bell, TeamChatRead read cursors (runbook #10). Owner next: "decide how to
+  improve chat + make it scalable" — realtime service, web push, email are
+  the candidate directions (docs/nph-demo-seed-plan.md §5).
+- **NPH demo world seeder** (6b8e538): scripts/seed-nph-demo.ts — plan +
+  cheat sheet in docs/nph-demo-seed-plan.md. Local DB scrubbed (1,668 test
+  users + sim tenants + old showcase REMOVED — old logins are GONE locally;
+  @sportshub.demo replaces them) and reseeded; login audit green. PROD RUN
+  BLOCKED on deploy train: push + runbook #10, then --report → --scrub-noise
+  → seed --yes-prod.
+
 ## 1. Deploy train (biggest risk, fully scripted, owner gate)
 - Run Neon runbook entries **#4 #5 #6 #7 #8** (`docs/pending-deploy-actions.md`)
 - Push master → Vercel auto-deploy
