@@ -3,18 +3,35 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
+import { monogram } from "@/lib/content/matchup-cover"
 
 /**
- * Public game page, sports-app style (Bleacher Report / theScore / Yahoo):
- * score header with line score, Game Leaders, then Box Score / Play-by-Play
- * tabs with a team switcher. Polls every 10s and folds the event stream
- * client-side with the SAME engine the console uses.
+ * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
+ * patterns, see docs/ux-audit + design artifact):
+ * - Full-bleed score hero washed with both clubs' colors; records + rank.
+ * - Desktop (lg+): BOTH box scores in full — side by side on very wide
+ *   screens — with an always-visible play-by-play rail. Nothing hidden.
+ * - Phones: Box/Plays tabs (filled active state) + one-team-at-a-time
+ *   switcher filled in that team's color, so the full roster fits without
+ *   endless scrolling (owner call: keep the swap on mobile).
+ * - Starters above a divider, bench below (from the first LINEUP event).
+ * - SCHEDULED games show each roster with season averages instead of an
+ *   empty box score.
+ * Polls every 10s and folds the event stream client-side with the same
+ * engine the console uses.
  */
 
 interface LivePlayer {
   playerId: string
+  teamId: string
   name: string
   jerseyNumber: string | null
+}
+
+interface TeamRecord {
+  record: string
+  rank: number
+  divisionName: string
 }
 
 interface LivePayload {
@@ -29,14 +46,29 @@ interface LivePayload {
     seasonId?: string | null
     homeTeamName: string
     awayTeamName: string
+    homeColor: string | null
+    awayColor: string | null
+    homeRecord: TeamRecord | null
+    awayRecord: TeamRecord | null
     venueName: string | null
     leagueName: string | null
+    seasonName: string | null
   }
   events: FoldEvent[]
   players: LivePlayer[]
+  seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }>
 }
 
 type Tab = "box" | "plays"
+
+const HOME_FALLBACK = "#4f46e5" // play-600
+const AWAY_FALLBACK = "#16a34a" // court-600
+
+const ordinal = (n: number) => {
+  const s = ["th", "st", "nd", "rd"]
+  const v = n % 100
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`
+}
 
 export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
@@ -44,6 +76,7 @@ export function LiveView({ gameId }: { gameId: string }) {
   const [canScore, setCanScore] = useState(false)
   const [tab, setTab] = useState<Tab>("box")
   const [boxSide, setBoxSide] = useState<"home" | "away">("home")
+  const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
 
   useEffect(() => {
     fetch(`/api/games/${gameId}/scoring`)
@@ -94,6 +127,11 @@ export function LiveView({ gameId }: { gameId: string }) {
   }
 
   const { game } = data
+  const homeColor = game.homeColor || HOME_FALLBACK
+  const awayColor = game.awayColor || AWAY_FALLBACK
+  const colorOf = (teamId?: string | null) =>
+    teamId === game.homeTeamId ? homeColor : teamId === game.awayTeamId ? awayColor : "#9191a1"
+
   const byId = new Map(data.players.map((p) => [p.playerId, p]))
   const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
   const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
@@ -110,6 +148,7 @@ export function LiveView({ gameId }: { gameId: string }) {
   const periods = Array.from(
     new Set(fold.playByPlay.filter((e) => e.period).map((e) => e.period as number))
   ).sort((a, b) => a - b)
+  const periodLabel = (p: number) => (p <= 4 ? `Q${p}` : `OT${p - 4}`)
   const periodPoints = (teamId: string, p: number) =>
     fold.playByPlay
       .filter(
@@ -129,6 +168,14 @@ export function LiveView({ gameId }: { gameId: string }) {
       .filter((l) => l.teamId === teamId)
       .sort((a, b) => b.points - a.points)
 
+  // Starting five = the first LINEUP event each team recorded
+  const starterIds = new Map<string, Set<string>>()
+  for (const e of data.events) {
+    if (e.eventType === "LINEUP" && e.teamId && !e.voided && !starterIds.has(e.teamId)) {
+      starterIds.set(e.teamId, new Set((e.metadata as any)?.playerIds ?? []))
+    }
+  }
+
   const leaderOf = (teamId: string, stat: (l: PlayerLine) => number): PlayerLine | null => {
     const lines = teamLines(teamId).filter((l) => stat(l) > 0)
     if (lines.length === 0) return null
@@ -142,112 +189,38 @@ export function LiveView({ gameId }: { gameId: string }) {
   ]
 
   const hasAnyStats = Object.keys(fold.players).length > 0
-
-  const leaderCell = (l: PlayerLine | null, value: number | null, align: "left" | "right") => (
-    <div className={`flex-1 ${align === "right" ? "text-right" : ""}`}>
-      {l ? (
-        <>
-          <p className="text-ink-900 truncate text-xs font-semibold">
-            #{jerseyOf(l.playerId)} {shortName(l.playerId)}
-          </p>
-          <p className="text-ink-950 text-lg font-bold">{value}</p>
-        </>
-      ) : (
-        <p className="text-ink-300 text-xs">—</p>
-      )}
-    </div>
-  )
-
   const boxTeamId = boxSide === "home" ? game.homeTeamId : game.awayTeamId
 
-  // One team's full stat table — phones show one at a time behind the
-  // switcher; desktop lays both teams out in full (ESPN/Yahoo style).
-  const statsTable = (teamId: string) => {
-    const lines = teamLines(teamId)
-    const showMinutes = lines.some((l) => l.secondsPlayed > 0)
-    const totals = lines.reduce(
-      (t, l) => ({
-        pts: t.pts + l.points,
-        reb: t.reb + totalRebounds(l),
-        ast: t.ast + l.assists,
-        stl: t.stl + l.steals,
-        blk: t.blk + l.blocks,
-        to: t.to + l.turnovers,
-        pf: t.pf + l.fouls,
-      }),
-      { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
-    )
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs lg:text-sm">
-          <thead className="text-ink-400 text-left text-[10px] uppercase lg:text-[11px]">
-            <tr>
-              <th className="py-1.5 pr-2">Player</th>
-              {showMinutes && <th className="px-1.5 text-right">MIN</th>}
-              <th className="px-1.5 text-right">PTS</th>
-              <th className="px-1.5 text-right">REB</th>
-              <th className="px-1.5 text-right">AST</th>
-              <th className="px-1.5 text-right">STL</th>
-              <th className="px-1.5 text-right">BLK</th>
-              <th className="px-1.5 text-right">TO</th>
-              <th className="px-1.5 text-right">PF</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l) => (
-              <tr key={l.playerId} className="border-ink-100 border-t">
-                <td className="text-ink-800 whitespace-nowrap py-1.5 pr-2">
-                  <span className="text-ink-400 mr-1">#{jerseyOf(l.playerId)}</span>
-                  <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
-                    {shortName(l.playerId)}
-                  </Link>
-                  {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
-                </td>
-                {showMinutes && (
-                  <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>
-                )}
-                <td className="px-1.5 text-right font-semibold">{l.points}</td>
-                <td className="px-1.5 text-right">{totalRebounds(l)}</td>
-                <td className="px-1.5 text-right">{l.assists}</td>
-                <td className="px-1.5 text-right">{l.steals}</td>
-                <td className="px-1.5 text-right">{l.blocks}</td>
-                <td className="px-1.5 text-right">{l.turnovers}</td>
-                <td className="px-1.5 text-right">
-                  {l.fouls}
-                  {l.technicalFouls > 0 ? "T" : ""}
-                </td>
-              </tr>
-            ))}
-            <tr className="border-ink-200 text-ink-900 border-t font-bold">
-              <td className="py-1.5 pr-2">Team</td>
-              {showMinutes && <td />}
-              <td className="px-1.5 text-right">{totals.pts}</td>
-              <td className="px-1.5 text-right">{totals.reb}</td>
-              <td className="px-1.5 text-right">{totals.ast}</td>
-              <td className="px-1.5 text-right">{totals.stl}</td>
-              <td className="px-1.5 text-right">{totals.blk}</td>
-              <td className="px-1.5 text-right">{totals.to}</td>
-              <td className="px-1.5 text-right">{totals.pf}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  const playByPlay = [...fold.playByPlay]
-    .filter((e) =>
-      [
-        "SCORE_2PT",
-        "SCORE_3PT",
-        "SCORE_FT",
-        "FOUL",
-        "SUBSTITUTION",
-        "PERIOD_START",
-        "PERIOD_END",
-      ].includes(e.eventType)
-    )
+  // Play-by-play with a running score attached to scoring plays
+  const SCORE_PTS: Record<string, number> = { SCORE_2PT: 2, SCORE_3PT: 3, SCORE_FT: 1 }
+  const PBP_TYPES = new Set([
+    "SCORE_2PT",
+    "SCORE_3PT",
+    "SCORE_FT",
+    "FOUL",
+    "SUBSTITUTION",
+    "PERIOD_START",
+    "PERIOD_END",
+  ])
+  let runHome = 0
+  let runAway = 0
+  const playByPlay = fold.playByPlay
+    .map((e) => {
+      const pts = SCORE_PTS[e.eventType]
+      const scored = pts != null && e.made !== false && !!e.teamId
+      if (scored) {
+        if (e.teamId === game.homeTeamId) runHome += pts
+        else if (e.teamId === game.awayTeamId) runAway += pts
+      }
+      return { e, score: scored ? `${runHome}–${runAway}` : null }
+    })
+    .filter(({ e }) => PBP_TYPES.has(e.eventType))
     .reverse()
+  const visiblePlays = playByPlay.filter(({ e, score }) => {
+    if (playFilter === "all") return true
+    if (playFilter === "scoring") return score !== null || e.eventType.startsWith("PERIOD")
+    return e.period === playFilter
+  })
 
   const describe = (e: FoldEvent): string => {
     switch (e.eventType) {
@@ -262,270 +235,567 @@ export function LiveView({ gameId }: { gameId: string }) {
       }
       case "FOUL":
         return `Foul on ${e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "team"}${
-          e.metadata?.technical ? " (technical)" : ""
+          (e.metadata as any)?.technical ? " (technical)" : ""
         }`
       case "SUBSTITUTION":
-        return `Sub: ${e.metadata?.inPlayerId ? `#${jerseyOf(e.metadata.inPlayerId)}` : "?"} in, ${
-          e.metadata?.outPlayerId ? `#${jerseyOf(e.metadata.outPlayerId)}` : "?"
+        return `Sub: ${(e.metadata as any)?.inPlayerId ? `#${jerseyOf((e.metadata as any).inPlayerId)}` : "?"} in, ${
+          (e.metadata as any)?.outPlayerId ? `#${jerseyOf((e.metadata as any).outPlayerId)}` : "?"
         } out`
       case "PERIOD_START":
-        return `— Period ${e.period} —`
+        return `${periodLabel(e.period ?? 1)}`
       case "PERIOD_END":
-        return "— End of period —"
+        return "End of period"
       default:
         return e.eventType
     }
   }
 
-  const sideDot = (teamId?: string | null) =>
-    teamId === game.homeTeamId ? (
-      <span className="bg-play-400 mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
-    ) : teamId === game.awayTeamId ? (
-      <span className="bg-court-400 mr-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle" />
-    ) : (
-      <span className="mr-3" />
+  // ---------- shared building blocks ----------
+
+  const crest = (teamId: string, size: string, text: string) => (
+    <span
+      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-sm`}
+      style={{ backgroundColor: colorOf(teamId) }}
+      aria-hidden="true"
+    >
+      {text}
+    </span>
+  )
+
+  const recordLine = (rec: TeamRecord | null) =>
+    rec ? (
+      <p className="text-ink-500 mt-0.5 text-xs">
+        {rec.record} · {ordinal(rec.rank)} in {rec.divisionName}
+      </p>
+    ) : null
+
+  const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
+    <tr
+      key={l.playerId}
+      className="border-ink-50 hover:bg-ink-50 border-t transition-colors"
+      style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
+    >
+      <td className="text-ink-800 whitespace-nowrap py-1.5 pl-4 pr-2 font-medium">
+        <span className="text-ink-400 mr-1.5 font-normal">#{jerseyOf(l.playerId)}</span>
+        <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
+          {shortName(l.playerId)}
+        </Link>
+        {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
+        {isTop && (
+          <span
+            className="ml-2 align-[2px] text-[9px] font-extrabold tracking-widest"
+            style={{ color: teamColor }}
+          >
+            TOP
+          </span>
+        )}
+      </td>
+      {showMin && <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>}
+      <td className="text-ink-950 px-1.5 text-right font-bold">{l.points}</td>
+      <td className="px-1.5 text-right">{totalRebounds(l)}</td>
+      <td className="px-1.5 text-right">{l.assists}</td>
+      <td className="px-1.5 text-right">{l.steals}</td>
+      <td className="px-1.5 text-right">{l.blocks}</td>
+      <td className="px-1.5 text-right">{l.turnovers}</td>
+      <td className="px-1.5 pr-4 text-right">
+        {l.fouls}
+        {l.technicalFouls > 0 ? "T" : ""}
+      </td>
+    </tr>
+  )
+
+  const statsTable = (teamId: string) => {
+    const lines = teamLines(teamId)
+    const teamColor = colorOf(teamId)
+    const showMinutes = lines.some((l) => l.secondsPlayed > 0)
+    const starters = starterIds.get(teamId)
+    const starterLines = starters ? lines.filter((l) => starters.has(l.playerId)) : []
+    const benchLines = starters ? lines.filter((l) => !starters.has(l.playerId)) : lines
+    const topId = lines.length > 0 && lines[0].points > 0 ? lines[0].playerId : null
+    const totals = lines.reduce(
+      (t, l) => ({
+        pts: t.pts + l.points,
+        reb: t.reb + totalRebounds(l),
+        ast: t.ast + l.assists,
+        stl: t.stl + l.steals,
+        blk: t.blk + l.blocks,
+        to: t.to + l.turnovers,
+        pf: t.pf + l.fouls,
+      }),
+      { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
     )
+    const header = (
+      <thead className="text-ink-400 text-left text-[10px] uppercase tracking-wide">
+        <tr>
+          <th className="py-2 pl-4 pr-2 font-bold">Player</th>
+          {showMinutes && <th className="px-1.5 text-right font-bold">Min</th>}
+          <th className="px-1.5 text-right font-bold">Pts</th>
+          <th className="px-1.5 text-right font-bold">Reb</th>
+          <th className="px-1.5 text-right font-bold">Ast</th>
+          <th className="px-1.5 text-right font-bold">Stl</th>
+          <th className="px-1.5 text-right font-bold">Blk</th>
+          <th className="px-1.5 text-right font-bold">TO</th>
+          <th className="px-1.5 pr-4 text-right font-bold">PF</th>
+        </tr>
+      </thead>
+    )
+    const cols = showMinutes ? 9 : 8
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs lg:text-[13px]">
+          {header}
+          <tbody>
+            {starterLines.map((l) => statRow(l, teamColor, l.playerId === topId, showMinutes))}
+            {starters && benchLines.length > 0 && (
+              <tr>
+                <td
+                  colSpan={cols}
+                  className="bg-ink-50 text-ink-400 border-ink-100 border-y px-4 py-1 text-[9px] font-extrabold uppercase tracking-widest"
+                >
+                  Bench
+                </td>
+              </tr>
+            )}
+            {benchLines.map((l) => statRow(l, teamColor, l.playerId === topId, showMinutes))}
+            <tr className="border-ink-200 text-ink-900 border-t-2 font-bold">
+              <td className="py-2 pl-4 pr-2">Team</td>
+              {showMinutes && <td />}
+              <td className="px-1.5 text-right">{totals.pts}</td>
+              <td className="px-1.5 text-right">{totals.reb}</td>
+              <td className="px-1.5 text-right">{totals.ast}</td>
+              <td className="px-1.5 text-right">{totals.stl}</td>
+              <td className="px-1.5 text-right">{totals.blk}</td>
+              <td className="px-1.5 text-right">{totals.to}</td>
+              <td className="px-1.5 pr-4 text-right">{totals.pf}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  const boxHeader = (teamId: string, name: string, total: number | null) => (
+    <div
+      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-extrabold text-white"
+      style={{ backgroundColor: colorOf(teamId) }}
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/25 text-[11px]">
+        {monogram(name)}
+      </span>
+      <Link href={`/team/${teamId}`} className="truncate hover:underline">
+        {name}
+      </Link>
+      {total != null && (
+        <span className="ml-auto text-lg tabular-nums">{total}</span>
+      )}
+    </div>
+  )
+
+  // Pre-game roster with season averages (SCHEDULED games)
+  const rosterTable = (teamId: string) => {
+    const roster = data.players
+      .filter((p) => p.teamId === teamId)
+      .map((p) => ({ ...p, avg: data.seasonAverages[p.playerId] }))
+      .sort((a, b) => (b.avg?.ppg ?? 0) - (a.avg?.ppg ?? 0))
+    if (roster.length === 0) {
+      return <p className="text-ink-400 px-4 py-6 text-center text-xs">Roster not submitted yet.</p>
+    }
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs lg:text-[13px]">
+          <thead className="text-ink-400 text-left text-[10px] uppercase tracking-wide">
+            <tr>
+              <th className="py-2 pl-4 pr-2 font-bold">Player</th>
+              <th className="px-1.5 text-right font-bold">GP</th>
+              <th className="px-1.5 text-right font-bold">PPG</th>
+              <th className="px-1.5 text-right font-bold">RPG</th>
+              <th className="px-1.5 pr-4 text-right font-bold">APG</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roster.map((p) => (
+              <tr key={p.playerId} className="border-ink-50 hover:bg-ink-50 border-t transition-colors">
+                <td className="text-ink-800 whitespace-nowrap py-1.5 pl-4 pr-2 font-medium">
+                  <span className="text-ink-400 mr-1.5 font-normal">
+                    {p.jerseyNumber ? `#${p.jerseyNumber}` : ""}
+                  </span>
+                  <Link href={`/player/${p.playerId}`} className="hover:text-play-600 transition-colors">
+                    {p.name}
+                  </Link>
+                </td>
+                <td className="px-1.5 text-right">{p.avg?.gp ?? 0}</td>
+                <td className="text-ink-950 px-1.5 text-right font-bold">{p.avg?.ppg ?? "—"}</td>
+                <td className="px-1.5 text-right">{p.avg?.rpg ?? "—"}</td>
+                <td className="px-1.5 pr-4 text-right">{p.avg?.apg ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  const leaderDuel = (label: string, get: (l: PlayerLine) => number) => {
+    const h = leaderOf(game.homeTeamId, get)
+    const a = leaderOf(game.awayTeamId, get)
+    if (!h && !a) return null
+    const cell = (l: PlayerLine | null, teamId: string, right: boolean) => (
+      <div className={`flex flex-1 items-center gap-2.5 ${right ? "flex-row-reverse text-right" : ""}`}>
+        {l ? (
+          <>
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-extrabold text-white"
+              style={{ backgroundColor: colorOf(teamId) }}
+            >
+              {jerseyOf(l.playerId)}
+            </span>
+            <div className="min-w-0">
+              <p className="text-ink-900 truncate text-xs font-bold">{shortName(l.playerId)}</p>
+              <p className="text-ink-950 text-xl font-extrabold tabular-nums leading-tight">
+                {get(l)}
+              </p>
+            </div>
+          </>
+        ) : (
+          <p className="text-ink-300 text-xs">—</p>
+        )}
+      </div>
+    )
+    return (
+      <div key={label} className="border-ink-100 rounded-2xl border bg-white px-4 py-3">
+        <h4 className="text-ink-400 mb-2 text-[10px] font-bold uppercase tracking-[0.14em]">
+          {label}
+        </h4>
+        <div className="flex items-center gap-3">
+          {cell(h, game.homeTeamId, false)}
+          <span className="text-ink-300 text-[10px] font-extrabold">VS</span>
+          {cell(a, game.awayTeamId, true)}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    // Phone-first column; on desktop it widens and splits into box score +
-    // play-by-play rail (the tab UI is a small-screen affordance only).
-    <div className="mx-auto max-w-3xl space-y-3 p-3 lg:max-w-6xl lg:space-y-4 lg:px-6 lg:py-6">
-      {canScore && !final && (
-        <a
-          href={`/games/${gameId}/score`}
-          className="bg-play-600 hover:bg-play-700 block rounded-2xl px-4 py-3 text-center text-sm font-bold text-white"
-        >
-          You can score this game — open the scoring console →
-        </a>
-      )}
-
-      {/* score header */}
-      <div className="border-ink-100 rounded-2xl border bg-white p-4">
-        {game.leagueName &&
-          (game.seasonId ? (
-            <p className="text-center text-[11px]">
-              <Link href={`/league/${game.seasonId}`} className="text-ink-400 hover:text-play-600 underline-offset-2 hover:underline">
+    <div className="pb-10">
+      {/* ---------- score hero: full-bleed, team-color washed ---------- */}
+      <div
+        className="border-ink-100 border-b"
+        style={{
+          background: `linear-gradient(105deg, ${homeColor}20 0%, #ffffff 38%, #ffffff 62%, ${awayColor}20 100%)`,
+        }}
+      >
+        <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6">
+          <p className="text-ink-500 pt-4 text-center text-xs font-semibold">
+            {game.seasonId && game.leagueName ? (
+              <Link href={`/league/${game.seasonId}`} className="text-play-600 hover:underline">
                 {game.leagueName}
               </Link>
-            </p>
-          ) : (
-            <p className="text-ink-400 text-center text-[11px]">{game.leagueName}</p>
-          ))}
-        <div className="mt-1 flex items-center justify-center gap-5 lg:gap-10">
-          <div className="flex-1 text-right">
-            <p className="text-ink-700 text-sm font-semibold lg:text-base">
-              <Link href={`/team/${game.homeTeamId}`} className="hover:text-play-600 transition-colors">
-                {game.homeTeamName}
-              </Link>{" "}
-              <span className="bg-play-400 ml-1 inline-block h-2 w-2 rounded-full" />
-            </p>
-            <p className="text-ink-950 text-4xl font-bold lg:text-6xl">{homeScore}</p>
-          </div>
-          <div className="text-center">
-            {live && (
-              <span className="bg-hoop-50 text-hoop-700 rounded-full px-2 py-0.5 text-[10px] font-bold">
-                ● LIVE · P{fold.period}
-              </span>
+            ) : (
+              game.leagueName
             )}
-            {final && (
-              <span className="bg-ink-100 text-ink-700 rounded-full px-2 py-0.5 text-[10px] font-bold">
-                FINAL
-              </span>
-            )}
-            {!live && !final && (
-              <span className="text-ink-400 text-[10px]">
-                {new Date(game.scheduledAt).toLocaleString()}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 text-left">
-            <p className="text-ink-700 text-sm font-semibold lg:text-base">
-              <span className="bg-court-400 mr-1 inline-block h-2 w-2 rounded-full" />{" "}
-              <Link href={`/team/${game.awayTeamId}`} className="hover:text-play-600 transition-colors">
-                {game.awayTeamName}
-              </Link>
-            </p>
-            <p className="text-ink-950 text-4xl font-bold lg:text-6xl">{awayScore}</p>
-          </div>
-        </div>
-
-        {/* line score */}
-        {periods.length > 0 && (
-          <table className="mx-auto mt-3 border-collapse text-center text-xs">
-            <thead>
-              <tr className="text-ink-400 text-[10px]">
-                <th className="px-2 py-0.5 text-left"></th>
-                {periods.map((p) => (
-                  <th key={p} className="px-2 py-0.5 font-semibold">
-                    {p <= 4 ? `Q${p}` : `OT${p - 4}`}
-                  </th>
-                ))}
-                <th className="px-2 py-0.5 font-bold">T</th>
-              </tr>
-            </thead>
-            <tbody className="text-ink-700">
-              <tr className="border-ink-100 border-t">
-                <td className="px-2 py-0.5 text-left font-semibold">
-                  {game.homeTeamName.slice(0, 14)}
-                </td>
-                {periods.map((p) => (
-                  <td key={p} className="px-2 py-0.5">
-                    {periodPoints(game.homeTeamId, p)}
-                  </td>
-                ))}
-                <td className="px-2 py-0.5 font-bold">{homeScore}</td>
-              </tr>
-              <tr className="border-ink-100 border-t">
-                <td className="px-2 py-0.5 text-left font-semibold">
-                  {game.awayTeamName.slice(0, 14)}
-                </td>
-                {periods.map((p) => (
-                  <td key={p} className="px-2 py-0.5">
-                    {periodPoints(game.awayTeamId, p)}
-                  </td>
-                ))}
-                <td className="px-2 py-0.5 font-bold">{awayScore}</td>
-              </tr>
-            </tbody>
-          </table>
-        )}
-
-        {game.venueName && (
-          <p className="text-ink-400 mt-2 text-center text-[10px]">{game.venueName}</p>
-        )}
-        {/* No scoresheet link here — the official sheet is league/club-only
-            (linked from the scoring console and the finalize email). */}
-      </div>
-
-      {!live && !final && fold.playByPlay.length === 0 && (
-        <div className="border-ink-100 rounded-2xl border bg-white p-6 text-center">
-          <p className="text-ink-900 text-sm font-semibold">This game hasn&apos;t started yet</p>
-          <p className="text-ink-500 mt-1 text-xs">
-            Tip-off {new Date(game.scheduledAt).toLocaleString()}. Live score, leaders and the box
-            score will appear here automatically — this page refreshes on its own.
+            {game.seasonName ? ` · ${game.seasonName}` : ""}
           </p>
-        </div>
-      )}
 
-      {/* Leaders + box score (main column) with play-by-play alongside on
-          desktop; on small screens the two panels collapse into tabs. */}
-      {hasAnyStats && (
-      <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-4 lg:space-y-0">
-      <div className="space-y-3 lg:space-y-4">
-        <div className="border-ink-100 rounded-2xl border bg-white p-4">
-          <h3 className="text-ink-400 mb-2 text-[10px] font-bold uppercase tracking-wider">
-            Game leaders
-          </h3>
-          <div className="space-y-2">
-            {LEADER_STATS.map(({ label, get }) => {
-              const h = leaderOf(game.homeTeamId, get)
-              const a = leaderOf(game.awayTeamId, get)
-              if (!h && !a) return null
-              return (
-                <div key={label} className="border-ink-50 flex items-center gap-3 border-b pb-2 last:border-0 last:pb-0">
-                  {leaderCell(h, h ? get(h) : null, "left")}
-                  <p className="text-ink-400 w-20 shrink-0 text-center text-[10px] font-semibold uppercase">
-                    {label}
-                  </p>
-                  {leaderCell(a, a ? get(a) : null, "right")}
-                </div>
-              )
-            })}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 py-5 lg:gap-8 lg:py-7">
+            {/* home */}
+            <div className="flex items-center justify-end gap-3 lg:gap-4">
+              <div className="hidden text-right sm:block">
+                <Link
+                  href={`/team/${game.homeTeamId}`}
+                  className="text-ink-950 hover:text-play-600 text-sm font-extrabold leading-tight transition-colors lg:text-lg"
+                >
+                  {game.homeTeamName}
+                </Link>
+                {recordLine(game.homeRecord)}
+              </div>
+              {crest(game.homeTeamId, "h-10 w-10 text-sm lg:h-14 lg:w-14 lg:text-lg", monogram(game.homeTeamName))}
+              <span className="text-ink-950 text-4xl font-extrabold tabular-nums lg:text-6xl">
+                {homeScore}
+              </span>
+            </div>
+
+            {/* middle */}
+            <div className="text-center">
+              {live && (
+                <span className="bg-live-50 text-live-600 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide">
+                  <span className="bg-live-600 h-1.5 w-1.5 animate-pulse rounded-full" />
+                  LIVE · {periodLabel(fold.period)}
+                </span>
+              )}
+              {final && (
+                <span className="bg-ink-100 text-ink-700 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide">
+                  FINAL
+                </span>
+              )}
+              {!live && !final && (
+                <span className="text-ink-500 text-xs font-semibold">
+                  {new Date(game.scheduledAt).toLocaleString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )}
+
+              {periods.length > 0 && (
+                <table className="mx-auto mt-2.5 border-collapse text-center text-xs tabular-nums">
+                  <thead>
+                    <tr className="text-ink-400 text-[10px]">
+                      <th className="px-2 py-0.5 text-left" />
+                      {periods.map((p) => (
+                        <th key={p} className="px-2 py-0.5 font-bold">
+                          {periodLabel(p)}
+                        </th>
+                      ))}
+                      <th className="px-2 py-0.5 font-extrabold">T</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-ink-700">
+                    {(
+                      [
+                        [game.homeTeamId, game.homeTeamName, homeScore],
+                        [game.awayTeamId, game.awayTeamName, awayScore],
+                      ] as Array<[string, string, number]>
+                    ).map(([tid, tname, total]) => (
+                      <tr key={tid} className="border-ink-100 border-t">
+                        <td className="py-0.5 pr-2 text-left font-bold">
+                          <span
+                            className="mr-1.5 inline-block h-2 w-2 rounded-sm align-middle"
+                            style={{ backgroundColor: colorOf(tid) }}
+                          />
+                          {monogram(tname)}
+                        </td>
+                        {periods.map((p) => (
+                          <td key={p} className="px-2 py-0.5">
+                            {periodPoints(tid, p)}
+                          </td>
+                        ))}
+                        <td className="px-2 py-0.5 font-extrabold">{total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {game.venueName && (
+                <p className="text-ink-400 mt-2 text-[11px]">{game.venueName}</p>
+              )}
+            </div>
+
+            {/* away */}
+            <div className="flex items-center justify-start gap-3 lg:gap-4">
+              <span className="text-ink-950 text-4xl font-extrabold tabular-nums lg:text-6xl">
+                {awayScore}
+              </span>
+              {crest(game.awayTeamId, "h-10 w-10 text-sm lg:h-14 lg:w-14 lg:text-lg", monogram(game.awayTeamName))}
+              <div className="hidden sm:block">
+                <Link
+                  href={`/team/${game.awayTeamId}`}
+                  className="text-ink-950 hover:text-play-600 text-sm font-extrabold leading-tight transition-colors lg:text-lg"
+                >
+                  {game.awayTeamName}
+                </Link>
+                {recordLine(game.awayRecord)}
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="border-ink-100 rounded-2xl border bg-white">
-          <div className="border-ink-100 flex border-b lg:hidden">
+          {/* phone-width team names (hidden ≥sm where they sit beside crests) */}
+          <div className="flex items-start justify-between pb-4 sm:hidden">
             {(
               [
-                ["box", "Box score"],
-                ["plays", "Play-by-play"],
-              ] as Array<[Tab, string]>
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex-1 py-2.5 text-sm font-semibold ${
-                  tab === key
-                    ? "text-play-700 border-play-600 border-b-2"
-                    : "text-ink-400 hover:text-ink-600"
-                }`}
-              >
-                {label}
-              </button>
+                [game.homeTeamId, game.homeTeamName, game.homeRecord],
+                [game.awayTeamId, game.awayTeamName, game.awayRecord],
+              ] as Array<[string, string, TeamRecord | null]>
+            ).map(([tid, tname, rec], i) => (
+              <div key={tid} className={`max-w-[45%] ${i === 1 ? "text-right" : ""}`}>
+                <Link href={`/team/${tid}`} className="text-ink-900 text-xs font-bold leading-tight">
+                  {tname}
+                </Link>
+                {rec && <p className="text-ink-400 text-[10px]">{rec.record}</p>}
+              </div>
             ))}
-          </div>
-          <h3 className="text-ink-400 hidden px-4 pt-4 text-[10px] font-bold uppercase tracking-wider lg:block">
-            Box score
-          </h3>
-
-          <div className={`${tab === "box" ? "block" : "hidden"} lg:block`}>
-            {/* phone: one team at a time behind a switcher */}
-            <div className="p-3 lg:hidden">
-              <div className="bg-ink-50 mb-2 flex rounded-xl p-0.5">
-                {(["home", "away"] as const).map((side) => (
-                  <button
-                    key={side}
-                    onClick={() => setBoxSide(side)}
-                    className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${
-                      boxSide === side ? "text-ink-900 bg-white shadow-sm" : "text-ink-500"
-                    }`}
-                  >
-                    {side === "home" ? game.homeTeamName : game.awayTeamName}
-                  </button>
-                ))}
-              </div>
-              {statsTable(boxTeamId)}
-            </div>
-
-            {/* desktop: both teams laid out in full */}
-            <div className="hidden space-y-7 p-4 pt-3 lg:block">
-              <div>
-                <h4 className="text-ink-900 mb-1 text-sm font-bold">
-                  <span className="bg-play-400 mr-1.5 inline-block h-2 w-2 rounded-full" />
-                  {game.homeTeamName}
-                </h4>
-                {statsTable(game.homeTeamId)}
-              </div>
-              <div>
-                <h4 className="text-ink-900 mb-1 text-sm font-bold">
-                  <span className="bg-court-400 mr-1.5 inline-block h-2 w-2 rounded-full" />
-                  {game.awayTeamName}
-                </h4>
-                {statsTable(game.awayTeamId)}
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* play-by-play — right rail on desktop, "Plays" tab on mobile */}
-      <div
-        className={`border-ink-100 rounded-2xl border bg-white ${
-          tab === "plays" ? "block" : "hidden"
-        } lg:sticky lg:top-[76px] lg:block`}
-      >
-        <h3 className="text-ink-400 hidden px-4 pt-4 text-[10px] font-bold uppercase tracking-wider lg:block">
-          Play-by-play
-        </h3>
-        <ul className="max-h-[420px] overflow-y-auto p-3 lg:max-h-[calc(100vh-180px)] lg:px-4">
-          {playByPlay.map((e, i) => (
-            <li
-              key={i}
-              className={`border-ink-50 border-b py-1.5 text-xs last:border-0 ${
-                e.eventType.startsWith("PERIOD")
-                  ? "text-ink-400 text-center font-semibold"
-                  : "text-ink-700"
-              }`}
-            >
-              {!e.eventType.startsWith("PERIOD") && sideDot(e.teamId)}
-              {describe(e)}
-            </li>
-          ))}
-        </ul>
+      <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6">
+        {canScore && !final && (
+          <a
+            href={`/games/${gameId}/score`}
+            className="bg-play-600 hover:bg-play-700 mt-4 block rounded-2xl px-4 py-3 text-center text-sm font-bold text-white"
+          >
+            You can score this game — open the scoring console →
+          </a>
+        )}
+
+        {/* ---------- pre-game: rosters with season averages ---------- */}
+        {!hasAnyStats && !live && !final && (
+          <>
+            <div className="border-ink-100 mt-4 rounded-2xl border bg-white p-6 text-center">
+              <p className="text-ink-900 text-sm font-semibold">This game hasn&apos;t started yet</p>
+              <p className="text-ink-500 mt-1 text-xs">
+                Live score, leaders and the box score appear here automatically at tip-off — the
+                page refreshes on its own. Season numbers below.
+              </p>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {(
+                [
+                  [game.homeTeamId, game.homeTeamName],
+                  [game.awayTeamId, game.awayTeamName],
+                ] as Array<[string, string]>
+              ).map(([tid, tname]) => (
+                <div key={tid} className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+                  {boxHeader(tid, tname, null)}
+                  {rosterTable(tid)}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ---------- leaders: head-to-head duels ---------- */}
+        {hasAnyStats && (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:gap-4">
+            {LEADER_STATS.map(({ label, get }) => leaderDuel(label, get))}
+          </div>
+        )}
+
+        {/* ---------- box scores + play-by-play ---------- */}
+        {hasAnyStats && (
+          <>
+            {/* phone tabs: filled active state, impossible to miss */}
+            <div className="bg-ink-100 mt-4 flex rounded-xl p-1 lg:hidden">
+              {(
+                [
+                  ["box", "Box score"],
+                  ["plays", "Play-by-play"],
+                ] as Array<[Tab, string]>
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${
+                    tab === key ? "bg-play-600 text-white shadow-sm" : "text-ink-500"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
+              {/* phone: one team behind a color-coded switcher; desktop: both in full */}
+              <div className={`${tab === "box" ? "block" : "hidden"} lg:block`}>
+                <div className="bg-ink-100 mb-2 flex rounded-xl p-1 lg:hidden">
+                  {(["home", "away"] as const).map((side) => {
+                    const tid = side === "home" ? game.homeTeamId : game.awayTeamId
+                    const on = boxSide === side
+                    return (
+                      <button
+                        key={side}
+                        onClick={() => setBoxSide(side)}
+                        className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-bold transition-colors ${
+                          on ? "text-white shadow-sm" : "text-ink-500"
+                        }`}
+                        style={on ? { backgroundColor: colorOf(tid) } : undefined}
+                      >
+                        {side === "home" ? game.homeTeamName : game.awayTeamName}
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* phone: selected team only */}
+                <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white lg:hidden">
+                  {boxHeader(
+                    boxTeamId,
+                    boxSide === "home" ? game.homeTeamName : game.awayTeamName,
+                    boxSide === "home" ? homeScore : awayScore
+                  )}
+                  {statsTable(boxTeamId)}
+                </div>
+                {/* desktop: home box (away box is the next grid cell) */}
+                <div className="border-ink-100 hidden overflow-hidden rounded-2xl border bg-white lg:block">
+                  {boxHeader(game.homeTeamId, game.homeTeamName, homeScore)}
+                  {statsTable(game.homeTeamId)}
+                </div>
+              </div>
+
+              <div className="border-ink-100 hidden overflow-hidden rounded-2xl border bg-white lg:block xl:col-start-1 2xl:col-start-2 2xl:row-start-1">
+                {boxHeader(game.awayTeamId, game.awayTeamName, awayScore)}
+                {statsTable(game.awayTeamId)}
+              </div>
+
+              {/* play-by-play — rail on desktop, tab on phones */}
+              <div
+                className={`border-ink-100 overflow-hidden rounded-2xl border bg-white ${
+                  tab === "plays" ? "block" : "hidden"
+                } lg:block xl:sticky xl:top-[76px] xl:col-start-2 xl:row-start-1 xl:row-span-2 2xl:col-start-3 2xl:row-span-1`}
+              >
+                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2.5">
+                  <h3 className="text-ink-400 flex-1 text-[10px] font-bold uppercase tracking-[0.14em]">
+                    Play-by-play
+                  </h3>
+                  {(
+                    [
+                      ["all", "All"],
+                      ["scoring", "Scoring"],
+                      ...periods.map((p) => [p, periodLabel(p)] as [number, string]),
+                    ] as Array<["all" | "scoring" | number, string]>
+                  ).map(([key, label]) => (
+                    <button
+                      key={String(key)}
+                      onClick={() => setPlayFilter(key)}
+                      className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-colors ${
+                        playFilter === key
+                          ? "bg-ink-950 text-white"
+                          : "text-ink-500 border-ink-200 border bg-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <ul className="max-h-[420px] overflow-y-auto xl:max-h-[calc(100vh-190px)]">
+                  {visiblePlays.map(({ e, score }, i) =>
+                    e.eventType.startsWith("PERIOD") ? (
+                      <li
+                        key={i}
+                        className="bg-ink-50 text-ink-500 border-ink-100 border-b px-4 py-1 text-center text-[10px] font-extrabold uppercase tracking-widest"
+                      >
+                        {e.eventType === "PERIOD_START" ? describe(e) : "End of period"}
+                      </li>
+                    ) : (
+                      <li
+                        key={i}
+                        className={`border-ink-50 flex items-center gap-2.5 border-b px-4 py-1.5 text-xs ${
+                          score ? "text-ink-950 font-semibold" : "text-ink-600"
+                        }`}
+                      >
+                        <span
+                          className="w-1 self-stretch rounded-full"
+                          style={{ backgroundColor: colorOf(e.teamId) }}
+                        />
+                        <span className="min-w-0 flex-1">{describe(e)}</span>
+                        {score && (
+                          <span className="text-ink-900 shrink-0 text-[11px] font-bold tabular-nums">
+                            {score}
+                          </span>
+                        )}
+                      </li>
+                    )
+                  )}
+                  {visiblePlays.length === 0 && (
+                    <li className="text-ink-400 px-4 py-6 text-center text-xs">No plays yet.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-      </div>
-      )}
     </div>
   )
 }
