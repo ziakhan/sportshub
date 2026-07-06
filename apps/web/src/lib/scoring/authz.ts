@@ -48,3 +48,21 @@ export async function canScoreGame(
   })
   return !!staffRole
 }
+
+/**
+ * Who may view the official scoresheet (HTML page and PDF): everyone who can
+ * score the game, plus the game's assigned referee(s). League/club people
+ * only — the sheet is an operational record (signatures, foul detail), not a
+ * public surface; families get the live page and box score instead.
+ */
+export async function canViewScoresheet(
+  userId: string,
+  isPlatformAdmin: boolean,
+  game: ScorableGame
+): Promise<boolean> {
+  if (await canScoreGame(userId, isPlatformAdmin, game)) return true
+  const refRole = await prisma.userRole.findFirst({
+    where: { userId, gameId: game.id, role: "Referee" },
+  })
+  return !!refRole
+}

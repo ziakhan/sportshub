@@ -105,7 +105,10 @@ export function ScoreCard({ status, home, away, dateLabel, venue, highlightsHref
       {(venue || highlightsHref) && (
         <div className="border-ink-100 mt-3 flex items-center justify-between border-t pt-3">
           {venue ? (
-            <span className="text-ink-400 truncate text-xs">{venue}</span>
+            // min-w-0: without it this nowrap flex item's min-content is the
+            // full venue string, which forces the card (and the page) wider
+            // than a phone viewport — truncate alone doesn't shrink it.
+            <span className="text-ink-400 min-w-0 truncate text-xs">{venue}</span>
           ) : (
             <span />
           )}

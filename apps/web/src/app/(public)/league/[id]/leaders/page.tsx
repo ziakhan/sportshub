@@ -51,7 +51,7 @@ export default async function LeagueLeadersPage({ params }: { params: { id: stri
           </p>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {leaders.categories.map((cat) => (
             <Card key={cat.key} className="overflow-hidden p-0">
               <div className="border-ink-100 flex items-baseline justify-between border-b px-5 py-4">

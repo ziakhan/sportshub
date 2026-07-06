@@ -1,14 +1,18 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
 import { foldEvents, totalRebounds, FOUL_LIMIT, type FoldEvent } from "@/lib/scoring/fold"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { canViewScoresheet } from "@/lib/scoring/authz"
 import { PrintButton } from "./print-button"
 
 export const dynamic = "force-dynamic"
 
 /**
- * The official scoresheet — a paper-style game record referenceable anywhere
- * on the web, designed to print onto one page (black on white, signature
- * lines, foul boxes, quarter line score). Public, like the live page.
+ * The official scoresheet — a paper-style game record designed to print onto
+ * one page (black on white, signature lines, foul boxes, quarter line score).
+ * League/club people only (owner decision 2026-07-06): league owner, either
+ * club's staff, the assigned referee, platform admin. Families get the live
+ * page and box score instead — this sheet is the operational record.
  */
 export default async function ScoresheetPage({ params }: { params: { gameId: string } }) {
   const game = await (prisma as any).game.findUnique({
@@ -40,6 +44,14 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
     },
   })
   if (!game) notFound()
+
+  // Middleware already requires a session for /scoresheet; this is the role
+  // check on top (middleware can't know game-scoped roles).
+  const sessionInfo = await getSessionUserId()
+  if (!sessionInfo) redirect(`/sign-in?callbackUrl=/scoresheet/${params.gameId}`)
+  if (!(await canViewScoresheet(sessionInfo.userId, !!sessionInfo.isPlatformAdmin, game))) {
+    notFound()
+  }
 
   const [rows, submissions] = await Promise.all([
     (prisma as any).gameEvent.findMany({

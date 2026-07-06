@@ -196,7 +196,7 @@ export default function EventsPage() {
           <p className="text-ink-600">Try adjusting your filters or search terms.</p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((event) => {
             const badge = typeBadge[event.type]
             return (

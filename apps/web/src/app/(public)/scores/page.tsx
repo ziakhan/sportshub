@@ -69,7 +69,7 @@ function DayGroups({ games, order }: { games: any[]; order: "asc" | "desc" }) {
           <h3 className="text-ink-400 mb-3 px-1 text-xs font-bold uppercase tracking-[0.14em]">
             {isSameDay(day.date, today) ? "Today" : format(day.date, "EEEE, MMMM d")}
           </h3>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {day.games.map((g) => (
               <GameCard key={g.id} g={g} />
             ))}
@@ -206,7 +206,7 @@ export default async function ScoresPage({
               <p className="text-ink-400 -mt-2 mb-4 text-xs">
                 Games for your kids&apos; teams and teams you follow.
               </p>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {myGames.slice(0, 6).map((g: any) => (
                   <GameCard key={g.id} g={g} />
                 ))}
@@ -222,7 +222,7 @@ export default async function ScoresPage({
                   {notMine(live).length}
                 </Badge>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {notMine(live).map((g: any) => (
                   <GameCard key={g.id} g={g} />
                 ))}

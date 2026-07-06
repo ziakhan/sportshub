@@ -141,7 +141,7 @@ export default async function ClubProfilePage({
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-8">
             {/* About */}
@@ -160,7 +160,7 @@ export default async function ClubProfilePage({
               {teams.length === 0 ? (
                 <p className="text-ink-500 text-sm">No teams listed yet.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {teams.map((team: any) => (
                     <Link
                       key={team.id}

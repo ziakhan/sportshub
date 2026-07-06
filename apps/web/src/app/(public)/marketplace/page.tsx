@@ -72,7 +72,7 @@ export default async function PublicMarketplacePage({
           <p className="text-ink-600">Check back soon for upcoming tryouts!</p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {tryouts.map((tryout: any) => (
             <Link
               key={tryout.id}

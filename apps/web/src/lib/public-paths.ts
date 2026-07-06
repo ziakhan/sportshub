@@ -24,7 +24,6 @@ const PUBLIC_PAGE_PREFIXES = [
   "/leagues",
   "/invitations",
   "/live",
-  "/scoresheet",
   "/news",
   "/team",
   "/player",
@@ -47,7 +46,6 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/settings",
   "/api/health",
   "/api/live",
-  "/api/scoresheet",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;

@@ -159,20 +159,81 @@ export function LiveView({ gameId }: { gameId: string }) {
   )
 
   const boxTeamId = boxSide === "home" ? game.homeTeamId : game.awayTeamId
-  const boxLines = teamLines(boxTeamId)
-  const showMinutes = boxLines.some((l) => l.secondsPlayed > 0)
-  const totals = boxLines.reduce(
-    (t, l) => ({
-      pts: t.pts + l.points,
-      reb: t.reb + totalRebounds(l),
-      ast: t.ast + l.assists,
-      stl: t.stl + l.steals,
-      blk: t.blk + l.blocks,
-      to: t.to + l.turnovers,
-      pf: t.pf + l.fouls,
-    }),
-    { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
-  )
+
+  // One team's full stat table — phones show one at a time behind the
+  // switcher; desktop lays both teams out in full (ESPN/Yahoo style).
+  const statsTable = (teamId: string) => {
+    const lines = teamLines(teamId)
+    const showMinutes = lines.some((l) => l.secondsPlayed > 0)
+    const totals = lines.reduce(
+      (t, l) => ({
+        pts: t.pts + l.points,
+        reb: t.reb + totalRebounds(l),
+        ast: t.ast + l.assists,
+        stl: t.stl + l.steals,
+        blk: t.blk + l.blocks,
+        to: t.to + l.turnovers,
+        pf: t.pf + l.fouls,
+      }),
+      { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
+    )
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs lg:text-sm">
+          <thead className="text-ink-400 text-left text-[10px] uppercase lg:text-[11px]">
+            <tr>
+              <th className="py-1.5 pr-2">Player</th>
+              {showMinutes && <th className="px-1.5 text-right">MIN</th>}
+              <th className="px-1.5 text-right">PTS</th>
+              <th className="px-1.5 text-right">REB</th>
+              <th className="px-1.5 text-right">AST</th>
+              <th className="px-1.5 text-right">STL</th>
+              <th className="px-1.5 text-right">BLK</th>
+              <th className="px-1.5 text-right">TO</th>
+              <th className="px-1.5 text-right">PF</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((l) => (
+              <tr key={l.playerId} className="border-ink-100 border-t">
+                <td className="text-ink-800 whitespace-nowrap py-1.5 pr-2">
+                  <span className="text-ink-400 mr-1">#{jerseyOf(l.playerId)}</span>
+                  <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
+                    {shortName(l.playerId)}
+                  </Link>
+                  {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
+                </td>
+                {showMinutes && (
+                  <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>
+                )}
+                <td className="px-1.5 text-right font-semibold">{l.points}</td>
+                <td className="px-1.5 text-right">{totalRebounds(l)}</td>
+                <td className="px-1.5 text-right">{l.assists}</td>
+                <td className="px-1.5 text-right">{l.steals}</td>
+                <td className="px-1.5 text-right">{l.blocks}</td>
+                <td className="px-1.5 text-right">{l.turnovers}</td>
+                <td className="px-1.5 text-right">
+                  {l.fouls}
+                  {l.technicalFouls > 0 ? "T" : ""}
+                </td>
+              </tr>
+            ))}
+            <tr className="border-ink-200 text-ink-900 border-t font-bold">
+              <td className="py-1.5 pr-2">Team</td>
+              {showMinutes && <td />}
+              <td className="px-1.5 text-right">{totals.pts}</td>
+              <td className="px-1.5 text-right">{totals.reb}</td>
+              <td className="px-1.5 text-right">{totals.ast}</td>
+              <td className="px-1.5 text-right">{totals.stl}</td>
+              <td className="px-1.5 text-right">{totals.blk}</td>
+              <td className="px-1.5 text-right">{totals.to}</td>
+              <td className="px-1.5 text-right">{totals.pf}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 
   const playByPlay = [...fold.playByPlay]
     .filter((e) =>
@@ -226,7 +287,9 @@ export function LiveView({ gameId }: { gameId: string }) {
     )
 
   return (
-    <div className="mx-auto max-w-3xl space-y-3 p-3">
+    // Phone-first column; on desktop it widens and splits into box score +
+    // play-by-play rail (the tab UI is a small-screen affordance only).
+    <div className="mx-auto max-w-3xl space-y-3 p-3 lg:max-w-6xl lg:space-y-4 lg:px-6 lg:py-6">
       {canScore && !final && (
         <a
           href={`/games/${gameId}/score`}
@@ -248,15 +311,15 @@ export function LiveView({ gameId }: { gameId: string }) {
           ) : (
             <p className="text-ink-400 text-center text-[11px]">{game.leagueName}</p>
           ))}
-        <div className="mt-1 flex items-center justify-center gap-5">
+        <div className="mt-1 flex items-center justify-center gap-5 lg:gap-10">
           <div className="flex-1 text-right">
-            <p className="text-ink-700 text-sm font-semibold">
+            <p className="text-ink-700 text-sm font-semibold lg:text-base">
               <Link href={`/team/${game.homeTeamId}`} className="hover:text-play-600 transition-colors">
                 {game.homeTeamName}
               </Link>{" "}
               <span className="bg-play-400 ml-1 inline-block h-2 w-2 rounded-full" />
             </p>
-            <p className="text-ink-950 text-4xl font-bold">{homeScore}</p>
+            <p className="text-ink-950 text-4xl font-bold lg:text-6xl">{homeScore}</p>
           </div>
           <div className="text-center">
             {live && (
@@ -276,13 +339,13 @@ export function LiveView({ gameId }: { gameId: string }) {
             )}
           </div>
           <div className="flex-1 text-left">
-            <p className="text-ink-700 text-sm font-semibold">
+            <p className="text-ink-700 text-sm font-semibold lg:text-base">
               <span className="bg-court-400 mr-1 inline-block h-2 w-2 rounded-full" />{" "}
               <Link href={`/team/${game.awayTeamId}`} className="hover:text-play-600 transition-colors">
                 {game.awayTeamName}
               </Link>
             </p>
-            <p className="text-ink-950 text-4xl font-bold">{awayScore}</p>
+            <p className="text-ink-950 text-4xl font-bold lg:text-6xl">{awayScore}</p>
           </div>
         </div>
 
@@ -330,14 +393,8 @@ export function LiveView({ gameId }: { gameId: string }) {
         {game.venueName && (
           <p className="text-ink-400 mt-2 text-center text-[10px]">{game.venueName}</p>
         )}
-        <p className="mt-1 text-center">
-          <a
-            href={`/scoresheet/${game.id}`}
-            className="text-play-600 text-[11px] font-semibold hover:underline"
-          >
-            Official scoresheet (print) →
-          </a>
-        </p>
+        {/* No scoresheet link here — the official sheet is league/club-only
+            (linked from the scoring console and the finalize email). */}
       </div>
 
       {!live && !final && fold.playByPlay.length === 0 && (
@@ -350,8 +407,11 @@ export function LiveView({ gameId }: { gameId: string }) {
         </div>
       )}
 
-      {/* game leaders */}
+      {/* Leaders + box score (main column) with play-by-play alongside on
+          desktop; on small screens the two panels collapse into tabs. */}
       {hasAnyStats && (
+      <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-4 lg:space-y-0">
+      <div className="space-y-3 lg:space-y-4">
         <div className="border-ink-100 rounded-2xl border bg-white p-4">
           <h3 className="text-ink-400 mb-2 text-[10px] font-bold uppercase tracking-wider">
             Game leaders
@@ -373,12 +433,9 @@ export function LiveView({ gameId }: { gameId: string }) {
             })}
           </div>
         </div>
-      )}
 
-      {/* tabs */}
-      {hasAnyStats && (
         <div className="border-ink-100 rounded-2xl border bg-white">
-          <div className="border-ink-100 flex border-b">
+          <div className="border-ink-100 flex border-b lg:hidden">
             {(
               [
                 ["box", "Box score"],
@@ -398,10 +455,13 @@ export function LiveView({ gameId }: { gameId: string }) {
               </button>
             ))}
           </div>
+          <h3 className="text-ink-400 hidden px-4 pt-4 text-[10px] font-bold uppercase tracking-wider lg:block">
+            Box score
+          </h3>
 
-          {tab === "box" && (
-            <div className="p-3">
-              {/* team switcher */}
+          <div className={`${tab === "box" ? "block" : "hidden"} lg:block`}>
+            {/* phone: one team at a time behind a switcher */}
+            <div className="p-3 lg:hidden">
               <div className="bg-ink-50 mb-2 flex rounded-xl p-0.5">
                 {(["home", "away"] as const).map((side) => (
                   <button
@@ -415,81 +475,56 @@ export function LiveView({ gameId }: { gameId: string }) {
                   </button>
                 ))}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead className="text-ink-400 text-left text-[10px] uppercase">
-                    <tr>
-                      <th className="py-1.5 pr-2">Player</th>
-                      {showMinutes && <th className="px-1.5 text-right">MIN</th>}
-                      <th className="px-1.5 text-right">PTS</th>
-                      <th className="px-1.5 text-right">REB</th>
-                      <th className="px-1.5 text-right">AST</th>
-                      <th className="px-1.5 text-right">STL</th>
-                      <th className="px-1.5 text-right">BLK</th>
-                      <th className="px-1.5 text-right">TO</th>
-                      <th className="px-1.5 text-right">PF</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {boxLines.map((l) => (
-                      <tr key={l.playerId} className="border-ink-100 border-t">
-                        <td className="text-ink-800 whitespace-nowrap py-1.5 pr-2">
-                          <span className="text-ink-400 mr-1">#{jerseyOf(l.playerId)}</span>
-                          <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
-                            {shortName(l.playerId)}
-                          </Link>
-                          {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
-                        </td>
-                        {showMinutes && (
-                          <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>
-                        )}
-                        <td className="px-1.5 text-right font-semibold">{l.points}</td>
-                        <td className="px-1.5 text-right">{totalRebounds(l)}</td>
-                        <td className="px-1.5 text-right">{l.assists}</td>
-                        <td className="px-1.5 text-right">{l.steals}</td>
-                        <td className="px-1.5 text-right">{l.blocks}</td>
-                        <td className="px-1.5 text-right">{l.turnovers}</td>
-                        <td className="px-1.5 text-right">
-                          {l.fouls}
-                          {l.technicalFouls > 0 ? "T" : ""}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="border-ink-200 text-ink-900 border-t font-bold">
-                      <td className="py-1.5 pr-2">Team</td>
-                      {showMinutes && <td />}
-                      <td className="px-1.5 text-right">{totals.pts}</td>
-                      <td className="px-1.5 text-right">{totals.reb}</td>
-                      <td className="px-1.5 text-right">{totals.ast}</td>
-                      <td className="px-1.5 text-right">{totals.stl}</td>
-                      <td className="px-1.5 text-right">{totals.blk}</td>
-                      <td className="px-1.5 text-right">{totals.to}</td>
-                      <td className="px-1.5 text-right">{totals.pf}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              {statsTable(boxTeamId)}
+            </div>
+
+            {/* desktop: both teams laid out in full */}
+            <div className="hidden space-y-7 p-4 pt-3 lg:block">
+              <div>
+                <h4 className="text-ink-900 mb-1 text-sm font-bold">
+                  <span className="bg-play-400 mr-1.5 inline-block h-2 w-2 rounded-full" />
+                  {game.homeTeamName}
+                </h4>
+                {statsTable(game.homeTeamId)}
+              </div>
+              <div>
+                <h4 className="text-ink-900 mb-1 text-sm font-bold">
+                  <span className="bg-court-400 mr-1.5 inline-block h-2 w-2 rounded-full" />
+                  {game.awayTeamName}
+                </h4>
+                {statsTable(game.awayTeamId)}
               </div>
             </div>
-          )}
-
-          {tab === "plays" && (
-            <ul className="max-h-[420px] overflow-y-auto p-3">
-              {playByPlay.map((e, i) => (
-                <li
-                  key={i}
-                  className={`border-ink-50 border-b py-1.5 text-xs last:border-0 ${
-                    e.eventType.startsWith("PERIOD")
-                      ? "text-ink-400 text-center font-semibold"
-                      : "text-ink-700"
-                  }`}
-                >
-                  {!e.eventType.startsWith("PERIOD") && sideDot(e.teamId)}
-                  {describe(e)}
-                </li>
-              ))}
-            </ul>
-          )}
+          </div>
         </div>
+      </div>
+
+      {/* play-by-play — right rail on desktop, "Plays" tab on mobile */}
+      <div
+        className={`border-ink-100 rounded-2xl border bg-white ${
+          tab === "plays" ? "block" : "hidden"
+        } lg:sticky lg:top-[76px] lg:block`}
+      >
+        <h3 className="text-ink-400 hidden px-4 pt-4 text-[10px] font-bold uppercase tracking-wider lg:block">
+          Play-by-play
+        </h3>
+        <ul className="max-h-[420px] overflow-y-auto p-3 lg:max-h-[calc(100vh-180px)] lg:px-4">
+          {playByPlay.map((e, i) => (
+            <li
+              key={i}
+              className={`border-ink-50 border-b py-1.5 text-xs last:border-0 ${
+                e.eventType.startsWith("PERIOD")
+                  ? "text-ink-400 text-center font-semibold"
+                  : "text-ink-700"
+              }`}
+            >
+              {!e.eventType.startsWith("PERIOD") && sideDot(e.teamId)}
+              {describe(e)}
+            </li>
+          ))}
+        </ul>
+      </div>
+      </div>
       )}
     </div>
   )

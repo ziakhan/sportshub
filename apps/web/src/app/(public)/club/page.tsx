@@ -51,7 +51,7 @@ export default async function ClubDirectoryPage() {
           <h2 className="text-ink-400 mb-4 text-xs font-bold uppercase tracking-[0.16em]">
             Most active clubs
           </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((club: any) => (
               <Link
                 key={club.id}

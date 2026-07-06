@@ -60,7 +60,7 @@ export default function StyleGuidePage() {
 
         <section className="space-y-5">
           <SectionHeader eyebrow="Dashboards" title="Stat blocks" accent="court" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatBlock label="Users" value="1,284" icon={usersIcon} tone="play" trend={{ dir: "up", value: "12%" }} />
             <StatBlock label="Clubs" value="188" icon={usersIcon} tone="court" />
             <StatBlock label="Teams" value="42" icon={usersIcon} tone="hoop" trend={{ dir: "down", value: "3%" }} />
@@ -88,7 +88,7 @@ export default function StyleGuidePage() {
                 key: "schedule",
                 label: "Schedule",
                 content: (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <ScoreCard
                       status="FINAL"
                       away={{ name: "Wolves", color: "#4f46e5", score: 68 }}
@@ -135,7 +135,7 @@ export default function StyleGuidePage() {
 
         <section className="space-y-5">
           <SectionHeader eyebrow="Content" title="News cards" accent="gold" />
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <NewsCard title="Raptors clinch playoff spot" excerpt="A 72–68 win over the Wolves locks up second seed in the East division." dateLabel="Jun 6" author="Coach Lee" href="#" />
             <NewsCard title="Spring camp registration open" excerpt="Three weeks of skills development for U10–U14, starting July." dateLabel="Jun 2" href="#" coverUrl="https://placehold.co/640x360/4f46e5/fff?text=Camp" />
             <NewsCard title="Photo gallery: Championship weekend" dateLabel="May 28" href="#" />

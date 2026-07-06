@@ -25,6 +25,7 @@ export interface SheetPlayer {
 export interface ScoresheetData {
   game: {
     id: string
+    seasonId: string | null
     status: string
     scheduledAt: Date
     final: boolean
@@ -212,6 +213,7 @@ export async function loadScoresheetData(gameId: string): Promise<ScoresheetData
   return {
     game: {
       id: game.id,
+      seasonId: game.seasonId ?? null,
       status: game.status,
       scheduledAt: game.scheduledAt,
       final,

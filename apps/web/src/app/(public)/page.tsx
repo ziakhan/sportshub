@@ -188,7 +188,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {/* Families */}
             <Link
               href="/events"
@@ -320,7 +320,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
               {upcomingTryouts.map((tryout) => (
                 <Link
                   key={tryout.id}
@@ -392,7 +392,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {featuredClubs.map((club) => (
                 <Link
                   key={club.id}
@@ -656,7 +656,7 @@ export default async function HomePage() {
 
       <section className="bg-ink-950 py-16 text-white sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid gap-8 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm lg:grid-cols-[1.2fr_0.8fr] lg:p-12">
+          <div className="grid grid-cols-1 gap-8 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur-sm lg:grid-cols-[1.2fr_0.8fr] lg:p-12">
             <div>
               <div className="mb-4 inline-flex items-center gap-3">
                 <span className="bg-hoop-400 h-px w-10" />
@@ -673,7 +673,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
               <div className="bg-white/8 rounded-3xl p-5">
                 <div className="text-ink-400 text-xs uppercase tracking-[0.18em]">Clubs</div>
                 <div className="mt-2 text-3xl font-bold text-white">{stats.totalClubs}+</div>

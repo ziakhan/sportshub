@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import PDFDocument from "pdfkit"
 import { loadScoresheetData, totalRebounds, type SheetPlayer } from "@/lib/scoring/scoresheet-data"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { canViewScoresheet } from "@/lib/scoring/authz"
 
 export const dynamic = "force-dynamic"
 
 /**
  * GET /api/scoresheet/[gameId] — server-generated PDF of the official
  * scoresheet, landscape letter, pure vector (foul boxes and free-throw
- * circles are drawn, not glyphs). Public read, like the HTML sheet —
- * built server-side because mobile-browser printing is unreliable.
+ * circles are drawn, not glyphs). League/club people only, same access as
+ * the HTML sheet (canViewScoresheet) — built server-side because
+ * mobile-browser printing is unreliable.
  */
 
 const PAGE_W = 792 // letter landscape
@@ -19,9 +22,16 @@ const LIGHT = "#bbbbbb"
 
 export async function GET(_request: NextRequest, { params }: { params: { gameId: string } }) {
   try {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
     const data = await loadScoresheetData(params.gameId)
     if (!data) return NextResponse.json({ error: "Game not found" }, { status: 404 })
     const { game, periods, teams, lineScore, periodLabel } = data
+
+    if (!(await canViewScoresheet(sessionInfo.userId, !!sessionInfo.isPlatformAdmin, game))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const doc = new PDFDocument({ size: "LETTER", layout: "landscape", margin: M })
     const chunks: Buffer[] = []

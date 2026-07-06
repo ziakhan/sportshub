@@ -60,7 +60,7 @@ export default async function PublicTryoutDetailPage({
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2">
             <Card className="p-8">
@@ -76,7 +76,7 @@ export default async function PublicTryoutDetailPage({
                 <p className="mb-6 text-ink-700">{tryout.description}</p>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl bg-ink-50 p-4">
                   <div className="mb-1 text-sm font-medium text-ink-500">Date &amp; Time</div>
                   <div className="text-ink-950">{format(new Date(tryout.scheduledAt), "EEEE, MMMM d, yyyy")}</div>

@@ -57,7 +57,10 @@ export default async function PublicLayout({ children }: { children: React.React
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
+              fit (worse logged-in) and overflow the viewport — tablets get
+              the scrollable pill row instead. */}
+          <nav className="hidden items-center gap-1 lg:flex">
             <Link
               href="/scores"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
@@ -138,7 +141,7 @@ export default async function PublicLayout({ children }: { children: React.React
           </div>
         </div>
 
-        <div className="border-ink-100 border-t px-4 py-2 md:hidden">
+        <div className="border-ink-100 border-t px-4 py-2 lg:hidden">
           <div className="flex gap-2 overflow-x-auto">
             <Link
               href="/scores"

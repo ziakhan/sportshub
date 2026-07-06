@@ -79,7 +79,7 @@ export default async function PublicLeaguesPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {leagues.map((l: any) => {
             const status = STATUS_LABEL[l.season.status] ?? STATUS_LABEL.DRAFT
             return (

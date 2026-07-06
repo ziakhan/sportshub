@@ -49,7 +49,7 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="p-8">
@@ -62,7 +62,7 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
                 <p className="text-ink-700 mb-6">{tournament.description}</p>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {tournament.startDate && (
                   <div className="rounded-2xl bg-ink-50 p-4">
                     <div className="text-sm font-medium text-ink-500 mb-1">Dates</div>
@@ -99,7 +99,7 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
             {tournament.divisions?.length > 0 && (
               <Card className="p-8">
                 <h2 className="text-lg font-bold text-ink-950 mb-4">Divisions</h2>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {tournament.divisions.map((d: any) => (
                     <div key={d.id} className="rounded-2xl border border-ink-100 bg-ink-50 p-3">
                       <span className="font-medium text-ink-950">{d.name}</span>

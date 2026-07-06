@@ -90,7 +90,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
         )}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
           {completed.length === 0 && upcoming.length === 0 && (
             <div className="border-ink-100 rounded-2xl border bg-white p-8 text-center">
@@ -117,7 +117,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                   ) : undefined
                 }
               />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {upcoming.slice(0, 4).map((g: any) => (
                   <ScoreCard
                     key={g.id}
@@ -199,7 +199,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
           {posts.length > 0 && (
             <section>
               <SectionHeader title="Team news" accent="hoop" className="mb-5" />
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {posts.map((p: any) => (
                   <NewsCard
                     key={p.id}

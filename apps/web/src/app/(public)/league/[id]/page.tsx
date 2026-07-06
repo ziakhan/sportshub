@@ -139,12 +139,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         className="mb-8"
       />
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-10 lg:col-span-2">
           {(liveGames.length > 0 || recentGames.length > 0 || upcomingGames.length > 0) && (
             <section>
               <SectionHeader title="Scores & schedule" accent="play" className="mb-5" />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {liveGames.map((g: any) => (
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
@@ -190,7 +190,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   tiebreaker rules yet.
                 </p>
               )}
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 {standings.divisions
                   .filter((d) => d.rows.length > 0)
                   .map((division) => (
@@ -232,7 +232,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   </Link>
                 }
               />
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {posts.map((p: any) => (
                   <NewsCard
                     key={p.id}
@@ -257,7 +257,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                     <h3 className="text-ink-400 mb-2 px-1 text-xs font-bold uppercase tracking-[0.14em]">
                       {divisionName}
                     </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {teams.map((t) => (
                         <Link
                           key={t.id}
