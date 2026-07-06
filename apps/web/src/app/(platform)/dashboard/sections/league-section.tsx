@@ -48,7 +48,7 @@ export function LeagueSection({ data }: LeagueSectionProps) {
               icon={<IconCalendar className="h-4 w-4" />}
             />
             <MetricCard
-              label="Avg games"
+              label="Games per league"
               value={Math.round(totalGames / Math.max(data.leagues.length, 1))}
               tone="bg-ink-100 text-ink-700"
               icon={<IconChart className="h-4 w-4" />}

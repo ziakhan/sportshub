@@ -111,6 +111,14 @@ export interface DashboardData {
       averageRating: any
       standardFee: any
     } | null
+    assignments: Array<{
+      gameId: string
+      scheduledAt: Date
+      status: string
+      homeTeam: string
+      awayTeam: string
+      venue: string | null
+    }>
   }
   leagueOwner?: {
     leagues: Array<{
@@ -398,16 +406,53 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
 
   // Referee data
   if (roleNames.includes("Referee")) {
-    const profile = await prisma.refereeProfile.findUnique({
-      where: { userId: user.id },
-      select: {
-        certificationLevel: true,
-        gamesRefereed: true,
-        averageRating: true,
-        standardFee: true,
-      },
-    })
+    const [profile, assignmentRoles] = await Promise.all([
+      prisma.refereeProfile.findUnique({
+        where: { userId: user.id },
+        select: {
+          certificationLevel: true,
+          gamesRefereed: true,
+          averageRating: true,
+          standardFee: true,
+        },
+      }),
+      // Assigned games (UserRole role=Referee gameId=…) — the same rows the
+      // scoresheet PIN sign-off verifies against
+      (prisma as any).userRole.findMany({
+        where: {
+          userId: user.id,
+          role: "Referee",
+          gameId: { not: null },
+          game: { status: { in: ["SCHEDULED", "LIVE"] } },
+        },
+        select: {
+          game: {
+            select: {
+              id: true,
+              scheduledAt: true,
+              status: true,
+              homeTeam: { select: { name: true } },
+              awayTeam: { select: { name: true } },
+              venue: { select: { name: true } },
+            },
+          },
+        },
+        take: 6,
+      }),
+    ])
     data.referee = {
+      assignments: assignmentRoles
+        .map((r: any) => r.game)
+        .filter(Boolean)
+        .sort((a: any, b: any) => +new Date(a.scheduledAt) - +new Date(b.scheduledAt))
+        .map((g: any) => ({
+          gameId: g.id,
+          scheduledAt: g.scheduledAt,
+          status: g.status,
+          homeTeam: g.homeTeam.name,
+          awayTeam: g.awayTeam.name,
+          venue: g.venue?.name ?? null,
+        })),
       profile: profile
         ? {
             ...profile,

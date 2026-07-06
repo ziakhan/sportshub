@@ -76,10 +76,36 @@ export function RefereeSection({ data }: RefereeSectionProps) {
             </div>
 
             <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-              <h3 className="font-display text-ink-950 text-lg font-semibold">Game day</h3>
-              <p className="text-ink-500 mt-3 text-sm">
-                Live and upcoming games you can officiate are listed on the scoring hub.
-              </p>
+              <h3 className="font-display text-ink-950 text-lg font-semibold">
+                My assignments
+              </h3>
+              {data.assignments.length > 0 ? (
+                <ul className="mt-3 space-y-2">
+                  {data.assignments.map((a) => (
+                    <li key={a.gameId}>
+                      <Link
+                        href={`/live/${a.gameId}`}
+                        className="border-ink-100 bg-ink-50 hover:border-play-200 hover:bg-play-50 block rounded-xl border p-3 transition"
+                      >
+                        <p className="text-ink-900 text-sm font-semibold">
+                          {a.homeTeam} vs {a.awayTeam}
+                          {a.status === "LIVE" && (
+                            <span className="text-hoop-700 ml-2 text-xs font-bold">● LIVE</span>
+                          )}
+                        </p>
+                        <p className="text-ink-500 mt-0.5 text-xs">
+                          {new Date(a.scheduledAt).toLocaleString()} {a.venue ? `· ${a.venue}` : ""}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-ink-500 mt-3 text-sm">
+                  No games assigned yet — live and upcoming games you can officiate are on the
+                  scoring hub.
+                </p>
+              )}
               <Link
                 href="/score"
                 className="bg-play-600 hover:bg-play-700 mt-5 inline-flex rounded-xl px-4 py-2 text-sm font-semibold text-white transition"

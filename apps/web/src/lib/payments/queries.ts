@@ -68,7 +68,7 @@ export async function payerObligations(
   const rows = await prisma.paymentObligation.findMany({
     where,
     include: {
-      payeeTenant: { select: { id: true, name: true } },
+      payeeTenant: { select: { id: true, name: true, slug: true } },
       payeeLeague: { select: { id: true, name: true } },
       payments: paymentsInclude,
     },
@@ -104,6 +104,11 @@ export async function payerObligations(
       createdAt: o.createdAt.toISOString(),
       referenceType: o.referenceType,
       payeeName: o.payeeTenant?.name ?? o.payeeLeague?.name ?? null,
+      payeeHref: o.payeeTenant?.slug
+        ? `/club/${o.payeeTenant.slug}`
+        : o.payeeLeague?.id
+          ? `/league/hub/${o.payeeLeague.id}`
+          : null,
       payments: o.payments.map(serializePayment),
       payOnline,
       offlineMethods: config && offlineAvailable(config) ? config.offlineMethods : [],

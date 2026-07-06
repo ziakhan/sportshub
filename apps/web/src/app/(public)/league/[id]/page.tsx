@@ -184,6 +184,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
           {standings && standings.divisions.some((d) => d.rows.length > 0) && (
             <section>
               <SectionHeader title="Standings" accent="gold" className="mb-5" />
+              {standings.tiebreakerOrder.length === 0 && (
+                <p className="text-ink-400 -mt-2 mb-4 text-xs">
+                  Tied teams are shown in win-percentage order — this league hasn&apos;t configured
+                  tiebreaker rules yet.
+                </p>
+              )}
               <div className="grid gap-6 xl:grid-cols-2">
                 {standings.divisions
                   .filter((d) => d.rows.length > 0)

@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
@@ -138,7 +140,17 @@ export function ObligationsTable({
                     onClick={() => setOpenRow(openRow === o.id ? null : o.id)}
                   >
                     <td className="px-4 py-3 font-medium text-ink-900">
-                      {(view === "merchant" ? o.payerName : o.payeeName) || "—"}
+                      {view === "payer" && o.payeeHref ? (
+                        <Link
+                          href={o.payeeHref}
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:text-play-600 transition-colors"
+                        >
+                          {o.payeeName || "—"}
+                        </Link>
+                      ) : (
+                        (view === "merchant" ? o.payerName : o.payeeName) || "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-ink-600">
                       <span className="mr-2 rounded bg-ink-100 px-1.5 py-0.5 text-xs text-ink-600">

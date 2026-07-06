@@ -23,6 +23,8 @@ export interface ObligationRow {
   payerName?: string | null
   /** Who is owed (payer view) */
   payeeName?: string | null
+  /** Public page of the club/league the money goes to (payer view) */
+  payeeHref?: string | null
   payments: PaymentRow[]
   /** Payer view: can this be paid online right now? */
   payOnline?: boolean
