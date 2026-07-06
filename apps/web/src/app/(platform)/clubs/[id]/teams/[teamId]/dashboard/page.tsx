@@ -302,12 +302,22 @@ export default async function TeamDashboardPage({
         <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-ink-900 font-semibold">Offers ({offers.length})</h3>
-            <Link
-              href={`/clubs/${clubId}/offers?team=${teamId}`}
-              className="text-play-700 text-xs hover:underline"
-            >
-              View All Offers
-            </Link>
+            <div className="flex items-center gap-3">
+              {acceptedOffers.length > 0 && (
+                <Link
+                  href={`/clubs/${clubId}/offers/summary?team=${teamId}`}
+                  className="text-play-700 text-xs hover:underline"
+                >
+                  Order Sheet
+                </Link>
+              )}
+              <Link
+                href={`/clubs/${clubId}/offers?team=${teamId}`}
+                className="text-play-700 text-xs hover:underline"
+              >
+                View All Offers
+              </Link>
+            </div>
           </div>
           {offers.length === 0 ? (
             <p className="text-ink-500 text-sm">No offers sent for this team yet.</p>
@@ -369,6 +379,12 @@ export default async function TeamDashboardPage({
               className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
             >
               Offer Templates
+            </Link>
+            <Link
+              href={`/clubs/${clubId}/offers/summary?team=${teamId}`}
+              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
+            >
+              Order Sheet
             </Link>
             <Link
               href={`/clubs/${clubId}/teams/${teamId}/edit`}

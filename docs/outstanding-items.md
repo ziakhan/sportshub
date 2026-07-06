@@ -10,9 +10,13 @@ Grounds the club/parent demos in real product. Audit + storyboards:
 `docs/outreach/club-parent-demos.md`. The club pipeline (tryout → offer w/
 packages+sizes+jersey prefs+installments → accept → auto-roster → one-click
 league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
-1. **Inventory / order roll-up** — aggregate a team's accepted offers into
-   size/item order totals ("8 uniforms: 3 YL/5 AM; 5 shoes; 4 backpacks").
-   Data exists on Offer (includes* + sizes); needs the aggregation + UI. SMALL.
+1. **Inventory / order roll-up** — ✅ SHIPPED 2026-07-06. The old
+   /clubs/[id]/offers/summary page (club-wide sizes only, dropped items with
+   missing sizes) is now the Order Sheet: per-team roll-ups w/ size
+   breakdowns, missing-size "Size TBD" buckets + warning, ?team= filter,
+   assigned jersey # column, CSV export. Pure agg lib
+   lib/offers/order-rollup.ts (9 unit tests). Entry points: team dashboard
+   quick action + offers-card link, offers page button.
 2. **Tryout mobile check-in** — live roll-call for tryout day (TryoutSignup has
    status, no check-in surface yet). SMALL.
 3. **Team ↔ family chat** — no Message/Chat model exists; TeamSnap-replacement

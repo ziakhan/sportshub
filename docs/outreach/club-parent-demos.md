@@ -23,7 +23,7 @@ data exists, not the feature).
 | Reviews / ratings of clubs | ✅ Built, HIDDEN | `Review` (rating 1-5), `Tenant.averageRating`; UI gated `{false && …}` |
 | Public club browse / discovery | ✅ Real (basic) | public `/club` browse page |
 | **Tryout check-in on mobile** ("who's supposed to be at the sign-up") | ⚠️ Gap | `TryoutSignup` has status, but no live roll-call/check-in for tryouts (game-day ATTENDANCE exists for scoring, not tryouts) |
-| **Inventory / order summary** (what to order per team, totals by size) | ⚠️ Gap (data exists) | Every accepted offer carries items+sizes, but nothing aggregates them into an order sheet. Derivable — small build. |
+| **Inventory / order summary** (what to order per team, totals by size) | ✅ Real (2026-07-06) | Order Sheet at `/clubs/[id]/offers/summary` — per-team + club totals by size, Size-TBD flags, jersey #s, CSV export (`lib/offers/order-rollup.ts`) |
 | **Team ↔ family chat** | ❌ Gap | No `Message`/`Chat` model at all |
 | **Sponsored / featured club listings** | ❌ Gap | No `sponsored`/`featured` fields |
 | **Parent discovery: clubs near me, ranked by rating** | ⚠️ Gap (pieces exist) | Browse + ratings exist but aren't assembled into a "find a club near you, by rating" surface; reviews hidden |
@@ -50,7 +50,7 @@ The story: a club runs its whole season setup without a single spreadsheet.
    automatically respecting preferences; parents notified. *(real)*
 6. **Order sheet, automatically** — the club sees totals by size/item across the
    team: "8 uniforms (3 YL, 5 AM), 5 pairs shoes, 4 backpacks." No manager
-   forms. *(gap — small build)*
+   forms. *(real — shipped 2026-07-06)*
 7. **Submit to the league in one click** — roster goes to the league; locks so
    nobody can change it mid-season without league permission. *(real)*
 
@@ -73,8 +73,8 @@ The story: a parent finds the right club and never misses a moment.
 
 ## Gaps to close so the demos are 100% honest (recommended order)
 
-1. **Inventory / order roll-up** — small, high-value, on the owner's list, and
-   data already exists. Aggregate a team's accepted offers → size/item totals.
+1. **Inventory / order roll-up** — ✅ SHIPPED 2026-07-06 (Order Sheet page,
+   per-team size/item totals, CSV export).
 2. **Tryout mobile check-in** — a roll-call surface for tryout day.
 3. **Parent discovery surface** — assemble browse + ratings (unhide reviews) +
    "near me" into one find-a-club experience.

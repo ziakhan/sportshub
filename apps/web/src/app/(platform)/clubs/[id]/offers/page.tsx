@@ -128,10 +128,10 @@ export default async function ClubOffersPage({
         </div>
         {acceptedCount > 0 && (
           <Link
-            href={`/clubs/${params.id}/offers/summary`}
+            href={`/clubs/${params.id}/offers/summary${teamFilter ? `?team=${teamFilter}` : ""}`}
             className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
           >
-            Accepted Summary
+            Order Sheet
           </Link>
         )}
       </div>
