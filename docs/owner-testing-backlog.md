@@ -1,9 +1,9 @@
-# Owner testing backlog
+# Owner scratchpad — ideas & gaps from test-driving
 
-Running list of gaps and design questions the owner finds while test-driving
-the site. These are DISCUSSION-FIRST items — capture here, decide together,
-then schedule into a fix batch. Distinct from the machine audit ledger
-(docs/ux-audit-2026-07-06.md); cross-reference when they overlap.
+The owner's scrapboard: anything noticed while browsing gets written down
+here so it isn't forgotten. DISCUSSION-FIRST — capture now, decide together
+later, then schedule into a fix batch. Distinct from the machine audit
+ledger (docs/ux-audit-2026-07-06.md); cross-reference when they overlap.
 
 Format: `OB-###` · date found · where · what · decision needed · status.
 
@@ -54,4 +54,25 @@ as `PENDING` for manual handling.
 
 ---
 
-_Add new items above this line as OB-003, OB-004, …_
+## OB-003 · 2026-07-06 · public navigation · What comes after "Leagues"?
+
+**Found:** Leagues as top navigation works, but the drill-down below it is
+undecided: after picking a league, should the next level be CLUBS, or AGE
+GROUPS / DIVISIONS, before you reach teams? Complication: one club can field
+a team in every age grade of the same league, so "browse by club" and
+"browse by division" are different slices of the same teams.
+
+**Discussion needed (when we take it up):**
+- League hub currently groups teams BY DIVISION with the club named on each
+  team row — is division-first the right primary axis (it matches how
+  schedules/standings work), with club pages as the cross-cut?
+- Should the league hub gain a club filter/rollup ("416 United — 3 teams in
+  this league")?
+- Does age-group belong in the global nav at all (e.g. U14 landing pages
+  across leagues), or only inside a league?
+
+**Status:** open — owner to decide the browse hierarchy.
+
+---
+
+_Add new items above this line as OB-004, OB-005, …_
