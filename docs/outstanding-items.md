@@ -95,6 +95,9 @@ monetization model (§12) — docs/public-site-content-plan.md.
   season-id pages); dashboard sidebar "View public site" cross-links;
   eventual subdomain split (owner: "maybe we will separate them in the
   future").
+- **Owner testing backlog** (`docs/owner-testing-backlog.md`) — discussion-first
+  gaps the owner finds while test-driving; OB-001 club-page visibility
+  controls, OB-002 claim-flow trust model. Add new finds there.
 - P1 leftovers: announcement form has no "public" checkbox yet (flag exists);
   RECAP_AI posts orphan if their game is deleted (tags cascade, post stays);
   /api/live box scores still show full names (authed surfaces do — decide
