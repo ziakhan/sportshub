@@ -1,5 +1,5 @@
 club,city,leagues_from_master,best_contact,tenant_slug,team_entries_censused,census_systems
-"Scarborough Blues / SBA (Team {coach}, Premier)",,,,,18,Coalition
+SBA Blues,Scarborough,JUEL+OBL,,scarborough-basketball-association-sba,18,Coalition
 The MUMBA Mentality,,,,,18,Coalition
 Burloak Elite,"Burlington, ON",NPH-SL,info@burloakbasketball.com; 416-219-4939,burloak-elite,14,Coalition+NPH
 YvY Elite (You vs You),"Waterloo/Kitchener/Guelph, ON",NPH-SL,yvybball@gmail.com; IG @yvyelitebasketball,yvy-elite,14,Coalition+NPH
@@ -34,7 +34,7 @@ YNBA,Aurora-Newmarket,Coalition+JUEL+OBL,,,5,Coalition
 "Canada Topflight Academy (Gold, Red)","Ottawa, ON",NJC+OSBA,X @CanadaTopflight,canada-topflight-academy-cta,4,NJC+OSBA
 CE23 Academy,"Paradise, NL",NPH-SL,team@ce23basketball.com,ce23-academy,4,NPH
 CKATT Basketball,"Mississauga, ON",NJC+NPH-SL,info@CKATT.com; 416-346-6244,ckatt-cooksville,4,NJC+NPH
-East York Eagles,,,,,4,Coalition
+East York Basketball,Toronto,Coalition+OBL,,east-york-basketball,4,Coalition
 Father Henry Carr,Toronto (Rexdale),NPH-D1+OSBA,,,4,NPH-D1+OSBA
 "MBA (likely MUMBA, Markham — verify)","Markham, ON",NPH-D1+NPH-SL,647-945-6945,,4,NPH
 NDL,,NPH-D1,,,4,NPH
@@ -93,13 +93,13 @@ Lo-Ellen Park Prep,Sudbury,OSBA,705-522-2320 · X @LEPPrep,,2,OSBA
 London Ramblers,"London, ON",NJC,ramblercoach@gmail.com; 519-850-4318,,2,NJC
 Louis-Riel Academy (CEPEO),Ottawa (Gloucester),OSBA,louis-riel@cepeo.on.ca · 613-590-2233,,2,OSBA
 Malton Sting Basketball,"Mississauga (Malton), ON",NPH-SL,maltonsting.bc@gmail.com,,2,NPH
-Milton Stags,,,,,2,Coalition
 Orangeville Prep (Athlete Institute) — Varsity,"Mono/Orangeville, ON",NSC,info@orangevilleprep.com; 519-940-3735,orangeville-prep,2,NPH-SL+NSC
 Project Excellence,"Scarborough, ON",NJC+NSC,647-705-0217; inquiry form,,2,NJC+NSC
 Retro Elite (Retro Basketball Academy),"Oakville/Mississauga/Brampton, ON",NPH-SL,retrobasketballacademy@gmail.com; 647-904-3420,retro-elite,2,NPH
 Ridley College,St. Catharines,OSBA,admissions@ridleycollege.com · 905-684-1889,ridley-college,2,NPA+OSBA
 SBA Premier (Scarborough Basketball Association),"Scarborough, ON",NJC+NSC,416-551-7554; contact form,,2,NJC+NSC
 Southwest Academy,London,NPH-D1+OSBA,Form only · IG @swacademywbb,southwest-academy,2,NPH-D1+OSBA
+Stags,,Coalition,,,2,Coalition
 Ste Cecile Academy (Windsor),"Windsor, ON",NPH-D1+NSC,info@stececile.ca; 519-969-1291,,2,NPH-D1+NSC
 Top Notch Prep,,,,,2,NJC
 Waterloo Wolverines Elite,,,,,2,NPH
@@ -133,7 +133,7 @@ Dundas Dynamo,"Dundas (Hamilton), ON",NPH-SL,basketballdundas@gmail.com; 905-628
 Durham Gators,"Durham Region, ON",NPH-SL,— (portal only),durham-gators,1,NPH-SL
 "Dynamic Basketball (DBDA, probable)","Toronto, ON",NSC,dynamicbball@gmail.com; 416-994-1676,,1,NSC
 Elton Academy,"Richmond Hill, ON",NSC,info@eltonacademy.ca; 905-731-0505,,1,NSC
-Etobicoke Thunder,,,,,1,Coalition
+Etobicoke,Toronto,Coalition,,,1,Coalition
 F.O.R.M. Basketball Academy,"Vancouver, BC",NSC,coaches@formbasketball.com,f-o-r-m-basketball-academy,1,NSC
 First Step Elite Gold,,,,,1,NPH-SL
 Fitz Youth,,NPH-D1,,,1,NPH-D1
@@ -194,9 +194,7 @@ Blessed Sacrament CYO (Yellow Jackets),"Hamilton, ON",NPH-SL,blessedscyo@gmail.c
 Brantford CYO Hawks,"Brantford, ON",NPH-SL,brantfordcyoboys@gmail.com,,,
 Cooksville We>Me 2030,"Mississauga, ON",NJC,IG @cooksville2030,,,
 Crestwood Preparatory College (+ Blue),Toronto (North York),OSBA,416-391-1441,crestwood-prep,,
-East York Basketball,Toronto,Coalition+OBL,,east-york-basketball,,
 Edge Varsity,,NPH-D1,,,,
-Etobicoke,Toronto,Coalition,,,,
 First Step Elite,"K-W/519, ON",NPH-SL,IG @firstepbball,first-step-elite,,
 HQ Prep / HQ Elite Canada,"Hamilton, ON",NJC+NPH-SL,HQelitecanada1@gmail.com,,,
 JCC Maccabi Warriors,Toronto,Coalition,,,,
@@ -213,10 +211,8 @@ Ottawa Capitals,Ottawa,JUEL,,,,
 Pelham,Pelham,Coalition,,,,
 Pelham Panthers,Niagara,JUEL,,pelham-panthers,,
 Royal Crown Academic School,"Scarborough, ON",NPH-D1+NPH-SL+OSBA,admissions@royalcrownschool.com; 416-519-0476,royal-crown-school,,
-SBA Blues,Scarborough,JUEL+OBL,,scarborough-basketball-association-sba,,
 Scarborough Blues (SBA),Scarborough,Coalition,,,,
 St. Lawrence Lightning,Brockville,JUEL,,,,
-Stags,,Coalition,,,,
 Team CB / CB Elite,Unresolved (Montreal cbelite.ca exists),NPH-SL,—,cb-elite,,
 TLB,,Coalition,,,,
 Top Notch Prep / TNP (Top Notch Stars),"Vaughan, ON",NJC+NPH-D1+NPH-SL,info@topnotchstars.com; 647-689-2311,,,
