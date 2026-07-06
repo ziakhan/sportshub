@@ -140,6 +140,9 @@ async function cleanupPreviousShowcase() {
   })
   const userIds = users.map((u: any) => u.id)
   await p.announcement.deleteMany({ where: { authorId: { in: userIds } } })
+  await p.payment.deleteMany({ where: { payerId: { in: userIds } } })
+  await p.paymentObligation.deleteMany({ where: { payerUserId: { in: userIds } } })
+  await p.offer.deleteMany({ where: { player: { parentId: { in: userIds } } } })
   await p.player.deleteMany({ where: { parentId: { in: userIds } } })
   await p.team.deleteMany({ where: { description: MARKER } })
   await p.user.deleteMany({ where: { id: { in: userIds } } })
@@ -359,6 +362,8 @@ async function main() {
       startDate: new Date(now.getTime() - 42 * 86400_000),
       endDate: new Date(now.getTime() + 42 * 86400_000),
       gamePeriods: "QUARTERS",
+      tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
+      tiebreakersLockedAt: now,
     },
   })
   const divisions: any[] = []
@@ -459,10 +464,39 @@ async function main() {
           },
         },
       })
+      // Complete staffing: team manager + head coach + assistant coach
+      const mkStaff = async (role: string, designation: string | null, title: string) => {
+        const name = makeName("MALE")
+        const staffUser = await p.user.create({
+          data: {
+            email: `staff-${team.id.slice(0, 8)}-${title}@${EMAIL_DOMAIN}`,
+            passwordHash,
+            firstName: pick(BOY_NAMES.concat(GIRL_NAMES)),
+            lastName: name.lastName,
+            onboardedAt: new Date(),
+          },
+          select: { id: true },
+        })
+        await p.userRole.create({
+          data: {
+            userId: staffUser.id,
+            role,
+            tenantId: club.id,
+            teamId: team.id,
+            ...(designation ? { designation } : {}),
+          },
+        })
+      }
+      await mkStaff("TeamManager", null, "mgr")
+      await mkStaff("Staff", "HeadCoach", "hc")
+      await mkStaff("Staff", "AssistantCoach", "ac")
+
       teams.push({ id: team.id, name: teamName, tenantId: club.id, divisionIdx: d, roster })
     }
   }
-  console.log(`✓ ${teams.length} teams · ${teams.length * 10} players rostered (frozen)`)
+  console.log(
+    `✓ ${teams.length} teams · ${teams.length * 10} players rostered (frozen) · manager + head coach + assistant per team`
+  )
 
   // ── Games: 5 completed weekend rounds + live now + next weekend ───────
   const rosterOf = new Map(teams.map((t) => [t.id, t.roster]))
@@ -601,6 +635,50 @@ async function main() {
   }
   console.log(`✓ ${completedGameIds.length} completed games scored · ${liveGameIds.length} LIVE now · next weekend scheduled`)
 
+  // ── Referee crew: profiles + real assignments on live/upcoming games ──
+  const refNames = [
+    ["Riley", "Whistler"],
+    ["Sam", "Okafor"],
+    ["Jo", "Tremblay"],
+    ["Chris", "Vandermeer"],
+  ]
+  const refereeIds: string[] = []
+  const pinHash = await bcrypt.hash("1234", 10)
+  for (let i = 0; i < refNames.length; i++) {
+    const ref = await p.user.create({
+      data: {
+        email: `referee-${i + 1}@${EMAIL_DOMAIN}`,
+        passwordHash,
+        firstName: refNames[i][0],
+        lastName: refNames[i][1],
+        onboardedAt: new Date(),
+      },
+      select: { id: true },
+    })
+    await p.userRole.create({ data: { userId: ref.id, role: "Referee" } })
+    await p.refereeProfile.create({
+      data: {
+        userId: ref.id,
+        certificationLevel: `Level ${2 + (i % 2)}`,
+        availableRegions: ["Ontario"],
+        standardFee: 45,
+        gamesRefereed: 15 + i * 7,
+        signoffPinHash: pinHash,
+      },
+    })
+    refereeIds.push(ref.id)
+  }
+  const assignable = await p.game.findMany({
+    where: { seasonId: season.id, status: { in: ["SCHEDULED", "LIVE"] } },
+    select: { id: true },
+  })
+  for (let i = 0; i < assignable.length; i++) {
+    await p.userRole.create({
+      data: { userId: refereeIds[i % refereeIds.length], role: "Referee", gameId: assignable[i].id },
+    })
+  }
+  console.log(`✓ ${refereeIds.length} referees (PIN 1234) · ${assignable.length} game assignments`)
+
   // ── Recaps (auto-published, publish date = game day) + photo covers ───
   let recapCount = 0
   for (const gameId of completedGameIds) {
@@ -613,24 +691,7 @@ async function main() {
       data: { publishedAt: game?.finalizedAt ?? new Date() },
     })
   }
-  // Covers on the most recent recaps (the ones the homepage feed shows)
-  const recentRecaps = await p.post.findMany({
-    where: { kind: "RECAP_AI", tags: { some: { leagueId: league.id } } },
-    orderBy: { publishedAt: "desc" },
-    take: 12,
-    select: { id: true },
-  })
-  for (let i = 0; i < recentRecaps.length; i++) {
-    await p.mediaAsset.create({
-      data: {
-        postId: recentRecaps[i].id,
-        type: "IMAGE",
-        url: COVER_PHOTOS[i % COVER_PHOTOS.length],
-        title: "Game action",
-      },
-    })
-  }
-  console.log(`✓ ${recapCount} recaps published · covers on the ${recentRecaps.length} freshest`)
+  console.log(`✓ ${recapCount} recaps published — every one with a generated matchup cover`)
 
   // ── Highlight video posts (YouTube embeds — plan §11.3 PoC) ───────────
   for (let i = 0; i < HIGHLIGHT_VIDEOS.length; i++) {
@@ -707,6 +768,70 @@ async function main() {
   await p.follow.create({ data: { userId: parent.id, leagueId: league.id } })
   const thirdTeam = teams.find((t) => t.divisionIdx === 2)!
   await p.follow.create({ data: { userId: parent.id, teamId: thirdTeam.id } })
+
+  // Paper trail: accepted offers + paid season fees for both kids, plus one
+  // open camp obligation so the payments page shows a live "you owe" state
+  for (const [kidId, kidTeam] of [
+    [u14bTeam.roster[0], u14bTeam],
+    [u14gTeam.roster[1], u14gTeam],
+  ] as const) {
+    const offer = await p.offer.create({
+      data: {
+        teamId: kidTeam.id,
+        playerId: kidId,
+        status: "ACCEPTED",
+        seasonFee: 450,
+        installments: 1,
+        practiceSessions: 2,
+        includesUniform: true,
+        includesBall: true,
+        message: "Welcome to the Winter 2026 season!",
+        expiresAt: new Date(now.getTime() - 30 * 86400_000),
+        respondedAt: new Date(now.getTime() - 35 * 86400_000),
+      },
+      select: { id: true },
+    })
+    const obligation = await p.paymentObligation.create({
+      data: {
+        payerUserId: parent.id,
+        payeeTenantId: kidTeam.tenantId,
+        referenceType: "Offer",
+        referenceId: offer.id,
+        description: `Winter 2026 season fee — ${kidTeam.name}`,
+        amount: 450,
+        status: "PAID",
+      },
+      select: { id: true },
+    })
+    await p.payment.create({
+      data: {
+        payerId: parent.id,
+        tenantId: kidTeam.tenantId,
+        amount: 450,
+        currency: "CAD",
+        status: "SUCCEEDED",
+        paymentType: "SEASON_FEE",
+        method: "ETRANSFER",
+        obligationId: obligation.id,
+        recordedById: commissioner.id,
+        description: `Winter 2026 season fee — ${kidTeam.name}`,
+        createdAt: new Date(now.getTime() - 33 * 86400_000),
+      },
+    })
+  }
+  await p.paymentObligation.create({
+    data: {
+      payerUserId: parent.id,
+      payeeTenantId: u14bTeam.tenantId,
+      referenceType: "CampSignup",
+      referenceId: `showcase-camp-${parent.id.slice(0, 8)}`,
+      description: "March Break Elite Camp deposit",
+      amount: 95,
+      status: "PENDING",
+      dueDate: new Date(now.getTime() + 14 * 86400_000),
+    },
+  })
+  console.log("✓ offers accepted + season fees paid + one open camp obligation (paper trail)")
 
   const kidB = await p.player.findUnique({ where: { id: u14bTeam.roster[0] }, select: { firstName: true, lastName: true } })
   const kidG = await p.player.findUnique({ where: { id: u14gTeam.roster[1] }, select: { firstName: true, lastName: true } })

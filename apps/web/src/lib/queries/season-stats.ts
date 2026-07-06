@@ -421,6 +421,16 @@ export const getTeamPublicData = cache(async (teamId: string) => {
       }))
   }
 
+  const staff = await (prisma as any).userRole.findMany({
+    where: { teamId, role: { in: ["Staff", "TeamManager"] } },
+    select: {
+      role: true,
+      designation: true,
+      user: { select: { firstName: true, lastName: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  })
+
   const posts = await (prisma as any).post.findMany({
     where: { status: "PUBLISHED", tags: { some: { teamId } } },
     select: {
@@ -440,5 +450,5 @@ export const getTeamPublicData = cache(async (teamId: string) => {
     take: 6,
   })
 
-  return { team, games, record: { wins, losses, ties }, playerAverages, posts }
+  return { team, games, record: { wins, losses, ties }, playerAverages, posts, staff }
 })

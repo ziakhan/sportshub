@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicTeamPage({ params }: { params: { id: string } }) {
   const data = await getTeamPublicData(params.id)
   if (!data) notFound()
-  const { team, games, record, playerAverages, posts } = data
+  const { team, games, record, playerAverages, posts, staff } = data
 
   const session = await getServerSession(authOptions)
   const viewerId = (session?.user as any)?.id ?? null
@@ -250,6 +250,30 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
               </ul>
             )}
           </Card>
+
+          {staff.length > 0 && (
+            <Card>
+              <h2 className="text-ink-950 mb-4 text-lg font-bold">Coaching staff</h2>
+              <ul className="space-y-2.5">
+                {staff.map((s: any, i: number) => (
+                  <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-ink-950 font-medium">
+                      {s.user.firstName} {s.user.lastName}
+                    </span>
+                    <span className="text-ink-500 text-xs">
+                      {s.designation === "HeadCoach"
+                        ? "Head coach"
+                        : s.designation === "AssistantCoach"
+                          ? "Assistant coach"
+                          : s.role === "TeamManager"
+                            ? "Team manager"
+                            : "Staff"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           {team.tenant && (
             <Card>

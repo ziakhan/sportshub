@@ -9,6 +9,7 @@ import {
   type RecapPlayerLine,
   type RecapScoreEvent,
 } from "./recap"
+import { buildMatchupCover } from "./matchup-cover"
 import { generateRecapWithClaude, RECAP_MODEL } from "./recap-claude"
 
 /**
@@ -41,8 +42,22 @@ export async function upsertGameRecap(gameId: string): Promise<{ postId: string 
       scheduledAt: true,
       homeScore: true,
       awayScore: true,
-      homeTeam: { select: { id: true, name: true, tenantId: true } },
-      awayTeam: { select: { id: true, name: true, tenantId: true } },
+      homeTeam: {
+        select: {
+          id: true,
+          name: true,
+          tenantId: true,
+          tenant: { select: { branding: { select: { primaryColor: true } } } },
+        },
+      },
+      awayTeam: {
+        select: {
+          id: true,
+          name: true,
+          tenantId: true,
+          tenant: { select: { branding: { select: { primaryColor: true } } } },
+        },
+      },
       season: {
         select: {
           label: true,
@@ -146,6 +161,19 @@ export async function upsertGameRecap(gameId: string): Promise<{ postId: string 
   for (const tenantId of tenantIds) tags.push({ tenantId })
   if (game.season?.league?.id) tags.push({ leagueId: game.season.league.id })
 
+  // Every recap ships with a branded matchup cover (generated SVG) so the
+  // news feed never shows imageless stories — replaced by real photos when
+  // creators upload them (P2).
+  const coverUrl = buildMatchupCover({
+    homeName: game.homeTeam.name,
+    awayName: game.awayTeam.name,
+    homeColor: game.homeTeam.tenant?.branding?.primaryColor,
+    awayColor: game.awayTeam.tenant?.branding?.primaryColor,
+    homeScore: game.homeScore,
+    awayScore: game.awayScore,
+    label: [game.season?.league?.name, game.season?.label].filter(Boolean).join(" · ") || null,
+  })
+
   const post = await (prisma as any).post.create({
     data: {
       kind: "RECAP_AI",
@@ -156,6 +184,7 @@ export async function upsertGameRecap(gameId: string): Promise<{ postId: string 
       publishedAt: new Date(),
       aiModel,
       tags: { create: tags },
+      media: { create: [{ type: "IMAGE", url: coverUrl, title: "Matchup" }] },
     },
     select: { id: true },
   })

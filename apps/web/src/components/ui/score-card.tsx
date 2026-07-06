@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { cn } from "./cn"
 import { Badge } from "./badge"
+import { monogram } from "@/lib/content/matchup-cover"
 
 export type GameStatus = "SCHEDULED" | "LIVE" | "FINAL" | "CANCELLED" | "DEFAULTED"
 
@@ -42,28 +43,41 @@ function TeamRow({ side, decided, won }: { side: Side; decided: boolean; won: bo
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2.5">
+        {/* Monogram crest until clubs upload real logos */}
         <span
-          className="h-6 w-6 shrink-0 rounded-lg"
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white shadow-sm",
+            decided && !won && "opacity-60"
+          )}
           style={{ backgroundColor: side.color || "#4f46e5" }}
           aria-hidden="true"
-        />
+        >
+          {monogram(side.name)}
+        </span>
         <span
           className={cn(
             "truncate text-sm",
-            decided && won ? "text-ink-950 font-bold" : "text-ink-700 font-medium"
+            decided && won ? "text-ink-950 font-bold" : decided ? "text-ink-500 font-medium" : "text-ink-700 font-medium"
           )}
         >
           {side.name}
         </span>
       </div>
       {typeof side.score === "number" && (
-        <span
-          className={cn(
-            "font-display tabular-nums",
-            decided && won ? "text-ink-950 text-2xl font-bold" : "text-ink-600 text-2xl font-semibold"
+        <span className="flex shrink-0 items-center gap-1.5">
+          {decided && won && (
+            <svg className="text-ink-950 h-3 w-3" viewBox="0 0 12 12" fill="currentColor" aria-label="winner">
+              <path d="M2 1l8 5-8 5z" transform="rotate(180 6 6)" />
+            </svg>
           )}
-        >
-          {side.score}
+          <span
+            className={cn(
+              "font-display tabular-nums",
+              decided && won ? "text-ink-950 text-2xl font-bold" : "text-ink-400 text-2xl font-semibold"
+            )}
+          >
+            {side.score}
+          </span>
         </span>
       )}
     </div>
