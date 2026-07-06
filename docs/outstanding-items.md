@@ -5,6 +5,24 @@ planner shipped; live scoring v1 shipped + 8 rounds of owner field-testing
 fixes; all suites green (unit 143, integration 112, phase runners 105 from
 last rehearsal). ~57 local commits UNPUSHED — deploy on hold by owner.
 
+## 0. Club GTM feature build — COMMITTED (owner, 2026-07-06) — "build all four soon"
+Grounds the club/parent demos in real product. Audit + storyboards:
+`docs/outreach/club-parent-demos.md`. The club pipeline (tryout → offer w/
+packages+sizes+jersey prefs+installments → accept → auto-roster → one-click
+league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
+1. **Inventory / order roll-up** — aggregate a team's accepted offers into
+   size/item order totals ("8 uniforms: 3 YL/5 AM; 5 shoes; 4 backpacks").
+   Data exists on Offer (includes* + sizes); needs the aggregation + UI. SMALL.
+2. **Tryout mobile check-in** — live roll-call for tryout day (TryoutSignup has
+   status, no check-in surface yet). SMALL.
+3. **Team ↔ family chat** — no Message/Chat model exists; TeamSnap-replacement
+   messaging. BIGGEST of the four.
+4. **Sponsored/featured listings + parent discovery** — "clubs near me, ranked
+   by rating"; unhide Review system, assemble browse+ratings+near-me, add a
+   `featured` flag + spotlight surface (monetization). Ratings/browse exist.
+Recommended build order: 1, 2, 4, 3. Close 1+2 before the club demo; 4 before
+the parent demo.
+
 ## 1. Deploy train (biggest risk, fully scripted, owner gate)
 - Run Neon runbook entries **#4 #5 #6 #7 #8** (`docs/pending-deploy-actions.md`)
 - Push master → Vercel auto-deploy
