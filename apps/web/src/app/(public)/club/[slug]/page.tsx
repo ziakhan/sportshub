@@ -23,7 +23,7 @@ async function getHouseLeagues(tenantId: string) {
   const raw = await (prisma as any).houseLeague.findMany({
     where: { tenantId, isPublished: true, endDate: { gte: new Date() } },
     select: {
-      id: true, name: true, ageGroup: true, gender: true, season: true,
+      id: true, name: true, ageGroups: true, gender: true, season: true,
       startDate: true, endDate: true, daysOfWeek: true, startTime: true, endTime: true,
       location: true, fee: true, maxParticipants: true,
       _count: { select: { signups: true } },
@@ -237,7 +237,7 @@ export default async function ClubProfilePage({
                         <div>
                           <h3 className="font-medium text-ink-950">{league.name}</h3>
                           <p className="text-sm text-ink-500">
-                            {league.ageGroup}{league.gender ? ` • ${league.gender}` : ""}
+                            {league.ageGroups}{league.gender ? ` • ${league.gender}` : ""}
                             {league.season ? ` • ${league.season}` : ""}
                           </p>
                           <p className="text-xs text-ink-400 mt-1">

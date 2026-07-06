@@ -273,7 +273,10 @@ additive — nothing renamed, nothing dropped:
    recaps (`RECAP_AI_MODEL` overrides the default `claude-opus-4-8`).
    WITHOUT the key the deterministic template engine writes every recap —
    fully functional, no action required.
-2. **Backfill recaps** for games completed before this ships:
+2. **Verify `PlatformSettings.enabledCountries`** on Neon is `["CA"]` — a
+   stale `["US"]` row silently empties the tryout marketplace while every
+   club is Canadian (UX audit GAP-013).
+3. **Backfill recaps** for games completed before this ships:
    ```bash
    DATABASE_URL='<neon-url>' npx tsx scripts/backfill-recaps.ts
    ```

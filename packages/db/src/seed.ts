@@ -121,6 +121,9 @@ async function main() {
       update: {
         firstName: user.firstName,
         lastName: user.lastName,
+        // Heal pre-existing accounts: an un-onboarded user gets NO nav
+        // chrome from the platform layout (UX audit GAP-008)
+        onboardedAt: new Date(),
       },
     })
     dbUsers[user.key] = dbUser.id

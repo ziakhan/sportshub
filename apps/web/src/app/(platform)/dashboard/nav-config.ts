@@ -210,19 +210,25 @@ export function buildNavSections({
       key: "browse",
       label: "Browse",
       items: [
-        { label: "Leagues", href: "/browse-leagues", icon: "search" },
+        // Registration flow (submit teams into leagues) — the public
+        // spectator directory lives at /leagues on the public site
+        { label: "League registration", href: "/browse-leagues", icon: "search" },
         { label: "Tournaments", href: "/browse-tournaments", icon: "star" },
+        { label: "Score games", href: "/score", icon: "play" },
       ],
     })
   }
 
-  if (hasRole("Referee")) {
+  if (hasRole("Referee") || hasRole("Scorekeeper")) {
     sections.push({
       key: "referee",
-      label: "Referee",
+      label: "Officiating",
       items: [
-        { label: "Available Games", href: "/browse-leagues", icon: "calendar" },
-        { label: "My Profile", href: "/referee/profile", icon: "users" },
+        // Game-day hub: live + upcoming games to score / officiate
+        { label: "Score games", href: "/score", icon: "play" },
+        ...(hasRole("Referee")
+          ? [{ label: "My Profile", href: "/referee/profile", icon: "users" as IconKey }]
+          : []),
       ],
     })
   }
@@ -233,8 +239,8 @@ export function buildNavSections({
       label: "Player",
       items: [
         { label: "My Teams", href: "/teams", icon: "users" },
-        { label: "Schedule", href: "/browse-tournaments", icon: "calendar" },
-        { label: "My Stats", href: "/dashboard", icon: "dashboard" },
+        { label: "My Schedule", href: "/scores", icon: "calendar" },
+        { label: "My Stats", href: "/players", icon: "dashboard" },
       ],
     })
   }
@@ -243,7 +249,10 @@ export function buildNavSections({
     sections.push({
       key: "league",
       label: "League",
-      items: [{ label: "My Leagues", href: "/manage/leagues", icon: "star" }],
+      items: [
+        { label: "My Leagues", href: "/manage/leagues", icon: "star" },
+        { label: "Score games", href: "/score", icon: "play" },
+      ],
     })
   }
 
