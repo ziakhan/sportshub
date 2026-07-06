@@ -292,11 +292,15 @@ additive — nothing renamed, nothing dropped:
 
 Nothing else to backfill.
 
-## 10. Tryout check-in column — NOT YET APPLIED to Neon
+## 10. Club GTM schema (check-in + featured) — NOT YET APPLIED to Neon
 
-Ships with the club-GTM feature-2 commit (tryout mobile check-in,
-2026-07-06). One additive nullable column — `prisma db push` covers it:
+Ships with the club-GTM feature commits (2026-07-06). Two additive columns —
+one `prisma db push` covers both:
 - `TryoutSignup.checkedInAt DateTime?` — tryout-day roll-call timestamp
   (null = not checked in / no-show; orthogonal to `status`).
+- `Tenant.isFeatured Boolean @default(false)` — paid-placement spotlight on
+  discovery surfaces; admin-toggled (setFeatured action, audited).
 
-Nothing to backfill.
+Nothing to backfill. Note: the same commits UNHID the Review system on
+public club pages (`/club/[slug]`) — no schema change (Review table already
+live), but reviews become writable by any signed-in user on deploy.

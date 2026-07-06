@@ -24,6 +24,8 @@ export type AuditAction =
   | "CLUB_REACTIVATE"
   | "CLUB_PLAN_CHANGE"
   | "CLUB_OWNERSHIP_TRANSFER"
+  | "CLUB_FEATURE"
+  | "CLUB_UNFEATURE"
   | "USER_UPDATE"
   | "USER_STATUS_CHANGE"
   // G2 (owner decision): cross-club recruiting offers are allowed on purpose,

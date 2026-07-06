@@ -15,9 +15,10 @@ async function requireAdmin() {
 }
 
 const updateClubSchema = z.object({
-  action: z.enum(["suspend", "reactivate", "changePlan", "transferOwnership"]),
+  action: z.enum(["suspend", "reactivate", "changePlan", "transferOwnership", "setFeatured"]),
   plan: z.enum(["FREE", "BASIC", "PRO", "ENTERPRISE"]).optional(),
   newOwnerEmail: z.string().email().optional(),
+  featured: z.boolean().optional(),
 })
 
 /**
@@ -88,6 +89,29 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           request,
         })
         return NextResponse.json({ success: true, message: `Plan changed to ${data.plan}` })
+      }
+
+      case "setFeatured": {
+        if (typeof data.featured !== "boolean") {
+          return NextResponse.json({ error: "featured is required" }, { status: 400 })
+        }
+        await prisma.tenant.update({
+          where: { id: clubId },
+          data: { isFeatured: data.featured },
+        })
+        await auditSafe({
+          actorId: adminId,
+          actorRole: "PlatformAdmin",
+          action: data.featured ? "CLUB_FEATURE" : "CLUB_UNFEATURE",
+          resource: "Tenant",
+          resourceId: clubId,
+          tenantId: clubId,
+          request,
+        })
+        return NextResponse.json({
+          success: true,
+          message: data.featured ? "Club is now featured" : "Club removed from featured",
+        })
       }
 
       case "transferOwnership": {

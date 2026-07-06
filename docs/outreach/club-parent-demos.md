@@ -20,13 +20,13 @@ data exists, not the feature).
 | Auto-form roster from accepted offers | ✅ Real | `teams/[id]/finalize` — reads accepted offers, assigns jerseys FCFS respecting prefs, notifies parents, expires stragglers |
 | Submit roster to league in ONE click | ✅ Real | `seasons/[id]/submit`; `TeamSubmission` |
 | Lock roster (no changes without league permission) | ✅ Real | `SeasonRoster.isLocked` + `lockedAt` |
-| Reviews / ratings of clubs | ✅ Built, HIDDEN | `Review` (rating 1-5), `Tenant.averageRating`; UI gated `{false && …}` |
+| Reviews / ratings of clubs | ✅ Real (unhidden 2026-07-06) | Reviews + avg stars live on `/club/[slug]` with write-review form; ratings on browse cards |
 | Public club browse / discovery | ✅ Real (basic) | public `/club` browse page |
 | **Tryout check-in on mobile** ("who's supposed to be at the sign-up") | ✅ Real (2026-07-06) | Roll-call page `/clubs/[id]/tryouts/[tryoutId]/check-in` — tap to check in, live X/N progress, search; `TryoutSignup.checkedInAt` |
 | **Inventory / order summary** (what to order per team, totals by size) | ✅ Real (2026-07-06) | Order Sheet at `/clubs/[id]/offers/summary` — per-team + club totals by size, Size-TBD flags, jersey #s, CSV export (`lib/offers/order-rollup.ts`) |
 | **Team ↔ family chat** | ❌ Gap | No `Message`/`Chat` model at all |
-| **Sponsored / featured club listings** | ❌ Gap | No `sponsored`/`featured` fields |
-| **Parent discovery: clubs near me, ranked by rating** | ⚠️ Gap (pieces exist) | Browse + ratings exist but aren't assembled into a "find a club near you, by rating" surface; reviews hidden |
+| **Sponsored / featured club listings** | ✅ Real (2026-07-06) | `Tenant.isFeatured` + admin toggle; gold spotlight section on `/club` browse |
+| **Parent discovery: clubs near me, ranked by rating** | ✅ Real (2026-07-06) | `/club` browse: city pills + filter, star ratings, rated-first sort, featured spotlight |
 
 **Takeaway:** the tryout → offer → accept → roster → submit-to-league → lock
 spine is 100% real and genuinely impressive — that IS the club demo. Four gaps
@@ -59,12 +59,10 @@ The story: a club runs its whole season setup without a single spreadsheet.
 
 The story: a parent finds the right club and never misses a moment.
 
-1. **Find clubs near you** — map/list of clubs in your area, each with a rating
-   from real families and current tryouts. *(gap — needs assembling; ratings +
-   browse exist)*
-2. **See who's good** — star ratings, reviews, age groups, open tryouts,
-   maybe a sponsored/featured spotlight. *(ratings real but hidden; sponsored =
-   gap)*
+1. **Find clubs near you** — list of clubs by city, each with a rating from
+   real families and current tryouts. *(real — shipped 2026-07-06)*
+2. **See who's good** — star ratings, reviews, age groups, open tryouts, and a
+   featured spotlight. *(real — shipped 2026-07-06)*
 3. **Register for a tryout** in a few taps. *(real)*
 4. **Get the offer, accept on your phone** — package, sizes, jersey, payment
    plan. *(real)*
@@ -78,9 +76,10 @@ The story: a parent finds the right club and never misses a moment.
    per-team size/item totals, CSV export).
 2. **Tryout mobile check-in** — ✅ SHIPPED 2026-07-06 (phone roll-call page,
    tap to check in, live progress).
-3. **Parent discovery surface** — assemble browse + ratings (unhide reviews) +
-   "near me" into one find-a-club experience.
-4. **Sponsored/featured listings** — monetization; a `featured` flag + surface.
+3. **Parent discovery surface** — ✅ SHIPPED 2026-07-06 (city pills, ratings,
+   reviews unhidden, rated-first sort).
+4. **Sponsored/featured listings** — ✅ SHIPPED 2026-07-06 (isFeatured +
+   admin toggle + gold spotlight on browse).
 5. **Team ↔ family chat** — the biggest build; TeamSnap-replacement messaging.
 
 Which of these we build before demoing determines whether a scene is "real

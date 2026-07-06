@@ -2,8 +2,11 @@ import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { formatCurrency } from "@/lib/countries"
-import { Card, EntityHeader } from "@/components/ui"
+import { Card, EntityHeader, StarRating } from "@/components/ui"
+import { ReviewForm } from "./review-form"
 import type { Metadata } from "next"
 
 async function getClubBySlug(slug: string) {
@@ -91,6 +94,44 @@ async function getClubData(tenantId: string) {
   }
 }
 
+async function getReviewsData(tenantId: string) {
+  const session = await getServerSession(authOptions).catch(() => null)
+  const userId = session?.user?.id ?? null
+  const [reviews, aggregate, ownReview] = await Promise.all([
+    prisma.review.findMany({
+      where: { tenantId, status: "PUBLISHED" },
+      select: {
+        id: true,
+        rating: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        reviewer: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    prisma.review.aggregate({
+      where: { tenantId, status: "PUBLISHED" },
+      _avg: { rating: true },
+      _count: { rating: true },
+    }),
+    userId
+      ? prisma.review.findFirst({
+          where: { tenantId, reviewerId: userId },
+          select: { id: true },
+        })
+      : null,
+  ])
+  return {
+    reviews,
+    averageRating: aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : null,
+    totalReviews: aggregate._count.rating,
+    signedIn: !!userId,
+    alreadyReviewed: !!ownReview,
+  }
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const tenant = await prisma.tenant.findUnique({
     where: { slug: params.slug },
@@ -111,12 +152,14 @@ export default async function ClubProfilePage({
   const club = await getClubBySlug(params.slug)
   if (!club) notFound()
 
-  const [clubData, houseLeagues, camps] = await Promise.all([
+  const [clubData, houseLeagues, camps, reviewsData] = await Promise.all([
     getClubData(club.id),
     getHouseLeagues(club.id),
     getCamps(club.id),
+    getReviewsData(club.id),
   ])
   const { teams, tryouts, staffCount } = clubData
+  const { reviews, averageRating, totalReviews, signedIn, alreadyReviewed } = reviewsData
 
   return (
     <>
@@ -302,13 +345,59 @@ export default async function ClubProfilePage({
               </Card>
             )}
 
-            {/* Reviews placeholder - hidden for now */}
-            {false && (
-              <Card>
-                <h2 className="text-lg font-bold text-ink-950 mb-4">Reviews</h2>
-                <p className="text-ink-500 text-sm">No reviews yet.</p>
-              </Card>
-            )}
+            {/* Reviews */}
+            <Card>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-bold text-ink-950">
+                  Reviews{totalReviews > 0 ? ` (${totalReviews})` : ""}
+                </h2>
+                {averageRating !== null && (
+                  <StarRating rating={averageRating} count={totalReviews} size="md" />
+                )}
+              </div>
+
+              {reviews.length === 0 ? (
+                <p className="text-ink-500 mb-4 text-sm">
+                  No reviews yet — be the first family to share your experience.
+                </p>
+              ) : (
+                <div className="mb-6 space-y-4">
+                  {reviews.map((review: (typeof reviews)[number]) => (
+                    <div key={review.id} className="border-ink-100 rounded-2xl border p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <StarRating rating={review.rating} />
+                        <span className="text-ink-400 text-xs">
+                          {[
+                            review.reviewer.firstName,
+                            review.reviewer.lastName?.[0]
+                              ? `${review.reviewer.lastName[0]}.`
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ") || "A family"}
+                          {" · "}
+                          {format(new Date(review.createdAt), "MMM yyyy")}
+                        </span>
+                      </div>
+                      {review.title && (
+                        <h3 className="text-ink-900 mt-2 text-sm font-semibold">{review.title}</h3>
+                      )}
+                      {review.content && (
+                        <p className="text-ink-700 mt-1 whitespace-pre-line text-sm">
+                          {review.content}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <ReviewForm
+                tenantId={club.id}
+                signedIn={signedIn}
+                alreadyReviewed={alreadyReviewed}
+              />
+            </Card>
           </div>
 
           {/* Sidebar */}
@@ -371,6 +460,11 @@ export default async function ClubProfilePage({
                   <div className="text-xs text-ink-500">Staff</div>
                 </div>
               </div>
+              {averageRating !== null && (
+                <div className="border-ink-100 mt-4 flex justify-center border-t pt-4">
+                  <StarRating rating={averageRating} count={totalReviews} size="md" />
+                </div>
+              )}
             </Card>
 
             {/* CTA */}

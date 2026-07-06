@@ -156,6 +156,9 @@ model Tenant {
   planExpiresAt DateTime?
   status        TenantStatus @default(ACTIVE)
 
+  // Paid placement: spotlighted in discovery surfaces (admin-toggled)
+  isFeatured Boolean @default(false)
+
   // Relationships
   branding         TenantBranding?
   features         TenantFeatures?

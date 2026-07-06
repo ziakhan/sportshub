@@ -24,9 +24,14 @@ league submit → lock) is ALREADY SHIPPED. These four gaps make it complete:
    tests, world seed 1117.
 3. **Team ↔ family chat** — no Message/Chat model exists; TeamSnap-replacement
    messaging. BIGGEST of the four.
-4. **Sponsored/featured listings + parent discovery** — "clubs near me, ranked
-   by rating"; unhide Review system, assemble browse+ratings+near-me, add a
-   `featured` flag + spotlight surface (monetization). Ratings/browse exist.
+4. **Sponsored/featured listings + parent discovery** — ✅ SHIPPED 2026-07-06.
+   Tenant.isFeatured (runbook #10) + admin Feature/Unfeature toggle (audited
+   CLUB_FEATURE/UNFEATURE); /club browse rebuilt: featured spotlight (gold),
+   star ratings on cards (rated-first sort), city pills + ?city= filter
+   (near-me v1 — no geocoords on Tenant). Review system UNHIDDEN on
+   /club/[slug]: reviews list + avg stars + write-review form (POST
+   /api/reviews already existed); At-a-Glance rating. StarRating added to
+   the design system.
 Recommended build order: 1, 2, 4, 3. Close 1+2 before the club demo; 4 before
 the parent demo.
 
@@ -143,7 +148,9 @@ monetization model (§12) — docs/public-site-content-plan.md.
   NOT yet covered: in-content sign-in links on product pages (tryout/camp
   registration CTAs) — audit those to use components/auth-link.tsx
 - Player invitations UI (API shipped G3; no UI)
-- Review system built but hidden (`{false && ...}`) — enable end of season
+- Review system — UNHIDDEN 2026-07-06 with club GTM feature 4 (§0 directive
+  superseded the "end of season" plan); moderation queue UI still unbuilt
+  (flag/status fields exist)
 - UI redesign D2 (public pages) / D5 (nav) / D6 (content) —
   docs/design-strategy.md. D3 (/team/[id] hub) ✅ shipped with content P1.
 - Club/venue architecture: 5 owner forks undecided (docs/club-venue-architecture.md)

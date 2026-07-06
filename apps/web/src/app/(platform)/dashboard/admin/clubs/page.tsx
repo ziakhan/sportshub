@@ -9,6 +9,7 @@ interface Club {
   slug: string
   plan: string
   status: string
+  isFeatured: boolean
   createdAt: string
   _count: { teams: number; tryouts: number; staff: number }
   staff: Array<{
@@ -66,7 +67,7 @@ export default function AdminClubsPage() {
     loadClubs()
   }, [loadClubs])
 
-  async function handleAction(clubId: string, action: string, extra?: Record<string, string>) {
+  async function handleAction(clubId: string, action: string, extra?: Record<string, unknown>) {
     setActionLoading(clubId)
     setMessage(null)
     const res = await fetch(`/api/admin/clubs/${clubId}`, {
@@ -191,6 +192,11 @@ export default function AdminClubsPage() {
                     <p className="text-ink-500 text-xs">{club.slug}.youthbasketballhub.com</p>
                   </div>
                   <div className="flex gap-1">
+                    {club.isFeatured && (
+                      <span className="bg-gold-100 text-gold-600 rounded-full px-2 py-0.5 text-xs font-bold">
+                        Featured
+                      </span>
+                    )}
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${planColors[club.plan] || "bg-ink-100 text-ink-700"}`}
                     >
@@ -263,6 +269,16 @@ export default function AdminClubsPage() {
                     <option value="PRO">Pro</option>
                     <option value="ENTERPRISE">Enterprise</option>
                   </select>
+
+                  <button
+                    onClick={() =>
+                      handleAction(club.id, "setFeatured", { featured: !club.isFeatured })
+                    }
+                    disabled={actionLoading === club.id}
+                    className="text-gold-600 hover:bg-gold-50 rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-50"
+                  >
+                    {club.isFeatured ? "Unfeature" : "Feature"}
+                  </button>
 
                   <button
                     onClick={() => setTransferModal(club.id)}
