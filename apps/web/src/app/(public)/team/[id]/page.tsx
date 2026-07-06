@@ -68,11 +68,38 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
         action={
           <FollowButton teamId={team.id} initialFollowing={following} isAuthenticated={!!viewerId} />
         }
-        className="mb-8"
+        className="mb-4"
       />
+
+      <div className="mb-8 flex flex-wrap gap-2">
+        {seasonInfo && (
+          <Link
+            href={`/league/${seasonInfo.id}`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            {seasonInfo.league.name} {seasonInfo.label} &rarr;
+          </Link>
+        )}
+        {team.tenant && (
+          <Link
+            href={`/club/${team.tenant.slug}`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            {team.tenant.name} &rarr;
+          </Link>
+        )}
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="space-y-8 lg:col-span-2">
+          {completed.length === 0 && upcoming.length === 0 && (
+            <div className="border-ink-100 rounded-2xl border bg-white p-8 text-center">
+              <p className="text-ink-500 text-sm">
+                No games on the calendar yet — the schedule appears here once this team is placed
+                in a league season.
+              </p>
+            </div>
+          )}
           {(completed.length > 0 || upcoming.length > 0) && (
             <section>
               <SectionHeader

@@ -120,9 +120,15 @@ export default async function TeamDashboardPage({
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <Link href={`/clubs/${clubId}/teams`} className="text-play-700 text-sm hover:underline">
           &larr; Back to Teams
+        </Link>
+        <Link
+          href={`/team/${teamId}`}
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
+        >
+          View public page &rarr;
         </Link>
       </div>
 

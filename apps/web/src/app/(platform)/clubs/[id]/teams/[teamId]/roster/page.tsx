@@ -197,7 +197,9 @@ export default async function TeamRosterPage({
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="font-medium text-ink-900">
-                        {tp.player.firstName} {tp.player.lastName}
+                        <Link href={`/player/${tp.player.id}`} className="hover:text-play-600 transition-colors">
+                          {tp.player.firstName} {tp.player.lastName}
+                        </Link>
                       </div>
                       <div className="text-xs text-ink-500">{tp.player.gender}</div>
                     </td>

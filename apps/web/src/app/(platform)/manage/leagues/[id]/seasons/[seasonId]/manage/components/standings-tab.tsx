@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { useState, useEffect } from "react"
 import { panelClass } from "./types"
 
@@ -81,7 +83,7 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
                               {idx + 1}
                             </td>
                             <td className="px-3 py-1.5 text-ink-900 font-medium">
-                              {row.name}
+                              <Link href={`/team/${row.teamId}`} className="hover:text-play-600 transition-colors">{row.name}</Link>
                             </td>
                             <td className="px-3 py-1.5 text-right">{row.gamesPlayed}</td>
                             <td className="px-3 py-1.5 text-right">{row.wins}</td>

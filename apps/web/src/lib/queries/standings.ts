@@ -16,6 +16,8 @@ export interface SeasonStandings {
   seasonLabel: string
   tiebreakerOrder: TiebreakerKey[]
   divisions: DivisionStandings[]
+  /** teamId → trailing result run, e.g. "W3" / "L1" (completed games only) */
+  streaks: Record<string, string>
 }
 
 export const getSeasonStandings = cache(async (seasonId: string): Promise<SeasonStandings | null> => {
@@ -44,8 +46,29 @@ export const getSeasonStandings = cache(async (seasonId: string): Promise<Season
       homeScore: true,
       awayScore: true,
       defaultedBy: true,
+      scheduledAt: true,
     },
-  })) as StandingsGame[]
+    orderBy: { scheduledAt: "asc" },
+  })) as Array<StandingsGame & { scheduledAt: Date }>
+
+  // Trailing streaks (STRK column): walk completed games in date order
+  const runs = new Map<string, { result: "W" | "L" | "T"; count: number }>()
+  for (const g of games) {
+    if (g.status !== "COMPLETED" || g.homeScore == null || g.awayScore == null) continue
+    const results: Array<[string, "W" | "L" | "T"]> =
+      g.homeScore === g.awayScore
+        ? [[g.homeTeamId, "T"], [g.awayTeamId, "T"]]
+        : g.homeScore > g.awayScore
+          ? [[g.homeTeamId, "W"], [g.awayTeamId, "L"]]
+          : [[g.homeTeamId, "L"], [g.awayTeamId, "W"]]
+    for (const [teamId, result] of results) {
+      const run = runs.get(teamId)
+      if (run && run.result === result) run.count++
+      else runs.set(teamId, { result, count: 1 })
+    }
+  }
+  const streaks: Record<string, string> = {}
+  for (const [teamId, run] of runs) streaks[teamId] = `${run.result}${run.count}`
 
   const teamsByDivision = (season.divisions ?? []).map((d: any) => ({
     divisionId: d.id,
@@ -66,5 +89,6 @@ export const getSeasonStandings = cache(async (seasonId: string): Promise<Season
     seasonLabel: season.label,
     tiebreakerOrder,
     divisions: computeStandings({ tiebreakerOrder, teamsByDivision, games }),
+    streaks,
   }
 })

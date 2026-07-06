@@ -60,8 +60,29 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
         ]}
         primaryColor={primaryTeam?.tenant?.branding?.primaryColor ?? "#4f46e5"}
         crestText={name.slice(0, 1)}
-        className="mb-8"
+        className="mb-4"
       />
+
+      {(primaryTeam || data.player.teams[0]?.team?.tenant) && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {primaryTeam && (
+            <Link
+              href={`/team/${primaryTeam.id}`}
+              className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+            >
+              {primaryTeam.name} &rarr;
+            </Link>
+          )}
+          {primaryTeam?.tenant && (
+            <Link
+              href={`/club/${primaryTeam.tenant.slug}`}
+              className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+            >
+              {primaryTeam.tenant.name} &rarr;
+            </Link>
+          )}
+        </div>
+      )}
 
       {a ? (
         <>

@@ -81,15 +81,20 @@ export default async function ScoreListPage() {
       </div>
 
       {games.length === 0 ? (
-        <p className="border-ink-200 text-ink-500 rounded-2xl border bg-white p-6 text-center text-sm">
-          No games to score right now.
-        </p>
+        <div className="border-ink-200 rounded-2xl border bg-white p-6 text-center text-sm">
+          <p className="text-ink-500">No games to score right now.</p>
+          <p className="text-ink-500 mt-2">
+            Games appear here on game day.{" "}
+            <Link href="/scores" className="text-play-600 font-semibold hover:underline">
+              See the public scoreboard &rarr;
+            </Link>
+          </p>
+        </div>
       ) : (
         <div className="space-y-2">
           {games.map((g: any) => (
-            <Link
+            <div
               key={g.id}
-              href={`/games/${g.id}/score`}
               className="border-ink-200 hover:border-play-300 flex items-center justify-between gap-3 rounded-2xl border bg-white p-4 transition"
             >
               <div className="min-w-0">
@@ -103,16 +108,24 @@ export default async function ScoreListPage() {
                   {g.season?.league?.name ? ` · ${g.season.league.name}` : ""}
                 </p>
               </div>
-              {g.status === "LIVE" ? (
-                <span className="bg-hoop-50 text-hoop-700 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold">
-                  ● LIVE {g.homeScore ?? 0}–{g.awayScore ?? 0}
-                </span>
-              ) : (
-                <span className="bg-play-50 text-play-700 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold">
-                  Score →
-                </span>
-              )}
-            </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  href={`/live/${g.id}`}
+                  className="text-ink-500 hover:text-ink-900 whitespace-nowrap px-1 text-xs font-semibold"
+                >
+                  Box score
+                </Link>
+                {g.status === "LIVE" ? (
+                  <Link href={`/games/${g.id}/score`} className="bg-hoop-50 text-hoop-700 hover:bg-hoop-100 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold transition">
+                    ● LIVE {g.homeScore ?? 0}–{g.awayScore ?? 0}
+                  </Link>
+                ) : (
+                  <Link href={`/games/${g.id}/score`} className="bg-play-50 text-play-700 hover:bg-play-100 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition">
+                    Score →
+                  </Link>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

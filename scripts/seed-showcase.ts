@@ -699,8 +699,10 @@ async function main() {
   // Adopt one star from a U14 Boys team and one from the U14 Girls division
   const u14bTeam = teams.find((t) => divisions[t.divisionIdx].name === "U14 Boys")!
   const u14gTeam = teams.find((t) => divisions[t.divisionIdx].name === "U14 Girls")!
-  await p.player.update({ where: { id: u14bTeam.roster[0] }, data: { parentId: parent.id } })
-  await p.player.update({ where: { id: u14gTeam.roster[1] }, data: { parentId: parent.id } })
+  // Demo kids stay on the privacy DEFAULT (UNSET) so the owner can see the
+  // public "First L." behavior working — audit adjudication 2026-07-06
+  await p.player.update({ where: { id: u14bTeam.roster[0] }, data: { parentId: parent.id, mediaConsent: "UNSET" } })
+  await p.player.update({ where: { id: u14gTeam.roster[1] }, data: { parentId: parent.id, mediaConsent: "UNSET" } })
   // Plus an explicit league follow + a neutral team follow
   await p.follow.create({ data: { userId: parent.id, leagueId: league.id } })
   const thirdTeam = teams.find((t) => t.divisionIdx === 2)!

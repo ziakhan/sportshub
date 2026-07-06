@@ -66,9 +66,7 @@ export function LeagueSection({ data }: LeagueSectionProps) {
                     <h3 className="text-ink-950 font-semibold">{league.name}</h3>
                     <p className="text-ink-500 mt-1 text-sm">{league.season}</p>
                   </div>
-                  <span className="bg-play-50 text-play-700 rounded-lg px-2 py-1 text-xs font-semibold">
-                    Live
-                  </span>
+
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">

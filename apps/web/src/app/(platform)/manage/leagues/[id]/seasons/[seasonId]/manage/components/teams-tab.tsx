@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { useState } from "react"
 import { panelClass } from "./types"
 
@@ -125,7 +127,16 @@ export function TeamsTab({
                 className="border-court-100 bg-court-50 mb-2 flex items-center justify-between rounded-xl border px-3 py-2"
               >
                 <div>
-                  <span className="text-ink-900 font-medium">{t.team.name}</span>
+                  {(t.team as any)?.id ? (
+                    <Link
+                      href={`/team/${(t.team as any).id}`}
+                      className="text-ink-900 hover:text-play-600 font-medium transition-colors"
+                    >
+                      {t.team.name}
+                    </Link>
+                  ) : (
+                    <span className="text-ink-900 font-medium">{t.team.name}</span>
+                  )}
                   <span className="text-ink-500 ml-2 text-xs">{t.team.tenant?.name}</span>
                   {t.division && (
                     <span className="text-play-700 ml-2 text-xs">{t.division.name}</span>

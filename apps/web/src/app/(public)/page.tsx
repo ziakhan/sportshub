@@ -6,6 +6,7 @@ import { getHighlightPosts, getPublicFeed, getScoreboardGames } from "@/lib/quer
 import { getFeaturedSeasonId, getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getYourTeams } from "@/lib/queries/home"
 import { getViewerScope } from "@/lib/privacy/participants"
+import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
 
@@ -28,7 +29,7 @@ async function getHomePageData() {
           _count: { select: { teams: true, tryouts: true } },
         },
         orderBy: { teams: { _count: "desc" } },
-        take: 6,
+        take: 40,
       }),
       prisma.tryout.findMany({
         where: {
@@ -61,7 +62,9 @@ async function getHomePageData() {
     ])
 
   return {
-    featuredClubs,
+    featuredClubs: featuredClubs
+      .filter((c: any) => !isTestWorldSlug(c.slug))
+      .slice(0, 6),
     upcomingTryouts: rawUpcomingTryouts.map((tryout) => ({
       ...tryout,
       fee: Number(tryout.fee),

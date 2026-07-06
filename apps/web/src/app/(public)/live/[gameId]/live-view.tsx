@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
 
@@ -25,6 +26,7 @@ interface LivePayload {
     awayScore: number | null
     homeTeamId: string
     awayTeamId: string
+    seasonId?: string | null
     homeTeamName: string
     awayTeamName: string
     venueName: string | null
@@ -236,13 +238,23 @@ export function LiveView({ gameId }: { gameId: string }) {
 
       {/* score header */}
       <div className="border-ink-100 rounded-2xl border bg-white p-4">
-        {game.leagueName && (
-          <p className="text-ink-400 text-center text-[11px]">{game.leagueName}</p>
-        )}
+        {game.leagueName &&
+          (game.seasonId ? (
+            <p className="text-center text-[11px]">
+              <Link href={`/league/${game.seasonId}`} className="text-ink-400 hover:text-play-600 underline-offset-2 hover:underline">
+                {game.leagueName}
+              </Link>
+            </p>
+          ) : (
+            <p className="text-ink-400 text-center text-[11px]">{game.leagueName}</p>
+          ))}
         <div className="mt-1 flex items-center justify-center gap-5">
           <div className="flex-1 text-right">
             <p className="text-ink-700 text-sm font-semibold">
-              {game.homeTeamName} <span className="bg-play-400 ml-1 inline-block h-2 w-2 rounded-full" />
+              <Link href={`/team/${game.homeTeamId}`} className="hover:text-play-600 transition-colors">
+                {game.homeTeamName}
+              </Link>{" "}
+              <span className="bg-play-400 ml-1 inline-block h-2 w-2 rounded-full" />
             </p>
             <p className="text-ink-950 text-4xl font-bold">{homeScore}</p>
           </div>
@@ -265,7 +277,10 @@ export function LiveView({ gameId }: { gameId: string }) {
           </div>
           <div className="flex-1 text-left">
             <p className="text-ink-700 text-sm font-semibold">
-              <span className="bg-court-400 mr-1 inline-block h-2 w-2 rounded-full" /> {game.awayTeamName}
+              <span className="bg-court-400 mr-1 inline-block h-2 w-2 rounded-full" />{" "}
+              <Link href={`/team/${game.awayTeamId}`} className="hover:text-play-600 transition-colors">
+                {game.awayTeamName}
+              </Link>
             </p>
             <p className="text-ink-950 text-4xl font-bold">{awayScore}</p>
           </div>
@@ -420,7 +435,9 @@ export function LiveView({ gameId }: { gameId: string }) {
                       <tr key={l.playerId} className="border-ink-100 border-t">
                         <td className="text-ink-800 whitespace-nowrap py-1.5 pr-2">
                           <span className="text-ink-400 mr-1">#{jerseyOf(l.playerId)}</span>
-                          {shortName(l.playerId)}
+                          <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
+                            {shortName(l.playerId)}
+                          </Link>
                           {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
                         </td>
                         {showMinutes && (

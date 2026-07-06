@@ -30,7 +30,7 @@ export interface YourTeamCard {
     dateISO: string
     venue: string | null
   } | null
-  kidLines: Array<{ name: string; points: number; rebounds: number; assists: number }>
+  kidLines: Array<{ playerId: string; name: string; points: number; rebounds: number; assists: number }>
 }
 
 export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]> => {
@@ -134,6 +134,7 @@ export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]
         })
         const nameOf = new Map(kids.map((k) => [k.id, k.firstName]))
         kidLines = lines.map((l: any) => ({
+          playerId: l.playerId,
           name: nameOf.get(l.playerId) ?? "Player",
           points: l.points,
           rebounds: l.rebounds,

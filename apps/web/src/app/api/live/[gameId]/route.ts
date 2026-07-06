@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { publicPlayerName } from "@/lib/privacy/names"
 
 export const dynamic = "force-dynamic"
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
                 select: {
                   playerId: true,
                   jerseyNumber: true,
-                  player: { select: { firstName: true, lastName: true } },
+                  player: { select: { firstName: true, lastName: true, mediaConsent: true } },
                 },
               },
             },
@@ -82,7 +83,8 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
       players = submissions.flatMap((s: any) =>
         (s.roster?.players ?? []).map((p: any) => ({
           playerId: p.playerId,
-          name: `${p.player.firstName} ${p.player.lastName}`.trim(),
+          // Public surface — same consent-gated naming as every other page
+          name: publicPlayerName(p.player),
           jerseyNumber: p.jerseyNumber != null ? String(p.jerseyNumber) : null,
         }))
       )
@@ -91,6 +93,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     return NextResponse.json({
       game: {
         id: game.id,
+        seasonId: game.seasonId ?? null,
         status: game.status,
         scheduledAt: game.scheduledAt,
         homeScore: game.homeScore,

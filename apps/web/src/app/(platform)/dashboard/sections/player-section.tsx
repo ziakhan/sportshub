@@ -64,16 +64,26 @@ export function PlayerSection({ data }: PlayerSectionProps) {
           {data.teams.length > 0 ? (
             <ul className="space-y-3">
               {data.teams.map((team) => (
-                <li key={team.id} className="border-ink-100 bg-ink-50 rounded-xl border p-4">
-                  <p className="text-ink-900 font-semibold">{team.name}</p>
-                  <p className="text-ink-500 mt-1 text-sm">
-                    {team.ageGroup} · {team.club}
-                  </p>
+                <li key={team.id}>
+                  <Link
+                    href={`/team/${team.id}`}
+                    className="border-ink-100 bg-ink-50 hover:border-play-200 hover:bg-play-50 block rounded-xl border p-4 transition"
+                  >
+                    <p className="text-ink-900 font-semibold">{team.name}</p>
+                    <p className="text-ink-500 mt-1 text-sm">
+                      {team.ageGroup} · {team.club}
+                    </p>
+                  </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-ink-500 text-sm">You have not been added to a team yet.</p>
+            <p className="text-ink-500 text-sm">
+              You have not been added to a team yet.{" "}
+              <Link href="/events" className="text-play-600 font-semibold hover:underline">
+                Browse programs &rarr;
+              </Link>
+            </p>
           )}
         </div>
 
@@ -83,18 +93,28 @@ export function PlayerSection({ data }: PlayerSectionProps) {
             {data.upcomingGames.length > 0 ? (
               <ul className="mt-4 space-y-3">
                 {data.upcomingGames.map((game) => (
-                  <li key={game.id} className="border-ink-100 bg-ink-50 rounded-xl border p-4">
-                    <p className="text-ink-900 font-semibold">
-                      {game.homeTeam} vs {game.awayTeam}
-                    </p>
-                    <p className="text-ink-500 mt-1 text-sm">
-                      {new Date(game.scheduledAt).toLocaleDateString()} · {game.location || "TBD"}
-                    </p>
+                  <li key={game.id}>
+                    <Link
+                      href={`/live/${game.id}`}
+                      className="border-ink-100 bg-ink-50 hover:border-play-200 hover:bg-play-50 block rounded-xl border p-4 transition"
+                    >
+                      <p className="text-ink-900 font-semibold">
+                        {game.homeTeam} vs {game.awayTeam}
+                      </p>
+                      <p className="text-ink-500 mt-1 text-sm">
+                        {new Date(game.scheduledAt).toLocaleDateString()} · {game.location || "TBD"}
+                      </p>
+                    </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-ink-500 mt-3 text-sm">No upcoming games scheduled yet.</p>
+              <p className="text-ink-500 mt-3 text-sm">
+                No upcoming games scheduled yet.{" "}
+                <Link href="/scores" className="text-play-600 font-semibold hover:underline">
+                  League scoreboard &rarr;
+                </Link>
+              </p>
             )}
           </div>
 
@@ -113,6 +133,12 @@ export function PlayerSection({ data }: PlayerSectionProps) {
             ) : (
               <p className="text-ink-500 mt-3 text-sm">No stats recorded yet.</p>
             )}
+            <Link
+              href="/players"
+              className="text-play-600 hover:text-play-700 mt-4 inline-flex text-sm font-semibold"
+            >
+              Full stats &amp; game logs &rarr;
+            </Link>
           </div>
         </div>
       </div>

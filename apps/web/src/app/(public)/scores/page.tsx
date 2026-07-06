@@ -171,6 +171,7 @@ export default async function ScoresPage({
             <Link
               key={l.seasons[0].id}
               href={`/scores?season=${l.seasons[0].id}`}
+              title={`${l.name} scores`}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition ${
                 seasonFilter === l.seasons[0].id
                   ? "bg-ink-950 text-white ring-ink-950"
@@ -180,6 +181,14 @@ export default async function ScoresPage({
               {l.name}
             </Link>
           ))}
+        {seasonFilter && (
+          <Link
+            href={`/league/${seasonFilter}`}
+            className="text-play-600 ring-play-200 hover:bg-play-50 rounded-full bg-white px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            Standings &amp; league hub &rarr;
+          </Link>
+        )}
       </div>
 
       {all.length === 0 ? (
@@ -194,6 +203,9 @@ export default async function ScoresPage({
                 <h2 className="text-ink-950 text-xl font-bold">Your games</h2>
                 <Badge tone="hoop">{myGames.length}</Badge>
               </div>
+              <p className="text-ink-400 -mt-2 mb-4 text-xs">
+                Games for your kids&apos; teams and teams you follow.
+              </p>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {myGames.slice(0, 6).map((g: any) => (
                   <GameCard key={g.id} g={g} />

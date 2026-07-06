@@ -234,15 +234,30 @@ export default async function PublicLayout({ children }: { children: React.React
               Platform
             </h3>
             <div className="text-ink-300 space-y-3 text-sm">
-              <Link href="/sign-up" className="block transition-colors hover:text-white">
-                Create account
-              </Link>
-              <Link href="/sign-in" className="block transition-colors hover:text-white">
-                Sign in
-              </Link>
-              <Link href="/dashboard" className="block transition-colors hover:text-white">
-                Dashboard
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link href="/scores" className="block transition-colors hover:text-white">
+                    Scores
+                  </Link>
+                  {nav.isOperator && (
+                    <Link href="/dashboard" className="block transition-colors hover:text-white">
+                      Manage
+                    </Link>
+                  )}
+                  <Link href="/settings/profile" className="block transition-colors hover:text-white">
+                    Account
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/sign-up" className="block transition-colors hover:text-white">
+                    Create account
+                  </Link>
+                  <Link href="/sign-in" className="block transition-colors hover:text-white">
+                    Sign in
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -250,10 +265,17 @@ export default async function PublicLayout({ children }: { children: React.React
             <h3 className="text-ink-400 mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
               Company
             </h3>
-            <p className="text-ink-300 text-sm leading-6">
-              Built for the real workflows behind teams, tryouts, offers, payments, and club
-              operations.
-            </p>
+            <div className="text-ink-300 space-y-3 text-sm">
+              <Link href="/for-clubs" className="block transition-colors hover:text-white">
+                For clubs
+              </Link>
+              <Link href="/for-leagues" className="block transition-colors hover:text-white">
+                For leagues
+              </Link>
+              <Link href="/news" className="block transition-colors hover:text-white">
+                News
+              </Link>
+            </div>
           </div>
         </div>
 

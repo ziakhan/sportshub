@@ -199,10 +199,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                           return {
                             rank: i + 1,
                             name: row.name,
+                            href: `/team/${row.teamId}`,
                             wins: row.wins,
                             losses: row.losses,
                             pct: row.winPct,
                             gamesBack: i === 0 ? "—" : gb.toFixed(1).replace(/\.0$/, ""),
+                            streak: standings.streaks[row.teamId],
                           }
                         })}
                       />

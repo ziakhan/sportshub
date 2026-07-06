@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { cache } from "./request-cache"
 import { getViewerScope } from "@/lib/privacy/participants"
+import { isTestWorldSlug } from "@/lib/demo-data"
 
 /**
  * Personalized public-nav data (docs/site-ia-plan.md §5.3, ESPN model):
@@ -101,9 +102,12 @@ export const getPublicNav = cache(async (userId: string | null): Promise<PublicN
       where: { status: { in: ["ACTIVE", "UNCLAIMED"] }, id: { notIn: [...myClubIds] } },
       select: { id: true, name: true, slug: true },
       orderBy: { teams: { _count: "desc" } },
-      take: MAX_OTHER,
+      take: 40,
     })
-  ).map((t: any) => ({ id: t.id, name: t.name, href: `/club/${t.slug}` }))
+  )
+    .filter((t: any) => !isTestWorldSlug(t.slug))
+    .slice(0, MAX_OTHER)
+    .map((t: any) => ({ id: t.id, name: t.name, href: `/club/${t.slug}` }))
 
   return {
     myLeagues,

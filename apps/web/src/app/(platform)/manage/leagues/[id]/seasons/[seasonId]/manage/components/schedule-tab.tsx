@@ -440,6 +440,14 @@ export function ScheduleTab({
                     {open && (
                       <div className="border-ink-100 border-t px-3 py-3 text-xs">
                         <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <a
+                            href={`/live/${g.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                          >
+                            Box score ↗
+                          </a>
                           <button
                             onClick={() => patchGame(g.id, { isLocked: !g.isLocked })}
                             className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"

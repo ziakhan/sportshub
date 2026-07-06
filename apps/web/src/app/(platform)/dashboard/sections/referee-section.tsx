@@ -76,13 +76,15 @@ export function RefereeSection({ data }: RefereeSectionProps) {
             </div>
 
             <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-              <h3 className="font-display text-ink-950 text-lg font-semibold">Next assignments</h3>
-              <p className="text-ink-500 mt-3 text-sm">No upcoming games assigned yet.</p>
+              <h3 className="font-display text-ink-950 text-lg font-semibold">Game day</h3>
+              <p className="text-ink-500 mt-3 text-sm">
+                Live and upcoming games you can officiate are listed on the scoring hub.
+              </p>
               <Link
-                href="/browse-leagues"
+                href="/score"
                 className="bg-play-600 hover:bg-play-700 mt-5 inline-flex rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
               >
-                Browse opportunities
+                Open scoring hub
               </Link>
             </div>
           </div>

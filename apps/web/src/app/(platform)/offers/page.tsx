@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { OfferResponseForm } from "./offer-response-form"
@@ -119,8 +121,11 @@ export default function OffersPage() {
                             {offer.team.tenant.name}
                           </h3>
                           <p className="text-ink-600 text-sm">
-                            {offer.team.name} &middot; {offer.team.ageGroup}
-                            {offer.team.gender ? ` &middot; ${offer.team.gender}` : ""}
+                            <Link href={`/team/${offer.team.id}`} className="hover:text-play-600 font-medium transition-colors">
+                              {offer.team.name}
+                            </Link>{" "}
+                            &middot; {offer.team.ageGroup}
+                            {offer.team.gender ? ` · ${offer.team.gender}` : ""}
                           </p>
                           <p className="text-ink-500 mt-1 text-sm">
                             For{" "}
@@ -258,7 +263,10 @@ export default function OffersPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-ink-900 font-medium">
-                            {offer.team.tenant.name} - {offer.team.name}
+                            {offer.team.tenant.name} -{" "}
+                            <Link href={`/team/${offer.team.id}`} className="hover:text-play-600 transition-colors">
+                              {offer.team.name}
+                            </Link>
                           </span>
                           <span className="text-ink-500 ml-2 text-sm">
                             for {offer.player.firstName} {offer.player.lastName}

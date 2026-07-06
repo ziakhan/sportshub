@@ -97,7 +97,7 @@ export default function ForLeaguesPage() {
                 Start your league free
               </Link>
               <Link
-                href="/browse-leagues"
+                href="/leagues"
                 className="border-ink-200 text-ink-700 hover:bg-ink-50 inline-flex items-center justify-center rounded-2xl border bg-white px-7 py-3.5 text-[15px] font-semibold transition"
               >
                 Browse leagues

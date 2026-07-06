@@ -141,6 +141,12 @@ export default function LeagueDashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <a
+              href={`/manage/leagues/${leagueId}/public`}
+              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
+            >
+              Public hub
+            </a>
             <Link
               href={`/manage/leagues/${leagueId}/payments`}
               className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"

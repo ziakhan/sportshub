@@ -162,6 +162,7 @@ export function buildNavSections({
         { label: "Clubs", href: "/dashboard/admin/clubs", icon: "club" },
         { label: "Leagues", href: "/manage/leagues", icon: "star" },
         { label: "Claims", href: "/dashboard/admin/claims", icon: "clipboard" },
+        { label: "Payments", href: "/dashboard/admin/payments", icon: "card" },
         { label: "Settings", href: "/dashboard/admin/settings", icon: "settings" },
       ],
     })

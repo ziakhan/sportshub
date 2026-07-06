@@ -63,7 +63,7 @@ export default function PlayersPage() {
           <div>
             <h1 className="font-display text-ink-950 text-3xl font-bold">My players</h1>
             <p className="text-ink-500 mt-1 text-sm">
-              Manage profiles before registering for tryouts and teams.
+              Player profiles on this account — teams, stats and registrations.
             </p>
           </div>
           <Link
@@ -88,7 +88,7 @@ export default function PlayersPage() {
           </div>
           <h3 className="font-display text-ink-950 text-xl font-semibold">No players yet</h3>
           <p className="text-ink-500 mx-auto mb-5 mt-2 max-w-lg text-sm">
-            Add your child to start signing up for tryouts, camps, and team programs.
+            Add a player profile to start signing up for tryouts, camps, and team programs.
           </p>
           <Link
             href="/players/add"

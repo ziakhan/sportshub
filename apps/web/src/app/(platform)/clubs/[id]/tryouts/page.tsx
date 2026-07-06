@@ -214,6 +214,12 @@ export default async function ClubTryoutsPage({
                       >
                         Edit
                       </Link>
+                      <Link
+                        href={`/tryout/${tryout.id}`}
+                        className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                      >
+                        Public listing
+                      </Link>
                       {!tryout.isPast && (
                         <PublishButton tryoutId={tryout.id} isPublished={tryout.isPublished} />
                       )}

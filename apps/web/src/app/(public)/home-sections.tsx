@@ -260,9 +260,13 @@ export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
               )}
 
               {card.kidLines.map((line) => (
-                <div key={line.name} className="bg-hoop-50 text-hoop-700 mb-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold">
-                  {line.name}: {line.points} PTS · {line.rebounds} REB · {line.assists} AST
-                </div>
+                <Link
+                  key={line.playerId}
+                  href={`/player/${line.playerId}`}
+                  className="bg-hoop-50 text-hoop-700 hover:bg-hoop-100 mb-2 block rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors"
+                >
+                  {line.name}: {line.points} PTS · {line.rebounds} REB · {line.assists} AST &rarr;
+                </Link>
               ))}
 
               {card.nextGame && (

@@ -1,8 +1,11 @@
+import Link from "next/link"
 import { cn } from "./cn"
 
 export interface StandingsRow {
   rank: number
   name: string
+  /** Team hub link — names render as anchors when present. */
+  href?: string
   color?: string
   wins: number
   losses: number
@@ -70,7 +73,13 @@ export function StandingsTable({ rows, highlightLeaders = 1, className }: Standi
                       style={{ backgroundColor: row.color || "#4f46e5" }}
                       aria-hidden="true"
                     />
-                    <span className="text-ink-900 font-semibold">{row.name}</span>
+                    {row.href ? (
+                      <Link href={row.href} className="text-ink-900 hover:text-play-600 font-semibold transition-colors">
+                        {row.name}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-900 font-semibold">{row.name}</span>
+                    )}
                   </div>
                 </td>
                 <td className="text-ink-700 px-2 py-3 text-center font-semibold tabular-nums">{row.wins}</td>

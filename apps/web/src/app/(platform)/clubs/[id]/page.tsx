@@ -299,6 +299,12 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
         </h2>
         <div className="flex flex-wrap gap-3">
           <Link
+            href={`/clubs/${params.id}/public`}
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+          >
+            View public page
+          </Link>
+          <Link
             href={`/clubs/${params.id}/teams/create`}
             className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
           >
