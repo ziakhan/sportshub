@@ -1,5 +1,12 @@
 # Youth Basketball Hub - Project Context
 
+## ⛔ PRODUCTION PUSH POLICY — NO EXCEPTIONS
+**NEVER push to production without the owner's explicit approval, given in the current session for the specific push.**
+- `git push origin master` auto-deploys to Vercel production — pushing IS deploying. Do not push (including reverts, docs-only commits, or "small fixes") until the owner says to.
+- Neon production DB: no schema pushes, SQL, or seeds without the same explicit approval.
+- Local commits are always fine. Work locally, verify on the dev server, and wait for the owner's go-ahead to ship.
+- Blanket approval does not carry over between sessions or tasks; ask each time.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)
