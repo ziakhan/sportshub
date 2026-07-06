@@ -205,16 +205,34 @@ for club, lg, n, det in [(m[0], m[1], m[2], m[3]) for m in memberships]:
 
 rows = []
 seen = set()
+master_keys = []
 with open(f"{D}/unique-clubs-master.csv") as f:
-    for r in csv.DictReader(f):
-        k = norm(r["club"])
-        t = totals.get(k)
-        rows.append([r["club"], r["city"], r["leagues"], r["contact"], r["tenant"],
-                     t["n"] if t else "", "+".join(sorted(t["leagues"])) if t else ""])
-        seen.add(k)
+    master_rows = list(csv.DictReader(f))
+master_keys = [norm(r["club"]) for r in master_rows]
+
+def fuzzy(k):
+    # containment fallback for name variants (min 6 chars to avoid false joins)
+    if k in totals: return totals[k]
+    if len(k) >= 6:
+        for tk in totals:
+            if len(tk) >= 6 and (k in tk or tk in k):
+                return totals[tk]
+    return None
+
+matched_total_keys = set()
+for r in master_rows:
+    k = norm(r["club"])
+    t = fuzzy(k)
+    if t:
+        for tk, tv in totals.items():
+            if tv is t: matched_total_keys.add(tk)
+    rows.append([r["club"], r["city"], r["leagues"], r["contact"], r["tenant"],
+                 t["n"] if t else "", "+".join(sorted(t["leagues"])) if t else ""])
+    seen.add(k)
 for k, t in sorted(totals.items()):
-    if k not in seen:
-        rows.append([t["name"], "", "", "", "", t["n"], "+".join(sorted(t["leagues"]))])
+    if k in seen or k in matched_total_keys: continue
+    if len(k) >= 6 and any(len(sk) >= 6 and (k in sk or sk in k) for sk in seen): continue
+    rows.append([t["name"], "", "", "", "", t["n"], "+".join(sorted(t["leagues"]))])
 
 rows.sort(key=lambda r: (-(int(r[5]) if str(r[5]).isdigit() else 0), r[0].lower()))
 with open(f"{S}/clubs.csv", "w", newline="") as f:
