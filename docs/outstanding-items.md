@@ -54,6 +54,17 @@ docs/outreach/club-parent-demos.md.
   @sportshub.demo replaces them) and reseeded; login audit green. PROD RUN
   BLOCKED on deploy train: push + runbook #10, then --report → --scrub-noise
   → seed --yes-prod.
+- **Demo-readiness round 2 (2026-07-07, af9d87e/ed4c374/79d0165/d6b709d):**
+  Summer/Fall league rename + REAL scheduler substrate in the seed (venues/
+  courts/sessions tabs populated, 10 games/team = 2/weekend, league fees
+  show $127,680 collected); viewer-aware box-score names + C.K. fix;
+  leaders UI tightened; My Hub parent door (public header + user menu);
+  forfeit relabels w/ confirms; locked-season guards on Divisions/Sessions
+  tabs; floating chat dock on public pages (desktop popup / mobile sheet);
+  scheduler buildPairings fairness fix (circle-method — was 7-11 game
+  spread for same guarantee). **NEXT FEATURE (owner): playoff generation**
+  (top-N per division from standings → bracket into PLAYOFF sessions —
+  settings + schema exist, no generator yet).
 
 ## 1. Deploy train (biggest risk, fully scripted, owner gate)
 - Run Neon runbook entries **#4 #5 #6 #7 #8** (`docs/pending-deploy-actions.md`)
