@@ -61,6 +61,10 @@ model User {
   teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
   rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
   rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
+  leagueRefereePools      LeagueReferee[]         @relation("LeagueReferees")
+  refereeAvailabilities   RefereeAvailability[]   @relation("RefereeAvailabilities")
+  targetedRefereeRequests RefereeSessionRequest[] @relation("TargetedRefereeRequests")
+  acceptedRefereeRequests RefereeSessionRequest[] @relation("AcceptedRefereeRequests")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -645,6 +649,8 @@ model League {
   reviews Review[]
   paymentConfig PaymentConfig?
   obligations   PaymentObligation[] @relation("LeagueObligations")
+  leagueReferees  LeagueReferee[]
+  refereeRequests RefereeSessionRequest[] @relation("LeagueRefereeRequests")
   postTags      PostTag[]
   follows       Follow[]
 
@@ -895,11 +901,82 @@ model SeasonSessionDay {
 
   date DateTime
 
-  dayVenues SeasonSessionDayVenue[]
-  games     Game[]
+  dayVenues       SeasonSessionDayVenue[]
+  games           Game[]
+  refereeRequests RefereeSessionRequest[]
 
   @@index([sessionId])
   @@index([date])
+}
+
+// The league's own referee pool — refs the commissioner knows and books
+model LeagueReferee {
+  id       String @id @default(uuid())
+  leagueId String
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation("LeagueReferees", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([leagueId, userId])
+  @@index([userId])
+}
+
+// Referee-declared availability windows, one row per day-slot
+model RefereeAvailability {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation("RefereeAvailabilities", fields: [userId], references: [id], onDelete: Cascade)
+
+  date      DateTime // calendar day (midnight)
+  startTime String // "09:00"
+  endTime   String // "18:00"
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([date])
+}
+
+// Uber-style shift offer for a session day: targeted at one referee, or
+// broadcast to the league pool (targetUserId null, first accept wins).
+// Accepting auto-assigns the referee to that day's games in the window.
+model RefereeSessionRequest {
+  id       String @id @default(uuid())
+  leagueId String
+  league   League @relation("LeagueRefereeRequests", fields: [leagueId], references: [id], onDelete: Cascade)
+
+  sessionDayId String
+  sessionDay   SeasonSessionDay @relation(fields: [sessionDayId], references: [id], onDelete: Cascade)
+
+  targetUserId String?
+  targetUser   User?   @relation("TargetedRefereeRequests", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  startTime String // shift the league enforces ("09:00")
+  endTime   String
+  message   String? @db.Text
+
+  status       RefereeRequestStatus @default(PENDING)
+  acceptedById String?
+  acceptedBy   User?                @relation("AcceptedRefereeRequests", fields: [acceptedById], references: [id])
+  respondedAt  DateTime?
+
+  createdById String
+
+  createdAt DateTime @default(now())
+
+  @@index([leagueId, status])
+  @@index([targetUserId, status])
+  @@index([sessionDayId])
+}
+
+enum RefereeRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
 }
 
 model SeasonSessionDayVenue {

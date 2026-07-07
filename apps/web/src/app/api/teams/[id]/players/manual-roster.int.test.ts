@@ -170,16 +170,17 @@ describe("manual roster controls (integration)", () => {
 })
 
 describe("game-day referee assignment (integration)", () => {
-  const assign = (userId: string) =>
-    refPOST(jsonRequest(`/api/games/${gameId}/referee`, { userId }), { params: { id: gameId } })
+  const assign = async (userId: string) =>
+    (await refPOST(jsonRequest(`/api/games/${gameId}/referee`, { userId }), {
+      params: { id: gameId },
+    }))!
 
   it("club staff can search the pool and assign a referee at game time", async () => {
     actAs(coachId)
-    const pool = await (
-      await refGET(jsonRequest(`/api/games/${gameId}/referee`, undefined, "GET"), {
-        params: { id: gameId },
-      })
-    ).json()
+    const poolRes = (await refGET(jsonRequest(`/api/games/${gameId}/referee`, undefined, "GET"), {
+      params: { id: gameId },
+    }))!
+    const pool = await poolRes.json()
     expect(pool.pool.map((r: any) => r.userId)).toContain(refereeUserId)
 
     expect((await assign(refereeUserId)).status).toBe(201)
@@ -200,10 +201,10 @@ describe("game-day referee assignment (integration)", () => {
 
   it("unassign removes the game role", async () => {
     actAs(coachId)
-    const res = await refDELETE(
+    const res = (await refDELETE(
       jsonRequest(`/api/games/${gameId}/referee?userId=${refereeUserId}`, undefined, "DELETE"),
       { params: { id: gameId } }
-    )
+    ))!
     expect(res.status).toBe(200)
     const role = await prisma.userRole.findFirst({
       where: { userId: refereeUserId, role: "Referee", gameId },

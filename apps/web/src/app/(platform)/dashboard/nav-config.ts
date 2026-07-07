@@ -229,7 +229,10 @@ export function buildNavSections({
         // Game-day hub: live + upcoming games to score / officiate
         { label: "Score games", href: "/score", icon: "play" },
         ...(hasRole("Referee")
-          ? [{ label: "My Profile", href: "/referee/profile", icon: "users" as IconKey }]
+          ? [
+              { label: "Shifts & Availability", href: "/referee/requests", icon: "clipboard" as IconKey },
+              { label: "My Profile", href: "/referee/profile", icon: "users" as IconKey },
+            ]
           : []),
       ],
     })

@@ -7,6 +7,7 @@ import { OverviewTab } from "./components/overview-tab"
 import { DivisionsTab } from "./components/divisions-tab"
 import { VenuesTab } from "./components/venues-tab"
 import { SessionsTab } from "./components/sessions-tab"
+import { RefereesTab } from "./components/referees-tab"
 import { SchedulingTab } from "./components/scheduling-tab"
 import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
@@ -39,6 +40,7 @@ const TABS = [
   { key: "scheduling", label: "Scheduling" },
   { key: "tiebreakers", label: "Tiebreakers" },
   { key: "teams", label: "Teams" },
+  { key: "referees", label: "Referees" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
 ] as const
@@ -279,6 +281,9 @@ export default function LeagueManagePage() {
       )}
       {activeTab === "teams" && (
         <TeamsTab seasonId={seasonId} league={league} refresh={fetchAll} />
+      )}
+      {activeTab === "referees" && (
+        <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />
       )}
       {activeTab === "scheduling" && (
         <SchedulingTab

@@ -35,6 +35,7 @@ import { getServerSession } from "next-auth"
  *   1118 team chat (membership matrix / send / poll / delete-moderation)
  *   1119 roster versions (selection / conflicts / lock policy / change requests)
  *   1120 manual overrides (roster add/release/jersey by coach, referee assign)
+ *   1121 referee booking (pool / availability / broadcast offers / auto-assign)
  */
 
 export function actAs(userId: string | null): void {

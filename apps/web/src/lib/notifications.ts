@@ -51,6 +51,10 @@ export type NotificationType =
   | "roster_change_approved"
   | "roster_change_denied"
   | "roster_updated"
+  // Referee booking (Uber-style session-day offers)
+  | "referee_request"
+  | "referee_request_accepted"
+  | "referee_request_declined"
 
 export interface NotificationInput {
   userId: string

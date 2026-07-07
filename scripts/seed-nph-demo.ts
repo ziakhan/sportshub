@@ -997,6 +997,49 @@ async function seed() {
   }
   console.log(`✓ 4 referees (PIN 1234) assigned across all ${allGames.length} summer games`)
 
+  // ── Referee booking demo: pool + availability + a live broadcast offer ─
+  for (const refId of refIds) {
+    await p.leagueReferee.create({ data: { leagueId: winterLeague.id, userId: refId } })
+  }
+  const week5SatDay = await p.seasonSessionDay.findFirst({
+    where: { sessionId: summerSessions.find((s) => s.label === "Week 5")!.id, date: { gt: now } },
+    orderBy: { date: "asc" },
+    select: { id: true, date: true },
+  })
+  if (week5SatDay) {
+    // Mike + Sarah have said they can work Saturday; James/Priya are silent
+    for (const refId of refIds.slice(0, 2)) {
+      await p.refereeAvailability.create({
+        data: { userId: refId, date: new Date(`${new Date(week5SatDay.date).toISOString().slice(0, 10)}T00:00:00.000Z`), startTime: "09:00", endTime: "18:00" },
+      })
+    }
+    const offer = await p.refereeSessionRequest.create({
+      data: {
+        leagueId: winterLeague.id,
+        sessionDayId: week5SatDay.id,
+        startTime: "09:00",
+        endTime: "15:00",
+        message: "Final regular-season Saturday — two courts running all morning.",
+        createdById: nph.id,
+      },
+      select: { id: true },
+    })
+    for (const refId of refIds) {
+      await p.notification.create({
+        data: {
+          userId: refId,
+          type: "referee_request",
+          title: `${WINTER_LEAGUE} needs a referee`,
+          message: "Saturday 09:00–15:00 — first to accept gets the day.",
+          link: "/referee/requests",
+          referenceId: offer.id,
+          referenceType: "RefereeSessionRequest",
+        },
+      })
+    }
+    console.log("✓ referee pool (4) + Sat availability (Mike, Sarah) + 1 broadcast shift offer pending")
+  }
+
   // ── Recaps + highlight videos + announcements ─────────────────────────
   let recapCount = 0
   for (const gameId of completedGameIds) {
@@ -1378,6 +1421,8 @@ function printCheatSheet() {
     "   · owner-lords → Offers → Order Sheet: sizes + CSV ready",
     "   · owner-nph → Summer mid-season (standings/live) + Fall open",
     "   · owner-nph → Teams tab: pending roster-change request to approve",
+    "   · owner-nph → Referees tab: pool + book-a-day; ref-mike → Shifts &",
+    "     Availability: broadcast offer to accept live (auto-assigns games)",
     "══════════════════════════════════════════════════════════════════",
   ]
   console.log(lines.join("\n"))
