@@ -113,6 +113,11 @@ export default function CreateTeamPage() {
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState<StaffRoleType>("AssistantCoach")
 
+  // Practice days (optional — leave empty for TBD; announced later)
+  const [practiceSlots, setPracticeSlots] = useState<
+    Array<{ dayOfWeek: number; startTime: string; durationMinutes: number; location: string }>
+  >([])
+
   const {
     register,
     handleSubmit,
@@ -256,6 +261,14 @@ export default function CreateTeamPage() {
       }
       if (data.gender) payload.gender = data.gender
       if (staff.length > 0) payload.staff = staff
+      if (practiceSlots.length > 0) {
+        payload.practiceSlots = practiceSlots.map((s) => ({
+          dayOfWeek: s.dayOfWeek,
+          startTime: s.startTime,
+          durationMinutes: s.durationMinutes,
+          location: s.location.trim() || undefined,
+        }))
+      }
 
       const res = await fetch("/api/teams", {
         method: "POST",
@@ -452,6 +465,107 @@ export default function CreateTeamPage() {
               />
             </div>
           </div>
+        </div>
+
+        {/* Practice Days Card */}
+        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-8">
+          <h3 className="text-ink-900 mb-1 text-lg font-semibold">Practice Days</h3>
+          <p className="text-ink-600 mb-4 text-sm">
+            Optional — leave empty if practice days are TBD. Families are only notified when you
+            announce the schedule (from the team calendar, closer to the season).
+          </p>
+
+          {practiceSlots.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {practiceSlots.map((slot, i) => (
+                <div
+                  key={i}
+                  className="border-ink-200 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
+                >
+                  <select
+                    value={slot.dayOfWeek}
+                    onChange={(e) =>
+                      setPracticeSlots((cur) =>
+                        cur.map((s, j) =>
+                          j === i ? { ...s, dayOfWeek: Number(e.target.value) } : s
+                        )
+                      )
+                    }
+                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
+                  >
+                    {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                      (d, di) => (
+                        <option key={d} value={di}>
+                          {d}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  <input
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(e) =>
+                      setPracticeSlots((cur) =>
+                        cur.map((s, j) => (j === i ? { ...s, startTime: e.target.value } : s))
+                      )
+                    }
+                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
+                  />
+                  <select
+                    value={slot.durationMinutes}
+                    onChange={(e) =>
+                      setPracticeSlots((cur) =>
+                        cur.map((s, j) =>
+                          j === i ? { ...s, durationMinutes: Number(e.target.value) } : s
+                        )
+                      )
+                    }
+                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
+                  >
+                    {[60, 75, 90, 105, 120, 150, 180].map((m) => (
+                      <option key={m} value={m}>
+                        {m} min
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={slot.location}
+                    onChange={(e) =>
+                      setPracticeSlots((cur) =>
+                        cur.map((s, j) => (j === i ? { ...s, location: e.target.value } : s))
+                      )
+                    }
+                    placeholder="Location (optional)"
+                    maxLength={200}
+                    className="border-ink-200 min-w-[140px] flex-1 rounded-lg border px-2 py-1.5 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPracticeSlots((cur) => cur.filter((_, j) => j !== i))}
+                    className="text-ink-400 shrink-0 text-lg leading-none hover:text-red-500"
+                    aria-label="Remove practice day"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {practiceSlots.length < 7 && (
+            <button
+              type="button"
+              onClick={() =>
+                setPracticeSlots((cur) => [
+                  ...cur,
+                  { dayOfWeek: 2, startTime: "18:30", durationMinutes: 90, location: "" },
+                ])
+              }
+              className="border-ink-300 text-ink-600 hover:border-play-400 hover:text-play-700 rounded-xl border border-dashed px-4 py-2 text-sm font-medium"
+            >
+              + Add practice day
+            </button>
+          )}
         </div>
 
         {/* Staff Assignment Card */}

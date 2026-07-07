@@ -230,6 +230,40 @@ demo world seeds a Lords G9 tournament poll (demo parent votes live).
 NEXT candidates (owner picks): club/league-scoped polls, public read-only
 results, quizzes, carpool v1.
 
+## 6c. Practice scheduling — SHIPPED 2026-07-06 (owner: "finish the team practice stuff")
+Recurring practice days per team (set at creation or TBD later), announce
+flow (expands to dated occurrences for 10 weeks + bell/EMAIL to every
+family), live team calendar (/teams/[teamId]/calendar, 45s polling, staff
+move/cancel/restore inline — every change notifies), personal iCal feed
+(/api/calendar/[token], webcal for iPhone + Google Calendar URL for
+Android; practices + games for ALL the user's teams; cancellations ship
+STATUS:CANCELLED). Public team page shows practice days once announced.
+Schema: PracticeSlot + Practice.location/slotId + User.calendarToken +
+Team.practiceScheduleAnnouncedAt = **runbook #13**. TZ: slot wall-times
+expand via APP_TIMEZONE (default America/Toronto) — lib/calendar/timezone.ts
+(Vercel is UTC; naive Date would shift 4-5h). 12 int tests (seed 1123).
+FOLLOW-ONS not built: per-user email notification preferences (v1 emails
+everyone — owner said "people who enabled notifications or emails", prefs
+need a settings surface); venue picker on slots (free-text location v1);
+league-level view of club practice load.
+
+## 7. Owner asks parked 2026-07-06 (do NOT lose these)
+- **Homepage cleanup / IA revisit**: owner doesn't understand programs vs
+  marketplace split (overlap!); menu order unclear; "should the Scores
+  dropdown be Leagues?" → fold into the N2/N3 IA work
+  (docs/site-ia-plan.md) as an explicit homepage-content + nav-labels pass.
+  Owner: "we really need to clean up the home page and revisit what's
+  lying there."
+- **Marketing messaging refresh**: copy says "parents" — should say
+  parents OR PLAYERS (and other audiences); now that the feature set is
+  deep (scoring, recaps, chat, polls, practices, calendar sync, payments),
+  refresh the landing/for-clubs/for-leagues value props — "spice up why
+  the platform is, what it does, who it is for."
+- **New roles (later)**: videographers, photographers, influencers,
+  content creators (ties into content P2 org-vetted creators), third-party
+  coaches (skills trainers), universities/recruiters (recruitment flows).
+  Owner wants them on the roadmap, not built yet.
+
 ## 6b. Performance — AUDITED + QUICK WINS SHIPPED 2026-07-06
 Owner asked "audit the DB indices, app is slow." **Full record:
 `docs/perf-audit-2026-07-06.md` — read it before touching perf again.**

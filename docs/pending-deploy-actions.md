@@ -342,3 +342,21 @@ docs/engagement-features-plan.md). All additive — one `prisma db push`:
 
 Nothing to backfill. Notification type "team_poll" is code-level only (the
 Notification.type column is a plain string).
+
+## 13. Practice scheduling schema — NOT YET APPLIED to Neon
+
+Ships with the practice-scheduling commit (2026-07-06). All additive — one
+`prisma db push` (expect a benign warning about the new unique constraint
+on the brand-new nullable column, safe to --accept-data-loss):
+- New table `PracticeSlot` (recurring pattern: teamId FK cascade,
+  dayOfWeek, startTime "HH:MM", durationMinutes, location)
+- `Practice.location String?` + `Practice.slotId` (FK → PracticeSlot,
+  SetNull) + Practice index change (teamId → teamId,scheduledAt)
+- `Team.practiceScheduleAnnouncedAt DateTime?`
+- `User.calendarToken String? @unique` (personal iCal feed auth)
+
+Also set Vercel env var **APP_TIMEZONE=America/Toronto** (slot wall-times
+expand server-side; Vercel runs UTC — without it the default in code is
+also America/Toronto, so this is belt-and-suspenders/documentation).
+Nothing to backfill. Notification types practice_schedule/practice_change
+are code-level only.

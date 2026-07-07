@@ -48,6 +48,9 @@ export type NotificationType =
   | "team_chat"
   // Team polls & surveys (one bell per poll created)
   | "team_poll"
+  // Practice schedule announced / a practice moved, added or cancelled
+  | "practice_schedule"
+  | "practice_change"
   // League roster change flow
   | "roster_change_requested"
   | "roster_change_approved"

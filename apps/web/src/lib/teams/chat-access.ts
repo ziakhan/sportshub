@@ -223,10 +223,10 @@ export interface ChatTeamSummary {
 }
 
 /**
- * Every team chat this user belongs to (staff side + family side), with
- * unread counts — powers the floating chat dock.
+ * Every team this user belongs to (staff side + family side) — the chat
+ * dock, and the personal calendar feed, share this membership set.
  */
-export async function getChatTeamSummaries(userId: string): Promise<ChatTeamSummary[]> {
+export async function getMemberTeamIds(userId: string): Promise<Set<string>> {
   const [roles, children] = await Promise.all([
     prisma.userRole.findMany({
       where: { userId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
@@ -252,6 +252,15 @@ export async function getChatTeamSummaries(userId: string): Promise<ChatTeamSumm
     })
     for (const t of clubTeams) teamIds.add(t.id)
   }
+  return teamIds
+}
+
+/**
+ * Every team chat this user belongs to (staff side + family side), with
+ * unread counts — powers the floating chat dock.
+ */
+export async function getChatTeamSummaries(userId: string): Promise<ChatTeamSummary[]> {
+  const teamIds = await getMemberTeamIds(userId)
   if (teamIds.size === 0) return []
 
   const [teams, unread] = await Promise.all([

@@ -112,6 +112,12 @@ export function ParentSection({ data }: ParentSectionProps) {
                           >
                             Polls
                           </Link>
+                          <Link
+                            href={`/teams/${t.team.id}/calendar`}
+                            className="text-play-600 hover:text-play-700 shrink-0 font-semibold"
+                          >
+                            Calendar
+                          </Link>
                         </div>
                       ))}
                     </div>

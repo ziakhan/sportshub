@@ -28,6 +28,33 @@ holds the whole shape while we ship it in slices.
 - Demo: NPH seeder gives Lords G9 a "Summer tournament plans" poll — 9
   families voted, demo parent votes live, coach sees names.
 
+## Slice 2 — Practice scheduling + calendar sync ✅ SHIPPED 2026-07-06
+
+- `PracticeSlot` recurring days ("Tue 18:30, 90 min, Main Gym") — set on
+  the team create form or later (TBD); `Practice` occurrences carry
+  `slotId` + free-text `location`. Neon = runbook #13.
+- **Announce** (staff, from the calendar page): expands slots into dated
+  practices for the next 10 weeks (dedup by team+datetime — re-announcing
+  extends, never duplicates), stamps `Team.practiceScheduleAnnouncedAt`,
+  and notifies every member — bell + email. Public team page shows the
+  practice days only after announce.
+- **Live calendar** `/teams/[teamId]/calendar`: practices + games in one
+  agenda, 45s polling; staff manage slots inline and move/cancel/restore
+  single practices — every change bells + emails the team.
+- **Phone sync**: personal iCal feed `/api/calendar/[token]`
+  (`User.calendarToken`, mint/rotate via /api/calendar/token). One
+  subscription covers ALL the user's teams (practices + games); webcal
+  link for iPhone, "from URL" link for Google Calendar; moves update via
+  SEQUENCE, cancellations ship STATUS:CANCELLED.
+- **Timezone**: slot times are wall times expanded via `APP_TIMEZONE`
+  (default America/Toronto) in `lib/calendar/timezone.ts` — Vercel runs
+  UTC; naive Date math would shift practices 4–5 hours.
+- 12 int tests (seed 1123). Demo: every NPH team has slots; Lords G9 is
+  announced with dated practices (one cancelled) for the calendar demo.
+- Deliberately NOT in v1: per-user email/notification preferences (emails
+  go to every member), venue-record picker on slots (free text),
+  recurring-practice per-instance venue overrides, league practice view.
+
 ## Later slices (NOT built — design notes)
 
 - **Club-wide / league-wide scope**: add nullable `tenantId` / `leagueId`

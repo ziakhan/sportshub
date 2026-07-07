@@ -1463,6 +1463,74 @@ async function seed() {
   })
   console.log(`✓ Lords G9 poll "Summer tournament plans" (${pollVotes} votes; demo parent hasn't voted)`)
 
+  // ── Practice schedules ─────────────────────────────────────────────────
+  // Every team gets recurring practice days (varied); the Lords G9 schedule
+  // is ANNOUNCED with 3 weeks of dated occurrences so the calendar + phone
+  // feed demo has real data. One practice is cancelled to show the flow.
+  const slotPatterns: Array<Array<{ dayOfWeek: number; startTime: string }>> = [
+    [{ dayOfWeek: 2, startTime: "18:30" }, { dayOfWeek: 4, startTime: "19:00" }],
+    [{ dayOfWeek: 1, startTime: "18:00" }, { dayOfWeek: 3, startTime: "18:30" }],
+    [{ dayOfWeek: 3, startTime: "19:30" }, { dayOfWeek: 5, startTime: "18:00" }],
+  ]
+  for (let ti = 0; ti < teams.length; ti++) {
+    const team = teams[ti]
+    for (const pattern of slotPatterns[ti % slotPatterns.length]) {
+      await p.practiceSlot.create({
+        data: {
+          teamId: team.id,
+          dayOfWeek: pattern.dayOfWeek,
+          startTime: pattern.startTime,
+          durationMinutes: 90,
+          location: "Main Gym",
+        },
+      })
+    }
+  }
+  const lordsSlots = await p.practiceSlot.findMany({ where: { teamId: lordsG9.id } })
+  let lordsPractices = 0
+  let cancelledOne = false
+  for (let d = 0; d < 21; d++) {
+    const day = new Date(now.getTime() + d * 86_400_000)
+    for (const slot of lordsSlots) {
+      if (day.getDay() !== slot.dayOfWeek) continue
+      const [hh, mm] = slot.startTime.split(":").map(Number)
+      const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hh, mm)
+      if (at.getTime() <= now.getTime()) continue
+      const cancelThis = !cancelledOne && d >= 7
+      await p.practice.create({
+        data: {
+          teamId: lordsG9.id,
+          tenantId: lordsG9.tenantId,
+          scheduledAt: at,
+          duration: slot.durationMinutes,
+          location: slot.location,
+          slotId: slot.id,
+          status: cancelThis ? "CANCELLED" : "SCHEDULED",
+        },
+      })
+      if (cancelThis) cancelledOne = true
+      lordsPractices++
+    }
+  }
+  await p.team.update({
+    where: { id: lordsG9.id },
+    data: { practiceScheduleAnnouncedAt: new Date(now.getTime() - days(1)) },
+  })
+  const dayName = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"]
+  const slotLabel = (s: { dayOfWeek: number; startTime: string }) => {
+    const [h, m] = s.startTime.split(":").map(Number)
+    return `${dayName[s.dayOfWeek]} ${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`
+  }
+  await p.notification.create({
+    data: {
+      userId: demoParent.id, type: "practice_schedule",
+      title: `Practice schedule — ${lordsG9.name}`,
+      message: lordsSlots.map(slotLabel).join(" · "),
+      link: `/teams/${lordsG9.id}/calendar`, referenceId: lordsG9.id, referenceType: "Team",
+    },
+  })
+  console.log(`✓ Practice slots for ${teams.length} teams; Lords G9 announced w/ ${lordsPractices} dated practices (1 cancelled)`)
+
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
 

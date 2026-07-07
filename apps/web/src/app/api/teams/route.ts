@@ -22,6 +22,13 @@ const staffEntrySchema = z
     { message: "assign requires userId, invite requires email" }
   )
 
+const practiceSlotSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  durationMinutes: z.number().int().min(15).max(360).default(90),
+  location: z.string().trim().max(200).optional().nullable(),
+})
+
 const createTeamSchema = z.object({
   name: z.string().min(3).max(100),
   ageGroup: z.string(),
@@ -30,6 +37,9 @@ const createTeamSchema = z.object({
   description: z.string().optional(),
   tenantId: z.string().uuid(),
   staff: z.array(staffEntrySchema).optional(),
+  // Recurring practice days — optional at creation (empty/omitted = TBD;
+  // staff set them later from the team calendar)
+  practiceSlots: z.array(practiceSlotSchema).max(7).optional(),
 })
 
 /**
@@ -87,6 +97,19 @@ export async function POST(request: NextRequest) {
           tenantId: validatedData.tenantId,
         },
       })
+
+      // 1b. Recurring practice days (announced later, closer to season)
+      if (validatedData.practiceSlots && validatedData.practiceSlots.length > 0) {
+        await tx.practiceSlot.createMany({
+          data: validatedData.practiceSlots.map((s) => ({
+            teamId: team.id,
+            dayOfWeek: s.dayOfWeek,
+            startTime: s.startTime,
+            durationMinutes: s.durationMinutes,
+            location: s.location || null,
+          })),
+        })
+      }
 
       // 2. Process staff entries
       for (const entry of staffEntries) {

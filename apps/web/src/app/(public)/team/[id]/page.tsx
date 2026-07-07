@@ -7,6 +7,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { getTeamPublicData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { formatSlotSummary } from "@/lib/teams/practices"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
@@ -47,6 +48,22 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
   const chatUnread = chatMember
     ? ((await getUnreadChatCounts(viewerId, [team.id])).get(team.id) ?? 0)
     : 0
+
+  // Practice days show publicly once staff have announced the schedule
+  const practiceInfo = await (prisma as any).team.findUnique({
+    where: { id: team.id },
+    select: {
+      practiceScheduleAnnouncedAt: true,
+      practiceSlots: {
+        select: { dayOfWeek: true, startTime: true },
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+      },
+    },
+  })
+  const practiceSummary =
+    practiceInfo?.practiceScheduleAnnouncedAt && practiceInfo.practiceSlots.length > 0
+      ? formatSlotSummary(practiceInfo.practiceSlots)
+      : null
 
   const primaryColor = team.tenant?.branding?.primaryColor ?? "#4f46e5"
   const completed = games.filter((g: any) => g.status === "COMPLETED" || g.status === "LIVE")
@@ -91,6 +108,19 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
               </span>
             )}
           </Link>
+        )}
+        {chatMember && (
+          <Link
+            href={`/teams/${team.id}/calendar`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            Calendar
+          </Link>
+        )}
+        {practiceSummary && (
+          <span className="bg-court-50 text-court-700 ring-court-200 rounded-full px-4 py-1.5 text-xs font-semibold ring-1">
+            Practices: {practiceSummary}
+          </span>
         )}
         {seasonInfo && (
           <Link

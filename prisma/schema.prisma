@@ -34,6 +34,10 @@ model User {
   // Onboarding
   onboardedAt DateTime?
 
+  // Personal iCal feed token (/api/calendar/[token]) — practices + games
+  // for every team the user belongs to; minted on first "add to calendar"
+  calendarToken String? @unique
+
   // Relationships
   roles               UserRole[]
   players             Player[]            @relation("ParentPlayers")
@@ -281,9 +285,14 @@ model Team {
   postTags          PostTag[]
   follows           Follow[]
 
-  messages  TeamMessage[]
-  chatReads TeamChatRead[]
-  polls     Poll[]
+  messages      TeamMessage[]
+  chatReads     TeamChatRead[]
+  polls         Poll[]
+  practiceSlots PracticeSlot[]
+
+  // Set when staff announce the practice schedule to families (bell+email);
+  // the public team page shows practice days only after this.
+  practiceScheduleAnnouncedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1408,9 +1417,16 @@ model Practice {
 
   venueId String?
   venue   Venue?  @relation(fields: [venueId], references: [id])
+  // Free-text fallback ("Main Gym") — practices rarely justify a Venue row
+  location String?
 
   scheduledAt DateTime
   duration    Int // minutes
+
+  // Which recurring slot generated this occurrence (null = one-off);
+  // announce re-runs skip dates already covered by the same slot.
+  slotId String?
+  slot   PracticeSlot? @relation(fields: [slotId], references: [id], onDelete: SetNull)
 
   notes  String?        @db.Text
   status PracticeStatus @default(SCHEDULED)
@@ -1419,8 +1435,29 @@ model Practice {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
-  @@index([teamId])
+  @@index([teamId, scheduledAt])
   @@index([scheduledAt])
+}
+
+// Recurring practice pattern ("Tue 6:30 PM, 90 min, Main Gym") — defined at
+// team creation or later (TBD = no slots). Announce generates Practice
+// occurrences from these and notifies the team
+// (docs/engagement-features-plan.md → practices).
+model PracticeSlot {
+  id     String @id @default(uuid())
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  dayOfWeek       Int // 0 = Sunday … 6 = Saturday
+  startTime       String // "18:30" wall time in the app timezone
+  durationMinutes Int    @default(90)
+  location        String?
+
+  practices Practice[]
+
+  createdAt DateTime @default(now())
+
+  @@index([teamId])
 }
 
 enum PracticeStatus {

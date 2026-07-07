@@ -46,6 +46,9 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/settings",
   "/api/health",
   "/api/live",
+  // Personal iCal feed (GET only) — the unguessable token IS the auth
+  // (phones fetch it without a session); the route 404s unknown tokens.
+  "/api/calendar",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;
