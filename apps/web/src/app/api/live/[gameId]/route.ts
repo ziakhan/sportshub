@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
-import { publicPlayerName } from "@/lib/privacy/names"
+import { authOptions } from "@/lib/auth"
+import { playerDisplayName } from "@/lib/privacy/names"
+import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getSeasonStandings } from "@/lib/queries/standings"
 import { aggregateSeasonStats, type SeasonStatLine } from "@/lib/stats/season"
 
@@ -39,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         season: {
           select: {
             label: true,
-            league: { select: { name: true, periodType: true, gameClockMode: true } },
+            league: { select: { id: true, name: true, periodType: true, gameClockMode: true } },
           },
         },
       },
@@ -94,12 +97,21 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
           },
         },
       })
+      // Viewer-aware naming: participants (staff, league members, parents of
+      // rostered kids) see full names; the anonymous public gets the
+      // consent-gated "First L." form — same rule as the leaders page.
+      const session = await getServerSession(authOptions).catch(() => null)
+      const scope = await getViewerScope((session?.user as any)?.id ?? null)
+      const participant =
+        isParticipant(scope, { teamId: game.homeTeamId }) ||
+        isParticipant(scope, { teamId: game.awayTeamId }) ||
+        isParticipant(scope, { leagueId: game.season?.league?.id ?? null })
+
       players = submissions.flatMap((s: any) =>
         (s.roster?.players ?? []).map((p: any) => ({
           playerId: p.playerId,
           teamId: s.teamId,
-          // Public surface — same consent-gated naming as every other page
-          name: publicPlayerName(p.player),
+          name: playerDisplayName(p.player, participant),
           jerseyNumber: p.jerseyNumber != null ? String(p.jerseyNumber) : null,
         }))
       )

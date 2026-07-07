@@ -468,20 +468,26 @@ export function ScheduleTab({
                             {suggestionsFor === g.id ? "Hide alternates" : "Find alternates"}
                           </button>
                           <button
-                            onClick={() =>
-                              patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.homeTeamId })
-                            }
+                            onClick={() => {
+                              if (window.confirm("Record a FORFEIT by the home team? The away team is awarded the win in standings.")) {
+                                patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.homeTeamId })
+                              }
+                            }}
+                            title="Home team forfeits — away team is awarded the game"
                             className="border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
                           >
-                            Home defaults
+                            Forfeit: home
                           </button>
                           <button
-                            onClick={() =>
-                              patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.awayTeamId })
-                            }
+                            onClick={() => {
+                              if (window.confirm("Record a FORFEIT by the away team? The home team is awarded the win in standings.")) {
+                                patchGame(g.id, { status: "DEFAULTED", defaultedBy: g.awayTeamId })
+                              }
+                            }}
+                            title="Away team forfeits — home team is awarded the game"
                             className="border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
                           >
-                            Away defaults
+                            Forfeit: away
                           </button>
                           <button
                             onClick={() => cancelGame(g.id)}

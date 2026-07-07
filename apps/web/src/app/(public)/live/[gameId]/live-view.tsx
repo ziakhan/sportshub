@@ -136,8 +136,14 @@ export function LiveView({ gameId }: { gameId: string }) {
   const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
   const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
   const shortName = (pid: string) => {
-    const parts = (nameOf(pid) || "").split(" ")
-    return parts.length > 1 ? `${parts[0][0]}. ${parts.slice(-1)[0]}` : parts[0] || "—"
+    const name = nameOf(pid) || ""
+    const parts = name.split(" ")
+    if (parts.length < 2) return parts[0] || "—"
+    // Privacy-abbreviated names ("Cameron K.") arrive pre-shortened — never
+    // initial them again ("C. K."). Only compress genuine full names.
+    const last = parts[parts.length - 1]
+    if (/^[A-Z]\.?$/.test(last)) return name
+    return `${parts[0][0]}. ${last}`
   }
 
   const live = game.status === "LIVE"

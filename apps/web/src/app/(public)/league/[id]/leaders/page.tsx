@@ -51,50 +51,67 @@ export default async function LeagueLeadersPage({ params }: { params: { id: stri
           </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {leaders.categories.map((cat) => (
-            <Card key={cat.key} className="overflow-hidden p-0">
-              <div className="border-ink-100 flex items-baseline justify-between border-b px-5 py-4">
-                <h2 className="text-ink-950 text-lg font-bold">{cat.label}</h2>
-                <span className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-                  per game
-                </span>
-              </div>
-              <ol>
-                {cat.rows.map((row, i) => (
-                  <li
-                    key={row.playerId}
-                    className="border-ink-50 flex items-center gap-3 border-b px-5 py-3 last:border-0"
-                  >
-                    <span
-                      className={`w-6 shrink-0 text-center text-sm font-bold tabular-nums ${
-                        i === 0 ? "text-gold-600" : "text-ink-400"
-                      }`}
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {leaders.categories.map((cat) => {
+            const [top, ...rest] = cat.rows
+            return (
+              <Card key={cat.key} className="overflow-hidden p-0">
+                <div className="border-ink-100 flex items-baseline justify-between border-b px-4 py-2.5">
+                  <h2 className="text-ink-950 text-sm font-bold uppercase tracking-wide">
+                    {cat.label}
+                  </h2>
+                  <span className="text-ink-400 text-[10px] font-semibold uppercase tracking-[0.14em]">
+                    per game
+                  </span>
+                </div>
+                {top && (
+                  <div className="bg-gold-50/60 border-gold-400 border-l-2 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/player/${top.playerId}`}
+                          className="text-ink-950 hover:text-play-600 block truncate text-base font-bold transition-colors"
+                        >
+                          {playerDisplayName(top, participant)}
+                        </Link>
+                        <Link
+                          href={`/team/${top.teamId}`}
+                          className="text-ink-500 hover:text-ink-700 block truncate text-xs"
+                        >
+                          {top.teamName} · {top.gamesPlayed} GP
+                        </Link>
+                      </div>
+                      <span className="font-display text-ink-950 text-3xl font-bold tabular-nums">
+                        {top.value.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <ol>
+                  {rest.map((row, i) => (
+                    <li
+                      key={row.playerId}
+                      className="border-ink-50 flex items-center gap-2.5 border-b px-4 py-1.5 last:border-0"
                     >
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
+                      <span className="text-ink-400 w-4 shrink-0 text-center text-xs font-bold tabular-nums">
+                        {i + 2}
+                      </span>
                       <Link
                         href={`/player/${row.playerId}`}
-                        className="text-ink-950 hover:text-play-600 block truncate text-sm font-semibold transition-colors"
+                        className="text-ink-900 hover:text-play-600 min-w-0 flex-1 truncate text-sm font-medium transition-colors"
                       >
                         {playerDisplayName(row, participant)}
+                        <span className="text-ink-400 text-xs font-normal"> · {row.teamName}</span>
                       </Link>
-                      <Link
-                        href={`/team/${row.teamId}`}
-                        className="text-ink-400 hover:text-ink-600 block truncate text-xs"
-                      >
-                        {row.teamName} · {row.gamesPlayed} GP
-                      </Link>
-                    </div>
-                    <span className="font-display text-ink-950 text-xl font-bold tabular-nums">
-                      {row.value.toFixed(1)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </Card>
-          ))}
+                      <span className="text-ink-900 text-sm font-bold tabular-nums">
+                        {row.value.toFixed(1)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </Card>
+            )
+          })}
         </div>
       )}
 

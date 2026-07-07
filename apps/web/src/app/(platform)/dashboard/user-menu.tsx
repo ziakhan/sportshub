@@ -8,9 +8,11 @@ interface UserMenuProps {
   userName: string
   userEmail: string
   userInitials: string
+  /** Context links above Profile Settings (e.g. My Hub / My Players on public pages). */
+  extraLinks?: Array<{ href: string; label: string }>
 }
 
-export function UserMenu({ userName, userEmail, userInitials }: UserMenuProps) {
+export function UserMenu({ userName, userEmail, userInitials, extraLinks }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -60,6 +62,25 @@ export function UserMenu({ userName, userEmail, userInitials }: UserMenuProps) {
           </div>
 
           <div className="py-1">
+            {(extraLinks ?? []).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className="text-ink-700 hover:bg-ink-50 flex items-center gap-2 px-4 py-2.5 text-sm transition"
+              >
+                <svg
+                  className="text-ink-400 h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 10 12 4l9 6M5 10v9h14v-9" />
+                </svg>
+                {link.label}
+              </Link>
+            ))}
             <Link
               href="/settings/profile"
               onClick={() => setOpen(false)}

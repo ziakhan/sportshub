@@ -4,15 +4,20 @@ import { useState } from "react"
 import { format } from "date-fns"
 import { panelClass } from "./types"
 
+const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
+
 export function SessionsTab({
   seasonId,
   sessions,
+  seasonStatus,
   refresh,
 }: {
   seasonId: string
   sessions: any[]
+  seasonStatus?: string
   refresh: () => void
 }) {
+  const locked = LOCKED_STATUSES.includes(seasonStatus ?? "")
   // Session form
   const [sessionLabel, setSessionLabel] = useState("")
   const [sessionDays, setSessionDays] = useState([
@@ -56,6 +61,15 @@ export function SessionsTab({
       {/* Sessions */}
       <div className={panelClass}>
         <h3 className="text-ink-900 mb-4 font-semibold">Sessions (Game Days)</h3>
+        {locked && (
+          <div className="border-amber-200 bg-amber-50 text-amber-800 mb-4 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs">
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Season is {seasonStatus === "IN_PROGRESS" ? "in progress" : seasonStatus?.toLowerCase()} —
+            sessions are locked while games are being played.
+          </div>
+        )}
         {sessions.map((s: any) => (
           <div
             key={s.id}
@@ -65,17 +79,25 @@ export function SessionsTab({
               <span className="text-ink-900 font-medium">{s.label || "Session"}</span>
               <div className="flex items-center gap-2">
                 {s.venue && <span className="text-ink-400 text-xs">{s.venue.name}</span>}
-                <button
-                  onClick={async () => {
-                    await fetch(`/api/seasons/${seasonId}/sessions?sessionId=${s.id}`, {
-                      method: "DELETE",
-                    })
-                    refresh()
-                  }}
-                  className="hover:text-hoop-700 text-xs text-red-500"
-                >
-                  Remove
-                </button>
+                {!locked && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Remove session "${s.label || "Session"}"? Its game days and venue slots go with it. This cannot be undone.`)) return
+                      const res = await fetch(
+                        `/api/seasons/${seasonId}/sessions?sessionId=${s.id}`,
+                        { method: "DELETE" }
+                      )
+                      if (!res.ok) {
+                        const data = await res.json().catch(() => ({}))
+                        window.alert(data.error || "Couldn't remove the session.")
+                      }
+                      refresh()
+                    }}
+                    className="hover:text-hoop-700 text-xs text-red-500"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
             </div>
             {s.days?.map((d: any) => (
@@ -85,6 +107,7 @@ export function SessionsTab({
             ))}
           </div>
         ))}
+        {!locked && (
         <div className="border-ink-200 mt-4 space-y-2 border-t pt-4">
           <input
             type="text"
@@ -138,6 +161,7 @@ export function SessionsTab({
             Add Session
           </button>
         </div>
+        )}
       </div>
     </div>
   )

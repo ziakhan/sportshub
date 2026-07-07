@@ -3,15 +3,20 @@
 import { useState } from "react"
 import { inputClass, panelClass } from "./types"
 
+const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
+
 export function DivisionsTab({
   seasonId,
   divisions,
+  seasonStatus,
   refresh,
 }: {
   seasonId: string
   divisions: any[]
+  seasonStatus?: string
   refresh: () => void
 }) {
+  const locked = LOCKED_STATUSES.includes(seasonStatus ?? "")
   // Division form
   const [divName, setDivName] = useState("")
   const [divAgeGroup, setDivAgeGroup] = useState("")
@@ -45,6 +50,15 @@ export function DivisionsTab({
       {/* Divisions */}
       <div className={panelClass}>
         <h3 className="text-ink-900 mb-4 font-semibold">Divisions</h3>
+        {locked && (
+          <div className="border-amber-200 bg-amber-50 text-amber-800 mb-4 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs">
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            Season is {seasonStatus === "IN_PROGRESS" ? "in progress" : seasonStatus?.toLowerCase()} —
+            divisions are locked. Structural changes need the season reopened.
+          </div>
+        )}
         {divisions.map((d: any) => (
           <div
             key={d.id}
@@ -66,20 +80,34 @@ export function DivisionsTab({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-ink-400 text-xs">{d._count?.teams || 0} teams</span>
-              <button
-                onClick={async () => {
-                  await fetch(`/api/seasons/${seasonId}/divisions?divisionId=${d.id}`, {
-                    method: "DELETE",
-                  })
-                  refresh()
-                }}
-                className="hover:text-hoop-700 text-xs text-red-500"
-              >
-                Remove
-              </button>
+              {!locked && (
+                <button
+                  onClick={async () => {
+                    const teamCount = d._count?.teams || 0
+                    const warning =
+                      teamCount > 0
+                        ? `Delete division "${d.name}"? ${teamCount} team${teamCount !== 1 ? "s are" : " is"} assigned to it — this cannot be undone.`
+                        : `Delete division "${d.name}"? This cannot be undone.`
+                    if (!window.confirm(warning)) return
+                    const res = await fetch(
+                      `/api/seasons/${seasonId}/divisions?divisionId=${d.id}`,
+                      { method: "DELETE" }
+                    )
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}))
+                      window.alert(data.error || "Couldn't delete the division.")
+                    }
+                    refresh()
+                  }}
+                  className="hover:text-hoop-700 text-xs text-red-500"
+                >
+                  Remove
+                </button>
+              )}
             </div>
           </div>
         ))}
+        {!locked && (
         <div className="border-ink-200 mt-4 space-y-2 border-t pt-4">
           <div className="grid grid-cols-2 gap-2">
             <input
@@ -138,6 +166,7 @@ export function DivisionsTab({
             Add Division
           </button>
         </div>
+        )}
       </div>
     </div>
   )

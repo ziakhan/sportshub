@@ -6,6 +6,7 @@ import { NavDropdown } from "@/components/nav-dropdown"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { UserMenu } from "../(platform)/dashboard/user-menu"
 import { AuthLink } from "@/components/auth-link"
+import { ChatDock } from "@/components/chat-dock"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -108,7 +109,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <div className="flex items-center gap-2 sm:gap-3">
             {isLoggedIn ? (
               <>
-                {nav.isOperator && (
+                {nav.isOperator ? (
                   <Link
                     href="/dashboard"
                     className="bg-ink-950 hover:bg-ink-800 hidden items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors sm:inline-flex"
@@ -118,9 +119,33 @@ export default async function PublicLayout({ children }: { children: React.React
                     </svg>
                     Manage
                   </Link>
-                )}
+                ) : nav.isFamily ? (
+                  <Link
+                    href="/dashboard"
+                    className="bg-play-600 hover:bg-play-700 hidden items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors sm:inline-flex"
+                  >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M3 10 12 4l9 6M5 10v9h14v-9" />
+                    </svg>
+                    My Hub
+                  </Link>
+                ) : null}
                 <NotificationBell />
-                <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
+                <UserMenu
+                  userName={userName}
+                  userEmail={userEmail}
+                  userInitials={userInitials}
+                  extraLinks={
+                    nav.isFamily && !nav.isOperator
+                      ? [
+                          { href: "/dashboard", label: "My Hub" },
+                          { href: "/players", label: "My Players" },
+                          { href: "/offers", label: "Offers" },
+                          { href: "/payments", label: "Payments" },
+                        ]
+                      : [{ href: "/dashboard", label: "Dashboard" }]
+                  }
+                />
               </>
             ) : (
               <>
@@ -242,9 +267,9 @@ export default async function PublicLayout({ children }: { children: React.React
                   <Link href="/scores" className="block transition-colors hover:text-white">
                     Scores
                   </Link>
-                  {nav.isOperator && (
+                  {(nav.isOperator || nav.isFamily) && (
                     <Link href="/dashboard" className="block transition-colors hover:text-white">
-                      Manage
+                      {nav.isOperator ? "Manage" : "My Hub"}
                     </Link>
                   )}
                   <Link href="/settings/profile" className="block transition-colors hover:text-white">
@@ -286,6 +311,7 @@ export default async function PublicLayout({ children }: { children: React.React
           &copy; {new Date().getFullYear()} Youth Basketball Hub. All rights reserved.
         </div>
       </footer>
+      {userId && <ChatDock userId={userId} />}
     </main>
   )
 }

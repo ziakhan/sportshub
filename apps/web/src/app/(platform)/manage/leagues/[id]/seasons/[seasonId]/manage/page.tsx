@@ -259,10 +259,20 @@ export default function LeagueManagePage() {
       )}
 
       {activeTab === "divisions" && (
-        <DivisionsTab seasonId={seasonId} divisions={divisions} refresh={fetchAll} />
+        <DivisionsTab
+          seasonId={seasonId}
+          divisions={divisions}
+          seasonStatus={league?.leagueStatus}
+          refresh={fetchAll}
+        />
       )}
       {activeTab === "sessions" && (
-        <SessionsTab seasonId={seasonId} sessions={sessions} refresh={fetchAll} />
+        <SessionsTab
+          seasonId={seasonId}
+          sessions={sessions}
+          seasonStatus={league?.leagueStatus}
+          refresh={fetchAll}
+        />
       )}
       {activeTab === "venues" && (
         <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />

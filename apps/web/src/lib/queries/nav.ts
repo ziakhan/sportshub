@@ -24,6 +24,8 @@ export interface PublicNavData {
   otherClubs: NavEntry[]
   /** Holds an operator role → public header shows the Manage door. */
   isOperator: boolean
+  /** Parent/player household → public header shows the My Hub door. */
+  isFamily: boolean
 }
 
 /** Roles whose day-to-day home is the MANAGE world (site-ia-plan §7–§8). */
@@ -115,5 +117,10 @@ export const getPublicNav = cache(async (userId: string | null): Promise<PublicN
     myClubs,
     otherClubs,
     isOperator: roles.some((r: any) => OPERATOR_ROLES.has(r.role)),
+    // Parent/Player role, or simply having kids on file (roles accrue from
+    // actions, so a parent who only ever signed up a kid still counts)
+    isFamily:
+      roles.some((r: any) => r.role === "Parent" || r.role === "Player") ||
+      scope.playerIds.size > 0,
   }
 })
