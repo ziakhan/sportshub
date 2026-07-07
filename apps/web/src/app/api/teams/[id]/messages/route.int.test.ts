@@ -11,6 +11,7 @@ import { getChatMembers, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { GET, POST } from "./route"
 import { DELETE } from "./[messageId]/route"
+import { POST as VOTE } from "../polls/[pollId]/vote/route"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
@@ -178,6 +179,56 @@ describe("team chat (integration)", () => {
     actAs(coachId)
     await send({ body: "Bell three." })
     expect(await unreadBells()).toBe(1)
+  })
+
+  it("quick poll: coach posts into the stream, family votes, counts flow back", async () => {
+    actAs(coachId)
+    const res = await send({
+      poll: { question: "Pizza after Saturday's game?", options: ["In!", "Can't make it"] },
+    })
+    expect(res.status).toBe(201)
+    const { message } = await res.json()
+    expect(message.poll).toBeTruthy()
+    expect(message.poll.question).toBe("Pizza after Saturday's game?")
+    expect(message.poll.options).toHaveLength(2)
+    expect(message.body).toBe("Pizza after Saturday's game?")
+
+    // Family votes through the regular poll endpoint
+    actAs(familyParentId)
+    const voteRes = await VOTE(
+      jsonRequest(`/api/teams/${teamId}/polls/${message.poll.id}/vote`, {
+        answers: [
+          { questionId: message.poll.questionId, optionIds: [message.poll.options[0].id] },
+        ],
+      }),
+      { params: { id: teamId, pollId: message.poll.id } }
+    )
+    expect(voteRes.status).toBe(200)
+
+    // The feed embeds the fresh counts AND ships pollUpdates for delta polls
+    const feed = await (await list()).json()
+    const pollMessage = feed.messages.find((m: any) => m.id === message.id)
+    expect(pollMessage.poll.options[0].count).toBe(1)
+    expect(pollMessage.poll.options[0].mine).toBe(true)
+    const update = feed.pollUpdates.find((u: any) => u.messageId === message.id)
+    expect(update.poll.voterCount).toBe(1)
+  })
+
+  it("quick poll: families cannot post one", async () => {
+    actAs(familyParentId)
+    const res = await send({ poll: { question: "Can I?", options: ["A", "B"] } })
+    expect(res.status).toBe(403)
+  })
+
+  it("quick poll: taking the message back deletes the poll and its votes", async () => {
+    actAs(coachId)
+    const { message } = await (
+      await send({ poll: { question: "Scrap this one?", options: ["Yes", "No"] } })
+    ).json()
+
+    expect((await remove(message.id)).status).toBe(200)
+    const pollLeft = await (prisma as any).poll.findUnique({ where: { id: message.poll.id } })
+    expect(pollLeft).toBeNull()
   })
 
   it("v1.5 — members list: coaches are chat admins, families carry player names", async () => {

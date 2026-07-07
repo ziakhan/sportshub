@@ -23,6 +23,39 @@ export const pollInclude = {
 }
 
 /**
+ * Compact shape for a quick poll embedded in a chat message bubble —
+ * single question, counts + the viewer's own picks (no names; the polls
+ * page has the staff detail view).
+ */
+export function serializeChatPoll(poll: any, viewerId: string) {
+  const question = [...poll.questions].sort((a: any, b: any) => a.order - b.order)[0]
+  if (!question) return null
+  const voters = new Set<string>(question.votes.map((v: any) => v.userId))
+  const countByOption = new Map<string, number>()
+  const mine = new Set<string>()
+  for (const v of question.votes) {
+    countByOption.set(v.optionId, (countByOption.get(v.optionId) ?? 0) + 1)
+    if (v.userId === viewerId) mine.add(v.optionId)
+  }
+  return {
+    id: poll.id,
+    questionId: question.id,
+    question: question.prompt,
+    allowMultiple: question.allowMultiple,
+    status: poll.status,
+    voterCount: voters.size,
+    options: [...question.options]
+      .sort((a: any, b: any) => a.order - b.order)
+      .map((o: any) => ({
+        id: o.id,
+        label: o.label,
+        count: countByOption.get(o.id) ?? 0,
+        mine: mine.has(o.id),
+      })),
+  }
+}
+
+/**
  * Aggregate a poll (loaded with pollInclude) for one viewer. Families see
  * counts and their own choices; staff additionally see voter names.
  */

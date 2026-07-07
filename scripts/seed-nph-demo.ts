@@ -1516,6 +1516,51 @@ async function seed() {
     where: { id: lordsG9.id },
     data: { practiceScheduleAnnouncedAt: new Date(now.getTime() - days(1)) },
   })
+  // Quick poll IN the Lords chat stream (chat bubble w/ live bars): pizza
+  // headcount, most families answered, demo parent hasn't
+  const chatPoll = await p.poll.create({
+    data: {
+      teamId: lordsG9.id,
+      createdById: lordsG9.coachId,
+      title: "Pizza after Saturday's game? 🍕",
+      createdAt: new Date(now.getTime() - 3600_000 * 5),
+      questions: {
+        create: [{
+          prompt: "Pizza after Saturday's game? 🍕",
+          order: 0,
+          options: { create: [
+            { label: "We're in!", order: 0 },
+            { label: "Can't make it", order: 1 },
+          ] },
+        }],
+      },
+    },
+    include: { questions: { include: { options: true } } },
+  })
+  const chatQ = chatPoll.questions[0]
+  await p.teamMessage.create({
+    data: {
+      teamId: lordsG9.id, senderId: lordsG9.coachId,
+      body: "Pizza after Saturday's game? 🍕",
+      pollId: chatPoll.id,
+      createdAt: new Date(now.getTime() - 3600_000 * 5),
+    },
+  })
+  let chatPollVotes = 0
+  for (let i = 0; i < lordsG9.rosterParents.length; i++) {
+    const userId = lordsG9.rosterParents[i]
+    if (userId === demoParent.id || i % 4 === 3) continue
+    await p.pollVote.create({
+      data: {
+        questionId: chatQ.id,
+        optionId: chatQ.options[i % 5 === 2 ? 1 : 0].id,
+        userId,
+      },
+    })
+    chatPollVotes++
+  }
+  console.log(`✓ Chat quick poll in Lords G9 stream (${chatPollVotes} votes; demo parent hasn't voted)`)
+
   const dayName = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"]
   const slotLabel = (s: { dayOfWeek: number; startTime: string }) => {
     const [h, m] = s.startTime.split(":").map(Number)

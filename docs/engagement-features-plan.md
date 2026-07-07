@@ -28,6 +28,29 @@ holds the whole shape while we ship it in slices.
 - Demo: NPH seeder gives Lords G9 a "Summer tournament plans" poll — 9
   families voted, demo parent votes live, coach sees names.
 
+### Slice 1b — Quick polls IN the chat stream ✅ SHIPPED 2026-07-07
+
+Owner's original vision: "posting a single-question poll into the chat for
+easily sending it to people... with charts or bars to show the results."
+- `TeamMessage.pollId` (runbook #12 amendment) — a message can carry a
+  single-question Poll; the bubble renders tappable options with live
+  result bars (WhatsApp-style). Tap to vote; single-choice taps switch,
+  multi-choice taps toggle.
+- Staff-only creation via the 📊 button in the chat composer (question +
+  2-6 options + multiple-choice toggle). Families vote in place.
+- Live counts WITHOUT new messages: votes mutate existing polls, so every
+  messages GET (including ?after= delta polls) ships `pollUpdates` — an
+  open chat sees vote movement within the 5s poll cycle.
+- Take back / moderate the poll message → the poll and its votes go with
+  it. Deleting from the polls page leaves the message as plain text
+  (pollId SetNull).
+- Chat polls also appear on the team polls page (they ARE single-question
+  polls) — staff get the voter-names detail view there.
+- Shared PollBubble renders in both the full chat page and the floating
+  chat dock. 3 int tests added to the chat suite (seed 1118).
+- Demo: Lords G9 chat has "Pizza after Saturday's game? 🍕" (7 votes,
+  demo parent hasn't voted).
+
 ## Slice 2 — Practice scheduling + calendar sync ✅ SHIPPED 2026-07-06
 
 - `PracticeSlot` recurring days ("Tue 18:30, 90 min, Main Gym") — set on

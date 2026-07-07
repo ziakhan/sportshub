@@ -227,6 +227,12 @@ vote), single/multi choice, re-vote replaces, live result bars, staff-only
 voter names, team_poll bell, /teams/[teamId]/polls + entry points (team
 dashboard, chat header, parent dashboard). 11 int tests (seed 1122). NPH
 demo world seeds a Lords G9 tournament poll (demo parent votes live).
+**1b SHIPPED 2026-07-07: quick polls in the chat stream** (owner's original
+vision) — 📊 composer button (staff), single-question poll as a chat
+bubble w/ tappable live result bars, votes flow to open chats within 5s
+(pollUpdates on every messages GET), take-back deletes the poll,
+TeamMessage.pollId = runbook #12 amendment, 3 int tests (chat suite),
+demo pizza poll in Lords chat.
 NEXT candidates (owner picks): club/league-scoped polls, public read-only
 results, quizzes, carpool v1.
 

@@ -9,26 +9,73 @@ import {
   getTeamStaffUserIds,
   markChatRead,
 } from "@/lib/teams/chat-access"
+import { pollInclude, serializeChatPoll } from "@/lib/teams/polls"
 
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 50
+/** Poll-bearing messages within this recent window get live vote refreshes */
+const POLL_REFRESH_WINDOW = 20
 
-const sendMessageSchema = z.object({
-  body: z.string().trim().min(1, "Message can't be empty").max(2000),
-})
+const sendMessageSchema = z
+  .object({
+    body: z.string().trim().min(1, "Message can't be empty").max(2000).optional(),
+    // Quick poll (staff): single question posted straight into the stream
+    poll: z
+      .object({
+        question: z.string().trim().min(1, "Question can't be empty").max(300),
+        options: z
+          .array(z.string().trim().min(1, "Option can't be empty").max(100))
+          .min(2, "A poll needs at least 2 options")
+          .max(6),
+        allowMultiple: z.boolean().optional().default(false),
+      })
+      .optional(),
+  })
+  .refine((data) => data.body || data.poll, { message: "Message can't be empty" })
 
-function serialize(message: any, staffIds: Set<string>) {
+function serialize(message: any, staffIds: Set<string>, pollById?: Map<string, any>) {
   return {
     id: message.id,
     body: message.body,
     createdAt: message.createdAt,
+    poll: message.pollId ? (pollById?.get(message.pollId) ?? null) : null,
     sender: {
       id: message.sender.id,
       name: [message.sender.firstName, message.sender.lastName].filter(Boolean).join(" "),
       isStaff: staffIds.has(message.sender.id),
     },
   }
+}
+
+/**
+ * Chat polls need fresher data than the message stream: votes mutate
+ * existing polls, so an ?after= delta poll would never see them. Every GET
+ * therefore also returns the current state of recent poll messages
+ * (pollUpdates) for the client to merge over its cache.
+ */
+async function loadChatPolls(teamId: string, viewerId: string, rowPollIds: string[]) {
+  const recent = await prisma.teamMessage.findMany({
+    where: { teamId, deletedAt: null, pollId: { not: null } },
+    orderBy: { createdAt: "desc" },
+    take: POLL_REFRESH_WINDOW,
+    select: { id: true, pollId: true },
+  })
+  const pollIds = [...new Set([...rowPollIds, ...recent.map((m: any) => m.pollId as string)])]
+  if (pollIds.length === 0) {
+    return { pollById: new Map<string, any>(), pollUpdates: [] as any[] }
+  }
+  const polls = await (prisma as any).poll.findMany({
+    where: { id: { in: pollIds } },
+    include: pollInclude,
+  })
+  const pollById = new Map<string, any>(
+    polls.map((p: any) => [p.id, serializeChatPoll(p, viewerId)])
+  )
+  const pollUpdates = recent
+    .map((m: any) => ({ messageId: m.id, poll: pollById.get(m.pollId) ?? null }))
+    .filter((u: any) => u.poll)
+  return { pollById, pollUpdates }
 }
 
 /**
@@ -61,6 +108,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: true,
         body: true,
         createdAt: true,
+        pollId: true,
         sender: { select: { id: true, firstName: true, lastName: true } },
       },
       orderBy: { createdAt: after ? "asc" : "desc" },
@@ -68,7 +116,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
     const ordered = after ? rows : [...rows].reverse()
 
-    const staffIds = await getTeamStaffUserIds(membership.teamId, membership.tenantId)
+    const [staffIds, { pollById, pollUpdates }] = await Promise.all([
+      getTeamStaffUserIds(membership.teamId, membership.tenantId),
+      loadChatPolls(
+        membership.teamId,
+        auth.userId,
+        rows.filter((r: any) => r.pollId).map((r: any) => r.pollId as string)
+      ),
+    ])
 
     // Reading advances the cursor: on open, and whenever a poll actually
     // delivers something new (a poll that returns nothing writes nothing).
@@ -77,7 +132,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({
-      messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds)),
+      messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds, pollById)),
+      pollUpdates,
       hasMore: !after && rows.length === PAGE_SIZE,
       membership: { role: membership.role },
     })
@@ -107,15 +163,65 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    const message = await prisma.teamMessage.create({
-      data: { teamId: params.id, senderId: auth.userId, body: parsed.data.body },
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        sender: { select: { id: true, firstName: true, lastName: true } },
-      },
-    })
+    if (parsed.data.poll && membership.role === "family") {
+      return NextResponse.json(
+        { error: "Only team staff can post polls" },
+        { status: 403 }
+      )
+    }
+
+    const messageSelect = {
+      id: true,
+      body: true,
+      createdAt: true,
+      pollId: true,
+      sender: { select: { id: true, firstName: true, lastName: true } },
+    }
+
+    let message: any
+    let chatPoll: any = null
+    if (parsed.data.poll) {
+      const pollInput = parsed.data.poll
+      const created = await (prisma as any).$transaction(async (tx: any) => {
+        const poll = await tx.poll.create({
+          data: {
+            teamId: params.id,
+            createdById: auth.userId,
+            title: pollInput.question,
+            questions: {
+              create: [
+                {
+                  prompt: pollInput.question,
+                  allowMultiple: pollInput.allowMultiple,
+                  order: 0,
+                  options: {
+                    create: pollInput.options.map((label, i) => ({ label, order: i })),
+                  },
+                },
+              ],
+            },
+          },
+          include: pollInclude,
+        })
+        const msg = await tx.teamMessage.create({
+          data: {
+            teamId: params.id,
+            senderId: auth.userId,
+            body: parsed.data.body || pollInput.question,
+            pollId: poll.id,
+          },
+          select: messageSelect,
+        })
+        return { poll, msg }
+      })
+      message = created.msg
+      chatPoll = serializeChatPoll(created.poll, auth.userId)
+    } else {
+      message = await prisma.teamMessage.create({
+        data: { teamId: params.id, senderId: auth.userId, body: parsed.data.body! },
+        select: messageSelect,
+      })
+    }
 
     // Sending counts as reading your own chat
     await markChatRead(auth.userId, membership.teamId)
@@ -140,12 +246,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       const senderName = [message.sender.firstName, message.sender.lastName]
         .filter(Boolean)
         .join(" ")
-      const preview =
-        parsed.data.body.length > 80 ? `${parsed.data.body.slice(0, 77)}…` : parsed.data.body
+      const bodyText: string = message.body
+      const preview = bodyText.length > 80 ? `${bodyText.slice(0, 77)}…` : bodyText
       await notifyMany(prisma, toNotify, {
         type: "team_chat",
         title: `New message in ${membership.teamName} chat`,
-        message: `${senderName}: ${preview}`,
+        message: `${senderName}: ${chatPoll ? "📊 " : ""}${preview}`,
         link: `/teams/${membership.teamId}/chat`,
         referenceId: membership.teamId,
         referenceType: "Team",
@@ -153,7 +259,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const staffIds = await getTeamStaffUserIds(membership.teamId, membership.tenantId)
-    return NextResponse.json({ message: serialize(message, staffIds) }, { status: 201 })
+    const pollById = chatPoll ? new Map([[message.pollId, chatPoll]]) : undefined
+    return NextResponse.json({ message: serialize(message, staffIds, pollById) }, { status: 201 })
   } catch (error) {
     console.error("Team chat send error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

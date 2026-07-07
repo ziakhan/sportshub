@@ -3,13 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { format, isSameDay, isToday, isYesterday } from "date-fns"
 import type { ChatMembers } from "@/lib/teams/chat-access"
+import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
 
 interface ChatMessage {
   id: string
   body: string
   createdAt: string
+  poll?: ChatPollData | null
   sender: { id: string; name: string; isStaff: boolean }
   pending?: boolean
+}
+
+interface PollUpdate {
+  messageId: string
+  poll: ChatPollData
 }
 
 const POLL_MS = 5000
@@ -38,6 +45,11 @@ export function TeamChat({
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showMembers, setShowMembers] = useState(false)
+  // Quick poll composer (staff)
+  const [showPollForm, setShowPollForm] = useState(false)
+  const [pollQuestion, setPollQuestion] = useState("")
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""])
+  const [pollMulti, setPollMulti] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
   const memberCount = members.userIds.length
@@ -51,6 +63,22 @@ export function TeamChat({
     })
   }, [])
 
+  // Votes mutate existing poll messages — every fetch ships fresh counts
+  const applyPollUpdates = useCallback((updates: PollUpdate[] | undefined) => {
+    if (!updates || updates.length === 0) return
+    const byMessage = new Map(updates.map((u) => [u.messageId, u.poll]))
+    setMessages((current) =>
+      current.map((m) => {
+        const poll = byMessage.get(m.id)
+        return poll ? { ...m, poll } : m
+      })
+    )
+  }, [])
+
+  const updatePoll = useCallback((poll: ChatPollData) => {
+    setMessages((current) => current.map((m) => (m.poll?.id === poll.id ? { ...m, poll } : m)))
+  }, [])
+
   // Initial load
   useEffect(() => {
     let cancelled = false
@@ -62,6 +90,7 @@ export function TeamChat({
         if (cancelled) return
         setMessages(data.messages)
         setHasMore(data.hasMore)
+        applyPollUpdates(data.pollUpdates)
       } catch {
         if (!cancelled) setError("Couldn't load the chat — refresh to try again.")
       } finally {
@@ -71,7 +100,7 @@ export function TeamChat({
     return () => {
       cancelled = true
     }
-  }, [teamId])
+  }, [teamId, applyPollUpdates])
 
   // Poll for new messages
   useEffect(() => {
@@ -84,12 +113,13 @@ export function TeamChat({
         if (!res.ok) return
         const data = await res.json()
         mergeNewer(data.messages)
+        applyPollUpdates(data.pollUpdates)
       } catch {
         // transient network blip — next tick retries
       }
     }, POLL_MS)
     return () => clearInterval(timer)
-  }, [teamId, loaded, messages, mergeNewer])
+  }, [teamId, loaded, messages, mergeNewer, applyPollUpdates])
 
   // Keep pinned to the bottom unless the reader scrolled up
   useEffect(() => {
@@ -150,6 +180,36 @@ export function TeamChat({
       mergeNewer([data.message])
     } catch {
       setError("Couldn't send — check your connection.")
+    } finally {
+      setSending(false)
+    }
+  }
+
+  async function sendPoll() {
+    const question = pollQuestion.trim()
+    const options = pollOptions.map((o) => o.trim()).filter(Boolean)
+    if (!question || options.length < 2 || sending) return
+    setSending(true)
+    setError(null)
+    stickToBottom.current = true
+    try {
+      const res = await fetch(`/api/teams/${teamId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ poll: { question, options, allowMultiple: pollMulti } }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || "Couldn't post the poll — try again.")
+        return
+      }
+      setShowPollForm(false)
+      setPollQuestion("")
+      setPollOptions(["", ""])
+      setPollMulti(false)
+      mergeNewer([data.message])
+    } catch {
+      setError("Couldn't post the poll — check your connection.")
     } finally {
       setSending(false)
     }
@@ -263,12 +323,18 @@ export function TeamChat({
                   <div className={`group mb-2 flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[85%] rounded-2xl px-3.5 py-2 ${
-                        mine ? "bg-play-600 text-white" : "bg-court-50 text-ink-900"
+                        message.poll
+                          ? "border-ink-100 w-full border bg-white sm:w-[85%]"
+                          : mine
+                            ? "bg-play-600 text-white"
+                            : "bg-court-50 text-ink-900"
                       }`}
                     >
-                      {!mine && (
+                      {(!mine || message.poll) && (
                         <div className="mb-0.5 flex items-center gap-1.5">
-                          <span className="text-xs font-semibold">{message.sender.name}</span>
+                          <span className="text-ink-800 text-xs font-semibold">
+                            {mine ? "You" : message.sender.name}
+                          </span>
                           {message.sender.isStaff && (
                             <span className="bg-play-100 text-play-700 rounded-full px-1.5 py-px text-[10px] font-bold">
                               STAFF
@@ -276,10 +342,14 @@ export function TeamChat({
                           )}
                         </div>
                       )}
-                      <p className="whitespace-pre-line break-words text-sm">{message.body}</p>
+                      {message.poll ? (
+                        <PollBubble teamId={teamId} poll={message.poll} onUpdate={updatePoll} />
+                      ) : (
+                        <p className="whitespace-pre-line break-words text-sm">{message.body}</p>
+                      )}
                       <div
                         className={`mt-0.5 flex items-center justify-end gap-2 text-[10px] ${
-                          mine ? "text-play-100" : "text-ink-400"
+                          mine && !message.poll ? "text-play-100" : "text-ink-400"
                         }`}
                       >
                         {(mine || canModerate) && (
@@ -308,7 +378,93 @@ export function TeamChat({
         </div>
       )}
 
+      {canModerate && showPollForm && (
+        <div className="border-ink-100 space-y-2 border-t p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-ink-700 text-xs font-bold">📊 Quick poll</p>
+            <label className="text-ink-500 flex items-center gap-1.5 text-xs">
+              <input
+                type="checkbox"
+                checked={pollMulti}
+                onChange={(e) => setPollMulti(e.target.checked)}
+              />
+              Multiple choices
+            </label>
+          </div>
+          <input
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            maxLength={300}
+            placeholder="Ask the team something…"
+            className="border-ink-200 focus:border-play-500 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+          />
+          {pollOptions.map((option, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={option}
+                onChange={(e) =>
+                  setPollOptions((cur) => cur.map((o, j) => (j === i ? e.target.value : o)))
+                }
+                maxLength={100}
+                placeholder={`Option ${i + 1}`}
+                className="border-ink-200 focus:border-play-500 min-w-0 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+              />
+              {pollOptions.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => setPollOptions((cur) => cur.filter((_, j) => j !== i))}
+                  className="text-ink-400 shrink-0 text-lg leading-none hover:text-red-500"
+                  aria-label="Remove option"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <div className="flex items-center justify-between">
+            {pollOptions.length < 6 ? (
+              <button
+                type="button"
+                onClick={() => setPollOptions((cur) => [...cur, ""])}
+                className="text-play-600 hover:text-play-700 text-xs font-semibold"
+              >
+                + Add option
+              </button>
+            ) : (
+              <span />
+            )}
+            <button
+              type="button"
+              onClick={sendPoll}
+              disabled={
+                sending ||
+                !pollQuestion.trim() ||
+                pollOptions.filter((o) => o.trim()).length < 2
+              }
+              className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              {sending ? "Posting…" : "Post poll"}
+            </button>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={sendMessage} className="border-ink-100 flex gap-2 border-t p-3">
+        {canModerate && (
+          <button
+            type="button"
+            onClick={() => setShowPollForm((v) => !v)}
+            className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+              showPollForm
+                ? "border-play-400 bg-play-50 text-play-700"
+                : "border-ink-200 text-ink-500 hover:bg-ink-50"
+            }`}
+            title="Post a quick poll"
+            aria-label="Post a quick poll"
+          >
+            📊
+          </button>
+        )}
         <input
           type="text"
           value={input}

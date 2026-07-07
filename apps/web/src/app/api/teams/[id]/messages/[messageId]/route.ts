@@ -23,7 +23,7 @@ export async function DELETE(
 
     const message = await prisma.teamMessage.findFirst({
       where: { id: params.messageId, teamId: params.id, deletedAt: null },
-      select: { id: true, senderId: true },
+      select: { id: true, senderId: true, pollId: true },
     })
     if (!message) return NextResponse.json({ error: "Message not found" }, { status: 404 })
 
@@ -36,6 +36,11 @@ export async function DELETE(
       where: { id: message.id },
       data: { deletedAt: new Date(), deletedById: auth.userId },
     })
+
+    // A taken-back/moderated poll message takes its poll (and votes) with it
+    if (message.pollId) {
+      await (prisma as any).poll.delete({ where: { id: message.pollId } }).catch(() => {})
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

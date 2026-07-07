@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
 
 /**
  * Floating team-chat dock (public pages, signed-in members only).
@@ -23,6 +24,7 @@ interface DockMessage {
   id: string
   body: string
   createdAt: string
+  poll?: ChatPollData | null
   sender: { id: string; name: string; isStaff: boolean }
 }
 
@@ -171,6 +173,24 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
     })
   }, [])
 
+  const applyPollUpdates = useCallback(
+    (updates: Array<{ messageId: string; poll: ChatPollData }> | undefined) => {
+      if (!updates || updates.length === 0) return
+      const byMessage = new Map(updates.map((u) => [u.messageId, u.poll]))
+      setMessages((current) =>
+        current.map((m) => {
+          const poll = byMessage.get(m.id)
+          return poll ? { ...m, poll } : m
+        })
+      )
+    },
+    []
+  )
+
+  const updatePoll = useCallback((poll: ChatPollData) => {
+    setMessages((current) => current.map((m) => (m.poll?.id === poll.id ? { ...m, poll } : m)))
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     setMessages([])
@@ -196,9 +216,10 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
       if (!res?.ok) return
       const data = await res.json()
       mergeNewer(data.messages)
+      applyPollUpdates(data.pollUpdates)
     }, POLL_MS)
     return () => clearInterval(timer)
-  }, [teamId, loaded, messages, mergeNewer])
+  }, [teamId, loaded, messages, mergeNewer, applyPollUpdates])
 
   useEffect(() => {
     const el = listRef.current
@@ -240,12 +261,16 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
               <div key={message.id} className={`mb-1.5 flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-1.5 ${
-                    mine ? "bg-play-600 text-white" : "bg-court-50 text-ink-900"
+                    message.poll
+                      ? "border-ink-100 w-full border bg-white"
+                      : mine
+                        ? "bg-play-600 text-white"
+                        : "bg-court-50 text-ink-900"
                   }`}
                 >
-                  {!mine && (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold">
-                      {message.sender.name}
+                  {(!mine || message.poll) && (
+                    <span className="text-ink-800 flex items-center gap-1 text-[11px] font-semibold">
+                      {mine ? "You" : message.sender.name}
                       {message.sender.isStaff && (
                         <span className="bg-play-100 text-play-700 rounded-full px-1 py-px text-[9px] font-bold">
                           STAFF
@@ -253,8 +278,16 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
                       )}
                     </span>
                   )}
-                  <p className="whitespace-pre-line break-words text-[13px]">{message.body}</p>
-                  <p className={`text-right text-[9px] ${mine ? "text-play-100" : "text-ink-400"}`}>
+                  {message.poll ? (
+                    <PollBubble teamId={teamId} poll={message.poll} onUpdate={updatePoll} />
+                  ) : (
+                    <p className="whitespace-pre-line break-words text-[13px]">{message.body}</p>
+                  )}
+                  <p
+                    className={`text-right text-[9px] ${
+                      mine && !message.poll ? "text-play-100" : "text-ink-400"
+                    }`}
+                  >
                     {format(new Date(message.createdAt), "h:mm a")}
                   </p>
                 </div>

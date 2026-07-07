@@ -339,6 +339,8 @@ docs/engagement-features-plan.md). All additive — one `prisma db push`:
 - New tables `Poll`, `PollQuestion`, `PollOption`, `PollVote`
   (team-scoped; FKs cascade; PollVote unique (questionId, userId, optionId))
 - Back-relations on Team (`polls`) and User (`pollsCreated`, `pollVotes`)
+- (amended 2026-07-07) `TeamMessage.pollId String? @unique` (FK → Poll,
+  SetNull) — quick single-question polls posted into the team chat stream
 
 Nothing to backfill. Notification type "team_poll" is code-level only (the
 Notification.type column is a plain string).

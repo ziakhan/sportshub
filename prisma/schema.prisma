@@ -315,6 +315,12 @@ model TeamMessage {
 
   body String @db.Text
 
+  // Quick poll posted into the stream (WhatsApp-style): the message carries
+  // a single-question Poll; the bubble renders live result bars. SetNull so
+  // deleting the poll from the polls page leaves the message as plain text.
+  pollId String? @unique
+  poll   Poll?   @relation(fields: [pollId], references: [id], onDelete: SetNull)
+
   deletedAt   DateTime?
   deletedById String?
 
@@ -361,6 +367,8 @@ model Poll {
   closedAt    DateTime?
 
   questions PollQuestion[]
+  // Set when this poll was posted as a quick poll in the team chat
+  chatMessage TeamMessage?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
