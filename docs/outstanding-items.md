@@ -217,7 +217,20 @@ monetization model (§12) — docs/public-site-content-plan.md.
 - Seeder unification fork — largely superseded by scripts/simulate.ts; ASK
   before building
 
-## 6. Performance — AUDITED + QUICK WINS SHIPPED 2026-07-06
+## 6. Engagement features (polls → quizzes → carpool) — SLICE 1 SHIPPED 2026-07-06
+Owner vision + roadmap: **docs/engagement-features-plan.md** (scoped
+team/club/league engagement by authorized creators, public-page surfacing
+later; carpool researched-not-built with V1 sketch + liability notes).
+**Team polls & surveys SHIPPED**: Poll/PollQuestion/PollOption/PollVote
+(runbook #12), chat-membership authz (staff create/close/delete; families
+vote), single/multi choice, re-vote replaces, live result bars, staff-only
+voter names, team_poll bell, /teams/[teamId]/polls + entry points (team
+dashboard, chat header, parent dashboard). 11 int tests (seed 1122). NPH
+demo world seeds a Lords G9 tournament poll (demo parent votes live).
+NEXT candidates (owner picks): club/league-scoped polls, public read-only
+results, quizzes, carpool v1.
+
+## 6b. Performance — AUDITED + QUICK WINS SHIPPED 2026-07-06
 Owner asked "audit the DB indices, app is slow." **Full record:
 `docs/perf-audit-2026-07-06.md` — read it before touching perf again.**
 Verdict: indexes were fine (DB tiny, warm renders 80–200ms); local slowness

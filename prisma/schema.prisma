@@ -59,6 +59,8 @@ model User {
   follows             Follow[]
   teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
   teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
+  pollsCreated        Poll[]              @relation("PollsCreated")
+  pollVotes           PollVote[]          @relation("PollVotes")
   rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
   rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
   leagueRefereePools      LeagueReferee[]         @relation("LeagueReferees")
@@ -281,6 +283,7 @@ model Team {
 
   messages  TeamMessage[]
   chatReads TeamChatRead[]
+  polls     Poll[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -324,6 +327,83 @@ model TeamChatRead {
 
   @@id([userId, teamId])
   @@index([teamId])
+}
+
+// Team polls & surveys (engagement v1 — docs/engagement-features-plan.md).
+// Same membership as team chat: staff create, staff + rostered families
+// vote and see results. A poll holds 1..N questions so it doubles as a
+// lightweight survey ("which tournaments should we enter?").
+enum PollStatus {
+  OPEN
+  CLOSED
+}
+
+model Poll {
+  id     String @id @default(uuid())
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("PollsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?    @db.Text
+  status      PollStatus @default(OPEN)
+  closedAt    DateTime?
+
+  questions PollQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId, status])
+  @@index([createdById])
+}
+
+model PollQuestion {
+  id     String @id @default(uuid())
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  prompt        String
+  allowMultiple Boolean @default(false)
+  order         Int     @default(0)
+
+  options PollOption[]
+  votes   PollVote[]
+
+  @@index([pollId])
+}
+
+model PollOption {
+  id         String       @id @default(uuid())
+  questionId String
+  question   PollQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  label String
+  order Int    @default(0)
+
+  votes PollVote[]
+
+  @@index([questionId])
+}
+
+model PollVote {
+  id         String       @id @default(uuid())
+  questionId String
+  question   PollQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     PollOption   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation("PollVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // One row per chosen option; re-voting replaces the user's rows for the
+  // question in a transaction (single-choice = at most one row).
+  @@unique([questionId, userId, optionId])
+  @@index([questionId, userId])
+  @@index([optionId])
 }
 
 enum Gender {

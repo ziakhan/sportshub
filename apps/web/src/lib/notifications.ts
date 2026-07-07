@@ -46,6 +46,8 @@ export type NotificationType =
   | "game_rescheduled"
   // Team chat (debounced — one unread bell per channel)
   | "team_chat"
+  // Team polls & surveys (one bell per poll created)
+  | "team_poll"
   // League roster change flow
   | "roster_change_requested"
   | "roster_change_approved"

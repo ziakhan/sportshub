@@ -1394,6 +1394,75 @@ async function seed() {
   })
   console.log(`✓ ${chatMessages} chat messages across ${teams.length} team chats (demo parent has unread + bell)`)
 
+  // ── Team poll on the Lords G9 (engagement v1 demo) ─────────────────────
+  // Most families have voted; the demo parent hasn't — the demo shows the
+  // live voting flow and staff-side voter names.
+  const lordsPoll = await p.poll.create({
+    data: {
+      teamId: lordsG9.id,
+      createdById: lordsG9.coachId,
+      title: "Summer tournament plans",
+      description: "Two questions — helps us commit to August tournaments before entry deadlines.",
+      createdAt: new Date(now.getTime() - days(2)),
+      questions: {
+        create: [
+          {
+            prompt: "Should we enter the Waterloo Summer Classic? ($95/player, Aug 15-16)",
+            order: 0,
+            options: {
+              create: [
+                { label: "Yes, count us in", order: 0 },
+                { label: "No, sitting this one out", order: 1 },
+                { label: "Yes, if we can carpool", order: 2 },
+              ],
+            },
+          },
+          {
+            prompt: "Which August weekends can your family travel?",
+            allowMultiple: true,
+            order: 1,
+            options: {
+              create: [
+                { label: "Aug 8-9", order: 0 },
+                { label: "Aug 15-16", order: 1 },
+                { label: "Aug 22-23", order: 2 },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    include: { questions: { include: { options: true }, orderBy: { order: "asc" } } },
+  })
+  const [pollQ1, pollQ2] = lordsPoll.questions
+  const pollVoters = lordsG9.rosterParents.filter((id: string) => id !== demoParent.id)
+  let pollVotes = 0
+  for (let i = 0; i < pollVoters.length; i++) {
+    const userId = pollVoters[i]
+    // Q1 single choice: mostly "yes", a few carpool-dependent, one "no"
+    const q1Option = pollQ1.options[i % 5 === 3 ? 2 : i % 7 === 5 ? 1 : 0]
+    await p.pollVote.create({ data: { questionId: pollQ1.id, optionId: q1Option.id, userId } })
+    pollVotes++
+    // Q2 multi choice: 1-2 weekends each
+    const first = pollQ2.options[i % 3]
+    await p.pollVote.create({ data: { questionId: pollQ2.id, optionId: first.id, userId } })
+    pollVotes++
+    if (i % 2 === 0) {
+      const second = pollQ2.options[(i + 1) % 3]
+      await p.pollVote.create({ data: { questionId: pollQ2.id, optionId: second.id, userId } })
+      pollVotes++
+    }
+  }
+  await p.notification.create({
+    data: {
+      userId: demoParent.id, type: "team_poll",
+      title: `New poll for ${lordsG9.name}`,
+      message: "Summer tournament plans",
+      link: `/teams/${lordsG9.id}/polls`, referenceId: lordsPoll.id, referenceType: "Poll",
+    },
+  })
+  console.log(`✓ Lords G9 poll "Summer tournament plans" (${pollVotes} votes; demo parent hasn't voted)`)
+
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
 
@@ -1423,6 +1492,8 @@ function printCheatSheet() {
     "   · owner-nph → Teams tab: pending roster-change request to approve",
     "   · owner-nph → Referees tab: pool + book-a-day; ref-mike → Shifts &",
     "     Availability: broadcast offer to accept live (auto-assigns games)",
+    "   · parent → Dashboard → Polls (Lords G9): tournament poll, 9 families",
+    "     voted, parent votes live; coach-lords-gr9 sees who picked what",
     "══════════════════════════════════════════════════════════════════",
   ]
   console.log(lines.join("\n"))

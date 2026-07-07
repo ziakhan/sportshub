@@ -330,3 +330,15 @@ Nothing to backfill. No client regen concerns (indexes don't change the
 generated client). While in the Neon console for this: check compute
 **autosuspend** — prime suspect for the "first prod load takes seconds"
 symptom (see audit doc §"suspected but NOT confirmed").
+
+## 12. Team polls & surveys schema — NOT YET APPLIED to Neon
+
+Ships with the engagement-v1 commit (2026-07-06,
+docs/engagement-features-plan.md). All additive — one `prisma db push`:
+- New enum `PollStatus` (OPEN, CLOSED)
+- New tables `Poll`, `PollQuestion`, `PollOption`, `PollVote`
+  (team-scoped; FKs cascade; PollVote unique (questionId, userId, optionId))
+- Back-relations on Team (`polls`) and User (`pollsCreated`, `pollVotes`)
+
+Nothing to backfill. Notification type "team_poll" is code-level only (the
+Notification.type column is a plain string).

@@ -506,6 +506,12 @@ export default async function TeamDashboardPage({
               )}
             </Link>
             <Link
+              href={`/teams/${teamId}/polls`}
+              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
+            >
+              Polls
+            </Link>
+            <Link
               href={`/clubs/${clubId}/teams/${teamId}/edit`}
               className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
             >

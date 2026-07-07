@@ -1,38 +1,35 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
-import { getChatMembers, getChatMembership } from "@/lib/teams/chat-access"
-import { TeamChat } from "./team-chat"
+import { getChatMembership } from "@/lib/teams/chat-access"
+import { TeamPolls } from "./team-polls"
 
 /**
- * Team ↔ family chat — one page for both sides. Staff arrive from the club
- * team dashboard, families from their dashboard or the public team hub.
+ * Team polls & surveys — same membership as team chat. Staff create and
+ * manage; families vote and watch results fill in.
  */
-export default async function TeamChatPage({ params }: { params: { teamId: string } }) {
+export default async function TeamPollsPage({ params }: { params: { teamId: string } }) {
   const auth = await getSessionUserId()
-  if (!auth) redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/teams/${params.teamId}/chat`)}`)
+  if (!auth) redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/teams/${params.teamId}/polls`)}`)
 
   const membership = await getChatMembership(params.teamId, auth.userId, auth.isPlatformAdmin)
   if (!membership) notFound()
 
-  const members = await getChatMembers(membership.teamId, membership.tenantId)
   const isStaffSide = membership.role !== "family"
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-ink-900 truncate text-xl font-bold">{membership.teamName}</h2>
-          <p className="text-ink-500 truncate text-sm">
-            {membership.clubName} • Team chat
-          </p>
+          <p className="text-ink-500 truncate text-sm">{membership.clubName} • Polls & surveys</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Link
-            href={`/teams/${membership.teamId}/polls`}
+            href={`/teams/${membership.teamId}/chat`}
             className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
           >
-            Polls
+            Team Chat
           </Link>
           <Link
             href={
@@ -47,12 +44,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
         </div>
       </div>
 
-      <TeamChat
-        teamId={membership.teamId}
-        currentUserId={auth.userId}
-        canModerate={isStaffSide}
-        members={members}
-      />
+      <TeamPolls teamId={membership.teamId} isStaff={isStaffSide} />
     </div>
   )
 }
