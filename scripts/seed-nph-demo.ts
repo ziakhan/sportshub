@@ -559,6 +559,7 @@ async function seed() {
       idealGamesPerDayPerTeam: 1, // 2-day weekend sessions → 2 games/weekend
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",
+      rosterChangePolicy: "REQUEST_ONLY", // locked rosters need commissioner approval
       tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
       tiebreakersLockedAt: now,
     },
@@ -1085,6 +1086,9 @@ async function seed() {
       idealGamesPerDayPerTeam: 1,
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",
+      // Clubs may edit rosters until the first fall session wraps
+      rosterChangePolicy: "OPEN_UNTIL_DEADLINE",
+      rosterChangeDeadline: new Date(fallStart.getTime() + days(9)),
     },
   })
   const springDivisions = new Map<number, any>()
@@ -1230,6 +1234,36 @@ async function seed() {
   }
   console.log(`✓ ${SPRING_LEAGUE} (${SPRING_SEASON}): REGISTRATION open · 3 squads submitted · ${CLUBS.filter((c) => c.spring === "recruiting").length} clubs running tryouts (Lords in 3h w/ live check-in) · open offer waiting for parent@`)
 
+  // ── Roster-change demo state: Burloak asks to amend a locked roster ──
+  const burloakG9 = teams.find((t) => t.clubKey === "burloak" && t.grade === 9)!
+  const burloakSubmission = await p.teamSubmission.findFirst({
+    where: { teamId: burloakG9.id, seasonId: winterSeason.id },
+    select: { roster: { select: { id: true } } },
+  })
+  if (burloakSubmission?.roster) {
+    const burloakRequest = await p.rosterChangeRequest.create({
+      data: {
+        rosterId: burloakSubmission.roster.id,
+        requestedById: clubRows.get("burloak")!.ownerId,
+        message:
+          "Two players are out for the rest of the summer (ankle + family travel). We'd like to call up two Grade 8s so we don't forfeit the last weekend.",
+      },
+      select: { id: true },
+    })
+    await p.notification.create({
+      data: {
+        userId: nph.id,
+        type: "roster_change_requested",
+        title: "Roster change requested",
+        message: "Burloak Elite Grade 9 is asking to change their Summer 2026 roster.",
+        link: `/manage/leagues/${winterLeague.id}/seasons/${winterSeason.id}/manage`,
+        referenceId: burloakRequest.id,
+        referenceType: "RosterChangeRequest",
+      },
+    })
+  }
+  console.log("✓ roster policies set (Summer: request-only · Fall: open until first session) + 1 pending change request for owner-nph")
+
   // ── parent@ history: declined + expired offers from rival clubs ───────
   const lordsG9 = teams.find((t) => t.clubKey === "lords" && t.grade === 9)!
   const demoKidId = lordsG9.roster[0]
@@ -1343,6 +1377,7 @@ function printCheatSheet() {
     "   · parent → open offer to accept live; Lords chat has 2 unread",
     "   · owner-lords → Offers → Order Sheet: sizes + CSV ready",
     "   · owner-nph → Summer mid-season (standings/live) + Fall open",
+    "   · owner-nph → Teams tab: pending roster-change request to approve",
     "══════════════════════════════════════════════════════════════════",
   ]
   console.log(lines.join("\n"))
