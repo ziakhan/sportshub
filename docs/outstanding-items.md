@@ -65,6 +65,13 @@ docs/outreach/club-parent-demos.md.
   spread for same guarantee). **NEXT FEATURE (owner): playoff generation**
   (top-N per division from standings → bracket into PLAYOFF sessions —
   settings + schema exist, no generator yet).
+- **Referee session booking (2026-07-07, 02b9199):** Uber-style — league
+  referee pools (LeagueReferee), self-service availability
+  (RefereeAvailability), session-day shift offers (RefereeSessionRequest:
+  targeted or broadcast, first-accept-wins, accept auto-assigns the day's
+  games in the window, audited). League Referees tab in season manage +
+  /referee/requests inbox w/ availability editor. Int seed 1121. Demo:
+  live broadcast offer pending for the 4-ref Summer pool.
 - **Manual override kit (2026-07-07, fd9cf09):** coaches/team managers get
   full roster authority (add club-linked players w/ jersey, invite-by-email
   UI for the G3 API, per-row jersey edit + release/reactivate, finalize);

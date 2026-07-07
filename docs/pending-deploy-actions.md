@@ -309,6 +309,10 @@ one `prisma db push` covers everything:
 - New table `RosterChangeRequest` (+ enum RosterChangeRequestStatus):
   rosterId FK cascade, requestedById/resolvedById User FKs, message/
   resolutionNote — club↔league roster change-request flow.
+- Referee booking tables: `LeagueReferee` (league pool),
+  `RefereeAvailability` (declared day/hour windows),
+  `RefereeSessionRequest` (+ enum RefereeRequestStatus) — session-day shift
+  offers, broadcast or targeted.
 
 Nothing to backfill. Note: the same commits UNHID the Review system on
 public club pages (`/club/[slug]`) — no schema change (Review table already
