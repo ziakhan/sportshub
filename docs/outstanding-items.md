@@ -254,6 +254,16 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
+- **Onboarding + tutorials + videos (2026-07-07, PLAN DONE, awaiting owner
+  green-light)**: docs/onboarding-tutorials-plan.md. Investigated the
+  "missing 'I am a parent' selection" — NOT a bug: role cards still render
+  on /onboarding for fresh signups (verified live); demo accounts are
+  pre-onboarded so they 307 past it, and /settings/roles was removed by
+  design (action-driven roles, 2026-06-08). Plan = 3 layers: getting-
+  started checklists (real-data progress) + teaching empty states; 16
+  short task videos (parents 4, clubs 8, refs 2, league sizzle + long
+  chaptered tour); /help center w/ YouTube embeds (infra exists). Owner
+  decisions in doc §7: voice, who records, T1 build go, priority order.
 - **Offer package options + BULK SEND — SHIPPED 2026-07-07** (owner
   approved "do what you just suggested" + asked for bulk structure): one
   offer carries 1-4 packages (OfferOption, runbook #14) composed from the
