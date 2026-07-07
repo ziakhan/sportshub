@@ -31,12 +31,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // Verify club permission
+    // Verify club permission — coaches/team managers included (owner
+    // decision 2026-07-07: full roster authority for the bench)
     const hasAccess = await prisma.userRole.findFirst({
       where: {
         userId,
         OR: [
-          { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          {
+            tenantId: team.tenantId,
+            role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
+          },
           { role: "PlatformAdmin" },
         ],
       },

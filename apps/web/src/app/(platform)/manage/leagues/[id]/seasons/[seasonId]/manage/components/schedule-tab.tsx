@@ -381,6 +381,8 @@ export function ScheduleTab({
           </div>
         )}
 
+        <ManualGameAdd seasonId={seasonId} league={league} refresh={refresh} />
+
         <div>
           <p className="text-ink-600 mb-2 text-sm font-semibold">
             Committed games ({scheduleGames.length})
@@ -547,6 +549,109 @@ export function ScheduleTab({
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Escape hatch: add ONE game outside the scheduler (make-ups, fixes). */
+function ManualGameAdd({
+  seasonId,
+  league,
+  refresh,
+}: {
+  seasonId: string
+  league: any
+  refresh: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [homeTeamId, setHomeTeamId] = useState("")
+  const [awayTeamId, setAwayTeamId] = useState("")
+  const [when, setWhen] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+
+  const approvedTeams = (league.teams || []).filter((t: any) => t.status === "APPROVED")
+
+  const create = async () => {
+    setBusy(true)
+    setNote(null)
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/games`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          homeTeamId,
+          awayTeamId,
+          scheduledAt: new Date(when).toISOString(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't add the game")
+      setNote("Game added.")
+      setHomeTeamId("")
+      setAwayTeamId("")
+      setWhen("")
+      setOpen(false)
+      refresh()
+    } catch (err) {
+      setNote(err instanceof Error ? err.message : "Couldn't add the game")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="border-ink-100 mb-4 rounded-xl border p-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-play-700 text-xs font-semibold hover:underline"
+      >
+        {open ? "Hide manual game" : "+ Add a game manually (make-up / fix)"}
+      </button>
+      {note && <p className="text-ink-600 mt-1 text-xs">{note}</p>}
+      {open && (
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <select
+            value={homeTeamId}
+            onChange={(e) => setHomeTeamId(e.target.value)}
+            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+          >
+            <option value="">Home team…</option>
+            {approvedTeams.map((t: any) => (
+              <option key={t.team.id} value={t.team.id}>
+                {t.team.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={awayTeamId}
+            onChange={(e) => setAwayTeamId(e.target.value)}
+            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+          >
+            <option value="">Away team…</option>
+            {approvedTeams
+              .filter((t: any) => t.team.id !== homeTeamId)
+              .map((t: any) => (
+                <option key={t.team.id} value={t.team.id}>
+                  {t.team.name}
+                </option>
+              ))}
+          </select>
+          <input
+            type="datetime-local"
+            value={when}
+            onChange={(e) => setWhen(e.target.value)}
+            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+          />
+          <button
+            onClick={create}
+            disabled={busy || !homeTeamId || !awayTeamId || !when}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "Adding…" : "Add game"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

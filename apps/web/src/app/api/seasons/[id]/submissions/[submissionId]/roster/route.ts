@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { auditSafe } from "@/lib/audit"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { notify } from "@/lib/notifications"
 import { evaluateRosterEdit } from "@/lib/seasons/roster-policy"
@@ -44,6 +45,15 @@ async function requireClubAccess(userId: string, isPlatformAdmin: boolean, tenan
   return !!role
 }
 
+async function isLeagueSide(userId: string, leagueId: string, leagueOwnerId: string) {
+  if (userId === leagueOwnerId) return true
+  const role = await prisma.userRole.findFirst({
+    where: { userId, role: { in: ["LeagueOwner", "LeagueManager"] }, leagueId },
+    select: { id: true },
+  })
+  return !!role
+}
+
 /**
  * PATCH /api/seasons/[id]/submissions/[submissionId]/roster { playerIds }
  * Replace the league roster version. Allowed while the roster is unlocked,
@@ -63,20 +73,34 @@ export async function PATCH(
     if (!submission?.roster) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 })
     }
-    if (!(await requireClubAccess(auth.userId, auth.isPlatformAdmin, submission.team.tenantId))) {
+
+    // Commissioner override: the league side may correct any roster at any
+    // time — no policy gate, no unlock dance, but ALWAYS an audit trail and
+    // a heads-up to the club.
+    const leagueOverride = await isLeagueSide(
+      auth.userId,
+      submission.season.league.id,
+      submission.season.league.ownerId
+    )
+    const clubAccess =
+      !leagueOverride &&
+      (await requireClubAccess(auth.userId, auth.isPlatformAdmin, submission.team.tenantId))
+    if (!leagueOverride && !clubAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const editability = evaluateRosterEdit({
-      isLocked: submission.roster.isLocked,
-      policy: submission.season.rosterChangePolicy,
-      deadline: submission.season.rosterChangeDeadline,
-    })
-    if (!editability.canEdit) {
-      return NextResponse.json(
-        { error: editability.reason, code: "ROSTER_LOCKED", canRequest: editability.canRequest },
-        { status: 409 }
-      )
+    if (!leagueOverride) {
+      const editability = evaluateRosterEdit({
+        isLocked: submission.roster.isLocked,
+        policy: submission.season.rosterChangePolicy,
+        deadline: submission.season.rosterChangeDeadline,
+      })
+      if (!editability.canEdit) {
+        return NextResponse.json(
+          { error: editability.reason, code: "ROSTER_LOCKED", canRequest: editability.canRequest },
+          { status: 409 }
+        )
+      }
     }
 
     const parsed = patchSchema.safeParse(await request.json().catch(() => null))
@@ -100,9 +124,10 @@ export async function PATCH(
     }
 
     // Editing while the season itself is locked = the one-shot window a
-    // commissioner opened by approving a request → re-lock on save.
+    // commissioner opened by approving a request → re-lock on save. League
+    // overrides never touch the lock.
     const seasonLocked = isSeasonLocked(submission.season.status)
-    const relock = seasonLocked && !submission.roster.isLocked
+    const relock = !leagueOverride && seasonLocked && !submission.roster.isLocked
 
     await prisma.$transaction(async (tx: any) => {
       await tx.seasonRosterPlayer.deleteMany({ where: { rosterId: submission.roster.id } })
@@ -118,7 +143,24 @@ export async function PATCH(
         where: { id: submission.roster.id },
         data: relock ? { isLocked: true, lockedAt: new Date() } : {},
       })
-      if (seasonLocked) {
+      if (leagueOverride) {
+        // Tell the club their league roster was touched by the league
+        const clubOwner = await tx.userRole.findFirst({
+          where: { tenantId: submission.team.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          select: { userId: true },
+        })
+        if (clubOwner) {
+          await notify(tx, {
+            userId: clubOwner.userId,
+            type: "roster_updated",
+            title: "League edited your roster",
+            message: `${submission.season.league.name} updated ${submission.team.name}'s ${submission.season.label} roster (${selection.players.length} players).`,
+            link: `/clubs/${submission.team.tenantId}/teams/${submission.teamId}/league-rosters`,
+            referenceId: submission.roster.id,
+            referenceType: "SeasonRoster",
+          })
+        }
+      } else if (seasonLocked) {
         await notify(tx, {
           userId: submission.season.league.ownerId,
           type: "roster_updated",
@@ -131,10 +173,27 @@ export async function PATCH(
       }
     })
 
+    await auditSafe({
+      actorId: auth.realUserId,
+      actorRole: leagueOverride ? "LeagueOwner" : auth.isPlatformAdmin ? "PlatformAdmin" : "ClubOwner",
+      action: leagueOverride ? "LEAGUE_ROSTER_EDIT" : "ROSTER_VERSION_EDIT",
+      resource: "SeasonRoster",
+      resourceId: submission.roster.id,
+      tenantId: submission.team.tenantId,
+      changes: {
+        teamName: submission.team.name,
+        seasonLabel: submission.season.label,
+        playerCount: selection.players.length,
+        playerIds: selection.players.map((p) => p.playerId),
+      },
+      request,
+    })
+
     return NextResponse.json({
       success: true,
       playerCount: selection.players.length,
       relocked: relock,
+      leagueOverride,
     })
   } catch (error) {
     console.error("Roster update error:", error)

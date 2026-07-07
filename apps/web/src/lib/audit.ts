@@ -26,6 +26,15 @@ export type AuditAction =
   | "CLUB_OWNERSHIP_TRANSFER"
   | "CLUB_FEATURE"
   | "CLUB_UNFEATURE"
+  // Manual roster + game operations — the escape hatches leave a trail
+  | "ROSTER_PLAYER_ADD"
+  | "ROSTER_PLAYER_RELEASE"
+  | "ROSTER_JERSEY_CHANGE"
+  | "ROSTER_VERSION_EDIT"
+  | "LEAGUE_ROSTER_EDIT"
+  | "REFEREE_ASSIGN"
+  | "REFEREE_UNASSIGN"
+  | "GAME_MANUAL_CREATE"
   | "USER_UPDATE"
   | "USER_STATUS_CHANGE"
   // G2 (owner decision): cross-club recruiting offers are allowed on purpose,

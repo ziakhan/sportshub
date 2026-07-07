@@ -163,6 +163,7 @@ export function buildNavSections({
         { label: "Leagues", href: "/manage/leagues", icon: "star" },
         { label: "Claims", href: "/dashboard/admin/claims", icon: "clipboard" },
         { label: "Payments", href: "/dashboard/admin/payments", icon: "card" },
+        { label: "Audit Trail", href: "/dashboard/admin/audit", icon: "clipboard" },
         { label: "Settings", href: "/dashboard/admin/settings", icon: "settings" },
       ],
     })

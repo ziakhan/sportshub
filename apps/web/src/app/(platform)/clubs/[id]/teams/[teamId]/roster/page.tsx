@@ -1,6 +1,8 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import { FinalizeButton } from "./finalize-button"
+import { RosterManager } from "./roster-manager"
+import { RosterRowActions } from "./roster-row-actions"
 
 interface RosterPlayer {
   id: string
@@ -52,6 +54,7 @@ async function getTeamRoster(teamId: string, tenantId: string): Promise<RosterTe
       gender: true,
       season: true,
       players: {
+        where: { status: "ACTIVE" },
         include: {
           player: {
             select: {
@@ -97,9 +100,19 @@ export default async function TeamRosterPage({
 }: {
   params: { id: string; teamId: string }
 }) {
-  const [team, offers] = await Promise.all([
+  const [team, offers, templates, pendingInvitations] = await Promise.all([
     getTeamRoster(params.teamId, params.id),
     getTeamOffers(params.teamId),
+    prisma.offerTemplate.findMany({
+      where: { tenantId: params.id, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    (prisma as any).playerInvitation.findMany({
+      where: { teamId: params.teamId, status: "PENDING" },
+      select: { id: true, invitedEmail: true, playerName: true },
+      orderBy: { createdAt: "desc" },
+    }),
   ])
 
   if (!team) {
@@ -140,6 +153,16 @@ export default async function TeamRosterPage({
         )}
       </div>
 
+      <RosterManager
+        teamId={team.id}
+        templates={templates}
+        pendingInvitations={pendingInvitations.map((i: any) => ({
+          id: i.id,
+          email: i.invitedEmail,
+          playerName: i.playerName,
+        }))}
+      />
+
       {team.players.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
           <h3 className="text-lg font-semibold text-ink-900 mb-2">No players on roster</h3>
@@ -175,6 +198,9 @@ export default async function TeamRosterPage({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-ink-500">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -228,6 +254,14 @@ export default async function TeamRosterPage({
                           Pending finalization
                         </span>
                       )}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <RosterRowActions
+                        teamId={team.id}
+                        playerId={tp.playerId}
+                        playerName={`${tp.player.firstName} ${tp.player.lastName}`}
+                        jerseyNumber={tp.jerseyNumber}
+                      />
                     </td>
                   </tr>
                 )

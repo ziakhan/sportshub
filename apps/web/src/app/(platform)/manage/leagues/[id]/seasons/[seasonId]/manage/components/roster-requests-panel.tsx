@@ -23,11 +23,14 @@ export function RosterRequestsPanel({
   seasonId,
   policy,
   deadline,
+  teams,
   refresh,
 }: {
   seasonId: string
   policy: string
   deadline: string | null
+  /** Approved submissions: [{ id, team: { id, name } }] — override targets */
+  teams: any[]
   refresh: () => void
 }) {
   const [requests, setRequests] = useState<RosterRequest[]>([])
@@ -157,6 +160,9 @@ export function RosterRequestsPanel({
         </button>
       </div>
 
+      {/* Commissioner override: edit any team's league roster directly */}
+      <OverrideEditor seasonId={seasonId} teams={teams} refresh={refresh} onDone={setMessage} />
+
       {/* Pending queue */}
       {requests.length === 0 ? (
         <p className="text-ink-500 text-sm">No pending roster-change requests.</p>
@@ -198,6 +204,142 @@ export function RosterRequestsPanel({
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Direct roster edit by the commissioner — bypasses lock + policy, always
+ * audited (LEAGUE_ROSTER_EDIT) and the club gets notified.
+ */
+function OverrideEditor({
+  seasonId,
+  teams,
+  refresh,
+  onDone,
+}: {
+  seasonId: string
+  teams: any[]
+  refresh: () => void
+  onDone: (msg: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [teamId, setTeamId] = useState("")
+  const [players, setPlayers] = useState<
+    { playerId: string; name: string; jerseyNumber: number | null }[] | null
+  >(null)
+  const [submissionId, setSubmissionId] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const approved = teams.filter((t: any) => t.status === "APPROVED")
+
+  const loadTeam = async (id: string) => {
+    setTeamId(id)
+    setPlayers(null)
+    setErr(null)
+    if (!id) return
+    const res = await fetch(`/api/seasons/${seasonId}/roster-preview?teamId=${id}`).catch(
+      () => null
+    )
+    if (!res?.ok) {
+      setErr("Couldn't load the team's roster")
+      return
+    }
+    const data = await res.json()
+    setPlayers(data.players ?? [])
+    setSubmissionId(data.submission?.id ?? null)
+    setSelected(new Set(data.submission?.currentPlayerIds ?? []))
+  }
+
+  const save = async () => {
+    if (!submissionId) return
+    setSaving(true)
+    setErr(null)
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/submissions/${submissionId}/roster`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerIds: [...selected] }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't save")
+      onDone(`Roster overridden (${data.playerCount} players) — the club has been notified.`)
+      setOpen(false)
+      setTeamId("")
+      setPlayers(null)
+      refresh()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't save")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="border-ink-100 mb-4 rounded-xl border p-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-play-700 text-xs font-semibold hover:underline"
+      >
+        {open ? "Hide roster override" : "Override a team's roster (audited)"}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          <select
+            value={teamId}
+            onChange={(e) => loadTeam(e.target.value)}
+            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+          >
+            <option value="">Choose team…</option>
+            {approved.map((t: any) => (
+              <option key={t.id} value={t.team.id}>
+                {t.team.name}
+              </option>
+            ))}
+          </select>
+          {err && <p className="text-hoop-600 text-xs">{err}</p>}
+          {players && submissionId && (
+            <>
+              <div className="grid max-h-48 gap-1 overflow-y-auto sm:grid-cols-2">
+                {players.map((p) => (
+                  <label
+                    key={p.playerId}
+                    className="hover:bg-court-50 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.playerId)}
+                      onChange={() =>
+                        setSelected((cur) => {
+                          const next = new Set(cur)
+                          if (next.has(p.playerId)) next.delete(p.playerId)
+                          else next.add(p.playerId)
+                          return next
+                        })
+                      }
+                      className="accent-play-600"
+                    />
+                    {p.jerseyNumber != null ? `#${p.jerseyNumber} ` : ""}
+                    {p.name}
+                  </label>
+                ))}
+              </div>
+              <button
+                onClick={save}
+                disabled={saving || selected.size === 0}
+                className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {saving ? "Saving…" : `Save override (${selected.size} players)`}
+              </button>
+            </>
+          )}
+          {players && !submissionId && (
+            <p className="text-ink-500 text-xs">This team has no roster in this season.</p>
+          )}
         </div>
       )}
     </div>

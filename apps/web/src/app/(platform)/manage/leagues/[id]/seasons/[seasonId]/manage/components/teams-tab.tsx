@@ -59,6 +59,7 @@ export function TeamsTab({
         seasonId={seasonId}
         policy={league.rosterChangePolicy ?? "REQUEST_ONLY"}
         deadline={league.rosterChangeDeadline ?? null}
+        teams={league.teams || []}
         refresh={refresh}
       />
 

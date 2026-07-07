@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { GameRefereeControl } from "@/components/scoring/game-referee-control"
 import { redirect } from "next/navigation"
 import { format } from "date-fns"
 import { prisma } from "@youthbasketballhub/db"
@@ -71,6 +72,20 @@ export default async function ScoreListPage() {
     },
   })
 
+  const refRoles = await (prisma as any).userRole.findMany({
+    where: { role: "Referee", gameId: { in: games.map((g: any) => g.id) } },
+    select: {
+      gameId: true,
+      user: { select: { id: true, firstName: true, lastName: true } },
+    },
+  })
+  const refsByGame = new Map<string, { userId: string; name: string }[]>()
+  for (const r of refRoles) {
+    const list = refsByGame.get(r.gameId) ?? []
+    list.push({ userId: r.user.id, name: `${r.user.firstName ?? ""} ${r.user.lastName ?? ""}`.trim() })
+    refsByGame.set(r.gameId, list)
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <div>
@@ -107,6 +122,7 @@ export default async function ScoreListPage() {
                   {g.court?.name ? ` · ${g.court.name}` : ""}
                   {g.season?.league?.name ? ` · ${g.season.league.name}` : ""}
                 </p>
+                <GameRefereeControl gameId={g.id} assigned={refsByGame.get(g.id) ?? []} />
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Link

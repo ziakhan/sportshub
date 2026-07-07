@@ -25,26 +25,52 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 })
 
     if (!auth.isPlatformAdmin) {
-      const role = await prisma.userRole.findFirst({
+      // Club side (owner/manager) or league side (commissioner override edits)
+      const season = (await prisma.season.findUnique({
+        where: { id: params.id },
+        select: { league: { select: { id: true, ownerId: true } } },
+      })) as any
+      const leagueSide =
+        season?.league?.ownerId === auth.userId ||
+        !!(await prisma.userRole.findFirst({
+          where: {
+            userId: auth.userId,
+            role: { in: ["LeagueOwner", "LeagueManager"] },
+            leagueId: season?.league?.id ?? "",
+          },
+          select: { id: true },
+        }))
+      const clubSide = !!(await prisma.userRole.findFirst({
         where: {
           userId: auth.userId,
           tenantId: team.tenantId,
           role: { in: ["ClubOwner", "ClubManager"] },
         },
         select: { id: true },
-      })
-      if (!role) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }))
+      if (!leagueSide && !clubSide) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
     }
 
-    const teamPlayers = await prisma.teamPlayer.findMany({
-      where: { teamId, status: "ACTIVE" },
-      select: {
-        playerId: true,
-        jerseyNumber: true,
-        player: { select: { firstName: true, lastName: true, position: true } },
-      },
-      orderBy: { jerseyNumber: "asc" },
-    })
+    const [teamPlayers, submission] = await Promise.all([
+      prisma.teamPlayer.findMany({
+        where: { teamId, status: "ACTIVE" },
+        select: {
+          playerId: true,
+          jerseyNumber: true,
+          player: { select: { firstName: true, lastName: true, position: true } },
+        },
+        orderBy: { jerseyNumber: "asc" },
+      }),
+      prisma.teamSubmission.findUnique({
+        where: { seasonId_teamId: { seasonId: params.id, teamId } },
+        select: {
+          id: true,
+          roster: { select: { isLocked: true, players: { select: { playerId: true } } } },
+        },
+      }) as any,
+    ])
     const conflicts = await findSeasonConflicts(
       params.id,
       teamId,
@@ -60,6 +86,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         position: tp.player.position,
         conflict: conflictBy.get(tp.playerId) ?? null,
       })),
+      submission: submission
+        ? {
+            id: submission.id,
+            isLocked: submission.roster?.isLocked ?? false,
+            currentPlayerIds: submission.roster?.players.map((p: any) => p.playerId) ?? [],
+          }
+        : null,
     })
   } catch (error) {
     console.error("Roster preview error:", error)
