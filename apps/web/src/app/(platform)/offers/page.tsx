@@ -7,10 +7,25 @@ import { format } from "date-fns"
 import { OfferResponseForm } from "./offer-response-form"
 import { formatCurrency } from "@/lib/countries"
 
+interface OfferPackage {
+  id: string
+  label: string
+  seasonFee: number
+  installments: number
+  practiceSessions: number
+  includesBall: boolean
+  includesBag: boolean
+  includesShoes: boolean
+  includesUniform: boolean
+  includesTracksuit: boolean
+}
+
 interface Offer {
   id: string
   status: string
   seasonFee: number
+  options?: OfferPackage[]
+  chosenOptionId?: string | null
   installments: number
   practiceSessions: number
   includesBall: boolean
@@ -135,19 +150,73 @@ export default function OffersPage() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className="text-ink-900 text-lg font-bold">
-                            {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
-                          </div>
-                          {offer.installments > 1 && (
-                            <div className="text-ink-500 text-xs">
-                              {offer.installments} installments
-                            </div>
+                          {(offer.options?.length ?? 0) > 1 && !offer.chosenOptionId ? (
+                            <>
+                              <div className="text-ink-900 text-lg font-bold">
+                                from{" "}
+                                {formatCurrency(
+                                  Math.min(...offer.options!.map((o) => o.seasonFee)),
+                                  offer.team.tenant.currency
+                                )}
+                              </div>
+                              <div className="text-play-700 text-xs font-semibold">
+                                {offer.options!.length} package options
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-ink-900 text-lg font-bold">
+                                {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
+                              </div>
+                              {offer.chosenOptionId &&
+                                (() => {
+                                  const chosenLabel = offer.options?.find(
+                                    (o) => o.id === offer.chosenOptionId
+                                  )?.label
+                                  return chosenLabel ? (
+                                    <div className="text-play-700 text-xs font-semibold">
+                                      {chosenLabel}
+                                    </div>
+                                  ) : null
+                                })()}
+                              {offer.installments > 1 && (
+                                <div className="text-ink-500 text-xs">
+                                  {offer.installments} installments
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
 
                       {/* What's included */}
-                      {(() => {
+                      {(offer.options?.length ?? 0) > 1 && !offer.chosenOptionId ? (
+                        <div className="border-play-200 bg-play-50 mt-3 rounded-xl border p-3">
+                          <div className="text-play-700 mb-1 text-xs font-medium">
+                            Your package choices:
+                          </div>
+                          <div className="space-y-1">
+                            {offer.options!.map((option) => {
+                              const optionItems = [
+                                option.includesUniform && "Uniform",
+                                option.includesTracksuit && "Tracksuit",
+                                option.includesShoes && "Shoes",
+                                option.includesBall && "Basketball",
+                                option.includesBag && "Bag",
+                              ].filter(Boolean)
+                              return (
+                                <div key={option.id} className="text-ink-700 text-xs">
+                                  <span className="font-semibold">{option.label}</span> —{" "}
+                                  {formatCurrency(option.seasonFee, offer.team.tenant.currency)}
+                                  {optionItems.length > 0
+                                    ? ` · ${optionItems.join(", ")}`
+                                    : " · no gear"}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ) : (() => {
                         const items = [
                           offer.includesUniform && "Uniform (Shirt + Shorts)",
                           offer.includesTracksuit && "Tracksuit",
@@ -217,6 +286,8 @@ export default function OffersPage() {
                           includesUniform={offer.includesUniform}
                           includesShoes={offer.includesShoes}
                           includesTracksuit={offer.includesTracksuit}
+                          options={offer.options ?? []}
+                          currency={offer.team.tenant.currency}
                           onDone={handleResponse}
                           onCancel={() => setRespondingTo(null)}
                         />

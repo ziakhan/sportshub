@@ -691,6 +691,14 @@ model Offer {
   includesUniform   Boolean @default(false)
   includesTracksuit Boolean @default(false)
 
+  // Package options presented to the family (docs/offer-package-options-
+  // design.md). Rows exist only for multi-option offers; the family picks
+  // one at accept and its values overwrite the snapshot columns above, so
+  // Order Sheet / payments / roster read the same columns as always.
+  options        OfferOption[] @relation("OfferOptions")
+  chosenOptionId String?       @unique
+  chosenOption   OfferOption?  @relation("ChosenOption", fields: [chosenOptionId], references: [id])
+
   message   String?  @db.Text
   expiresAt DateTime
 
@@ -714,6 +722,36 @@ model Offer {
   @@index([tryoutSignupId])
   @@index([templateId])
   @@index([status])
+}
+
+// One package choice on a multi-option offer ("Returning Player $950" /
+// "New Player $1,250"). A COPY seeded from a template at send time —
+// later template edits never disturb sent offers.
+model OfferOption {
+  id      String @id @default(uuid())
+  offerId String
+  offer   Offer  @relation("OfferOptions", fields: [offerId], references: [id], onDelete: Cascade)
+
+  label            String
+  sourceTemplateId String?
+
+  seasonFee        Decimal @db.Decimal(10, 2)
+  installments     Int     @default(1)
+  practiceSessions Int     @default(0)
+
+  includesBall      Boolean @default(false)
+  includesBag       Boolean @default(false)
+  includesShoes     Boolean @default(false)
+  includesUniform   Boolean @default(false)
+  includesTracksuit Boolean @default(false)
+
+  sortOrder Int @default(0)
+
+  chosenBy Offer? @relation("ChosenOption")
+
+  createdAt DateTime @default(now())
+
+  @@index([offerId])
 }
 
 enum OfferStatus {

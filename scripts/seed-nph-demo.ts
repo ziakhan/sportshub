@@ -1271,6 +1271,39 @@ async function seed() {
         } else {
           springOfferForDemo = offer.id
           await p.tryoutSignup.update({ where: { id: signup.id }, data: { status: "OFFERED" } })
+          // The demo parent's open offer carries TWO packages — the family
+          // picks Returning vs New Player at accept (engagement demo)
+          const fullFee = Number(lordsSpringTemplate.seasonFee)
+          await p.offerOption.createMany({
+            data: [
+              {
+                offerId: offer.id, label: "Returning Player", sortOrder: 0,
+                sourceTemplateId: lordsSpringTemplate.id,
+                seasonFee: Math.round(fullFee * 0.8), installments: lordsSpringTemplate.installments,
+                practiceSessions: lordsSpringTemplate.practiceSessions,
+                includesBall: false, includesBag: false, includesShoes: false,
+                includesUniform: false, includesTracksuit: false,
+              },
+              {
+                offerId: offer.id, label: "New Player", sortOrder: 1,
+                sourceTemplateId: lordsSpringTemplate.id,
+                seasonFee: fullFee, installments: lordsSpringTemplate.installments,
+                practiceSessions: lordsSpringTemplate.practiceSessions,
+                includesBall: lordsSpringTemplate.includesBall, includesBag: lordsSpringTemplate.includesBag,
+                includesShoes: lordsSpringTemplate.includesShoes, includesUniform: lordsSpringTemplate.includesUniform,
+                includesTracksuit: lordsSpringTemplate.includesTracksuit,
+              },
+            ],
+          })
+          await p.offer.update({
+            where: { id: offer.id },
+            data: {
+              seasonFee: Math.round(fullFee * 0.8),
+              includesBall: false, includesBag: false, includesShoes: false,
+              includesUniform: false, includesTracksuit: false,
+              message: `${kid.firstName} impressed at evaluations — we'd love to have him on the Fall Elite roster. Pick the package that fits: returning players keep their kit.`,
+            },
+          })
         }
       }
     }

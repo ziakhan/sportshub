@@ -41,11 +41,26 @@ const SHOE_SIZES = [
   "14",
 ]
 
+export interface OfferPackageView {
+  id: string
+  label: string
+  seasonFee: number
+  installments: number
+  practiceSessions: number
+  includesBall: boolean
+  includesBag: boolean
+  includesShoes: boolean
+  includesUniform: boolean
+  includesTracksuit: boolean
+}
+
 export function OfferResponseForm({
   offerId,
-  includesUniform,
-  includesShoes,
-  includesTracksuit,
+  includesUniform: offerIncludesUniform,
+  includesShoes: offerIncludesShoes,
+  includesTracksuit: offerIncludesTracksuit,
+  options = [],
+  currency,
   onDone,
   onCancel,
 }: {
@@ -53,6 +68,9 @@ export function OfferResponseForm({
   includesUniform: boolean
   includesShoes: boolean
   includesTracksuit: boolean
+  /** Multi-option offers: the packages the family chooses between */
+  options?: OfferPackageView[]
+  currency?: string
   onDone: () => void
   onCancel: () => void
 }) {
@@ -62,16 +80,29 @@ export function OfferResponseForm({
   const [jerseyPref1, setJerseyPref1] = useState("")
   const [jerseyPref2, setJerseyPref2] = useState("")
   const [jerseyPref3, setJerseyPref3] = useState("")
+  const [optionId, setOptionId] = useState<string>(options.length === 1 ? options[0].id : "")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const labelClass = "block text-sm font-medium text-ink-800"
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
+  // Sizes are asked for what the CHOSEN package includes (falls back to the
+  // offer's own fields for classic single-package offers)
+  const chosen = options.find((o) => o.id === optionId)
+  const includesUniform = options.length > 0 ? !!chosen?.includesUniform : offerIncludesUniform
+  const includesShoes = options.length > 0 ? !!chosen?.includesShoes : offerIncludesShoes
+  const includesTracksuit =
+    options.length > 0 ? !!chosen?.includesTracksuit : offerIncludesTracksuit
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
+    if (options.length > 0 && !optionId) {
+      setError("Please choose a package first")
+      return
+    }
     if (includesUniform && !uniformSize) {
       setError("Please select a uniform size")
       return
@@ -112,6 +143,7 @@ export function OfferResponseForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "accept",
+          optionId: optionId || undefined,
           uniformSize: uniformSize || undefined,
           shoeSize: shoeSize || undefined,
           tracksuitSize: tracksuitSize || undefined,
@@ -153,6 +185,56 @@ export function OfferResponseForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Package choice (multi-option offers) */}
+        {options.length > 1 && (
+          <div>
+            <label className="text-ink-800 mb-2 block text-sm font-medium">
+              Choose your package <span className="text-red-500">*</span>
+            </label>
+            <div className="space-y-2">
+              {options.map((option) => {
+                const items = [
+                  option.includesUniform && "Uniform",
+                  option.includesTracksuit && "Tracksuit",
+                  option.includesShoes && "Shoes",
+                  option.includesBall && "Basketball",
+                  option.includesBag && "Bag",
+                ].filter(Boolean)
+                return (
+                  <label
+                    key={option.id}
+                    className={`block cursor-pointer rounded-xl border p-3 transition ${
+                      optionId === option.id
+                        ? "border-play-400 ring-play-200 bg-white ring-1"
+                        : "border-ink-200 bg-white hover:border-ink-300"
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name={`package-${offerId}`}
+                          checked={optionId === option.id}
+                          onChange={() => setOptionId(option.id)}
+                        />
+                        <span className="text-ink-900 text-sm font-semibold">{option.label}</span>
+                      </span>
+                      <span className="text-ink-900 text-sm font-bold">
+                        ${option.seasonFee.toFixed(2)}
+                        {currency ? ` ${currency}` : ""}
+                      </span>
+                    </span>
+                    <span className="text-ink-500 mt-1 block pl-6 text-xs">
+                      {items.length > 0 ? `Includes ${items.join(", ")}` : "No gear included"}
+                      {option.installments > 1 ? ` · ${option.installments} installments` : ""}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Size fields */}
         {hasSizeFields && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

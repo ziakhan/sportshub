@@ -362,3 +362,16 @@ expand server-side; Vercel runs UTC — without it the default in code is
 also America/Toronto, so this is belt-and-suspenders/documentation).
 Nothing to backfill. Notification types practice_schedule/practice_change
 are code-level only.
+
+## 14. Offer package options schema — NOT YET APPLIED to Neon
+
+Ships with the offer-package-options commit (2026-07-07,
+docs/offer-package-options-design.md). All additive — one `prisma db push`:
+- New table `OfferOption` (offerId FK cascade, label, sourceTemplateId,
+  fee/installments/practiceSessions + include-booleans, sortOrder)
+- `Offer.chosenOptionId String? @unique` (FK → OfferOption) — the package
+  the family picked; expect the benign new-unique-constraint warning
+  (--accept-data-loss is safe, column is brand-new)
+
+Nothing to backfill — existing offers have no option rows and behave
+exactly as before (single package).

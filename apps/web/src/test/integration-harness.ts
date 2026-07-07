@@ -38,6 +38,7 @@ import { getServerSession } from "next-auth"
  *   1121 referee booking (pool / availability / broadcast offers / auto-assign)
  *   1122 team polls (create / vote / re-vote / staff names / close / delete)
  *   1123 practices (slots / announce / move-cancel notify / iCal feed)
+ *   1124 offer package options (multi-option accept / bulk send / skips)
  */
 
 export function actAs(userId: string | null): void {

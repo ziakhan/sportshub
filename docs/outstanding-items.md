@@ -254,15 +254,19 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
-- **Offer package options (2026-07-07, design DONE, awaiting owner OK)**:
-  clubs need multi-option offers — canonically Returning player (no
-  uniform/bag/ball) vs New player (full kit). Recommended design:
-  templates stay simple; the OFFER carries N options (OfferOption table),
-  family picks at accept, chosen option fills the existing snapshot
-  columns so Order Sheet/payments/roster are untouched. Plus returning-
-  player auto-detection (badge on signups; optional returning-only guard;
-  jersey-number prefill). Full design + open decisions:
-  docs/offer-package-options-design.md.
+- **Offer package options + BULK SEND — SHIPPED 2026-07-07** (owner
+  approved "do what you just suggested" + asked for bulk structure): one
+  offer carries 1-4 packages (OfferOption, runbook #14) composed from the
+  template library; family picks at accept (sizes adapt to the chosen
+  package); chosen option fills the snapshot columns so Order Sheet/
+  payments/roster untouched. BULK: "Send Offers (N)" on tryout signups —
+  compose once, tick players, per-row skip reasons (offered/cancelled/no
+  profile). POST /api/offers/bulk. 8 int tests (seed 1124). Demo: parent@'s
+  open Lords offer now has Returning (-20%, no kit) vs New Player packages.
+- **Returning players at offer time — DEFERRED (owner 2026-07-07: "deal
+  with this later")**: auto-detect from prior rosters -> "Returning" badge
+  on signups, optional returning-only package guard, jersey-number
+  prefill. Design ready in docs/offer-package-options-design.md.
 - **Homepage cleanup / IA revisit**: owner doesn't understand programs vs
   marketplace split (overlap!); menu order unclear; "should the Scores
   dropdown be Leagues?" → fold into the N2/N3 IA work

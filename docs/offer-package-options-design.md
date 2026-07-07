@@ -1,4 +1,4 @@
-# Offer package options — design (2026-07-07, owner ask, NOT built)
+# Offer package options — design (2026-07-07) — ✅ SHIPPED same day (+ bulk send)
 
 Owner: clubs need to give families **multiple package options in one
 offer** — canonically "Returning player" (no uniform/bag/ball — gear
@@ -120,7 +120,16 @@ edits never disturb sent offers — same rule as today).
 
 Rough size: comparable to the tryout check-in feature — a focused day.
 
-## Decision needed from owner
+## Status (post-ship)
+
+Owner approved the recommended shape + asked for bulk structure — both
+shipped 2026-07-07 (runbook #14, int seed 1124). Bulk: "Send Offers (N)"
+on the tryout signups page — compose packages once, tick players, per-row
+skip reasons. **Returning-player intelligence (badge / guard / jersey
+prefill) DEFERRED by owner ("deal with this later")** — design below
+stands ready.
+
+## Original decision points (resolved)
 
 1. Approve the "one offer, N packages from simple templates" shape (vs
    options-inside-template)?

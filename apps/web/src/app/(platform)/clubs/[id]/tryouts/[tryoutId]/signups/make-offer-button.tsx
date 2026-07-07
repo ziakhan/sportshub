@@ -1,21 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  OfferComposer,
+  packagePayload,
+  type OfferPackageDraft,
+} from "@/components/offers/offer-composer"
 
-interface Template {
-  id: string
-  name: string
-  seasonFee: number
-  installments: number
-  practiceSessions: number
-  includesBall: boolean
-  includesBag: boolean
-  includesShoes: boolean
-  includesUniform: boolean
-  includesTracksuit: boolean
-}
-
+/**
+ * Per-signup offer modal. The composer builds 1..4 package options — one
+ * option behaves exactly like the classic single-template offer; more give
+ * the family a choice at accept time. For many players at once, use the
+ * BulkOfferButton at the top of the signups page instead.
+ */
 export function MakeOfferButton({
   teamId,
   teamName,
@@ -35,52 +33,17 @@ export function MakeOfferButton({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [templates, setTemplates] = useState<Template[]>([])
-  const [loadingTemplates, setLoadingTemplates] = useState(false)
-  const router = useRouter()
-
-  const [selectedTemplateId, setSelectedTemplateId] = useState("")
-  const [seasonFee, setSeasonFee] = useState("0")
-  const [installments, setInstallments] = useState("1")
-  const [practiceSessions, setPracticeSessions] = useState("0")
-  const [includesBall, setIncludesBall] = useState(false)
-  const [includesBag, setIncludesBag] = useState(false)
-  const [includesShoes, setIncludesShoes] = useState(false)
-  const [includesUniform, setIncludesUniform] = useState(false)
-  const [includesTracksuit, setIncludesTracksuit] = useState(false)
+  const [packages, setPackages] = useState<OfferPackageDraft[]>([])
   const [message, setMessage] = useState("")
   const [expiresInDays, setExpiresInDays] = useState("7")
-
-  useEffect(() => {
-    if (showForm && templates.length === 0) {
-      setLoadingTemplates(true)
-      fetch(`/api/clubs/${clubId}/offer-templates`)
-        .then((res) => res.json())
-        .then((data) => setTemplates(data.templates || []))
-        .catch(() => {})
-        .finally(() => setLoadingTemplates(false))
-    }
-  }, [showForm, teamId, templates.length, clubId])
-
-  const handleTemplateSelect = (templateId: string) => {
-    setSelectedTemplateId(templateId)
-    if (!templateId) return
-
-    const tmpl = templates.find((t) => t.id === templateId)
-    if (tmpl) {
-      setSeasonFee(tmpl.seasonFee.toString())
-      setInstallments(tmpl.installments.toString())
-      setPracticeSessions(tmpl.practiceSessions.toString())
-      setIncludesBall(tmpl.includesBall)
-      setIncludesBag(tmpl.includesBag)
-      setIncludesShoes(tmpl.includesShoes)
-      setIncludesUniform(tmpl.includesUniform)
-      setIncludesTracksuit(tmpl.includesTracksuit)
-    }
-  }
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (packages.length === 0) {
+      setError("Add at least one package")
+      return
+    }
     setIsSubmitting(true)
     setError(null)
 
@@ -95,15 +58,7 @@ export function MakeOfferButton({
           teamId,
           playerId,
           tryoutSignupId,
-          templateId: selectedTemplateId || undefined,
-          seasonFee: parseFloat(seasonFee),
-          installments: parseInt(installments),
-          practiceSessions: parseInt(practiceSessions),
-          includesBall,
-          includesBag,
-          includesShoes,
-          includesUniform,
-          includesTracksuit,
+          options: packagePayload(packages),
           message: message || undefined,
           expiresAt: expiresAt.toISOString(),
         }),
@@ -138,213 +93,61 @@ export function MakeOfferButton({
     )
   }
 
-  const includedItems = [
-    includesUniform && "Uniform",
-    includesTracksuit && "Tracksuit",
-    includesShoes && "Shoes",
-    includesBall && "Basketball",
-    includesBag && "Bag",
-  ].filter(Boolean)
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="text-ink-900 mb-1 text-lg font-semibold">Make Offer</h3>
-        <p className="text-ink-600 mb-4 text-sm">
-          Offering <strong>{playerName}</strong> a spot on <strong>{teamName}</strong>
+        <h3 className="text-ink-900 text-lg font-bold">Make Offer</h3>
+        <p className="text-ink-500 mb-4 text-sm">
+          {playerName} → {teamName}
         </p>
 
-        {error && (
-          <div className="text-hoop-700 mb-4 rounded-xl bg-red-50 p-3 text-sm">{error}</div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Template selector */}
-          <div>
-            <label className="text-ink-700 block text-sm font-medium">Template</label>
-            {loadingTemplates ? (
-              <div className="text-ink-500 mt-1 text-sm">Loading templates...</div>
-            ) : templates.length > 0 ? (
-              <select
-                value={selectedTemplateId}
-                onChange={(e) => handleTemplateSelect(e.target.value)}
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
-              >
-                <option value="">Custom (no template)</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} - ${t.seasonFee.toFixed(2)}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-ink-500 mt-1 text-xs">
-                No templates yet.{" "}
-                <a
-                  href={`/clubs/${clubId}/offer-templates`}
-                  className="text-play-700 hover:underline"
-                  target="_blank"
-                >
-                  Create one
-                </a>{" "}
-                for faster offers.
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-ink-700 block text-sm font-medium">Fee ($)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={seasonFee}
-                onChange={(e) => setSeasonFee(e.target.value)}
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
-              />
-            </div>
-            <div>
-              <label className="text-ink-700 block text-sm font-medium">Installments</label>
-              <select
-                value={installments}
-                onChange={(e) => setInstallments(e.target.value)}
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
-              >
-                {[1, 2, 3, 4, 6, 12].map((n) => (
-                  <option key={n} value={n}>
-                    {n === 1 ? "Full" : `${n}x`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-ink-700 block text-sm font-medium">Sessions</label>
-              <input
-                type="number"
-                min="0"
-                value={practiceSessions}
-                onChange={(e) => setPracticeSessions(e.target.value)}
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
-              />
-            </div>
-          </div>
-
-          {/* Included items */}
-          <div>
-            <label className="text-ink-700 mb-2 block text-sm font-medium">Includes</label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                {
-                  key: "uniform",
-                  label: "Uniform",
-                  desc: "Shirt + Shorts",
-                  checked: includesUniform,
-                  set: setIncludesUniform,
-                },
-                {
-                  key: "tracksuit",
-                  label: "Tracksuit",
-                  desc: "Jacket + Pants",
-                  checked: includesTracksuit,
-                  set: setIncludesTracksuit,
-                },
-                {
-                  key: "shoes",
-                  label: "Shoes",
-                  desc: "Basketball shoes",
-                  checked: includesShoes,
-                  set: setIncludesShoes,
-                },
-                {
-                  key: "ball",
-                  label: "Basketball",
-                  desc: "Game ball",
-                  checked: includesBall,
-                  set: setIncludesBall,
-                },
-                {
-                  key: "bag",
-                  label: "Bag",
-                  desc: "Equipment bag",
-                  checked: includesBag,
-                  set: setIncludesBag,
-                },
-              ].map((item) => (
-                <label
-                  key={item.key}
-                  className="border-ink-200 hover:bg-court-50 flex cursor-pointer items-center gap-2 rounded-xl border p-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={(e) => item.set(e.target.checked)}
-                    className="border-ink-200 text-play-700 focus:ring-play-500/20 rounded"
-                  />
-                  <div>
-                    <div className="text-ink-900 text-xs font-medium">{item.label}</div>
-                    <div className="text-ink-400 text-xs">{item.desc}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-ink-700 block text-sm font-medium">Expires In</label>
-              <select
-                value={expiresInDays}
-                onChange={(e) => setExpiresInDays(e.target.value)}
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
-              >
-                <option value="3">3 days</option>
-                <option value="7">7 days</option>
-                <option value="14">14 days</option>
-                <option value="30">30 days</option>
-              </select>
-            </div>
-          </div>
+          <OfferComposer clubId={clubId} packages={packages} onChange={setPackages} />
 
           <div>
-            <label className="text-ink-700 block text-sm font-medium">Message (optional)</label>
+            <label className="text-ink-700 mb-1 block text-xs font-semibold">
+              Message <span className="text-ink-400 font-normal">(optional)</span>
+            </label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={2}
-              placeholder="Congratulations! We'd love to have you on the team..."
-              className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block w-full rounded-xl border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1"
+              className="border-ink-200 focus:border-play-500 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+              placeholder="We'd love to have you on the team…"
             />
           </div>
 
-          {/* Preview */}
-          {includedItems.length > 0 && (
-            <div className="bg-play-50 rounded-xl p-3">
-              <div className="text-play-700 mb-1 text-xs font-medium">Offer includes:</div>
-              <div className="text-play-700 text-xs">
-                ${parseFloat(seasonFee).toFixed(2)}
-                {parseInt(installments) > 1 ? ` (${installments} installments)` : ""}
-                {parseInt(practiceSessions) > 0 ? ` + ${practiceSessions} practice sessions` : ""}
-                {" + "}
-                {includedItems.join(", ")}
-              </div>
-            </div>
-          )}
+          <div>
+            <label className="text-ink-700 mb-1 block text-xs font-semibold">Expires in</label>
+            <select
+              value={expiresInDays}
+              onChange={(e) => setExpiresInDays(e.target.value)}
+              className="border-ink-200 rounded-xl border px-3 py-2 text-sm"
+            >
+              {[3, 5, 7, 10, 14].map((d) => (
+                <option key={d} value={d}>
+                  {d} days
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2 text-sm font-medium"
+              className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || packages.length === 0}
               className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {isSubmitting ? "Sending..." : "Send Offer"}
+              {isSubmitting ? "Sending…" : "Send Offer"}
             </button>
           </div>
         </form>

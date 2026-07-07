@@ -103,6 +103,7 @@ export async function sendOfferEmail({
   clubName,
   teamName,
   seasonFee,
+  packages,
   message,
   offerLink,
 }: {
@@ -112,16 +113,26 @@ export async function sendOfferEmail({
   clubName: string
   teamName: string
   seasonFee: number
+  /** Multi-option offers list their package choices instead of one fee */
+  packages?: Array<{ label: string; fee: number }>
   message?: string
   offerLink: string
 }) {
   const subject = `Team Offer for ${playerName} from ${clubName}`
+  const feeBlock =
+    packages && packages.length > 1
+      ? `<p><strong>Choose your package when you respond:</strong></p><ul>${packages
+          .map((p) => `<li>${p.label} — $${p.fee.toFixed(2)}</li>`)
+          .join("")}</ul>`
+      : seasonFee > 0
+        ? `<p><strong>Season Fee:</strong> $${seasonFee.toFixed(2)}</p>`
+        : ""
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Team Offer</h2>
       <p>Hi ${parentName},</p>
       <p><strong>${clubName}</strong> would like to offer <strong>${playerName}</strong> a spot on <strong>${teamName}</strong>!</p>
-      ${seasonFee > 0 ? `<p><strong>Season Fee:</strong> $${seasonFee.toFixed(2)}</p>` : ""}
+      ${feeBlock}
       ${message ? `<p style="padding: 12px; background: #f5f5f5; border-radius: 6px; font-style: italic;">"${message}"</p>` : ""}
       <p>To accept or decline this offer, please log in and visit your offers page.</p>
       <p>

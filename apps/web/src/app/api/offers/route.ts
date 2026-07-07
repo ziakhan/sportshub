@@ -6,6 +6,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import {
   createOfferForPlayer,
+  offerPackageSchema,
   resolveOfferTerms,
   OfferCreationError,
 } from "@/lib/offers/create-offer"
@@ -27,6 +28,9 @@ const createOfferSchema = z.object({
   includesShoes: z.boolean().optional(),
   includesUniform: z.boolean().optional(),
   includesTracksuit: z.boolean().optional(),
+  // Package choices (composer sends these; overrides above are the legacy
+  // single-package shape and are ignored when options are present)
+  options: z.array(offerPackageSchema).min(1).max(4).optional(),
   message: z.string().optional(),
   expiresAt: z.string().datetime(),
 })
@@ -100,21 +104,31 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Resolve terms (template + explicit overrides) via the shared service
-    const { terms } = await resolveOfferTerms(prisma, {
-      tenantId: team.tenantId,
-      templateId: data.templateId,
-      overrides: {
-        seasonFee: data.seasonFee,
-        installments: data.installments,
-        practiceSessions: data.practiceSessions,
-        includesBall: data.includesBall,
-        includesBag: data.includesBag,
-        includesShoes: data.includesShoes,
-        includesUniform: data.includesUniform,
-        includesTracksuit: data.includesTracksuit,
-      },
-    })
+    // Resolve terms: package options (first option = pending-display
+    // snapshot) or the legacy single template + overrides shape
+    let terms: Awaited<ReturnType<typeof resolveOfferTerms>>["terms"]
+    let templateId: string | null | undefined = data.templateId
+    if (data.options && data.options.length > 0) {
+      const { label: _l, sourceTemplateId, ...firstTerms } = data.options[0]
+      terms = firstTerms
+      templateId = sourceTemplateId ?? null
+    } else {
+      const resolved = await resolveOfferTerms(prisma, {
+        tenantId: team.tenantId,
+        templateId: data.templateId,
+        overrides: {
+          seasonFee: data.seasonFee,
+          installments: data.installments,
+          practiceSessions: data.practiceSessions,
+          includesBall: data.includesBall,
+          includesBag: data.includesBag,
+          includesShoes: data.includesShoes,
+          includesUniform: data.includesUniform,
+          includesTracksuit: data.includesTracksuit,
+        },
+      })
+      terms = resolved.terms
+    }
 
     // Create the offer + notification + update signup status in a transaction
     const result = await prisma.$transaction(async (tx: any) => {
@@ -122,8 +136,9 @@ export async function POST(request: NextRequest) {
         teamId: data.teamId,
         playerId: data.playerId,
         tryoutSignupId: data.tryoutSignupId,
-        templateId: data.templateId,
+        templateId,
         terms,
+        options: data.options,
         message: data.message,
         expiresAt: new Date(data.expiresAt),
         player,
@@ -170,6 +185,10 @@ export async function POST(request: NextRequest) {
           clubName: team.tenant.name,
           teamName: team.name,
           seasonFee: Number(offerData.seasonFee),
+          packages:
+            data.options && data.options.length > 1
+              ? data.options.map((o) => ({ label: o.label, fee: o.seasonFee }))
+              : undefined,
           message: data.message,
           offerLink: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/offers`,
         })
@@ -329,6 +348,7 @@ export async function GET(request: NextRequest) {
           player: {
             select: { id: true, firstName: true, lastName: true },
           },
+          options: { orderBy: { sortOrder: "asc" } },
         },
         orderBy: { createdAt: "desc" },
       })
@@ -351,5 +371,8 @@ function simplifyOffer(offer: any) {
   return {
     ...offer,
     seasonFee: Number(offer.seasonFee),
+    ...(offer.options
+      ? { options: offer.options.map((o: any) => ({ ...o, seasonFee: Number(o.seasonFee) })) }
+      : {}),
   }
 }

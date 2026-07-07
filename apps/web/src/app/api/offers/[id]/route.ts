@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic"
 
 const respondSchema = z.object({
   action: z.enum(["accept", "decline"]),
+  // Multi-option offers: which package the family chose (required to accept)
+  optionId: z.string().optional(),
   // Required when accepting (conditional on what's included)
   uniformSize: z.string().optional(),
   shoeSize: z.string().optional(),
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         tryoutSignup: {
           select: { id: true, playerName: true, notes: true },
         },
+        options: { orderBy: { sortOrder: "asc" } },
       },
     })
 
@@ -81,6 +84,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({
       ...offer,
       seasonFee: Number(offer.seasonFee),
+      options: (offer as any).options.map((o: any) => ({
+        ...o,
+        seasonFee: Number(o.seasonFee),
+      })),
     })
   } catch (error) {
     console.error("Get offer error:", error)
@@ -113,6 +120,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         team: {
           select: { id: true, name: true, tenantId: true, tenant: { select: { name: true, currency: true } } },
         },
+        options: { orderBy: { sortOrder: "asc" } },
       },
     })
 
@@ -142,6 +150,46 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         data: { status: "EXPIRED" },
       })
       return NextResponse.json({ error: "This offer has expired" }, { status: 400 })
+    }
+
+    // Multi-option offer: the family's chosen package overwrites the
+    // snapshot columns BEFORE acceptance, so gear validation, payments and
+    // the Order Sheet all read the package they actually picked.
+    const offerOptions: any[] = (offer as any).options ?? []
+    if (data.action === "accept" && offerOptions.length > 0) {
+      const chosen = data.optionId
+        ? offerOptions.find((o) => o.id === data.optionId)
+        : undefined
+      if (!chosen) {
+        return NextResponse.json(
+          { error: "Choose a package to accept this offer" },
+          { status: 400 }
+        )
+      }
+      await prisma.offer.update({
+        where: { id: params.id },
+        data: {
+          chosenOptionId: chosen.id,
+          templateId: chosen.sourceTemplateId ?? offer.templateId,
+          seasonFee: chosen.seasonFee,
+          installments: chosen.installments,
+          practiceSessions: chosen.practiceSessions,
+          includesBall: chosen.includesBall,
+          includesBag: chosen.includesBag,
+          includesShoes: chosen.includesShoes,
+          includesUniform: chosen.includesUniform,
+          includesTracksuit: chosen.includesTracksuit,
+        },
+      })
+      Object.assign(offer, {
+        seasonFee: chosen.seasonFee,
+        installments: chosen.installments,
+        includesBall: chosen.includesBall,
+        includesBag: chosen.includesBag,
+        includesShoes: chosen.includesShoes,
+        includesUniform: chosen.includesUniform,
+        includesTracksuit: chosen.includesTracksuit,
+      })
     }
 
     if (data.action === "accept") {

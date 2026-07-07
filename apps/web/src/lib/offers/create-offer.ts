@@ -1,3 +1,4 @@
+import { z } from "zod"
 import { notify } from "@/lib/notifications"
 
 /**
@@ -92,12 +93,38 @@ export async function resolveOfferTerms(
   return { terms, templateId: resolvedTemplateId }
 }
 
+/** One package choice on a multi-option offer — a copy seeded from a template. */
+export interface OfferPackageInput extends OfferTerms {
+  label: string
+  sourceTemplateId?: string | null
+}
+
+/** Request shape for one package — shared by POST /api/offers and /bulk. */
+export const offerPackageSchema = z.object({
+  label: z.string().trim().min(1, "Package needs a name").max(60),
+  sourceTemplateId: z.string().optional().nullable(),
+  seasonFee: z.number().min(0),
+  installments: z.number().int().min(1).max(12).default(1),
+  practiceSessions: z.number().int().min(0).default(0),
+  includesBall: z.boolean().default(false),
+  includesBag: z.boolean().default(false),
+  includesShoes: z.boolean().default(false),
+  includesUniform: z.boolean().default(false),
+  includesTracksuit: z.boolean().default(false),
+})
+
 export interface CreateOfferInput {
   teamId: string
   playerId: string
   tryoutSignupId?: string | null
   templateId?: string | null
   terms: OfferTerms
+  /**
+   * Package choices for the family (docs/offer-package-options-design.md).
+   * Rows are written only when there's an actual choice (2+); terms should
+   * equal options[0] so pending-offer displays read sensibly.
+   */
+  options?: OfferPackageInput[]
   message?: string | null
   expiresAt: Date
   /** For the parent notification. */
@@ -135,6 +162,26 @@ export async function createOfferForPlayer(tx: any, input: CreateOfferInput) {
       expiresAt: input.expiresAt,
     },
   })
+
+  // A single package is just today's offer; rows only exist for real choices
+  if (input.options && input.options.length > 1) {
+    await tx.offerOption.createMany({
+      data: input.options.map((option, i) => ({
+        offerId: offer.id,
+        label: option.label,
+        sourceTemplateId: option.sourceTemplateId || null,
+        seasonFee: option.seasonFee,
+        installments: option.installments,
+        practiceSessions: option.practiceSessions,
+        includesBall: option.includesBall,
+        includesBag: option.includesBag,
+        includesShoes: option.includesShoes,
+        includesUniform: option.includesUniform,
+        includesTracksuit: option.includesTracksuit,
+        sortOrder: i,
+      })),
+    })
+  }
 
   if (input.tryoutSignupId) {
     await tx.tryoutSignup.update({

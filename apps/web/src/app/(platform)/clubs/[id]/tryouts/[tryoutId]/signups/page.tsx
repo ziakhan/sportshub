@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
 import { MakeOfferButton } from "./make-offer-button"
+import { BulkOfferButton } from "./bulk-offer-button"
 
 interface TryoutSignup {
   id: string
@@ -114,14 +115,36 @@ export default async function TryoutSignupsPage({
             )}
           </div>
         </div>
-        {signupsWithPlayers.length > 0 && (
-          <Link
-            href={`/clubs/${params.id}/tryouts/${params.tryoutId}/check-in`}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-          >
-            {`Check-in (${signupsWithPlayers.filter((s) => s.checkedInAt).length}/${signupsWithPlayers.length})`}
-          </Link>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {tryout.team && signupsWithPlayers.length > 0 && (
+            <BulkOfferButton
+              teamId={tryout.team.id}
+              teamName={tryout.team.name}
+              clubId={params.id}
+              recipients={signupsWithPlayers.map((s) => ({
+                signupId: s.id,
+                playerName: s.playerName,
+                eligible: !!s.matchedPlayer && s.offers.length === 0 && s.status !== "CANCELLED",
+                status:
+                  s.offers.length > 0
+                    ? `Offer ${s.offers[s.offers.length - 1].status.toLowerCase()}`
+                    : s.status === "CANCELLED"
+                      ? "Cancelled"
+                      : !s.matchedPlayer
+                        ? "No player profile"
+                        : null,
+              }))}
+            />
+          )}
+          {signupsWithPlayers.length > 0 && (
+            <Link
+              href={`/clubs/${params.id}/tryouts/${params.tryoutId}/check-in`}
+              className="border-play-200 text-play-700 hover:bg-play-50 rounded-xl border bg-white px-4 py-2 text-sm font-semibold"
+            >
+              {`Check-in (${signupsWithPlayers.filter((s) => s.checkedInAt).length}/${signupsWithPlayers.length})`}
+            </Link>
+          )}
+        </div>
       </div>
 
       {signupsWithPlayers.length === 0 ? (
