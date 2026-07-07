@@ -65,6 +65,16 @@ docs/outreach/club-parent-demos.md.
   spread for same guarantee). **NEXT FEATURE (owner): playoff generation**
   (top-N per division from standings → bracket into PLAYOFF sessions —
   settings + schema exist, no generator yet).
+- **Manual override kit (2026-07-07, fd9cf09):** coaches/team managers get
+  full roster authority (add club-linked players w/ jersey, invite-by-email
+  UI for the G3 API, per-row jersey edit + release/reactivate, finalize);
+  commissioner roster override past lock (audited, club notified) + manual
+  single-game add in Schedule tab; game-day referee search/assign/unassign
+  on /score rows (busy-slot flags, referee notified); admin Audit Trail
+  page (/dashboard/admin/audit) — 8 new AuditAction types. Int seed 1120.
+  STILL MANUAL-GAP candidates (owner review): free-form game date picker
+  (suggestions-only today), player merge/dedupe, score correction UI beyond
+  re-finalize.
 - **Roster versions + change requests (2026-07-07, 086c670/47e3572):**
   team→league submission finally discoverable (league chips + W-L + coach
   on team cards, Leagues panel + Add-to-league buttons on team dashboard,
