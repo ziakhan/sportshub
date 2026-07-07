@@ -46,6 +46,11 @@ export type NotificationType =
   | "game_rescheduled"
   // Team chat (debounced — one unread bell per channel)
   | "team_chat"
+  // League roster change flow
+  | "roster_change_requested"
+  | "roster_change_approved"
+  | "roster_change_denied"
+  | "roster_updated"
 
 export interface NotificationInput {
   userId: string

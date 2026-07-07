@@ -3,12 +3,16 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canSubmitTeams, SUBMIT_CLOSED_MESSAGE } from "@/lib/seasons/season-lock"
+import { resolveRosterSelection } from "@/lib/seasons/roster-selection"
 
 export const dynamic = "force-dynamic"
 
 const submitTeamSchema = z.object({
   teamId: z.string(),
   divisionId: z.string(),
+  // Optional roster version: which of the club's ACTIVE players go into THIS
+  // league. Omitted → whole active roster (legacy behavior).
+  playerIds: z.array(z.string()).optional(),
 })
 
 /**
@@ -114,12 +118,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    const teamPlayers = await prisma.teamPlayer.findMany({
-      where: { teamId: data.teamId, status: "ACTIVE" },
-      include: {
-        player: { select: { id: true, firstName: true, lastName: true, position: true } },
-      },
+    const selection = await resolveRosterSelection({
+      seasonId: params.id,
+      teamId: data.teamId,
+      playerIds: data.playerIds,
     })
+    if (!selection.ok) {
+      return NextResponse.json(
+        { error: selection.error, conflicts: selection.conflicts },
+        { status: selection.status }
+      )
+    }
+    const teamPlayers = selection.players
 
     const result = await prisma.$transaction(async (tx: any) => {
       const submission = await tx.teamSubmission.create({
@@ -143,11 +153,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       if (teamPlayers.length > 0) {
         await tx.seasonRosterPlayer.createMany({
-          data: teamPlayers.map((tp: any) => ({
+          data: teamPlayers.map((tp) => ({
             rosterId: roster.id,
             playerId: tp.playerId,
             jerseyNumber: tp.jerseyNumber,
-            position: tp.player.position,
+            position: tp.position,
           })),
         })
       }

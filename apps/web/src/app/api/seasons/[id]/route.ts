@@ -85,6 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "schedulingPhilosophy",
       "allowCrossDivisionScheduling",
       "tiebreakerOrder",
+      "rosterChangePolicy",
     ]
     for (const field of passThrough) {
       if (body[field] !== undefined) update[field] = body[field]
@@ -93,6 +94,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (body.startDate) update.startDate = new Date(body.startDate)
     if (body.endDate) update.endDate = new Date(body.endDate)
     if (body.registrationDeadline) update.registrationDeadline = new Date(body.registrationDeadline)
+    if (body.rosterChangeDeadline !== undefined) {
+      update.rosterChangeDeadline = body.rosterChangeDeadline
+        ? new Date(body.rosterChangeDeadline)
+        : null
+    }
     if (body.ageGroupCutoffDate) update.ageGroupCutoffDate = new Date(body.ageGroupCutoffDate)
 
     let finalizeWarnings: string[] = []

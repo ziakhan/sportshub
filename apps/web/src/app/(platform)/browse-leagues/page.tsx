@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
@@ -26,6 +27,17 @@ interface League {
 }
 
 export default function BrowseLeaguesPage() {
+  return (
+    <Suspense fallback={<div className="text-ink-500 py-12 text-center">Loading leagues...</div>}>
+      <BrowseLeaguesInner />
+    </Suspense>
+  )
+}
+
+function BrowseLeaguesInner() {
+  // Deep links from the club side carry the team to preselect on the season page
+  const searchParams = useSearchParams()
+  const teamParam = searchParams?.get("team")
   const [leagues, setLeagues] = useState<League[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -68,7 +80,7 @@ export default function BrowseLeaguesPage() {
             return (
               <Link
                 key={season.id}
-                href={`/browse-leagues/${season.id}`}
+                href={`/browse-leagues/${season.id}${teamParam ? `?team=${teamParam}` : ""}`}
                 className="border-ink-100 hover:border-play-200 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)] transition hover:shadow-[0_20px_60px_-34px_rgba(15,23,42,0.5)]"
               >
                 <div className="mb-3 flex items-start justify-between">

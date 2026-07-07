@@ -91,6 +91,24 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     orderBy: { createdAt: "desc" },
   })) as any
 
+  const submissions = (await prisma.teamSubmission.findMany({
+    where: { teamId },
+    select: {
+      id: true,
+      status: true,
+      paymentStatus: true,
+      createdAt: true,
+      division: { select: { name: true } },
+      season: {
+        select: { id: true, label: true, status: true, league: { select: { name: true } } },
+      },
+      roster: {
+        select: { id: true, isLocked: true, submittedAt: true, _count: { select: { players: true } } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  })) as any[]
+
   return {
     team: {
       ...team,
@@ -99,6 +117,7 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     },
     tryouts,
     offers,
+    submissions,
   }
 }
 
@@ -115,7 +134,7 @@ export default async function TeamDashboardPage({
     ? ((await getUnreadChatCounts(auth.userId, [params.teamId])).get(params.teamId) ?? 0)
     : 0
 
-  const { team, tryouts, offers } = data
+  const { team, tryouts, offers, submissions } = data
   const clubId = params.id
   const teamId = params.teamId
 
@@ -211,6 +230,88 @@ export default async function TeamDashboardPage({
           <div className="text-play-700 text-2xl font-bold">{offers.length}</div>
           <div className="text-ink-500 text-xs">Offers</div>
         </div>
+      </div>
+
+      {/* Leagues — where this team plays */}
+      <div className="border-ink-100 shadow-soft mb-6 rounded-2xl border bg-white p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-ink-900 font-semibold">Leagues ({submissions.filter((s: any) => s.status !== "WITHDRAWN").length})</h3>
+          <Link
+            href={`/browse-leagues?team=${teamId}`}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
+          >
+            Add this team to a league
+          </Link>
+        </div>
+        {submissions.length === 0 ? (
+          <p className="text-ink-500 text-sm">
+            This team isn&apos;t registered in any league yet. Browse open leagues and submit the
+            roster in a couple of clicks.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {submissions.map((s: any) => (
+              <div
+                key={s.id}
+                className="bg-court-50 flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <div className="text-ink-900 flex items-center gap-2 text-sm font-semibold">
+                    {s.season.league.name}
+                    <span className="text-ink-400 font-normal">· {s.season.label}</span>
+                    {s.division && (
+                      <span className="text-ink-400 font-normal">· {s.division.name}</span>
+                    )}
+                  </div>
+                  <div className="text-ink-500 mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                    <span
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        s.status === "APPROVED"
+                          ? "bg-court-100 text-court-700"
+                          : s.status === "PENDING"
+                            ? "bg-hoop-100 text-hoop-700"
+                            : "bg-court-100 text-ink-500"
+                      }`}
+                    >
+                      {s.status.toLowerCase()}
+                    </span>
+                    {s.paymentStatus && (
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-medium ${
+                          s.paymentStatus === "PAID"
+                            ? "bg-court-100 text-court-700"
+                            : "bg-hoop-100 text-hoop-700"
+                        }`}
+                      >
+                        fee {s.paymentStatus.toLowerCase()}
+                      </span>
+                    )}
+                    {s.roster && (
+                      <span
+                        className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
+                          s.roster.isLocked
+                            ? "bg-ink-100 text-ink-600"
+                            : "bg-play-100 text-play-700"
+                        }`}
+                      >
+                        {s.roster.isLocked ? "🔒 roster locked" : "roster open"} ·{" "}
+                        {s.roster._count.players} players
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {s.roster && (
+                  <Link
+                    href={`/clubs/${clubId}/teams/${teamId}/league-rosters?submission=${s.id}`}
+                    className="border-ink-200 text-ink-700 hover:bg-white shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                  >
+                    View league roster
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

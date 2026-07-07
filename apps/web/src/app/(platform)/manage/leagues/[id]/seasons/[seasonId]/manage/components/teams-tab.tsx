@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { useState } from "react"
 import { panelClass } from "./types"
+import { RosterRequestsPanel } from "./roster-requests-panel"
 
 export function TeamsTab({
   seasonId,
@@ -53,6 +54,14 @@ export function TeamsTab({
 
   return (
     <div className="grid gap-6">
+      {/* Roster policy + change-request queue */}
+      <RosterRequestsPanel
+        seasonId={seasonId}
+        policy={league.rosterChangePolicy ?? "REQUEST_ONLY"}
+        deadline={league.rosterChangeDeadline ?? null}
+        refresh={refresh}
+      />
+
       {/* Registered Teams */}
       <div className={panelClass}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

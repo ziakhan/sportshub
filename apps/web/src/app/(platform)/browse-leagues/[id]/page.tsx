@@ -1,20 +1,40 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 
+interface RosterPreviewPlayer {
+  playerId: string
+  name: string
+  jerseyNumber: number | null
+  position: string | null
+  conflict: { clubName: string; teamName: string } | null
+}
+
 export default function SeasonDetailSubmitPage() {
+  return (
+    <Suspense fallback={<div className="text-ink-500 py-12 text-center">Loading...</div>}>
+      <SeasonDetailSubmitInner />
+    </Suspense>
+  )
+}
+
+function SeasonDetailSubmitInner() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const seasonId = params?.id as string
+  const preselectedTeam = searchParams?.get("team") ?? ""
   const [season, setSeason] = useState<any>(null)
   const [myTeams, setMyTeams] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [selectedTeam, setSelectedTeam] = useState("")
+  const [selectedTeam, setSelectedTeam] = useState(preselectedTeam)
   const [selectedDivision, setSelectedDivision] = useState("")
+  const [roster, setRoster] = useState<RosterPreviewPlayer[] | null>(null)
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<string>>(new Set())
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
@@ -30,9 +50,44 @@ export default function SeasonDetailSubmitPage() {
       .finally(() => setLoading(false))
   }, [seasonId])
 
+  // Pick your league version: load the club roster with eligibility flags
+  useEffect(() => {
+    if (!selectedTeam) {
+      setRoster(null)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/seasons/${seasonId}/roster-preview?teamId=${selectedTeam}`)
+      .then((r) => (r.ok ? r.json() : { players: [] }))
+      .then((data) => {
+        if (cancelled) return
+        const players: RosterPreviewPlayer[] = data.players ?? []
+        setRoster(players)
+        // Everyone eligible starts checked; conflicted players can't be sent
+        setSelectedPlayers(new Set(players.filter((p) => !p.conflict).map((p) => p.playerId)))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [seasonId, selectedTeam])
+
+  const togglePlayer = (playerId: string) => {
+    setSelectedPlayers((current) => {
+      const next = new Set(current)
+      if (next.has(playerId)) next.delete(playerId)
+      else next.add(playerId)
+      return next
+    })
+  }
+
   const handleSubmit = async () => {
     if (!selectedTeam || !selectedDivision) {
       setMessage({ type: "error", text: "Select a team and division" })
+      return
+    }
+    if (roster && roster.length > 0 && selectedPlayers.size === 0) {
+      setMessage({ type: "error", text: "Select at least one player for the league roster" })
       return
     }
     setSubmitting(true)
@@ -41,7 +96,11 @@ export default function SeasonDetailSubmitPage() {
       const res = await fetch(`/api/seasons/${seasonId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId: selectedTeam, divisionId: selectedDivision }),
+        body: JSON.stringify({
+          teamId: selectedTeam,
+          divisionId: selectedDivision,
+          ...(roster && roster.length > 0 ? { playerIds: [...selectedPlayers] } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to submit")
@@ -253,6 +312,53 @@ export default function SeasonDetailSubmitPage() {
                       </select>
                     </div>
 
+                    {roster && roster.length > 0 && (
+                      <div>
+                        <label className="text-ink-600 mb-1 block text-xs font-medium">
+                          League roster version ({selectedPlayers.size}/{roster.length} selected)
+                        </label>
+                        <div className="border-ink-200 max-h-56 space-y-1 overflow-y-auto rounded-xl border p-2">
+                          {roster.map((p) => (
+                            <label
+                              key={p.playerId}
+                              className={`flex items-center gap-2 rounded-lg px-2 py-1 text-sm ${
+                                p.conflict ? "opacity-60" : "hover:bg-court-50 cursor-pointer"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPlayers.has(p.playerId)}
+                                disabled={!!p.conflict}
+                                onChange={() => togglePlayer(p.playerId)}
+                                className="accent-play-600"
+                              />
+                              <span className="min-w-0 flex-1 truncate">
+                                {p.jerseyNumber != null ? `#${p.jerseyNumber} ` : ""}
+                                {p.name}
+                              </span>
+                              {p.conflict ? (
+                                <span
+                                  className="bg-hoop-100 text-hoop-700 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                                  title={`Already rostered this season with ${p.conflict.clubName} (${p.conflict.teamName})`}
+                                >
+                                  ineligible
+                                </span>
+                              ) : (
+                                p.position && (
+                                  <span className="text-ink-400 shrink-0 text-xs">{p.position}</span>
+                                )
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                        {roster.some((p) => p.conflict) && (
+                          <p className="text-hoop-600 mt-1 text-[11px]">
+                            Grayed players already play in this season with another club.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <button
                       onClick={handleSubmit}
                       disabled={submitting || !selectedTeam || !selectedDivision}
@@ -262,7 +368,8 @@ export default function SeasonDetailSubmitPage() {
                     </button>
 
                     <p className="text-ink-400 text-center text-xs">
-                      Your current roster will be frozen for this season.
+                      Only the selected players are submitted — the league sees this version, not
+                      your full club roster.
                     </p>
                   </>
                 )}

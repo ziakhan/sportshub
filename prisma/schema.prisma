@@ -59,6 +59,8 @@ model User {
   follows             Follow[]
   teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
   teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
+  rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
+  rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -663,6 +665,10 @@ model Season {
   registrationDeadline DateTime?
   ageGroupCutoffDate   DateTime?
 
+  // Roster edits after lock: policy + optional hard deadline
+  rosterChangePolicy   RosterChangePolicy @default(REQUEST_ONLY)
+  rosterChangeDeadline DateTime?
+
   teamFee  Decimal? @db.Decimal(10, 2)
   currency String   @default("CAD")
 
@@ -796,12 +802,50 @@ model SeasonRoster {
   submittedAt DateTime?
   lockedAt    DateTime?
 
-  players SeasonRosterPlayer[]
+  players        SeasonRosterPlayer[]
+  changeRequests RosterChangeRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([seasonId])
+}
+
+// Club asks the league to reopen a locked season roster; commissioner
+// approves (one-shot unlock — the next roster save re-locks) or denies.
+model RosterChangeRequest {
+  id       String       @id @default(uuid())
+  rosterId String
+  roster   SeasonRoster @relation(fields: [rosterId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User   @relation("RosterChangeRequests", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  message String @db.Text
+
+  status         RosterChangeRequestStatus @default(PENDING)
+  resolvedById   String?
+  resolvedBy     User?     @relation("RosterChangeResolutions", fields: [resolvedById], references: [id])
+  resolutionNote String?   @db.Text
+  resolvedAt     DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([rosterId])
+  @@index([status])
+}
+
+enum RosterChangeRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+// How a league handles roster edits after rosters lock at finalization
+enum RosterChangePolicy {
+  OPEN_UNTIL_DEADLINE // clubs edit freely until rosterChangeDeadline
+  REQUEST_ONLY // clubs must ask; commissioner approves per change
+  CLOSED // locked means locked
 }
 
 model SeasonRosterPlayer {
