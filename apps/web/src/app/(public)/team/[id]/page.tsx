@@ -117,6 +117,14 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
             Calendar
           </Link>
         )}
+        {chatMember && (
+          <Link
+            href={`/teams/${team.id}/polls`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            Polls
+          </Link>
+        )}
         {practiceSummary && (
           <span className="bg-court-50 text-court-700 ring-court-200 rounded-full px-4 py-1.5 text-xs font-semibold ring-1">
             Practices: {practiceSummary}
