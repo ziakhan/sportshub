@@ -65,6 +65,17 @@ docs/outreach/club-parent-demos.md.
   spread for same guarantee). **NEXT FEATURE (owner): playoff generation**
   (top-N per division from standings → bracket into PLAYOFF sessions —
   settings + schema exist, no generator yet).
+- **Roster versions + change requests (2026-07-07, 086c670/47e3572):**
+  team→league submission finally discoverable (league chips + W-L + coach
+  on team cards, Leagues panel + Add-to-league buttons on team dashboard,
+  ?team= deep-link); submit picks a per-league roster VERSION (subset of
+  club roster, cross-club conflicts blocked); club-side
+  /clubs/[id]/teams/[teamId]/league-rosters shows each version + lock;
+  Season.rosterChangePolicy (OPEN_UNTIL_DEADLINE/REQUEST_ONLY/CLOSED) +
+  deadline; club requests change → commissioner queue in Teams tab
+  (approve = one-shot unlock, next save re-locks; deny w/ note) — both
+  sides notified. Demo: Burloak request pending for owner-nph. Runbook #10
+  extended. Int seed 1119.
 
 ## 1. Deploy train (biggest risk, fully scripted, owner gate)
 - Run Neon runbook entries **#4 #5 #6 #7 #8** (`docs/pending-deploy-actions.md`)

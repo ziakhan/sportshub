@@ -304,6 +304,11 @@ one `prisma db push` covers everything:
   soft-delete fields (deletedAt/deletedById), index (teamId, createdAt).
 - New table `TeamChatRead` (chat v1.5 read cursors): @@id(userId, teamId),
   lastReadAt — unread badges + debounced `team_chat` bell derive from it.
+- `Season.rosterChangePolicy` (enum RosterChangePolicy, default REQUEST_ONLY)
+  + `Season.rosterChangeDeadline DateTime?` — roster-edit policy after lock.
+- New table `RosterChangeRequest` (+ enum RosterChangeRequestStatus):
+  rosterId FK cascade, requestedById/resolvedById User FKs, message/
+  resolutionNote — club↔league roster change-request flow.
 
 Nothing to backfill. Note: the same commits UNHID the Review system on
 public club pages (`/club/[slug]`) — no schema change (Review table already
