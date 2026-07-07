@@ -36,8 +36,12 @@ easily sending it to people... with charts or bars to show the results."
   single-question Poll; the bubble renders tappable options with live
   result bars (WhatsApp-style). Tap to vote; single-choice taps switch,
   multi-choice taps toggle.
-- Staff-only creation via the 📊 button in the chat composer (question +
-  2-6 options + multiple-choice toggle). Families vote in place.
+- Creation open to EVERY chat member (owner call 2026-07-07 — membership
+  = staff + parents, i.e. the adults; a rare self-registered 13+ player
+  is also a member and gets the button, indistinguishable from a parent
+  in the data model). 📊 button in the chat composer: question + 2-6
+  options + multiple-choice toggle. Multi-question surveys on the polls
+  page stay staff-only.
 - Live counts WITHOUT new messages: votes mutate existing polls, so every
   messages GET (including ?after= delta polls) ships `pollUpdates` — an
   open chat sees vote movement within the 5s poll cycle.

@@ -378,7 +378,7 @@ export function TeamChat({
         </div>
       )}
 
-      {canModerate && showPollForm && (
+      {showPollForm && (
         <div className="border-ink-100 space-y-2 border-t p-3">
           <div className="flex items-center justify-between">
             <p className="text-ink-700 text-xs font-bold">📊 Quick poll</p>
@@ -450,21 +450,19 @@ export function TeamChat({
       )}
 
       <form onSubmit={sendMessage} className="border-ink-100 flex gap-2 border-t p-3">
-        {canModerate && (
-          <button
-            type="button"
-            onClick={() => setShowPollForm((v) => !v)}
-            className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
-              showPollForm
-                ? "border-play-400 bg-play-50 text-play-700"
-                : "border-ink-200 text-ink-500 hover:bg-ink-50"
-            }`}
-            title="Post a quick poll"
-            aria-label="Post a quick poll"
-          >
-            📊
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowPollForm((v) => !v)}
+          className={`shrink-0 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+            showPollForm
+              ? "border-play-400 bg-play-50 text-play-700"
+              : "border-ink-200 text-ink-500 hover:bg-ink-50"
+          }`}
+          title="Post a quick poll"
+          aria-label="Post a quick poll"
+        >
+          📊
+        </button>
         <input
           type="text"
           value={input}

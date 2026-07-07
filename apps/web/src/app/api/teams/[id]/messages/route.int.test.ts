@@ -214,10 +214,21 @@ describe("team chat (integration)", () => {
     expect(update.poll.voterCount).toBe(1)
   })
 
-  it("quick poll: families cannot post one", async () => {
+  it("quick poll: parents can post one too (owner call — chat members are the adults)", async () => {
     actAs(familyParentId)
-    const res = await send({ poll: { question: "Can I?", options: ["A", "B"] } })
-    expect(res.status).toBe(403)
+    const res = await send({
+      poll: { question: "Anyone carpooling from the west end?", options: ["We can drive", "Need a ride"] },
+    })
+    expect(res.status).toBe(201)
+    const { message } = await res.json()
+    expect(message.poll.question).toBe("Anyone carpooling from the west end?")
+    expect(message.sender.isStaff).toBe(false)
+
+    // outsiders still can't — membership is the gate
+    actAs(outsiderParentId)
+    expect(
+      (await send({ poll: { question: "sneaky?", options: ["a", "b"] } })).status
+    ).toBe(403)
   })
 
   it("quick poll: taking the message back deletes the poll and its votes", async () => {

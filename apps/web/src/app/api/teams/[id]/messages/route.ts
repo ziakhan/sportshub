@@ -163,13 +163,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    if (parsed.data.poll && membership.role === "family") {
-      return NextResponse.json(
-        { error: "Only team staff can post polls" },
-        { status: 403 }
-      )
-    }
-
+    // Quick polls are open to every chat member (owner call 2026-07-07:
+    // "keep it to adults" — membership is staff + parents, which is the
+    // adult set; multi-question surveys on the polls page stay staff-only).
     const messageSelect = {
       id: true,
       body: true,
