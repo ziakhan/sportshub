@@ -217,6 +217,20 @@ monetization model (§12) — docs/public-site-content-plan.md.
 - Seeder unification fork — largely superseded by scripts/simulate.ts; ASK
   before building
 
+## 6. Performance — AUDITED + QUICK WINS SHIPPED 2026-07-06
+Owner asked "audit the DB indices, app is slow." **Full record:
+`docs/perf-audit-2026-07-06.md` — read it before touching perf again.**
+Verdict: indexes were fine (DB tiny, warm renders 80–200ms); local slowness
+= dev-mode compiles, Vercel slowness = query count × Neon round-trips (+
+suspected Neon free-tier autosuspend, unconfirmed — owner to check console).
+Shipped + verified: incremental live polling w/ void reconciliation (52KB →
+621B per 10s poll per viewer), can-score probe (58KB → 17B), getCurrentUser
+request-memoized, layout tenant counts batched (3/tenant → 2 fixed),
+getYourTeams batched (~18 → 6 queries), 3 composite indexes (local only —
+Neon = runbook #11). Deferred: chat-polling architecture (fold into the
+queued chat-scalability discussion), getSessionUserId admin lookup → JWT,
+standings/leaders JS aggregation (fine at current season size).
+
 ## Environment notes (local)
 - Demo scoring world seed 9414 in DB (`npx tsx scripts/demo-scoring-game.ts`
   re-seeds; --wipe removes). Stripe verify world 9412 also present.

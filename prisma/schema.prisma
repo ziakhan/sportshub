@@ -196,6 +196,9 @@ model Tenant {
 
   @@index([slug])
   @@index([customDomain])
+  // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
+  // imported clubs (perf audit 2026-07-06)
+  @@index([status])
 }
 
 enum TenantPlan {
@@ -1137,6 +1140,10 @@ model Game {
   @@index([awayTeamId])
   @@index([scheduledAt])
   @@index([status])
+  // Scoreboard strips / /scores filter status + scheduledAt-range together;
+  // standings + leaders filter seasonId + status (perf audit 2026-07-06)
+  @@index([status, scheduledAt])
+  @@index([seasonId, status])
 }
 
 enum GameStatus {

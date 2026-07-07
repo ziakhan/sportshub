@@ -38,25 +38,35 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   const tenantIds = Array.from(new Set(rawTenants.map((t: any) => t.id as string)))
 
-  const tenantCounts =
-    tenantIds.length > 0
-      ? await Promise.all(
-          tenantIds.map(async (tenantId) => {
-            const [teams, tryouts, offers] = await Promise.all([
-              prisma.team.count({ where: { tenantId } }),
-              prisma.tryout.count({ where: { tenantId } }),
-              prisma.offer.count({
-                where: { team: { tenantId }, status: "PENDING" },
-              }),
-            ])
-            return { tenantId, teams, tryouts, offers }
-          })
-        )
-      : []
-
-  const countsByTenant = new Map(
-    tenantCounts.map((c) => [c.tenantId, { teams: c.teams, tryouts: c.tryouts, offers: c.offers }])
-  )
+  // Two fixed queries instead of 3-per-tenant: team rows double as the team
+  // count and carry a filtered pending-offer count; tryouts group in one.
+  const countsByTenant = new Map<string, { teams: number; tryouts: number; offers: number }>()
+  if (tenantIds.length > 0) {
+    const [teamRows, tryoutGroups] = await Promise.all([
+      prisma.team.findMany({
+        where: { tenantId: { in: tenantIds } },
+        select: {
+          tenantId: true,
+          _count: { select: { offers: { where: { status: "PENDING" } } } },
+        },
+      }),
+      prisma.tryout.groupBy({
+        by: ["tenantId"],
+        where: { tenantId: { in: tenantIds } },
+        _count: { _all: true },
+      }),
+    ])
+    for (const id of tenantIds) countsByTenant.set(id, { teams: 0, tryouts: 0, offers: 0 })
+    for (const row of teamRows) {
+      const c = countsByTenant.get(row.tenantId)!
+      c.teams += 1
+      c.offers += row._count.offers
+    }
+    for (const g of tryoutGroups) {
+      const c = countsByTenant.get(g.tenantId)
+      if (c) c.tryouts = g._count._all
+    }
+  }
 
   const tenants = rawTenants.map((tenant: any) => ({
     ...tenant,

@@ -97,6 +97,12 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
+    // ?probe=1 — authz-only check ("may this viewer score?") without the
+    // roster/event payload. The public live page uses it for its Score button.
+    if (new URL(_request.url).searchParams.get("probe") === "1") {
+      return NextResponse.json({ canScore: true })
+    }
+
     const [homeRoster, awayRoster, refereeRoles, events] = await Promise.all([
       rosterForTeam(game.seasonId, game.homeTeamId),
       rosterForTeam(game.seasonId, game.awayTeamId),

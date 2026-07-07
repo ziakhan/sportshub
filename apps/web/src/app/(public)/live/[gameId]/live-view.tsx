@@ -55,6 +55,8 @@ interface LivePayload {
     seasonName: string | null
   }
   events: FoldEvent[]
+  /** Incremental polls only: sequences ≤ sinceSeq that are currently voided. */
+  voidedSequences?: number[]
   players: LivePlayer[]
   seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }>
 }
@@ -79,22 +81,57 @@ export function LiveView({ gameId }: { gameId: string }) {
   const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
 
   useEffect(() => {
-    fetch(`/api/games/${gameId}/scoring`)
+    fetch(`/api/games/${gameId}/scoring?probe=1`)
       .then((res) => setCanScore(res.ok))
       .catch(() => {})
   }, [gameId])
 
   useEffect(() => {
     let stop = false
+    // After the initial full load, poll with ?sinceSeq — the server then
+    // skips rosters/standings/averages and returns only new events plus the
+    // currently-voided sequences (voids mutate rows, so they must be
+    // reconciled against the cache rather than appended).
+    let lastSeq = 0
     async function poll() {
       try {
-        const res = await fetch(`/api/live/${gameId}`)
+        const url =
+          lastSeq > 0 ? `/api/live/${gameId}?sinceSeq=${lastSeq}` : `/api/live/${gameId}`
+        const res = await fetch(url)
         if (!res.ok) throw new Error()
-        const payload = await res.json()
-        if (!stop) {
+        const payload: LivePayload = await res.json()
+        if (stop) return
+        if (lastSeq === 0) {
           setData(payload)
-          setError(false)
+        } else {
+          setData((prev) => {
+            if (!prev) return payload
+            const fresh = new Set(payload.events.map((e) => e.sequence))
+            const voided = new Set(payload.voidedSequences ?? [])
+            const events = prev.events
+              .filter((e) => !fresh.has(e.sequence))
+              .map((e) =>
+                (e.voided ?? false) === voided.has(e.sequence)
+                  ? e
+                  : { ...e, voided: voided.has(e.sequence) }
+              )
+              .concat(payload.events)
+              .sort((a, b) => a.sequence - b.sequence)
+            return {
+              ...prev,
+              // Header fields (score/status/clock) refresh every poll; the
+              // standings-derived records only come with the initial load.
+              game: {
+                ...payload.game,
+                homeRecord: payload.game.homeRecord ?? prev.game.homeRecord,
+                awayRecord: payload.game.awayRecord ?? prev.game.awayRecord,
+              },
+              events,
+            }
+          })
         }
+        lastSeq = payload.events.reduce((max, e) => Math.max(max, e.sequence), lastSeq)
+        setError(false)
       } catch {
         if (!stop) setError(true)
       }

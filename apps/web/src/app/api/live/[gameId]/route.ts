@@ -18,8 +18,11 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest, { params }: { params: { gameId: string } }) {
   try {
-    // Plain URL parsing — this route is also exercised with vanilla Requests
-    const sinceSeq = Number(new URL(request.url).searchParams.get("sinceSeq") ?? 0)
+    // Plain URL parsing — this route is also exercised with vanilla Requests.
+    // Garbage/negative values fall back to 0 (full load); NaN would make
+    // Prisma throw a 500.
+    const rawSince = Number(new URL(request.url).searchParams.get("sinceSeq") ?? 0)
+    const sinceSeq = Number.isFinite(rawSince) && rawSince > 0 ? Math.floor(rawSince) : 0
 
     const game = await (prisma as any).game.findUnique({
       where: { id: params.gameId },
@@ -65,6 +68,19 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         metadata: true,
       },
     })
+
+    // Voids MUTATE existing rows (PATCH /events flips `voided`), so an
+    // incremental poll can't see undo/correction of an already-delivered
+    // event. Ship the currently-voided sequences with every incremental
+    // response; the client reconciles its cached events against this set.
+    let voidedSequences: number[] | undefined
+    if (sinceSeq > 0) {
+      const voided = await (prisma as any).gameEvent.findMany({
+        where: { gameId: params.gameId, voided: true, sequence: { lte: sinceSeq } },
+        select: { sequence: true },
+      })
+      voidedSequences = voided.map((v: any) => v.sequence)
+    }
 
     // Player names/jerseys + header context only on the initial load (sinceSeq=0)
     let players: Array<{
@@ -184,6 +200,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         seasonName: game.season?.label ?? null,
       },
       events: events.map((e: any) => ({ ...e, timestampMs: new Date(e.timestamp).getTime() })),
+      voidedSequences,
       players,
       seasonAverages,
     })

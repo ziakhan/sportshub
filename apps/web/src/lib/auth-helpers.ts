@@ -2,14 +2,18 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "./auth"
 import { prisma } from "@youthbasketballhub/db"
 import { cookies } from "next/headers"
+import { cache } from "./queries/request-cache"
 
 const IMPERSONATE_COOKIE = "admin-impersonate-uid"
 
 /**
  * Get current user from database with roles.
  * Supports admin impersonation via cookie.
+ * Request-memoized: the platform layout and the page it wraps both call
+ * this in the same render pass — without cache() that's a duplicated
+ * 3-level include query on every authenticated page.
  */
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async function getCurrentUser() {
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {
@@ -43,7 +47,7 @@ export async function getCurrentUser() {
   })
 
   return user
-}
+})
 
 /**
  * Get the real admin user ID (ignores impersonation)

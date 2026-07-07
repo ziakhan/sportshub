@@ -317,3 +317,16 @@ one `prisma db push` covers everything:
 Nothing to backfill. Note: the same commits UNHID the Review system on
 public club pages (`/club/[slug]`) — no schema change (Review table already
 live), but reviews become writable by any signed-in user on deploy.
+
+## 11. Perf-audit composite indexes — NOT YET APPLIED to Neon
+
+Ships with the perf-audit commit (2026-07-06, docs/perf-audit-2026-07-06.md).
+Index-only, additive, zero data risk — one `prisma db push` covers it:
+- `Game @@index([status, scheduledAt])` — scoreboard strips + /scores
+- `Game @@index([seasonId, status])` — standings / leaders
+- `Tenant @@index([status])` — homepage + public-nav club filters
+
+Nothing to backfill. No client regen concerns (indexes don't change the
+generated client). While in the Neon console for this: check compute
+**autosuspend** — prime suspect for the "first prod load takes seconds"
+symptom (see audit doc §"suspected but NOT confirmed").
