@@ -3,9 +3,9 @@
  * docs/nph-demo-seed-plan.md (v2).
  *
  * Builds: 16 real Toronto/West-End NPH clubs (12 adopted UNCLAIMED import
- * tenants + 4 created), NPH Showcase League Winter 2026 mid-season (4 grade
+ * tenants + 4 created), NPH Summer League (Summer 2026) mid-season (4 grade
  * divisions × 8 teams, 64 completed games w/ full stats + recaps, 3 LIVE,
- * ~45 scheduled, standings, referees signed), NPH Spring Circuit in OPEN
+ * ~45 scheduled, standings, referees signed), NPH Fall League in OPEN
  * registration (tryouts live, check-in demo, open offer for the demo
  * parent), complete per-team pipeline history (templates → tryout → signups
  * → offers in every status → sizes → roster → payments → submit → lock),
@@ -26,6 +26,8 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
 import { foldEvents, totalRebounds } from "../apps/web/src/lib/scoring/fold"
 import { upsertGameRecap } from "../apps/web/src/lib/content/recap-service"
+import { loadSchedulerInput } from "../apps/web/src/lib/scheduler/load"
+import { generateSchedule } from "../apps/web/src/lib/scheduler/generate"
 
 // Deterministic recaps: force the template engine even if a key is present.
 // Re-run scripts/backfill-recaps.ts with ANTHROPIC_API_KEY for AI prose.
@@ -34,11 +36,15 @@ delete process.env.ANTHROPIC_API_KEY
 const MARKER = "NPH_DEMO_SEED"
 const EMAIL_DOMAIN = "sportshub.demo"
 const PASSWORD = "TestPass123!"
-const WINTER_LEAGUE = "NPH Showcase League"
-const WINTER_SEASON = "Winter 2026"
-const SPRING_LEAGUE = "NPH Spring Circuit"
-const SPRING_SEASON = "Spring 2026"
+// Active league: summer, weekly weekend sessions, wraps up end of July.
+// Open league: fall, monthly sessions, runs October through March.
+const WINTER_LEAGUE = "NPH Summer League"
+const WINTER_SEASON = "Summer 2026"
+const SPRING_LEAGUE = "NPH Fall League"
+const SPRING_SEASON = "Fall 2026"
 const LEAGUE_TEAM_FEE = 3990 // real NPH SL per-team fee (docs/research)
+const SUMMER_GAMES_PER_TEAM = 10 // 2 per weekend × 5 weekends — never less than 2/weekend
+const FALL_GAMES_PER_TEAM = 12 // monthly sessions Oct–Mar
 
 const p = prisma as any
 
@@ -50,10 +56,10 @@ interface ClubCfg {
   create?: boolean // no import tenant — create fresh
   city: string
   color: string
-  grades: number[] // winter divisions this club fields (8 teams per grade)
+  grades: number[] // summer divisions this club fields (8 teams per grade)
   featured?: boolean
   elite?: boolean // gets the Elite All-In template
-  spring?: "submitted" | "recruiting" // NPH Spring Circuit participation
+  spring?: "submitted" | "recruiting" // NPH Fall League participation
 }
 
 const CLUBS: ClubCfg[] = [
@@ -107,7 +113,7 @@ const HIGHLIGHT_VIDEOS = [
   { id: "LGBsYRZ0jmU", title: "Grade 11: Toronto Lords vs West United — Full Highlights" },
   { id: "QKvLqlGZEic", title: "Grade 8 Division — Top Plays, Week 4" },
   { id: "2OYIiF2YwIs", title: "Saturday Showcase — Around the League" },
-  { id: "kmhxcuhYNjk", title: "Player Spotlight: Rising Stars of Winter 2026" },
+  { id: "kmhxcuhYNjk", title: "Player Spotlight: Rising Stars of Summer 2026" },
   { id: "TmslsvOqTUU", title: "Grade 10 Game of the Week: Burlington Force vs Royal Crown" },
 ]
 
@@ -268,7 +274,13 @@ async function scrubNoise() {
 
 // ── Demo-world wipe (config-driven, surgical, restores adopted tenants) ─
 async function wipeDemoWorld() {
-  for (const name of [WINTER_LEAGUE, SPRING_LEAGUE, "Ontario Youth Basketball League"]) {
+  for (const name of [
+    WINTER_LEAGUE,
+    SPRING_LEAGUE,
+    "NPH Showcase League",
+    "NPH Spring Circuit",
+    "Ontario Youth Basketball League",
+  ]) {
     const league = await p.league.findFirst({ where: { name }, select: { id: true } })
     if (league) await deleteLeagueDeep(league.id)
   }
@@ -458,12 +470,19 @@ async function seed() {
   const nph = await mkUser(`owner-nph@${EMAIL_DOMAIN}`, "Nathan", "Hoops")
   console.log("✓ admin + league owner")
 
-  // Venues (find-or-create, global)
-  const venues: any[] = []
+  // Venues (find-or-create, global) — each with 2 real courts so the
+  // session substrate and scheduler have something to allocate
+  const venues: Array<{ id: string; courtIds: string[] }> = []
   for (const v of VENUES) {
     let venue = await p.venue.findFirst({ where: { name: v.name }, select: { id: true } })
-    if (!venue) venue = await p.venue.create({ data: { ...v, state: "ON", country: "CA" } })
-    venues.push(venue)
+    if (!venue) venue = await p.venue.create({ data: { ...v, state: "ON", country: "CA" }, select: { id: true } })
+    const courtIds: string[] = []
+    for (let c = 1; c <= 2; c++) {
+      let court = await p.court.findFirst({ where: { venueId: venue.id, name: `Court ${c}` }, select: { id: true } })
+      if (!court) court = await p.court.create({ data: { venueId: venue.id, name: `Court ${c}`, displayOrder: c }, select: { id: true } })
+      courtIds.push(court.id)
+    }
+    venues.push({ id: venue.id, courtIds })
   }
 
   // ── Clubs: adopt real import tenants / create the missing ones ────────
@@ -513,7 +532,7 @@ async function seed() {
   }
   console.log(`✓ ${CLUBS.length} clubs adopted/created, branded, templated (${CLUBS.filter((c) => c.featured).length} featured)`)
 
-  // ── Winter league + season + divisions ────────────────────────────────
+  // ── Summer league + season + divisions ────────────────────────────────
   const winterLeague = await p.league.create({
     data: {
       name: WINTER_LEAGUE,
@@ -529,10 +548,17 @@ async function seed() {
       leagueId: winterLeague.id,
       label: WINTER_SEASON,
       status: "IN_PROGRESS",
-      startDate: new Date(now.getTime() - days(45)),
-      endDate: new Date(now.getTime() + days(40)),
+      type: "SUMMER",
+      startDate: new Date(now.getTime() - days(32)),
+      endDate: new Date(now.getTime() + days(24)), // wraps up end of July
       teamFee: LEAGUE_TEAM_FEE,
       gamePeriods: "QUARTERS",
+      gamesGuaranteed: SUMMER_GAMES_PER_TEAM,
+      gameSlotMinutes: 90,
+      gameLengthMinutes: 40,
+      idealGamesPerDayPerTeam: 1, // 2-day weekend sessions → 2 games/weekend
+      defaultVenueOpenTime: "09:00",
+      defaultVenueCloseTime: "18:00",
       tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
       tiebreakersLockedAt: now,
     },
@@ -543,7 +569,64 @@ async function seed() {
       data: { seasonId: winterSeason.id, name: `Grade ${g}`, ageGroup: `Grade ${g}`, gender: "MALE" },
     }))
   }
-  console.log(`✓ ${WINTER_LEAGUE} · ${WINTER_SEASON} · 4 grade divisions`)
+
+  // Season venue allocations + weekly weekend sessions (the substrate the
+  // Venues/Sessions tabs display and the scheduler consumes)
+  const buildSessions = async (
+    seasonId: string,
+    spec: Array<{ label: string; dayOffsets: number[] }>,
+    targetGamesPerTeam: number
+  ): Promise<Array<{ id: string; label: string }>> => {
+    const created: Array<{ id: string; label: string }> = []
+    for (const v of venues) {
+      await p.seasonVenue.upsert({
+        where: { seasonId_venueId: { seasonId, venueId: v.id } },
+        create: { seasonId, venueId: v.id, courtsAvailable: v.courtIds.length },
+        update: {},
+      })
+    }
+    for (const s of spec) {
+      const session = await p.seasonSession.create({
+        data: { seasonId, label: s.label, phase: "REGULAR", targetGamesPerTeam },
+        select: { id: true },
+      })
+      created.push({ id: session.id, label: s.label })
+      for (const offset of s.dayOffsets) {
+        const date = new Date(now.getTime() + days(offset))
+        date.setHours(0, 0, 0, 0)
+        const day = await p.seasonSessionDay.create({
+          data: { sessionId: session.id, date },
+          select: { id: true },
+        })
+        for (const v of venues) {
+          const dayVenue = await p.seasonSessionDayVenue.create({
+            data: { dayId: day.id, venueId: v.id, startTime: "09:00", endTime: "18:00" },
+            select: { id: true },
+          })
+          for (const courtId of v.courtIds) {
+            await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId } })
+          }
+        }
+      }
+    }
+    return created
+  }
+
+  // 5 weekend sessions: 4 played, week 5 = today + next Saturday
+  const dow = now.getDay()
+  const lastSaturday = dow === 6 ? 0 : -((dow + 1) % 7)
+  const summerSessions = await buildSessions(
+    winterSeason.id,
+    [
+      { label: "Week 1", dayOffsets: [lastSaturday - 28, lastSaturday - 27] },
+      { label: "Week 2", dayOffsets: [lastSaturday - 21, lastSaturday - 20] },
+      { label: "Week 3", dayOffsets: [lastSaturday - 14, lastSaturday - 13] },
+      { label: "Week 4", dayOffsets: [lastSaturday - 7, lastSaturday - 6] },
+      { label: "Week 5", dayOffsets: [0, lastSaturday + 7] }, // today + next Saturday
+    ],
+    2
+  )
+  console.log(`✓ ${WINTER_LEAGUE} · ${WINTER_SEASON} · 4 grade divisions · 4 venues (2 courts each) · 5 weekend sessions`)
 
   // ── Teams + the full pipeline history per team ─────────────────────────
   const teams: SeededTeam[] = []
@@ -724,13 +807,25 @@ async function seed() {
           players: { create: rosterRows.map((r: any) => ({ playerId: r.playerId, jerseyNumber: r.jerseyNumber })) },
         },
       })
-      // Club → league entry fee, PAID (the real NPH SL anchor)
-      await p.paymentObligation.create({
+      // Club → league entry fee, PAID — with the actual Payment row so the
+      // league payments page sums real collected money
+      const leagueFeeObligation = await p.paymentObligation.create({
         data: {
           payerTenantId: row.id, payeeLeagueId: winterLeague.id,
           referenceType: "TeamSubmission", referenceId: submission.id,
           description: `${WINTER_LEAGUE} team entry — ${teamName} (${WINTER_SEASON})`,
           amount: LEAGUE_TEAM_FEE, status: "PAID",
+        },
+        select: { id: true },
+      })
+      await p.payment.create({
+        data: {
+          obligationId: leagueFeeObligation.id,
+          amount: LEAGUE_TEAM_FEE, currency: "CAD",
+          status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
+          payeeId: nph.id, recordedById: nph.id,
+          description: `${WINTER_LEAGUE} team entry — ${teamName} (${WINTER_SEASON})`,
+          createdAt: new Date(now.getTime() - days(40)),
         },
       })
 
@@ -741,83 +836,148 @@ async function seed() {
       })
     }
   }
-  console.log(`✓ ${teams.length} winter teams: tryout + 14 signups + offers (10✓ 2✗ 1 expired) + sizes + payments + locked league roster each`)
+  console.log(`✓ ${teams.length} summer teams: tryout + 14 signups + offers (10✓ 2✗ 1 expired) + sizes + payments + locked league roster each`)
 
-  // ── Winter schedule: 4 completed rounds, 3 LIVE now, 3 future rounds ──
+  // ── Summer schedule: generated by the REAL scheduler over the session
+  // substrate (same code path as the owner's "Commit schedule" button) ──
   const rosterOf = new Map(teams.map((t) => [t.id, t.roster]))
+  const gradeOf = new Map(teams.map((t) => [t.id, t.grade]))
   const completedGameIds: string[] = []
   const liveGameIds: string[] = []
-  const saturdayHours = [9, 10.5, 12, 13.5]
-  const liveGrades = [9, 10, 11]
 
-  for (const grade of GRADE_LIST) {
-    const g = GRADES[grade]
-    const divTeams = teams.filter((t) => t.grade === grade).map((t) => t.id)
-    const rounds = roundRobin(divTeams) // 7 rounds × 4 games
-    for (let r = 0; r < rounds.length; r++) {
-      const isCompleted = r < 4
-      const daysOffset = [-30, -23, -16, -9, 5, 12, 19][r]
-      for (let gIdx = 0; gIdx < rounds[r].length; gIdx++) {
-        const [homeId, awayId] = rounds[r][gIdx]
-        // One pairing per live grade plays RIGHT NOW instead of next weekend
-        const isLive = !isCompleted && r === 4 && gIdx === 0 && liveGrades.includes(grade)
-        const startAt = isLive
-          ? new Date(now.getTime() - 55 * 60_000)
-          : new Date(now.getTime() + days(daysOffset))
-        if (!isLive) startAt.setHours(Math.floor(saturdayHours[gIdx] + (grade - 8) * 2), (saturdayHours[gIdx] % 1) * 60, 0, 0)
-        const game = await p.game.create({
+  const { input: schedInput, errors: schedErrors } = await loadSchedulerInput(winterSeason.id)
+  if (!schedInput) throw new Error(`Scheduler input failed: ${schedErrors.join("; ")}`)
+
+  // Staged passes so the cadence lands exactly (generateSchedule packs
+  // greedily-chronologically — a single pass would pour every game into the
+  // past sessions): 8 games/team across the four played weekends, then
+  // Week 5 as two single-day passes (1 game/team today, 1 next Saturday).
+  const week5Id = summerSessions.find((s) => s.label === "Week 5")!.id
+  const week5Session = schedInput.sessions.find((s: any) => s.id === week5Id)!
+  const playedPass = generateSchedule({
+    ...schedInput,
+    gamesGuaranteed: SUMMER_GAMES_PER_TEAM - 2,
+    sessions: schedInput.sessions.filter((s: any) => s.id !== week5Id),
+  })
+  const week5DayPasses = week5Session.days.map((day: any) =>
+    generateSchedule({
+      ...schedInput,
+      gamesGuaranteed: 1,
+      sessions: [{ ...week5Session, days: [day] }],
+    })
+  )
+  const allPasses = [playedPass, ...week5DayPasses]
+  const proposal = {
+    games: allPasses.flatMap((r) => r.games),
+    unscheduled: allPasses.flatMap((r) => r.unscheduled),
+    warnings: allPasses.flatMap((r) => r.warnings),
+  }
+  if (proposal.warnings.length) {
+    for (const w of proposal.warnings) console.log(`  ! scheduler: ${w}`)
+  }
+
+  const createdGames: Array<{ id: string; homeTeamId: string; awayTeamId: string; scheduledAt: Date }> = []
+  for (const g of proposal.games) {
+    const game = await p.game.create({
+      data: {
+        seasonId: winterSeason.id,
+        phase: "REGULAR",
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+        sessionId: g.sessionId,
+        dayId: g.dayId,
+        dayVenueId: g.dayVenueId,
+        courtId: g.courtId,
+        venueId: g.venueId,
+        scheduledAt: g.scheduledAt,
+        duration: schedInput.gameSlotMinutes,
+        status: "SCHEDULED",
+        isLocked: true,
+      },
+      select: { id: true, homeTeamId: true, awayTeamId: true, scheduledAt: true },
+    })
+    createdGames.push(game)
+  }
+
+  // Games from past sessions (and earlier today) get played + scored;
+  // 3 of the still-pending ones go LIVE right now (distinct grades first).
+  const playedCutoff = new Date(now.getTime() - 100 * 60_000)
+  const pending = createdGames.filter((g) => g.scheduledAt >= playedCutoff)
+  const livePicks: typeof pending = []
+  for (const grade of [9, 10, 11, 8]) {
+    if (livePicks.length >= 3) break
+    const pick = pending.find(
+      (g) => gradeOf.get(g.homeTeamId) === grade && !livePicks.includes(g)
+    )
+    if (pick) livePicks.push(pick)
+  }
+  while (livePicks.length < 3 && pending.length > livePicks.length) {
+    const next = pending.find((g) => !livePicks.includes(g))
+    if (!next) break
+    livePicks.push(next)
+  }
+
+  for (const game of createdGames) {
+    const grade = gradeOf.get(game.homeTeamId) ?? 9
+    const pace = GRADES[grade].pace
+    const isLive = livePicks.includes(game)
+    const isPlayed = !isLive && game.scheduledAt < playedCutoff
+    if (!isLive && !isPlayed) continue
+
+    const startAt = isLive ? new Date(now.getTime() - 55 * 60_000) : game.scheduledAt
+    const events = buildGameEvents({
+      gameId: game.id,
+      homeTeamId: game.homeTeamId,
+      awayTeamId: game.awayTeamId,
+      homeRoster: rosterOf.get(game.homeTeamId)!,
+      awayRoster: rosterOf.get(game.awayTeamId)!,
+      pace,
+      startAt,
+      homeEdge: isLive ? 0.5 : 0.44 + rnd() * 0.12,
+      throughPeriod: isLive ? 3 : undefined,
+    })
+    await p.gameEvent.createMany({ data: events })
+    const folded = foldEvents(
+      events.map((e: any) => ({ ...e, timestampMs: e.timestamp.getTime() })),
+      { homeTeamId: game.homeTeamId, awayTeamId: game.awayTeamId }
+    )
+    if (isLive) {
+      await p.game.update({
+        where: { id: game.id },
+        data: { status: "LIVE", scheduledAt: startAt, homeScore: folded.homeScore, awayScore: folded.awayScore },
+      })
+      liveGameIds.push(game.id)
+    } else {
+      const refName = REFS[(grade + completedGameIds.length) % REFS.length]
+      await p.$transaction(async (tx: any) => {
+        await tx.game.update({
+          where: { id: game.id },
           data: {
-            seasonId: winterSeason.id, homeTeamId: homeId, awayTeamId: awayId,
-            venueId: venues[(grade + gIdx) % venues.length].id,
-            scheduledAt: startAt, duration: 90,
-            status: isLive ? "LIVE" : "SCHEDULED",
+            homeScore: folded.homeScore,
+            awayScore: folded.awayScore,
+            status: "COMPLETED",
+            finalizedAt: new Date(startAt.getTime() + 90 * 60_000),
+            refereeName: `${refName[0]} ${refName[1]}`,
+            refereeSignedAt: new Date(startAt.getTime() + 90 * 60_000),
+            refereeVerified: true,
           },
-          select: { id: true },
         })
-        if (isCompleted || isLive) {
-          const events = buildGameEvents({
-            gameId: game.id, homeTeamId: homeId, awayTeamId: awayId,
-            homeRoster: rosterOf.get(homeId)!, awayRoster: rosterOf.get(awayId)!,
-            pace: g.pace, startAt, homeEdge: isLive ? 0.5 : 0.44 + rnd() * 0.12,
-            throughPeriod: isLive ? 3 : undefined,
-          })
-          await p.gameEvent.createMany({ data: events })
-          const folded = foldEvents(
-            events.map((e: any) => ({ ...e, timestampMs: e.timestamp.getTime() })),
-            { homeTeamId: homeId, awayTeamId: awayId }
-          )
-          if (isLive) {
-            await p.game.update({ where: { id: game.id }, data: { homeScore: folded.homeScore, awayScore: folded.awayScore } })
-            liveGameIds.push(game.id)
-          } else {
-            const refName = REFS[(grade + gIdx) % REFS.length]
-            await p.$transaction(async (tx: any) => {
-              await tx.game.update({
-                where: { id: game.id },
-                data: {
-                  homeScore: folded.homeScore, awayScore: folded.awayScore,
-                  status: "COMPLETED", finalizedAt: new Date(startAt.getTime() + 90 * 60_000),
-                  refereeName: `${refName[0]} ${refName[1]}`,
-                  refereeSignedAt: new Date(startAt.getTime() + 90 * 60_000),
-                  refereeVerified: true,
-                },
-              })
-              await tx.playerStat.createMany({
-                data: Object.values(folded.players).map((l: any) => ({
-                  gameId: game.id, playerId: l.playerId,
-                  points: l.points, rebounds: totalRebounds(l), assists: l.assists,
-                  steals: l.steals, blocks: l.blocks, turnovers: l.turnovers, fouls: l.fouls,
-                  minutesPlayed: l.secondsPlayed > 0 ? Math.round(l.secondsPlayed / 60) : null,
-                })),
-              })
-            })
-            completedGameIds.push(game.id)
-          }
-        }
-      }
+        await tx.playerStat.createMany({
+          data: Object.values(folded.players).map((l: any) => ({
+            gameId: game.id, playerId: l.playerId,
+            points: l.points, rebounds: totalRebounds(l), assists: l.assists,
+            steals: l.steals, blocks: l.blocks, turnovers: l.turnovers, fouls: l.fouls,
+            minutesPlayed: l.secondsPlayed > 0 ? Math.round(l.secondsPlayed / 60) : null,
+          })),
+        })
+      })
+      completedGameIds.push(game.id)
     }
   }
-  console.log(`✓ games: ${completedGameIds.length} completed (stats + standings) · ${liveGameIds.length} LIVE now · rest scheduled over 3 weekends`)
+  const scheduledLeft = createdGames.length - completedGameIds.length - liveGameIds.length
+  console.log(
+    `✓ scheduler committed ${createdGames.length} games (target ${SUMMER_GAMES_PER_TEAM}/team, ${proposal.unscheduled.length} unscheduled): ${completedGameIds.length} completed · ${liveGameIds.length} LIVE now · ${scheduledLeft} upcoming`
+  )
 
   // ── Referees: memorable logins, PIN 1234, assigned to EVERY game ──────
   const refIds: string[] = []
@@ -834,7 +994,7 @@ async function seed() {
   for (let i = 0; i < allGames.length; i++) {
     await p.userRole.create({ data: { userId: refIds[i % refIds.length], role: "Referee", gameId: allGames[i].id } })
   }
-  console.log(`✓ 4 referees (PIN 1234) assigned across all ${allGames.length} winter games`)
+  console.log(`✓ 4 referees (PIN 1234) assigned across all ${allGames.length} summer games`)
 
   // ── Recaps + highlight videos + announcements ─────────────────────────
   let recapCount = 0
@@ -860,8 +1020,8 @@ async function seed() {
     })
   }
   const annos = [
-    { key: "lords", title: "Winter 2026 playoff picture taking shape", content: "Top four in each grade division qualify for championship weekend at Pan Am Sports Centre, March 14–15. All games live-scored with stats and recaps." },
-    { key: "force", title: "Spring Circuit tryouts open across the West End", content: "Burlington Force, West United and the Monarchs have posted Spring Circuit tryouts — register on the marketplace, roll call happens on your phone at the door." },
+    { key: "lords", title: "Summer 2026 championship picture taking shape", content: "Top four in each grade division qualify for championship weekend at Pan Am Sports Centre, July 25–26. All games live-scored with stats and recaps." },
+    { key: "force", title: "Fall League tryouts open across the West End", content: "Burlington Force, West United and the Monarchs have posted Fall League tryouts — register on the marketplace, roll call happens on your phone at the door." },
     { key: "crown", title: "March Break Elite Camp — registration open", content: "Five days of skill development with our coaching staff. Ages 12–17, all levels welcome. Early-bird pricing ends February 1." },
   ]
   for (let i = 0; i < annos.length; i++) {
@@ -901,21 +1061,30 @@ async function seed() {
   }
   console.log(`✓ ${reviewCount} club reviews published`)
 
-  // ── Spring Circuit: OPEN league — live tryouts, check-in, open offer ──
+  // ── Fall League: OPEN league — live tryouts, check-in, open offer ──
   const springLeague = await p.league.create({
     data: {
       name: SPRING_LEAGUE,
-      description: "NPH's spring session — registration open now. Clubs are holding tryouts and submitting rosters.",
+      description: "NPH's fall season — October through March, registration open now. Clubs are holding tryouts and submitting rosters.",
       ownerId: nph.id, statDepth: "STANDARD", periodType: "QUARTERS",
     },
   })
   await p.userRole.create({ data: { userId: nph.id, role: "LeagueOwner", leagueId: springLeague.id } })
+  // Fall runs October → March: monthly weekend sessions, 12 games/team
+  const fallStart = new Date(now.getFullYear(), 9, 3) // early October
   const springSeason = await p.season.create({
     data: {
       leagueId: springLeague.id, label: SPRING_SEASON, status: "REGISTRATION",
-      registrationDeadline: new Date(now.getTime() + days(21)),
-      startDate: new Date(now.getTime() + days(35)), endDate: new Date(now.getTime() + days(120)),
+      type: "FALL_WINTER",
+      registrationDeadline: new Date(now.getTime() + days(45)),
+      startDate: fallStart, endDate: new Date(now.getFullYear() + 1, 2, 28), // end of March
       teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
+      gamesGuaranteed: FALL_GAMES_PER_TEAM,
+      gameSlotMinutes: 90,
+      gameLengthMinutes: 40,
+      idealGamesPerDayPerTeam: 1,
+      defaultVenueOpenTime: "09:00",
+      defaultVenueCloseTime: "18:00",
     },
   })
   const springDivisions = new Map<number, any>()
@@ -924,14 +1093,24 @@ async function seed() {
       data: { seasonId: springSeason.id, name: `Grade ${g}`, ageGroup: `Grade ${g}`, gender: "MALE" },
     }))
   }
+  // Monthly sessions Oct–Mar (one weekend a month), venue allocations included
+  const fallBase = Math.round((fallStart.getTime() - now.getTime()) / 86400_000)
+  await buildSessions(
+    springSeason.id,
+    Array.from({ length: 6 }, (_, m) => ({
+      label: ["October", "November", "December", "January", "February", "March"][m],
+      dayOffsets: [fallBase + m * 30 + 7, fallBase + m * 30 + 8],
+    })),
+    2
+  )
 
-  // 3 clubs already submitted spring squads (winter roster carries over)
+  // 3 clubs already submitted fall squads (summer roster carries over)
   for (const club of CLUBS.filter((c) => c.spring === "submitted")) {
     const row = clubRows.get(club.key)!
     const sourceGrade = club.grades.includes(9) ? 9 : 10
     const source = teams.find((t) => t.clubKey === club.key && t.grade === sourceGrade)!
     const team = await p.team.create({
-      data: { tenantId: row.id, name: `${club.name} Spring Grade ${sourceGrade}`, ageGroup: `Grade ${sourceGrade}`, gender: "MALE", season: SPRING_SEASON, description: MARKER },
+      data: { tenantId: row.id, name: `${club.name} Fall Grade ${sourceGrade}`, ageGroup: `Grade ${sourceGrade}`, gender: "MALE", season: SPRING_SEASON, description: MARKER },
       select: { id: true },
     })
     for (let i = 0; i < source.roster.length; i++) {
@@ -950,14 +1129,14 @@ async function seed() {
     })
   }
 
-  // Recruiting clubs: spring tryouts live on the marketplace NOW.
+  // Recruiting clubs: fall tryouts live on the marketplace NOW.
   // Lords' tryout is in ~3 hours with 5 kids already checked in — the
-  // on-stage check-in + send-offer demo (plan §3). Their spring team is
+  // on-stage check-in + send-offer demo (plan §3). Their fall team is
   // forming: 3 accepted offers, and parent@'s kid has the OPEN offer.
   let springOfferForDemo: string | null = null
   const lordsRow = clubRows.get("lords")!
   const lordsSpringTeam = await p.team.create({
-    data: { tenantId: lordsRow.id, name: "Toronto Lords Spring Elite", ageGroup: "Grade 9", gender: "MALE", season: SPRING_SEASON, description: MARKER },
+    data: { tenantId: lordsRow.id, name: "Toronto Lords Fall Elite", ageGroup: "Grade 9", gender: "MALE", season: SPRING_SEASON, description: MARKER },
     select: { id: true },
   })
   const lordsSpringTemplate = lordsRow.templates[1] // Premium
@@ -974,8 +1153,8 @@ async function seed() {
     const tryout = await p.tryout.create({
       data: {
         tenantId: row.id, teamId: isLords ? lordsSpringTeam.id : null,
-        title: `${club.name} Spring Circuit Tryouts — Grade ${grade}`,
-        description: `Evaluation for our ${SPRING_SEASON} NPH Spring Circuit entry. All players welcome.`,
+        title: `${club.name} Fall League Tryouts — Grade ${grade}`,
+        description: `Evaluation for our ${SPRING_SEASON} NPH Fall League entry. All players welcome.`,
         ageGroup: `Grade ${grade}`, gender: "MALE",
         location: gymFor(club.city), scheduledAt: tryoutAt, duration: 120,
         fee: 0, maxParticipants: 24, isPublished: true, isPublic: true,
@@ -989,7 +1168,7 @@ async function seed() {
       parentSeqByClub.set(club.key, seq)
       const parent = isDemoKid ? demoParent : await mkUser(`parent-${club.key}-${String(seq).padStart(2, "0")}@${EMAIL_DOMAIN}`, pick(ADULT_NAMES), pick(LAST_NAMES), { city: club.city })
       if (!isDemoKid) await p.userRole.create({ data: { userId: parent.id, role: "Parent" } })
-      // The demo kid = parent@'s Lords Grade 9 son trying out for spring
+      // The demo kid = parent@'s Lords Grade 9 son trying out for fall
       const lordsG9 = teams.find((t) => t.clubKey === "lords" && t.grade === 9)!
       const playerId = isDemoKid
         ? lordsG9.roster[0]
@@ -1016,7 +1195,7 @@ async function seed() {
         },
         select: { id: true },
       })
-      // Lords spring squad is forming: 3 accepted + the demo parent's OPEN offer
+      // Lords fall squad is forming: 3 accepted + the demo parent's OPEN offer
       if (isLords && (i === 0 || (i >= 1 && i <= 3))) {
         const accepted = i !== 0
         const offer = await p.offer.create({
@@ -1029,8 +1208,8 @@ async function seed() {
             includesShoes: lordsSpringTemplate.includesShoes, includesUniform: lordsSpringTemplate.includesUniform,
             includesTracksuit: lordsSpringTemplate.includesTracksuit,
             message: accepted
-              ? "Welcome to the Spring Elite squad!"
-              : `${kid.firstName} impressed at evaluations — we'd love to have him on the Spring Elite roster. Premium package includes full kit.`,
+              ? "Welcome to the Fall Elite squad!"
+              : `${kid.firstName} impressed at evaluations — we'd love to have him on the Fall Elite roster. Premium package includes full kit.`,
             expiresAt: new Date(now.getTime() + days(7)),
             respondedAt: accepted ? new Date(now.getTime() - days(1)) : null,
             ...(accepted
@@ -1065,7 +1244,7 @@ async function seed() {
         includesBall: rivalTemplate.includesBall, includesUniform: rivalTemplate.includesUniform,
         includesBag: rivalTemplate.includesBag, includesShoes: rivalTemplate.includesShoes,
         includesTracksuit: rivalTemplate.includesTracksuit,
-        message: "We'd love to add him to our Grade 9 roster this winter.",
+        message: "We'd love to add him to our Grade 9 roster this summer.",
         expiresAt: new Date(now.getTime() - days(62)),
         respondedAt: status === "DECLINED" ? new Date(now.getTime() - days(65)) : null,
         createdAt: new Date(now.getTime() - days(70)),
@@ -1083,7 +1262,7 @@ async function seed() {
       data: {
         userId: demoParent.id, type: "offer_received",
         title: "New offer from Toronto Lords",
-        message: "Toronto Lords Spring Elite has sent an offer — Premium package, expires in 7 days.",
+        message: "Toronto Lords Fall Elite has sent an offer — Premium package, expires in 7 days.",
         link: "/offers", referenceId: springOfferForDemo, referenceType: "Offer",
       },
     })
@@ -1148,9 +1327,9 @@ function printCheatSheet() {
     ` NPH DEMO WORLD — LOGINS (password for ALL: ${PASSWORD} · ref PIN 1234)`,
     "══════════════════════════════════════════════════════════════════",
     ` admin@${EMAIL_DOMAIN}            platform admin`,
-    ` owner-nph@${EMAIL_DOMAIN}        NPH league owner (Winter + Spring)`,
+    ` owner-nph@${EMAIL_DOMAIN}        NPH league owner (Summer + Fall)`,
     ` parent@${EMAIL_DOMAIN}       ⭐  demo parent Jordan Reyes — 2 kids,`,
-    `                                  OPEN spring offer, unread chat, payments`,
+    `                                  OPEN fall offer, unread chat, payments`,
     ` parent2@${EMAIL_DOMAIN}          second parent (declined/expired history)`,
     "──────────────────────────────────────────────────────────────────",
     " Club owners:",
@@ -1160,10 +1339,10 @@ function printCheatSheet() {
     ` Referees: ${REFS.map((r) => `${r[2]}@`).join(" · ")}  (PIN 1234)`,
     "──────────────────────────────────────────────────────────────────",
     " Demo hooks:",
-    "   · owner-lords → Tryouts: spring tryout in ~3h, 5/12 checked in",
+    "   · owner-lords → Tryouts: fall tryout in ~3h, 5/12 checked in",
     "   · parent → open offer to accept live; Lords chat has 2 unread",
     "   · owner-lords → Offers → Order Sheet: sizes + CSV ready",
-    "   · owner-nph → Winter mid-season (standings/live) + Spring open",
+    "   · owner-nph → Summer mid-season (standings/live) + Fall open",
     "══════════════════════════════════════════════════════════════════",
   ]
   console.log(lines.join("\n"))
