@@ -215,6 +215,63 @@ export async function getUnreadChatCounts(
   return counts
 }
 
+export interface ChatTeamSummary {
+  teamId: string
+  teamName: string
+  clubName: string
+  unread: number
+}
+
+/**
+ * Every team chat this user belongs to (staff side + family side), with
+ * unread counts — powers the floating chat dock.
+ */
+export async function getChatTeamSummaries(userId: string): Promise<ChatTeamSummary[]> {
+  const [roles, children] = await Promise.all([
+    prisma.userRole.findMany({
+      where: { userId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
+      select: { role: true, tenantId: true, teamId: true },
+    }),
+    prisma.teamPlayer.findMany({
+      where: { status: "ACTIVE", player: { parentId: userId, deletedAt: null } },
+      select: { teamId: true },
+    }),
+  ])
+
+  const teamIds = new Set<string>(children.map((c: { teamId: string }) => c.teamId))
+  const ownerTenantIds = roles
+    .filter((r: any) => (r.role === "ClubOwner" || r.role === "ClubManager") && r.tenantId)
+    .map((r: any) => r.tenantId as string)
+  for (const r of roles) {
+    if ((r.role === "Staff" || r.role === "TeamManager") && r.teamId) teamIds.add(r.teamId)
+  }
+  if (ownerTenantIds.length > 0) {
+    const clubTeams = await prisma.team.findMany({
+      where: { tenantId: { in: ownerTenantIds } },
+      select: { id: true },
+    })
+    for (const t of clubTeams) teamIds.add(t.id)
+  }
+  if (teamIds.size === 0) return []
+
+  const [teams, unread] = await Promise.all([
+    prisma.team.findMany({
+      where: { id: { in: [...teamIds] } },
+      select: { id: true, name: true, tenant: { select: { name: true } } },
+      orderBy: { name: "asc" },
+    }),
+    getUnreadChatCounts(userId, [...teamIds]),
+  ])
+  return teams
+    .map((t: any) => ({
+      teamId: t.id,
+      teamName: t.name,
+      clubName: t.tenant.name,
+      unread: unread.get(t.id) ?? 0,
+    }))
+    .sort((a: ChatTeamSummary, b: ChatTeamSummary) => b.unread - a.unread)
+}
+
 /** Advance the read cursor and clear this chat's bell notifications. */
 export async function markChatRead(userId: string, teamId: string): Promise<void> {
   await Promise.all([
