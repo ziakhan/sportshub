@@ -254,6 +254,15 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
+- **Offer package options (2026-07-07, design DONE, awaiting owner OK)**:
+  clubs need multi-option offers — canonically Returning player (no
+  uniform/bag/ball) vs New player (full kit). Recommended design:
+  templates stay simple; the OFFER carries N options (OfferOption table),
+  family picks at accept, chosen option fills the existing snapshot
+  columns so Order Sheet/payments/roster are untouched. Plus returning-
+  player auto-detection (badge on signups; optional returning-only guard;
+  jersey-number prefill). Full design + open decisions:
+  docs/offer-package-options-design.md.
 - **Homepage cleanup / IA revisit**: owner doesn't understand programs vs
   marketplace split (overlap!); menu order unclear; "should the Scores
   dropdown be Leagues?" → fold into the N2/N3 IA work
