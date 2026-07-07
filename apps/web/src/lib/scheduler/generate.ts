@@ -233,39 +233,45 @@ function buildPairings(unit: SchedulerUnit, gamesGuaranteed: number): Pairing[] 
   if (n < 2) return []
   const targetGames = Math.ceil((n * gamesGuaranteed) / 2)
 
-  // Every unique unordered pair once
-  const uniquePairs: Pairing[] = []
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      uniquePairs.push({
-        unitKey: unit.key,
-        homeTeamId: unit.teams[i].teamId,
-        awayTeamId: unit.teams[j].teamId,
-      })
+  // Circle-method round-robin rounds: every full round pairs each team
+  // exactly once, so consuming rounds in order keeps per-team game counts
+  // within one of each other at ANY pool size. (The old uniform-pair
+  // sampling could hand one team 11 games and another 7 for the same
+  // guarantee.) Odd team counts get a rotating bye via a phantom slot.
+  const ids = unit.teams.map((t) => t.teamId)
+  const arr: Array<string | null> = [...ids]
+  if (arr.length % 2 === 1) arr.push(null) // bye
+  const m = arr.length
+  const rounds: Array<Array<[string, string]>> = []
+  for (let r = 0; r < m - 1; r++) {
+    const pairs: Array<[string, string]> = []
+    for (let i = 0; i < m / 2; i++) {
+      const a = arr[i]
+      const b = arr[m - 1 - i]
+      if (a === null || b === null) continue
+      // Alternate sides round-to-round for home/away balance
+      pairs.push(r % 2 === 0 ? [a, b] : [b, a])
     }
+    rounds.push(pairs)
+    arr.splice(1, 0, arr.pop() as string | null)
   }
-
-  if (uniquePairs.length === 0) return []
+  if (rounds.length === 0) return []
 
   const pool: Pairing[] = []
-  if (targetGames <= uniquePairs.length) {
-    // Sample uniformly to avoid over-using any pair
-    const stride = uniquePairs.length / targetGames
-    for (let k = 0; k < targetGames; k++) {
-      pool.push(uniquePairs[Math.floor(k * stride) % uniquePairs.length])
+  let cycle = 0
+  while (pool.length < targetGames) {
+    const round = rounds[cycle % rounds.length]
+    // Repeat meetings (second cycle onward) swap home/away
+    const flip = Math.floor(cycle / rounds.length) % 2 === 1
+    for (const [a, b] of round) {
+      if (pool.length >= targetGames) break
+      pool.push({
+        unitKey: unit.key,
+        homeTeamId: flip ? b : a,
+        awayTeamId: flip ? a : b,
+      })
     }
-  } else {
-    // Cycle through unique pairs, flipping home/away each cycle
-    let i = 0
-    let flip = false
-    while (pool.length < targetGames) {
-      const p = uniquePairs[i % uniquePairs.length]
-      pool.push(
-        flip ? { unitKey: p.unitKey, homeTeamId: p.awayTeamId, awayTeamId: p.homeTeamId } : p
-      )
-      i++
-      if (i % uniquePairs.length === 0) flip = !flip
-    }
+    cycle++
   }
   return pool
 }

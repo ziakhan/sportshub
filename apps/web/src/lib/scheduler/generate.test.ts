@@ -306,15 +306,16 @@ describe("generateSchedule — core", () => {
     }
   })
 
-  it("odd team count: pair sampling can leave a team under target, which warns", () => {
-    // 5 teams × 2 guaranteed → 5-game pool sampled by stride from 10 unique
-    // pairs; the sampling is uneven, leaving one team a game short (a bye).
+  it("odd team count: circle-method rounds keep every team on target (rotating bye)", () => {
+    // 5 teams × 2 guaranteed → 5-game pool from round-robin rounds with a
+    // phantom bye. Rounds hand each team at most one game apiece, so counts
+    // stay balanced — the old stride sampling left one team a game short.
     const result = generateSchedule(makeInput({ teams: 5, gamesGuaranteed: 2 }))
     expect(result.games).toHaveLength(5)
     const counts = gameCounts(result.games)
     expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(10)
-    expect(result.warnings).toHaveLength(1)
-    expect(result.warnings[0]).toContain("has 1 games (target 2)")
+    for (const count of Object.values(counts)) expect(count).toBe(2)
+    expect(result.warnings).toEqual([])
   })
 
   it("unreachable guarantee: slot exhaustion reports unscheduled pairings and per-team warnings", () => {
