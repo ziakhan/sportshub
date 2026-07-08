@@ -1,4 +1,8 @@
-# Outstanding items — master ledger (2026-07-04, end of scoring session)
+# Outstanding items — master ledger
+
+> **🚦 LAUNCH BLOCKERS: docs/launch-blockers.md** — the must-fix-before-live
+> list (prod email, family accept-payment UI, Stripe live setup, legal/
+> compliance, deploy train). Living doc; check it before any go-live. (2026-07-04, end of scoring session)
 
 State at close: payments stages 1–4 shipped + live-verified; session capacity
 planner shipped; live scoring v1 shipped + 8 rounds of owner field-testing
