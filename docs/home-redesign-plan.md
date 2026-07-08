@@ -90,7 +90,15 @@ Confirms: anonymous = pitch + live taste; member = hub of their stuff.
 
 ## Status
 
-Scoped only — NOT started. Sequenced after the current demo/tutorial work
+**PHASE 1 SHIPPED 2026-07-07:** signed-in members now get a content-first
+home — the 5 promo walls (hero, "three ways in", logo marquee, org feature
+bento, "patchwork" + club CTA) are gated to anonymous visitors via a single
+`marketing = !userId` flag in (public)/page.tsx. Content + discovery (Your
+teams, scoreboard, news/leaders, highlights, Programs, Clubs) carry the page
+for members. Anonymous unchanged. NEXT (optional): reframe the Programs/Clubs
+headings for members, a getting-started nudge for the signed-in-but-empty
+state, and fold in the Site IA menu decisions (Scores→Leagues, programs-vs-
+marketplace). Originally scoped — Sequenced after the current demo/tutorial work
 unless the owner reprioritizes. Related: docs/site-ia-plan.md,
 docs/onboarding-tutorials-plan.md (getting-started checklist is the
 signed-in-empty state).

@@ -95,10 +95,17 @@ export default async function HomePage() {
 
   const logoMarquee = featuredClubs.length > 0 ? [...featuredClubs, ...featuredClubs] : []
 
+  // Signed-in members get a content-first home — the pitch/feature walls
+  // (hero, "three ways in", the org feature bento, "patchwork" + the club
+  // CTA) are for prospects only. Their teams, scores, news, leaders and
+  // program discovery carry the page (docs/home-redesign-plan.md).
+  const marketing = !userId
+
   return (
     <>
       <YourTeamsRail cards={yourTeams} />
       <ScoreboardStrip games={scoreboard} />
+      {marketing && (
       <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
         <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
         <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
@@ -164,11 +171,13 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
 
       <HighlightsRow highlights={highlights} />
 
+      {marketing && (
       <section className="bg-white py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-10 text-center">
@@ -279,8 +288,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
-      {logoMarquee.length > 0 && (
+      {marketing && logoMarquee.length > 0 && (
         <section className="border-ink-100 overflow-hidden border-b bg-white py-6">
           <div className="marquee-track">
             {logoMarquee.map((club, index) => (
@@ -462,6 +472,8 @@ export default async function HomePage() {
         </section>
       )}
 
+      {marketing && (
+      <>
       <section className="bg-white py-20 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-14 text-center">
@@ -725,6 +737,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </>
+      )}
     </>
   )
 }

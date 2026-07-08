@@ -106,7 +106,7 @@ before launch. Me.
   works, so soft; set the key for real recaps.
 - **M4 — Neon autosuspend** (perf): free-tier pause = slow first prod load;
   confirm/upgrade compute. (docs/perf-audit-2026-07-06.md)
-- **M5 — Onboarding/help/videos** + **homepage-IA cleanup** — adoption/GTM
+- **M5 — Onboarding/help/videos** + **homepage-IA cleanup** (homepage promo-for-signed-in REMOVED 2026-07-07; menu-IA + getting-started nudge remain) — adoption/GTM
   polish, not a hard gate (docs/onboarding-tutorials-plan.md, home-redesign-
   plan.md, site-ia-plan.md).
 
