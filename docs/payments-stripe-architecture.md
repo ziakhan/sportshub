@@ -119,6 +119,69 @@ Posture split for v1 (keeps scope sane):
 - The cron infra (still new) shrinks to: finalize-due-invoices +
   pre-due-reminders (Stripe owns the retry cadence).
 
+## Account model — our account vs the club's (how money actually flows)
+
+There is **one platform Stripe account (ours)** — the `STRIPE_SECRET_KEY`.
+Each **club is an Express connected account** under our platform via Stripe
+Connect, created through Stripe-hosted onboarding
+(`clubs/[id]/payment-config/connect` → `accounts.create type:"express"` →
+account link). A club can't take online money until it finishes that
+onboarding (`stripeAccountStatus === "active"`). The parent NEVER creates a
+Stripe account — they just enter a card.
+
+When a parent pays, the money routes one of two ways (already built,
+`obligations/[id]/checkout`):
+
+| | **PLATFORM_COLLECT** (destination charge) | **CONNECT_DIRECT** (direct charge) |
+|---|---|---|
+| PaymentIntent lives on | **our** platform account (`transfer_data.destination` = club, `on_behalf_of` club) | the **club's** connected account (`{stripeAccount}` request option) |
+| Merchant of record | **us** (platform) | the **club** |
+| Where funds land | our account → Stripe transfers the club's share to them at charge time (instant settlement) | the club's balance directly |
+| Our cut | `application_fee_amount` withheld | `application_fee_amount` withheld |
+| Refunds / disputes | come to **us** | the **club's** to handle |
+| Best for | control, unified support, simplest family UX | clubs who want to be their own merchant |
+
+Both withhold Stripe's processing fee + our platform fee automatically; the
+club only ever nets their share. `PaymentConfig` per club stores the
+`stripeAccountId` + mode; platform-admin postures gate which modes a club may
+use. **The hybrid installment plan rides on top of whichever mode a club is
+in** — for v1 auto-charge we start with PLATFORM_COLLECT (our-account
+customer/invoices are simplest), CONNECT_DIRECT auto-charge follows.
+
+## Testing — yes, entirely with dummy data, no real cards ever
+
+Stripe **test mode is the default here** — `.env.example` ships
+`pk_test_/sk_test_/whsec_` keys; production is the *only* place live keys go.
+Nothing charges a real card or moves real money until we deliberately flip to
+live keys in prod.
+
+- **Test cards** — no real card needed: `4242 4242 4242 4242` succeeds,
+  `4000 0000 0000 0002` declines, `4000 0025 0000 3155` forces 3-D Secure,
+  `4000 0000 0000 9995` = insufficient funds, etc. Any future expiry + any CVC.
+- **Test connected accounts** — create Express test accounts for demo clubs
+  and complete onboarding with Stripe's prefilled test identity/bank data
+  (test SSN, routing/account numbers). Simulate payouts without real banks.
+- **Test clocks** — simulate time passing so a "deposit + 3 monthly" plan and
+  its retries play out in **seconds, not months**. This is how we validate
+  the whole installment schedule, reminders, auto-charge, Smart Retries, and
+  failure/retry paths deterministically (already earmarked in
+  docs/payments-open-items.md for stage-5 QA).
+- **Stripe CLI** — `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+  forwards webhooks to local dev; `stripe trigger payment_intent.succeeded`
+  (etc.) fires events on demand. Binary lives in a scratchpad (see
+  payments-design.md). Webhook secret comes from `stripe listen`.
+- **Offline path needs no Stripe at all** — the demo seeder records
+  CASH/ETRANSFER/CHEQUE payments directly, so most demos never touch Stripe.
+  Online test flows are opt-in (test keys + `stripe listen` running).
+- **Integration tests** — the accept→deposit→schedule logic is unit/int
+  testable with the Stripe client mocked; the true end-to-end (real test-mode
+  charges + webhooks + test clocks) is the manual stage-5 QA pass.
+
+**Prod flip = swap test keys for live keys + create the prod webhook
+endpoint.** The code path is identical; only the keys differ. So we build and
+validate everything in test mode first, with confidence it behaves the same
+live.
+
 ## Decision needed from owner
 1. Approve **Hybrid (C)** as the architecture? (vs pure in-house A / pure
    Billing B)
