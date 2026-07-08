@@ -59,6 +59,12 @@ next-env.d.ts
 # OS
 Thumbs.db
 
+# Obsidian (docs vault) — keep sharable config (graph/appearance/plugins),
+# drop churny per-session UI state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
 # Assistant tooling (local/generated)
 .claude/settings.local.json
 .claude/projects/
