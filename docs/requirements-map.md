@@ -101,6 +101,7 @@ the [[_dashboard|Build Dashboard]]. Statuses flip planned → in-progress → sh
 **Tier 1** — [[invitation-continuity]] · [[camp-houseleague-registration]] · [[scorekeeper-access]] · [[waitlists]] · [[season-rollover]] · [[refunds-withdrawals]] · [[referee-payouts]] · [[attendance-rsvp]] · [[tryout-evaluations]]
 **Tier 2** — [[i18n-accessibility]] · [[data-import-export]] · [[observability-security]] · [[playoff-generation]] · [[broadcast-comms]] · [[financial-aid-discounts]] · [[co-guardian-households]] · [[content-moderation-analytics]]
 **Tier 3** — [[mobile-pwa-push]] · [[differentiators-future]]
+**Initiative — Identity & Pages** ([[_moc-identity]], draft) — [[handles-identity]] · [[customizable-pages]] · [[player-profile-privacy]]
 
 ## How we build
 One cohesive feature at a time (never batch). **Starting now: [[invitation-continuity]]**

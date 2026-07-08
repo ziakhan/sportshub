@@ -10,7 +10,7 @@ tables update themselves — no manual editing.
 
 > **Requires the Dataview plugin** (Settings → Community plugins → search "Dataview" →
 > install + enable). Without it these blocks show as code. Snapshot as of 2026-07-08:
-> **25 plans — 25 planned · 0 in-progress · 0 shipped.**
+> **28 plans — 25 planned · 3 draft · 0 in-progress · 0 shipped.**
 
 ## 🔨 In progress
 ```dataview

@@ -178,6 +178,12 @@
   },
   "active": "9ca28c83a7c0cb4c",
   "lastOpenFiles": [
+    "roadmap/player-profile-privacy.md",
+    "roadmap/customizable-pages.md",
+    "roadmap/handles-identity.md",
+    "_moc-identity.md",
+    "e2e-test-plan.md",
+    "requirements-map.md",
     "_dashboard.md",
     "_moc-platform.md",
     "_moc-compliance.md",
@@ -198,12 +204,6 @@
     "roadmap/invitation-continuity.md",
     "roadmap/i18n-accessibility.md",
     "roadmap/financial-aid-discounts.md",
-    "roadmap/differentiators-future.md",
-    "roadmap/data-import-export.md",
-    "roadmap/content-moderation-analytics.md",
-    "roadmap/concussion-rowans-law.md",
-    "roadmap/co-guardian-households.md",
-    "roadmap/camp-houseleague-registration.md",
     "roadmap"
   ]
 }

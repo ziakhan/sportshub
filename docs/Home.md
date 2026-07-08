@@ -29,6 +29,7 @@ Product surfaces — what we're building and why.
 - [[_moc-offers-engagement|🤝 Offers & Engagement]] — offer packages, chat, polls, practices.
 - [[_moc-content-ux|🎨 Public Site · Content · UX]] — site IA, homepage, content, design.
 - [[_moc-compliance|⚖️ Compliance & Safety]] — waivers, Rowan's Law, medical, background checks, PIPEDA (Tier-0 roadmap).
+- [[_moc-identity|🪪 Identity & Pages]] — @handles + customizable club/league pages + player privacy (initiative, draft).
 
 ## 🧱 Foundations
 The substrate everything sits on.
