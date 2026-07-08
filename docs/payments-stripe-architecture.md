@@ -190,12 +190,22 @@ needed either way. What differs is the *weight*:
 Either way the **parent/family does zero onboarding** — they just enter a
 card at accept time.
 
-**Leagues: a gap.** There is **no league Connect route today** — league fees
-can only be tracked offline; a league can't take online card payments yet.
-When league online payments are wanted, leagues need the *same* Express
-onboarding built (a `manage/leagues/[id]/payments` "Connect with Stripe"
-mirroring the club route + a `PaymentConfig.leagueId` account). Clubs paying
-their league entry fee online depends on this.
+**Leagues: full parity, built alongside clubs (owner decision 2026-07-07).**
+Leagues get the *same two modes* (direct + destination) and the same
+onboarding as clubs. This is a **small increment, not a parallel build** —
+the data layer already supports leagues:
+- `getPaymentConfig(merchant)` already takes `{ tenantId } | { leagueId }`.
+- `PaymentConfig.leagueId` (unique) already exists.
+- Obligations already carry `payeeLeagueId` / `payerTenantId`; the seeder
+  already writes club→league entry-fee obligations.
+
+What's missing is only: (1) a league Connect route
+(`/api/leagues/[id]/payment-config/connect` — the club route parameterized by
+`leagueId`), (2) the `PaymentSettingsCard` mounted on
+`manage/leagues/[id]/payments`, (3) the checkout route branching to
+`getPaymentConfig({ leagueId })` when an obligation's payee is a league.
+Build it in the same pass as club payments. Unlocks clubs paying their league
+entry fee online (today offline-only).
 
 ## Testing — yes, entirely with dummy data, no real cards ever
 
@@ -231,11 +241,23 @@ endpoint.** The code path is identical; only the keys differ. So we build and
 validate everything in test mode first, with confidence it behaves the same
 live.
 
-## Decision needed from owner
-1. Approve **Hybrid (C)** as the architecture? (vs pure in-house A / pure
-   Billing B)
-2. Approve the **posture split** (auto-charge for PLATFORM_COLLECT in v1;
-   CONNECT_DIRECT auto-charge as fast-follow)?
+## Decisions
+**Owner decided 2026-07-07:** both charge modes (direct + destination)
+supported for **clubs AND leagues**, built in the same pass; **default =
+destination charge (PLATFORM_COLLECT)** — lighter onboarding, platform owns
+the merchant side.
+
+**Still to confirm:**
+1. Approve **Hybrid (C)** as the architecture? (Stripe vault + auto-collect
+   invoices + Smart Retries + dunning; our schedule + accept UX + pre-due
+   reminders. vs pure in-house A / pure Billing B.)
+2. **Installment AUTO-CHARGE** — do it for **both** modes in v1, or
+   destination-first with direct-charge auto-charge as a fast-follow? (Both
+   *modes* are supported regardless; this is only about whether unattended
+   installment charges run on a club's *own* connected account in v1, which
+   needs the card saved on the connected account — genuinely more complex.
+   Recommend: destination auto-charge v1, direct fast-follow. One-time/deposit
+   payments work on both modes from day one either way.)
 
 On "yes", I revise payments-plan-v2 stages E/F/G to the hybrid and start
 Stage A (card-on-file), which is identical under any option.
