@@ -254,8 +254,17 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
-- **Onboarding + tutorials + videos (2026-07-07, PLAN DONE, awaiting owner
-  green-light)**: docs/onboarding-tutorials-plan.md. Investigated the
+- **Onboarding + tutorials + videos (2026-07-07, PLAN v2 — league-first
+  catalog per owner; demo-readiness gaps BUILT)**:
+  docs/onboarding-tutorials-plan.md. Owner's league storyline (create
+  league → season → sessions/dates → venues+times → referees → schedule
+  one session → EVERYONE notified + calendar) audited end-to-end; 2 gaps
+  found + built same day: (1) schedule commit now bells club managers AND
+  bell+emails every team's staff + rostered families w/ team-calendar
+  link (was club-managers-only; int seed 1125, no double-bell), (2)
+  TeamManager can post tryouts (int seed 1126). Club sequence C1-C12 per
+  owner's corrected list (templates→options wording). Both storylines now
+  recordable start-to-finish on the NPH demo world. Investigated the
   "missing 'I am a parent' selection" — NOT a bug: role cards still render
   on /onboarding for fresh signups (verified live); demo accounts are
   pre-onboarded so they 307 past it, and /settings/roles was removed by

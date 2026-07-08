@@ -75,34 +75,55 @@ checklists and empty states.
 - Surface: footer link, user menu "Help & tutorials", `?` icon in
   platform top nav.
 
-## 3. Content catalog (v1 — owner's list, structured)
+## 3. Content catalog (v2, 2026-07-07 — LEAGUE FIRST, owner's storylines verbatim)
+
+**Leagues — the most important content (owner).** Two videos sharing one
+storyline; the long one is the master recording, the sizzle is cut from it.
+
+L-long **full feature tour (15-25 min, chaptered)** — the owner's demo
+storyline, in order:
+1. Create a league (action-driven: "+ New" → instant LeagueOwner)
+2. Create a season (fees, games guaranteed, registration deadline)
+3. Divisions + club intake (submissions → approve → roster locks)
+4. Within the season: create SESSIONS and session DATES
+5. Assign venues to session days; define venue START/END times + courts
+6. Allocate referees (pool + availability + Uber-style shift offers)
+7. Generate the schedule for ONE session (preview → commit)
+8. **The payoff shot**: the moment the schedule commits — club managers
+   get a bell; every team's coach, assistant coach, team manager, parents
+   and players get a bell + EMAIL; then cut to a parent's team calendar
+   showing the games, and the same games on a phone via the iCal feed.
+   *(This fan-out was a GAP — built 2026-07-07, this commit.)*
+9. Season runs: live scoring console → scoresheet + referee sign-off →
+   AI recap publishes → standings/leaders update
+10. Money: league fees, who-paid-what
+L-short **"Run your league on SportsHub" (3-4 min sizzle)** — cut from
+L-long's chapters 1→8 payoff + one live-scoring beat + standings. Doubles
+as the GTM/outreach asset for NPH-style operators.
+
+**Club owners (the owner's corrected sequence, one short each):**
+C1 Create a club · C2 Create a team · C3 Assign staff (coach designations,
+handoff to club/team managers — what each can do) · C4 Post a tryout —
+by owner, club manager, coach, OR team manager *(TeamManager was a GAP —
+built 2026-07-07)* · C5 Tryout day: signups + mobile check-in ·
+C6 Create offer TEMPLATES (the reusable packages) · C7 Send offers —
+attach one or several templates as package options, bulk-send to checked
+players · C8 (parent POV interlude) Accept the offer + pick the package
+(Returning vs New) + sizes + jersey prefs · C9 Finalize the team (accepts
+→ roster → league submission + Order Sheet) · C10 Practice schedule:
+add practice days → announce → live calendar + phone sync ·
+C11 Finances: payment posture, obligations, who-paid-what ·
+C12 Communications: team chat, quick polls in chat, surveys.
+*(C10-C12 features all exist — shipped 2026-07-06/07.)*
 
 **Parents (4 shorts):**
-P1 Sign up & add your child · P2 Discover programs (marketplace: tryouts,
-camps, house leagues; club pages, follow) · P3 Register your kid + accept
-an offer (incl. package choice, sizes, payment) · P4 Follow the season
-(team page, live scores, stats, chat, polls, practice calendar + phone
-iCal sync).
+P1 Sign up & add your child · P2 Discover programs (tryouts, camps, house
+leagues; club pages, follow) · P3 Register for a tryout; accept an offer +
+choose your package · P4 Follow the season (team page, live scores, stats,
+chat + polls, practice/game calendar + phone iCal sync).
 
-**Club owners (8 shorts):**
-C1 Create your club · C2 Create teams · C3 Hand off to managers (invite
-staff, designations, what managers can do) · C4 Create programs (tryout /
-camp / house league) · C5 Tryout day (signups, mobile check-in) · C6 Send
-offers (incl. multi-package Returning-vs-New + bulk send) · C7 Finalize
-teams (accepts → roster → league submission, Order Sheet) · C8 Money
-(payment posture, obligations, who-paid-what).
-
-**Leagues (the owner's two-video ask):**
-L-short **"Run your league on SportsHub" (3-4 min sizzle)** — club intake
-→ scheduling substrate → live scoring + recaps → standings/leaders →
-referee booking → payments. Demo-world screen capture, tight cuts; doubles
-as the GTM/outreach asset for the NPH-style operators.
-L-long **full feature tour (15-25 min, chaptered)** — every feature with
-YouTube chapter stamps; each chapter is reusable as a standalone clip.
-Chapters: league+season setup, divisions/scheduling groups, venues+
-sessions, club submissions & roster locks, scheduling, referee pools +
-Uber-style booking, live scoring console + scoresheet + sign-off, recaps/
-news, standings/leaders, payments, comms (chat/polls/practices).
+**Referees (2 shorts):** R1 Profile + availability + accepting session
+offers · R2 Scoring a game + PIN sign-off.
 
 **Referees (2 shorts, add):** R1 Profile + availability + accepting
 session offers · R2 Scoring a game + PIN sign-off.
@@ -133,19 +154,31 @@ session offers · R2 Scoring a game + PIN sign-off.
 4. `docs/tutorials/` scripts for all 16 videos above — writing work.
 5. (Later, optional) pulse-dot pointers for "+ New" and Manage door.
 
-## 6. Phasing
+## 6. Demo-readiness gaps (owner: "build them all first") — status
 
-- **T1 (build week):** /help skeleton + parent & club checklists + the 16
-  scripts written. Videos can be recorded any time after.
-- **T2:** record P1-P4 + C1-C8 shorts; embed; empty-state links.
-- **T3:** L-short sizzle (voiceover) + L-long chaptered tour + R1-R2;
-  league checklist; pointer dots if still wanted.
+Audited both storylines end-to-end 2026-07-07:
+- ✅ BUILT (this commit): **schedule commit fan-out** — club-level bell for
+  owners/managers + bell+EMAIL to every team's staff + rostered families
+  with a team-calendar link (was: club managers only, silently). Int test
+  seed 1125 (no double-bell; calendar link; game counts).
+- ✅ BUILT (this commit): **TeamManager can post tryouts** (was: owner/
+  manager/Staff only). Int test seed 1126.
+- ✅ Already existed (verified): session-day venue start/end times +
+  courts; referee pools/booking; games in team calendar AND phone iCal
+  feed; multi-package offers + bulk send; practices; finances; chat/polls.
+- Both storylines are now recordable start-to-finish on the demo world.
 
-## 7. Owner decisions needed
+## 7. Phasing
+
+- **T1 (build week):** /help skeleton + checklists + all scripts written
+  (league scripts FIRST).
+- **T2:** record L-long master → cut L-short sizzle.
+- **T3:** C1-C12 + P1-P4 shorts; embed; empty-state links; R1-R2.
+
+## 8. Owner decisions needed
 
 1. Voice: silent+captions v1 (recommended) or voiceover from day one?
+   (L-short sizzle should get a voiceover either way.)
 2. Who records: owner from my scripts, vs. scripts+captions fully
    prepared and owner just screen-drives?
 3. Green-light T1 build (help center + checklists + scripts)?
-4. Priority order confirmation: parents first, then club owners, then
-   league videos — or league sizzle first for GTM outreach?

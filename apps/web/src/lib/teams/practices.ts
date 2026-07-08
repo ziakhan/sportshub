@@ -81,6 +81,8 @@ export async function notifyTeam(opts: {
   teamId: string
   tenantId: string
   excludeUserId?: string
+  /** Users already notified through another channel (e.g. a club-level bell) */
+  excludeUserIds?: string[]
   type: NotificationType
   title: string
   message: string
@@ -90,7 +92,9 @@ export async function notifyTeam(opts: {
   emailHtml: string
 }): Promise<number> {
   const members = await getChatMembers(opts.teamId, opts.tenantId)
-  const userIds = members.userIds.filter((id) => id !== opts.excludeUserId)
+  const excluded = new Set(opts.excludeUserIds ?? [])
+  if (opts.excludeUserId) excluded.add(opts.excludeUserId)
+  const userIds = members.userIds.filter((id) => !excluded.has(id))
   if (userIds.length === 0) return 0
 
   await notifyMany(prisma, userIds, {

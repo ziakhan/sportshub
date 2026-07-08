@@ -37,7 +37,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTryoutSchema.parse(body)
 
-    // Verify permissions (ClubOwner, ClubManager, Staff, or PlatformAdmin)
+    // Verify permissions (ClubOwner, ClubManager, Staff, TeamManager, or
+    // PlatformAdmin) — owner call 2026-07-07: coaches AND team managers can
+    // post tryouts, same circle that runs the team day-to-day.
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
             OR: [
               {
                 tenantId: validatedData.tenantId,
-                role: { in: ["ClubOwner", "ClubManager", "Staff"] },
+                role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
               },
               { role: "PlatformAdmin" },
             ],
