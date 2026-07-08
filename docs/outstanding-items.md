@@ -254,14 +254,19 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
-- **Offer fees SIMPLIFIED + installment/deposit plan scoped (2026-07-07)**:
-  demo now seeds TWO packages only — New $3,000 / Returning $2,700 (price
-  the only difference, no item breakdown) w/ deposit $750 + 3 monthly in
-  the seeded payments. Real product installment/deposit builder = NOT built
-  (installments is still just a count; no deposit, no per-installment due
-  dates). Model + defaults + one owner decision in
-  docs/offer-package-options-design.md §"Follow-up". Payments-touching —
-  build behind explicit go.
+- **PAYMENTS v2 — FULL SPEC WRITTEN (2026-07-07), owner-committed, NOT built**:
+  docs/payments-plan-v2.md. Club configures payment terms at OFFER time
+  (full-pay OR deposit + N installments w/ per-installment due dates; default
+  25%+3 monthly); family accepts one option and CANNOT accept without paying
+  the deposit; auto-charge on schedule; club-configurable reminders (email +
+  push); success/failure emails + retry. Big gaps confirmed by audit: NO
+  card-on-file (no Stripe Customer/SetupIntent/saved-card UI), NO schedule
+  generation, NO auto-charge, NO reminders, NO scheduled-job infra at all.
+  6-stage build order in the doc; 4 open decisions (deposit-on-accept for
+  offline clubs, push v1-vs-fastfollow, CONNECT_DIRECT auto-charge). Demo
+  data already simplified to New $3,000 / Returning $2,700 + deposit $750 +
+  3 monthly (offer-package-options-design.md §Follow-up). Payments-sensitive
+  — build behind explicit go, stage by stage.
 - **Logged-in home/landing redesign (2026-07-07, owner ask, SEPARATE
   project, scoped not started)**: drop promo/marketing for signed-in
   members, content-first, maximize real estate; fold in the Site IA
