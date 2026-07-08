@@ -1,5 +1,9 @@
 # Outstanding items — master ledger
 
+> **💡 FEATURE BACKLOG: docs/feature-backlog.md** — the wishlist of
+> requested-but-unbuilt features (RSVP/attendance, playoffs, quizzes,
+> creator roles…). Add ideas there the moment they come up.
+>
 > **🚦 LAUNCH BLOCKERS: docs/launch-blockers.md** — the must-fix-before-live
 > list (prod email, family accept-payment UI, Stripe live setup, legal/
 > compliance, deploy train). Living doc; check it before any go-live. (2026-07-04, end of scoring session)
