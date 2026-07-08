@@ -6,76 +6,12 @@
   "hideUnresolved": false,
   "showOrphans": true,
   "collapse-color-groups": false,
-  "colorGroups": [
-    {
-      "query": "tag:#status/shipped",
-      "color": {
-        "a": 1,
-        "rgb": 6408252
-      }
-    },
-    {
-      "query": "tag:#status/in-progress",
-      "color": {
-        "a": 1,
-        "rgb": 3900150
-      }
-    },
-    {
-      "query": "tag:#status/planned",
-      "color": {
-        "a": 1,
-        "rgb": 15580167
-      }
-    },
-    {
-      "query": "tag:#status/living",
-      "color": {
-        "a": 1,
-        "rgb": 9115073
-      }
-    },
-    {
-      "query": "tag:#status/draft",
-      "color": {
-        "a": 1,
-        "rgb": 16347926
-      }
-    },
-    {
-      "query": "tag:#status/superseded",
-      "color": {
-        "a": 1,
-        "rgb": 4674921
-      }
-    },
-    {
-      "query": "tag:#status/reference",
-      "color": {
-        "a": 1,
-        "rgb": 9741240
-      }
-    },
-    {
-      "query": "tag:#moc",
-      "color": {
-        "a": 1,
-        "rgb": 16317180
-      }
-    },
-    {
-      "query": "tag:#status/archived",
-      "color": {
-        "a": 1,
-        "rgb": 758209
-      }
-    }
-  ],
-  "collapse-display": true,
+  "colorGroups": [],
+  "collapse-display": false,
   "showArrow": false,
   "textFadeMultiplier": 0,
   "nodeSizeMultiplier": 1,
-  "lineSizeMultiplier": 1,
+  "lineSizeMultiplier": 1.54469184027778,
   "collapse-forces": true,
   "centerStrength": 0.518713248970312,
   "repelStrength": 10,

@@ -9,6 +9,7 @@ off one of the hubs below. Jump into a hub, or open the **Graph view** to explor
 by connection. New here? Read [[README|the vault guide]].
 
 > ### 📊 Status views — start here
+> - 📊 [[_dashboard|Build Dashboard]] — **live** status tables (planned / in-progress / shipped) across the whole roadmap; updates itself as we build.
 > - ✅ [[_moc-shipped|What's Built]] — feature-by-feature tally of everything shipped.
 > - 🧭 [[coverage-audit|Coverage Audit]] — how complete the platform is, per persona +
 >   integration, with a ranked gap list (what's disconnected / missing).
@@ -27,11 +28,13 @@ Product surfaces — what we're building and why.
 - [[_moc-onboarding|🚪 Onboarding & Tutorials]] — first-run, checklists, how-tos.
 - [[_moc-offers-engagement|🤝 Offers & Engagement]] — offer packages, chat, polls, practices.
 - [[_moc-content-ux|🎨 Public Site · Content · UX]] — site IA, homepage, content, design.
+- [[_moc-compliance|⚖️ Compliance & Safety]] — waivers, Rowan's Law, medical, background checks, PIPEDA (Tier-0 roadmap).
 
 ## 🧱 Foundations
 The substrate everything sits on.
 
 - [[_moc-architecture|⚙️ Architecture & Testing]] — data model, test layers, perf.
+- [[_moc-platform|🖥️ Platform & Non-Functional]] — i18n/accessibility, security, PWA, import/export.
 - [[_moc-spec|📐 Product Spec & System]] — the platform spec, sprint history, prompts.
 
 ## 🚀 Go-to-market

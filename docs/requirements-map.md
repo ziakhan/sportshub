@@ -93,9 +93,19 @@ Mobile app/PWA + push · SMS · 2-way calendar sync · live streaming · recruit
 
 ---
 
+## 📁 Tracked plan docs
+Every backlog item above is a plan doc in `roadmap/` — a node in the graph, tracked on
+the [[_dashboard|Build Dashboard]]. Statuses flip planned → in-progress → shipped as we go.
+
+**Tier 0** — [[registration-forms]] · [[waivers-esign]] · [[concussion-rowans-law]] · [[player-safety-medical]] · [[staff-background-checks]] · [[privacy-pipeda-casl]]
+**Tier 1** — [[invitation-continuity]] · [[camp-houseleague-registration]] · [[scorekeeper-access]] · [[waitlists]] · [[season-rollover]] · [[refunds-withdrawals]] · [[referee-payouts]] · [[attendance-rsvp]] · [[tryout-evaluations]]
+**Tier 2** — [[i18n-accessibility]] · [[data-import-export]] · [[observability-security]] · [[playoff-generation]] · [[broadcast-comms]] · [[financial-aid-discounts]] · [[co-guardian-households]] · [[content-moderation-analytics]]
+**Tier 3** — [[mobile-pwa-push]] · [[differentiators-future]]
+
 ## How we build
-One cohesive feature at a time (never batch). **Starting now: #5, the invitation /
-manual-add continuity** — highest-value plumbing the rest rides on, and the owner's
-explicit ask. Each build updates status here + [[_moc-shipped]] on ship.
+One cohesive feature at a time (never batch). **Starting now: [[invitation-continuity]]**
+— highest-value plumbing the rest rides on, and the owner's explicit ask. Each build
+updates its plan's `status` (→ shipped) + [[_moc-shipped]] on ship, and the
+[[_dashboard]] reflects it automatically.
 
 ⬅ [[Home]] · see also [[coverage-audit|Coverage Audit]] · [[feature-backlog]] · [[launch-blockers]]
