@@ -9,11 +9,23 @@ an explicit go, in the stages below.
 > **ARCHITECTURE (2026-07-07): see docs/payments-stripe-architecture.md.**
 > Recommendation = **Hybrid** — Stripe as vault + charging + Smart-Retries +
 > dunning (via auto-collect Invoices), our schedule + accept UX + pre-due
-> reminders. NOT pure in-house, NOT pure Subscriptions. Stages E/F/G below
-> are written for the older "our own off_session loop" model; they get
-> revised to the hybrid on architecture sign-off. Key research fact: Stripe's
-> native invoice *payment plans* do NOT auto-charge — auto-charge + AI
-> retries + dunning require Stripe Billing invoices/subscriptions.
+> reminders. NOT pure in-house, NOT pure Subscriptions.
+>
+> **STATUS 2026-07-07: STAGES A–H BUILT (local, unpushed).** A card-on-file
+> (`4a71222`); B–H (this build): offer payment terms + composer, deposit-
+> gated accept (`/api/offers/[id]/pay-intent` + PATCH verify), installment
+> schedule generation (Payment rows + pre-created auto-collect invoices),
+> auto-charge cron (`/api/cron/charge-due` finalizes due invoices → Stripe
+> charges + Smart Retries), reminders cron (`/api/cron/payment-reminders`),
+> webhook `invoice.paid`/`payment_failed` → receipts/failure emails, parent
+> installment timeline on `/payments`, and league Connect parity (both charge
+> modes). Both charge modes (destination + direct) implemented per the
+> owner's "no phasing" call — destination is live-verified in test mode;
+> direct-charge unattended auto-charge (card on the connected account via
+> ConnectedCustomer) needs live connected-account QA. Runbook #16 (card-on-
+> file) + #17 (B–H schema + CRON_SECRET). Tests: computeDefaultPlan unit +
+> installment-accept int. Manual stage-5 QA (test clocks, real webhooks)
+> still recommended before prod.
 
 ## 1. What EXISTS today (audit, 2026-07-07)
 

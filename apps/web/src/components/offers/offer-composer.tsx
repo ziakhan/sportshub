@@ -23,6 +23,11 @@ export interface TemplateSummary {
   includesTracksuit: boolean
 }
 
+export interface InstallmentTermDraft {
+  amount: string
+  dueDate: string // yyyy-mm-dd
+}
+
 export interface OfferPackageDraft {
   label: string
   sourceTemplateId: string | null
@@ -34,6 +39,11 @@ export interface OfferPackageDraft {
   includesShoes: boolean
   includesUniform: boolean
   includesTracksuit: boolean
+  // Payment terms (payments v2 Stage B)
+  allowFullPay: boolean
+  allowInstallments: boolean
+  depositAmount: string
+  installmentTerms: InstallmentTermDraft[]
 }
 
 export function packagePayload(drafts: OfferPackageDraft[]) {
@@ -48,6 +58,14 @@ export function packagePayload(drafts: OfferPackageDraft[]) {
     includesShoes: d.includesShoes,
     includesUniform: d.includesUniform,
     includesTracksuit: d.includesTracksuit,
+    allowFullPay: d.allowFullPay,
+    allowInstallments: d.allowInstallments,
+    depositAmount: d.allowInstallments ? parseFloat(d.depositAmount) || 0 : undefined,
+    installmentTerms: d.allowInstallments
+      ? d.installmentTerms
+          .map((t) => ({ amount: parseFloat(t.amount) || 0, dueDate: t.dueDate }))
+          .filter((t) => t.amount > 0 && t.dueDate)
+      : [],
   }))
 }
 
@@ -62,10 +80,16 @@ const blankDraft = (): OfferPackageDraft => ({
   includesShoes: false,
   includesUniform: false,
   includesTracksuit: false,
+  allowFullPay: true,
+  allowInstallments: false,
+  depositAmount: "0",
+  installmentTerms: [],
 })
 
 function draftFromTemplate(t: TemplateSummary): OfferPackageDraft {
+  const base = blankDraft()
   return {
+    ...base,
     label: t.name,
     sourceTemplateId: t.id,
     seasonFee: String(t.seasonFee),
@@ -76,7 +100,25 @@ function draftFromTemplate(t: TemplateSummary): OfferPackageDraft {
     includesShoes: t.includesShoes,
     includesUniform: t.includesUniform,
     includesTracksuit: t.includesTracksuit,
+    // A template with >1 installment implies a plan is on offer
+    allowInstallments: t.installments > 1,
   }
+}
+
+/** Default plan: 25% deposit + N monthly on the 1st (owner spec). */
+export function autofillPlan(seasonFee: number, count = 3): {
+  depositAmount: string
+  installmentTerms: InstallmentTermDraft[]
+} {
+  const per = Math.round((seasonFee / (count + 1)) * 100) / 100
+  const terms: InstallmentTermDraft[] = []
+  const now = new Date()
+  for (let i = 1; i <= count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+    terms.push({ amount: String(per), dueDate: d.toISOString().slice(0, 10) })
+  }
+  const deposit = Math.round((seasonFee - per * count) * 100) / 100
+  return { depositAmount: String(deposit > 0 ? deposit : per), installmentTerms: terms }
 }
 
 const ITEM_FIELDS: Array<{ key: keyof OfferPackageDraft; label: string }> = [
@@ -197,6 +239,118 @@ export function OfferComposer({
               </label>
             ))}
           </div>
+
+          {/* Payment terms (payments v2) */}
+          <div className="border-ink-200 space-y-2 border-t pt-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-ink-600 flex items-center gap-1.5 text-xs font-medium">
+                <input
+                  type="checkbox"
+                  checked={pkg.allowFullPay}
+                  onChange={(e) => patch(i, { allowFullPay: e.target.checked })}
+                />
+                Pay in full
+              </label>
+              <label className="text-ink-600 flex items-center gap-1.5 text-xs font-medium">
+                <input
+                  type="checkbox"
+                  checked={pkg.allowInstallments}
+                  onChange={(e) => {
+                    const on = e.target.checked
+                    if (on && pkg.installmentTerms.length === 0) {
+                      patch(i, { allowInstallments: true, ...autofillPlan(parseFloat(pkg.seasonFee) || 0) })
+                    } else {
+                      patch(i, { allowInstallments: on })
+                    }
+                  }}
+                />
+                Payment plan (deposit + installments)
+              </label>
+            </div>
+            {pkg.allowInstallments && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="text-ink-500 flex items-center gap-1 text-xs">
+                    Deposit (due on accept) $
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={pkg.depositAmount}
+                      onChange={(e) => patch(i, { depositAmount: e.target.value })}
+                      className={`${inputClass} w-24`}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => patch(i, autofillPlan(parseFloat(pkg.seasonFee) || 0))}
+                    className="text-play-600 text-xs font-semibold hover:underline"
+                  >
+                    Auto: 25% + 3 monthly
+                  </button>
+                </div>
+                {pkg.installmentTerms.map((term, ti) => (
+                  <div key={ti} className="flex items-center gap-2">
+                    <span className="text-ink-400 text-xs">#{ti + 1}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={term.amount}
+                      onChange={(e) =>
+                        patch(i, {
+                          installmentTerms: pkg.installmentTerms.map((t, j) =>
+                            j === ti ? { ...t, amount: e.target.value } : t
+                          ),
+                        })
+                      }
+                      className={`${inputClass} w-24`}
+                      placeholder="Amount"
+                    />
+                    <input
+                      type="date"
+                      value={term.dueDate}
+                      onChange={(e) =>
+                        patch(i, {
+                          installmentTerms: pkg.installmentTerms.map((t, j) =>
+                            j === ti ? { ...t, dueDate: e.target.value } : t
+                          ),
+                        })
+                      }
+                      className={`${inputClass} w-36`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        patch(i, {
+                          installmentTerms: pkg.installmentTerms.filter((_, j) => j !== ti),
+                        })
+                      }
+                      className="text-ink-400 text-sm hover:text-red-500"
+                      aria-label="Remove installment"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    patch(i, {
+                      installmentTerms: [
+                        ...pkg.installmentTerms,
+                        { amount: "", dueDate: "" },
+                      ],
+                    })
+                  }
+                  className="text-play-600 text-xs font-semibold hover:underline"
+                >
+                  + Add installment
+                </button>
+                <PlanSum pkg={pkg} />
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
@@ -227,5 +381,20 @@ export function OfferComposer({
         </p>
       )}
     </div>
+  )
+}
+
+/** Live "deposit + installments vs fee" check so the club can't misconfigure. */
+function PlanSum({ pkg }: { pkg: OfferPackageDraft }) {
+  const fee = parseFloat(pkg.seasonFee) || 0
+  const deposit = parseFloat(pkg.depositAmount) || 0
+  const installments = pkg.installmentTerms.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0)
+  const total = Math.round((deposit + installments) * 100) / 100
+  const ok = Math.abs(total - fee) < 0.01
+  return (
+    <p className={`text-[11px] ${ok ? "text-ink-400" : "text-red-500 font-semibold"}`}>
+      Deposit ${deposit.toFixed(2)} + installments ${installments.toFixed(2)} = ${total.toFixed(2)}
+      {ok ? " ✓" : ` (should equal fee $${fee.toFixed(2)})`}
+    </p>
   )
 }

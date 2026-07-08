@@ -53,6 +53,10 @@ export type NotificationType =
   | "practice_change"
   // Team events (photo day, film session, …) added / changed / cancelled
   | "team_event"
+  // Installment payments (payments v2): pre-due reminder, receipt, failure
+  | "payment_reminder"
+  | "payment_receipt"
+  | "payment_failed"
   // League roster change flow
   | "roster_change_requested"
   | "roster_change_approved"

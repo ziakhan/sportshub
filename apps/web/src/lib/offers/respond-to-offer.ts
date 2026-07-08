@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
 import { ensureObligation } from "@/lib/payments/obligations"
+import { scheduleInstallments } from "@/lib/payments/installments"
 
 /**
  * Offer response domain service — accept/decline with roster formation.
@@ -9,6 +10,21 @@ import { ensureObligation } from "@/lib/payments/obligations"
  * (gear validation conditioned on what the offer includes, roster upsert,
  * club notification, all atomic). The route stays a thin HTTP adapter.
  */
+
+export interface OfferOptionTerms {
+  id: string
+  seasonFee: unknown
+  installments: number
+  includesUniform: boolean
+  includesShoes: boolean
+  includesTracksuit: boolean
+  includesBall: boolean
+  includesBag: boolean
+  allowFullPay: boolean
+  allowInstallments: boolean
+  depositAmount: unknown | null
+  installmentTerms: Array<{ sequence: number; amount: unknown; dueDate: Date; label: string | null }>
+}
 
 export interface OfferForResponse {
   id: string
@@ -19,8 +35,11 @@ export interface OfferForResponse {
   includesUniform: boolean
   includesShoes: boolean
   includesTracksuit: boolean
+  includesBall?: boolean
+  includesBag?: boolean
   player: { id: string; parentId: string; firstName: string; lastName: string }
   team: { id: string; name: string; tenantId: string; tenant: { name: string; currency: string } }
+  options?: OfferOptionTerms[]
 }
 
 export interface AcceptOfferInput {
@@ -30,6 +49,10 @@ export interface AcceptOfferInput {
   jerseyPref1?: number
   jerseyPref2?: number
   jerseyPref3?: number
+  // Payments v2 Stage C: chosen package + how to pay + the confirmed deposit
+  optionId?: string
+  paymentPlan?: "FULL" | "INSTALLMENTS"
+  depositPaymentIntentId?: string
 }
 
 export class OfferResponseError extends Error {
@@ -98,11 +121,18 @@ async function notifyClubOfResponse(
 export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInput) {
   validateAcceptInput(offer, data)
 
-  return prisma.$transaction(async (tx: any) => {
+  // The route already snapshots the chosen option onto the offer columns; we
+  // read the chosen option only for its PLAN (deposit + installment terms).
+  const chosen =
+    offer.options?.find((o) => o.id === (data.optionId ?? "")) ?? offer.options?.[0] ?? null
+  const plan = data.paymentPlan ?? "FULL"
+
+  const result = await prisma.$transaction(async (tx: any) => {
     const updated = await tx.offer.update({
       where: { id: offer.id },
       data: {
         status: "ACCEPTED",
+        paymentPlan: plan,
         uniformSize: data.uniformSize || null,
         shoeSize: data.shoeSize || null,
         tracksuitSize: data.tracksuitSize || null,
@@ -114,12 +144,7 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
     })
 
     await tx.teamPlayer.upsert({
-      where: {
-        teamId_playerId: {
-          teamId: offer.teamId,
-          playerId: offer.playerId,
-        },
-      },
+      where: { teamId_playerId: { teamId: offer.teamId, playerId: offer.playerId } },
       create: {
         teamId: offer.teamId,
         playerId: offer.playerId,
@@ -136,25 +161,74 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
       },
     })
 
-    // Accepting the offer is what creates the season-fee debt (the flagship
-    // family→club flow, docs/payments-design.md A2). Installments are the
-    // payment schedule against ONE obligation, not separate debts.
+    // Accepting creates the season-fee debt (flagship family→club flow).
     const playerName = `${offer.player.firstName} ${offer.player.lastName}`
-    await ensureObligation(tx, {
+    const obligation = await ensureObligation(tx, {
       payerUserId: offer.player.parentId,
       payeeTenantId: offer.team.tenantId,
       referenceType: "Offer",
       referenceId: offer.id,
-      description:
-        `Season fee — ${offer.team.name} (${playerName})` +
-        (offer.installments > 1 ? `, ${offer.installments} installments` : ""),
+      description: `Season fee — ${offer.team.name} (${playerName})`,
       amount: Number(offer.seasonFee),
       currency: offer.team.tenant.currency,
     })
 
+    // The deposit/full payment the family just made on-session (Stage C).
+    if (data.depositPaymentIntentId && obligation) {
+      const depositAmount =
+        plan === "INSTALLMENTS" && chosen
+          ? Number(chosen.depositAmount ?? 0)
+          : Number(offer.seasonFee)
+      await tx.payment.create({
+        data: {
+          obligationId: obligation.id,
+          payerId: offer.player.parentId,
+          tenantId: offer.team.tenantId,
+          amount: depositAmount,
+          currency: offer.team.tenant.currency,
+          status: "SUCCEEDED",
+          method: "STRIPE",
+          stripePaymentIntentId: data.depositPaymentIntentId,
+          installmentNumber: 1,
+          relatedOfferId: offer.id,
+          paymentType: "SEASON_FEE",
+          description:
+            plan === "INSTALLMENTS"
+              ? `Deposit — ${offer.team.name}`
+              : `Season fee — ${offer.team.name}`,
+        },
+      })
+    }
+
     await notifyClubOfResponse(tx, offer, updated.id, true)
-    return updated
+    return { updated, obligationId: obligation?.id ?? null }
   })
+
+  // Installment invoices are external Stripe calls → after the DB commit.
+  if (
+    plan === "INSTALLMENTS" &&
+    chosen?.allowInstallments &&
+    (chosen.installmentTerms?.length ?? 0) > 0 &&
+    result.obligationId
+  ) {
+    await scheduleInstallments({
+      offerId: offer.id,
+      payerUserId: offer.player.parentId,
+      merchant: { tenantId: offer.team.tenantId },
+      tenantId: offer.team.tenantId,
+      obligationId: result.obligationId,
+      currency: offer.team.tenant.currency,
+      teamName: offer.team.name,
+      terms: chosen.installmentTerms.map((t) => ({
+        sequence: t.sequence,
+        amount: Number(t.amount),
+        dueDate: new Date(t.dueDate),
+        label: t.label,
+      })),
+    }).catch((e) => console.error("scheduleInstallments failed:", e))
+  }
+
+  return result.updated
 }
 
 /** Decline: offer -> DECLINED, club notified — one transaction. */

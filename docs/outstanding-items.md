@@ -273,7 +273,14 @@ league-level view of club practice load.
   Subscriptions). Research fact: Stripe native invoice payment-plans do NOT
   auto-charge; auto-charge + AI retries + dunning need Stripe Billing. 2
   arch decisions pending (approve Hybrid; posture split = auto-charge
-  PLATFORM_COLLECT v1, CONNECT_DIRECT fast-follow).
+  PLATFORM_COLLECT v1, CONNECT_DIRECT fast-follow). **UPDATE 2026-07-07:
+  owner locked HYBRID + both modes v1 (no phasing) + leagues same pass.
+  STAGES A–H BUILT (local): card-on-file, offer terms + composer, deposit-
+  gated accept, installment schedule (auto-collect invoices), auto-charge +
+  reminders crons, invoice webhooks (receipts/failures), parent timeline,
+  league Connect parity. Destination live-verified test mode; direct auto-
+  charge needs connected-account QA. Runbook #16/#17 + CRON_SECRET env.
+  Suites 233u/213i.**
 - **Competitor tracker (parked, docs/research/competitor-tracker.md)**: full competitive positioning pass later (PlayMetrics, LeagueApps, JerseyWatch, SportsEngine, TeamSnap, GameChanger, MaxPreps, Exposure Events…) by feature area + business model; list + comparison frame captured.
 - **Logged-in home/landing redesign (2026-07-07, owner ask, SEPARATE
   project, scoped not started)**: drop promo/marketing for signed-in

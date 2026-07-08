@@ -31,10 +31,14 @@ const OFFLINE_METHODS = [
 export function PaymentSettingsCard({
   tenantId,
   config,
+  basePath,
 }: {
   tenantId: string
   config: PaymentConfigView
+  /** API base — defaults to the club path; leagues pass their own. */
+  basePath?: string
 }) {
+  const apiBase = basePath ?? `/api/clubs/${tenantId}`
   const router = useRouter()
   const [offlineEnabled, setOfflineEnabled] = useState(config.offlineEnabled)
   const [methods, setMethods] = useState<string[]>(config.offlineMethods)
@@ -48,7 +52,7 @@ export function PaymentSettingsCard({
     setSaving(true)
     setError(null)
     setMessage(null)
-    const res = await fetch(`/api/clubs/${tenantId}/payment-config`, {
+    const res = await fetch(`${apiBase}/payment-config`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ offlineEnabled, offlineMethods: methods, onlineMode }),
@@ -66,7 +70,7 @@ export function PaymentSettingsCard({
   async function connect() {
     setConnecting(true)
     setError(null)
-    const res = await fetch(`/api/clubs/${tenantId}/payment-config/connect`, { method: "POST" })
+    const res = await fetch(`${apiBase}/payment-config/connect`, { method: "POST" })
     const body = await res.json().catch(() => ({}))
     setConnecting(false)
     if (!res.ok) {

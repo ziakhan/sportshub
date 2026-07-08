@@ -3,8 +3,40 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/respond-to-offer"
+import { resolveChargeContext } from "@/lib/payments/installments"
 
 export const dynamic = "force-dynamic"
+
+/**
+ * The deposit/full PaymentIntent must have succeeded before we accept. Also
+ * pins the card as the customer's default so scheduled installments
+ * auto-charge it. Best-effort default-setting (never blocks acceptance).
+ */
+async function verifyDepositPaid(
+  offer: { team: { tenantId: string; tenant: { currency: string } } },
+  paymentIntentId: string
+): Promise<boolean> {
+  const ctx = await resolveChargeContext(
+    { tenantId: offer.team.tenantId },
+    offer.team.tenant.currency
+  ).catch(() => null)
+  if (!ctx) return false
+  const intent = await ctx.stripe.paymentIntents
+    .retrieve(paymentIntentId, ctx.direct ? ({ stripeAccount: ctx.account } as any) : undefined)
+    .catch(() => null)
+  if (!intent || intent.status !== "succeeded") return false
+  const pm = intent.payment_method as string | null
+  if (pm && intent.customer) {
+    await ctx.stripe.customers
+      .update(
+        intent.customer as string,
+        { invoice_settings: { default_payment_method: pm } },
+        ctx.direct ? ({ stripeAccount: ctx.account } as any) : undefined
+      )
+      .catch(() => {})
+  }
+  return true
+}
 
 const respondSchema = z.object({
   action: z.enum(["accept", "decline"]),
@@ -17,6 +49,9 @@ const respondSchema = z.object({
   jerseyPref1: z.number().int().min(0).max(99).optional(),
   jerseyPref2: z.number().int().min(0).max(99).optional(),
   jerseyPref3: z.number().int().min(0).max(99).optional(),
+  // Payments v2 Stage C — how to pay + the on-session deposit already confirmed
+  paymentPlan: z.enum(["FULL", "INSTALLMENTS"]).optional(),
+  depositPaymentIntentId: z.string().optional(),
 })
 
 /**
@@ -120,7 +155,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         team: {
           select: { id: true, name: true, tenantId: true, tenant: { select: { name: true, currency: true } } },
         },
-        options: { orderBy: { sortOrder: "asc" } },
+        options: {
+          orderBy: { sortOrder: "asc" },
+          include: { installmentTerms: { orderBy: { sequence: "asc" } } },
+        },
       },
     })
 
@@ -190,6 +228,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         includesUniform: chosen.includesUniform,
         includesTracksuit: chosen.includesTracksuit,
       })
+    }
+
+    // Deposit gate (payments v2 Stage C): if a payment intent was made, it
+    // must have SUCCEEDED before we accept + roster. Also set it as the
+    // customer's default card so installments can auto-charge.
+    if (data.action === "accept" && data.depositPaymentIntentId) {
+      const ok = await verifyDepositPaid(offer as any, data.depositPaymentIntentId)
+      if (!ok) {
+        return NextResponse.json(
+          { error: "Deposit payment not completed", code: "DEPOSIT_NOT_PAID" },
+          { status: 400 }
+        )
+      }
     }
 
     if (data.action === "accept") {

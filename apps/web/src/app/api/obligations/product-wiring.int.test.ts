@@ -61,7 +61,9 @@ afterAll(async () => {
 })
 
 describe("offer acceptance (A2 — the flagship)", () => {
-  it("accepting an offer mints the season-fee obligation with the installment note", async () => {
+  it("accepting an offer mints the season-fee obligation for the full fee", async () => {
+    // (payments v2: installments are now real scheduled Payment rows against
+    // this one obligation, not a text note in the description.)
     const offer = await createOffer(world.ctx, {
       teamId: world.clubs[0].teams[0].id,
       playerId,
@@ -82,7 +84,7 @@ describe("offer acceptance (A2 — the flagship)", () => {
     expect(Number(obligation!.amount)).toBe(480)
     expect(obligation!.payerUserId).toBe(parentId)
     expect(obligation!.payeeTenantId).toBe(tenantId)
-    expect(obligation!.description).toContain("4 installments")
+    expect(obligation!.description).toContain("Season fee")
   })
 
   it("declining an offer creates no obligation", async () => {

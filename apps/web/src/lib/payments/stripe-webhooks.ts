@@ -1,5 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { recomputeObligationStatus } from "@/lib/payments/obligations"
+import { sendEmail } from "@/lib/email"
+import { notify } from "@/lib/notifications"
 
 /**
  * Stripe event processing — kept separate from the HTTP route so tests can
@@ -29,9 +31,97 @@ export async function handleStripeEvent(event: {
       return onChargeRefunded(event.data.object)
     case "account.updated":
       return onAccountUpdated(event.data.object)
+    // Installment auto-charge (payments v2 hybrid): the invoice is the truth.
+    case "invoice.paid":
+      return onInvoicePaid(event.data.object)
+    case "invoice.payment_failed":
+      return onInvoicePaymentFailed(event.data.object)
     default:
       return { handled: false, detail: `ignored: ${event.type}` }
   }
+}
+
+async function onInvoicePaid(invoice: {
+  id: string
+  charge?: string | null
+  payment_intent?: string | null
+}): Promise<HandledResult> {
+  const payment = await prisma.payment.findUnique({ where: { stripeInvoiceId: invoice.id } })
+  if (!payment) return { handled: false, detail: "no matching installment" }
+  if (payment.status === "SUCCEEDED") return { handled: true, detail: "already succeeded" }
+
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      status: "SUCCEEDED",
+      stripeChargeId: typeof invoice.charge === "string" ? invoice.charge : payment.stripeChargeId,
+      stripePaymentIntentId:
+        typeof invoice.payment_intent === "string"
+          ? invoice.payment_intent
+          : payment.stripePaymentIntentId,
+    },
+  })
+  if (payment.obligationId) await recomputeObligationStatus(prisma, payment.obligationId)
+
+  // Receipt to the payer
+  if (payment.payerId) {
+    const amount = Number(payment.amount)
+    await notify(prisma, {
+      userId: payment.payerId,
+      type: "payment_receipt",
+      title: "Payment received",
+      message: `${payment.description ?? "Installment"} — $${amount.toFixed(2)} paid. Thank you!`,
+      link: "/payments",
+      referenceId: payment.id,
+      referenceType: "Payment",
+    }).catch(() => {})
+    const user = await prisma.user.findUnique({
+      where: { id: payment.payerId },
+      select: { email: true },
+    })
+    if (user?.email) {
+      await sendEmail({
+        to: user.email,
+        subject: `Payment received — $${amount.toFixed(2)}`,
+        html: `<p>We received your payment of <strong>$${amount.toFixed(2)}</strong>${payment.description ? ` (${payment.description})` : ""}. Thanks!</p><p><a href="${process.env.NEXTAUTH_URL || ""}/payments">View your payments</a></p>`,
+      }).catch(() => {})
+    }
+  }
+  return { handled: true }
+}
+
+async function onInvoicePaymentFailed(invoice: { id: string }): Promise<HandledResult> {
+  const payment = await prisma.payment.findUnique({ where: { stripeInvoiceId: invoice.id } })
+  if (!payment) return { handled: false, detail: "no matching installment" }
+  if (payment.status === "SUCCEEDED") return { handled: true, detail: "already paid" }
+
+  // Stripe Smart Retries will keep trying; we surface the failure and let
+  // its dunning drive recovery. Keep the row PENDING so a later retry can
+  // still settle it (don't hard-FAIL a retryable invoice).
+  if (payment.payerId) {
+    const amount = Number(payment.amount)
+    await notify(prisma, {
+      userId: payment.payerId,
+      type: "payment_failed",
+      title: "Payment didn't go through",
+      message: `${payment.description ?? "Installment"} — $${amount.toFixed(2)} couldn't be charged. We'll retry; you can also update your card.`,
+      link: "/payments",
+      referenceId: payment.id,
+      referenceType: "Payment",
+    }).catch(() => {})
+    const user = await prisma.user.findUnique({
+      where: { id: payment.payerId },
+      select: { email: true },
+    })
+    if (user?.email) {
+      await sendEmail({
+        to: user.email,
+        subject: `Payment failed — $${amount.toFixed(2)}`,
+        html: `<p>We couldn't charge your card for <strong>$${amount.toFixed(2)}</strong>${payment.description ? ` (${payment.description})` : ""}. We'll automatically retry, or you can update your card and pay now: <a href="${process.env.NEXTAUTH_URL || ""}/settings/payments">manage cards</a> · <a href="${process.env.NEXTAUTH_URL || ""}/payments">my payments</a>.</p>`,
+      }).catch(() => {})
+    }
+  }
+  return { handled: true }
 }
 
 async function onPaymentIntentSucceeded(intent: {

@@ -109,7 +109,15 @@ export async function POST(request: NextRequest) {
     let terms: Awaited<ReturnType<typeof resolveOfferTerms>>["terms"]
     let templateId: string | null | undefined = data.templateId
     if (data.options && data.options.length > 0) {
-      const { label: _l, sourceTemplateId, ...firstTerms } = data.options[0]
+      const {
+      label: _l,
+      sourceTemplateId,
+      allowFullPay: _af,
+      allowInstallments: _ai,
+      depositAmount: _dep,
+      installmentTerms: _it,
+      ...firstTerms
+    } = data.options[0]
       terms = firstTerms
       templateId = sourceTemplateId ?? null
     } else {

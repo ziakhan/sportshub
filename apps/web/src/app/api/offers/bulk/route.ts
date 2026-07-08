@@ -90,7 +90,15 @@ export async function POST(request: NextRequest) {
     }
     const signupById = new Map(signups.map((s: any) => [s.id, s]))
 
-    const { label: _l, sourceTemplateId, ...firstTerms } = data.options[0]
+    const {
+      label: _l,
+      sourceTemplateId,
+      allowFullPay: _af,
+      allowInstallments: _ai,
+      depositAmount: _dep,
+      installmentTerms: _it,
+      ...firstTerms
+    } = data.options[0]
     const expiresAt = new Date(data.expiresAt)
 
     // Cross-club recruiting audit (G2): one batched lookup for all players

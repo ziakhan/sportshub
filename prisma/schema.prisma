@@ -69,6 +69,7 @@ model User {
   teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
   pollsCreated        Poll[]              @relation("PollsCreated")
   teamEventsCreated   TeamEvent[]         @relation("TeamEventsCreated")
+  connectedCustomers  ConnectedCustomer[] @relation("ConnectedCustomers")
   pollVotes           PollVote[]          @relation("PollVotes")
   rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
   rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
@@ -746,6 +747,8 @@ model Offer {
   options        OfferOption[] @relation("OfferOptions")
   chosenOptionId String?       @unique
   chosenOption   OfferOption?  @relation("ChosenOption", fields: [chosenOptionId], references: [id])
+  // Which way the family chose to pay at accept (payments v2 Stage C)
+  paymentPlan PaymentPlan?
 
   message   String?  @db.Text
   expiresAt DateTime
@@ -795,11 +798,56 @@ model OfferOption {
 
   sortOrder Int @default(0)
 
+  // Payment terms the CLUB sets on this package (payments v2 Stage B).
+  // Full payment and/or an installment plan = a deposit (due on accept) +
+  // OfferInstallmentTerm rows (each an amount + due date). Snapshotted here
+  // because the option is already offer-scoped.
+  allowFullPay     Boolean @default(true)
+  allowInstallments Boolean @default(false)
+  depositAmount    Decimal? @db.Decimal(10, 2)
+  installmentTerms OfferInstallmentTerm[]
+
   chosenBy Offer? @relation("ChosenOption")
 
   createdAt DateTime @default(now())
 
   @@index([offerId])
+}
+
+// One installment on an option's payment plan: "$750 due Oct 1". Amounts
+// across a plan (deposit + terms) sum to the option's seasonFee.
+model OfferInstallmentTerm {
+  id       String      @id @default(uuid())
+  optionId String
+  option   OfferOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  sequence Int // 1..N after the deposit
+  label    String?
+  amount   Decimal  @db.Decimal(10, 2)
+  dueDate  DateTime
+
+  @@index([optionId])
+}
+
+enum PaymentPlan {
+  FULL
+  INSTALLMENTS
+}
+
+// A payer's Stripe Customer on a CLUB's connected account (direct-charge
+// mode only). Direct charges + saved cards must live on the connected
+// account, so a payer has one of these per direct-charge club they pay.
+model ConnectedCustomer {
+  id         String @id @default(uuid())
+  userId     String
+  user       User   @relation("ConnectedCustomers", fields: [userId], references: [id], onDelete: Cascade)
+  accountId  String // the club's connected account (acct_…)
+  customerId String // the Stripe customer on that account (cus_…)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, accountId])
+  @@index([userId])
 }
 
 enum OfferStatus {
@@ -1575,6 +1623,9 @@ model Payment {
   // PLATFORM_COLLECT destination charges: the connected account the club's
   // share transfers to at charge time; refunds must reverse_transfer.
   stripeDestinationAccountId String?
+  // Auto-collect invoice backing a scheduled installment (payments v2 hybrid).
+  // Cron finalizes it on the due date; Stripe charges + Smart-Retries + duns.
+  stripeInvoiceId String? @unique
 
   // Parties — payer may be a person (family flows) or an organization via
   // the obligation (club→league team fees), hence nullable.
@@ -1694,6 +1745,11 @@ model PaymentConfig {
   offlineEnabled Boolean         @default(true)
   offlineMethods PaymentMethod[] @default([CASH, ETRANSFER])
   onlineMode     OnlineMode? // null inherits payDefaultOnlineMode
+
+  // Installment reminders (payments v2 Stage F) — our branded pre-due nudge
+  reminderLeadDays Int     @default(3)
+  reminderEmail    Boolean @default(true)
+  reminderPush     Boolean @default(false) // web push is a fast-follow
 
   // Platform fee overrides on ONLINE charges — null inherits PlatformSettings
   platformFeeBps  Int?

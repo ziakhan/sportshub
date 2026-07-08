@@ -401,3 +401,20 @@ on first card-add / payment). No card data is ever stored in our DB.
 Prod also needs the existing `STRIPE_*` env vars (already on the deploy
 train, runbook §1). Later payments-v2 stages add more schema — separate
 runbook entries as they land.
+
+## 17. Payments v2 Stages B–H schema + CRON_SECRET (NOT YET APPLIED to Neon)
+
+Ships with the payments v2 B–H commit (2026-07-07). Additive — one
+`prisma db push`:
+- `OfferOption`: `allowFullPay`, `allowInstallments`, `depositAmount`
+- New `OfferInstallmentTerm` (optionId FK cascade; sequence/amount/dueDate)
+- `Offer.paymentPlan` (enum PaymentPlan FULL|INSTALLMENTS)
+- `Payment.stripeInvoiceId` (unique) — the auto-collect invoice per installment
+- `PaymentConfig`: `reminderLeadDays` (3), `reminderEmail` (true), `reminderPush` (false)
+- New enum `PaymentPlan`; new `ConnectedCustomer` (userId+accountId unique) —
+  payer's Stripe customer on a club's connected account (direct-charge mode)
+
+**Vercel env: add `CRON_SECRET`** (any strong random string). The two
+`/api/cron/*` jobs fail closed without it. `vercel.json` now declares the
+crons (charge-due 09:00, payment-reminders 09:30 daily) — Vercel picks them
+up on deploy. Nothing to backfill.

@@ -3,5 +3,9 @@
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "cd ../.. && npx prisma generate --schema=prisma/schema.prisma && npx turbo run build --filter=@youthbasketballhub/web",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    { "path": "/api/cron/charge-due", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/payment-reminders", "schedule": "30 9 * * *" }
+  ]
 }

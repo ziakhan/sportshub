@@ -97,6 +97,10 @@ export async function resolveOfferTerms(
 export interface OfferPackageInput extends OfferTerms {
   label: string
   sourceTemplateId?: string | null
+  allowFullPay?: boolean
+  allowInstallments?: boolean
+  depositAmount?: number
+  installmentTerms?: Array<{ amount: number; dueDate: string }>
 }
 
 /** Request shape for one package — shared by POST /api/offers and /bulk. */
@@ -111,6 +115,14 @@ export const offerPackageSchema = z.object({
   includesShoes: z.boolean().default(false),
   includesUniform: z.boolean().default(false),
   includesTracksuit: z.boolean().default(false),
+  // Payment terms (payments v2 Stage B)
+  allowFullPay: z.boolean().default(true),
+  allowInstallments: z.boolean().default(false),
+  depositAmount: z.number().min(0).optional(),
+  installmentTerms: z
+    .array(z.object({ amount: z.number().min(0), dueDate: z.string() }))
+    .max(12)
+    .default([]),
 })
 
 export interface CreateOfferInput {
@@ -163,24 +175,44 @@ export async function createOfferForPlayer(tx: any, input: CreateOfferInput) {
     },
   })
 
-  // A single package is just today's offer; rows only exist for real choices
-  if (input.options && input.options.length > 1) {
-    await tx.offerOption.createMany({
-      data: input.options.map((option, i) => ({
-        offerId: offer.id,
-        label: option.label,
-        sourceTemplateId: option.sourceTemplateId || null,
-        seasonFee: option.seasonFee,
-        installments: option.installments,
-        practiceSessions: option.practiceSessions,
-        includesBall: option.includesBall,
-        includesBag: option.includesBag,
-        includesShoes: option.includesShoes,
-        includesUniform: option.includesUniform,
-        includesTracksuit: option.includesTracksuit,
-        sortOrder: i,
-      })),
-    })
+  // Persist OfferOption rows when there's a real choice (2+) OR any option
+  // carries a payment plan (a single-package plan still needs its terms
+  // + installment schedule stored). A simple single full-pay package needs
+  // no rows — the offer's snapshot columns are enough.
+  const anyPlan = (input.options ?? []).some((o) => o.allowInstallments)
+  if (input.options && (input.options.length > 1 || anyPlan)) {
+    for (let i = 0; i < input.options.length; i++) {
+      const option = input.options[i]
+      await tx.offerOption.create({
+        data: {
+          offerId: offer.id,
+          label: option.label,
+          sourceTemplateId: option.sourceTemplateId || null,
+          seasonFee: option.seasonFee,
+          installments: option.installments,
+          practiceSessions: option.practiceSessions,
+          includesBall: option.includesBall,
+          includesBag: option.includesBag,
+          includesShoes: option.includesShoes,
+          includesUniform: option.includesUniform,
+          includesTracksuit: option.includesTracksuit,
+          sortOrder: i,
+          allowFullPay: option.allowFullPay ?? true,
+          allowInstallments: option.allowInstallments ?? false,
+          depositAmount: option.allowInstallments ? (option.depositAmount ?? 0) : null,
+          installmentTerms:
+            option.allowInstallments && option.installmentTerms?.length
+              ? {
+                  create: option.installmentTerms.map((t, ti) => ({
+                    sequence: ti + 1,
+                    amount: t.amount,
+                    dueDate: new Date(t.dueDate),
+                  })),
+                }
+              : undefined,
+        },
+      })
+    }
   }
 
   if (input.tryoutSignupId) {
