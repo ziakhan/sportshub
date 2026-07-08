@@ -254,6 +254,18 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
+- **Offer fees SIMPLIFIED + installment/deposit plan scoped (2026-07-07)**:
+  demo now seeds TWO packages only — New $3,000 / Returning $2,700 (price
+  the only difference, no item breakdown) w/ deposit $750 + 3 monthly in
+  the seeded payments. Real product installment/deposit builder = NOT built
+  (installments is still just a count; no deposit, no per-installment due
+  dates). Model + defaults + one owner decision in
+  docs/offer-package-options-design.md §"Follow-up". Payments-touching —
+  build behind explicit go.
+- **Logged-in home/landing redesign (2026-07-07, owner ask, SEPARATE
+  project, scoped not started)**: drop promo/marketing for signed-in
+  members, content-first, maximize real estate; fold in the Site IA
+  menu decisions. Plan: docs/home-redesign-plan.md (+ site-ia-plan.md).
 - **Onboarding + tutorials + videos (2026-07-07, PLAN v2 — league-first
   catalog per owner; demo-readiness gaps BUILT)**:
   docs/onboarding-tutorials-plan.md. Owner's league storyline (create

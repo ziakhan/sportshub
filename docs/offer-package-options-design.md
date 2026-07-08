@@ -135,3 +135,54 @@ stands ready.
    options-inside-template)?
 2. Is the returning-only **audience guard** wanted at v1, or is open
    family choice fine to start?
+
+---
+
+## Follow-up (2026-07-07): simpler fees + a real installment/deposit plan
+
+Owner refinements after seeing the demo:
+
+### A. Fees: keep it to TWO, price is the only difference
+Drop the multi-package item breakdown (uniform/ball/bag/shoes/tracksuit as
+the story) — it reads as confusing. The demo now seeds exactly two
+templates per club:
+- **New Player — $3,000** (regular fee)
+- **Returning Player — $2,700** (~$300 less; kit carries over)
+Both include the uniform; nothing else itemized. Clubs can still tweak
+per-offer, but the default vocabulary is New vs Returning. *(Demo seeder
+DONE — `OFFER_PRICING` knobs at top of scripts/seed-nph-demo.ts.)*
+
+### B. Payment: full OR a deposit + installment schedule — NOT YET BUILT
+Today `installments` is only a COUNT on the offer/option; accept creates one
+lump PaymentObligation and the "N installments" is descriptive text. No
+deposit, no per-installment due dates. The gap to close:
+
+**Model (recommended): club sets terms on the package, family picks at accept.**
+- On each OfferOption the club chooses: **Full payment** and/or an
+  **installment plan** = a deposit (amount or % due on accept) + N further
+  installments, each with an amount and a **due date**. Default generator:
+  deposit = 25% due on accept, then 3 equal installments on the **1st of the
+  next three months** (season starts September). "Add installment" lets them
+  add rows and edit each amount + date freely; amounts must sum to the fee.
+- At **accept**, the family sees "Pay in full ($3,000)" vs "Payment plan
+  ($750 deposit today, then 3 × $750)" and picks one.
+- On accept: create the obligation for the full fee, then generate the
+  scheduled installment records (deposit PENDING/now-due, the rest PENDING
+  with their due dates). Reminders fire as due dates approach (reuse the
+  practice/schedule notify machinery). Full-pay = a single record.
+
+**Demo defaults to encode once built:** $3,000 fee · $750 deposit on accept ·
+$750 on the 1st of each of the next 3 months. (Returning: $2,700 → $675 × 4.)
+
+**Schema sketch (additive):** OfferOption gains `allowFullPay Boolean`,
+`allowInstallments Boolean`, `depositAmount Decimal?`; installment rows go in
+a child `OfferInstallmentTerm { optionId, sequence, label, amount, dueOffset
+or dueDate }` (snapshotted onto the accepted offer, same as sizes). Payments
+already have `installmentNumber` + `dueDate` — the accept flow just needs to
+populate them from the chosen plan.
+
+**Owner decision before building:** confirm the "club sets terms, family
+picks full-vs-plan at accept" model (vs family builds their own schedule).
+Scope ≈ half-day: schema + composer payment-terms UI + accept full-vs-plan
+picker + obligation/installment generation + int tests. Touches PAYMENTS —
+build behind an explicit go.

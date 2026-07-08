@@ -51,13 +51,14 @@ const SUMMER_GAMES_PER_TEAM = 10 // 2 per weekend × 5 weekends — never less t
 const FALL_GAMES_PER_TEAM = 12 // monthly sessions Oct–Mar
 const GAME_SLOT_MINUTES = 90 // scheduler slot width (warmup + game + buffer)
 const GAME_LENGTH_MINUTES = 40 // actual playing time (4 × 10-min quarters)
-// Club offer package prices (per club, CAD). base varies ±$20 club to club
-// for realism; the rest are offsets from base.
+// Club offer packages (CAD) — deliberately simple (owner call 2026-07-07):
+// two options, New vs Returning, differing only by price. No item
+// itemization in the demo. Payment = deposit-on-accept + 3 equal monthly.
 const OFFER_PRICING = {
-  standardBase: 425, // "Standard Package" (uniform + ball)
-  premiumDelta: +330, // "Premium Package" (full kit, 3 installments)
-  returningDelta: -80, // "Returning Player" (uniform only — kit carries over)
-  eliteAllIn: 999, // elite clubs' "Elite All-In" (full kit + 2 practices/wk)
+  newPlayerFee: 3000, // regular season fee, new player
+  returningFee: 2700, // ~$300 less — kit carries over from last season
+  installments: 4, // deposit + 3 monthly (equal quarters)
+  depositFraction: 0.25, // deposit = a quarter, due on accepting the offer
 }
 // Venue default hours — Sessions tab prefills day windows from these
 const VENUE_WEEKEND_HOURS = { open: "08:00", close: "18:00" }
@@ -549,21 +550,22 @@ async function seed() {
     const owner = await mkUser(`owner-${club.key}@${EMAIL_DOMAIN}`, pick(ADULT_NAMES), pick(LAST_NAMES), { city: club.city })
     await p.userRole.create({ data: { userId: owner.id, role: "ClubOwner", tenantId: tenant.id } })
 
-    // Offer templates — the package story (plan §3)
-    const base = OFFER_PRICING.standardBase + Math.floor(rnd() * 5) * 10
-    const mkTemplate = (name: string, fee: number, installments: number, inc: any, practice = 0) =>
+    // Offer templates — TWO simple packages (owner call): New vs Returning,
+    // price the only difference; both include the uniform, both on the
+    // deposit + 3-monthly plan. templates[0]=New, templates[1]=Returning.
+    const mkTemplate = (name: string, fee: number) =>
       p.offerTemplate.create({
-        data: { tenantId: tenant.id, name, seasonFee: fee, installments, practiceSessions: practice, isActive: true, ...inc },
+        data: {
+          tenantId: tenant.id, name, seasonFee: fee,
+          installments: OFFER_PRICING.installments, practiceSessions: 0,
+          isActive: true, includesUniform: true,
+        },
         select: { id: true, name: true, seasonFee: true, installments: true, practiceSessions: true, includesBall: true, includesBag: true, includesShoes: true, includesUniform: true, includesTracksuit: true },
       })
     const templates = [
-      await mkTemplate("Standard Package", base, 1, { includesUniform: true, includesBall: true }),
-      await mkTemplate("Premium Package", base + OFFER_PRICING.premiumDelta, 3, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }),
-      await mkTemplate("Returning Player", base + OFFER_PRICING.returningDelta, 2, { includesUniform: true }),
+      await mkTemplate("New Player", OFFER_PRICING.newPlayerFee),
+      await mkTemplate("Returning Player", OFFER_PRICING.returningFee),
     ]
-    if (club.elite) {
-      templates.push(await mkTemplate("Elite All-In", OFFER_PRICING.eliteAllIn, 4, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }, 2))
-    }
     clubRows.set(club.key, { id: tenant.id, ownerId: owner.id, templates })
   }
   console.log(`✓ ${CLUBS.length} clubs adopted/created, branded, templated (${CLUBS.filter((c) => c.featured).length} featured)`)
@@ -690,8 +692,8 @@ async function seed() {
       await p.userRole.create({ data: { userId: coach.id, role: "Staff", tenantId: row.id } })
       await p.userRole.create({ data: { userId: coach.id, role: "Staff", tenantId: row.id, teamId: team.id, designation: "HeadCoach" } })
 
-      // Template by grade: G8/9 Standard-heavy, G10/11 mixes Premium/Returning
-      const template = grade <= 9 ? row.templates[0] : pick(row.templates)
+      // ~30% of a squad are returning players (kit carries over); rest New
+      const template = rnd() < 0.3 ? row.templates[1] : row.templates[0]
       const seasonFee = Number(template.seasonFee)
 
       // Tryout ~10-11 weeks back, published, with roll-call history
@@ -809,20 +811,25 @@ async function seed() {
           select: { id: true },
         })
         if (obligationStatus !== "PENDING") {
-          const n = template.installments
+          // Deposit (a quarter, paid on accept) + 3 equal monthly installments
+          const n = template.installments // 4
           const perInstallment = Math.round((seasonFee / n) * 100) / 100
           const paidCount = obligationStatus === "PAID" ? n : Math.max(1, n - 1)
           for (let k = 0; k < paidCount; k++) {
             await p.payment.create({
               data: {
                 payerId: parent.id, tenantId: row.id,
-                amount: n === 1 ? seasonFee : perInstallment, currency: "CAD",
+                amount: perInstallment, currency: "CAD",
                 status: "SUCCEEDED", paymentType: "SEASON_FEE",
                 method: pick(["ETRANSFER", "ETRANSFER", "CASH", "CHEQUE"]),
                 obligationId: obligation.id, recordedById: row.ownerId,
-                description: `${WINTER_SEASON} season fee — ${teamName}${n > 1 ? ` (installment ${k + 1}/${n})` : ""}`,
-                ...(n > 1 ? { installmentNumber: k + 1 } : {}),
-                createdAt: new Date(respondedAt.getTime() + days(k * 21)),
+                description:
+                  k === 0
+                    ? `${WINTER_SEASON} deposit — ${teamName}`
+                    : `${WINTER_SEASON} installment ${k}/3 — ${teamName}`,
+                installmentNumber: k + 1,
+                // deposit on accept, then the 1st of each following month
+                createdAt: new Date(respondedAt.getTime() + days(k * 30)),
               },
             })
           }
@@ -1222,7 +1229,7 @@ async function seed() {
     data: { tenantId: lordsRow.id, name: "Toronto Lords Fall Elite", ageGroup: "Grade 9", gender: "MALE", season: SPRING_SEASON, description: MARKER },
     select: { id: true },
   })
-  const lordsSpringTemplate = lordsRow.templates[1] // Premium
+  const lordsSpringTemplate = lordsRow.templates[0] // New Player (fresh recruit)
 
   for (const club of CLUBS.filter((c) => c.spring === "recruiting")) {
     const row = clubRows.get(club.key)!
