@@ -56,9 +56,9 @@ mile" fixes rather than net-new builds.
 ### Tier 2 — Missing capabilities (real, expected for this product)
 6. ⛔ **Referee payouts** — a per-game fee is captured + displayed, but no obligation/payout/Connect for officials. Referees are never paid through the platform (contrast: league fees are fully wired).
 7. ⛔ **Playoff generation** — `playoffFormat`/`playoffTeams` are saved, but the scheduler only produces `REGULAR` games; no bracket generation. *(known backlog item)*
-8. ⛔ **Player (13+) self-onboarding** — player records are only created by a parent; no self-register path.
+8. ✅ ~~Player (13+) self-onboarding~~ **CORRECTED (Layer 2): it exists** — `role-selector` offers "I'm a Player (13+)" and onboarding creates `Player{canLogin:true}`. Real gap = the player-*invitation* accept UI (#4 above).
 9. ⛔ **Broadcast comms** — no club-wide announcement, and league-wide event push is API-only (the only UI is scoped to one club's teams).
-10. ⛔ **Refund initiation** — inbound `charge.refunded` is reconciled, but there's no admin/club UI to *start* a refund.
+10. ✅ ~~Refund initiation~~ **CORRECTED (Layer 2): a merchant Refund button exists** (`obligations-table.tsx` → `PATCH /api/payments/[id]`, `reverse_transfer`, admin-gated). Real gap = refund **policy/proration** + prorated mid-season withdrawal (see [[requirements-map]]).
 11. ⛔ **Content moderation (admin)** — no UI to unpublish/take down reviews or news/recaps.
 12. ⛔ **Surveys** — polls exist (team-scoped); surveys do not.
 13. ⛔ **Notification preferences + channel parity** — email fires ad-hoc per event (not from the central notify layer), bell covers ~40 event types, no per-user preferences, no push.
@@ -67,7 +67,7 @@ mile" fixes rather than net-new builds.
 14. 🟡 **Club branding write-once** — logo is a pasted URL at *create* only (no upload, not editable after); only `primaryColor` editable in settings; contact/address/description never editable.
 15. 🟡 **League currency uneditable** — read for formatting, but not in the create form or update schema.
 16. 🔌 **Team-level offer-templates** — the API exists but the page just redirects to the club-level one.
-17. 🟡 **Media embeds** — `MediaAsset` supports video, but in practice recaps/news render images only; no YouTube/iframe embed render path found. *(verify — prior notes claimed YouTube highlights)*
+17. 🟡 **Media embeds** — partial: a YouTube `<iframe>` (news) and a `<video>` tile exist, but recaps render images in practice; no ingest/upload pipeline. *(Layer-2 corrected: not "image-only.")*
 18. 🟡 **Analytics** — admin has count tiles + recent lists only; no time-series.
 19. 🟡 **Search** — client-side filter over the club directory; no global/entity search.
 

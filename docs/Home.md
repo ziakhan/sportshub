@@ -12,6 +12,8 @@ by connection. New here? Read [[README|the vault guide]].
 > - ✅ [[_moc-shipped|What's Built]] — feature-by-feature tally of everything shipped.
 > - 🧭 [[coverage-audit|Coverage Audit]] — how complete the platform is, per persona +
 >   integration, with a ranked gap list (what's disconnected / missing).
+> - 🧱 [[requirements-map|Requirements Map]] — the *complete-platform* denominator +
+>   the tiered build backlog (safety/compliance, retention, parity we never planned).
 >
 > (The graph colors *docs*, so completed work spread across plans and living ledgers
 > doesn't all show green — these two notes are the honest tally.)
