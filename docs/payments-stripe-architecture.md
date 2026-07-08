@@ -148,6 +148,55 @@ use. **The hybrid installment plan rides on top of whichever mode a club is
 in** — for v1 auto-charge we start with PLATFORM_COLLECT (our-account
 customer/invoices are simplest), CONNECT_DIRECT auto-charge follows.
 
+## Onboarding — what a club (and league) actually does
+
+**Not part of signup.** A club owner signs up → creates the club → and only
+*later*, deliberately, goes to **`/clubs/[id]/payments`** (the
+`PaymentSettingsCard`) and clicks **"Connect with Stripe."** That's the right
+call — we never block account creation on someone having their bank details
+handy. (Recommendation: surface "Set up payments" as a step in the
+getting-started checklist from the onboarding plan, not in the signup wizard.)
+
+**The flow (already built for clubs):**
+1. Club owner opens Payments settings, picks/confirms the posture (offline
+   methods + online mode), clicks **Connect with Stripe**.
+2. We create a Stripe **Express** connected account (country, club name,
+   contact email, `tenantId` metadata) and redirect to **Stripe's hosted
+   onboarding** — we don't build or see any of those forms.
+3. Stripe collects, from the club owner, the KYC a payout account requires:
+   business type (individual / company / non-profit), the representative's
+   name + DOB + address + ID (last-4 SSN/SIN, sometimes a document), business
+   name/category/description, and a **bank account** for payouts. Stripe runs
+   verification.
+4. They return to `/clubs/[id]/payments`; the `account.updated` webhook flips
+   `stripeAccountStatus` → **active**, and the club can now take online
+   payments. Until active, only offline methods show.
+
+**Same onboarding serves both charge modes** — the connected account is
+needed either way. What differs is the *weight*:
+- **Direct charges (CONNECT_DIRECT):** the club is the merchant of record →
+  needs full `card_payments` + `transfers` capabilities → Stripe requires the
+  complete onboarding, and the club then owns its statement descriptor,
+  disputes, refunds and tax reporting (e.g. 1099-K). More setup, more
+  responsibility on the club. Button copy: *"so card payments land directly
+  in your bank."*
+- **Destination charges (PLATFORM_COLLECT):** the platform is merchant of
+  record → the account mainly needs the `transfers` capability to *receive*
+  funds → onboarding is lighter, and we own the merchant side (disputes,
+  refunds, descriptor). Button copy: *"so the platform can transfer your
+  share of each payment to your bank."* **This is the lower-friction default
+  and what we recommend clubs start on.**
+
+Either way the **parent/family does zero onboarding** — they just enter a
+card at accept time.
+
+**Leagues: a gap.** There is **no league Connect route today** — league fees
+can only be tracked offline; a league can't take online card payments yet.
+When league online payments are wanted, leagues need the *same* Express
+onboarding built (a `manage/leagues/[id]/payments` "Connect with Stripe"
+mirroring the club route + a `PaymentConfig.leagueId` account). Clubs paying
+their league entry fee online depends on this.
+
 ## Testing — yes, entirely with dummy data, no real cards ever
 
 Stripe **test mode is the default here** — `.env.example` ships
