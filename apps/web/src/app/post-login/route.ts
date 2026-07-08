@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@youthbasketballhub/db"
+import { cookies } from "next/headers"
+import { getCurrentUser } from "@/lib/auth-helpers"
+import { getCompletionChecklist } from "@/lib/onboarding/checklist"
+import { ONBOARDING_DISMISS_COOKIE } from "@/lib/onboarding/constants"
 import { OPERATOR_ROLES } from "@/lib/queries/nav"
 
 export const dynamic = "force-dynamic"
@@ -11,16 +12,26 @@ export const dynamic = "force-dynamic"
  * staff, referees, admins) land in the MANAGE world; parents, players and
  * role-less accounts land on the personalized PUBLIC homepage. Sign-in only
  * defaults here — an explicit callbackUrl (deep link) always wins upstream.
+ *
+ * Onboarding soft gate: the first time a member lands here with setup still
+ * incomplete, route them through the dismissible /welcome checklist. Skipping
+ * or finishing sets ONBOARDING_DISMISS_COOKIE so we never auto-interrupt again
+ * — the top-nav pill + dashboard card carry ongoing guidance from there.
  */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as any)?.id
-  if (!userId) return NextResponse.redirect(new URL("/sign-in", request.url))
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.redirect(new URL("/sign-in", request.url))
 
-  const roles = await prisma.userRole.findMany({
-    where: { userId },
-    select: { role: true },
-  })
-  const isOperator = roles.some((r: any) => OPERATOR_ROLES.has(r.role))
-  return NextResponse.redirect(new URL(isOperator ? "/dashboard" : "/", request.url))
+  const isOperator = user.roles.some((r: any) => OPERATOR_ROLES.has(r.role))
+  const landing = isOperator ? "/dashboard" : "/"
+
+  const dismissed = cookies().get(ONBOARDING_DISMISS_COOKIE)?.value
+  if (!dismissed) {
+    const checklist = await getCompletionChecklist(user as any)
+    if (checklist.applicable && !checklist.complete) {
+      return NextResponse.redirect(new URL("/welcome", request.url))
+    }
+  }
+
+  return NextResponse.redirect(new URL(landing, request.url))
 }
