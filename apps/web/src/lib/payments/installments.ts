@@ -157,14 +157,16 @@ export async function createInstallmentInvoice(
     },
     requestOptions as any
   )
+  // NB: `charge_automatically` invoices must NOT set due_date (Stripe rejects
+  // it — that's a `send_invoice` field). OUR Payment.dueDate drives WHEN the
+  // cron finalizes this invoice; Stripe charges on finalize.
   const invoice = await ctx.stripe.invoices.create(
     {
       customer: opts.customerId,
       collection_method: "charge_automatically",
       auto_advance: false,
-      due_date: Math.floor(opts.dueDate.getTime() / 1000),
       description: opts.description,
-      metadata: { paymentId: opts.paymentId },
+      metadata: { paymentId: opts.paymentId, dueDate: opts.dueDate.toISOString() },
       ...(params as any),
     },
     requestOptions as any

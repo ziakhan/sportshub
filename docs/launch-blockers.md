@@ -57,17 +57,26 @@ Owner-gated (production). Owner + me.
 
 ## 🟠 HIGH
 
-### H1 — Direct-charge unattended auto-charge QA
-Installment auto-charge for CONNECT_DIRECT clubs (card saved on the club's
-connected account via `ConnectedCustomer`) is implemented but NOT live-tested
-— it needs a fully-onboarded test connected account with charges enabled.
-Either QA it end-to-end (test clocks) or **disable direct-charge auto-charge
-at launch** and let those clubs use reminder-to-pay until verified. Me + owner.
+### H1 — Direct-charge unattended auto-charge QA — ✅ VERIFIED 2026-07-07
+Proven end-to-end in Stripe test mode against a fully-activated test
+connected account (`scripts/qa-payments-setup.ts`): accept an INSTALLMENTS
+offer → deposit charged on the connected account → schedule + draft invoices
+created → finalize each invoice (what the cron does) → **the saved card was
+auto-charged, both installments settled to SUCCEEDED via the invoice.paid
+webhook, receipts sent.** This QA CAUGHT + FIXED a real bug (Stripe rejects
+`due_date` on `charge_automatically` invoices). Residual: nothing blocking —
+the same code serves destination charges (verified by int test + the finalize
+mechanism is identical).
 
-### H2 — Stripe stage-5 QA with test clocks
-Fast-forward simulated months to watch a deposit + 3 installments charge,
-a card decline trigger Smart Retries + dunning, and receipts/failure emails
-fire. Automated tests can't simulate time; this is a manual pass. Me.
+### H2 — Stripe stage-5 QA with test clocks — 🟢 CORE VERIFIED, timing pass optional
+Done live in test mode: real deposit charge, real installment auto-charge via
+invoice finalize → invoice.paid webhook → SUCCEEDED + receipt; failure branch
+(invoice.payment_failed → stays PENDING for Smart Retries + failure notice)
+locked by int test (invoice-webhooks.int.test.ts). STILL NICE-TO-HAVE before
+prod: a **test-clock** run that advances real calendar months so the Vercel
+cron actually fires on schedule end-to-end (vs. us finalizing manually), and
+a real Stripe decline → Smart Retries observation. Not a hard gate now that
+the mechanism is proven. Me.
 
 ### H3 — Payments backend human review
 Stages 3–4 (obligations/postures) and now B–H were built largely unattended.
