@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
+import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { getDashboardData } from "./get-dashboard-data"
+import { FinishSetupCard } from "./sections/finish-setup-card"
 import { AdminSection } from "./sections/admin-section"
 import { ParentSection } from "./sections/parent-section"
 import { ClubSection } from "./sections/club-section"
@@ -19,7 +21,10 @@ export default async function DashboardPage() {
   }
 
   const roles = dbUser.roles.map((r: any) => r.role as string)
-  const dashboardData = await getDashboardData(dbUser)
+  const [dashboardData, checklist] = await Promise.all([
+    getDashboardData(dbUser),
+    getCompletionChecklist(dbUser as any),
+  ])
 
   const hasAdminRole = roles.includes("PlatformAdmin")
   const hasClubRole = roles.includes("ClubOwner") || roles.includes("ClubManager")
@@ -63,6 +68,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      <FinishSetupCard checklist={checklist} />
 
       {hasAdminRole && dashboardData.admin && <AdminSection data={dashboardData.admin} />}
 
