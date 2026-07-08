@@ -51,6 +51,8 @@ export type NotificationType =
   // Practice schedule announced / a practice moved, added or cancelled
   | "practice_schedule"
   | "practice_change"
+  // Team events (photo day, film session, …) added / changed / cancelled
+  | "team_event"
   // League roster change flow
   | "roster_change_requested"
   | "roster_change_approved"

@@ -38,6 +38,16 @@ interface SlotView {
   location: string | null
 }
 
+interface TeamEventView {
+  id: string
+  title: string
+  description: string | null
+  location: string | null
+  startAt: string
+  durationMinutes: number
+  status: "SCHEDULED" | "CANCELLED"
+}
+
 const POLL_MS = 45_000
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
@@ -54,9 +64,18 @@ function dayHeading(date: Date): string {
   return format(date, "EEEE, MMM d")
 }
 
-export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boolean }) {
+export function TeamCalendar({
+  teamId,
+  tenantId,
+  isStaff,
+}: {
+  teamId: string
+  tenantId: string
+  isStaff: boolean
+}) {
   const [practices, setPractices] = useState<PracticeView[]>([])
   const [games, setGames] = useState<GameView[]>([])
+  const [teamEvents, setTeamEvents] = useState<TeamEventView[]>([])
   const [slots, setSlots] = useState<SlotView[]>([])
   const [announcedAt, setAnnouncedAt] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -64,6 +83,7 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
+  const [showEventForm, setShowEventForm] = useState(false)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [moveValue, setMoveValue] = useState("")
 
@@ -77,6 +97,7 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
     const slotData = await slotsRes.json()
     setPractices(events.practices)
     setGames(events.games)
+    setTeamEvents(events.events ?? [])
     setSlots(slotData.slots)
     setAnnouncedAt(slotData.announcedAt)
   }, [teamId])
@@ -168,11 +189,38 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
     }
   }
 
-  // Merge practices + games into day buckets
+  async function eventAction(
+    eventId: string,
+    method: "PATCH" | "DELETE",
+    body?: Record<string, unknown>
+  ) {
+    if (method === "DELETE" && !window.confirm("Remove this event from all team calendars?")) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/team-events/${eventId}`, {
+        method,
+        ...(body
+          ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+          : {}),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      await refresh()
+    } catch (e: any) {
+      setError(e?.message || "Couldn't update the event — try again.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Merge practices + games + team events into day buckets — one calendar
   const days = useMemo(() => {
     type Entry =
       | { kind: "practice"; at: Date; practice: PracticeView }
       | { kind: "game"; at: Date; game: GameView }
+      | { kind: "event"; at: Date; event: TeamEventView }
     const entries: Entry[] = [
       ...practices.map((p) => ({
         kind: "practice" as const,
@@ -180,6 +228,7 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
         practice: p,
       })),
       ...games.map((g) => ({ kind: "game" as const, at: new Date(g.scheduledAt), game: g })),
+      ...teamEvents.map((e) => ({ kind: "event" as const, at: new Date(e.startAt), event: e })),
     ].sort((a, b) => a.at.getTime() - b.at.getTime())
 
     const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -192,7 +241,7 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
       byDay.set(key, bucket)
     }
     return [...byDay.values()]
-  }, [practices, games])
+  }, [practices, games, teamEvents])
 
   if (!loaded) {
     return <p className="text-ink-500 py-10 text-center text-sm">Loading calendar…</p>
@@ -345,6 +394,33 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
         )}
       </div>
 
+      {/* Team events — photo day, film session, fundraiser… same calendar */}
+      {isStaff && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowEventForm((v) => !v)}
+            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+              showEventForm
+                ? "border-play-400 bg-play-50 text-play-700"
+                : "border-ink-200 text-ink-600 hover:bg-ink-50"
+            }`}
+          >
+            {showEventForm ? "Close" : "+ Add event"}
+          </button>
+        </div>
+      )}
+      {isStaff && showEventForm && (
+        <AddEventForm
+          teamId={teamId}
+          tenantId={tenantId}
+          onCreated={() => {
+            setShowEventForm(false)
+            setNotice("Event added — the team has been notified.")
+            refresh().catch(() => {})
+          }}
+        />
+      )}
+
       {/* Agenda */}
       {days.length === 0 ? (
         <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
@@ -461,6 +537,68 @@ export function TeamCalendar({ teamId, isStaff }: { teamId: string; isStaff: boo
                       )}
                     </div>
                   </div>
+                ) : entry.kind === "event" ? (
+                  <div
+                    key={`e-${entry.event.id}`}
+                    className={`border-hoop-200 bg-hoop-50/40 rounded-xl border px-4 py-2.5 ${
+                      entry.event.status === "CANCELLED" ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-ink-800 text-sm font-semibold">
+                          <span
+                            className={entry.event.status === "CANCELLED" ? "line-through" : ""}
+                          >
+                            {entry.event.title} · {format(entry.at, "h:mm a")}
+                          </span>
+                          {entry.event.status === "CANCELLED" && (
+                            <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">
+                              Cancelled
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-ink-400 text-xs">
+                          Event · {entry.event.durationMinutes} min
+                          {entry.event.location ? ` · ${entry.event.location}` : ""}
+                          {entry.event.description ? ` · ${entry.event.description}` : ""}
+                        </p>
+                      </div>
+                      {isStaff && (
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {entry.event.status === "CANCELLED" ? (
+                            <button
+                              onClick={() =>
+                                eventAction(entry.event.id, "PATCH", { status: "SCHEDULED" })
+                              }
+                              disabled={busy}
+                              className="border-court-200 text-court-700 hover:bg-court-50 rounded-lg border px-2.5 py-1 text-xs font-semibold"
+                            >
+                              Restore
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                eventAction(entry.event.id, "PATCH", { status: "CANCELLED" })
+                              }
+                              disabled={busy}
+                              className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          <button
+                            onClick={() => eventAction(entry.event.id, "DELETE")}
+                            disabled={busy}
+                            className="text-ink-400 hover:text-red-600 px-1 text-xs font-semibold"
+                            title="Remove event"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <a
                     key={`g-${entry.game.id}`}
@@ -571,6 +709,183 @@ function AddToPhone() {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Add-event form: coaches/team managers add to this team; club managers can
+ * tick sibling teams (server re-checks authority per team and names any it
+ * rejects). League owners use the same API across their league's teams.
+ */
+function AddEventForm({
+  teamId,
+  tenantId,
+  onCreated,
+}: {
+  teamId: string
+  tenantId: string
+  onCreated: () => void
+}) {
+  const [title, setTitle] = useState("")
+  const [startAt, setStartAt] = useState("")
+  const [duration, setDuration] = useState("60")
+  const [location, setLocation] = useState("")
+  const [description, setDescription] = useState("")
+  const [clubTeams, setClubTeams] = useState<Array<{ id: string; name: string }>>([])
+  const [extraIds, setExtraIds] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch(`/api/teams?tenantId=${tenantId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.teams) {
+          setClubTeams(
+            data.teams
+              .filter((t: any) => t.id !== teamId)
+              .map((t: any) => ({ id: t.id, name: t.name }))
+          )
+        }
+      })
+      .catch(() => {})
+  }, [tenantId, teamId])
+
+  async function submit() {
+    if (!title.trim() || !startAt || saving) return
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/team-events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamIds: [teamId, ...extraIds],
+          title: title.trim(),
+          startAt: new Date(startAt).toISOString(),
+          durationMinutes: Number(duration),
+          location: location.trim() || undefined,
+          description: description.trim() || undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(
+          data.deniedTeamIds
+            ? "You don't manage some of the selected teams — uncheck them and try again."
+            : data.error || "Couldn't add the event."
+        )
+      }
+      onCreated()
+    } catch (e: any) {
+      setError(e?.message || "Couldn't add the event — try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputClass =
+    "border-ink-200 focus:border-play-500 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+
+  return (
+    <div className="border-ink-100 space-y-3 rounded-2xl border bg-white p-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">Event title</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={150}
+            placeholder="Team photo day"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">When</label>
+          <input
+            type="datetime-local"
+            value={startAt}
+            onChange={(e) => setStartAt(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">Duration</label>
+          <select value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass}>
+            <option value="30">30 min</option>
+            <option value="60">1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+            <option value="180">3 hours</option>
+            <option value="240">4 hours</option>
+          </select>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">
+            Location <span className="text-ink-400 font-normal">(optional)</span>
+          </label>
+          <input
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            maxLength={200}
+            placeholder="Main gym"
+            className={inputClass}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">
+            Details <span className="text-ink-400 font-normal">(optional)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={1000}
+            rows={2}
+            placeholder="Wear the home jersey; families welcome."
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {clubTeams.length > 0 && (
+        <div>
+          <p className="text-ink-700 mb-1 text-xs font-semibold">Also add to other teams</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {clubTeams.map((t) => (
+              <label key={t.id} className="text-ink-600 flex items-center gap-1.5 text-xs">
+                <input
+                  type="checkbox"
+                  checked={extraIds.has(t.id)}
+                  onChange={(e) =>
+                    setExtraIds((cur) => {
+                      const next = new Set(cur)
+                      if (e.target.checked) next.add(t.id)
+                      else next.delete(t.id)
+                      return next
+                    })
+                  }
+                />
+                {t.name}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-ink-400 text-xs">
+          Everyone on the team gets a notification and sees it on the calendar.
+        </p>
+        <button
+          onClick={submit}
+          disabled={saving || !title.trim() || !startAt}
+          className="bg-play-600 hover:bg-play-700 shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          {saving ? "Adding…" : "Add Event"}
+        </button>
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   )
 }

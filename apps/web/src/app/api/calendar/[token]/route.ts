@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic"
 const GAME_LENGTH_MS = 2 * 3600_000
 
 /**
- * GET /api/calendar/[token] — personal iCal feed: practices + games for
- * every team the token's owner belongs to. Public route (allowlisted in
+ * GET /api/calendar/[token] — personal iCal feed: practices, games and
+ * team events for every team the token's owner belongs to. Public route (allowlisted in
  * public-paths.ts); the unguessable token is the auth. Subscribed phone
  * calendars re-fetch periodically, so moves/cancellations propagate
  * without any push machinery (cancelled practices ship STATUS:CANCELLED).
@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
     const weekBack = new Date(now - 7 * 86_400_000)
     const horizon = new Date(now + 180 * 86_400_000)
 
-    const [practices, games] = await Promise.all([
+    const [practices, teamEvents, games] = await Promise.all([
       (prisma as any).practice.findMany({
         where: { teamId: { in: teamIds }, scheduledAt: { gte: weekBack, lte: horizon } },
         select: {
@@ -47,6 +47,23 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
           updatedAt: true,
           team: { select: { name: true } },
           venue: { select: { name: true, address: true } },
+        },
+      }),
+      (prisma as any).teamEvent.findMany({
+        where: {
+          teams: { some: { teamId: { in: teamIds } } },
+          startAt: { gte: weekBack, lte: horizon },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: true,
+          startAt: true,
+          durationMinutes: true,
+          status: true,
+          updatedAt: true,
+          teams: { select: { team: { select: { name: true } } } },
         },
       }),
       (prisma as any).game.findMany({
@@ -80,6 +97,20 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
         description: p.notes,
         cancelled: p.status === "CANCELLED",
         sequence: Math.floor(new Date(p.updatedAt).getTime() / 1000),
+      })
+    }
+    for (const e of teamEvents) {
+      const start = new Date(e.startAt)
+      const teamNames = e.teams.map((l: any) => l.team.name).join(", ")
+      events.push({
+        uid: `event-${e.id}@sportshub`,
+        title: `${e.title} — ${teamNames}`,
+        start,
+        end: new Date(start.getTime() + e.durationMinutes * 60_000),
+        location: e.location,
+        description: e.description,
+        cancelled: e.status === "CANCELLED",
+        sequence: Math.floor(new Date(e.updatedAt).getTime() / 1000),
       })
     }
     for (const g of games) {

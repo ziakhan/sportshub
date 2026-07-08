@@ -264,7 +264,11 @@ league-level view of club practice load.
   link (was club-managers-only; int seed 1125, no double-bell), (2)
   TeamManager can post tryouts (int seed 1126). Club sequence C1-C12 per
   owner's corrected list (templates→options wording). Both storylines now
-  recordable start-to-finish on the NPH demo world. Investigated the
+  recordable start-to-finish on the NPH demo world. **+ Team events
+  (2026-07-07): ONE calendar rule** — TeamEvent/TeamEventTeam (runbook
+  #15), events editable by coach/TM/club managers/league owner, multi-team
+  push (club + league scopes), deduped bell+email, same calendar endpoint
+  + phone iCal. Int seed 1127; demo: Lords photo day + NPH Media Day. Investigated the
   "missing 'I am a parent' selection" — NOT a bug: role cards still render
   on /onboarding for fresh signups (verified live); demo accounts are
   pre-onboarded so they 307 past it, and /settings/roles was removed by

@@ -1609,6 +1609,42 @@ async function seed() {
   })
   console.log(`✓ Practice slots for ${teams.length} teams; Lords G9 announced w/ ${lordsPractices} dated practices (1 cancelled)`)
 
+  // Team events (one calendar): a Lords photo day by the coach + a
+  // league-wide media day across the Summer Grade 9 division by the
+  // NPH owner — the multi-team beat in the league demo storyline.
+  const photoDay = await p.teamEvent.create({
+    data: {
+      createdById: lordsG9.coachId,
+      title: "Team Photo Day 📸",
+      description: "Wear the home jersey — families welcome.",
+      location: "Main gym",
+      startAt: new Date(now.getTime() + 86_400_000 * 6),
+      durationMinutes: 90,
+      teams: { create: [{ teamId: lordsG9.id }] },
+    },
+  })
+  await p.notification.create({
+    data: {
+      userId: demoParent.id, type: "team_event",
+      title: `New team event: Team Photo Day 📸`,
+      message: "Sat at Main gym — see the team calendar.",
+      link: `/teams/${lordsG9.id}/calendar`, referenceId: photoDay.id, referenceType: "TeamEvent",
+    },
+  })
+  const g9SummerTeams = teams.filter((t) => t.grade === 9).slice(0, 6)
+  await p.teamEvent.create({
+    data: {
+      createdById: nph.id,
+      title: "NPH Media Day",
+      description: "League photo + interview day for Grade 9 teams.",
+      location: "Haber Recreation Centre",
+      startAt: new Date(now.getTime() + 86_400_000 * 13),
+      durationMinutes: 240,
+      teams: { create: g9SummerTeams.map((t) => ({ teamId: t.id })) },
+    },
+  })
+  console.log(`✓ Team events: Lords photo day + NPH Media Day across ${g9SummerTeams.length} G9 teams`)
+
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
 

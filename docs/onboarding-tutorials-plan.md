@@ -94,9 +94,12 @@ storyline, in order:
    and players get a bell + EMAIL; then cut to a parent's team calendar
    showing the games, and the same games on a phone via the iCal feed.
    *(This fan-out was a GAP — built 2026-07-07, this commit.)*
-9. Season runs: live scoring console → scoresheet + referee sign-off →
-   AI recap publishes → standings/leaders update
-10. Money: league fees, who-paid-what
+9. League-wide touch: push a TeamEvent (e.g. "NPH Media Day") across the
+   division's teams — every family's calendar + a bell, one click
+   *(multi-team events built 2026-07-07)*
+10. Season runs: live scoring console → scoresheet + referee sign-off →
+    AI recap publishes → standings/leaders update
+11. Money: league fees, who-paid-what
 L-short **"Run your league on SportsHub" (3-4 min sizzle)** — cut from
 L-long's chapters 1→8 payoff + one live-scoring beat + standings. Doubles
 as the GTM/outreach asset for NPH-style operators.
@@ -110,11 +113,13 @@ C6 Create offer TEMPLATES (the reusable packages) · C7 Send offers —
 attach one or several templates as package options, bulk-send to checked
 players · C8 (parent POV interlude) Accept the offer + pick the package
 (Returning vs New) + sizes + jersey prefs · C9 Finalize the team (accepts
-→ roster → league submission + Order Sheet) · C10 Practice schedule:
-add practice days → announce → live calendar + phone sync ·
-C11 Finances: payment posture, obligations, who-paid-what ·
-C12 Communications: team chat, quick polls in chat, surveys.
-*(C10-C12 features all exist — shipped 2026-07-06/07.)*
+→ roster → league submission + Order Sheet) · C10 ONE team calendar:
+practice days → announce → games land automatically → team events (photo
+day, film session — club managers can push one event across several
+teams) → phone sync · C11 Finances: payment posture, obligations,
+who-paid-what · C12 Communications: team chat, quick polls in chat,
+surveys. *(C10-C12 features all exist — shipped 2026-07-06/07; team
+events + multi-team push built 2026-07-07.)*
 
 **Parents (4 shorts):**
 P1 Sign up & add your child · P2 Discover programs (tryouts, camps, house
@@ -163,6 +168,13 @@ Audited both storylines end-to-end 2026-07-07:
   seed 1125 (no double-bell; calendar link; game counts).
 - ✅ BUILT (this commit): **TeamManager can post tryouts** (was: owner/
   manager/Staff only). Int test seed 1126.
+- ✅ BUILT (2026-07-07, follow-up): **team events in the ONE calendar**
+  (owner rule: no separate calendars/links) — TeamEvent/TeamEventTeam,
+  add/edit/cancel by coach/TM/club managers/league owner; club + league
+  scopes push one event across multiple teams; members get ONE deduped
+  bell + email; events ride the same calendar endpoint AND the phone iCal
+  feed. Int test seed 1127; demo world seeds a Lords photo day + NPH
+  Media Day across 6 G9 teams. Runbook #15.
 - ✅ Already existed (verified): session-day venue start/end times +
   courts; referee pools/booking; games in team calendar AND phone iCal
   feed; multi-package offers + bulk send; practices; finances; chat/polls.

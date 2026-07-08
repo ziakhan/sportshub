@@ -15,8 +15,9 @@ export const dynamic = "force-dynamic"
 /**
  * GET /api/teams/[id]/practices — members; occurrences from a week back to
  * ten weeks out (cancelled included so the calendar can show strikethrough).
- * ?includeGames=1 folds the team's games into the same window — the
- * calendar page polls this one endpoint for live updates.
+ * Team events ride along in the same window, and ?includeGames=1 folds the
+ * team's games in too — the calendar page polls this ONE endpoint for live
+ * updates (one calendar, owner rule 2026-07-07).
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -31,11 +32,27 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const to = new Date(now + 70 * 86_400_000)
     const includeGames = new URL(request.url).searchParams.get("includeGames") === "1"
 
-    const [practices, games] = await Promise.all([
+    const [practices, teamEvents, games] = await Promise.all([
       (prisma as any).practice.findMany({
         where: { teamId: params.id, scheduledAt: { gte: from, lte: to } },
         select: practiceSelect,
         orderBy: { scheduledAt: "asc" },
+      }),
+      (prisma as any).teamEvent.findMany({
+        where: {
+          teams: { some: { teamId: params.id } },
+          startAt: { gte: from, lte: to },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          location: true,
+          startAt: true,
+          durationMinutes: true,
+          status: true,
+        },
+        orderBy: { startAt: "asc" },
       }),
       includeGames
         ? (prisma as any).game.findMany({
@@ -62,6 +79,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json({
       practices: practices.map(serializePractice),
+      events: teamEvents,
       games: games.map((g: any) => ({
         id: g.id,
         scheduledAt: g.scheduledAt,

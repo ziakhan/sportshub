@@ -375,3 +375,16 @@ docs/offer-package-options-design.md). All additive — one `prisma db push`:
 
 Nothing to backfill — existing offers have no option rows and behave
 exactly as before (single package).
+
+## 15. Team events schema — NOT YET APPLIED to Neon
+
+Ships with the team-events commit (2026-07-07). All additive — one
+`prisma db push`:
+- New enum `TeamEventStatus` (SCHEDULED, CANCELLED)
+- New table `TeamEvent` (createdById FK, title/description/location,
+  startAt, durationMinutes, status)
+- New table `TeamEventTeam` (eventId+teamId composite PK, cascade both
+  ways) — one event can sit on several team calendars
+- Back-relations: Team.eventLinks, User.teamEventsCreated
+
+Nothing to backfill. Notification type "team_event" is code-level only.

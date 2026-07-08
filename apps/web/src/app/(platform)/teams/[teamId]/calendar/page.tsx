@@ -47,7 +47,11 @@ export default async function TeamCalendarPage({ params }: { params: { teamId: s
         </div>
       </div>
 
-      <TeamCalendar teamId={membership.teamId} isStaff={isStaffSide} />
+      <TeamCalendar
+        teamId={membership.teamId}
+        tenantId={membership.tenantId}
+        isStaff={isStaffSide}
+      />
     </div>
   )
 }

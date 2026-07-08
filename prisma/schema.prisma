@@ -64,6 +64,7 @@ model User {
   teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
   teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
   pollsCreated        Poll[]              @relation("PollsCreated")
+  teamEventsCreated   TeamEvent[]         @relation("TeamEventsCreated")
   pollVotes           PollVote[]          @relation("PollVotes")
   rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
   rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
@@ -289,6 +290,7 @@ model Team {
   chatReads     TeamChatRead[]
   polls         Poll[]
   practiceSlots PracticeSlot[]
+  eventLinks    TeamEventTeam[]
 
   // Set when staff announce the practice schedule to families (bell+email);
   // the public team page shows practice days only after this.
@@ -341,6 +343,48 @@ model TeamChatRead {
   lastReadAt DateTime @default(now())
 
   @@id([userId, teamId])
+  @@index([teamId])
+}
+
+// Team events (owner ask 2026-07-07): arbitrary calendar entries — photo
+// day, film session, fundraiser — living in the SAME team calendar as
+// practices and games. One event can span multiple teams (club managers
+// push club-wide, league owners push across their league's teams); staff
+// of every attached team can edit. Members get a bell+email on add/change.
+enum TeamEventStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+model TeamEvent {
+  id          String @id @default(uuid())
+  createdById String
+  createdBy   User   @relation("TeamEventsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String? @db.Text
+  location        String?
+  startAt         DateTime
+  durationMinutes Int      @default(60)
+
+  status TeamEventStatus @default(SCHEDULED)
+
+  teams TeamEventTeam[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startAt])
+  @@index([createdById])
+}
+
+model TeamEventTeam {
+  eventId String
+  event   TeamEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamId  String
+  team    Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, teamId])
   @@index([teamId])
 }
 
