@@ -55,8 +55,7 @@ const createOffer = (playerId: string, signupId: string) =>
       tryoutSignupId: signupId,
       options: TWO_PACKAGES,
       expiresAt: expiresAt(),
-    }),
-    {} as any
+    })
   )
 
 const respond = (offerId: string, body: unknown) =>
@@ -189,8 +188,7 @@ describe("offer package options (integration)", () => {
         options: TWO_PACKAGES,
         message: "Great tryout — pick the package that fits.",
         expiresAt: expiresAt(),
-      }),
-      {} as any
+      })
     )
     expect(res.status).toBe(201)
     const data = await res.json()
@@ -218,8 +216,7 @@ describe("offer package options (integration)", () => {
         signupIds: [signups[2].signupId],
         options: TWO_PACKAGES,
         expiresAt: expiresAt(),
-      }),
-      {} as any
+      })
     )
     const data = await res.json()
     expect(data.sent).toBe(0)
@@ -234,8 +231,7 @@ describe("offer package options (integration)", () => {
         signupIds: [signups[3].signupId],
         options: TWO_PACKAGES,
         expiresAt: expiresAt(),
-      }),
-      {} as any
+      })
     )
     expect(res.status).toBe(403)
   })

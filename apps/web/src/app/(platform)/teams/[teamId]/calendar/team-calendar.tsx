@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { format, isToday, isTomorrow, startOfWeek } from "date-fns"
+import { addDays, format, isSameDay, isToday, isTomorrow, startOfWeek } from "date-fns"
 
 /**
  * Live agenda: practices + games grouped by week, polling for updates every
@@ -86,6 +86,14 @@ export function TeamCalendar({
   const [showEventForm, setShowEventForm] = useState(false)
   const [movingId, setMovingId] = useState<string | null>(null)
   const [moveValue, setMoveValue] = useState("")
+  // Agenda for phones; week-by-week grid for desktop demos (owner ask).
+  // Default by viewport on mount; the toggle lets either side switch.
+  const [view, setView] = useState<"agenda" | "grid">("agenda")
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+      setView("grid")
+    }
+  }, [])
 
   const refresh = useCallback(async () => {
     const [eventsRes, slotsRes] = await Promise.all([
@@ -215,25 +223,31 @@ export function TeamCalendar({
     }
   }
 
-  // Merge practices + games + team events into day buckets — one calendar
-  const days = useMemo(() => {
-    type Entry =
-      | { kind: "practice"; at: Date; practice: PracticeView }
-      | { kind: "game"; at: Date; game: GameView }
-      | { kind: "event"; at: Date; event: TeamEventView }
-    const entries: Entry[] = [
-      ...practices.map((p) => ({
-        kind: "practice" as const,
-        at: new Date(p.scheduledAt),
-        practice: p,
-      })),
-      ...games.map((g) => ({ kind: "game" as const, at: new Date(g.scheduledAt), game: g })),
-      ...teamEvents.map((e) => ({ kind: "event" as const, at: new Date(e.startAt), event: e })),
-    ].sort((a, b) => a.at.getTime() - b.at.getTime())
+  // Merge practices + games + team events — ONE calendar, two projections
+  type Entry =
+    | { kind: "practice"; at: Date; practice: PracticeView }
+    | { kind: "game"; at: Date; game: GameView }
+    | { kind: "event"; at: Date; event: TeamEventView }
+  const allEntries = useMemo<Entry[]>(
+    () =>
+      [
+        ...practices.map((p) => ({
+          kind: "practice" as const,
+          at: new Date(p.scheduledAt),
+          practice: p,
+        })),
+        ...games.map((g) => ({ kind: "game" as const, at: new Date(g.scheduledAt), game: g })),
+        ...teamEvents.map((e) => ({ kind: "event" as const, at: new Date(e.startAt), event: e })),
+      ].sort((a, b) => a.at.getTime() - b.at.getTime()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [practices, games, teamEvents]
+  )
 
+  // Agenda projection: day buckets from this week forward
+  const days = useMemo(() => {
     const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 })
     const byDay = new Map<string, { date: Date; entries: Entry[] }>()
-    for (const entry of entries) {
+    for (const entry of allEntries) {
       if (entry.at < cutoff) continue
       const key = format(entry.at, "yyyy-MM-dd")
       const bucket = byDay.get(key) ?? { date: entry.at, entries: [] }
@@ -241,7 +255,25 @@ export function TeamCalendar({
       byDay.set(key, bucket)
     }
     return [...byDay.values()]
-  }, [practices, games, teamEvents])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEntries])
+
+  // Grid projection: 6 weeks of 7-day rows (Mon-start), entries per cell
+  const weeks = useMemo(() => {
+    const byKey = new Map<string, Entry[]>()
+    for (const entry of allEntries) {
+      const key = format(entry.at, "yyyy-MM-dd")
+      byKey.set(key, [...(byKey.get(key) ?? []), entry])
+    }
+    const start = startOfWeek(new Date(), { weekStartsOn: 1 })
+    return Array.from({ length: 6 }, (_, w) =>
+      Array.from({ length: 7 }, (_, d) => {
+        const date = addDays(start, w * 7 + d)
+        return { date, entries: byKey.get(format(date, "yyyy-MM-dd")) ?? [] }
+      })
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEntries])
 
   if (!loaded) {
     return <p className="text-ink-500 py-10 text-center text-sm">Loading calendar…</p>
@@ -394,9 +426,22 @@ export function TeamCalendar({
         )}
       </div>
 
-      {/* Team events — photo day, film session, fundraiser… same calendar */}
-      {isStaff && (
-        <div className="flex justify-end">
+      {/* View toggle (agenda = phone-first list, grid = desktop weeks) + add event */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="border-ink-200 inline-flex rounded-xl border p-0.5">
+          {(["agenda", "grid"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`rounded-lg px-3 py-1 text-xs font-semibold capitalize transition ${
+                view === v ? "bg-play-600 text-white" : "text-ink-500 hover:text-ink-800"
+              }`}
+            >
+              {v === "agenda" ? "Agenda" : "Grid"}
+            </button>
+          ))}
+        </div>
+        {isStaff && (
           <button
             onClick={() => setShowEventForm((v) => !v)}
             className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
@@ -407,8 +452,8 @@ export function TeamCalendar({
           >
             {showEventForm ? "Close" : "+ Add event"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
       {isStaff && showEventForm && (
         <AddEventForm
           teamId={teamId}
@@ -421,8 +466,92 @@ export function TeamCalendar({
         />
       )}
 
+      {/* Week-by-week grid — desktop demo view; chips link games to /live */}
+      {view === "grid" && (
+        <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white p-2">
+          <div className="min-w-[720px]">
+            <div className="grid grid-cols-7">
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                <p
+                  key={d}
+                  className="text-ink-400 px-2 pb-1 pt-1.5 text-center text-[11px] font-bold uppercase tracking-wide"
+                >
+                  {d}
+                </p>
+              ))}
+            </div>
+            {weeks.map((week, wi) => (
+              <div key={wi} className="grid grid-cols-7">
+                {week.map((cell) => (
+                  <div
+                    key={format(cell.date, "yyyy-MM-dd")}
+                    className={`border-ink-100/70 m-0.5 min-h-[88px] rounded-lg border p-1.5 ${
+                      isToday(cell.date) ? "ring-play-400 bg-play-50/40 ring-1" : ""
+                    }`}
+                  >
+                    <p className="text-ink-400 mb-1 text-[11px] font-semibold">
+                      {format(cell.date, cell.date.getDate() === 1 || (wi === 0 && isSameDay(cell.date, weeks[0][0].date)) ? "MMM d" : "d")}
+                    </p>
+                    <div className="space-y-0.5">
+                      {cell.entries.map((entry) =>
+                        entry.kind === "game" ? (
+                          <a
+                            key={`g-${entry.game.id}`}
+                            href={`/live/${entry.game.id}`}
+                            className={`bg-play-100 text-play-800 hover:bg-play-200 block truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                              entry.game.status === "LIVE" ? "ring-1 ring-red-400" : ""
+                            }`}
+                            title={`${entry.game.isHome ? "vs" : "@"} ${entry.game.opponent}`}
+                          >
+                            {format(entry.at, "h:mma").toLowerCase()}{" "}
+                            {entry.game.isHome ? "vs" : "@"} {entry.game.opponent}
+                            {entry.game.status === "COMPLETED" &&
+                            entry.game.usScore != null &&
+                            entry.game.themScore != null
+                              ? ` · ${entry.game.usScore}–${entry.game.themScore}`
+                              : ""}
+                          </a>
+                        ) : entry.kind === "practice" ? (
+                          <p
+                            key={`p-${entry.practice.id}`}
+                            className={`bg-ink-100/80 text-ink-700 truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                              entry.practice.status === "CANCELLED" ? "line-through opacity-60" : ""
+                            }`}
+                            title={entry.practice.location ?? undefined}
+                          >
+                            {format(entry.at, "h:mma").toLowerCase()} Practice
+                          </p>
+                        ) : (
+                          <p
+                            key={`e-${entry.event.id}`}
+                            className={`bg-hoop-100/80 text-hoop-800 truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                              entry.event.status === "CANCELLED" ? "line-through opacity-60" : ""
+                            }`}
+                            title={entry.event.location ?? undefined}
+                          >
+                            {format(entry.at, "h:mma").toLowerCase()} {entry.event.title}
+                          </p>
+                        )
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <p className="text-ink-400 px-2 py-1.5 text-[11px]">
+              <span className="bg-play-100 mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
+              Games ·
+              <span className="bg-ink-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
+              Practices ·
+              <span className="bg-hoop-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
+              Events — switch to Agenda to move or cancel items.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Agenda */}
-      {days.length === 0 ? (
+      {view === "agenda" && (days.length === 0 ? (
         <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
           <p className="text-ink-700 text-sm font-semibold">Nothing scheduled yet</p>
           <p className="text-ink-500 mt-1 text-sm">
@@ -632,7 +761,7 @@ export function TeamCalendar({
             </div>
           </div>
         ))
-      )}
+      ))}
     </div>
   )
 }

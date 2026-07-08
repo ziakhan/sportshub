@@ -36,8 +36,7 @@ const createTryout = (overrides: Record<string, unknown> = {}) =>
       tenantId,
       teamId,
       ...overrides,
-    }),
-    undefined as any
+    })
   )
 
 beforeAll(async () => {

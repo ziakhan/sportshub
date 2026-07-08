@@ -41,8 +41,7 @@ const createEvent = (teamIds: string[], overrides: Record<string, unknown> = {})
       durationMinutes: 60,
       location: "Main Gym",
       ...overrides,
-    }),
-    undefined as any
+    })
   )
 
 const eventBells = (userId: string) =>

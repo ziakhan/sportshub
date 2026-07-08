@@ -21,7 +21,7 @@ export default async function TeamCalendarPage({ params }: { params: { teamId: s
   const isStaffSide = membership.role !== "family"
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl lg:max-w-5xl">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-ink-900 truncate text-xl font-bold">{membership.teamName}</h2>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { panelClass } from "./types"
 
@@ -23,13 +23,55 @@ export function SessionsTab({
   const [sessionDays, setSessionDays] = useState([
     { date: "", startTime: "09:00", endTime: "17:00" },
   ])
+  // Venue default hours (owner ask 2026-07-07): picking a date prefills the
+  // day window from the venue's stored hours for that weekday — editable.
+  const [venueHoursName, setVenueHoursName] = useState<string | null>(null)
+  const [hoursByDay, setHoursByDay] = useState<
+    Map<number, { open: string; close: string }> | null
+  >(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/seasons/${seasonId}/venues`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.venues?.length) return
+        const venue = data.venues[0].venue
+        const map = new Map<number, { open: string; close: string }>()
+        for (const h of venue?.venueHours ?? []) {
+          if (h.openTime && h.closeTime) {
+            map.set(h.dayOfWeek, { open: h.openTime, close: h.closeTime })
+          }
+        }
+        if (map.size > 0) {
+          setHoursByDay(map)
+          setVenueHoursName(venue.name)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [seasonId])
 
   const addSessionDay = () => {
     setSessionDays([...sessionDays, { date: "", startTime: "09:00", endTime: "17:00" }])
   }
 
   const updateSessionDay = (idx: number, field: string, value: string) => {
-    setSessionDays(sessionDays.map((d, i) => (i === idx ? { ...d, [field]: value } : d)))
+    setSessionDays(
+      sessionDays.map((d, i) => {
+        if (i !== idx) return d
+        // Date picked → default the window to the venue's hours that weekday
+        if (field === "date" && value && hoursByDay) {
+          const hours = hoursByDay.get(new Date(`${value}T12:00:00`).getDay())
+          if (hours) {
+            return { ...d, date: value, startTime: hours.open, endTime: hours.close }
+          }
+        }
+        return { ...d, [field]: value }
+      })
+    )
   }
 
   const removeSessionDay = (idx: number) => {
@@ -154,6 +196,12 @@ export function SessionsTab({
           >
             + Add another day
           </button>
+          {venueHoursName && (
+            <p className="text-ink-400 text-[11px]">
+              Times default to {venueHoursName}&apos;s hours for the chosen weekday — edit as
+              needed.
+            </p>
+          )}
           <button
             onClick={addSession}
             className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition"

@@ -42,9 +42,27 @@ const WINTER_LEAGUE = "NPH Summer League"
 const WINTER_SEASON = "Summer 2026"
 const SPRING_LEAGUE = "NPH Fall League"
 const SPRING_SEASON = "Fall 2026"
+// ════════════════════════════════════════════════════════════════════════
+// OWNER KNOBS — hand-edit these (and the CLUBS list below) to shape the
+// demo world, then re-run the seeder (~30s). Everything downstream derives.
+// ════════════════════════════════════════════════════════════════════════
 const LEAGUE_TEAM_FEE = 3990 // real NPH SL per-team fee (docs/research)
 const SUMMER_GAMES_PER_TEAM = 10 // 2 per weekend × 5 weekends — never less than 2/weekend
 const FALL_GAMES_PER_TEAM = 12 // monthly sessions Oct–Mar
+const GAME_SLOT_MINUTES = 90 // scheduler slot width (warmup + game + buffer)
+const GAME_LENGTH_MINUTES = 40 // actual playing time (4 × 10-min quarters)
+// Club offer package prices (per club, CAD). base varies ±$20 club to club
+// for realism; the rest are offsets from base.
+const OFFER_PRICING = {
+  standardBase: 425, // "Standard Package" (uniform + ball)
+  premiumDelta: +330, // "Premium Package" (full kit, 3 installments)
+  returningDelta: -80, // "Returning Player" (uniform only — kit carries over)
+  eliteAllIn: 999, // elite clubs' "Elite All-In" (full kit + 2 practices/wk)
+}
+// Venue default hours — Sessions tab prefills day windows from these
+const VENUE_WEEKEND_HOURS = { open: "08:00", close: "18:00" }
+const VENUE_WEEKDAY_HOURS = { open: "17:00", close: "22:00" }
+// ════════════════════════════════════════════════════════════════════════
 
 const p = prisma as any
 
@@ -482,6 +500,24 @@ async function seed() {
       if (!court) court = await p.court.create({ data: { venueId: venue.id, name: `Court ${c}`, displayOrder: c }, select: { id: true } })
       courtIds.push(court.id)
     }
+    // Default hours (owner ask): weekends all day, weeknights after school —
+    // the Sessions tab prefills day windows from these (editable)
+    for (let dow = 0; dow <= 6; dow++) {
+      const weekend = dow === 0 || dow === 6
+      await p.venueHours.upsert({
+        where: { venueId_dayOfWeek: { venueId: venue.id, dayOfWeek: dow } },
+        create: {
+          venueId: venue.id,
+          dayOfWeek: dow,
+          openTime: weekend ? VENUE_WEEKEND_HOURS.open : VENUE_WEEKDAY_HOURS.open,
+          closeTime: weekend ? VENUE_WEEKEND_HOURS.close : VENUE_WEEKDAY_HOURS.close,
+        },
+        update: {
+          openTime: weekend ? VENUE_WEEKEND_HOURS.open : VENUE_WEEKDAY_HOURS.open,
+          closeTime: weekend ? VENUE_WEEKEND_HOURS.close : VENUE_WEEKDAY_HOURS.close,
+        },
+      })
+    }
     venues.push({ id: venue.id, courtIds })
   }
 
@@ -514,7 +550,7 @@ async function seed() {
     await p.userRole.create({ data: { userId: owner.id, role: "ClubOwner", tenantId: tenant.id } })
 
     // Offer templates — the package story (plan §3)
-    const base = 425 + Math.floor(rnd() * 5) * 10
+    const base = OFFER_PRICING.standardBase + Math.floor(rnd() * 5) * 10
     const mkTemplate = (name: string, fee: number, installments: number, inc: any, practice = 0) =>
       p.offerTemplate.create({
         data: { tenantId: tenant.id, name, seasonFee: fee, installments, practiceSessions: practice, isActive: true, ...inc },
@@ -522,11 +558,11 @@ async function seed() {
       })
     const templates = [
       await mkTemplate("Standard Package", base, 1, { includesUniform: true, includesBall: true }),
-      await mkTemplate("Premium Package", base + 330, 3, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }),
-      await mkTemplate("Returning Player", base - 80, 2, { includesUniform: true }),
+      await mkTemplate("Premium Package", base + OFFER_PRICING.premiumDelta, 3, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }),
+      await mkTemplate("Returning Player", base + OFFER_PRICING.returningDelta, 2, { includesUniform: true }),
     ]
     if (club.elite) {
-      templates.push(await mkTemplate("Elite All-In", 999, 4, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }, 2))
+      templates.push(await mkTemplate("Elite All-In", OFFER_PRICING.eliteAllIn, 4, { includesUniform: true, includesBall: true, includesShoes: true, includesBag: true, includesTracksuit: true }, 2))
     }
     clubRows.set(club.key, { id: tenant.id, ownerId: owner.id, templates })
   }
@@ -554,8 +590,8 @@ async function seed() {
       teamFee: LEAGUE_TEAM_FEE,
       gamePeriods: "QUARTERS",
       gamesGuaranteed: SUMMER_GAMES_PER_TEAM,
-      gameSlotMinutes: 90,
-      gameLengthMinutes: 40,
+      gameSlotMinutes: GAME_SLOT_MINUTES,
+      gameLengthMinutes: GAME_LENGTH_MINUTES,
       idealGamesPerDayPerTeam: 1, // 2-day weekend sessions → 2 games/weekend
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",
@@ -1124,8 +1160,8 @@ async function seed() {
       startDate: fallStart, endDate: new Date(now.getFullYear() + 1, 2, 28), // end of March
       teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
       gamesGuaranteed: FALL_GAMES_PER_TEAM,
-      gameSlotMinutes: 90,
-      gameLengthMinutes: 40,
+      gameSlotMinutes: GAME_SLOT_MINUTES,
+      gameLengthMinutes: GAME_LENGTH_MINUTES,
       idealGamesPerDayPerTeam: 1,
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",

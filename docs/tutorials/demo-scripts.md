@@ -9,6 +9,13 @@ demo world — reseed first for a pristine set: `npx tsx scripts/seed-nph-demo.t
 · `parent@sportshub.demo` (2 kids: Mateo/Lords G9, Jordan/Force G10) ·
 `ref-mike@sportshub.demo` (PIN 1234) · `admin@sportshub.demo`.
 
+**Device per audience (owner decision input, 2026-07-07):** league + club
+demos = full-screen DESKTOP (recording at 1440p; the calendar's week GRID
+view is the desktop default). Parent + referee demos = PHONE frame
+(responsive viewport ~390px; the calendar shows the agenda view + "Add to
+phone"). Rationale: that's each audience's real device — operators work at
+desks, families live on phones.
+
 ---
 
 ## 🏆 LEAGUE — L-long master tour (~15-25 min, chaptered; L-short sizzle is cut from it)
@@ -21,7 +28,7 @@ demo world — reseed first for a pristine set: `npx tsx scripts/seed-nph-demo.t
 | 2 | Create a season | League → New season: label, team fee, games guaranteed, registration deadline. | Season card, REGISTRATION status |
 | 3 | Divisions + club intake | Season Manage → Divisions tab: add divisions (Grade 8-11). Clubs submit teams (show `owner-lords@` side: team dashboard → Add to league → pick roster version → submit). Approve submissions in Teams tab. | Approved team list w/ locked rosters |
 | 4 | Sessions + dates | Manage → Sessions tab: create a REGULAR session, add session days (the actual Saturdays/Sundays). | Session with dated days |
-| 5 | Venues + times + courts | Manage → Venues tab: attach venues; per session day set venue **start/end times** and courts (capacity planner shows fit). | Day grid with venue windows |
+| 5 | Venues + times + courts | Manage → Venues tab: attach venues (each carries **default hours** — weekends 8-6, weeknights 5-10); Sessions tab: pick a date and the day window **prefills from the venue's hours for that weekday**, editable; courts + capacity fit. | Date picked → times fill themselves |
 | 6 | Referees | Manage → Referees tab: build the pool; broadcast a session-day shift offer. Cut to `ref-mike@` → `/referee/requests` → set availability, accept the shift (first-accept-wins auto-assigns the day's games). | Referee attached to game rows |
 | 7 | Generate the schedule | Manage → Schedule: preview (fairness, utilization) → **Commit**. | Games appear in the season schedule |
 | 8 | **THE PAYOFF** | The moment commit lands: club managers get a bell; every team's coach/TM/parents get bell + **email** ("Lords G9: 10 games scheduled"). Cut to `parent@` → team calendar full of games → same games on an iPhone via the subscribed feed. | Notification tray + calendar + phone |
@@ -53,14 +60,29 @@ demo world — reseed first for a pristine set: `npx tsx scripts/seed-nph-demo.t
 
 ---
 
-## 👨‍👩‍👧 PARENT — 4 shorts
+## 🎬 LIVE SCORING & SCOREKEEPING — standalone short (S1)
+
+**As `coach-lords-gr9@` (console) + `parent@` (second screen/phone).**
+
+- **S1 — Score a game live**: `/score` → open the game console → attendance
+  → start period → tap scoring/rebounds/fouls (offline-safe queue) → BOX
+  overlay mid-game → second screen: `parent@` watching `/live/[game]`
+  update within 10s → final → referee PIN sign-off (`ref-mike@`, 1234) →
+  scoresheet PDF + AI recap auto-publish. *Payoff: the parent's screen
+  moving a beat after every console tap.* (Also chapter 10 of L-long —
+  this short is the deep cut for scorekeepers/refs.)
+
+---
+
+## 👨‍👩‍👧 PARENT — 5 shorts (phone frame)
 
 **As `parent@` (or a fresh signup for P1).**
 
 - **P1 — Sign up & add your child**: Sign up (fresh email) → "I'm a Parent" card → profile → dashboard → Add a child. *Payoff: kid on the dashboard.*
 - **P2 — Discover programs**: Browse clubs (featured, ratings, city filter) → club page (reviews, teams) → marketplace: tryouts / camps / house leagues → follow a team. *Payoff: found the right program in under a minute.*
 - **P3 — Register + accept an offer**: Sign kid up for a tryout → after tryout day, offer arrives (bell + email) → choose package → sizes/jersey → pay or installments. *Payoff: "You're on the team."*
-- **P4 — Follow the season**: Dashboard rows per kid (Chat · Polls · Calendar) → team page → live game (`/live/...`) → kid's stat line → season calendar on the phone. *Payoff: whole season in your pocket.*
+- **P4 — Follow the season**: Dashboard rows per kid (Chat · Polls · Calendar) → live game (`/live/...`) → practice/game/event calendar on the phone. *Payoff: whole season in your pocket.*
+- **P5 — The stats world**: public **team page** (record, schedule, roster, player averages) → **player page** (kid's game log, season averages, consent-gated naming) → league **stat leaders** ("is my kid on the board?") → **standings** → **club page** (teams, reviews, programs). *Payoff: a kid's own ESPN page.*
 
 ---
 
@@ -75,7 +97,7 @@ demo world — reseed first for a pristine set: `npx tsx scripts/seed-nph-demo.t
 
 ## Status: what each demo depends on
 
-All 19 use cases above are **recordable today** on the demo world — the
+Every use case above (2 league cuts, 12 club, 1 scoring, 5 parent, 2 referee shorts) is **recordable today** on the demo world — the
 storyline gaps were closed 2026-07-07 (schedule-publish fan-out, TeamManager
 tryouts, team events/one-calendar, multi-package offers + bulk send). The
 catalog + production plan (voice, phasing, help-center build) lives in
