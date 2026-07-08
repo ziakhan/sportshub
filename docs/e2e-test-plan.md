@@ -1,7 +1,4 @@
 ---
-theme: [testing]
-type: plan
-status: living
 updated: 2026-05-05
 tags: [theme/testing, type/plan, status/living]
 ---

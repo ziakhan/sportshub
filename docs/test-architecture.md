@@ -1,7 +1,4 @@
 ---
-theme: [testing]
-type: design
-status: shipped
 updated: 2026-07-03
 tags: [theme/testing, type/design, status/shipped]
 ---

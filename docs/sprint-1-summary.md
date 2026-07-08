@@ -1,7 +1,4 @@
 ---
-theme: [spec]
-type: reference
-status: shipped
 updated: 2026-04-13
 tags: [theme/spec, type/reference, status/shipped]
 ---

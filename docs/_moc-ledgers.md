@@ -1,7 +1,4 @@
 ---
-theme: [ledgers]
-type: reference
-status: living
 tags: [type/reference, moc/ledgers]
 ---
 

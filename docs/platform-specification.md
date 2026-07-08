@@ -1,7 +1,4 @@
 ---
-theme: [spec]
-type: spec
-status: superseded
 updated: 2026-03-16
 tags: [theme/spec, type/spec, status/superseded]
 ---

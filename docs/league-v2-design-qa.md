@@ -1,7 +1,4 @@
 ---
-theme: [leagues]
-type: design
-status: shipped
 updated: 2026-04-20
 tags: [theme/leagues, type/design, status/shipped]
 ---

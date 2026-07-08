@@ -1,7 +1,4 @@
 ---
-theme: [scoring]
-type: reference
-status: living
 tags: [type/reference, moc/scoring]
 ---
 

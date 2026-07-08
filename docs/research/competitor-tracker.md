@@ -1,7 +1,4 @@
 ---
-theme: [research, gtm]
-type: research
-status: draft
 updated: 2026-07-07
 tags: [theme/research, theme/gtm, type/research, status/draft]
 ---

@@ -1,7 +1,4 @@
 ---
-theme: [leagues]
-type: reference
-status: living
 tags: [type/reference, moc/leagues]
 ---
 

@@ -1,7 +1,4 @@
 ---
-theme: [spec, system]
-type: reference
-status: living
 tags: [type/reference, moc/spec, moc/system]
 ---
 

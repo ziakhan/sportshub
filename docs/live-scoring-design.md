@@ -1,7 +1,4 @@
 ---
-theme: [scoring]
-type: design
-status: shipped
 updated: 2026-07-04
 tags: [theme/scoring, type/design, status/shipped]
 ---

@@ -1,7 +1,4 @@
 ---
-theme: [onboarding]
-type: reference
-status: living
 tags: [type/reference, moc/onboarding]
 ---
 

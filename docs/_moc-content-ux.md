@@ -1,7 +1,4 @@
 ---
-theme: [content-ux]
-type: reference
-status: living
 tags: [type/reference, moc/content-ux]
 ---
 

@@ -1,7 +1,4 @@
 ---
-theme: [payments]
-type: reference
-status: living
 tags: [type/reference, moc/payments]
 ---
 

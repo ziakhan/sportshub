@@ -1,7 +1,4 @@
 ---
-theme: [ledgers]
-type: ledger
-status: living
 updated: 2026-07-07
 tags: [theme/ledgers, type/ledger, status/living]
 ---

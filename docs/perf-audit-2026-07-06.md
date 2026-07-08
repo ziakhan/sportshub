@@ -1,7 +1,4 @@
 ---
-theme: [architecture]
-type: reference
-status: shipped
 updated: 2026-07-06
 tags: [theme/architecture, type/reference, status/shipped]
 ---

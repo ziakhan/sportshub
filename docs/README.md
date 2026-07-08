@@ -24,6 +24,7 @@ organization is layered on top with **hub notes** ("Maps of Content"):
 
 | Hub | Covers |
 |---|---|
+| [**✅ What's Built**](_moc-shipped.md) | **feature-by-feature list of everything shipped — start here** |
 | [Payments](_moc-payments.md) | Stripe architecture, plan v2, open items |
 | [Leagues & Scheduling](_moc-leagues.md) | League v2 plan + design Q&A |
 | [Live Scoring](_moc-scoring.md) | Scoring plan + design |
@@ -39,27 +40,32 @@ organization is layered on top with **hub notes** ("Maps of Content"):
 
 ## Conventions
 
-Each note carries **frontmatter** so Obsidian can color the graph and run live
-queries:
+Each note carries lean **frontmatter** — an `updated` date plus `tags` that
+drive graph coloring and Dataview queries:
 
 ```yaml
 ---
-theme: [payments]          # one or two hub themes
-type: design               # plan | design | spec | research | ledger | outreach | tutorial | reference
-status: shipped            # shipped | in-progress | planned | draft | living | reference | superseded
-updated: 2026-07-04        # last meaningful edit (from git)
+updated: 2026-07-04
 tags: [theme/payments, type/design, status/shipped]
 ---
 ```
+
+The tags encode three axes (that's why they're tags, not separate properties —
+one source of truth, and Obsidian's graph colors by tag):
+
+- **`theme/…`** — `payments · leagues · scoring · onboarding · content-ux · offers · engagement · architecture · testing · gtm · research · demos · ledgers · spec · system` (one or two)
+- **`type/…`** — `plan · design · spec · research · ledger · outreach · tutorial · reference`
+- **`status/…`** — `shipped · in-progress · planned · draft · living · reference · superseded · archived`
+
+> **Note on `status`:** it describes the *document*, not the feature. A `plan`
+> stays `plan`-typed after its feature ships, and completed work often lives
+> inside `living` ledgers — so the graph *undersells* progress by design. For an
+> honest "what's done," use [**What's Built**](_moc-shipped.md).
 
 **Adding a doc?** Give it that frontmatter and add a `[[wikilink]]` to it from
 the relevant hub note. That's all — the graph picks it up automatically.
 
 ## Recommended plugins
 
-- **Dataview** — turn frontmatter into live tables (e.g. "every `in-progress`
-  payments doc"). The hubs are hand-maintained today; Dataview can make parts of
-  them self-updating later.
-- **Graph view** (core) — in *Settings → Graph → Groups*, add color groups by
-  search query like `["status:shipped"]` or by tag `#status/planned` to see
-  what's done vs pending at a glance.
+- **Dataview** — turn tags into live tables, e.g. ` ```dataview TABLE updated FROM #status/in-progress SORT updated DESC``` `. The hubs are hand-maintained today; Dataview can make parts of them self-updating later.
+- **Graph view** (core) — the color **Groups** live in the graph view's *own* control panel (the sliders icon at the graph's top-left), **not** app Settings. Add a group per status, e.g. `tag:#status/shipped` (green) … `tag:#status/planned` (amber), plus `tag:#moc` for the hubs.

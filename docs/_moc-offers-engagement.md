@@ -1,7 +1,4 @@
 ---
-theme: [offers, engagement]
-type: reference
-status: living
 tags: [type/reference, moc/offers, moc/engagement]
 ---
 

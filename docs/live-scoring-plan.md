@@ -1,7 +1,4 @@
 ---
-theme: [scoring]
-type: plan
-status: shipped
 updated: 2026-03-19
 tags: [theme/scoring, type/plan, status/shipped]
 ---

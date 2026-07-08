@@ -1,7 +1,4 @@
 ---
-theme: [system]
-type: reference
-status: reference
 updated: 2026-04-12
 tags: [theme/system, type/reference, status/reference]
 ---

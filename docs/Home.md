@@ -1,7 +1,4 @@
 ---
-theme: [system]
-type: reference
-status: living
 tags: [type/reference, moc/home]
 ---
 
@@ -10,6 +7,11 @@ tags: [type/reference, moc/home]
 The dashboard for this vault. Every plan, design, research note, and ledger hangs
 off one of the hubs below. Jump into a hub, or open the **Graph view** to explore
 by connection. New here? Read [[README|the vault guide]].
+
+> ### ✅ [[_moc-shipped|What's built]]
+> The feature-by-feature list of everything shipped — start here for "how much is
+> done." (The graph colors *docs*, so completed work spread across plans and
+> living ledgers doesn't all show green; this hub is the honest tally.)
 
 ## 🏗 Build areas
 Product surfaces — what we're building and why.

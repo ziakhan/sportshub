@@ -1,7 +1,4 @@
 ---
-theme: [payments]
-type: design
-status: shipped
 updated: 2026-07-07
 tags: [theme/payments, type/design, status/shipped]
 ---

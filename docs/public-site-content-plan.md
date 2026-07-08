@@ -1,7 +1,4 @@
 ---
-theme: [content-ux]
-type: plan
-status: in-progress
 updated: 2026-07-05
 tags: [theme/content-ux, type/plan, status/in-progress]
 ---

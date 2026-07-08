@@ -1,7 +1,4 @@
 ---
-theme: [content-ux]
-type: ledger
-status: living
 updated: 2026-07-05
 tags: [theme/content-ux, type/ledger, status/living]
 ---

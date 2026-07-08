@@ -1,7 +1,4 @@
 ---
-theme: [demos]
-type: reference
-status: living
 tags: [type/reference, moc/demos]
 ---
 

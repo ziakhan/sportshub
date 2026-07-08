@@ -1,7 +1,4 @@
 ---
-theme: [research]
-type: reference
-status: living
 tags: [type/reference, moc/research]
 ---
 

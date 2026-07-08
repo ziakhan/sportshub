@@ -1,9 +1,6 @@
 ---
-theme: [onboarding]
-type: plan
-status: planned
-updated: 2026-07-07
-tags: [theme/onboarding, type/plan, status/planned]
+updated: 2026-07-08
+tags: [theme/onboarding, type/plan, status/in-progress]
 ---
 
 # Onboarding, Tutorials & Video Plan (2026-07-07, owner ask)

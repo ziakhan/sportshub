@@ -1,7 +1,4 @@
 ---
-theme: [architecture]
-type: plan
-status: draft
 updated: 2026-07-02
 tags: [theme/architecture, type/plan, status/draft]
 ---

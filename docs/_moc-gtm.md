@@ -1,7 +1,4 @@
 ---
-theme: [gtm]
-type: reference
-status: living
 tags: [type/reference, moc/gtm]
 ---
 

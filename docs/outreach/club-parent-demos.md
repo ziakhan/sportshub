@@ -1,7 +1,4 @@
 ---
-theme: [demos, gtm]
-type: outreach
-status: reference
 updated: 2026-07-06
 tags: [theme/demos, theme/gtm, type/outreach, status/reference]
 ---

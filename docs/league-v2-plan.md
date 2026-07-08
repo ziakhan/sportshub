@@ -1,7 +1,4 @@
 ---
-theme: [leagues]
-type: plan
-status: shipped
 updated: 2026-04-20
 tags: [theme/leagues, type/plan, status/shipped]
 ---

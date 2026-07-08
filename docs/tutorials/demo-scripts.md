@@ -1,7 +1,4 @@
 ---
-theme: [demos]
-type: tutorial
-status: reference
 updated: 2026-07-07
 tags: [theme/demos, type/tutorial, status/reference]
 ---

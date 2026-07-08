@@ -1,7 +1,4 @@
 ---
-theme: [demos]
-type: outreach
-status: in-progress
 updated: 2026-07-06
 tags: [theme/demos, type/outreach, status/in-progress]
 ---
