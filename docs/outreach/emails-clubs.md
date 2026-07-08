@@ -1,3 +1,11 @@
+---
+theme: [gtm]
+type: outreach
+status: reference
+updated: 2026-07-06
+tags: [theme/gtm, type/outreach, status/reference]
+---
+
 # Club outreach emails
 
 Two motions: (1) **Claim your page** — warm, for clubs that already have a

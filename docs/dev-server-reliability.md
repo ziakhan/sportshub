@@ -1,3 +1,11 @@
+---
+theme: [system]
+type: reference
+status: reference
+updated: 2026-04-12
+tags: [theme/system, type/reference, status/reference]
+---
+
 # Dev Server Reliability
 
 This repo uses a guarded startup path to reduce local Next.js instability (stale chunks, missing CSS/assets, startup 500s).

@@ -1,3 +1,11 @@
+---
+theme: [offers, payments]
+type: design
+status: shipped
+updated: 2026-07-07
+tags: [theme/offers, theme/payments, type/design, status/shipped]
+---
+
 # Offer package options — design (2026-07-07) — ✅ SHIPPED same day (+ bulk send)
 
 Owner: clubs need to give families **multiple package options in one

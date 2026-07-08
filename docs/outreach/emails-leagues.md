@@ -1,3 +1,11 @@
+---
+theme: [gtm]
+type: outreach
+status: reference
+updated: 2026-07-06
+tags: [theme/gtm, type/outreach, status/reference]
+---
+
 # League outreach emails (warm intros)
 
 Drafts for the two friendly operators. Keep them short, personal, and specific —

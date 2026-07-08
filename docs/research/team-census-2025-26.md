@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # Team census 2025-26 — entries per club across every enumerable system
 
 > Compiled 2026-07-06 from machine-readable sources: NPH stats portal JSON,

@@ -1,3 +1,11 @@
+---
+theme: [research]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, type/research, status/reference]
+---
+
 # NPH 2025-26 Team-Entry Census — Showcase League, D1, NPA/WNPA — raw census
 
 > Pulled 2026-07-06 from `stats.northpolehoops.com/NPH/index.php?json&ssn_ID={n}`

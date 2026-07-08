@@ -1,3 +1,11 @@
+---
+theme: [payments]
+type: plan
+status: shipped
+updated: 2026-07-07
+tags: [theme/payments, type/plan, status/shipped]
+---
+
 # Payments v2 — offer terms, card-on-file, installments, reminders, statuses
 
 Owner spec (2026-07-07). The culminating payments build: a club configures

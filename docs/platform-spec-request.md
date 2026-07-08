@@ -1,3 +1,11 @@
+---
+theme: [spec]
+type: spec
+status: archived
+updated: 2026-03-16
+tags: [theme/spec, type/spec, status/archived]
+---
+
 You are a principal product architect + full-stack technical lead. Design a build-ready multi-tenant white-label platform called “Youth Basketball Hub” using:
 
 TECH STACK (MANDATORY)

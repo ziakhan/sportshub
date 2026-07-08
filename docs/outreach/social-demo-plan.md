@@ -1,3 +1,11 @@
+---
+theme: [gtm, demos]
+type: outreach
+status: planned
+updated: 2026-07-06
+tags: [theme/gtm, theme/demos, type/outreach, status/planned]
+---
+
 # Social + interactive demo plan
 
 Goal: shareable demos clubs and parents can *feel* in 15 seconds, usable as

@@ -1,3 +1,11 @@
+---
+theme: [system]
+type: reference
+status: reference
+updated: 2026-03-16
+tags: [theme/system, type/reference, status/reference]
+---
+
 You are a principal product architect and senior full-stack engineer.
 You specialize in SaaS multi-tenant systems using Next.js, Postgres, and Stripe Connect.
 

@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: draft
+updated: 2026-07-07
+tags: [theme/research, theme/gtm, type/research, status/draft]
+---
+
 # Competitor tracker — for LATER research (parked 2026-07-07)
 
 Owner wants a full competitive positioning pass eventually: where we stand

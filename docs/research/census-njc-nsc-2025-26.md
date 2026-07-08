@@ -1,3 +1,11 @@
+---
+theme: [research]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, type/research, status/reference]
+---
+
 # NJC / NSC 2025-26 Team-Entry Census (TeamLinkt API) — raw census
 
 > Pulled 2026-07-06 from the circuits' own TeamLinkt endpoints (no auth):

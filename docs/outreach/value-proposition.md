@@ -1,3 +1,11 @@
+---
+theme: [gtm]
+type: outreach
+status: reference
+updated: 2026-07-06
+tags: [theme/gtm, type/outreach, status/reference]
+---
+
 # Value proposition — benefits by audience
 
 Grounded in what's actually shipped (live scoring, AI recaps, standings, player

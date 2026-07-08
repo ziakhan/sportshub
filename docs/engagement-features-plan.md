@@ -1,3 +1,11 @@
+---
+theme: [engagement]
+type: plan
+status: in-progress
+updated: 2026-07-07
+tags: [theme/engagement, type/plan, status/in-progress]
+---
+
 # Engagement features — vision + roadmap (2026-07-06)
 
 Owner direction (verbatim intent): engagement tools — polls, quizzes,

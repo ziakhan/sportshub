@@ -1,3 +1,11 @@
+---
+theme: [payments]
+type: ledger
+status: living
+updated: 2026-07-04
+tags: [theme/payments, type/ledger, status/living]
+---
+
 # Payments — open items (as of 2026-07-04)
 
 State: stages 1–4 SHIPPED and verified (obligation engine → all products mint

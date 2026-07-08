@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # Contact enrichment pass (2026-07-06)
 
 We took the ~110 clubs that had no email/phone (only a social handle, or

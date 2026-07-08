@@ -1,3 +1,11 @@
+---
+theme: [demos]
+type: tutorial
+status: reference
+updated: 2026-07-07
+tags: [theme/demos, type/tutorial, status/reference]
+---
+
 # Demo scripts — every use case, step by step
 
 One entry per video/demo. Each lists: who you sign in as, where you start,

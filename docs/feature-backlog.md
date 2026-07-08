@@ -1,3 +1,11 @@
+---
+theme: [ledgers]
+type: ledger
+status: living
+updated: 2026-07-08
+tags: [theme/ledgers, type/ledger, status/living]
+---
+
 # Feature backlog — requested but not built
 
 The single place feature ideas land so none get lost. This is NOT go-live

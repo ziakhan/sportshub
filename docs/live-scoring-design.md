@@ -1,3 +1,11 @@
+---
+theme: [scoring]
+type: design
+status: shipped
+updated: 2026-07-04
+tags: [theme/scoring, type/design, status/shipped]
+---
+
 # Live Scoring — Interface Design (v1)
 
 > **STATUS: v1 BUILT 2026-07-04** — fold engine (`lib/scoring/fold.ts`, 11

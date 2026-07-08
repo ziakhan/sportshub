@@ -1,3 +1,11 @@
+---
+theme: [demos, gtm]
+type: outreach
+status: reference
+updated: 2026-07-06
+tags: [theme/demos, theme/gtm, type/outreach, status/reference]
+---
+
 # Club & Parent demos — feature audit + storyboards (2026-07-06)
 
 Grounding the demo content in what's actually shipped, from the owner's

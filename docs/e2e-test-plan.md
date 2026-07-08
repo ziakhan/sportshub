@@ -1,3 +1,11 @@
+---
+theme: [testing]
+type: plan
+status: living
+updated: 2026-05-05
+tags: [theme/testing, type/plan, status/living]
+---
+
 # End-to-End Test Plan — Youth Basketball Hub
 
 Manual execution plan covering the core travel-team pipeline:

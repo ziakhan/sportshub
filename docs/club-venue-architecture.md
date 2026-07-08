@@ -1,3 +1,11 @@
+---
+theme: [architecture]
+type: plan
+status: draft
+updated: 2026-07-02
+tags: [theme/architecture, type/plan, status/draft]
+---
+
 # Club Management, Venues & Scheduling — Architecture Plan
 
 > Planning doc, June 2026. Grounded in a code audit of the club lifecycle and

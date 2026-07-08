@@ -1,3 +1,11 @@
+---
+theme: [ledgers]
+type: ledger
+status: living
+updated: 2026-07-07
+tags: [theme/ledgers, type/ledger, status/living]
+---
+
 # Pending Deploy Actions
 
 Manual steps to run on production (Neon) **before** the next Vercel deploy of master. Each action lists the linked code change, the production command, and how to verify it landed.

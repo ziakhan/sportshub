@@ -1,3 +1,11 @@
+---
+theme: [architecture]
+type: design
+status: shipped
+updated: 2026-07-02
+tags: [theme/architecture, type/design, status/shipped]
+---
+
 # Architecture Review — SportsHub
 
 > July 2026. Five parallel deep audits (data model, API/auth, testing/seeding,

@@ -1,3 +1,11 @@
+---
+theme: [payments]
+type: design
+status: shipped
+updated: 2026-07-07
+tags: [theme/payments, type/design, status/shipped]
+---
+
 # Stripe architecture — build in-house vs lean on Stripe Billing (2026-07-07)
 
 Owner question before building payments v2: do we build the

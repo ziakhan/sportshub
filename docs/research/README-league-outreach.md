@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # Ontario youth basketball — market research master index (2026-07-06)
 
 Everything from the July 2026 research sessions (three research passes + three

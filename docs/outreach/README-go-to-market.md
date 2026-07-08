@@ -1,3 +1,11 @@
+---
+theme: [gtm]
+type: outreach
+status: reference
+updated: 2026-07-06
+tags: [theme/gtm, type/outreach, status/reference]
+---
+
 # Go-to-market — strategy & outreach kit (2026-07-06)
 
 ## The plan in one line

@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # NPH & the Canadian "National Circuit" Ecosystem — B2B Outreach Research (2025-26 season)
 
 > Research date 2026-07-06. Participant lists pulled from official machine-readable

@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # GTA & Ontario Youth Basketball League Landscape (excl. NPH & OSBA)
 
 > Research date July 2026. All facts from public league sites/search; confidence

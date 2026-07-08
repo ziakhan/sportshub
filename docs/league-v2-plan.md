@@ -1,3 +1,11 @@
+---
+theme: [leagues]
+type: plan
+status: shipped
+updated: 2026-04-20
+tags: [theme/leagues, type/plan, status/shipped]
+---
+
 # Leagues v2 — End-to-End Plan
 
 > **Status:** Draft, awaiting owner approval. Captured 2026-04-20 from back-and-forth design session (see [league-v2-design-qa.md](league-v2-design-qa.md) for the Q&A that produced this plan).

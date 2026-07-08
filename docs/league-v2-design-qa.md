@@ -1,3 +1,11 @@
+---
+theme: [leagues]
+type: design
+status: shipped
+updated: 2026-04-20
+tags: [theme/leagues, type/design, status/shipped]
+---
+
 # Leagues v2 — Design Q&A Transcript
 
 > Captured 2026-04-20. Source conversation where owner and Claude worked through the domain model, scheduling philosophy, and edge cases that produced [league-v2-plan.md](league-v2-plan.md). Preserve this so we never re-litigate these decisions.

@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # Club & program taxonomy — segmentation for the business model (2026-07-06)
 
 The market is NOT "clubs" as one thing. Five distinct operating models exist, and

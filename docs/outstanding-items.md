@@ -1,3 +1,11 @@
+---
+theme: [ledgers]
+type: ledger
+status: living
+updated: 2026-07-08
+tags: [theme/ledgers, type/ledger, status/living]
+---
+
 # Outstanding items — master ledger
 
 > **💡 FEATURE BACKLOG: docs/feature-backlog.md** — the wishlist of

@@ -1,3 +1,11 @@
+---
+theme: [ledgers, payments]
+type: ledger
+status: living
+updated: 2026-07-08
+tags: [theme/ledgers, theme/payments, type/ledger, status/living]
+---
+
 # Launch blockers — must-fix before going live
 
 Living list. I add to it whenever I build something that isn't launch-safe on

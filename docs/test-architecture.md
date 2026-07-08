@@ -1,3 +1,11 @@
+---
+theme: [testing]
+type: design
+status: shipped
+updated: 2026-07-03
+tags: [theme/testing, type/design, status/shipped]
+---
+
 # WS2 — Test & Simulation Architecture
 
 > July 2026. The comprehensive automation design: every scenario testable, every

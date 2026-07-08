@@ -1,3 +1,11 @@
+---
+theme: [content-ux]
+type: plan
+status: in-progress
+updated: 2026-07-08
+tags: [theme/content-ux, type/plan, status/in-progress]
+---
+
 # Logged-in home & landing redesign — scoping (2026-07-07, owner ask)
 
 Owner: after logging in — especially as an established parent/staff/club

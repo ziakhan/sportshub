@@ -1,3 +1,11 @@
+---
+theme: [demos]
+type: plan
+status: shipped
+updated: 2026-07-06
+tags: [theme/demos, type/plan, status/shipped]
+---
+
 # NPH production demo world — seed plan v2 (2026-07-07)
 
 > **STATUS: BUILT + REHEARSED LOCALLY 2026-07-07.** `scripts/seed-nph-demo.ts`

@@ -1,3 +1,11 @@
+---
+theme: [architecture]
+type: reference
+status: shipped
+updated: 2026-07-06
+tags: [theme/architecture, type/reference, status/shipped]
+---
+
 # Performance audit — 2026-07-06
 
 Owner symptom: "app loads really slow locally, the game takes a long time,

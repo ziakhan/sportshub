@@ -1,3 +1,11 @@
+---
+theme: [research, gtm]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, theme/gtm, type/research, status/reference]
+---
+
 # Unique clubs master list — cross-league dedupe (2026-07-06)
 
 Full data: [unique-clubs-master.csv](unique-clubs-master.csv) — one row per unique

@@ -1,3 +1,11 @@
+---
+theme: [content-ux]
+type: plan
+status: in-progress
+updated: 2026-07-05
+tags: [theme/content-ux, type/plan, status/in-progress]
+---
+
 # Public Site & Content Ecosystem — Detailed Plan
 
 > **STATUS: APPROVED — P1 IN BUILD (2026-07-05).** The strategy discussion

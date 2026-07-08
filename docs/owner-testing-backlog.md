@@ -1,3 +1,11 @@
+---
+theme: [content-ux]
+type: ledger
+status: living
+updated: 2026-07-05
+tags: [theme/content-ux, type/ledger, status/living]
+---
+
 # Owner scratchpad — ideas & gaps from test-driving
 
 The owner's scrapboard: anything noticed while browsing gets written down

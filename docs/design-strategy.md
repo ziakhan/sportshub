@@ -1,3 +1,11 @@
+---
+theme: [content-ux]
+type: design
+status: in-progress
+updated: 2026-07-02
+tags: [theme/content-ux, type/design, status/in-progress]
+---
+
 # SportsHub — Public Experience & Design Strategy
 
 > Design consultation, June 2026. Grounded in an audit of the current code + the

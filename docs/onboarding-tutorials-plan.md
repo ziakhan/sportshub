@@ -1,3 +1,11 @@
+---
+theme: [onboarding]
+type: plan
+status: planned
+updated: 2026-07-07
+tags: [theme/onboarding, type/plan, status/planned]
+---
+
 # Onboarding, Tutorials & Video Plan (2026-07-07, owner ask)
 
 Owner: focus on onboarding — tutorials, pointers/arrows for what users can

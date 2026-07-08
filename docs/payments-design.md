@@ -1,3 +1,11 @@
+---
+theme: [payments]
+type: design
+status: shipped
+updated: 2026-07-04
+tags: [theme/payments, type/design, status/shipped]
+---
+
 # Payments — Design Requirements & Architecture
 
 > Founding requirements stated by the owner 2026-07-03, before any Stripe code.

@@ -1,3 +1,11 @@
+---
+theme: [research]
+type: research
+status: reference
+updated: 2026-07-06
+tags: [theme/research, type/research, status/reference]
+---
+
 # OSBA & Coalition team-entry census — raw census
 
 > Pulled 2026-07-06. OSBA: server-rendered `/division/0/{id}/rosters` pages on
