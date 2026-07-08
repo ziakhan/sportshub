@@ -1,8 +1,11 @@
 import Link from "next/link"
+import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { authOptions } from "@/lib/auth"
 import { isTestWorldSlug } from "@/lib/demo-data"
 import { getClubRatings, type ClubRating } from "@/lib/queries/club-ratings"
 import { StarRating } from "@/components/ui"
+import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
 
 export const dynamic = "force-dynamic"
@@ -83,15 +86,23 @@ function ClubCard({
   club,
   rating,
   featured = false,
+  following = false,
+  isAuthenticated = false,
 }: {
   club: DirectoryClub
   rating?: ClubRating
   featured?: boolean
+  following?: boolean
+  isAuthenticated?: boolean
 }) {
   return (
+    <div className="relative">
+      <div className="absolute right-3 top-3 z-10">
+        <FollowButton tenantId={club.id} initialFollowing={following} isAuthenticated={isAuthenticated} compact />
+      </div>
     <Link
       href={`/club/${club.slug}`}
-      className={`card-lift shadow-soft group flex items-center gap-4 rounded-2xl border bg-white p-4 ${
+      className={`card-lift shadow-soft group flex items-center gap-4 rounded-2xl border bg-white p-4 pr-12 ${
         featured ? "border-gold-400 ring-gold-100 ring-2" : "border-ink-100"
       }`}
     >
@@ -129,6 +140,7 @@ function ClubCard({
         </span>
       )}
     </Link>
+    </div>
   )
 }
 
@@ -147,6 +159,20 @@ export default async function ClubDirectoryPage({
   const featuredIds = new Set(featuredClubs.map((c) => c.id))
   const regularClubs = clubs.filter((c) => !featuredIds.has(c.id))
   const ratings = await getClubRatings([...featuredClubs, ...regularClubs].map((c) => c.id))
+
+  // Follow (favorite) state per club for the signed-in viewer
+  const session = await getServerSession(authOptions).catch(() => null)
+  const viewerId = (session?.user as any)?.id ?? null
+  const followedClubs = new Set<string>(
+    viewerId
+      ? (
+          await (prisma as any).follow.findMany({
+            where: { userId: viewerId, tenantId: { not: null } },
+            select: { tenantId: true },
+          })
+        ).map((f: any) => f.tenantId)
+      : []
+  )
 
   // Rated clubs first within the grid — "ranked by rating" without hiding
   // unrated clubs below a fold of empty stars.
@@ -206,7 +232,7 @@ export default async function ClubDirectoryPage({
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featuredClubs.map((club) => (
-              <ClubCard key={club.id} club={club} rating={ratings.get(club.id)} featured />
+              <ClubCard key={club.id} club={club} rating={ratings.get(club.id)} featured following={followedClubs.has(club.id)} isAuthenticated={!!viewerId} />
             ))}
           </div>
         </div>
@@ -219,7 +245,7 @@ export default async function ClubDirectoryPage({
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sortedRegular.map((club) => (
-              <ClubCard key={club.id} club={club} rating={ratings.get(club.id)} />
+              <ClubCard key={club.id} club={club} rating={ratings.get(club.id)} following={followedClubs.has(club.id)} isAuthenticated={!!viewerId} />
             ))}
           </div>
         </div>

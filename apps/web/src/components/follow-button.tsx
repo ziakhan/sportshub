@@ -12,7 +12,24 @@ interface FollowButtonProps {
   isAuthenticated: boolean
   /** Renders on dark banners (EntityHeader) by default; "light" for cards. */
   variant?: "banner" | "light"
+  /** Icon-only star, for directory cards and dropdown rows. */
+  compact?: boolean
   className?: string
+}
+
+function Star({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.5 6.1 21.3l1.2-6.6L2.5 9.5l6.6-.9z" />
+    </svg>
+  )
 }
 
 /**
@@ -27,6 +44,7 @@ export function FollowButton({
   initialFollowing,
   isAuthenticated,
   variant = "banner",
+  compact = false,
   className,
 }: FollowButtonProps) {
   const [following, setFollowing] = useState(initialFollowing)
@@ -58,11 +76,36 @@ export function FollowButton({
   }
 
   const banner = variant === "banner"
+
+  // Icon-only star for directory cards / dropdown rows
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy}
+        aria-pressed={following}
+        title={following ? "Following — tap to unfollow" : "Follow"}
+        className={cn(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full transition disabled:opacity-60",
+          following
+            ? "bg-amber-50 text-amber-500 ring-1 ring-amber-200 hover:bg-amber-100"
+            : "text-ink-400 hover:text-amber-500 hover:bg-amber-50 bg-white ring-1 ring-ink-200",
+          className
+        )}
+      >
+        <Star filled={following} />
+        <span className="sr-only">{following ? "Following" : "Follow"}</span>
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
       onClick={toggle}
       disabled={busy}
+      aria-pressed={following}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60",
         banner
@@ -70,26 +113,13 @@ export function FollowButton({
             ? "bg-white/15 text-white ring-1 ring-white/40 hover:bg-white/25"
             : "text-ink-950 hover:bg-ink-50 bg-white"
           : following
-            ? "bg-ink-100 text-ink-700 ring-ink-200 ring-1 hover:bg-ink-200"
+            ? "bg-amber-50 text-amber-600 ring-amber-200 ring-1 hover:bg-amber-100"
             : "bg-ink-950 hover:bg-ink-800 text-white",
         className
       )}
     >
-      {following ? (
-        <>
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
-          Following
-        </>
-      ) : (
-        <>
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Follow
-        </>
-      )}
+      <Star filled={following} />
+      {following ? "Following" : "Follow"}
     </button>
   )
 }

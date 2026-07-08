@@ -104,9 +104,17 @@ export function NavDropdown({
                 <Link
                   key={e.id}
                   href={e.href}
-                  className="text-ink-950 hover:bg-ink-50 block truncate px-4 py-2 text-sm font-semibold transition-colors"
+                  className="text-ink-950 hover:bg-ink-50 flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors"
                 >
-                  {e.name}
+                  <svg
+                    className="h-3.5 w-3.5 shrink-0 text-amber-400"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 18.5 6.1 21.3l1.2-6.6L2.5 9.5l6.6-.9z" />
+                  </svg>
+                  <span className="truncate">{e.name}</span>
                 </Link>
               ))}
             </div>

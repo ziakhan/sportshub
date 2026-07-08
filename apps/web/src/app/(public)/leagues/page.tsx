@@ -1,6 +1,9 @@
 import Link from "next/link"
+import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
+import { authOptions } from "@/lib/auth"
 import { Badge, SectionHeader } from "@/components/ui"
+import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
 
@@ -61,6 +64,20 @@ export default async function PublicLeaguesPage() {
   // Active content first, drafts last
   leagues.sort((a: any, b: any) => b.completedGames + b.liveGames * 10 - (a.completedGames + a.liveGames * 10))
 
+  // Follow (favorite) state per league for the signed-in viewer
+  const session = await getServerSession(authOptions).catch(() => null)
+  const viewerId = (session?.user as any)?.id ?? null
+  const followed = new Set<string>(
+    viewerId
+      ? (
+          await (prisma as any).follow.findMany({
+            where: { userId: viewerId, leagueId: { not: null } },
+            select: { leagueId: true },
+          })
+        ).map((f: any) => f.leagueId)
+      : []
+  )
+
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
       <SectionHeader
@@ -83,12 +100,20 @@ export default async function PublicLeaguesPage() {
           {leagues.map((l: any) => {
             const status = STATUS_LABEL[l.season.status] ?? STATUS_LABEL.DRAFT
             return (
+              <div key={l.id} className="relative">
+                <div className="absolute right-5 top-5 z-10">
+                  <FollowButton
+                    leagueId={l.id}
+                    initialFollowing={followed.has(l.id)}
+                    isAuthenticated={!!viewerId}
+                    compact
+                  />
+                </div>
               <Link
-                key={l.id}
                 href={`/league/${l.season.id}`}
                 className="card-lift border-ink-100 shadow-soft group flex flex-col rounded-[28px] border bg-white p-7"
               >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
+                <div className="mb-3 flex flex-wrap items-center gap-2 pr-10">
                   {l.liveGames > 0 && <Badge tone="live" dot>{l.liveGames} live now</Badge>}
                   <Badge tone={status.tone}>{status.label}</Badge>
                   <Badge tone="hoop">{l.season.label}</Badge>
@@ -124,6 +149,7 @@ export default async function PublicLeaguesPage() {
                   </svg>
                 </span>
               </Link>
+              </div>
             )
           })}
         </div>
