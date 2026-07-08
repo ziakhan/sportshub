@@ -114,6 +114,47 @@ export async function customerForCharges(
   return customer.id
 }
 
+/**
+ * Cards already on file for THIS merchant. Destination → the platform
+ * customer (Stage A). Direct → the connected-account customer, if one exists
+ * (read-only; never creates one). Display fields only.
+ */
+export async function listContextCards(
+  userId: string,
+  ctx: ChargeContext
+): Promise<Array<{ id: string; brand: string; last4: string; isDefault: boolean }>> {
+  let customerId: string | null = null
+  let requestOptions: any = undefined
+  if (!ctx.direct) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { stripeCustomerId: true },
+    })
+    customerId = user?.stripeCustomerId ?? null
+  } else {
+    const cc = await (prisma as any).connectedCustomer.findUnique({
+      where: { userId_accountId: { userId, accountId: ctx.account } },
+    })
+    customerId = cc?.customerId ?? null
+    requestOptions = { stripeAccount: ctx.account }
+  }
+  if (!customerId) return []
+
+  const [methods, customer] = await Promise.all([
+    ctx.stripe.paymentMethods.list({ customer: customerId, type: "card" }, requestOptions),
+    ctx.stripe.customers.retrieve(customerId, requestOptions),
+  ])
+  const defaultId =
+    !("deleted" in customer) &&
+    (customer.invoice_settings?.default_payment_method as string | null | undefined)
+  return methods.data.map((m) => ({
+    id: m.id,
+    brand: m.card?.brand ?? "card",
+    last4: m.card?.last4 ?? "••••",
+    isDefault: m.id === defaultId,
+  }))
+}
+
 /** Build the Connect params common to a deposit PaymentIntent / invoice. */
 export function connectChargeParams(ctx: ChargeContext, amount: number) {
   const feeCents = Math.round(ctx.feeFor(amount) * 100)

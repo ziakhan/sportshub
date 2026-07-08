@@ -230,16 +230,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       })
     }
 
-    // Deposit gate (payments v2 Stage C): if a payment intent was made, it
-    // must have SUCCEEDED before we accept + roster. Also set it as the
-    // customer's default card so installments can auto-charge.
-    if (data.action === "accept" && data.depositPaymentIntentId) {
-      const ok = await verifyDepositPaid(offer as any, data.depositPaymentIntentId)
-      if (!ok) {
+    // Deposit gate (payments v2 Stage C). Online club + a fee → a payment
+    // (full or deposit) is REQUIRED to accept; the client must pass the
+    // confirmed PaymentIntent. Offline clubs / free offers accept without one.
+    if (data.action === "accept") {
+      const online = !!(await resolveChargeContext(
+        { tenantId: offer.team.tenantId },
+        offer.team.tenant.currency
+      ).catch(() => null))
+      if (online && Number((offer as any).seasonFee) > 0 && !data.depositPaymentIntentId) {
         return NextResponse.json(
-          { error: "Deposit payment not completed", code: "DEPOSIT_NOT_PAID" },
+          { error: "Payment is required to accept this offer", code: "PAYMENT_REQUIRED" },
           { status: 400 }
         )
+      }
+      if (data.depositPaymentIntentId) {
+        const ok = await verifyDepositPaid(offer as any, data.depositPaymentIntentId)
+        if (!ok) {
+          return NextResponse.json(
+            { error: "Deposit payment not completed", code: "DEPOSIT_NOT_PAID" },
+            { status: 400 }
+          )
+        }
       }
     }
 

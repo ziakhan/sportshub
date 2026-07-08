@@ -192,4 +192,24 @@ describe("installment accept (integration)", () => {
     const body = await res.json()
     expect(body.code).toBe("DEPOSIT_NOT_PAID")
   })
+
+  it("online club + a fee → accepting with NO payment is rejected (can't bypass)", async () => {
+    const o3 = await (prisma as any).offer.create({
+      data: {
+        teamId: world.clubs[0].teams[0].id,
+        playerId,
+        status: "PENDING",
+        seasonFee: 3000,
+        expiresAt: new Date(Date.now() + 7 * 86_400_000),
+      },
+      select: { id: true },
+    })
+    actAs(parentId)
+    const res = await PATCH(
+      jsonRequest(`/api/offers/${o3.id}`, { action: "accept", jerseyPref1: 8 }, "PATCH"),
+      { params: { id: o3.id } }
+    )
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe("PAYMENT_REQUIRED")
+  })
 })

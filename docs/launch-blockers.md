@@ -21,15 +21,19 @@ silently fail. Pick a provider (Resend/Postmark/SendGrid), set
 `SMTP_HOST/PORT/USER/PASS/FROM` on Vercel, and set up domain auth
 (SPF/DKIM/DMARC) so mail lands. Owner + me (wiring).
 
-### C2 — Family accept-payment UI is not wired (payments feature unreachable)
-The payments v2 backend is done (pay-intent, deposit-gated accept, schedule),
-but `offer-response-form.tsx` (the screen a PARENT uses to accept) still just
-POSTs `{action:"accept"}` — it does NOT show the Full-vs-Plan choice, call
-`/api/offers/[id]/pay-intent`, render Stripe Elements for the deposit, or send
-`depositPaymentIntentId`. So a family literally can't pay a deposit or pick a
-plan through the UI, and the "can't accept without the deposit" rule isn't
-enforced from the client. **This is the completion of Stage C/H** — buildable
-now. Me.
+### C2 — Family accept-payment UI — ✅ BUILT + VERIFIED 2026-07-07
+`offer-response-form.tsx` now runs the full payment step: Full-vs-Plan choice
+(shows deposit + dated installment schedule), and — the owner's refinement —
+**a card already on file is used one-click** (no re-entry); only a family with
+no card sees the Stripe Elements field; offline clubs accept with no card.
+New `GET /api/offers/[id]/payment-info` (online?, currency, per-option terms,
+saved cards — context-aware: platform customer for destination, connected-
+account customer for direct). `pay-intent` gained saved-card server-confirm.
+**Server now ENFORCES payment** — online club + a fee → accepting without a
+confirmed deposit returns PAYMENT_REQUIRED (can't bypass from the client).
+Live QA caught + fixed 2 real bugs (saved-card PI needed `payment_method_types`;
+the missing server-side enforcement). Int test covers enforcement + accept.
+Every case covered: saved card / new card / different card / offline / free.
 
 ### C3 — Stripe production setup
 Live keys (`sk_live`/`pk_live`), a prod webhook endpoint subscribed to

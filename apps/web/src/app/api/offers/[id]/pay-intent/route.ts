@@ -14,6 +14,9 @@ export const dynamic = "force-dynamic"
 const schema = z.object({
   chosenOptionId: z.string().optional(),
   paymentPlan: z.enum(["FULL", "INSTALLMENTS"]).default("FULL"),
+  // A card already on file — pay one-click without re-entering it. When
+  // omitted, the client collects a new card via Elements against the secret.
+  paymentMethodId: z.string().optional(),
 })
 
 /**
@@ -83,22 +86,50 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const customerId = await customerForCharges(auth.userId, ctx)
     const { params: connectParams, requestOptions } = connectChargeParams(ctx, amountDue)
+
+    const base: any = {
+      amount: Math.round(amountDue * 100),
+      currency: currency.toLowerCase(),
+      customer: customerId,
+      description: `${offer.team.name} — ${body.paymentPlan === "INSTALLMENTS" ? "deposit" : "season fee"}`,
+      // Save the card so installments can auto-charge off_session later
+      setup_future_usage: "off_session",
+      metadata: { offerId: offer.id, kind: "offer-accept" },
+      ...(connectParams as any),
+    }
+
+    // A card already on file → create + confirm now (user is present). No
+    // Elements, no re-entry. 3-D Secure surfaces as requires_action.
+    if (body.paymentMethodId) {
+      const intent = await ctx.stripe.paymentIntents.create(
+        {
+          ...base,
+          payment_method_types: ["card"], // explicit card, no redirect flows
+          payment_method: body.paymentMethodId,
+          confirm: true,
+          off_session: false,
+          error_on_requires_action: false,
+        },
+        requestOptions as any
+      )
+      return NextResponse.json({
+        status: intent.status, // succeeded | requires_action | …
+        clientSecret: intent.client_secret,
+        amountDue,
+        paymentIntentId: intent.id,
+      })
+    }
+
+    // No saved card → return a secret the client confirms via Elements
     const intent = await ctx.stripe.paymentIntents.create(
       {
-        amount: Math.round(amountDue * 100),
-        currency: currency.toLowerCase(),
-        customer: customerId,
-        description: `${offer.team.name} — ${body.paymentPlan === "INSTALLMENTS" ? "deposit" : "season fee"}`,
-        // Save the card so installments can auto-charge off_session later
-        setup_future_usage: "off_session",
+        ...base,
         automatic_payment_methods: { enabled: true, allow_redirects: "never" },
-        metadata: { offerId: offer.id, kind: "offer-accept" },
-        ...(connectParams as any),
       },
       requestOptions as any
     )
-
     return NextResponse.json({
+      status: intent.status,
       clientSecret: intent.client_secret,
       amountDue,
       paymentIntentId: intent.id,
