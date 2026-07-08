@@ -388,3 +388,16 @@ Ships with the team-events commit (2026-07-07). All additive — one
 - Back-relations: Team.eventLinks, User.teamEventsCreated
 
 Nothing to backfill. Notification type "team_event" is code-level only.
+
+## 16. Payments v2 Stage A — card-on-file (NOT YET APPLIED to Neon)
+
+Ships with the card-on-file commit (2026-07-07, payments v2 Stage A). One
+additive column — `prisma db push`:
+- `User.stripeCustomerId String? @unique` — the user's Stripe Customer
+  (platform account) where saved cards live in Stripe's vault.
+
+Nothing to backfill (existing users get NULL, a Customer is created lazily
+on first card-add / payment). No card data is ever stored in our DB.
+Prod also needs the existing `STRIPE_*` env vars (already on the deploy
+train, runbook §1). Later payments-v2 stages add more schema — separate
+runbook entries as they land.

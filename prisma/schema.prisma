@@ -34,6 +34,10 @@ model User {
   // Onboarding
   onboardedAt DateTime?
 
+  // Payments — the user's Stripe Customer (platform account). Cards live in
+  // Stripe's vault, referenced by this id; we never store card data.
+  stripeCustomerId String? @unique
+
   // Personal iCal feed token (/api/calendar/[token]) — practices + games
   // for every team the user belongs to; minted on first "add to calendar"
   calendarToken String? @unique

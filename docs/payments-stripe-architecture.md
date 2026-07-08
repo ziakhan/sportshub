@@ -247,17 +247,37 @@ supported for **clubs AND leagues**, built in the same pass; **default =
 destination charge (PLATFORM_COLLECT)** — lighter onboarding, platform owns
 the merchant side.
 
-**Still to confirm:**
-1. Approve **Hybrid (C)** as the architecture? (Stripe vault + auto-collect
-   invoices + Smart Retries + dunning; our schedule + accept UX + pre-due
-   reminders. vs pure in-house A / pure Billing B.)
-2. **Installment AUTO-CHARGE** — do it for **both** modes in v1, or
-   destination-first with direct-charge auto-charge as a fast-follow? (Both
-   *modes* are supported regardless; this is only about whether unattended
-   installment charges run on a club's *own* connected account in v1, which
-   needs the card saved on the connected account — genuinely more complex.
-   Recommend: destination auto-charge v1, direct fast-follow. One-time/deposit
-   payments work on both modes from day one either way.)
+**ALL LOCKED 2026-07-07:**
+1. **Hybrid (C) — APPROVED.** Stripe vault + auto-collect invoices + Smart
+   Retries + dunning; our schedule + accept UX + pre-due reminders.
+2. **Auto-charge on BOTH modes in v1 — APPROVED, no phasing.** Installments
+   auto-charge on destination AND direct-charge accounts from v1 (direct
+   needs the card saved on the connected account — build it in v1).
+3. **Leagues in the same pass — APPROVED.** League Connect onboarding +
+   online checkout parity built alongside clubs (data layer already ready).
+
+Local tooling confirmed ready: real `sk_test_`/`pk_test_`/`whsec_` in
+apps/web/.env.local + Stripe CLI in scratchpad → full test-mode build + verify.
+
+## v1 build stages (consolidated, all decisions folded in)
+- **A — Card-on-file** *(league-agnostic; building first)*: `User.stripeCustomerId`,
+  SetupIntent + Payment-methods API (list/add/default/detach), saved-card UI
+  (Stripe Elements). Cards on Stripe's vault, never us.
+- **B — Offer payment terms**: OfferOption gains full-pay/plan + deposit +
+  `OfferInstallmentTerm` rows; composer UI.
+- **C — Deposit-gated accept**: family picks one option, pays deposit/full
+  (on-session PaymentIntent, saves card) → only then ACCEPTED + rostered.
+- **D — Schedule generation**: on accept, pre-create auto-collect invoices
+  per installment (both modes).
+- **E — Auto-charge (both modes)**: cron finalizes each invoice on its due
+  date; Stripe charges + Smart Retries + dunning. Direct-charge = customer/
+  card on the connected account.
+- **F — Reminders**: our branded pre-due (email + push) via PaymentConfig
+  lead-days; cron.
+- **G — Statuses**: receipt on `invoice.paid`, failure handling on
+  `invoice.payment_failed`, retries via Stripe dunning.
+- **H — Parent forward-schedule view** + **League Connect parity**
+  (connect route + settings card + checkout branch).
 
 On "yes", I revise payments-plan-v2 stages E/F/G to the hybrid and start
 Stage A (card-on-file), which is identical under any option.
