@@ -125,6 +125,17 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
     const base = primaryTenantId ? `/clubs/${primaryTenantId}` : "/clubs/create"
     steps.push(
       {
+        key: "club-create",
+        group: CLUB_GROUP,
+        label: "Create your club",
+        hint: "Set up your club — teams, tryouts, and offers all live under it.",
+        href: "/clubs/create",
+        // The ClubOwner role is granted at signup but unscoped; it gets a
+        // tenantId only once the club row exists. So "has a club" == has a
+        // tenant-scoped club role == primaryTenantId is set.
+        done: !!primaryTenantId,
+      },
+      {
         key: "club-brand",
         group: CLUB_GROUP,
         label: "Brand your club",

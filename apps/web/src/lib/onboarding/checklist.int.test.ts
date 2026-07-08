@@ -77,6 +77,7 @@ describe("getCompletionChecklist — club owner journey", () => {
 
     const clubKeys = c.steps.filter((s) => s.group === "Your club").map((s) => s.key)
     expect(clubKeys).toEqual([
+      "club-create",
       "club-brand",
       "club-team",
       "club-staff",
@@ -85,6 +86,7 @@ describe("getCompletionChecklist — club owner journey", () => {
       "club-payments",
     ])
 
+    expect(step(c.steps, "club-create").done).toBe(true) // tenant-scoped role exists
     expect(step(c.steps, "club-team").done).toBe(true) // team exists
     expect(step(c.steps, "club-staff").done).toBe(true) // head coach → Staff role
     expect(step(c.steps, "club-brand").done).toBe(false) // default seeded branding
@@ -95,13 +97,26 @@ describe("getCompletionChecklist — club owner journey", () => {
     expect(step(c.steps, "club-roster").optional).toBe(true)
     expect(step(c.steps, "club-payments").optional).toBe(true)
 
-    // Required = profile + brand + team + tryout; only team done → 25%.
-    expect(c.requiredTotal).toBe(4)
-    expect(c.requiredDone).toBe(1)
-    expect(c.percent).toBe(25)
+    // Required = profile + create + brand + team + tryout; create + team done → 40%.
+    expect(c.requiredTotal).toBe(5)
+    expect(c.requiredDone).toBe(2)
+    expect(c.percent).toBe(40)
 
     expect(step(c.steps, "club-team").href).toBe(`/clubs/${club.tenantId}/teams/create`)
     expect(step(c.steps, "club-brand").href).toBe(`/clubs/${club.tenantId}/settings`)
+  })
+
+  it("shows 'Create your club' undone for a fresh, unscoped ClubOwner (post-signup)", async () => {
+    // Mirrors the onboarding API: the ClubOwner role is granted with no tenant.
+    const fresh = await createUser(world.ctx, { roles: [{ role: "ClubOwner" }] })
+    const c = await checklistFor(fresh.id)
+
+    expect(step(c.steps, "club-create").done).toBe(false)
+    expect(step(c.steps, "club-create").href).toBe("/clubs/create")
+    // Until the club exists, downstream steps point at the create flow too.
+    expect(step(c.steps, "club-brand").href).toBe("/clubs/create")
+    expect(step(c.steps, "club-team").href).toBe("/clubs/create")
+    expect(step(c.steps, "club-create").optional).toBeFalsy()
   })
 
   it("reaches 100% once profile, branding, and a tryout all exist", async () => {

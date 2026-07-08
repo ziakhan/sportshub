@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import type { ProfileData } from "@/lib/validations/onboarding"
 import { ParentForm } from "./forms/parent-form"
 import { PlayerForm } from "./forms/player-form"
@@ -159,7 +159,6 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
   const searchParams = useSearchParams()
   // Deep link the user was chasing before sign-up — honored at the terminal
   // step so onboarding drops them where they meant to go, not on dashboard.
@@ -212,14 +211,12 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
-      if (data.nextStep === "/dashboard") {
-        // Terminal step: deep link wins; otherwise role-aware landing
-        // (operators -> dashboard, parents/players -> public homepage).
-        // Full reload so server layouts pick up the fresh session/roles.
-        window.location.href = callbackUrl ?? "/post-login"
-      } else {
-        router.push(data.nextStep)
-      }
+      // Every role now finishes through /post-login, which runs the onboarding
+      // soft gate (the /welcome checklist) — including club owners, whose first
+      // checklist step is "Create your club". A full reload lets the server
+      // layouts pick up the fresh session/roles; an explicit deep-link
+      // callbackUrl still wins.
+      window.location.href = callbackUrl ?? "/post-login"
     } catch {
       setError("Network error. Please try again.")
       setIsSubmitting(false)
