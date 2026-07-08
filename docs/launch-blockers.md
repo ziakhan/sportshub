@@ -99,6 +99,39 @@ before launch. Me.
 
 ---
 
+## 👤 Owner action queue (things only you can do — start in parallel)
+
+Roughly in lead-time order. I can't do any of these; they need your
+business identity, bank, domain/DNS, vendor accounts, or a lawyer.
+
+1. **Legal (start FIRST — longest lead time)** [C4]: get Terms of Service,
+   Privacy Policy, and a refund/cancellation policy drafted, plus a COPPA
+   review (minors' data). A service like Termly/iubenda gives templates;
+   given youth + payments, have a lawyer review. This takes calendar time —
+   kick it off now.
+2. **Stripe account** [C3/H1]: finish activating your Stripe account
+   (business details + bank). Then in the Dashboard: (a) get the **live**
+   API keys, (b) in Billing → turn ON **Smart Retries** + **customer
+   failed-payment emails** (this IS our recovery engine — it's a dashboard
+   toggle), (c) decide your **platform fee %**. The prod webhook endpoint we
+   create together once there's a live URL.
+3. **Email provider** [C1]: sign up for Resend (easiest) or Postmark. Verify
+   your **sending domain** by adding the DNS records they give you
+   (SPF/DKIM/DMARC) so mail lands, not spams. Give me the SMTP creds to set
+   on Vercel. Nothing emails in prod until this is done.
+4. **Domain & DNS** [C1/C5]: confirm you control the production domain and
+   its DNS (needed for email auth + the live site).
+5. **Product decisions I need from you** (quick, but they gate config):
+   default **platform fee %**, default **reminder lead days** (we default 3),
+   **refund policy** wording, and **which clubs launch first**.
+6. **Do the owner click-through** [H3]: run the demo end-to-end yourself
+   (create club → team → tryout → offer → accept) and tell me what feels
+   wrong. You've flagged this hasn't been done — your eyes catch things tests
+   don't.
+
+Give me your answers to #5 (and the creds from #2/#3) and I wire them; the
+rest are yours to drive.
+
 ## How this list is used
 I append here as I build. Nothing here blocks *local* development — these are
 the gates between "works on the demo" and "safe with real families and real
