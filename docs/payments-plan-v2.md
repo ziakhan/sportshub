@@ -6,6 +6,15 @@ deposit to accept**, the rest auto-charges on a schedule, everyone gets
 reminders and status notifications. This doc is the full spec — build behind
 an explicit go, in the stages below.
 
+> **ARCHITECTURE (2026-07-07): see docs/payments-stripe-architecture.md.**
+> Recommendation = **Hybrid** — Stripe as vault + charging + Smart-Retries +
+> dunning (via auto-collect Invoices), our schedule + accept UX + pre-due
+> reminders. NOT pure in-house, NOT pure Subscriptions. Stages E/F/G below
+> are written for the older "our own off_session loop" model; they get
+> revised to the hybrid on architecture sign-off. Key research fact: Stripe's
+> native invoice *payment plans* do NOT auto-charge — auto-charge + AI
+> retries + dunning require Stripe Billing invoices/subscriptions.
+
 ## 1. What EXISTS today (audit, 2026-07-07)
 
 - **Stripe Connect** live: `CONNECT_DIRECT` (charge on club's account) and

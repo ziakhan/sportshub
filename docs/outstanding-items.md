@@ -266,7 +266,15 @@ league-level view of club practice load.
   offline clubs, push v1-vs-fastfollow, CONNECT_DIRECT auto-charge). Demo
   data already simplified to New $3,000 / Returning $2,700 + deposit $750 +
   3 monthly (offer-package-options-design.md §Follow-up). Payments-sensitive
-  — build behind explicit go, stage by stage.
+  — build behind explicit go, stage by stage. **Stripe architecture decided
+  (docs/payments-stripe-architecture.md): HYBRID recommended** — Stripe as
+  vault + charging + Smart Retries + dunning (auto-collect Invoices), our
+  schedule + accept UX + pre-due reminders (NOT pure in-house, NOT pure
+  Subscriptions). Research fact: Stripe native invoice payment-plans do NOT
+  auto-charge; auto-charge + AI retries + dunning need Stripe Billing. 2
+  arch decisions pending (approve Hybrid; posture split = auto-charge
+  PLATFORM_COLLECT v1, CONNECT_DIRECT fast-follow).
+- **Competitor tracker (parked, docs/research/competitor-tracker.md)**: full competitive positioning pass later (PlayMetrics, LeagueApps, JerseyWatch, SportsEngine, TeamSnap, GameChanger, MaxPreps, Exposure Events…) by feature area + business model; list + comparison frame captured.
 - **Logged-in home/landing redesign (2026-07-07, owner ask, SEPARATE
   project, scoped not started)**: drop promo/marketing for signed-in
   members, content-first, maximize real estate; fold in the Site IA
