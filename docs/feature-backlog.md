@@ -56,6 +56,21 @@ Programs/Clubs headings ("Near you"). (docs/home-redesign-plan.md)
 Scores→Leagues, programs-vs-marketplace overlap, menu order. Seen in every
 demo's nav. (docs/site-ia-plan.md)
 
+### Clickable venue on registration pages 💡 (owner, 2026-07-09)
+On **Camp**, **House League**, and **Tryout** registration pages the venue shows
+as **plain text only** — not clickable, no map/details. Today `Camp.location`,
+`HouseLeague.location`, `Tryout.location` are free-text `String`s (schema), while
+the real `Venue` model (with `placeId`, lat/long, used by games/practices/
+tournaments via `venueId`) is NOT linked to these three. Two paths:
+- **Quick win (no schema change):** wrap the location text in a link to Google
+  Maps (`https://www.google.com/maps/search/?api=1&query=<encoded location>`) so
+  it opens directions. Ships today; works off the string.
+- **Proper:** migrate these three `location` strings → a `venueId` relation to
+  `Venue`, then render a real clickable venue (address, embedded map, directions,
+  "other events here"). Reuses existing Places autocomplete + placeId dedup.
+Files: `(public)/camp/[id]/page.tsx`, `(public)/house-league/[id]/page.tsx`,
+`(platform)/tryouts/[id]/page.tsx` (each renders `{…​.location}` as text).
+
 ---
 
 ## Engagement / content
