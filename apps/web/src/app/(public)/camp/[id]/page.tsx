@@ -1,11 +1,31 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
 import { Badge, Card } from "@/components/ui"
+import { CampSignupForm } from "./camp-signup-form"
 
 export const dynamic = "force-dynamic"
+
+async function getRegistrantData(userId: string | null, campId: string) {
+  if (!userId) return { players: [], existingPlayerIds: [] as string[] }
+  const [players, signups] = await Promise.all([
+    prisma.player.findMany({
+      where: { parentId: userId },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: { firstName: "asc" },
+    }),
+    (prisma as any).campSignup.findMany({
+      where: { campId, userId, status: { not: "CANCELLED" } },
+      select: { playerId: true },
+    }),
+  ])
+  return { players, existingPlayerIds: signups.map((s: any) => s.playerId).filter(Boolean) }
+}
 
 const CAMP_TYPE_LABELS: Record<string, string> = {
   MARCH_BREAK: "March Break Camp",
@@ -26,6 +46,10 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicCampDetailPage({ params }: { params: { id: string } }) {
   const camp = await getPublicCamp(params.id)
   if (!camp) notFound()
+
+  const session = await getServerSession(authOptions).catch(() => null)
+  const userId = session?.user?.id ?? null
+  const { players, existingPlayerIds } = await getRegistrantData(userId, params.id)
 
   const isPast = new Date(camp.endDate) < new Date()
   const isFull = camp.maxParticipants && camp._count.signups >= camp.maxParticipants
@@ -137,10 +161,22 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                 <div className="rounded-2xl bg-ink-100 p-4 text-center text-sm text-ink-600">This camp has ended.</div>
               ) : isFull ? (
                 <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">This camp is full.</div>
+              ) : userId ? (
+                <CampSignupForm
+                  campId={camp.id}
+                  campName={camp.name}
+                  location={camp.location}
+                  currency={currency}
+                  weeklyFee={camp.weeklyFee}
+                  fullCampFee={camp.fullCampFee}
+                  numberOfWeeks={camp.numberOfWeeks}
+                  players={players}
+                  existingPlayerIds={existingPlayerIds}
+                />
               ) : (
-                <Link href="/sign-in?callbackUrl=/dashboard"
+                <Link href={`/sign-in?callbackUrl=/camp/${camp.id}`}
                   className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700">
-                  Sign Up
+                  Sign in to register
                 </Link>
               )}
 

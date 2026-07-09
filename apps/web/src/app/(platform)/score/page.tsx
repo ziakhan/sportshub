@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { GameRefereeControl } from "@/components/scoring/game-referee-control"
+import { GameScorekeeperControl } from "@/components/scoring/game-scorekeeper-control"
 import { redirect } from "next/navigation"
 import { format } from "date-fns"
 import { prisma } from "@youthbasketballhub/db"
@@ -16,7 +17,7 @@ export default async function ScoreListPage() {
   const sessionInfo = await getSessionUserId()
   if (!sessionInfo) redirect("/sign-in")
 
-  const [ownedLeagues, staffRoles] = await Promise.all([
+  const [ownedLeagues, staffRoles, myScorekeeperRoles] = await Promise.all([
     (prisma as any).league.findMany({
       where: { ownerId: sessionInfo.userId },
       select: { id: true },
@@ -29,9 +30,17 @@ export default async function ScoreListPage() {
       },
       select: { tenantId: true },
     }),
+    // Games this user is personally assigned to score.
+    prisma.userRole.findMany({
+      where: { userId: sessionInfo.userId, role: "Scorekeeper", gameId: { not: null } },
+      select: { gameId: true },
+    }),
   ])
   const leagueIds = ownedLeagues.map((l: any) => l.id)
   const tenantIds = Array.from(new Set(staffRoles.map((r) => r.tenantId).filter(Boolean)))
+  const myScorekeeperGameIds = Array.from(
+    new Set(myScorekeeperRoles.map((r) => r.gameId).filter(Boolean))
+  ) as string[]
 
   const windowStart = new Date(Date.now() - 24 * 3600 * 1000)
   const windowEnd = new Date(Date.now() + 7 * 24 * 3600 * 1000)
@@ -52,6 +61,7 @@ export default async function ScoreListPage() {
                   { awayTeam: { tenantId: { in: tenantIds as string[] } } },
                 ]
               : []),
+            ...(myScorekeeperGameIds.length > 0 ? [{ id: { in: myScorekeeperGameIds } }] : []),
           ],
         },
       ],
@@ -72,18 +82,28 @@ export default async function ScoreListPage() {
     },
   })
 
-  const refRoles = await (prisma as any).userRole.findMany({
-    where: { role: "Referee", gameId: { in: games.map((g: any) => g.id) } },
-    select: {
-      gameId: true,
-      user: { select: { id: true, firstName: true, lastName: true } },
-    },
-  })
+  const gameIds = games.map((g: any) => g.id)
+  const [refRoles, keeperRoles] = await Promise.all([
+    (prisma as any).userRole.findMany({
+      where: { role: "Referee", gameId: { in: gameIds } },
+      select: { gameId: true, user: { select: { id: true, firstName: true, lastName: true } } },
+    }),
+    (prisma as any).userRole.findMany({
+      where: { role: "Scorekeeper", gameId: { in: gameIds } },
+      select: { gameId: true, user: { select: { id: true, firstName: true, lastName: true } } },
+    }),
+  ])
   const refsByGame = new Map<string, { userId: string; name: string }[]>()
   for (const r of refRoles) {
     const list = refsByGame.get(r.gameId) ?? []
     list.push({ userId: r.user.id, name: `${r.user.firstName ?? ""} ${r.user.lastName ?? ""}`.trim() })
     refsByGame.set(r.gameId, list)
+  }
+  const keepersByGame = new Map<string, { userId: string; name: string }[]>()
+  for (const r of keeperRoles) {
+    const list = keepersByGame.get(r.gameId) ?? []
+    list.push({ userId: r.user.id, name: `${r.user.firstName ?? ""} ${r.user.lastName ?? ""}`.trim() })
+    keepersByGame.set(r.gameId, list)
   }
 
   return (
@@ -123,6 +143,7 @@ export default async function ScoreListPage() {
                   {g.season?.league?.name ? ` · ${g.season.league.name}` : ""}
                 </p>
                 <GameRefereeControl gameId={g.id} assigned={refsByGame.get(g.id) ?? []} />
+                <GameScorekeeperControl gameId={g.id} assigned={keepersByGame.get(g.id) ?? []} />
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Link

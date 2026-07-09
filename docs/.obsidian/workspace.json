@@ -74,7 +74,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "24555cbaae17c46b",
@@ -178,6 +178,11 @@
   },
   "active": "9ca28c83a7c0cb4c",
   "lastOpenFiles": [
+    "roadmap/design-system-elevation.md",
+    "roadmap/demo-shot-list.md",
+    "roadmap/native-mobile-platform.md",
+    "roadmap/club-page-design-polish.md",
+    "Untitled.canvas",
     "roadmap/player-profile-privacy.md",
     "roadmap/customizable-pages.md",
     "roadmap/handles-identity.md",
@@ -200,10 +205,6 @@
     "roadmap/playoff-generation.md",
     "roadmap/player-safety-medical.md",
     "roadmap/observability-security.md",
-    "roadmap/mobile-pwa-push.md",
-    "roadmap/invitation-continuity.md",
-    "roadmap/i18n-accessibility.md",
-    "roadmap/financial-aid-discounts.md",
     "roadmap"
   ]
 }

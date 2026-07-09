@@ -2,10 +2,10 @@ import { prisma } from "@youthbasketballhub/db"
 
 /**
  * Who may run the scoring console for a game (docs/live-scoring-design.md,
- * owner-confirmed v1 access): the league owner, a platform admin, or staff
- * (ClubOwner/ClubManager/Staff) of EITHER competing club. Scorekeeper
- * assignment (Game.scorekeepers) is deferred — when it ships, assigned
- * scorekeepers join this list.
+ * owner-confirmed v1 access): the league owner, a platform admin, staff
+ * (ClubOwner/ClubManager/Staff) of EITHER competing club, or a user assigned as
+ * the game's Scorekeeper (UserRole role=Scorekeeper, gameId scoped) — mirroring
+ * how referees are assigned per game.
  */
 
 export interface ScorableGame {
@@ -22,7 +22,7 @@ export async function canScoreGame(
 ): Promise<boolean> {
   if (isPlatformAdmin) return true
 
-  const [teams, season] = await Promise.all([
+  const [teams, season, gameRole] = await Promise.all([
     prisma.team.findMany({
       where: { id: { in: [game.homeTeamId, game.awayTeamId] } },
       select: { tenantId: true },
@@ -33,8 +33,14 @@ export async function canScoreGame(
           select: { league: { select: { ownerId: true } } },
         })
       : Promise.resolve(null),
+    // A scorekeeper assigned to THIS game.
+    prisma.userRole.findFirst({
+      where: { userId, gameId: game.id, role: "Scorekeeper" },
+      select: { id: true },
+    }),
   ])
 
+  if (gameRole) return true
   if (season?.league?.ownerId === userId) return true
 
   const tenantIds = Array.from(new Set(teams.map((t: any) => t.tenantId)))

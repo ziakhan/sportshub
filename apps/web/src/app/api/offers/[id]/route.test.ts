@@ -17,6 +17,16 @@ vi.mock("@youthbasketballhub/db", () => ({
   },
 }))
 
+// The accept path resolves the club's charge context. Without a mock it calls
+// the real getPaymentConfig, whose Promise.all hits unmocked prisma models and
+// orphans getPlatformPaymentPolicy()'s promise into an unhandled rejection
+// (surfaces only under some test orderings). Treat the club as offline — the
+// exact path this test already exercised via the route's `.catch(() => null)`.
+vi.mock("@/lib/payments/installments", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/payments/installments")>()
+  return { ...actual, resolveChargeContext: vi.fn().mockResolvedValue(null) }
+})
+
 describe("PATCH /api/offers/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks()

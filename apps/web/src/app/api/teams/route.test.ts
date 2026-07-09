@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { sendStaffInviteEmail } from "@/lib/email"
 import { POST } from "@/app/api/teams/route"
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -11,9 +12,16 @@ vi.mock("@/lib/auth", () => ({
   authOptions: {},
 }))
 
+vi.mock("@/lib/email", () => ({
+  sendStaffInviteEmail: vi.fn().mockResolvedValue(undefined),
+}))
+
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
     user: {
+      findUnique: vi.fn(),
+    },
+    tenant: {
       findUnique: vi.fn(),
     },
     $transaction: vi.fn(),
@@ -58,6 +66,8 @@ describe("POST /api/teams", () => {
     }
 
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx))
+    // Post-transaction email delivery looks up the inviter + club name.
+    vi.mocked(prisma.tenant.findUnique).mockResolvedValue({ name: "Warriors Club" } as any)
 
     const response = await POST(
       new Request("http://localhost:3000/api/teams", {
@@ -102,10 +112,18 @@ describe("POST /api/teams", () => {
         type: "staff_invite",
         title: "Team Staff Invitation",
         message: 'Warriors Club has invited you to join team "U12 Warriors" as Head Coach.',
-        link: "/notifications",
+        link: "/invitations/invite-1/accept",
         referenceId: "invite-1",
         referenceType: "StaffInvitation",
       },
     })
+    // The invite is now also emailed with a working accept link.
+    expect(sendStaffInviteEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "coach@example.com",
+        clubName: "Warriors Club",
+        inviteLink: expect.stringContaining("/invitations/invite-1/accept"),
+      })
+    )
   })
 })

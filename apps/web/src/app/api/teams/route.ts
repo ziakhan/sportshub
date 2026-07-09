@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A team can have at most one Head Coach" }, { status: 400 })
     }
 
+    // Collected during the transaction, delivered after it commits.
+    const staffInviteEmails: Array<{ email: string; roleLabel: string; invitationId: string }> = []
+
     // Run team creation + staff assignments in a transaction
     const result = await prisma.$transaction(async (tx: any) => {
       // 1. Create the team
@@ -165,27 +168,36 @@ export async function POST(request: NextRequest) {
             },
           })
 
-          // Send notification if user exists
+          const roleLabel =
+            entry.designation === "HeadCoach"
+              ? "Head Coach"
+              : entry.designation === "AssistantCoach"
+                ? "Assistant Coach"
+                : entry.role === "TeamManager"
+                  ? "Team Manager"
+                  : entry.role
+
+          // Queue an email for every invite (existing or brand-new account) so
+          // the recipient actually learns of it — sent after the transaction.
+          staffInviteEmails.push({
+            email: normalizedEmail,
+            roleLabel,
+            invitationId: invitation.id,
+          })
+
+          // Send an in-app notification too when the user already exists.
           if (invitedUser) {
             const tenant = await tx.tenant.findUnique({
               where: { id: validatedData.tenantId },
               select: { name: true },
             })
-            const roleLabel =
-              entry.designation === "HeadCoach"
-                ? "Head Coach"
-                : entry.designation === "AssistantCoach"
-                  ? "Assistant Coach"
-                  : entry.role === "TeamManager"
-                    ? "Team Manager"
-                    : entry.role
 
             await notify(tx, {
               userId: invitedUser.id,
               type: "staff_invite",
               title: "Team Staff Invitation",
               message: `${tenant?.name || "A club"} has invited you to join team "${team.name}" as ${roleLabel}.`,
-              link: `/notifications`,
+              link: `/invitations/${invitation.id}/accept`,
               referenceId: invitation.id,
               referenceType: "StaffInvitation",
             })
@@ -195,6 +207,42 @@ export async function POST(request: NextRequest) {
 
       return team
     })
+
+    // Deliver staff-invite emails outside the transaction (mirrors the club
+    // staff-invite flow). Never fail team creation on email trouble.
+    if (staffInviteEmails.length > 0) {
+      try {
+        const { sendStaffInviteEmail } = await import("@/lib/email")
+        const [inviterUser, tenantForEmail] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { firstName: true, lastName: true, email: true },
+          }),
+          prisma.tenant.findUnique({
+            where: { id: validatedData.tenantId },
+            select: { name: true },
+          }),
+        ])
+        const inviterName =
+          [inviterUser?.firstName, inviterUser?.lastName].filter(Boolean).join(" ") ||
+          inviterUser?.email ||
+          "A club admin"
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000"
+        await Promise.all(
+          staffInviteEmails.map((e) =>
+            sendStaffInviteEmail({
+              to: e.email,
+              clubName: tenantForEmail?.name || "the club",
+              role: e.roleLabel,
+              inviterName,
+              inviteLink: `${appUrl}/invitations/${e.invitationId}/accept`,
+            })
+          )
+        )
+      } catch (emailError) {
+        console.error("Failed to send team staff-invite emails:", emailError)
+      }
+    }
 
     return NextResponse.json(result, { status: 201 })
   } catch (error) {

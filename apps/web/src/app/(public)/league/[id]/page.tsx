@@ -12,6 +12,7 @@ import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Badge, Card, NewsCard, ScoreCard, SectionHeader, StandingsTable } from "@/components/ui"
 import { socialLinks } from "@/lib/club-page/blocks"
+import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -45,7 +46,14 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   const brand: any = leagueId
     ? await (prisma as any).league.findUnique({
         where: { id: leagueId },
-        select: { logoUrl: true, bannerUrl: true, tagline: true, primaryColor: true, socials: true },
+        select: {
+          ownerId: true,
+          logoUrl: true,
+          bannerUrl: true,
+          tagline: true,
+          primaryColor: true,
+          socials: true,
+        },
       })
     : null
 
@@ -109,6 +117,30 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
     : 0
   const topScorers = leaders?.categories.find((c) => c.key === "ppg")?.rows.slice(0, 3) ?? []
 
+  // League owners/managers (or platform admins) get an inline "Edit page" link.
+  const canManageLeague =
+    viewerId && leagueId
+      ? brand?.ownerId === viewerId ||
+        (await prisma.userRole.count({
+          where: {
+            userId: viewerId,
+            OR: [
+              { role: "PlatformAdmin" as any },
+              { leagueId, role: { in: ["LeagueOwner", "LeagueManager"] as any } },
+            ],
+          },
+        })) > 0
+      : false
+
+  const leagueStats: Array<{ value: string; label: string }> = [
+    { value: String(approvedTeams.length), label: approvedTeams.length === 1 ? "Team" : "Teams" },
+    { value: String(Math.round(completedCount)), label: "Games played" },
+    { value: String(season.divisions?.length || 0), label: "Divisions" },
+    liveGames.length > 0
+      ? { value: String(liveGames.length), label: "Live now" }
+      : { value: String(upcomingGames.length), label: "Upcoming" },
+  ]
+
   // Teams grouped by division for the browse grid
   const teamsByDivision = new Map<string, Array<{ id: string; name: string; clubName?: string; clubSlug?: string }>>()
   for (const t of approvedTeams) {
@@ -119,40 +151,79 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 sm:px-6">
+    <div
+      className="container font-barlow mx-auto px-4 py-10 sm:px-6"
+      style={brandStyle(brand?.primaryColor)}
+    >
       <div className="mb-6 flex items-center justify-between gap-4">
-        <Link href="/leagues" className="text-hoop-600 text-sm hover:underline">
+        <Link
+          href="/leagues"
+          className="brand-focus text-[color:var(--brand-ink)] text-sm font-semibold hover:underline"
+        >
           &larr; All leagues
         </Link>
       </div>
 
       {/* Branded league hero (customizable — docs/roadmap/customizable-pages.md) */}
       <header
-        className="relative mb-8 overflow-hidden rounded-3xl text-white"
+        className="relative mb-10 overflow-hidden rounded-3xl text-white"
         style={{ backgroundColor: brand?.primaryColor || "#1d4ed8" }}
       >
         {brand?.bannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={brand.bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/45 to-black/80" />
+        <div aria-hidden className="absolute -right-16 -top-20 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
         <div className="relative p-6 sm:p-8">
+          {canManageLeague && leagueId && (
+            <Link
+              href={`/manage/leagues/${leagueId}/customize`}
+              className="brand-focus absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/25"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                <path d="M4 20h4L18 10l-4-4L4 16v4z" strokeLinejoin="round" />
+                <path d="M13.5 6.5l4 4" strokeLinecap="round" />
+              </svg>
+              Edit page
+            </Link>
+          )}
           <div className="flex flex-wrap items-end gap-4">
             {brand?.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={brand.logoUrl}
                 alt={`${leagueName} logo`}
-                className="h-16 w-16 flex-shrink-0 rounded-2xl border-2 border-white/40 bg-white object-cover shadow sm:h-20 sm:w-20"
+                className="h-16 w-16 flex-shrink-0 rounded-2xl border-2 border-white/50 bg-white object-cover shadow sm:h-24 sm:w-24"
               />
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-2xl font-bold drop-shadow sm:text-3xl">
+              <h1 className="font-condensed text-3xl font-bold uppercase leading-[0.95] tracking-tight drop-shadow sm:text-5xl">
                 {leagueName ?? "League"}
               </h1>
               {brand?.tagline && (
-                <p className="mt-1 text-sm font-medium text-white/90 drop-shadow">{brand.tagline}</p>
+                <p className="mt-2 text-sm font-medium text-white/90 drop-shadow sm:text-base">
+                  {brand.tagline}
+                </p>
               )}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+                {season.status === "IN_PROGRESS" && (
+                  <span className="bg-gold-400 text-ink-950 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide">
+                    Season underway
+                  </span>
+                )}
+                {isOpen && !deadlinePassed && (
+                  <span className="bg-court-400 text-court-950 inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide">
+                    <span aria-hidden className="bg-court-700 h-1.5 w-1.5 rounded-full" />
+                    Registration open
+                  </span>
+                )}
+                {season.label && (
+                  <span className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
+                    {season.label}
+                  </span>
+                )}
+              </div>
             </div>
             {leagueId && (
               <FollowButton
@@ -162,21 +233,6 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                 variant="banner"
               />
             )}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            {[
-              season.label,
-              `${approvedTeams.length} teams`,
-              `${Math.round(completedCount)} games played`,
-              ...(season.status === "IN_PROGRESS" ? ["Season underway"] : []),
-              ...(isOpen && !deadlinePassed ? ["Registration open"] : []),
-            ]
-              .filter(Boolean)
-              .map((m, i) => (
-                <span key={i} className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
-                  {m}
-                </span>
-              ))}
           </div>
           {season.league?.description && (
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/85 line-clamp-3">
@@ -191,13 +247,25 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   href={l.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cursor-pointer rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-white/20"
+                  className="brand-focus inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-white/20"
                 >
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white/70" />
                   {l.label}
                 </a>
               ))}
             </div>
           )}
+          {/* Quick-stats strip */}
+          <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/10 sm:grid-cols-4">
+            {leagueStats.map((s) => (
+              <div key={s.label} className="bg-black/10 px-4 py-3 backdrop-blur">
+                <div className="font-condensed text-3xl font-bold leading-none">{s.value}</div>
+                <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-white/75">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -412,15 +480,17 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
             <Card>
               {season.teamFee && (
                 <div className="mb-4 text-center">
-                  <div className="text-hoop-600 text-3xl font-bold">{formatCurrency(season.teamFee)}</div>
-                  <p className="text-ink-500 text-xs">per team</p>
+                  <div className="font-condensed text-[color:var(--brand-ink)] text-4xl font-bold leading-none">
+                    {formatCurrency(season.teamFee)}
+                  </div>
+                  <p className="text-ink-500 mt-1 text-xs">per team</p>
                 </div>
               )}
               {isOpen && !deadlinePassed ? (
                 <>
                   <Link
                     href={`/browse-leagues/${params.id}`}
-                    className="bg-play-600 hover:bg-play-700 block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition"
+                    className="brand-focus block w-full rounded-xl bg-[var(--brand)] px-4 py-3 text-center font-bold uppercase tracking-wide text-[color:var(--brand-on)] transition-opacity hover:opacity-90"
                   >
                     Register your team
                   </Link>

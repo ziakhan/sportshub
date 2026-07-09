@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
           type: "player_invite",
           title: "Player Invitation",
           message: `${team.tenant.name} has invited ${data.playerName || "a player in your family"} to join ${team.name}.`,
-          link: "/notifications",
+          link: `/player-invitations/${created.id}/accept`,
           referenceId: created.id,
           referenceType: "PlayerInvitation",
         })
@@ -141,13 +141,20 @@ export async function POST(request: NextRequest) {
       const inviterName =
         [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") || inviter.email
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+      // Always land on the invite's accept page. A brand-new recipient goes
+      // through sign-up first, carrying the accept page as callbackUrl so signup
+      // → onboarding threads them straight back here (invitation continuity).
+      const acceptPath = `/player-invitations/${invitation.id}/accept`
+      const inviteLink = existingUser
+        ? `${baseUrl}${acceptPath}`
+        : `${baseUrl}/sign-up?callbackUrl=${encodeURIComponent(acceptPath)}`
       await sendPlayerInviteEmail({
         to: data.email,
         clubName: team.tenant.name,
         teamName: team.name,
         playerName: data.playerName,
         inviterName,
-        inviteLink: existingUser ? `${baseUrl}/notifications` : `${baseUrl}/sign-up`,
+        inviteLink,
         message: data.message,
       })
     } catch (emailError) {

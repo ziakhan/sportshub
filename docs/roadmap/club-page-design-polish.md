@@ -1,18 +1,57 @@
 ---
 updated: 2026-07-08
-status: planned
+status: shipped
 tier: 1
 area: content-ux
 effort: M
 source: owner
-tags: [theme/content-ux, type/plan, status/planned]
+tags: [theme/content-ux, type/plan, status/shipped]
 ---
 
 # 🎨 Club/league page — visual design polish (UI/UX audit)
 
-**Tier 1 · effort M · from owner · PLANNED (do NOT build yet — after session restart).**
-The customizable pages are functionally complete, but the *visual design* is flat.
-This is the audit + the redesign brief. Grounded in the ui-ux-pro-max skill.
+**Tier 1 · effort M · from owner · ✅ SHIPPED 2026-07-08 (scope (a): club/league-page-only, LOCAL/UNPUSHED).**
+The customizable pages were functionally complete but visually flat. This redesign carries
+each org's brand color through the page, adds athletic condensed type, and gives the blocks
+hierarchy + variety. Grounded in the ui-ux-pro-max skill (Vibrant & Block-based / Barlow Condensed).
+
+## ✅ What shipped (2026-07-08)
+- **Dynamic brand-carry engine** — `apps/web/src/lib/club-page/brand.ts` derives accessible tokens
+  from one `primaryColor` hex (WCAG-safe `ink` darkened to ≥4.5:1 on white, `on` for text on fills,
+  soft/softer/line tints), exposed as `--brand*` CSS vars via `brandStyle()` on the page wrapper.
+  Blocks read them through static Tailwind classes → the club's color flows through section bars,
+  links, prices, badges, monograms, active sub-nav, and tinted bands. Verified per-org: Toronto Lords
+  (maroon), NPH Summer League (teal), North Toronto Huskies (purple) all render distinctly.
+- **Athletic typography (page-scoped)** — Barlow Condensed (headings) + Barlow (body) loaded in
+  `layout.tsx` as `--font-condensed`/`--font-barlow`, wired as `font-condensed`/`font-barlow` in
+  the Tailwind config. Applied ONLY on the club/league pages (`font-barlow` wrapper + condensed
+  headers) — app-global fonts (Outfit/Work Sans) untouched. Big uppercase condensed hero H1 + a
+  consistent condensed brand-accent-bar section header.
+- **Hero upgrade** — richer diagonal scrim + soft geometric accent, overlap-scale logo, gold
+  primary CTA ("View programs"), and a quick-stats strip (Teams · Open programs · Next game · Rating).
+- **Block variety** — Programs = colored brand-tint **band** w/ green "Registering" pills + green
+  FREE prices; Teams = **chip grid** with brand monograms; News = **featured-first** cover layout;
+  Schedule = score pills + LIVE badge; branded rail widgets (Next game, Contact w/ SVG icons, At-a-glance).
+- **Scroll-spy sub-nav** (`club-subnav.tsx`, client) — highlights the in-view section in brand color.
+- **"Edit page" affordance** — owner/manager/admin-gated pill on both public heros →
+  `/clubs/[id]/customize` and `/manage/leagues/[id]/customize`.
+- **League page** — condensed hero + stat strip + status pills (gold "Season underway" / green
+  "Registration open") + brand-carried register CTA & fee + edit button. (Kept its multi-accent
+  SectionHeaders for block variety; the shared `SectionHeader` component was left untouched.)
+- **Accessibility kept** — brand-ink ≥4.5:1, `.brand-focus` visible rings, `prefers-reduced-motion`
+  guards (card-lift + smooth-scroll), SVG icons (no emoji), verified responsive at 390/1440.
+
+**Files:** `lib/club-page/brand.ts` (new), `(public)/club/[slug]/{page,club-blocks,club-subnav}.tsx`,
+`(public)/league/[id]/page.tsx`, `app/layout.tsx`, `tailwind.config.ts`, `globals.css`.
+Typecheck (no new errors) + lint clean; driven in-browser (3 orgs, desktop + mobile).
+
+## ⏭️ Follow-ups (not done)
+- **Scope (b) — app-wide design-system refresh** (fonts/tokens/component pass, incl. condensing the
+  shared `SectionHeader`) is still open; this was the contained club/league-only pass.
+- Demo tip: **Toronto Lords has 0 open programs**, so its colored programs band + gold hero CTA don't
+  render — add a tryout/camp to it before recording, or demo the band on North Toronto Huskies.
+
+## Original brief (below) — grounding for the above
 
 ## The problem (owner + audit, verified in code)
 - **Brand color used 0× in page content** — the club's `primaryColor` only appears in

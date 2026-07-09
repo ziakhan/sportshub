@@ -43,6 +43,15 @@ export interface DashboardData {
       status: string
       tryout: { id: string; title: string; scheduledAt: Date; location: string }
     }>
+    programSignups: Array<{
+      id: string
+      kind: "Camp" | "House league"
+      name: string
+      status: string
+      href: string
+      startDate: Date | null
+      location: string | null
+    }>
     recentPayments: Array<{
       id: string
       amount: any
@@ -226,7 +235,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
 
   // Parent data
   if (roleNames.includes("Parent")) {
-    const [players, tryoutSignups, recentPayments] = await Promise.all([
+    const [players, tryoutSignups, campSignups, houseLeagueSignups, recentPayments] = await Promise.all([
       prisma.player.findMany({
         where: { parentId: user.id },
         include: {
@@ -245,12 +254,45 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
+      (prisma as any).campSignup.findMany({
+        where: { userId: user.id, status: { not: "CANCELLED" } },
+        include: { camp: { select: { id: true, name: true, startDate: true, location: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      (prisma as any).houseLeagueSignup.findMany({
+        where: { userId: user.id, status: { not: "CANCELLED" } },
+        include: { houseLeague: { select: { id: true, name: true, startDate: true, location: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
       prisma.payment.findMany({
         where: { payerId: user.id },
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
     ])
+
+    const programSignups: NonNullable<DashboardData["parent"]>["programSignups"] = [
+      ...campSignups.map((s: any) => ({
+        id: s.id,
+        kind: "Camp" as const,
+        name: s.camp?.name ?? "Camp",
+        status: s.status,
+        href: `/camp/${s.campId}`,
+        startDate: s.camp?.startDate ?? null,
+        location: s.camp?.location ?? null,
+      })),
+      ...houseLeagueSignups.map((s: any) => ({
+        id: s.id,
+        kind: "House league" as const,
+        name: s.houseLeague?.name ?? "House league",
+        status: s.status,
+        href: `/house-league/${s.houseLeagueId}`,
+        startDate: s.houseLeague?.startDate ?? null,
+        location: s.houseLeague?.location ?? null,
+      })),
+    ]
 
     const parentTeamIds = [
       ...new Set(
@@ -262,6 +304,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
     data.parent = {
       players,
       tryoutSignups,
+      programSignups,
       recentPayments: recentPayments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),

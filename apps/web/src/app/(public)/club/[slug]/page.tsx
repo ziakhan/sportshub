@@ -1,12 +1,15 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { format } from "date-fns"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import type { Metadata } from "next"
 import { FollowButton } from "@/components/follow-button"
 import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
+import { brandStyle } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
+import { ClubSubNav } from "./club-subnav"
 
 async function getClubBySlug(slug: string) {
   const tenant = await prisma.tenant.findUnique({
@@ -126,7 +129,7 @@ async function getGames(teamIds: string[]) {
         OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
       },
       select: {
-        id: true, scheduledAt: true,
+        id: true, scheduledAt: true, status: true,
         homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
       },
       orderBy: { scheduledAt: "asc" },
@@ -195,6 +198,20 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     ? !!(await (prisma as any).follow.findFirst({ where: { userId, tenantId: club.id }, select: { id: true } }))
     : false
 
+  // Owners/managers of this club (or platform admins) get an inline "Edit page"
+  // affordance on the public hero.
+  const canManage = userId
+    ? (await prisma.userRole.count({
+        where: {
+          userId,
+          OR: [
+            { role: "PlatformAdmin" },
+            { tenantId: club.id, role: { in: ["ClubOwner", "ClubManager"] } },
+          ],
+        },
+      })) > 0
+    : false
+
   const branding: any = club.branding
   const primary = branding?.primaryColor || "#1a73e8"
   const data: ClubPageData = {
@@ -222,13 +239,28 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   const railCfg = zoneBlocks(layout, "rail")
   const navSections = NAV.filter(
     ([k]) => layout.find((b) => b.key === k)?.visible && hasBlockContent(k, data)
-  )
+  ).map(([anchor, label]) => ({ anchor, label }))
   const pinnedRail = railCfg.filter((b) => b.pinMobile && hasBlockContent(b.key, data))
 
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")
+  const nextGame = upcomingGames[0]
+  const programCount = tryouts.length + houseLeagues.length + camps.length
+
+  // Quick-stats strip under the hero.
+  const heroStats: Array<{ value: string; label: string }> = [
+    { value: String(teams.length), label: teams.length === 1 ? "Team" : "Teams" },
+    { value: String(programCount), label: "Open programs" },
+    {
+      value: nextGame ? format(new Date(nextGame.scheduledAt), "MMM d") : "—",
+      label: "Next game",
+    },
+    reviewsData.averageRating !== null
+      ? { value: reviewsData.averageRating.toFixed(1), label: "Rating" }
+      : { value: String(staffCount), label: "Staff" },
+  ]
 
   return (
-    <div className="[scroll-behavior:smooth]">
+    <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(primary)}>
       {/* HERO */}
       <header className="relative overflow-hidden text-white" style={{ backgroundColor: primary }}>
         {branding?.bannerUrl && (
@@ -239,25 +271,54 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-        <div className="container relative mx-auto px-4 py-10 sm:py-14">
+        {/* Richer diagonal scrim + a soft geometric accent (block-based vibe). */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/45 to-black/80" />
+        <div
+          aria-hidden
+          className="absolute -right-16 -top-20 h-72 w-72 rounded-full bg-white/10 blur-2xl"
+        />
+
+        <div className="container relative mx-auto px-4 pb-0 pt-10 sm:pt-14">
+          {canManage && (
+            <Link
+              href={`/clubs/${club.id}/customize`}
+              className="brand-focus absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/25"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                <path d="M4 20h4L18 10l-4-4L4 16v4z" strokeLinejoin="round" />
+                <path d="M13.5 6.5l4 4" strokeLinecap="round" />
+              </svg>
+              Edit page
+            </Link>
+          )}
+
           <div className="flex flex-wrap items-end gap-5">
             {branding?.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={branding.logoUrl}
                 alt={`${club.name} logo`}
-                className="h-20 w-20 flex-shrink-0 rounded-2xl border-2 border-white/40 bg-white object-cover shadow-lg sm:h-24 sm:w-24"
+                className="h-20 w-20 flex-shrink-0 rounded-2xl border-2 border-white/50 bg-white object-cover shadow-lg sm:h-28 sm:w-28"
               />
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-3xl font-bold drop-shadow sm:text-4xl">{club.name}</h1>
+              <h1 className="font-condensed text-4xl font-bold uppercase leading-[0.95] tracking-tight drop-shadow sm:text-6xl">
+                {club.name}
+              </h1>
               {branding?.tagline && (
-                <p className="mt-1 max-w-2xl text-base font-medium text-white/90 drop-shadow">
+                <p className="mt-2 max-w-2xl text-base font-medium text-white/90 drop-shadow sm:text-lg">
                   {branding.tagline}
                 </p>
               )}
-              {subtitle && <p className="mt-1 text-sm text-white/80">{subtitle}</p>}
+              {subtitle && (
+                <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/80">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                    <path d="M12 21s7-5.686 7-11a7 7 0 10-14 0c0 5.314 7 11 7 11z" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                  {subtitle}
+                </p>
+              )}
             </div>
           </div>
 
@@ -267,26 +328,26 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             {hasBlockContent("programs", data) && (
               <a
                 href="#programs"
-                className="bg-hoop-500 hover:bg-hoop-600 cursor-pointer rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition"
+                className="brand-focus bg-gold-400 hover:bg-gold-500 text-ink-950 cursor-pointer rounded-xl px-5 py-2.5 text-sm font-bold uppercase tracking-wide shadow-sm transition-colors"
               >
                 View programs
               </a>
             )}
             <a
               href="#contact"
-              className="cursor-pointer rounded-xl border border-white/50 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+              className="brand-focus cursor-pointer rounded-xl border border-white/50 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
             >
               Contact
             </a>
             {club.status === "UNCLAIMED" ? (
               <Link
                 href={`/clubs/find?q=${encodeURIComponent(club.name)}`}
-                className="shadow-soft cursor-pointer rounded-xl bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-white/90"
-                style={{ color: primary }}
+                className="brand-focus shadow-soft cursor-pointer rounded-xl bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-white/90"
+                style={{ color: "var(--brand-ink)" }}
               >
                 Claim this club
               </Link>
@@ -299,27 +360,25 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
               />
             )}
           </div>
+
+          {/* Quick-stats strip — bridges hero and content. */}
+          <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-t-2xl border-x border-t border-white/15 bg-white/10 sm:grid-cols-4">
+            {heroStats.map((s) => (
+              <div key={s.label} className="bg-black/10 px-4 py-3 backdrop-blur">
+                <div className="font-condensed text-3xl font-bold leading-none">{s.value}</div>
+                <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-white/75">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </header>
 
-      {/* STICKY SUB-NAV */}
-      {navSections.length > 0 && (
-        <nav className="border-ink-100 sticky top-0 z-20 border-b bg-white/95 backdrop-blur">
-          <div className="container mx-auto flex gap-1 overflow-x-auto px-4 py-2 text-sm">
-            {navSections.map(([anchor, label]) => (
-              <a
-                key={anchor}
-                href={`#${anchor}`}
-                className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 cursor-pointer whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition"
-              >
-                {label}
-              </a>
-            ))}
-          </div>
-        </nav>
-      )}
+      {/* STICKY SUB-NAV (scroll-spy, brand active state) */}
+      {navSections.length > 0 && <ClubSubNav sections={navSections} />}
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-10">
         {/* Mobile: pinned rail widgets promoted to the top */}
         {pinnedRail.length > 0 && (
           <div className="mb-6 space-y-4 lg:hidden">
@@ -329,9 +388,9 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Main zone */}
-          <div className="space-y-8 lg:col-span-2">
+          <div className="space-y-10 lg:col-span-2 lg:space-y-12">
             {mainCfg.map((b) => (
               <ClubBlock key={b.key} blockKey={b.key} variant="main" data={data} />
             ))}

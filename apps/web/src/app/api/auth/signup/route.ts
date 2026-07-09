@@ -78,7 +78,7 @@ export async function POST(request: Request) {
           type: "staff_invite" as const,
           title: "Staff Invitation",
           message: `${tenantNameById.get(inv.tenantId) || "A club"} has invited you to join as ${inv.role}.`,
-          link: "/notifications",
+          link: `/invitations/${inv.id}/accept`,
           referenceId: inv.id,
           referenceType: "StaffInvitation",
         }))
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
           type: "player_invite" as const,
           title: "Player Invitation",
           message: `${inv.tenant.name} has invited ${inv.playerName || "a player in your family"} to join ${inv.team.name}.`,
-          link: "/notifications",
+          link: `/player-invitations/${inv.id}/accept`,
           referenceId: inv.id,
           referenceType: "PlayerInvitation",
         }))

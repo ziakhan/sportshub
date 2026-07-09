@@ -1,11 +1,31 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
 import { Badge, Card } from "@/components/ui"
+import { HouseLeagueSignupForm } from "./house-league-signup-form"
 
 export const dynamic = "force-dynamic"
+
+async function getRegistrantData(userId: string | null, houseLeagueId: string) {
+  if (!userId) return { players: [], existingPlayerIds: [] as string[] }
+  const [players, signups] = await Promise.all([
+    prisma.player.findMany({
+      where: { parentId: userId },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: { firstName: "asc" },
+    }),
+    (prisma as any).houseLeagueSignup.findMany({
+      where: { houseLeagueId, userId, status: { not: "CANCELLED" } },
+      select: { playerId: true },
+    }),
+  ])
+  return { players, existingPlayerIds: signups.map((s: any) => s.playerId).filter(Boolean) }
+}
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const league = await getPublicHouseLeague(params.id)
@@ -19,6 +39,10 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicHouseLeaguePage({ params }: { params: { id: string } }) {
   const league = await getPublicHouseLeague(params.id)
   if (!league) notFound()
+
+  const session = await getServerSession(authOptions).catch(() => null)
+  const userId = session?.user?.id ?? null
+  const { players, existingPlayerIds } = await getRegistrantData(userId, params.id)
 
   const isPast = new Date(league.endDate) < new Date()
   const isFull = league.maxParticipants !== null && league._count.signups >= league.maxParticipants
@@ -138,12 +162,22 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                 <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">
                   This program is full.
                 </div>
+              ) : userId ? (
+                <HouseLeagueSignupForm
+                  houseLeagueId={league.id}
+                  leagueName={league.name}
+                  location={league.location}
+                  currency={currency}
+                  fee={league.fee}
+                  players={players}
+                  existingPlayerIds={existingPlayerIds}
+                />
               ) : (
                 <Link
-                  href={`/sign-in?callbackUrl=/dashboard`}
+                  href={`/sign-in?callbackUrl=/house-league/${league.id}`}
                   className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
                 >
-                  Sign Up
+                  Sign in to register
                 </Link>
               )}
 

@@ -140,8 +140,11 @@ export function ParentSection({ data }: ParentSectionProps) {
         </div>
 
         <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <h3 className="font-display text-ink-950 text-lg font-semibold">Tryout signups</h3>
-          <p className="text-ink-500 mb-4 mt-1 text-sm">{data.tryoutSignups.length} recent</p>
+          <h3 className="font-display text-ink-950 text-lg font-semibold">Registrations</h3>
+          <p className="text-ink-500 mb-4 mt-1 text-sm">
+            {data.tryoutSignups.length} tryout{data.tryoutSignups.length !== 1 ? "s" : ""} ·{" "}
+            {data.programSignups.length} program{data.programSignups.length !== 1 ? "s" : ""}
+          </p>
 
           {data.tryoutSignups.length > 0 ? (
             <ul className="space-y-2">
@@ -150,14 +153,37 @@ export function ParentSection({ data }: ParentSectionProps) {
               ))}
             </ul>
           ) : (
-            <p className="text-ink-500 text-sm">No signups yet.</p>
+            <p className="text-ink-500 text-sm">No tryout signups yet.</p>
+          )}
+
+          {data.programSignups.length > 0 && (
+            <>
+              <p className="text-ink-400 mb-2 mt-4 text-xs font-semibold uppercase tracking-[0.14em]">
+                Camps &amp; leagues
+              </p>
+              <ul className="space-y-2">
+                {data.programSignups.map((p) => (
+                  <li key={p.id} className="border-ink-100 bg-ink-50 rounded-xl border p-3">
+                    <Link href={p.href} className="text-ink-900 font-medium hover:text-play-700">
+                      {p.name}
+                    </Link>
+                    <div className="text-ink-500 text-xs">
+                      {p.kind}
+                      {p.startDate ? ` · starts ${new Date(p.startDate).toLocaleDateString()}` : ""}
+                      {" · "}
+                      <span className="text-court-700 font-semibold">{p.status}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
 
           <Link
             href="/marketplace"
             className="text-play-600 hover:text-play-700 mt-4 inline-flex items-center text-sm font-semibold"
           >
-            Browse tryouts
+            Browse programs
           </Link>
         </div>
 

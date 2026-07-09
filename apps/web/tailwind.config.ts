@@ -134,6 +134,9 @@ const config = {
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],
         body: ["var(--font-body)", "sans-serif"],
+        // Athletic pair — scoped to the club/league public pages.
+        condensed: ["var(--font-condensed)", "ui-sans-serif", "sans-serif"],
+        barlow: ["var(--font-barlow)", "ui-sans-serif", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

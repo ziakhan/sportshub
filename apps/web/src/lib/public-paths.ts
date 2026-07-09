@@ -23,6 +23,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/league",
   "/leagues",
   "/invitations",
+  "/player-invitations",
   "/live",
   "/news",
   "/team",
