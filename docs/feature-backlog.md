@@ -56,6 +56,14 @@ Programs/Clubs headings ("Near you"). (docs/home-redesign-plan.md)
 Scores→Leagues, programs-vs-marketplace overlap, menu order. Seen in every
 demo's nav. (docs/site-ia-plan.md)
 
+### Editability fix waves 2–4 🎯 (owner-directed audit, 2026-07-09)
+The full entity-lifecycle audit lives in **[[editability-audit]]** — wave 1 (program edit
+pages, registrants views, lifecycle chips, guard fixes) SHIPPED 2026-07-09. Queued there:
+**wave 2** offer rescind + expiry cron, game "Correct result" UI, division rename, club
+self-withdraw, staff-invite cancel/expiry; **wave 3** mediaConsent editor, player remove
+button, designation promote, email/password self-service; **wave 4** recap/review/poll/
+announcement/chat edit round-trips + notification dismiss. Pull from the audit doc, not here.
+
 ### Clickable venue on registration pages 💡 (owner, 2026-07-09)
 On **Camp**, **House League**, and **Tryout** registration pages the venue shows
 as **plain text only** — not clickable, no map/details. Today `Camp.location`,

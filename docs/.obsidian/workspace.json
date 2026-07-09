@@ -178,6 +178,8 @@
   },
   "active": "9ca28c83a7c0cb4c",
   "lastOpenFiles": [
+    "editability-audit.md",
+    "outreach/club-parent-demos.md",
     "roadmap/design-system-elevation.md",
     "roadmap/demo-shot-list.md",
     "roadmap/native-mobile-platform.md",
@@ -203,8 +205,6 @@
     "roadmap/referee-payouts.md",
     "roadmap/privacy-pipeda-casl.md",
     "roadmap/playoff-generation.md",
-    "roadmap/player-safety-medical.md",
-    "roadmap/observability-security.md",
     "roadmap"
   ]
 }

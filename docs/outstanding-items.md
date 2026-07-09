@@ -1,10 +1,22 @@
 ---
-updated: 2026-07-08
+updated: 2026-07-09
 tags: [theme/ledgers, type/ledger, status/living]
 ---
 
 # Outstanding items — master ledger
 
+> **✅ SHIPPED 2026-07-09 (local, unpushed): Editability wave 1 + full lifecycle audit + design-system kit & sweep.**
+> 6-agent audit of every entity's editability/transitions → **[[editability-audit]]**
+> (entity × state × action matrix, dead-enum inventory, fix waves 2–4 prioritized — wave 2
+> headline: club-side offer rescind + offer-expiry cron; game "Correct result" UI; division
+> rename; club self-withdraw from league). Built: `lib/lifecycle.ts` (derived
+> DRAFT/OPEN/FULL/IN_PROGRESS/ENDED + per-state action gates, 10 tests), Camp/HouseLeague
+> **edit pages + registrants views** (were create-only; clubs couldn't see signups),
+> lifecycle chips + always-visible Edit/Registrants/View/Publish actions on program lists,
+> Tournament core-fields edit page. Guards fixed: tryout Unpublish (silent no-op), venue
+> PATCH authz hole, completed-game PATCH block, offer pay-intent expiry (orphaned-deposit
+> risk). Same day: **UI kit + 16-surface design sweep** ([[design-system-elevation]] §7).
+>
 > **✅ SHIPPED 2026-07-08 (local, unpushed): Customizable club & league pages.**
 > Public `/club/[slug]` is now a branded microsite — hero (banner/logo/colors/
 > tagline/description) + sticky sub-nav + a two-zone (Main + Rail) drag-drop block
