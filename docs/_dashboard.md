@@ -10,7 +10,7 @@ tables update themselves — no manual editing.
 
 > **Requires the Dataview plugin** (Settings → Community plugins → search "Dataview" →
 > install + enable). Without it these blocks show as code. Snapshot as of 2026-07-08:
-> **28 plans — 25 planned · 2 draft · 0 in-progress · 1 shipped.** ✅ [[customizable-pages]] shipped.
+> **29 plans — 26 planned · 2 draft · 0 in-progress · 1 shipped.** ✅ [[customizable-pages]] shipped; next: [[club-page-design-polish]] (after restart).
 
 ## 🔨 In progress
 ```dataview
