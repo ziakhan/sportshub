@@ -231,13 +231,20 @@ model TenantBranding {
   tenantId String @unique
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  logoUrl        String?
+  logoUrl        String? @db.Text
   faviconUrl     String?
   primaryColor   String  @default("#1a73e8")
   secondaryColor String  @default("#34a853")
   accentColor    String  @default("#fbbc04")
   fontFamily     String  @default("Inter")
   customCss      String? @db.Text
+
+  // Customizable public page ("your website"): brand + layout.
+  // Images stored as compressed data URLs (@db.Text) — no external blob infra.
+  bannerUrl  String? @db.Text
+  tagline    String?
+  socials    Json? // { instagram, facebook, x, youtube, tiktok, ... }
+  pageLayout Json? // [{ key, zone: "main"|"rail", order, visible, pinMobile }]
 
   emailLogoUrl String?
   emailFooter  String? @db.Text
