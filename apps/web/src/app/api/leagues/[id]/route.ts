@@ -42,6 +42,22 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 const updateLeagueSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().optional().nullable(),
+  // Customizable public page branding
+  logoUrl: z.string().optional().nullable(),
+  bannerUrl: z.string().optional().nullable(),
+  tagline: z.string().max(200).optional().nullable(),
+  primaryColor: z.string().max(20).optional(),
+  socials: z
+    .object({
+      instagram: z.string().max(200).optional().nullable(),
+      facebook: z.string().max(200).optional().nullable(),
+      x: z.string().max(200).optional().nullable(),
+      youtube: z.string().max(200).optional().nullable(),
+      tiktok: z.string().max(200).optional().nullable(),
+    })
+    .partial()
+    .optional()
+    .nullable(),
   // Live-scoring configuration (docs/live-scoring-design.md)
   statDepth: z.enum(["SCORE_ONLY", "STANDARD", "FULL"]).optional(),
   gameClockMode: z.enum(["SIMPLE", "OFF"]).optional(),

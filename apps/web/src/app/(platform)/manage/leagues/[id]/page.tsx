@@ -148,6 +148,12 @@ export default function LeagueDashboardPage() {
               Public hub
             </a>
             <Link
+              href={`/manage/leagues/${leagueId}/customize`}
+              className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
+            >
+              Customize page
+            </Link>
+            <Link
               href={`/manage/leagues/${leagueId}/payments`}
               className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold"
             >

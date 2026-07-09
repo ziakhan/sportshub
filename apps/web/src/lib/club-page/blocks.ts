@@ -78,6 +78,27 @@ export function zoneBlocks(cfg: BlockConfig[], zone: Zone): BlockConfig[] {
     .sort((a, b) => a.order - b.order)
 }
 
+/** Normalize a stored socials object into labeled outbound links. */
+export function socialLinks(socials: unknown): Array<{ key: string; label: string; href: string }> {
+  if (!socials || typeof socials !== "object") return []
+  const map: Record<string, { label: string; base: string }> = {
+    instagram: { label: "Instagram", base: "https://instagram.com/" },
+    facebook: { label: "Facebook", base: "https://facebook.com/" },
+    x: { label: "X", base: "https://x.com/" },
+    youtube: { label: "YouTube", base: "" },
+    tiktok: { label: "TikTok", base: "https://tiktok.com/@" },
+  }
+  const out: Array<{ key: string; label: string; href: string }> = []
+  for (const [key, cfg] of Object.entries(map)) {
+    const v = (socials as any)[key]
+    if (typeof v === "string" && v.trim()) {
+      const val = v.trim()
+      out.push({ key, label: cfg.label, href: /^https?:\/\//.test(val) ? val : cfg.base + val.replace(/^@/, "") })
+    }
+  }
+  return out
+}
+
 /** Sub-nav anchors derived from the visible main-zone content sections. */
 export const SUBNAV_SECTIONS: Array<{ key: string; label: string; anchor: string }> = [
   { key: "about", label: "About", anchor: "about" },

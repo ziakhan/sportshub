@@ -10,7 +10,8 @@ import { getSeasonStandings } from "@/lib/queries/standings"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
-import { Badge, Card, EntityHeader, NewsCard, ScoreCard, SectionHeader, StandingsTable } from "@/components/ui"
+import { Badge, Card, NewsCard, ScoreCard, SectionHeader, StandingsTable } from "@/components/ui"
+import { socialLinks } from "@/lib/club-page/blocks"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -41,6 +42,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   if (!season) notFound()
   const leagueId = season.league?.id
   const leagueName = season.league?.name
+  const brand: any = leagueId
+    ? await (prisma as any).league.findUnique({
+        where: { id: leagueId },
+        select: { logoUrl: true, bannerUrl: true, tagline: true, primaryColor: true, socials: true },
+      })
+    : null
 
   const session = await getServerSession(authOptions).catch(() => null)
   const viewerId = (session?.user as any)?.id ?? null
@@ -119,25 +126,80 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         </Link>
       </div>
 
-      <EntityHeader
-        name={leagueName ?? "League"}
-        subtitle={season.league?.description ?? undefined}
-        meta={[
-          season.label,
-          `${approvedTeams.length} teams`,
-          `${Math.round(completedCount)} games played`,
-          ...(season.status === "IN_PROGRESS" ? ["Season underway"] : []),
-          ...(isOpen && !deadlinePassed ? ["Registration open"] : []),
-        ].filter(Boolean)}
-        primaryColor="#1d4ed8"
-        crestText={(leagueName ?? "L").slice(0, 1)}
-        action={
-          leagueId ? (
-            <FollowButton leagueId={leagueId} initialFollowing={leagueFollowed} isAuthenticated={!!viewerId} />
-          ) : undefined
-        }
-        className="mb-8"
-      />
+      {/* Branded league hero (customizable — docs/roadmap/customizable-pages.md) */}
+      <header
+        className="relative mb-8 overflow-hidden rounded-3xl text-white"
+        style={{ backgroundColor: brand?.primaryColor || "#1d4ed8" }}
+      >
+        {brand?.bannerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={brand.bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+        <div className="relative p-6 sm:p-8">
+          <div className="flex flex-wrap items-end gap-4">
+            {brand?.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brand.logoUrl}
+                alt={`${leagueName} logo`}
+                className="h-16 w-16 flex-shrink-0 rounded-2xl border-2 border-white/40 bg-white object-cover shadow sm:h-20 sm:w-20"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-2xl font-bold drop-shadow sm:text-3xl">
+                {leagueName ?? "League"}
+              </h1>
+              {brand?.tagline && (
+                <p className="mt-1 text-sm font-medium text-white/90 drop-shadow">{brand.tagline}</p>
+              )}
+            </div>
+            {leagueId && (
+              <FollowButton
+                leagueId={leagueId}
+                initialFollowing={leagueFollowed}
+                isAuthenticated={!!viewerId}
+                variant="banner"
+              />
+            )}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {[
+              season.label,
+              `${approvedTeams.length} teams`,
+              `${Math.round(completedCount)} games played`,
+              ...(season.status === "IN_PROGRESS" ? ["Season underway"] : []),
+              ...(isOpen && !deadlinePassed ? ["Registration open"] : []),
+            ]
+              .filter(Boolean)
+              .map((m, i) => (
+                <span key={i} className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
+                  {m}
+                </span>
+              ))}
+          </div>
+          {season.league?.description && (
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/85 line-clamp-3">
+              {season.league.description}
+            </p>
+          )}
+          {socialLinks(brand?.socials).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {socialLinks(brand?.socials).map((l) => (
+                <a
+                  key={l.key}
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-white/20"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-10 lg:col-span-2">

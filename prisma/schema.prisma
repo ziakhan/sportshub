@@ -876,6 +876,13 @@ model League {
   currency        String  @default("CAD")
   stripeAccountId String? @unique
 
+  // Customizable public page branding (docs/roadmap/customizable-pages.md).
+  logoUrl      String? @db.Text
+  bannerUrl    String? @db.Text
+  tagline      String?
+  primaryColor String  @default("#1a73e8")
+  socials      Json?
+
   // Live-scoring configuration (docs/live-scoring-design.md) — owner-confirmed
   // defaults: STANDARD depth, simple clock ON.
   statDepth     StatDepth  @default(STANDARD)
