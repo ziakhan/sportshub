@@ -29,9 +29,10 @@ export function ClubTabs({ tabs }: { tabs: Tab[] }) {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium ${
+            style={active ? { borderColor: "var(--brand)", color: "var(--brand-ink)" } : undefined}
+            className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-semibold ${
               active
-                ? "border-play-500 text-play-700"
+                ? ""
                 : "border-transparent text-ink-500 hover:border-ink-200 hover:text-ink-700"
             }`}
           >
