@@ -30,6 +30,10 @@ vi.mock("@/app/(platform)/dashboard/create-menu", () => ({
   CreateMenu: () => <div>CreateMenu</div>,
 }))
 
+vi.mock("@/app/(platform)/dashboard/completion-pill", () => ({
+  CompletionPill: () => <div>CompletionPill</div>,
+}))
+
 vi.mock("@/app/(platform)/dashboard/user-menu", () => ({
   UserMenu: ({ userName }: { userName: string }) => <div>UserMenu:{userName}</div>,
 }))
