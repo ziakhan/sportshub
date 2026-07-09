@@ -21,6 +21,7 @@ export interface ClubPageData {
   announcements: any[]
   recentGames: any[]
   upcomingGames: any[]
+  news: any[]
 }
 
 type Variant = "main" | "rail"
@@ -40,6 +41,8 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
       return true // shows an empty state
     case "schedule":
       return d.recentGames.length + d.upcomingGames.length > 0
+    case "news":
+      return d.news.length > 0
     case "reviews":
       return true
     case "nextgame":
@@ -100,6 +103,8 @@ function renderBlock(key: string, variant: Variant, d: ClubPageData) {
       return <TeamsBlock d={d} />
     case "schedule":
       return <ScheduleBlock d={d} />
+    case "news":
+      return <NewsBlock d={d} />
     case "reviews":
       return <ReviewsBlock d={d} />
     case "nextgame":
@@ -294,6 +299,43 @@ function GameRow({ g, final }: { g: any; final?: boolean }) {
           : format(new Date(g.scheduledAt), "MMM d, h:mm a")}
       </span>
     </Link>
+  )
+}
+
+function NewsBlock({ d }: { d: ClubPageData }) {
+  if (d.news.length === 0) return null
+  return (
+    <Card>
+      <h2 className={H2}>News &amp; highlights</h2>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {d.news.map((post: any) => {
+          const m = post.media?.[0]
+          const img = m?.posterUrl || (m?.type === "IMAGE" ? m?.url : null)
+          return (
+            <Link
+              key={post.id}
+              href={`/news/${post.slug}`}
+              className="group border-ink-100 hover:border-hoop-300 hover:shadow-soft block cursor-pointer overflow-hidden rounded-2xl border transition"
+            >
+              {img && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img} alt="" className="h-32 w-full object-cover" />
+              )}
+              <div className="p-3">
+                <h3 className="text-ink-900 group-hover:text-hoop-600 text-sm font-semibold transition">
+                  {post.title}
+                </h3>
+                {post.publishedAt && (
+                  <p className="text-ink-400 mt-1 text-xs">
+                    {format(new Date(post.publishedAt), "MMM d, yyyy")}
+                  </p>
+                )}
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </Card>
   )
 }
 

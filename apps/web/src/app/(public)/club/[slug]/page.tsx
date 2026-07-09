@@ -136,6 +136,20 @@ async function getGames(teamIds: string[]) {
   return { recentGames, upcomingGames }
 }
 
+async function getClubNews(tenantId: string, teamIds: string[]) {
+  const orTags: any[] = [{ tenantId }]
+  if (teamIds.length) orTags.push({ teamId: { in: teamIds } })
+  return (prisma as any).post.findMany({
+    where: { status: "PUBLISHED", tags: { some: { OR: orTags } } },
+    select: {
+      id: true, title: true, slug: true, publishedAt: true,
+      media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 4,
+  })
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const tenant = await prisma.tenant.findUnique({
     where: { slug: params.slug },
@@ -172,7 +186,11 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   ])
   const { teams, tryouts, staffCount } = clubData
   const { userId } = reviewsData
-  const { recentGames, upcomingGames } = await getGames(teams.map((t: any) => t.id))
+  const teamIds = teams.map((t: any) => t.id)
+  const [{ recentGames, upcomingGames }, news] = await Promise.all([
+    getGames(teamIds),
+    getClubNews(club.id, teamIds),
+  ])
   const initialFollowing = userId
     ? !!(await (prisma as any).follow.findFirst({ where: { userId, tenantId: club.id }, select: { id: true } }))
     : false
@@ -196,6 +214,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     announcements,
     recentGames,
     upcomingGames,
+    news,
   }
 
   const layout = resolveLayout(branding?.pageLayout)
