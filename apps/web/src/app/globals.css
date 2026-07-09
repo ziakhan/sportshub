@@ -24,6 +24,16 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 24.6 95% 53.1%;
     --radius: 0.5rem;
+
+    /* Design-system "brand" tone — default indigo fallback so the kit works
+       app-wide even without a brand wrapper. Operator/public surfaces override
+       these per-org via brandStyle() (see lib/club-page/brand.ts). */
+    --brand: #4f46e5;
+    --brand-on: #ffffff;
+    --brand-ink: #4338ca;
+    --brand-soft: #eef2ff;
+    --brand-softer: #f5f7ff;
+    --brand-line: #c7d2fe;
   }
 
   .dark {

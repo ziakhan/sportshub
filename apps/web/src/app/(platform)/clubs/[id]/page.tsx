@@ -1,7 +1,8 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
+import type { ReactNode } from "react"
 import { brandStyle } from "@/lib/club-page/brand"
-import { StatTile, AnimatedNumber } from "./overview-ui"
+import { StatTile, AnimatedNumber, Button, PanelHeader } from "@/components/ui"
 
 interface OverviewTeam {
   id: string
@@ -148,7 +149,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           value={data.teamCount}
           label="Teams"
           tone="court"
-          icon="teams"
+          icon={TILE_ICONS.teams}
           delay={0}
           sub={data.teamsWithNoPlayers.length > 0 ? `${data.teamsWithNoPlayers.length} without players` : null}
           subTone="play"
@@ -158,7 +159,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           value={data.tryoutCount}
           label="Tryouts"
           tone="play"
-          icon="tryouts"
+          icon={TILE_ICONS.tryouts}
           delay={70}
           sub={`${data.activeTryouts} active · ${data.draftTryouts} draft`}
           subTone="ink"
@@ -168,7 +169,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           value={data.totalOffers}
           label="Offers"
           tone="hoop"
-          icon="offers"
+          icon={TILE_ICONS.offers}
           delay={140}
           sub={data.pendingOffers > 0 ? `${data.pendingOffers} awaiting` : null}
           subTone="hoop"
@@ -178,7 +179,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           value={data.staffCount}
           label="Staff"
           tone="ink"
-          icon="staff"
+          icon={TILE_ICONS.staff}
           delay={210}
           sub={data.pendingInvites > 0 ? `${data.pendingInvites} pending invite${data.pendingInvites !== 1 ? "s" : ""}` : null}
           subTone="hoop"
@@ -191,12 +192,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           className="reveal border-ink-100 shadow-soft mb-8 overflow-hidden rounded-[28px] border bg-white"
           style={{ animationDelay: "260ms" }}
         >
-          <div className="bg-[var(--brand-soft)] flex items-center gap-2.5 px-6 py-4">
-            <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
-            <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
-              Needs attention
-            </span>
-          </div>
+          <PanelHeader variant="band" title="Needs attention" />
           <div className="space-y-2 p-4">
             {data.tryoutsNeedingOffers.map((t) => (
               <AttnRow
@@ -262,12 +258,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           className="reveal border-ink-100 shadow-soft mb-8 rounded-[28px] border bg-white p-6"
           style={{ animationDelay: "320ms" }}
         >
-          <div className="mb-4 flex items-center gap-2.5">
-            <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
-            <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
-              Offer pipeline
-            </span>
-          </div>
+          <PanelHeader title="Offer pipeline" />
           <div className="grow-x bg-ink-100 mb-5 flex h-2.5 overflow-hidden rounded-full">
             {pipe
               .filter((p) => p.n > 0)
@@ -300,33 +291,28 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
         className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
         style={{ animationDelay: "380ms" }}
       >
-        <div className="mb-4 flex items-center gap-2.5">
-          <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
-          <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
-            Quick actions
-          </span>
-        </div>
+        <PanelHeader title="Quick actions" />
         <div className="flex flex-wrap gap-3">
-          <ActionButton href={`/clubs/${params.id}/teams/create`} primary icon="plus">
+          <Button href={`/clubs/${params.id}/teams/create`} icon={ACTION_ICONS.plus}>
             Create team
-          </ActionButton>
-          <ActionButton href={`/clubs/${params.id}/tryouts/create`} primary icon="plus">
+          </Button>
+          <Button href={`/clubs/${params.id}/tryouts/create`} icon={ACTION_ICONS.plus}>
             Create tryout
-          </ActionButton>
-          <ActionButton href={`/clubs/${params.id}/staff`} icon="people">
+          </Button>
+          <Button href={`/clubs/${params.id}/staff`} variant="subtle" icon={ACTION_ICONS.people}>
             Manage staff
-          </ActionButton>
+          </Button>
           {data.acceptedOffers > 0 && (
-            <ActionButton href={`/clubs/${params.id}/offers/summary`} tone="court" icon="list">
+            <Button href={`/clubs/${params.id}/offers/summary`} tone="court" icon={ACTION_ICONS.list}>
               Accepted summary
-            </ActionButton>
+            </Button>
           )}
-          <ActionButton href={`/clubs/${params.id}/public`} icon="eye">
+          <Button href={`/clubs/${params.id}/public`} variant="subtle" icon={ACTION_ICONS.eye}>
             View public page
-          </ActionButton>
-          <ActionButton href={`/clubs/${params.id}/settings`} icon="gear">
+          </Button>
+          <Button href={`/clubs/${params.id}/settings`} variant="subtle" icon={ACTION_ICONS.gear}>
             Settings
-          </ActionButton>
+          </Button>
         </div>
       </section>
     </div>
@@ -363,41 +349,64 @@ function AttnRow({
   )
 }
 
-const ACTION_ICONS: Record<string, React.ReactNode> = {
-  plus: <path d="M12 5v14M5 12h14" strokeLinecap="round" />,
-  people: <><circle cx="9" cy="7" r="4" /><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M19 8v6M22 11h-6" strokeLinecap="round" /></>,
-  list: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />,
-  eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></>,
-  gear: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9v0" /></>,
+/** Full SVG icons for the stat tiles (20×20). */
+const TILE_ICONS: Record<string, ReactNode> = {
+  teams: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+    </svg>
+  ),
+  tryouts: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" strokeLinejoin="round" />
+      <path d="M9 13l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  offers: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  staff: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M22 11h-6" strokeLinecap="round" />
+    </svg>
+  ),
 }
 
-/** Polished quick-action button — primary uses the club brand color; press + hover motion. */
-function ActionButton({
-  href,
-  children,
-  primary,
-  tone,
-  icon,
-}: {
-  href: string
-  children: React.ReactNode
-  primary?: boolean
-  tone?: "court"
-  icon: keyof typeof ACTION_ICONS
-}) {
-  const base =
-    "brand-focus inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97]"
-  const style = primary
-    ? "text-[color:var(--brand-on)] shadow-[0_10px_24px_-12px_rgba(15,23,42,0.5)] hover:brightness-95"
-    : tone === "court"
-      ? "bg-court-600 text-white hover:bg-court-700 shadow-[0_10px_24px_-14px_rgba(22,163,74,0.6)]"
-      : "border-ink-200 text-ink-700 border bg-white hover:border-ink-300 hover:bg-ink-50"
-  return (
-    <Link href={href} className={`${base} ${style}`} style={primary ? { backgroundColor: "var(--brand)" } : undefined}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-        {ACTION_ICONS[icon]}
-      </svg>
-      {children}
-    </Link>
-  )
+/** Full SVG icons for the quick-action buttons (the Button kit sizes them). */
+const ACTION_ICONS: Record<string, ReactNode> = {
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
+  people: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="7" r="4" />
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M19 8v6M22 11h-6" strokeLinecap="round" />
+    </svg>
+  ),
+  list: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />
+    </svg>
+  ),
+  eye: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  gear: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9v0" />
+    </svg>
+  ),
 }

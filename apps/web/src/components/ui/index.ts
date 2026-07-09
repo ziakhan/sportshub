@@ -4,6 +4,15 @@ export { Card } from "./card"
 export { Badge, type BadgeTone } from "./badge"
 export { SectionHeader } from "./section-header"
 export { StatBlock } from "./stat-block"
+export { AnimatedNumber } from "./animated-number"
+export { StatTile, type StatTileTone } from "./stat-tile"
+export {
+  Button,
+  type ButtonVariant,
+  type ButtonTone,
+  type ButtonSize,
+} from "./button"
+export { PanelHeader } from "./panel-header"
 export { EntityHeader } from "./entity-header"
 export { Tabs, type TabItem } from "./tabs"
 export { ScoreCard, type GameStatus } from "./score-card"
