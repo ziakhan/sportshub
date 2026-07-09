@@ -1,7 +1,9 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
+import type { ReactNode } from "react"
 import { formatCurrency } from "@/lib/countries"
+import { StatTile, Button, Badge, type BadgeTone, type StatTileTone } from "@/components/ui"
 import { OffersFilter } from "./offers-filter"
 
 interface ClubOffer {
@@ -80,6 +82,14 @@ async function getTenantCurrency(tenantId: string) {
   return tenant?.currency || "USD"
 }
 
+/** Badge tone per offer status. */
+const STATUS_BADGE: Record<string, BadgeTone> = {
+  PENDING: "gold",
+  ACCEPTED: "court",
+  DECLINED: "hoop",
+  EXPIRED: "neutral",
+}
+
 export default async function ClubOffersPage({
   params,
   searchParams,
@@ -92,13 +102,6 @@ export default async function ClubOffersPage({
     getClubTeams(params.id),
     getTenantCurrency(params.id),
   ])
-
-  const statusColors: Record<string, string> = {
-    PENDING: "bg-hoop-100 text-hoop-700",
-    ACCEPTED: "bg-court-100 text-court-700",
-    DECLINED: "bg-hoop-100 text-hoop-700",
-    EXPIRED: "bg-court-100 text-ink-600",
-  }
 
   const pendingCount = offers.filter((o) => o.status === "PENDING").length
   const acceptedCount = offers.filter((o) => o.status === "ACCEPTED").length
@@ -119,69 +122,61 @@ export default async function ClubOffersPage({
 
   const activeFilterTeam = teams.find((t) => t.id === teamFilter)
 
+  // Clickable status stat-tiles — each toggles its own status filter.
+  const statCards: {
+    key: string
+    label: string
+    count: number
+    tone: StatTileTone
+    param: string
+    icon: ReactNode
+  }[] = [
+    { key: "PENDING", label: "Pending", count: pendingCount, tone: "gold", param: "pending", icon: TILE_ICONS.pending },
+    { key: "ACCEPTED", label: "Accepted", count: acceptedCount, tone: "court", param: "accepted", icon: TILE_ICONS.accepted },
+    { key: "DECLINED", label: "Declined", count: declinedCount, tone: "hoop", param: "declined", icon: TILE_ICONS.declined },
+    { key: "EXPIRED", label: "Expired", count: expiredCount, tone: "ink", param: "expired", icon: TILE_ICONS.expired },
+  ]
+
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-ink-900 text-xl font-bold">Offers</h2>
+          <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+            Offers
+          </h2>
           <p className="text-ink-500 mt-1 text-sm">Manage offers sent to players from tryouts</p>
         </div>
         {acceptedCount > 0 && (
-          <Link
+          <Button
             href={`/clubs/${params.id}/offers/summary${teamFilter ? `?team=${teamFilter}` : ""}`}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+            tone="court"
+            icon={ACTION_ICONS.list}
           >
             Order Sheet
-          </Link>
+          </Button>
         )}
       </div>
 
       {/* Stats — clickable to filter */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Link
-          href={
-            statusFilter === "PENDING"
-              ? `/clubs/${params.id}/offers`
-              : `/clubs/${params.id}/offers?status=pending${teamFilter ? `&team=${teamFilter}` : ""}`
-          }
-          className={`rounded-2xl border p-4 transition ${statusFilter === "PENDING" ? "border-hoop-400 ring-hoop-200 ring-2" : "border-hoop-200"} bg-hoop-50`}
-        >
-          <div className="text-hoop-700 text-2xl font-bold">{pendingCount}</div>
-          <div className="text-hoop-600 text-sm">Pending</div>
-        </Link>
-        <Link
-          href={
-            statusFilter === "ACCEPTED"
-              ? `/clubs/${params.id}/offers`
-              : `/clubs/${params.id}/offers?status=accepted${teamFilter ? `&team=${teamFilter}` : ""}`
-          }
-          className={`rounded-2xl border p-4 transition ${statusFilter === "ACCEPTED" ? "border-court-400 ring-court-200 ring-2" : "border-court-200"} bg-court-50`}
-        >
-          <div className="text-court-700 text-2xl font-bold">{acceptedCount}</div>
-          <div className="text-court-600 text-sm">Accepted</div>
-        </Link>
-        <Link
-          href={
-            statusFilter === "DECLINED"
-              ? `/clubs/${params.id}/offers`
-              : `/clubs/${params.id}/offers?status=declined${teamFilter ? `&team=${teamFilter}` : ""}`
-          }
-          className={`rounded-2xl border p-4 transition ${statusFilter === "DECLINED" ? "border-hoop-400 ring-hoop-200 ring-2" : "border-hoop-200"} bg-hoop-50`}
-        >
-          <div className="text-hoop-700 text-2xl font-bold">{declinedCount}</div>
-          <div className="text-hoop-600 text-sm">Declined</div>
-        </Link>
-        <Link
-          href={
-            statusFilter === "EXPIRED"
-              ? `/clubs/${params.id}/offers`
-              : `/clubs/${params.id}/offers?status=expired${teamFilter ? `&team=${teamFilter}` : ""}`
-          }
-          className={`rounded-2xl border p-4 transition ${statusFilter === "EXPIRED" ? "border-ink-400 ring-court-200 ring-2" : "border-ink-200"} bg-court-50`}
-        >
-          <div className="text-ink-600 text-2xl font-bold">{expiredCount}</div>
-          <div className="text-ink-500 text-sm">Expired</div>
-        </Link>
+        {statCards.map((card, i) => (
+          <StatTile
+            key={card.key}
+            value={card.count}
+            label={card.label}
+            tone={card.tone}
+            icon={card.icon}
+            delay={i * 70}
+            href={
+              statusFilter === card.key
+                ? `/clubs/${params.id}/offers`
+                : `/clubs/${params.id}/offers?status=${card.param}${teamFilter ? `&team=${teamFilter}` : ""}`
+            }
+            className={
+              statusFilter === card.key ? "ring-2 ring-[color:var(--brand)]" : undefined
+            }
+          />
+        ))}
       </div>
 
       {/* Team filter */}
@@ -194,23 +189,21 @@ export default async function ClubOffersPage({
 
       {/* Active filter indicator */}
       {(statusFilter || teamFilter) && (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-ink-500 text-sm">Filtered by:</span>
           {statusFilter && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[statusFilter] || "bg-court-100 text-ink-600"}`}
-            >
+            <Badge tone={STATUS_BADGE[statusFilter] || "neutral"}>
               {statusFilter.toLowerCase()}
-            </span>
+            </Badge>
           )}
           {activeFilterTeam && (
-            <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
+            <span className="rounded-full bg-[var(--brand-soft)] px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--brand-ink)]">
               {activeFilterTeam.name}
             </span>
           )}
           <Link
             href={`/clubs/${params.id}/offers`}
-            className="text-play-700 text-xs hover:underline"
+            className="text-xs font-semibold text-[color:var(--brand-ink)] hover:underline"
           >
             Clear all
           </Link>
@@ -218,27 +211,30 @@ export default async function ClubOffersPage({
       )}
 
       {filteredOffers.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+        <div className="reveal border-ink-200 shadow-soft rounded-[28px] border border-dashed bg-white p-12 text-center">
           {offers.length === 0 ? (
             <>
-              <h3 className="text-ink-900 mb-2 text-lg font-semibold">No offers yet</h3>
-              <p className="text-ink-600 mb-4">
+              <h3 className="font-condensed text-ink-900 mb-2 text-xl font-bold uppercase tracking-wide">
+                No offers yet
+              </h3>
+              <p className="text-ink-600 mb-5">
                 Go to a tryout&apos;s signups page to make offers to players.
               </p>
-              <Link
-                href={`/clubs/${params.id}/tryouts`}
-                className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
-              >
-                View Tryouts
-              </Link>
+              <div className="flex justify-center">
+                <Button href={`/clubs/${params.id}/tryouts`} icon={ACTION_ICONS.clipboard}>
+                  View Tryouts
+                </Button>
+              </div>
             </>
           ) : (
             <>
-              <h3 className="text-ink-900 mb-2 text-lg font-semibold">No matching offers</h3>
+              <h3 className="font-condensed text-ink-900 mb-2 text-xl font-bold uppercase tracking-wide">
+                No matching offers
+              </h3>
               <p className="text-ink-600 mb-4">No offers match the current filters.</p>
               <Link
                 href={`/clubs/${params.id}/offers`}
-                className="text-play-700 text-sm hover:underline"
+                className="text-sm font-semibold text-[color:var(--brand-ink)] hover:underline"
               >
                 Clear filters
               </Link>
@@ -248,43 +244,60 @@ export default async function ClubOffersPage({
       ) : (
         <div className="space-y-6">
           {/* Group by team */}
-          {teams.map((team) => {
+          {teams.map((team, teamIdx) => {
             const teamOffers = filteredOffers.filter((o) => o.team.id === team.id)
             if (teamOffers.length === 0) return null
 
             const teamAccepted = teamOffers.filter((o) => o.status === "ACCEPTED").length
 
             return (
-              <div key={team.id} className="border-ink-100 shadow-soft rounded-2xl border bg-white">
-                <div className="border-ink-100 flex items-center justify-between border-b px-6 py-4">
-                  <div>
-                    <h3 className="text-ink-900 font-semibold">{team.name}</h3>
-                    <p className="text-ink-500 text-xs">
-                      {teamOffers.length} offer{teamOffers.length !== 1 ? "s" : ""} &middot;{" "}
-                      {teamAccepted} accepted
-                    </p>
+              <div
+                key={team.id}
+                className="reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
+                style={{ animationDelay: `${teamIdx * 70}ms` }}
+              >
+                <div className="border-ink-100 flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="h-8 w-1.5 shrink-0 rounded-full bg-[var(--brand)]"
+                      aria-hidden
+                    />
+                    <div>
+                      <h3 className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
+                        {team.name}
+                      </h3>
+                      <p className="text-ink-500 mt-1 text-xs">
+                        {teamOffers.length} offer{teamOffers.length !== 1 ? "s" : ""} &middot;{" "}
+                        {teamAccepted} accepted
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Link
+                    <Button
                       href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
-                      className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                      variant="subtle"
+                      size="sm"
                     >
                       Team Dashboard
-                    </Link>
+                    </Button>
                     {teamAccepted > 0 && (
-                      <Link
+                      <Button
                         href={`/clubs/${params.id}/teams/${team.id}/roster`}
-                        className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
+                        tone="court"
+                        size="sm"
                       >
                         View Roster
-                      </Link>
+                      </Button>
                     )}
                   </div>
                 </div>
 
-                <div className="divide-court-100 divide-y">
+                <div className="divide-ink-100 divide-y">
                   {teamOffers.map((offer) => (
-                    <div key={offer.id} className="flex items-center justify-between px-6 py-3">
+                    <div
+                      key={offer.id}
+                      className="flex flex-wrap items-center justify-between gap-2 px-6 py-3"
+                    >
                       <div>
                         <span className="text-ink-900 font-medium">
                           {offer.player.firstName} {offer.player.lastName}
@@ -303,11 +316,9 @@ export default async function ClubOffersPage({
                             {offer.jerseyPref3 !== null ? `, #${offer.jerseyPref3}` : ""}
                           </span>
                         )}
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[offer.status]}`}
-                        >
+                        <Badge tone={STATUS_BADGE[offer.status] || "neutral"}>
                           {offer.status.toLowerCase()}
-                        </span>
+                        </Badge>
                         <span className="text-ink-400 text-xs">
                           {format(new Date(offer.createdAt), "MMM d")}
                         </span>
@@ -322,4 +333,50 @@ export default async function ClubOffersPage({
       )}
     </div>
   )
+}
+
+/** Stat-tile icons (20×20 — the tile sizes them via h-5 w-5). */
+const TILE_ICONS: Record<string, ReactNode> = {
+  pending: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  accepted: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 12.5l2.5 2.5 4.5-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  declined: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6M15 9l-6 6" strokeLinecap="round" />
+    </svg>
+  ),
+  expired: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.6 5.6l12.8 12.8" strokeLinecap="round" />
+    </svg>
+  ),
+}
+
+/** Button icons (the Button kit sizes them per `size`). */
+const ACTION_ICONS: Record<string, ReactNode> = {
+  list: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" strokeLinecap="round" />
+    </svg>
+  ),
+  clipboard: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path
+        d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
 }

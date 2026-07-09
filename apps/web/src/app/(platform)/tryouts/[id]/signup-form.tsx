@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import type { ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import { tryoutSignupSchema, type TryoutSignupFormData } from "@/lib/validations/tryout-signup"
+import { Button, PanelHeader } from "@/components/ui"
 
 interface Player {
   id: string
@@ -53,7 +55,7 @@ export function SignupForm({
   })
   const labelClass = "block text-sm font-medium text-ink-800"
   const inputClass =
-    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
+    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-[color:var(--brand)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-line)]"
 
   // Filter out players who are already signed up
   const signedUpNames = new Set(existingSignups.map((s) => s.playerName))
@@ -111,7 +113,7 @@ export function SignupForm({
         </div>
         <Link
           href="/dashboard"
-          className="text-play-700 hover:text-play-800 block text-center text-sm font-medium"
+          className="block text-center text-sm font-medium text-[color:var(--brand-ink)] transition hover:opacity-80"
         >
           View in Dashboard &rarr;
         </Link>
@@ -152,25 +154,22 @@ export function SignupForm({
   if (players.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+        <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
           <h3 className="mb-2 font-semibold text-yellow-800">Add a Player First</h3>
           <p className="text-hoop-700 text-sm">
             You need to add a player before signing up for a tryout.
           </p>
         </div>
-        <Link
-          href={`/players/add?redirect=/tryouts/${tryoutId}`}
-          className="bg-play-600 hover:bg-play-700 block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition"
-        >
+        <Button href={`/players/add?redirect=/tryouts/${tryoutId}`} block size="lg" icon={ICONS.plus}>
           Add a Player
-        </Link>
+        </Button>
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-ink-900 font-semibold">Sign Up a Player</h3>
+      <PanelHeader title="Sign Up a Player" />
 
       {existingSignups.length > 0 && (
         <div className="border-court-100 bg-court-50 rounded-xl border p-3">
@@ -228,18 +227,28 @@ export function SignupForm({
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 w-full rounded-xl px-4 py-3 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
-        >
+        <Button type="submit" disabled={isSubmitting} block size="lg" icon={ICONS.check}>
           {isSubmitting
             ? "Signing up..."
             : tryoutFee === 0
               ? "Sign Up (Free)"
               : `Sign Up ($${tryoutFee})`}
-        </button>
+        </Button>
       </form>
     </div>
   )
+}
+
+/** Inline SVG icons (the Button kit sizes them). */
+const ICONS: Record<string, ReactNode> = {
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
+  check: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 }

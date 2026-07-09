@@ -6,7 +6,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
-import { Badge, Card } from "@/components/ui"
+import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
+import { brandStyle } from "@/lib/club-page/brand"
 import { CampSignupForm } from "./camp-signup-form"
 
 export const dynamic = "force-dynamic"
@@ -67,13 +68,16 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
     camp.includesBall && "Basketball",
   ].filter(Boolean)
 
+  const infoTile = "rounded-2xl border border-[color:var(--brand-line)] bg-[var(--brand-softer)] p-4"
+  const infoLabel = "mb-1 font-condensed text-xs font-semibold uppercase tracking-wide text-ink-500"
+
   return (
-    <>
-      <div className="border-b" style={{ backgroundColor: primaryColor }}>
+    <div className="font-barlow" style={brandStyle(primaryColor)}>
+      <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="container mx-auto px-4 py-6">
-          <Link href="/events" className="mb-2 inline-block text-sm text-white/80 hover:text-white">&larr; Back to Events</Link>
+          <Link href="/events" className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100">&larr; Back to Events</Link>
           <Link href={`/club/${camp.tenant.slug}`}>
-            <h2 className="text-lg font-semibold text-white hover:text-white/90">{camp.tenant.name}</h2>
+            <h2 className="font-condensed text-xl font-bold tracking-tight text-[color:var(--brand-on)] transition hover:opacity-90">{camp.tenant.name}</h2>
           </Link>
         </div>
       </div>
@@ -81,9 +85,9 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-8">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-medium text-violet-700">
+            <Card className="reveal p-8">
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-sm font-semibold text-[color:var(--brand-ink)]">
                   {CAMP_TYPE_LABELS[camp.campType] || camp.campType}
                 </span>
                 {isPast && <Badge tone="neutral">Ended</Badge>}
@@ -91,31 +95,31 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                 {isFull && !isPast && <Badge tone="danger">Full</Badge>}
               </div>
 
-              <h1 className="text-3xl font-bold text-ink-950 mb-2">{camp.name}</h1>
+              <h1 className="font-condensed text-4xl font-bold tracking-tight text-ink-950 mb-2">{camp.name}</h1>
               <p className="text-ink-500 mb-4">{camp.ageGroup}{camp.gender ? ` • ${camp.gender}` : ""}</p>
 
               {camp.description && <p className="text-ink-700 mb-6">{camp.description}</p>}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Dates</div>
+                <div className={infoTile}>
+                  <div className={infoLabel}>Dates</div>
                   <div className="text-ink-950">
                     {format(new Date(camp.startDate), "MMM d")} - {format(new Date(camp.endDate), "MMM d, yyyy")}
                   </div>
                   <div className="text-sm text-ink-500">{weeks} week{weeks !== 1 ? "s" : ""}</div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Daily Schedule</div>
+                <div className={infoTile}>
+                  <div className={infoLabel}>Daily Schedule</div>
                   <div className="text-ink-950">{camp.dailyStartTime} - {camp.dailyEndTime}</div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Location</div>
+                <div className={infoTile}>
+                  <div className={infoLabel}>Location</div>
                   <div className="text-ink-950">{camp.location}</div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
-                  <div className="text-sm font-medium text-ink-500 mb-1">Spots</div>
+                <div className={infoTile}>
+                  <div className={infoLabel}>Spots</div>
                   <div className="text-ink-950">
-                    {camp._count.signups} registered
+                    <span className="font-condensed text-xl font-bold text-[color:var(--brand-ink)]"><AnimatedNumber value={camp._count.signups} /></span> registered
                     {spotsLeft !== null && <span className="text-sm text-ink-500"> ({spotsLeft} left)</span>}
                   </div>
                 </div>
@@ -123,12 +127,15 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
             </Card>
 
             {(camp.details || included.length > 0) && (
-              <Card className="p-8">
-                <h2 className="text-lg font-bold text-ink-950 mb-4">What&apos;s Included</h2>
+              <Card className="reveal p-8 [animation-delay:80ms]">
+                <PanelHeader title="What's Included" />
                 {included.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {included.map((item: any) => (
-                      <span key={item as string} className="rounded-full bg-court-50 px-3 py-1 text-sm font-medium text-court-700">{item}</span>
+                      <span key={item as string} className="inline-flex items-center gap-1.5 rounded-full bg-court-50 px-3 py-1 text-sm font-semibold text-court-700">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3.5 w-3.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        {item}
+                      </span>
                     ))}
                   </div>
                 )}
@@ -138,19 +145,19 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
           </div>
 
           <div>
-            <Card className="sticky top-4">
+            <Card className="reveal sticky top-4 [animation-delay:120ms]">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-hoop-600">
+                <div className="font-condensed text-4xl font-bold leading-none text-[color:var(--brand-ink)]">
                   {formatCurrency(camp.weeklyFee, currency)}
                 </div>
-                <p className="text-xs text-ink-500">per week</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-500">per week</p>
 
                 {hasDiscount && (
-                  <div className="mt-2 rounded-2xl bg-court-50 p-3">
-                    <div className="text-lg font-bold text-court-700">
+                  <div className="mt-3 rounded-2xl bg-court-50 p-3">
+                    <div className="font-condensed text-2xl font-bold text-court-700">
                       {formatCurrency(camp.fullCampFee, currency)}
                     </div>
-                    <p className="text-xs text-court-600">
+                    <p className="text-xs font-medium text-court-600">
                       All {weeks} weeks — save {savingsPercent}%
                     </p>
                   </div>
@@ -174,14 +181,18 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                   existingPlayerIds={existingPlayerIds}
                 />
               ) : (
-                <Link href={`/sign-in?callbackUrl=/camp/${camp.id}`}
-                  className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700">
+                <Button
+                  href={`/sign-in?callbackUrl=/camp/${camp.id}`}
+                  block
+                  size="lg"
+                  icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                >
                   Sign in to register
-                </Link>
+                </Button>
               )}
 
               <div className="mt-4 text-center">
-                <Link href={`/club/${camp.tenant.slug}`} className="text-sm text-hoop-600 hover:underline">
+                <Link href={`/club/${camp.tenant.slug}`} className="text-sm font-semibold text-[color:var(--brand-ink)] hover:underline">
                   View {camp.tenant.name} &rarr;
                 </Link>
               </div>
@@ -189,6 +200,6 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

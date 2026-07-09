@@ -6,7 +6,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
-import { Badge, Card } from "@/components/ui"
+import { AnimatedNumber, Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { brandStyle } from "@/lib/club-page/brand"
 import { HouseLeagueSignupForm } from "./house-league-signup-form"
 
 export const dynamic = "force-dynamic"
@@ -60,15 +61,20 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
   const days = league.daysOfWeek.split(",").map((d: string) => d.trim())
 
   return (
-    <>
+    <div className="font-barlow" style={brandStyle(primaryColor)}>
       {/* Banner */}
-      <div className="border-b" style={{ backgroundColor: primaryColor }}>
+      <div className="border-b bg-[var(--brand)]">
         <div className="container mx-auto px-4 py-6">
-          <Link href="/marketplace" className="mb-2 inline-block text-sm text-white/80 hover:text-white">
+          <Link
+            href="/marketplace"
+            className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100"
+          >
             &larr; Back
           </Link>
           <Link href={`/club/${league.tenant.slug}`}>
-            <h2 className="text-lg font-semibold text-white hover:text-white/90">{league.tenant.name}</h2>
+            <h2 className="font-condensed text-lg font-semibold uppercase tracking-wide text-[color:var(--brand-on)] hover:opacity-90">
+              {league.tenant.name}
+            </h2>
           </Link>
         </div>
       </div>
@@ -77,7 +83,7 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-8">
+            <Card className="reveal p-8">
               <div className="mb-4 flex items-center gap-3">
                 {isPast && <Badge tone="neutral">Ended</Badge>}
                 {!isPast && !isFull && <Badge tone="court">Open</Badge>}
@@ -85,7 +91,7 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                 {league.season && <Badge tone="hoop">{league.season}</Badge>}
               </div>
 
-              <h1 className="text-3xl font-bold text-ink-950 mb-2">{league.name}</h1>
+              <h1 className="font-condensed text-3xl font-bold text-ink-950 mb-2">{league.name}</h1>
               <p className="text-ink-500 mb-4">
                 {league.ageGroups.split(",").join(", ")}{league.gender ? ` • ${league.gender}` : ""}
               </p>
@@ -96,26 +102,26 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
 
               {/* Schedule */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-ink-50 p-4">
+                <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Dates</div>
                   <div className="text-ink-950">
                     {format(new Date(league.startDate), "MMM d")} - {format(new Date(league.endDate), "MMM d, yyyy")}
                   </div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
+                <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Weekly Schedule</div>
                   <div className="text-ink-950">
                     {days.join(", ")} {league.startTime} - {league.endTime}
                   </div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
+                <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Location</div>
                   <div className="text-ink-950">{league.location}</div>
                 </div>
-                <div className="rounded-2xl bg-ink-50 p-4">
+                <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Spots</div>
                   <div className="text-ink-950">
-                    {league._count.signups} registered
+                    <AnimatedNumber value={league._count.signups} /> registered
                     {spotsLeft !== null && <span className="text-sm text-ink-500"> ({spotsLeft} left)</span>}
                   </div>
                 </div>
@@ -124,13 +130,13 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
 
             {/* Details / What's Included */}
             {(league.details || included.length > 0) && (
-              <Card className="p-8">
-                <h2 className="text-lg font-bold text-ink-950 mb-4">What&apos;s Included</h2>
+              <Card className="reveal p-8 [animation-delay:120ms]">
+                <PanelHeader title="What's Included" />
 
                 {included.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
                     {included.map((item: any) => (
-                      <span key={item as string} className="rounded-full bg-court-50 px-3 py-1 text-sm font-medium text-court-700">
+                      <span key={item as string} className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-sm font-medium text-[color:var(--brand-ink)]">
                         {item}
                       </span>
                     ))}
@@ -146,9 +152,9 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
 
           {/* Sidebar */}
           <div>
-            <Card className="sticky top-4">
+            <Card className="reveal sticky top-4 [animation-delay:80ms]">
               <div className="mb-4 text-center">
-                <div className="text-3xl font-bold text-hoop-600">
+                <div className="font-condensed text-3xl font-bold text-[color:var(--brand-ink)]">
                   {league.fee === 0 ? "FREE" : formatCurrency(league.fee, currency)}
                 </div>
                 <p className="text-xs text-ink-500 mt-1">per player</p>
@@ -173,16 +179,22 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                   existingPlayerIds={existingPlayerIds}
                 />
               ) : (
-                <Link
+                <Button
                   href={`/sign-in?callbackUrl=/house-league/${league.id}`}
-                  className="block w-full rounded-xl bg-play-600 px-4 py-3 text-center font-semibold text-white hover:bg-play-700"
+                  block
+                  size="lg"
+                  icon={
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  }
                 >
                   Sign in to register
-                </Link>
+                </Button>
               )}
 
               <div className="mt-4 text-center">
-                <Link href={`/club/${league.tenant.slug}`} className="text-sm text-hoop-600 hover:underline">
+                <Link href={`/club/${league.tenant.slug}`} className="text-sm font-medium text-[color:var(--brand-ink)] hover:underline">
                   View {league.tenant.name} &rarr;
                 </Link>
               </div>
@@ -190,6 +202,6 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

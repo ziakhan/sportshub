@@ -1,6 +1,8 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
+import type { ReactNode } from "react"
+import { AnimatedNumber, Badge, Button } from "@/components/ui"
 import { PublishButton } from "./publish-button"
 import { TryoutsFilter } from "./tryouts-filter"
 
@@ -93,28 +95,26 @@ export default async function ClubTryoutsPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-ink-900 text-xl font-bold">Tryouts</h2>
-        <Link
-          href={`/clubs/${params.id}/tryouts/create`}
-          className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-        >
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          Tryouts
+        </h2>
+        <Button href={`/clubs/${params.id}/tryouts/create`} icon={ICONS.plus}>
           Create Tryout
-        </Link>
+        </Button>
       </div>
 
       {tryouts.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
-          <h3 className="text-ink-900 mb-2 text-lg font-semibold">No tryouts yet</h3>
+        <div className="reveal border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-12 text-center">
+          <h3 className="font-condensed text-ink-950 mb-2 text-xl font-bold uppercase tracking-wide">
+            No tryouts yet
+          </h3>
           <p className="text-ink-600 mb-6">
             Create a tryout and publish it to the marketplace so parents can sign up.
           </p>
-          <Link
-            href={`/clubs/${params.id}/tryouts/create`}
-            className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
-          >
+          <Button href={`/clubs/${params.id}/tryouts/create`} icon={ICONS.plus}>
             Create Your First Tryout
-          </Link>
+          </Button>
         </div>
       ) : (
         <>
@@ -135,21 +135,19 @@ export default async function ClubTryoutsPage({
           />
 
           {filtered.length === 0 ? (
-            <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
+            <div className="reveal border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-8 text-center">
               <p className="text-ink-600 mb-3">No tryouts match the current filters.</p>
-              <Link
-                href={`/clubs/${params.id}/tryouts`}
-                className="text-play-700 text-sm hover:underline"
-              >
+              <Button href={`/clubs/${params.id}/tryouts`} variant="subtle" size="sm">
                 Clear filters
-              </Link>
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {filtered.map((tryout) => (
+              {filtered.map((tryout, i) => (
                 <div
                   key={tryout.id}
-                  className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4 sm:p-6"
+                  className="reveal border-ink-100 shadow-soft rounded-3xl border bg-white p-4 transition duration-200 hover:border-[color:var(--brand-line)] sm:p-6"
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
                   {/* Title + badges */}
                   <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -157,22 +155,16 @@ export default async function ClubTryoutsPage({
                       {tryout.title}
                     </h3>
                     {tryout.isPast ? (
-                      <span className="bg-court-100 text-ink-600 rounded-full px-2 py-0.5 text-xs font-medium">
-                        Past
-                      </span>
+                      <Badge tone="neutral">Past</Badge>
                     ) : tryout.isPublished ? (
-                      <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                        Published
-                      </span>
+                      <Badge tone="court">Published</Badge>
                     ) : (
-                      <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                        Draft
-                      </span>
+                      <Badge tone="hoop">Draft</Badge>
                     )}
                     {tryout.team && (
                       <Link
                         href={`/clubs/${params.id}/teams/${tryout.team.id}/dashboard`}
-                        className="bg-play-100 text-play-700 hover:bg-play-200 rounded-full px-2 py-0.5 text-xs font-medium"
+                        className="rounded-full bg-[var(--brand-soft)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--brand-ink)] transition hover:brightness-95"
                       >
                         {tryout.team.name}
                       </Link>
@@ -188,38 +180,44 @@ export default async function ClubTryoutsPage({
 
                   {/* Stats + actions — stacks on mobile */}
                   <div className="flex flex-wrap items-center gap-3">
-                    <div>
-                      <span className="text-play-700 text-lg font-bold">
-                        {tryout.signupStats.total}
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-condensed text-2xl font-bold leading-none text-[color:var(--brand-ink)]">
+                        <AnimatedNumber value={tryout.signupStats.total} />
                         {tryout.maxParticipants ? ` / ${tryout.maxParticipants}` : ""}
                       </span>
-                      <span className="text-ink-500 ml-1 text-xs">signups</span>
+                      <span className="text-ink-500 text-xs">signups</span>
                       {tryout.signupStats.needsOffer > 0 && (
-                        <span className="text-play-700 ml-2 text-xs font-medium">
+                        <span className="text-hoop-600 ml-1 text-xs font-semibold">
                           ({tryout.signupStats.needsOffer} need
                           {tryout.signupStats.needsOffer === 1 ? "s" : ""} offer)
                         </span>
                       )}
                     </div>
                     <div className="ml-auto flex flex-wrap gap-2">
-                      <Link
+                      <Button
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/signups`}
-                        className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                        variant="secondary"
+                        size="sm"
+                        icon={ICONS.users}
                       >
                         Signups
-                      </Link>
-                      <Link
+                      </Button>
+                      <Button
                         href={`/clubs/${params.id}/tryouts/${tryout.id}/edit`}
-                        className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                        variant="subtle"
+                        size="sm"
+                        icon={ICONS.pencil}
                       >
                         Edit
-                      </Link>
-                      <Link
+                      </Button>
+                      <Button
                         href={`/tryout/${tryout.id}`}
-                        className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                        variant="subtle"
+                        size="sm"
+                        icon={ICONS.eye}
                       >
                         Public listing
-                      </Link>
+                      </Button>
                       {!tryout.isPast && (
                         <PublishButton tryoutId={tryout.id} isPublished={tryout.isPublished} />
                       )}
@@ -233,4 +231,31 @@ export default async function ClubTryoutsPage({
       )}
     </div>
   )
+}
+
+/** Leading SVG icons for the kit Buttons (the Button component sizes them). */
+const ICONS: Record<string, ReactNode> = {
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
+  users: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+    </svg>
+  ),
+  pencil: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  eye: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
 }

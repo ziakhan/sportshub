@@ -1,5 +1,6 @@
-import Link from "next/link"
+import type { ReactNode } from "react"
 import type { DashboardData } from "../get-dashboard-data"
+import { StatTile, AnimatedNumber, Button } from "@/components/ui"
 
 interface LeagueSectionProps {
   data: NonNullable<DashboardData["leagueOwner"]>
@@ -17,66 +18,75 @@ export function LeagueSection({ data }: LeagueSectionProps) {
           <p className="text-ink-500 mt-1 text-sm">Track teams, fixtures, and season activity.</p>
         </div>
         {data.leagues.length > 0 && (
-          <Link
+          <Button
             href={`/manage/leagues/${data.leagues[0].leagueId}`}
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+            variant="subtle"
+            icon={ACTION_ICONS.pencil}
           >
             Edit League
-          </Link>
+          </Button>
         )}
       </div>
 
       {data.leagues.length > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricCard
+            <StatTile
               label="Leagues"
               value={data.leagues.length}
-              tone="bg-play-50 text-play-700"
-              icon={<IconTrophy className="h-4 w-4" />}
+              tone="brand"
+              icon={<IconTrophy className="h-5 w-5" />}
+              delay={0}
             />
-            <MetricCard
+            <StatTile
               label="Teams"
               value={totalTeams}
-              tone="bg-court-50 text-court-700"
-              icon={<IconUsers className="h-4 w-4" />}
+              tone="court"
+              icon={<IconUsers className="h-5 w-5" />}
+              delay={70}
             />
-            <MetricCard
+            <StatTile
               label="Games"
               value={totalGames}
-              tone="bg-hoop-50 text-hoop-700"
-              icon={<IconCalendar className="h-4 w-4" />}
+              tone="hoop"
+              icon={<IconCalendar className="h-5 w-5" />}
+              delay={140}
             />
-            <MetricCard
+            <StatTile
               label="Games per league"
               value={Math.round(totalGames / Math.max(data.leagues.length, 1))}
-              tone="bg-ink-100 text-ink-700"
-              icon={<IconChart className="h-4 w-4" />}
+              tone="ink"
+              icon={<IconChart className="h-5 w-5" />}
+              delay={210}
             />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {data.leagues.map((league) => (
+            {data.leagues.map((league, i) => (
               <div
                 key={league.id}
-                className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
+                className="reveal border-ink-100 shadow-soft card-lift rounded-3xl border bg-white p-5 transition-colors hover:border-[color:var(--brand-line)]"
+                style={{ animationDelay: `${i * 70}ms` }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="text-ink-950 font-semibold">{league.name}</h3>
                     <p className="text-ink-500 mt-1 text-sm">{league.season}</p>
                   </div>
-
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="bg-ink-50 rounded-xl p-3">
                     <p className="text-ink-400 text-xs uppercase tracking-[0.1em]">Teams</p>
-                    <p className="text-ink-900 mt-1 text-lg font-semibold">{league._count.teams}</p>
+                    <p className="font-condensed text-ink-900 mt-1 text-2xl font-bold leading-none">
+                      <AnimatedNumber value={league._count.teams} />
+                    </p>
                   </div>
                   <div className="bg-ink-50 rounded-xl p-3">
                     <p className="text-ink-400 text-xs uppercase tracking-[0.1em]">Games</p>
-                    <p className="text-ink-900 mt-1 text-lg font-semibold">{league._count.games}</p>
+                    <p className="font-condensed text-ink-900 mt-1 text-2xl font-bold leading-none">
+                      <AnimatedNumber value={league._count.games} />
+                    </p>
                   </div>
                 </div>
 
@@ -84,21 +94,23 @@ export function LeagueSection({ data }: LeagueSectionProps) {
                   <span className="text-ink-400 text-xs uppercase tracking-[0.12em]">
                     League workspace
                   </span>
-                  <Link
+                  <Button
                     href={`/manage/leagues/${league.leagueId}/seasons/${league.id}/manage`}
-                    className="text-play-600 hover:text-play-700 text-sm font-semibold"
+                    variant="subtle"
+                    size="sm"
+                    icon={ACTION_ICONS.arrow}
                   >
                     Open
-                  </Link>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
-          <div className="bg-ink-50 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl">
-            <IconTrophy className="text-ink-500 h-5 w-5" />
+        <div className="reveal border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)] text-[color:var(--brand-ink)]">
+            <IconTrophy className="h-5 w-5" />
           </div>
           <h3 className="font-display text-ink-950 text-xl font-semibold">
             Create your first league
@@ -107,40 +119,39 @@ export function LeagueSection({ data }: LeagueSectionProps) {
             You&apos;ve signed up as a league organizer but haven&apos;t created a league yet. Get
             started now!
           </p>
-          <Link
-            href="/manage/leagues/create"
-            className="bg-play-600 hover:bg-play-700 inline-flex items-center rounded-xl px-6 py-3 text-sm font-semibold text-white transition"
-          >
-            Create League
-          </Link>
+          <div className="flex justify-center">
+            <Button href="/manage/leagues/create" size="lg" icon={ACTION_ICONS.plus}>
+              Create League
+            </Button>
+          </div>
         </div>
       )}
     </section>
   )
 }
 
-function MetricCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string
-  value: number
-  tone: string
-  icon: JSX.Element
-}) {
-  return (
-    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
-        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-          {label}
-        </div>
-      </div>
-      <div className="font-display text-ink-950 text-3xl font-bold">{value}</div>
-    </div>
-  )
+/** Unsized SVG icons for the kit Buttons (the Button sizes them per `size`). */
+const ACTION_ICONS: Record<string, ReactNode> = {
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
+  pencil: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20h9" strokeLinecap="round" />
+      <path
+        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  arrow: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 }
 
 function IconUsers({ className }: { className?: string }) {

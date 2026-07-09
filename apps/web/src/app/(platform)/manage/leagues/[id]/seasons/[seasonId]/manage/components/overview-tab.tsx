@@ -1,7 +1,9 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { StatTile, PanelHeader } from "@/components/ui"
 import type { PreflightCheck } from "./types"
 
 export function OverviewTab({
@@ -28,7 +30,7 @@ export function OverviewTab({
       {/* Finalization preflight checklist */}
       {preflightChecks && (
         <div
-          className={`mb-6 rounded-2xl border p-4 ${canFinalize ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}
+          className={`reveal mb-6 rounded-2xl border p-4 ${canFinalize ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}
         >
           <p
             className={`mb-2 text-sm font-semibold ${canFinalize ? "text-green-800" : "text-amber-800"}`}
@@ -69,28 +71,19 @@ export function OverviewTab({
       )}
 
       {/* Stats bar — overview only */}
-      <div className="mb-8 grid grid-cols-4 gap-4">
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-play-700 text-2xl font-bold">{divisions.length}</div>
-          <div className="text-ink-500 text-xs">Divisions</div>
-        </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-2xl font-bold text-green-600">{league.teams?.length || 0}</div>
-          <div className="text-ink-500 text-xs">Teams</div>
-        </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-hoop-600 text-2xl font-bold">{sessions.length}</div>
-          <div className="text-ink-500 text-xs">Sessions</div>
-        </div>
-        <div className="border-ink-100 rounded-2xl border bg-white p-4 text-center shadow-sm">
-          <div className="text-play-700 text-2xl font-bold">{venues.length}</div>
-          <div className="text-ink-500 text-xs">Venues</div>
-        </div>
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile value={divisions.length} label="Divisions" tone="brand" icon={TILE_ICONS.divisions} delay={0} />
+        <StatTile value={league.teams?.length || 0} label="Teams" tone="court" icon={TILE_ICONS.teams} delay={70} />
+        <StatTile value={sessions.length} label="Sessions" tone="hoop" icon={TILE_ICONS.sessions} delay={140} />
+        <StatTile value={venues.length} label="Venues" tone="play" icon={TILE_ICONS.venues} delay={210} />
       </div>
 
       {/* Season Info */}
-      <div className="border-ink-100 mt-6 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-        <h3 className="text-ink-900 mb-3 font-semibold">Season Summary</h3>
+      <div
+        className="reveal border-ink-100 mt-6 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
+        style={{ animationDelay: "280ms" }}
+      >
+        <PanelHeader title="Season summary" />
         <div className="grid grid-cols-2 gap-4 text-sm">
           {league.startDate && (
             <div>
@@ -112,7 +105,10 @@ export function OverviewTab({
           )}
           {league.teamFee && (
             <div>
-              <span className="text-ink-500">Team Fee:</span> {formatCurrency(league.teamFee)}
+              <span className="text-ink-500">Team Fee:</span>{" "}
+              <span className="text-[color:var(--brand-ink)] font-semibold">
+                {formatCurrency(league.teamFee)}
+              </span>
             </div>
           )}
           {league.gamesGuaranteed && (
@@ -130,4 +126,33 @@ export function OverviewTab({
       </div>
     </>
   )
+}
+
+/** Stat-tile icons (20×20). */
+const TILE_ICONS: Record<string, ReactNode> = {
+  divisions: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M3 7l9-4 9 4-9 4-9-4z" strokeLinejoin="round" />
+      <path d="M3 12l9 4 9-4M3 17l9 4 9-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  teams: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+    </svg>
+  ),
+  sessions: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" />
+    </svg>
+  ),
+  venues: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" strokeLinejoin="round" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  ),
 }

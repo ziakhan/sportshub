@@ -24,15 +24,15 @@ export function PanelHeader({ title, action, variant = "inline", className }: Pa
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5",
+        "flex flex-wrap items-center gap-x-2.5 gap-y-1",
         variant === "band" ? "bg-[var(--brand-soft)] px-6 py-4" : "mb-4",
         !!action && "justify-between",
         className
       )}
     >
-      <span className="flex min-w-0 items-center gap-2.5">
+      <span className="flex items-center gap-2.5">
         <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
-        <span className="font-condensed text-ink-950 truncate text-lg font-bold uppercase leading-none tracking-wide">
+        <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
           {title}
         </span>
       </span>

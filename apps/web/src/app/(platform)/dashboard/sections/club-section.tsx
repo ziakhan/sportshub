@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { StatTile, AnimatedNumber, Button, PanelHeader, Badge } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
 interface ClubSectionProps {
@@ -13,91 +14,94 @@ export function ClubSection({ data }: ClubSectionProps) {
 
   return (
     <section className="space-y-6">
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6 lg:col-span-3">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="font-display text-ink-950 text-2xl font-bold">Club management</h2>
-              <p className="text-ink-500 mt-1 text-sm">
-                A closer-to-mock dashboard view for club operations, programs, and staffing.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricCard
-              label="Clubs"
-              value={data.tenants.length}
-              tone="bg-play-50 text-play-700"
-              icon={<IconBuilding className="h-4 w-4" />}
-            />
-            <MetricCard
-              label="Teams"
-              value={totalTeams}
-              tone="bg-court-50 text-court-700"
-              icon={<IconUsers className="h-4 w-4" />}
-            />
-            <MetricCard
-              label="Tryouts"
-              value={totalTryouts}
-              tone="bg-hoop-50 text-hoop-700"
-              icon={<IconClipboard className="h-4 w-4" />}
-            />
-            <MetricCard
-              label="Plans"
-              value={new Set(data.tenants.map((tenant) => tenant.plan)).size}
-              tone="bg-ink-100 text-ink-700"
-              icon={<IconLayers className="h-4 w-4" />}
-            />
-          </div>
+      <div>
+        <div className="mb-5">
+          <h2 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+            Club management
+          </h2>
+          <p className="text-ink-500 mt-1 text-sm">
+            A closer-to-mock dashboard view for club operations, programs, and staffing.
+          </p>
         </div>
 
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white lg:col-span-2">
-          <div className="border-ink-100 flex items-center gap-2 border-b px-5 py-4">
-            <div className="bg-hoop-500 h-2 w-2 rounded-full" />
-            <h3 className="font-display text-ink-950 text-sm font-semibold">Needs attention</h3>
-          </div>
-          <div className="divide-ink-100 divide-y">
-            <AttentionRow
-              label={`${Math.max(data.tenants.length, 1)} club workspace${data.tenants.length === 1 ? "" : "s"} active`}
-              href="/dashboard"
-              icon={<IconBuilding className="text-play-600 h-3.5 w-3.5" />}
-              iconTone="bg-play-50"
-            />
-            <AttentionRow
-              label={`${totalTryouts} tryout${totalTryouts === 1 ? "" : "s"} currently tracked`}
-              href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/tryouts` : "/clubs/create"}
-              icon={<IconClipboard className="text-hoop-500 h-3.5 w-3.5" />}
-              iconTone="bg-hoop-50"
-            />
-            <AttentionRow
-              label={`${totalTeams} team${totalTeams === 1 ? "" : "s"} across your clubs`}
-              href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/teams` : "/clubs/create"}
-              icon={<IconUsers className="text-court-700 h-3.5 w-3.5" />}
-              iconTone="bg-court-50"
-            />
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            label="Clubs"
+            value={data.tenants.length}
+            tone="brand"
+            icon={<IconBuilding className="h-5 w-5" />}
+            delay={0}
+          />
+          <StatTile
+            label="Teams"
+            value={totalTeams}
+            tone="court"
+            icon={<IconUsers className="h-5 w-5" />}
+            delay={70}
+          />
+          <StatTile
+            label="Tryouts"
+            value={totalTryouts}
+            tone="hoop"
+            icon={<IconClipboard className="h-5 w-5" />}
+            delay={140}
+          />
+          <StatTile
+            label="Plans"
+            value={new Set(data.tenants.map((tenant) => tenant.plan)).size}
+            tone="ink"
+            icon={<IconLayers className="h-5 w-5" />}
+            delay={210}
+          />
+        </div>
+      </div>
+
+      <div
+        className="reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
+        style={{ animationDelay: "260ms" }}
+      >
+        <PanelHeader variant="band" title="Needs attention" />
+        <div className="space-y-2 p-4">
+          <AttentionRow
+            label={`${Math.max(data.tenants.length, 1)} club workspace${data.tenants.length === 1 ? "" : "s"} active`}
+            href="/dashboard"
+            icon={<IconBuilding className="text-play-600 h-4 w-4" />}
+            iconTone="bg-play-50"
+          />
+          <AttentionRow
+            label={`${totalTryouts} tryout${totalTryouts === 1 ? "" : "s"} currently tracked`}
+            href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/tryouts` : "/clubs/create"}
+            icon={<IconClipboard className="text-hoop-500 h-4 w-4" />}
+            iconTone="bg-hoop-50"
+          />
+          <AttentionRow
+            label={`${totalTeams} team${totalTeams === 1 ? "" : "s"} across your clubs`}
+            href={data.tenants[0] ? `/clubs/${data.tenants[0].id}/teams` : "/clubs/create"}
+            icon={<IconUsers className="text-court-700 h-4 w-4" />}
+            iconTone="bg-court-50"
+          />
         </div>
       </div>
 
       {data.tenants.length > 0 ? (
         <>
           <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
-              <div className="mb-5 flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-display text-ink-950 text-lg font-semibold">
-                    Club workspaces
-                  </h3>
-                  <p className="text-ink-500 mt-1 text-sm">
-                    Each club keeps its own teams, programs, and settings, even when one account
-                    manages multiple organizations.
-                  </p>
-                </div>
-              </div>
+            <div
+              className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+              style={{ animationDelay: "320ms" }}
+            >
+              <PanelHeader title="Club workspaces" />
+              <p className="text-ink-500 -mt-2 mb-5 text-sm">
+                Each club keeps its own teams, programs, and settings, even when one account manages
+                multiple organizations.
+              </p>
               <div className="grid gap-4 md:grid-cols-2">
-                {data.tenants.map((tenant) => (
-                  <div key={tenant.id} className="border-ink-100 bg-ink-50 rounded-2xl border p-5">
+                {data.tenants.map((tenant, index) => (
+                  <div
+                    key={tenant.id}
+                    className="reveal border-ink-100 bg-ink-50 card-lift rounded-2xl border p-5 transition-colors hover:border-[color:var(--brand-line)]"
+                    style={{ animationDelay: `${360 + index * 60}ms` }}
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h4 className="text-ink-950 font-semibold">{tenant.name}</h4>
@@ -150,27 +154,28 @@ export function ClubSection({ data }: ClubSectionProps) {
           </div>
 
           <div>
-            <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <h3 className="font-display text-ink-950 text-base font-semibold">Teams</h3>
-                <p className="text-ink-500 mt-1 text-sm">
+                <PanelHeader title="Teams" />
+                <p className="text-ink-500 -mt-2 text-sm">
                   A flat operating view across every club you manage.
                 </p>
               </div>
-              <Link
+              <Button
                 href={
                   data.tenants[0] ? `/clubs/${data.tenants[0].id}/teams/create` : "/clubs/create"
                 }
-                className="border-ink-200 text-ink-600 hover:bg-ink-50 inline-flex items-center gap-1.5 rounded-xl border bg-white px-3.5 py-2 text-xs font-medium transition"
+                variant="subtle"
+                size="sm"
+                icon={<IconPlus />}
               >
-                <IconPlus className="h-3 w-3" />
                 Add team
-              </Link>
+              </Button>
             </div>
 
             {teams.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {teams.map((team) => {
+                {teams.map((team, teamIndex) => {
                   const leadCoach = getLeadCoach(team)
                   const initials = team.players.map((entry) =>
                     getInitials(entry.player.firstName, entry.player.lastName)
@@ -181,19 +186,20 @@ export function ClubSection({ data }: ClubSectionProps) {
                     <Link
                       key={team.id}
                       href={`/clubs/${team.tenant.id}/teams/${team.id}/dashboard`}
-                      className={`hover:shadow-soft group rounded-2xl border p-4 transition hover:-translate-y-0.5 ${
-                        leadCoach ? "border-ink-100 bg-white" : "border-hoop-200 bg-white"
+                      style={{ animationDelay: `${Math.min(teamIndex, 10) * 45}ms` }}
+                      className={`reveal card-lift group rounded-2xl border p-4 ${
+                        leadCoach
+                          ? "border-ink-100 bg-white hover:border-[color:var(--brand-line)]"
+                          : "border-hoop-200 bg-white"
                       }`}
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <span className="bg-court-50 text-court-700 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]">
-                          Active
-                        </span>
+                        <Badge tone="court">Active</Badge>
                         <span className="text-ink-400 text-[10px] font-semibold uppercase tracking-[0.12em]">
                           {team.tenant.name}
                         </span>
                       </div>
-                      <h4 className="font-display text-ink-950 group-hover:text-play-600 text-sm font-semibold transition">
+                      <h4 className="font-condensed text-ink-950 group-hover:text-[color:var(--brand-ink)] text-base font-bold uppercase tracking-wide transition">
                         {team.name}
                       </h4>
                       <p className="text-ink-400 mb-3 mt-1 text-[11px]">
@@ -253,8 +259,10 @@ export function ClubSection({ data }: ClubSectionProps) {
                 })}
               </div>
             ) : (
-              <div className="border-ink-200 rounded-2xl border border-dashed bg-white p-8 text-center">
-                <h3 className="font-display text-ink-950 text-lg font-semibold">No teams yet</h3>
+              <div className="border-ink-200 rounded-[28px] border border-dashed bg-white p-8 text-center">
+                <h3 className="font-condensed text-ink-950 text-xl font-bold uppercase tracking-wide">
+                  No teams yet
+                </h3>
                 <p className="text-ink-500 mt-2 text-sm">
                   Create a team in any club workspace and it will appear here in the operating grid.
                 </p>
@@ -265,18 +273,19 @@ export function ClubSection({ data }: ClubSectionProps) {
           <ActivityFeed activity={data.activity} primaryTenantId={primaryTenantId} />
         </>
       ) : (
-        <div className="border-ink-200 rounded-[28px] border-2 border-dashed bg-white p-8 text-center">
-          <h3 className="text-ink-950 mb-2 text-lg font-semibold">Create Your Club</h3>
-          <p className="text-ink-600 mb-4">
+        <div className="reveal border-ink-200 rounded-[28px] border-2 border-dashed bg-white p-10 text-center">
+          <h3 className="font-condensed text-ink-950 mb-2 text-2xl font-bold uppercase tracking-wide">
+            Create Your Club
+          </h3>
+          <p className="text-ink-600 mb-5">
             You&apos;ve signed up as a club owner but haven&apos;t created your club yet. Get
             started now!
           </p>
-          <Link
-            href="/clubs/create"
-            className="bg-play-600 hover:bg-play-700 inline-block rounded-2xl px-6 py-3 font-semibold text-white"
-          >
-            Create Club
-          </Link>
+          <div className="flex justify-center">
+            <Button href="/clubs/create" size="lg" icon={<IconPlus />}>
+              Create Club
+            </Button>
+          </div>
         </div>
       )}
     </section>
@@ -292,43 +301,84 @@ function OfferPipeline({
 }) {
   const offersHref = primaryTenantId ? `/clubs/${primaryTenantId}/offers` : "/clubs/create"
 
+  const stages = [
+    {
+      value: pipeline.pending,
+      label: "Pending",
+      seg: "bg-play-500",
+      dot: "bg-play-500",
+      num: "text-play-700",
+      box: "bg-play-50 border-play-100",
+    },
+    {
+      value: pipeline.accepted,
+      label: "Accepted",
+      seg: "bg-court-500",
+      dot: "bg-court-500",
+      num: "text-court-700",
+      box: "bg-court-50 border-court-100",
+    },
+    {
+      value: pipeline.declined,
+      label: "Declined",
+      seg: "bg-red-400",
+      dot: "bg-red-400",
+      num: "text-red-700",
+      box: "bg-red-50 border-red-100",
+    },
+    {
+      value: pipeline.expired,
+      label: "Expired",
+      seg: "bg-ink-300",
+      dot: "bg-ink-300",
+      num: "text-ink-500",
+      box: "bg-ink-50 border-ink-100",
+    },
+  ]
+
   return (
-    <div className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white">
-      <div className="border-ink-100 flex items-center justify-between border-b px-5 py-4">
-        <h3 className="font-display text-ink-950 text-sm font-semibold">Offer pipeline</h3>
-        <Link
-          href={offersHref}
-          className="text-play-600 hover:text-play-700 text-xs font-medium transition"
-        >
-          View all
-        </Link>
-      </div>
+    <div
+      className="reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
+      style={{ animationDelay: "380ms" }}
+    >
+      <PanelHeader
+        variant="band"
+        title="Offer pipeline"
+        action={
+          <Link
+            href={offersHref}
+            className="text-[color:var(--brand-ink)] text-xs font-semibold transition hover:opacity-70"
+          >
+            View all
+          </Link>
+        }
+      />
       <div className="p-5">
+        <div className="grow-x bg-ink-100 mb-5 flex h-2.5 overflow-hidden rounded-full">
+          {stages
+            .filter((stage) => stage.value > 0)
+            .map((stage) => (
+              <div
+                key={stage.label}
+                className={stage.seg}
+                style={{ flexGrow: stage.value, minWidth: 6 }}
+                title={`${stage.label}: ${stage.value}`}
+              />
+            ))}
+        </div>
+
         <div className="mb-5 grid grid-cols-4 gap-3">
-          <PipelineStage
-            value={pipeline.pending}
-            label="Pending"
-            tone="bg-play-50 border-play-100 text-play-700"
-            labelTone="text-play-500"
-          />
-          <PipelineStage
-            value={pipeline.accepted}
-            label="Accepted"
-            tone="bg-court-50 border-court-100 text-court-700"
-            labelTone="text-court-500"
-          />
-          <PipelineStage
-            value={pipeline.declined}
-            label="Declined"
-            tone="bg-red-50 border-red-100 text-red-700"
-            labelTone="text-red-500"
-          />
-          <PipelineStage
-            value={pipeline.expired}
-            label="Expired"
-            tone="bg-ink-50 border-ink-100 text-ink-600"
-            labelTone="text-ink-400"
-          />
+          {stages.map((stage) => (
+            <div key={stage.label} className={`rounded-xl border p-3 text-center ${stage.box}`}>
+              <div className={`font-condensed text-2xl font-bold leading-none ${stage.num}`}>
+                <AnimatedNumber value={stage.value} />
+              </div>
+              <div className="text-ink-500 mt-1 inline-flex items-center gap-1 text-[10px] font-medium">
+                <span className={`h-1.5 w-1.5 rounded-full ${stage.dot}`} aria-hidden="true" />
+                {stage.label}
+              </div>
+            </div>
+          ))}
         </div>
 
         {pipeline.recent.length > 0 ? (
@@ -370,25 +420,6 @@ function OfferPipeline({
   )
 }
 
-function PipelineStage({
-  value,
-  label,
-  tone,
-  labelTone,
-}: {
-  value: number
-  label: string
-  tone: string
-  labelTone: string
-}) {
-  return (
-    <div className={`rounded-xl border p-3 text-center ${tone}`}>
-      <div className="font-display text-xl font-bold">{value}</div>
-      <div className={`mt-0.5 text-[10px] font-medium ${labelTone}`}>{label}</div>
-    </div>
-  )
-}
-
 function ActivityFeed({
   activity,
   primaryTenantId,
@@ -399,18 +430,24 @@ function ActivityFeed({
   if (activity.length === 0) return null
 
   return (
-    <div className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white">
-      <div className="border-ink-100 flex items-center justify-between border-b px-5 py-4">
-        <h3 className="font-display text-ink-950 text-sm font-semibold">Recent activity</h3>
-        {primaryTenantId && (
-          <Link
-            href={`/clubs/${primaryTenantId}`}
-            className="text-play-600 hover:text-play-700 text-xs font-medium transition"
-          >
-            View all
-          </Link>
-        )}
-      </div>
+    <div
+      className="reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
+      style={{ animationDelay: "440ms" }}
+    >
+      <PanelHeader
+        variant="band"
+        title="Recent activity"
+        action={
+          primaryTenantId ? (
+            <Link
+              href={`/clubs/${primaryTenantId}`}
+              className="text-[color:var(--brand-ink)] text-xs font-semibold transition hover:opacity-70"
+            >
+              View all
+            </Link>
+          ) : undefined
+        }
+      />
       <div className="divide-ink-50 divide-y">
         {activity.map((entry) => {
           const visual = ACTIVITY_VISUALS[entry.type]
@@ -611,31 +648,9 @@ function MiniStat({ label, value, tone }: { label: string; value: number; tone: 
       >
         {label}
       </div>
-      <div className="text-ink-950 mt-2 text-xl font-bold">{value}</div>
-    </div>
-  )
-}
-
-function MetricCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string
-  value: number
-  tone: string
-  icon: JSX.Element
-}) {
-  return (
-    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
-        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-          {label}
-        </div>
+      <div className="font-condensed text-ink-950 mt-2 text-xl font-bold">
+        <AnimatedNumber value={value} />
       </div>
-      <div className="font-display text-ink-950 text-2xl font-bold">{value}</div>
     </div>
   )
 }
@@ -654,14 +669,12 @@ function AttentionRow({
   return (
     <Link
       href={href}
-      className="hover:bg-ink-50 group flex items-center gap-3 px-5 py-3 transition"
+      className="border-ink-100 group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3 transition-all duration-200 hover:translate-x-0.5 hover:border-[color:var(--brand-line)] hover:shadow-[0_10px_30px_-22px_rgba(15,23,42,0.45)]"
     >
-      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${iconTone}`}>
-        {icon}
-      </div>
+      <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconTone}`}>{icon}</div>
       <div className="text-ink-700 flex-1 text-sm">{label}</div>
       <svg
-        className="text-ink-300 group-hover:text-play-500 h-3.5 w-3.5 transition"
+        className="text-ink-300 group-hover:text-[color:var(--brand-ink)] h-3.5 w-3.5 transition"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

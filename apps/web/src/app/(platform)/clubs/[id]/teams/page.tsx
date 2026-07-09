@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
+import { Button, Badge, AnimatedNumber } from "@/components/ui"
 import { TeamsFilter } from "./teams-filter"
 
 interface TeamListItem {
@@ -33,6 +34,23 @@ const SUBMISSION_CHIP: Record<string, string> = {
   REJECTED: "bg-hoop-100 text-hoop-700",
   WITHDRAWN: "bg-court-100 text-ink-500",
 }
+
+const PLUS_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+  </svg>
+)
+
+const TROPHY_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M7 4h10v4a5 5 0 01-10 0V4z" />
+    <path
+      d="M7 4H4v2a3 3 0 003 3M17 4h3v2a3 3 0 01-3 3M9 21h6M12 13v8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
 
 async function getTeams(tenantId: string): Promise<TeamListItem[]> {
   return await prisma.team.findMany({
@@ -114,35 +132,31 @@ export default async function ClubTeamsPage({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-ink-900 text-xl font-bold">Teams ({teams.length})</h2>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/browse-leagues"
-            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2 text-sm font-semibold"
-          >
+        <h2 className="font-condensed text-ink-950 flex items-center gap-2.5 text-2xl font-bold uppercase tracking-wide">
+          <span className="h-6 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
+          Teams ({teams.length})
+        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button href="/browse-leagues" variant="subtle" icon={TROPHY_ICON}>
             Add a Team to a League
-          </Link>
-          <Link
-            href={`/clubs/${params.id}/teams/create`}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
-          >
+          </Button>
+          <Button href={`/clubs/${params.id}/teams/create`} icon={PLUS_ICON}>
             Create Team
-          </Link>
+          </Button>
         </div>
       </div>
 
       {teams.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+        <div className="reveal border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
           <h3 className="text-ink-900 mb-2 text-lg font-semibold">No teams yet</h3>
           <p className="text-ink-600 mb-6">
             Create your first team to start managing players and scheduling games.
           </p>
-          <Link
-            href={`/clubs/${params.id}/teams/create`}
-            className="bg-play-600 hover:bg-play-700 inline-block rounded-xl px-6 py-2 font-semibold text-white"
-          >
-            Create Your First Team
-          </Link>
+          <div className="flex justify-center">
+            <Button href={`/clubs/${params.id}/teams/create`} size="lg" icon={PLUS_ICON}>
+              Create Your First Team
+            </Button>
+          </div>
         </div>
       ) : (
         <>
@@ -156,16 +170,15 @@ export default async function ClubTeamsPage({
           {filtered.length === 0 ? (
             <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
               <p className="text-ink-600 mb-3">No teams match the current filters.</p>
-              <Link
-                href={`/clubs/${params.id}/teams`}
-                className="text-play-700 text-sm hover:underline"
-              >
-                Clear filters
-              </Link>
+              <div className="flex justify-center">
+                <Button href={`/clubs/${params.id}/teams`} variant="subtle" size="sm">
+                  Clear filters
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((team) => {
+              {filtered.map((team, i) => {
                 const pendingOffers = team.offers.filter((o) => o.status === "PENDING").length
                 const acceptedOffers = team.offers.filter((o) => o.status === "ACCEPTED").length
                 const headCoach = team.staff.find((s) => s.designation === "HeadCoach")
@@ -178,16 +191,13 @@ export default async function ClubTeamsPage({
                   <Link
                     key={team.id}
                     href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
-                    className="border-ink-100 shadow-soft hover:shadow-panel hover:border-play-300 block rounded-2xl border bg-white p-6 transition"
+                    style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}
+                    className="reveal card-lift border-ink-100 shadow-soft hover:shadow-panel block rounded-2xl border bg-white p-6 hover:border-[color:var(--brand-line)]"
                   >
                     <div className="mb-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-2">
                         <h3 className="text-ink-900 text-xl font-bold">{team.name}</h3>
-                        {!headCoach && (
-                          <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                            No coach
-                          </span>
-                        )}
+                        {!headCoach && <Badge tone="hoop">No coach</Badge>}
                       </div>
                       <p className="text-ink-600 text-sm">
                         {team.ageGroup}
@@ -217,9 +227,7 @@ export default async function ClubTeamsPage({
                       </div>
                     ) : (
                       <div className="mb-3">
-                        <span className="bg-court-50 text-ink-400 rounded-full px-2 py-0.5 text-xs font-medium">
-                          Not in a league yet
-                        </span>
+                        <Badge tone="neutral">Not in a league yet</Badge>
                       </div>
                     )}
 
@@ -229,40 +237,40 @@ export default async function ClubTeamsPage({
 
                     {/* Status indicators */}
                     {(pendingOffers > 0 || acceptedOffers > 0) && (
-                      <div className="mb-3 flex gap-2">
+                      <div className="mb-3 flex flex-wrap gap-2">
                         {pendingOffers > 0 && (
-                          <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                          <Badge tone="hoop">
                             {pendingOffers} pending offer{pendingOffers !== 1 ? "s" : ""}
-                          </span>
+                          </Badge>
                         )}
-                        {acceptedOffers > 0 && (
-                          <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                            {acceptedOffers} accepted
-                          </span>
-                        )}
+                        {acceptedOffers > 0 && <Badge tone="court">{acceptedOffers} accepted</Badge>}
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-2 border-t pt-3 text-center sm:grid-cols-4">
+                    <div className="border-ink-100 grid grid-cols-2 gap-2 border-t pt-3 text-center sm:grid-cols-4">
                       <div>
-                        <div className="text-court-700 text-lg font-bold">
-                          {team._count.players}
+                        <div className="font-condensed text-2xl font-bold leading-none text-[color:var(--brand-ink)]">
+                          <AnimatedNumber value={team._count.players} />
                         </div>
-                        <div className="text-ink-500 text-xs">Players</div>
+                        <div className="text-ink-500 mt-1 text-xs">Players</div>
                       </div>
                       <div>
-                        <div className="text-ink-900 text-lg font-bold">
+                        <div className="font-condensed text-ink-900 text-2xl font-bold leading-none">
                           {record ? `${record.w}–${record.l}` : "—"}
                         </div>
-                        <div className="text-ink-500 text-xs">Record</div>
+                        <div className="text-ink-500 mt-1 text-xs">Record</div>
                       </div>
                       <div>
-                        <div className="text-hoop-600 text-lg font-bold">{team._count.tryouts}</div>
-                        <div className="text-ink-500 text-xs">Tryouts</div>
+                        <div className="font-condensed text-hoop-600 text-2xl font-bold leading-none">
+                          <AnimatedNumber value={team._count.tryouts} />
+                        </div>
+                        <div className="text-ink-500 mt-1 text-xs">Tryouts</div>
                       </div>
                       <div>
-                        <div className="text-play-700 text-lg font-bold">{team._count.offers}</div>
-                        <div className="text-ink-500 text-xs">Offers</div>
+                        <div className="font-condensed text-play-700 text-2xl font-bold leading-none">
+                          <AnimatedNumber value={team._count.offers} />
+                        </div>
+                        <div className="text-ink-500 mt-1 text-xs">Offers</div>
                       </div>
                     </div>
                   </Link>

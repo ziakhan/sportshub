@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
+import { Button } from "@/components/ui"
 
 interface Player {
   id: string
@@ -48,7 +49,7 @@ export function HouseLeagueSignupForm({
 
   const labelClass = "block text-sm font-medium text-ink-800"
   const inputClass =
-    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
+    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-[color:var(--brand)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-line)]"
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -98,7 +99,7 @@ export function HouseLeagueSignupForm({
         </div>
         <Link
           href="/dashboard"
-          className="text-play-700 hover:text-play-800 block text-center text-sm font-medium"
+          className="block text-center text-sm font-medium text-[color:var(--brand-ink)] hover:underline"
         >
           View in Dashboard &rarr;
         </Link>
@@ -113,12 +114,18 @@ export function HouseLeagueSignupForm({
           <h3 className="mb-1 font-semibold text-yellow-800">Add a player first</h3>
           <p className="text-hoop-700 text-sm">Add your child before registering for this league.</p>
         </div>
-        <Link
+        <Button
           href={`/players/add?redirect=/house-league/${houseLeagueId}`}
-          className="bg-play-600 hover:bg-play-700 block w-full rounded-xl px-4 py-3 text-center font-semibold text-white transition"
+          block
+          size="lg"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+          }
         >
           Add a player
-        </Link>
+        </Button>
       </div>
     )
   }
@@ -172,13 +179,9 @@ export function HouseLeagueSignupForm({
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 w-full rounded-xl px-4 py-3 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
-      >
+      <Button type="submit" disabled={isSubmitting} block size="lg">
         {isSubmitting ? "Registering..." : fee > 0 ? `Register (${formatCurrency(fee, currency)})` : "Register (Free)"}
-      </button>
+      </Button>
     </form>
   )
 }

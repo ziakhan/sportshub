@@ -1,4 +1,6 @@
 import Link from "next/link"
+import type { ReactNode } from "react"
+import { AnimatedNumber, Badge, Button, PanelHeader, cn } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
 interface RefereeSectionProps {
@@ -9,7 +11,9 @@ export function RefereeSection({ data }: RefereeSectionProps) {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="font-display text-ink-950 text-2xl font-bold">Referee dashboard</h2>
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          Referee dashboard
+        </h2>
         <p className="text-ink-500 mt-1 text-sm">
           Your certification, assignments, and officiating performance.
         </p>
@@ -21,42 +25,46 @@ export function RefereeSection({ data }: RefereeSectionProps) {
             <MetricCard
               label="Certification"
               value={data.profile.certificationLevel || "Not set"}
-              tone="bg-play-50 text-play-700"
-              icon={<IconBadge className="h-4 w-4" />}
+              tone="brand"
+              delay={0}
+              icon={<IconBadge className="h-5 w-5" />}
             />
             <MetricCard
               label="Games refereed"
-              value={String(data.profile.gamesRefereed)}
-              tone="bg-court-50 text-court-700"
-              icon={<IconWhistle className="h-4 w-4" />}
+              value={<AnimatedNumber value={data.profile.gamesRefereed} />}
+              tone="court"
+              delay={70}
+              icon={<IconWhistle className="h-5 w-5" />}
             />
             <MetricCard
               label="Average rating"
               value={data.profile.averageRating ? `${data.profile.averageRating}/5` : "No ratings"}
-              tone="bg-hoop-50 text-hoop-700"
-              icon={<IconStar className="h-4 w-4" />}
+              tone="gold"
+              delay={140}
+              icon={<IconStar className="h-5 w-5" />}
             />
             <MetricCard
               label="Standard fee"
               value={`$${String(data.profile.standardFee)}`}
-              tone="bg-ink-100 text-ink-700"
-              icon={<IconCard className="h-4 w-4" />}
+              tone="ink"
+              delay={210}
+              icon={<IconCard className="h-5 w-5" />}
             />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6 lg:col-span-2">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-display text-ink-950 text-lg font-semibold">
-                  Profile snapshot
-                </h3>
-                <Link
-                  href="/referee/profile"
-                  className="text-play-600 hover:text-play-700 text-sm font-semibold"
-                >
-                  Edit
-                </Link>
-              </div>
+            <div
+              className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 lg:col-span-2"
+              style={{ animationDelay: "280ms" }}
+            >
+              <PanelHeader
+                title="Profile snapshot"
+                action={
+                  <Button href="/referee/profile" variant="subtle" size="sm" icon={ACTION_ICONS.pencil}>
+                    Edit
+                  </Button>
+                }
+              />
               <dl className="grid gap-3 sm:grid-cols-2">
                 <Detail
                   label="Certification"
@@ -75,24 +83,29 @@ export function RefereeSection({ data }: RefereeSectionProps) {
               </dl>
             </div>
 
-            <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-              <h3 className="font-display text-ink-950 text-lg font-semibold">
-                My assignments
-              </h3>
+            <div
+              className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+              style={{ animationDelay: "340ms" }}
+            >
+              <PanelHeader title="My assignments" />
               {data.assignments.length > 0 ? (
-                <ul className="mt-3 space-y-2">
+                <ul className="space-y-2">
                   {data.assignments.map((a) => (
                     <li key={a.gameId}>
                       <Link
                         href={`/live/${a.gameId}`}
-                        className="border-ink-100 bg-ink-50 hover:border-play-200 hover:bg-play-50 block rounded-xl border p-3 transition"
+                        className="border-ink-100 bg-ink-50/60 hover:border-[color:var(--brand-line)] block rounded-2xl border p-3 transition-all duration-200 hover:translate-x-0.5 hover:bg-white hover:shadow-[0_10px_30px_-22px_rgba(15,23,42,0.45)]"
                       >
-                        <p className="text-ink-900 text-sm font-semibold">
-                          {a.homeTeam} vs {a.awayTeam}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-ink-900 text-sm font-semibold">
+                            {a.homeTeam} vs {a.awayTeam}
+                          </p>
                           {a.status === "LIVE" && (
-                            <span className="text-hoop-700 ml-2 text-xs font-bold">● LIVE</span>
+                            <Badge tone="live" dot>
+                              LIVE
+                            </Badge>
                           )}
-                        </p>
+                        </div>
                         <p className="text-ink-500 mt-0.5 text-xs">
                           {new Date(a.scheduledAt).toLocaleString()} {a.venue ? `· ${a.venue}` : ""}
                         </p>
@@ -101,42 +114,52 @@ export function RefereeSection({ data }: RefereeSectionProps) {
                   ))}
                 </ul>
               ) : (
-                <p className="text-ink-500 mt-3 text-sm">
+                <p className="text-ink-500 text-sm">
                   No games assigned yet — live and upcoming games you can officiate are on the
                   scoring hub.
                 </p>
               )}
-              <Link
-                href="/score"
-                className="bg-play-600 hover:bg-play-700 mt-5 inline-flex rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
-              >
+              <Button href="/score" className="mt-5" icon={ACTION_ICONS.arrow}>
                 Open scoring hub
-              </Link>
+              </Button>
             </div>
           </div>
         </>
       ) : (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
-          <div className="bg-ink-50 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl">
-            <IconFlag className="text-ink-500 h-5 w-5" />
+        <div className="reveal border-ink-200 shadow-soft rounded-[28px] border border-dashed bg-white p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)]">
+            <IconFlag className="h-5 w-5 text-[color:var(--brand-ink)]" />
           </div>
-          <h3 className="font-display text-ink-950 text-xl font-semibold">
+          <h3 className="font-condensed text-ink-950 text-xl font-bold uppercase tracking-wide">
             Complete your referee profile
           </h3>
           <p className="text-ink-500 mx-auto mb-5 mt-2 max-w-xl text-sm">
             Add certification level, rate, and availability so leagues can discover and assign you
             to games.
           </p>
-          <Link
-            href="/referee/profile"
-            className="bg-play-600 hover:bg-play-700 inline-flex rounded-xl px-6 py-3 text-sm font-semibold text-white transition"
-          >
-            Set up profile
-          </Link>
+          <div className="flex justify-center">
+            <Button href="/referee/profile" size="lg" icon={ACTION_ICONS.plus}>
+              Set up profile
+            </Button>
+          </div>
         </div>
       )}
     </section>
   )
+}
+
+type MetricTone = "brand" | "court" | "gold" | "hoop" | "ink"
+
+const METRIC_TONES: Record<MetricTone, { chip: string; num: string; ring: string }> = {
+  brand: {
+    chip: "bg-[var(--brand-soft)] text-[color:var(--brand-ink)]",
+    num: "text-[color:var(--brand-ink)]",
+    ring: "group-hover:border-[color:var(--brand-line)]",
+  },
+  court: { chip: "bg-court-50 text-court-600", num: "text-court-700", ring: "group-hover:border-court-200" },
+  gold: { chip: "bg-gold-50 text-gold-600", num: "text-gold-600", ring: "group-hover:border-gold-100" },
+  hoop: { chip: "bg-hoop-50 text-hoop-600", num: "text-hoop-600", ring: "group-hover:border-hoop-200" },
+  ink: { chip: "bg-ink-100 text-ink-700", num: "text-ink-800", ring: "group-hover:border-ink-300" },
 }
 
 function MetricCard({
@@ -144,21 +167,28 @@ function MetricCard({
   value,
   tone,
   icon,
+  delay = 0,
 }: {
   label: string
-  value: string
-  tone: string
+  value: ReactNode
+  tone: MetricTone
   icon: JSX.Element
+  delay?: number
 }) {
+  const t = METRIC_TONES[tone]
   return (
-    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
-        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-          {label}
-        </div>
+    <div
+      style={{ animationDelay: `${delay}ms` }}
+      className={cn(
+        "reveal group border-ink-100 relative overflow-hidden rounded-3xl border bg-white p-5 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)] transition-all duration-200",
+        t.ring
+      )}
+    >
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <span className={cn("grid h-10 w-10 place-items-center rounded-2xl", t.chip)}>{icon}</span>
       </div>
-      <div className="font-display text-ink-950 text-xl font-bold">{value}</div>
+      <div className={cn("font-condensed text-2xl font-bold leading-none", t.num)}>{value}</div>
+      <div className="text-ink-500 mt-1.5 text-sm font-medium">{label}</div>
     </div>
   )
 }
@@ -250,4 +280,23 @@ function IconFlag({ className }: { className?: string }) {
       <line x1="4" y1="22" x2="4" y2="15" />
     </svg>
   )
+}
+
+/** SVG icons for the kit buttons (the Button component sizes them). */
+const ACTION_ICONS: Record<string, ReactNode> = {
+  pencil: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  arrow: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
 }

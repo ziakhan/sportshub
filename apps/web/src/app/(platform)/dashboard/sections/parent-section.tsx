@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { StatTile, Button, PanelHeader, Badge } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
 interface ParentSectionProps {
@@ -18,50 +19,62 @@ export function ParentSection({ data }: ParentSectionProps) {
     <section className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-ink-950 text-2xl font-bold">Parent dashboard</h2>
+          <h2 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+            Parent dashboard
+          </h2>
           <p className="text-ink-500 mt-1 text-sm">
             Players, signups, and payment history in one place.
           </p>
         </div>
-        <Link
-          href="/settings/profile"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-        >
+        <Button href="/settings/profile" variant="subtle" icon={ICONS.pencil}>
           Edit Profile
-        </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard
-          label="Players"
+        <StatTile
           value={data.players.length}
-          tone="bg-play-50 text-play-700"
-          icon={<IconUsers className="h-4 w-4" />}
+          label="Players"
+          tone="brand"
+          icon={<IconUsers className="h-5 w-5" />}
+          delay={0}
         />
-        <MetricCard
-          label="Tryout signups"
+        <StatTile
           value={data.tryoutSignups.length}
-          tone="bg-hoop-50 text-hoop-700"
-          icon={<IconClipboard className="h-4 w-4" />}
+          label="Tryout signups"
+          tone="hoop"
+          icon={<IconClipboard className="h-5 w-5" />}
+          delay={70}
         />
-        <MetricCard
-          label="Active signups"
+        <StatTile
           value={activeSignups}
-          tone="bg-court-50 text-court-700"
-          icon={<IconBolt className="h-4 w-4" />}
+          label="Active signups"
+          tone="court"
+          icon={<IconBolt className="h-5 w-5" />}
+          delay={140}
         />
-        <MetricCard
-          label="Payments"
+        <StatTile
           value={data.recentPayments.length}
-          tone="bg-ink-100 text-ink-700"
-          icon={<IconCard className="h-4 w-4" />}
+          label="Payments"
+          tone="ink"
+          icon={<IconCard className="h-5 w-5" />}
+          delay={210}
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <h3 className="font-display text-ink-950 text-lg font-semibold">My players</h3>
-          <p className="text-ink-500 mb-4 mt-1 text-sm">{data.players.length} registered</p>
+        <div
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "260ms" }}
+        >
+          <PanelHeader
+            title="My players"
+            action={
+              <span className="text-ink-400 text-xs font-semibold">
+                {data.players.length} registered
+              </span>
+            }
+          />
 
           {data.players.length > 0 ? (
             <ul className="space-y-2">
@@ -131,20 +144,26 @@ export function ParentSection({ data }: ParentSectionProps) {
             <p className="text-ink-500 text-sm">No players registered yet.</p>
           )}
 
-          <Link
-            href="/players/add"
-            className="text-play-600 hover:text-play-700 mt-4 inline-flex items-center text-sm font-semibold"
-          >
-            Add a player
-          </Link>
+          <div className="mt-4">
+            <Button href="/players/add" variant="subtle" size="sm" icon={ICONS.plus}>
+              Add a player
+            </Button>
+          </div>
         </div>
 
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <h3 className="font-display text-ink-950 text-lg font-semibold">Registrations</h3>
-          <p className="text-ink-500 mb-4 mt-1 text-sm">
-            {data.tryoutSignups.length} tryout{data.tryoutSignups.length !== 1 ? "s" : ""} ·{" "}
-            {data.programSignups.length} program{data.programSignups.length !== 1 ? "s" : ""}
-          </p>
+        <div
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "320ms" }}
+        >
+          <PanelHeader
+            title="Registrations"
+            action={
+              <span className="text-ink-400 shrink-0 text-xs font-semibold">
+                {data.tryoutSignups.length} tryout{data.tryoutSignups.length !== 1 ? "s" : ""} ·{" "}
+                {data.programSignups.length} program{data.programSignups.length !== 1 ? "s" : ""}
+              </span>
+            }
+          />
 
           {data.tryoutSignups.length > 0 ? (
             <ul className="space-y-2">
@@ -179,35 +198,37 @@ export function ParentSection({ data }: ParentSectionProps) {
             </>
           )}
 
-          <Link
-            href="/marketplace"
-            className="text-play-600 hover:text-play-700 mt-4 inline-flex items-center text-sm font-semibold"
-          >
-            Browse programs
-          </Link>
+          <div className="mt-4">
+            <Button href="/marketplace" variant="subtle" size="sm" icon={ICONS.grid}>
+              Browse programs
+            </Button>
+          </div>
         </div>
 
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <h3 className="font-display text-ink-950 text-lg font-semibold">Recent payments</h3>
-          <p className="text-ink-500 mb-4 mt-1 text-sm">
-            {data.recentPayments.length} transactions
-          </p>
+        <div
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "380ms" }}
+        >
+          <PanelHeader
+            title="Recent payments"
+            action={
+              <span className="text-ink-400 text-xs font-semibold">
+                {data.recentPayments.length} transactions
+              </span>
+            }
+          />
 
           {data.recentPayments.length > 0 ? (
             <ul className="space-y-2">
               {data.recentPayments.map((payment) => (
                 <li key={payment.id} className="border-ink-100 bg-ink-50 rounded-xl border p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-ink-900 text-sm font-semibold">
+                    <span className="text-[color:var(--brand-ink)] text-sm font-bold">
                       ${String(payment.amount)}
                     </span>
-                    <span
-                      className={`text-xs font-semibold ${
-                        payment.status === "SUCCEEDED" ? "text-court-700" : "text-hoop-700"
-                      }`}
-                    >
+                    <Badge tone={payment.status === "SUCCEEDED" ? "success" : "hoop"}>
                       {payment.status}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="text-ink-500 text-xs">
                     {payment.paymentType.replace("_", " ")}
@@ -221,30 +242,6 @@ export function ParentSection({ data }: ParentSectionProps) {
         </div>
       </div>
     </section>
-  )
-}
-
-function MetricCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string
-  value: number
-  tone: string
-  icon: JSX.Element
-}) {
-  return (
-    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
-        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-          {label}
-        </div>
-      </div>
-      <div className="font-display text-ink-950 text-3xl font-bold">{value}</div>
-    </div>
   )
 }
 
@@ -313,6 +310,29 @@ function IconCard({ className }: { className?: string }) {
   )
 }
 
+/** Unsized icon nodes for kit <Button>s (the Button sizes them per `size`). */
+const ICONS = {
+  pencil: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20h9" strokeLinecap="round" />
+      <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" strokeLinejoin="round" />
+    </svg>
+  ),
+  plus: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
+  ),
+  grid: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  ),
+}
+
 function SignupItem({
   signup,
 }: {
@@ -376,13 +396,16 @@ function SignupItem({
           </span>
         </div>
         {canCancel && (
-          <button
+          <Button
+            type="button"
             onClick={handleCancel}
             disabled={cancelling}
-            className="text-hoop-600 hover:text-hoop-700 disabled:text-ink-400 text-xs font-semibold"
+            variant="secondary"
+            tone="hoop"
+            size="sm"
           >
             {cancelling ? "..." : "Cancel"}
-          </button>
+          </Button>
         )}
       </div>
     </li>

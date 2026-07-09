@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { StatTile, PanelHeader, Button, Badge, type StatTileTone } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
 interface AdminSectionProps {
@@ -6,54 +7,59 @@ interface AdminSectionProps {
 }
 
 export function AdminSection({ data }: AdminSectionProps) {
-  const statCards = [
+  const statCards: {
+    label: string
+    value: number
+    tone: StatTileTone
+    icon: JSX.Element
+  }[] = [
     {
       label: "Users",
       value: data.totalUsers,
-      tone: "bg-play-50 text-play-600",
-      icon: <IconUsers className="h-4 w-4" />,
+      tone: "brand",
+      icon: <IconUsers className="h-5 w-5" />,
     },
     {
       label: "Clubs",
       value: data.totalClubs,
-      tone: "bg-court-50 text-court-600",
-      icon: <IconBuilding className="h-4 w-4" />,
+      tone: "court",
+      icon: <IconBuilding className="h-5 w-5" />,
     },
     {
       label: "Teams",
       value: data.totalTeams,
-      tone: "bg-hoop-50 text-hoop-600",
-      icon: <IconGroup className="h-4 w-4" />,
+      tone: "hoop",
+      icon: <IconGroup className="h-5 w-5" />,
     },
     {
       label: "Players",
       value: data.totalPlayers,
-      tone: "bg-sky-50 text-sky-600",
-      icon: <IconUserPlus className="h-4 w-4" />,
+      tone: "play",
+      icon: <IconUserPlus className="h-5 w-5" />,
     },
     {
       label: "Leagues",
       value: data.totalLeagues,
-      tone: "bg-violet-50 text-violet-600",
-      icon: <IconTrophy className="h-4 w-4" />,
+      tone: "gold",
+      icon: <IconTrophy className="h-5 w-5" />,
     },
     {
       label: "Tryouts",
       value: data.totalTryouts,
-      tone: "bg-amber-50 text-amber-600",
-      icon: <IconClipboard className="h-4 w-4" />,
+      tone: "ink",
+      icon: <IconClipboard className="h-5 w-5" />,
     },
     {
       label: "Games",
       value: data.totalGames,
-      tone: "bg-rose-50 text-rose-600",
-      icon: <IconCalendar className="h-4 w-4" />,
+      tone: "court",
+      icon: <IconCalendar className="h-5 w-5" />,
     },
     {
       label: "Pending Invites",
       value: data.pendingInvitations,
-      tone: "bg-ink-100 text-ink-700",
-      icon: <IconMail className="h-4 w-4" />,
+      tone: "hoop",
+      icon: <IconMail className="h-5 w-5" />,
     },
   ]
 
@@ -61,89 +67,86 @@ export function AdminSection({ data }: AdminSectionProps) {
     <section className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-ink-950 text-2xl font-bold">Platform overview</h2>
+          <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+            Platform overview
+          </h2>
           <p className="text-ink-500 mt-1 text-sm">
             The highest-signal admin metrics and newest activity across the platform.
           </p>
         </div>
         <div className="flex gap-2">
-          <Link
-            href="/dashboard/admin/payments"
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-          >
+          <Button href="/dashboard/admin/payments" variant="subtle" icon={ACTION_ICONS.payments}>
             Payments
-          </Link>
-          <Link
-            href="/dashboard/admin/settings"
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-          >
+          </Button>
+          <Button href="/dashboard/admin/settings" variant="subtle" icon={ACTION_ICONS.gear}>
             Admin settings
-          </Link>
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map((card) => (
-          <div
+        {statCards.map((card, i) => (
+          <StatTile
             key={card.label}
-            className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
-          >
-            <div className="mb-3 flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${card.tone}`}>
-                {card.icon}
-              </div>
-              <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-                {card.label}
-              </div>
-            </div>
-            <div className="font-display text-ink-950 text-3xl font-bold">{card.value}</div>
-          </div>
+            value={card.value}
+            label={card.label}
+            tone={card.tone}
+            icon={card.icon}
+            delay={i * 60}
+          />
         ))}
       </div>
 
       {data.recentClubs.length > 0 && (
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-ink-950 text-lg font-semibold">Recent clubs</h3>
-              <Link
-                href="/dashboard/admin/clubs"
-                className="text-play-600 hover:text-play-700 text-sm font-semibold"
-              >
-                View all
-              </Link>
-            </div>
+          <div
+            className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+            style={{ animationDelay: "500ms" }}
+          >
+            <PanelHeader
+              title="Recent clubs"
+              action={
+                <Link
+                  href="/dashboard/admin/clubs"
+                  className="text-sm font-semibold text-[color:var(--brand-ink)] hover:underline"
+                >
+                  View all &rarr;
+                </Link>
+              }
+            />
             <div className="grid gap-4 md:grid-cols-2">
               {data.recentClubs.map((club) => (
-                <div key={club.id} className="border-ink-100 bg-ink-50 rounded-2xl border p-5">
+                <div
+                  key={club.id}
+                  className="border-ink-100 bg-ink-50 rounded-2xl border p-5 transition-colors hover:border-[color:var(--brand-line)]"
+                >
                   <h4 className="text-ink-950 font-semibold">{club.name}</h4>
                   <p className="text-ink-500 mt-1 text-sm">{club.slug}.youthbasketballhub.com</p>
-                  <div className="mt-4 flex gap-3 text-sm">
-                    <span className="bg-court-50 text-court-700 rounded-xl px-3 py-2">
-                      {club._count.teams} teams
-                    </span>
-                    <span className="bg-hoop-50 text-hoop-700 rounded-xl px-3 py-2">
-                      {club._count.tryouts} tryouts
-                    </span>
-                    <span className="bg-ink-100 text-ink-700 rounded-xl px-3 py-2">
-                      {club.plan}
-                    </span>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge tone="court">{club._count.teams} teams</Badge>
+                    <Badge tone="hoop">{club._count.tryouts} tryouts</Badge>
+                    <Badge tone="neutral">{club.plan}</Badge>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-ink-950 text-lg font-semibold">Recent users</h3>
-              <Link
-                href="/dashboard/admin/users"
-                className="text-play-600 hover:text-play-700 text-sm font-semibold"
-              >
-                Manage
-              </Link>
-            </div>
+          <div
+            className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+            style={{ animationDelay: "560ms" }}
+          >
+            <PanelHeader
+              title="Recent users"
+              action={
+                <Link
+                  href="/dashboard/admin/users"
+                  className="text-sm font-semibold text-[color:var(--brand-ink)] hover:underline"
+                >
+                  Manage &rarr;
+                </Link>
+              }
+            />
             <div className="overflow-x-auto">
               <table className="divide-ink-100 min-w-full divide-y">
                 <thead className="bg-ink-50">
@@ -187,6 +190,26 @@ export function AdminSection({ data }: AdminSectionProps) {
       )}
     </section>
   )
+}
+
+/** Unsized SVG icons for the header buttons (the Button kit sizes them). */
+const ACTION_ICONS = {
+  payments: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" strokeLinecap="round" />
+    </svg>
+  ),
+  gear: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path
+        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9v0"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
 }
 
 function IconUsers({ className }: { className?: string }) {

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Badge, Button, StatTile } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
 interface StaffSectionProps {
@@ -9,54 +10,59 @@ export function StaffSection({ data }: StaffSectionProps) {
   const totalPlayers = data.teams.reduce((sum, team) => sum + team._count.players, 0)
 
   return (
-    <section className="space-y-6">
+    <section className="font-barlow space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-ink-950 text-2xl font-bold">Staff assignments</h2>
+          <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+            Staff assignments
+          </h2>
           <p className="text-ink-500 mt-1 text-sm">Your active team roles and roster load.</p>
         </div>
-        <Link
-          href="/settings/profile"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-        >
+        <Button href="/settings/profile" variant="subtle" icon={<IconEdit />}>
           Edit Profile
-        </Link>
+        </Button>
       </div>
 
       {data.teams.length > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <MetricCard
+            <StatTile
               label="Assigned teams"
               value={data.teams.length}
-              tone="bg-play-50 text-play-700"
-              icon={<IconClipboard className="h-4 w-4" />}
+              tone="brand"
+              icon={<IconClipboard className="h-5 w-5" />}
+              delay={0}
             />
-            <MetricCard
+            <StatTile
               label="Total players"
               value={totalPlayers}
-              tone="bg-court-50 text-court-700"
-              icon={<IconUsers className="h-4 w-4" />}
+              tone="court"
+              icon={<IconUsers className="h-5 w-5" />}
+              delay={70}
             />
-            <MetricCard
+            <StatTile
               label="In season"
               value={data.teams.filter((team) => Boolean(team.season)).length}
-              tone="bg-hoop-50 text-hoop-700"
-              icon={<IconCalendar className="h-4 w-4" />}
+              tone="hoop"
+              icon={<IconCalendar className="h-5 w-5" />}
+              delay={140}
             />
-            <MetricCard
+            <StatTile
               label="Organizations"
               value={new Set(data.teams.map((team) => team.tenant.name)).size}
-              tone="bg-ink-100 text-ink-700"
-              icon={<IconBuilding className="h-4 w-4" />}
+              tone="ink"
+              icon={<IconBuilding className="h-5 w-5" />}
+              delay={210}
             />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {data.teams.map((team) => (
-              <div
+            {data.teams.map((team, index) => (
+              <Link
                 key={team.id}
-                className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
+                href={`/clubs/${team.tenant.id}/teams/${team.id}/dashboard`}
+                className="reveal card-lift border-ink-100 shadow-soft group block rounded-2xl border bg-white p-5 hover:border-[color:var(--brand-line)]"
+                style={{ animationDelay: `${index * 60}ms` }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -66,32 +72,37 @@ export function StaffSection({ data }: StaffSectionProps) {
                       {team.season ? ` · ${team.season}` : ""}
                     </p>
                   </div>
-                  <span className="bg-court-50 text-court-700 rounded-lg px-2 py-1 text-xs font-semibold">
-                    {team._count.players} players
-                  </span>
+                  <Badge tone="court">{team._count.players} players</Badge>
                 </div>
 
                 <div className="border-ink-100 mt-4 flex items-center justify-between border-t pt-4">
                   <span className="text-ink-400 text-xs uppercase tracking-[0.12em]">
                     Team workspace
                   </span>
-                  <Link
-                    href={`/clubs/${team.tenant.id}/teams/${team.id}/dashboard`}
-                    className="text-play-600 hover:text-play-700 text-sm font-semibold"
-                  >
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-[color:var(--brand-ink)]">
                     Open
-                  </Link>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </>
       ) : (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
-          <div className="bg-ink-50 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl">
-            <IconClipboard className="text-ink-500 h-5 w-5" />
+        <div className="reveal border-ink-300 shadow-soft rounded-[28px] border border-dashed bg-white p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)]">
+            <IconClipboard className="h-5 w-5 text-[color:var(--brand-ink)]" />
           </div>
-          <h3 className="font-display text-ink-950 text-xl font-semibold">
+          <h3 className="font-condensed text-ink-950 text-xl font-bold uppercase tracking-wide">
             No team assignments yet
           </h3>
           <p className="text-ink-500 mx-auto mt-2 max-w-xl text-sm">
@@ -104,27 +115,18 @@ export function StaffSection({ data }: StaffSectionProps) {
   )
 }
 
-function MetricCard({
-  label,
-  value,
-  tone,
-  icon,
-}: {
-  label: string
-  value: number
-  tone: string
-  icon: JSX.Element
-}) {
+function IconEdit() {
   return (
-    <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}>{icon}</div>
-        <div className="text-ink-400 text-xs font-semibold uppercase tracking-[0.14em]">
-          {label}
-        </div>
-      </div>
-      <div className="font-display text-ink-950 text-3xl font-bold">{value}</div>
-    </div>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
