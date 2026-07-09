@@ -44,6 +44,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    // Venues are GLOBAL (shared across clubs/leagues) — an unscoped PATCH let any
+    // signed-in user rename any venue (docs/editability-audit.md §4). Gate to
+    // PlatformAdmin until a venue-ownership model exists.
+    if (!sessionInfo.isPlatformAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const body = await request.json()
     const data = updateVenueSchema.parse(body)
 

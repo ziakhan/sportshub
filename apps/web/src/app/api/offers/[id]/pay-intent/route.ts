@@ -40,6 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         id: true,
         status: true,
         seasonFee: true,
+        expiresAt: true,
         player: { select: { parentId: true } },
         team: { select: { name: true, tenantId: true, tenant: { select: { currency: true } } } },
         options: {
@@ -59,6 +60,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     if (offer.status !== "PENDING") {
       return NextResponse.json({ error: "This offer isn't open" }, { status: 400 })
+    }
+    // Expiry is enforced lazily (no cron). The accept PATCH already checks it, but
+    // this route runs FIRST — without the check a family could complete a deposit
+    // charge on a stale offer whose accept then fails, orphaning the payment
+    // (docs/editability-audit.md §4). Flip + refuse, same as the accept path.
+    if (offer.expiresAt && new Date(offer.expiresAt) < new Date()) {
+      await (prisma as any).offer.update({
+        where: { id: offer.id },
+        data: { status: "EXPIRED" },
+      })
+      return NextResponse.json({ error: "This offer has expired" }, { status: 400 })
     }
 
     // Resolve the chosen option (or the single one, or the bare offer)

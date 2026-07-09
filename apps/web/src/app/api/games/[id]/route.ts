@@ -100,6 +100,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const data = patchSchema.parse(body)
 
+    // A COMPLETED game is a signed record — its result/teams/time may only change
+    // through the audited re-finalize flow (finalize + DELETE already guard this;
+    // the generic PATCH didn't — docs/editability-audit.md §4). Toggling the lock
+    // flag alone is still allowed.
+    if (game.status === "COMPLETED") {
+      const keys = Object.keys(data).filter((k) => (data as Record<string, unknown>)[k] !== undefined)
+      const onlyLockToggle = keys.length > 0 && keys.every((k) => k === "isLocked")
+      if (!onlyLockToggle) {
+        return NextResponse.json(
+          { error: "Game is completed — correct results through re-finalization" },
+          { status: 409 }
+        )
+      }
+    }
+
     // Derived values for conflict check
     const newStart = data.scheduledAt ? new Date(data.scheduledAt) : new Date(game.scheduledAt)
     const duration = data.duration ?? game.duration ?? 90
