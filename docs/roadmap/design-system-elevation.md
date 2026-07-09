@@ -10,15 +10,23 @@ tags: [theme/platform, type/plan, status/in-progress]
 
 # ✨ App-wide design-system elevation ("make the app look like the demos")
 
-**Tier 1 · effort XL · owner-directed · IN PROGRESS.**
+**Tier 1 · effort XL · owner-directed · KIT + WAVE-1 SWEEP SHIPPED (local/unpushed).**
 The owner loves the look of the interactive pitch demos (responsiveness, animation, buttons +
 their transitions, colors, tick marks) and wants the **whole app** to look and feel that way.
 This is the app-wide design-system refresh (previously flagged as "scope b").
 
-> **⏭️ RESUME HERE for a fresh session.** Read this doc top-to-bottom, then start at
-> **§4 Phase 1 (build the kit)** — it isn't built yet. The owner has approved
-> **"build a kit and do the workflow sweep."** The kit must be built + verified BEFORE the
-> workflow sweep (agents import it).
+> **✅ SHIPPED 2026-07-09 (all LOCAL/UNPUSHED — 4 commits `46cf754`→`22bb189`):**
+> **Phase 1 kit built + verified** and **Phase 2 wave-1 sweep done** (16 surfaces via a
+> multi-agent Workflow). `tsc --noEmit` + `next lint` clean; 10 pages spot-checked in the browser
+> (0 page errors) across Huskies purple / West teal / NPH teal / indigo. See **§7 What shipped**.
+>
+> **⏭️ NEXT (wave 2 — the long tail):** club settings/payments/templates/tournaments/house-leagues/
+> camps *list* pages, `/clubs/[id]/teams/[teamId]/*` team dashboards, staff/roster admin, tryout
+> create/edit forms, `/manage/leagues/[id]/seasons/[seasonId]/manage/*` remaining tabs, browse-*
+> pages, settings/profile. Leave the iPad-tuned **scoring console** alone. Same recipe: fan out
+> `general-purpose` agents (one file each) with the §5 briefing; the kit + reference already exist.
+> One known harmonization nit: `clubs/[id]/tryouts/publish-button.tsx` still uses legacy
+> `bg-play-600` — fold into wave 2.
 
 ---
 
@@ -111,6 +119,37 @@ Later waves: the long tail (settings, templates, tournaments, scoring console is
 Typecheck + lint + drive key pages in the browser (dev: `export PATH="/usr/local/opt/node@18/bin:$PATH"
 && npm run dev`). Screenshots via `scripts/demo/` harness. Everything stays LOCAL/UNPUSHED — the
 owner approves pushes per-session (see [[feedback-no-prod-push-without-approval]]).
+
+## 7. What shipped (2026-07-09 — kit + wave-1 sweep, LOCAL/UNPUSHED)
+
+**Phase 1 — the kit** (`apps/web/src/components/ui/`, exported from the barrel `index.ts`):
+- `animated-number.tsx` — `AnimatedNumber` count-up (rAF + safety timeout + reduced-motion).
+- `stat-tile.tsx` — `StatTile`: generalized `icon?: ReactNode`, tones `brand|court|play|hoop|gold|ink`,
+  `sub`/`subTone` pill, optional `href` (whole tile links + hover-lift), `delay` stagger, count-up.
+- `button.tsx` — `Button`: renders `<Link>` when `href` else `<button>` (+ `type`/`disabled`/`onClick`);
+  `variant` primary|secondary|subtle, `tone` brand|court|hoop|play|ink, `size` sm|md|lg, `icon` (unsized svg,
+  button sizes it), `block`; press-scale + brand-aware focus. Primary+brand fills `var(--brand)`.
+- `panel-header.tsx` — `PanelHeader`: brand accent-bar + condensed-uppercase in-card section title;
+  `inline` (default) and `band` variants; `action` slot wraps below the title on narrow (no title clip).
+- `globals.css` `:root` now defaults `--brand*` to indigo so the kit works app-wide with no wrapper.
+- Reference club dashboard refactored onto the kit; `overview-ui.tsx` deleted (its `StatTile`/`AnimatedNumber`
+  now live in the kit).
+
+**Foundation — club admin layout** (`clubs/[id]/layout.tsx`): fetches the club `primaryColor` and wraps the
+whole admin area in `brandStyle()` + `font-barlow` + a condensed branded header; `club-tabs.tsx` active tab
+now carries the org color. → every club subpage inherits `--brand*` + Barlow automatically (brandMode "inherit").
+
+**Phase 2 — wave-1 sweep** (Workflow `design-system-sweep-wave1`, 16 `general-purpose` agents, ~1M tok, 11 min,
+0 errors; presentation-only, all logic/data/props preserved):
+- Dashboard sections (indigo): parent, club, league, staff, referee, player, admin, + do-more/finish-setup cards.
+- Club subpages (inherit brand): teams, tryouts, offers.
+- League manage (self-league brand): `manage/leagues/[id]` + list; season `overview-tab`.
+- Registration (self-program brand, mobile): `(public)/camp/[id]` + form, `(public)/house-league/[id]` + form,
+  `(platform)/tryouts/[id]` + form.
+
+**Verify:** `tsc --noEmit` + `next lint` clean; screenshot spot-check via `scripts/demo/` (`shots.mjs` pattern —
+login persona → full-page shots → assert no pageerror/500). Commits `46cf754`, `f748a35`, `22bb189` (+ demo lock).
+The brand rule from §3 held up well in the browser and is the working default.
 
 ## Refs
 [[club-page-design-polish]] · [[native-mobile-platform]] · [[demo-shot-list]] · `scripts/demo/` (recorder)
