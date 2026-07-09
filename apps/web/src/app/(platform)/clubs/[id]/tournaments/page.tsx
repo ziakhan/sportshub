@@ -5,6 +5,13 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { Button } from "@/components/ui"
+
+const PencilIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+  </svg>
+)
 
 interface Tournament {
   id: string
@@ -140,21 +147,31 @@ export default function ClubTournamentsPage() {
                         </div>
                       )}
                     </div>
-                    {(tournament.status === "DRAFT" || tournament.status === "REGISTRATION") && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault()
-                          togglePublish(tournament.id, tournament.status)
-                        }}
-                        className={`rounded-md px-3 py-1 text-xs font-medium ${
-                          tournament.status === "DRAFT"
-                            ? "bg-court-100 text-court-700 hover:bg-green-200"
-                            : "bg-court-100 text-ink-700 hover:bg-court-200"
-                        }`}
+                    <div className="flex items-center gap-2">
+                      {(tournament.status === "DRAFT" || tournament.status === "REGISTRATION") && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            togglePublish(tournament.id, tournament.status)
+                          }}
+                          className={`rounded-md px-3 py-1 text-xs font-medium ${
+                            tournament.status === "DRAFT"
+                              ? "bg-court-100 text-court-700 hover:bg-green-200"
+                              : "bg-court-100 text-ink-700 hover:bg-court-200"
+                          }`}
+                        >
+                          {tournament.status === "DRAFT" ? "Publish" : "Unpublish"}
+                        </button>
+                      )}
+                      <Button
+                        href={`/clubs/${clubId}/tournaments/${tournament.id}/edit`}
+                        variant="subtle"
+                        size="sm"
+                        icon={PencilIcon}
                       >
-                        {tournament.status === "DRAFT" ? "Publish" : "Unpublish"}
-                      </button>
-                    )}
+                        Edit
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

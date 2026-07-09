@@ -5,6 +5,13 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { Button } from "@/components/ui"
+
+const PencilIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+  </svg>
+)
 
 const STATUS_FLOW = [
   "DRAFT",
@@ -198,14 +205,24 @@ export default function TournamentManagePage() {
             </p>
           )}
         </div>
-        {nextStatus && (
-          <button
-            onClick={() => updateStatus(nextStatus)}
-            className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
+        <div className="flex items-center gap-2">
+          <Button
+            href={`/clubs/${clubId}/tournaments/${tournamentId}/edit`}
+            variant="subtle"
+            size="sm"
+            icon={PencilIcon}
           >
-            {nextButtonLabel(nextStatus)}
-          </button>
-        )}
+            Edit details
+          </Button>
+          {nextStatus && (
+            <button
+              onClick={() => updateStatus(nextStatus)}
+              className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
+            >
+              {nextButtonLabel(nextStatus)}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats bar */}

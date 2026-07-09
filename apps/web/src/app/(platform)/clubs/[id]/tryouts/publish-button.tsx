@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui"
 
 interface PublishButtonProps {
   tryoutId: string
@@ -29,16 +30,14 @@ export function PublishButton({ tryoutId, isPublished }: PublishButtonProps) {
   }
 
   return (
-    <button
+    <Button
+      type="button"
+      size="sm"
       onClick={handleToggle}
       disabled={loading}
-      className={`rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${
-        isPublished
-          ? "border border-ink-200 bg-white text-ink-700 hover:bg-court-50"
-          : "bg-play-600 text-white hover:bg-play-700"
-      }`}
+      variant={isPublished ? "subtle" : "primary"}
     >
       {loading ? "..." : isPublished ? "Unpublish" : "Publish"}
-    </button>
+    </Button>
   )
 }
