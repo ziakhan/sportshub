@@ -1,16 +1,19 @@
 ---
 updated: 2026-07-08
-status: in-progress
+status: shipped
 tier: 1
 area: identity
 effort: L
 source: owner
-tags: [theme/identity, type/plan, status/in-progress]
+tags: [theme/identity, type/plan, status/shipped]
 ---
 
 # 🎨 Customizable club/league pages ("your website")
 
-**Tier 1 · effort L · from owner · IN PROGRESS.** Turn the public club/league page
+**Tier 1 · effort L · from owner · ✅ SHIPPED (2026-07-08, local).** Club page fully
+customizable (hero + two-zone drag-drop block editor + upload + contact + socials +
+announcements); league variant = branded hero + editor. Verified end-to-end.
+Turn the public club/league page
 into a branded, mostly-auto "microsite" the org can shape — the Facebook-Page-for-
 business idea. Lives at the existing `/club/[slug]` (and later the [[handles-identity|@handle]]);
 no separate site to maintain. Demo centerpiece for the polish push.

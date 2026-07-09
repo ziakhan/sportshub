@@ -5,6 +5,16 @@ tags: [theme/ledgers, type/ledger, status/living]
 
 # Outstanding items — master ledger
 
+> **✅ SHIPPED 2026-07-08 (local, unpushed): Customizable club & league pages.**
+> Public `/club/[slug]` is now a branded microsite — hero (banner/logo/colors/
+> tagline/description) + sticky sub-nav + a two-zone (Main + Rail) drag-drop block
+> editor (`@dnd-kit`), image upload (client-compressed data URLs, no blob infra),
+> contact + socials + announcements. League `/league/[seasonId]` gets a branded
+> hero + a compact "Customize page" editor. Schema: `TenantBranding` +bannerUrl/
+> tagline/socials/pageLayout, `League` +logoUrl/bannerUrl/tagline/primaryColor/
+> socials (local db push + regen). Verified end-to-end; unit suite 233/233 green.
+> Plan: [[customizable-pages]]. **Still tracked as the demo-polish push.**
+>
 > **💡 FEATURE BACKLOG: docs/feature-backlog.md** — the wishlist of
 > requested-but-unbuilt features (RSVP/attendance, playoffs, quizzes,
 > creator roles…). Add ideas there the moment they come up.

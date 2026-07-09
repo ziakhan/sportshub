@@ -47,6 +47,7 @@ running record is [[outstanding-items]]; deploy state is in [[pending-deploy-act
 - ✅ Homepage (scoreboard strip, your-teams rail, news/leaders); league / team / player / news pages
 - ✅ Follow model + star affordance; content-first homepage for signed-in members — [[home-redesign-plan]]
 - ✅ Site IA N1: personalized nav dropdowns, Manage door, /scores, role-aware /post-login — [[site-ia-plan]]
+- ✅ **Customizable club & league pages** — branded hero (banner/logo/colors/tagline/description) + sticky sub-nav + two-zone drag-drop block editor (`@dnd-kit`) + image upload + contact + socials + announcements (club); branded hero + editor (league) — [[customizable-pages]]
 
 ## 🤝 Engagement — [[_moc-offers-engagement]]
 - ✅ Team ↔ family chat + public chat dock
