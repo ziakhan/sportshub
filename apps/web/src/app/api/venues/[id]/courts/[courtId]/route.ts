@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSessionUserId } from "@/lib/auth-helpers"
+import { getSessionUserId, canManageVenues } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -20,6 +20,11 @@ export async function PATCH(
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    if (!(await canManageVenues(sessionInfo))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
 
     const body = await request.json()
     const data = updateCourtSchema.parse(body)
@@ -53,6 +58,11 @@ export async function DELETE(
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    if (!(await canManageVenues(sessionInfo))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
 
     const gameCount = await (prisma as any).game.count({ where: { courtId: params.courtId } })
     if (gameCount > 0) {

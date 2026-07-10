@@ -149,3 +149,25 @@ export async function canAccessTenant(tenantId: string) {
   const tenants = await getUserTenants()
   return tenants.some((t: any) => t.id === tenantId)
 }
+
+/**
+ * Venues (and their courts/hours) are GLOBAL — shared across clubs and
+ * leagues. Until a venue-ownership model exists, mutating them is limited to
+ * org operators (any club/league owner or manager) or PlatformAdmin, so a
+ * random signed-in member can't vandalize scheduling data everyone relies on
+ * (gap-audit 2026-07-09 §2).
+ */
+export async function canManageVenues(sessionInfo: {
+  userId: string
+  isPlatformAdmin: boolean
+}): Promise<boolean> {
+  if (sessionInfo.isPlatformAdmin) return true
+  const role = await prisma.userRole.findFirst({
+    where: {
+      userId: sessionInfo.userId,
+      role: { in: ["ClubOwner", "ClubManager", "LeagueOwner", "LeagueManager"] },
+    },
+    select: { id: true },
+  })
+  return !!role
+}

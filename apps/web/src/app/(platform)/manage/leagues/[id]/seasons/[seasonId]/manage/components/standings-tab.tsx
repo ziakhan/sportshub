@@ -11,12 +11,19 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
 
   const loadStandings = async () => {
     setStandingsLoading(true)
-    const res = await fetch(`/api/seasons/${seasonId}/standings`)
-    if (res.ok) {
-      const data = await res.json()
-      setStandings(data.divisions || [])
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/standings`)
+      if (res.ok) {
+        const data = await res.json()
+        setStandings(data.divisions || [])
+      }
+    } catch {
+      // Swallow — Refresh stays enabled so the operator can retry.
+    } finally {
+      // Previously a thrown fetch left standingsLoading=true forever, bricking
+      // the tab AND its disabled={standingsLoading} Refresh button (gap-audit).
+      setStandingsLoading(false)
     }
-    setStandingsLoading(false)
   }
 
   useEffect(() => {

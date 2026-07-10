@@ -191,7 +191,8 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
 
   if (hasLeague) {
     const lid = league?.primaryLeagueId
-    const seasonsHref = lid ? `/manage/leagues/${lid}/seasons` : "/manage/leagues/create"
+    // NOTE: there is no /seasons index page — season creation lives on the league detail.
+    const seasonsHref = lid ? `/manage/leagues/${lid}` : "/manage/leagues/create"
     steps.push(
       {
         key: "league-create",
@@ -216,7 +217,7 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
         hint: "Group teams by age and tier.",
         href:
           lid && league?.primarySeasonId
-            ? `/manage/leagues/${lid}/seasons/${league.primarySeasonId}`
+            ? `/manage/leagues/${lid}/seasons/${league.primarySeasonId}/manage`
             : seasonsHref,
         done: !!league?.hasDivision,
       }

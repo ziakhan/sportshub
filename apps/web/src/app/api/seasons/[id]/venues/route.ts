@@ -162,6 +162,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "seasonVenueId required" }, { status: 400 })
     }
 
+    // Scope: the link row must belong to THIS season (IDOR guard, gap-audit §2).
+    const target = await prisma.seasonVenue.findFirst({
+      where: { id: seasonVenueId, seasonId: params.id },
+      select: { id: true },
+    })
+    if (!target) return NextResponse.json({ error: "Season venue not found" }, { status: 404 })
+
     await prisma.seasonVenue.delete({ where: { id: seasonVenueId } })
     return NextResponse.json({ success: true })
   } catch (error) {

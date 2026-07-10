@@ -141,6 +141,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "tournamentVenueId required" }, { status: 400 })
     }
 
+    // Scope: the link row must belong to THIS tournament (IDOR guard, gap-audit §2).
+    const target = await (prisma as any).tournamentVenue.findFirst({
+      where: { id: tournamentVenueId, tournamentId: params.id },
+      select: { id: true },
+    })
+    if (!target) return NextResponse.json({ error: "Tournament venue not found" }, { status: 404 })
+
     await (prisma as any).tournamentVenue.delete({ where: { id: tournamentVenueId } })
     return NextResponse.json({ success: true })
   } catch (error) {

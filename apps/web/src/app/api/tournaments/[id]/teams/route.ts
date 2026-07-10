@@ -71,6 +71,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
     }
 
+    // Scope: the registration must belong to THIS tournament (IDOR guard, gap-audit §2).
+    const target = await (prisma as any).tournamentTeam.findFirst({
+      where: { id: tournamentTeamId, tournamentId: params.id },
+      select: { id: true },
+    })
+    if (!target) return NextResponse.json({ error: "Team registration not found" }, { status: 404 })
+
     await (prisma as any).tournamentTeam.update({
       where: { id: tournamentTeamId },
       data: { status },

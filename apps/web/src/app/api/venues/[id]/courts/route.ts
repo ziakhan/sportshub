@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSessionUserId } from "@/lib/auth-helpers"
+import { getSessionUserId, canManageVenues } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -33,6 +33,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    if (!(await canManageVenues(sessionInfo))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
 
     const body = await request.json()
     const data = createCourtSchema.parse(body)

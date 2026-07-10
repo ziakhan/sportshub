@@ -178,6 +178,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "sessionId required" }, { status: 400 })
     }
 
+    // Scope: the session must belong to THIS season (IDOR guard, gap-audit §2).
+    const target = await prisma.seasonSession.findFirst({
+      where: { id: sessionId, seasonId: params.id },
+      select: { id: true },
+    })
+    if (!target) return NextResponse.json({ error: "Session not found" }, { status: 404 })
+
     await prisma.seasonSession.delete({ where: { id: sessionId } })
     return NextResponse.json({ success: true })
   } catch (error) {

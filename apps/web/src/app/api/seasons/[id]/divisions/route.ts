@@ -188,6 +188,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "divisionId required" }, { status: 400 })
     }
 
+    // Scope: the division must belong to THIS season (IDOR guard, gap-audit §2).
+    const target = await prisma.division.findFirst({
+      where: { id: divisionId, seasonId: params.id },
+      select: { id: true },
+    })
+    if (!target) return NextResponse.json({ error: "Division not found" }, { status: 404 })
+
     await prisma.division.delete({ where: { id: divisionId } })
     return NextResponse.json({ success: true })
   } catch (error) {

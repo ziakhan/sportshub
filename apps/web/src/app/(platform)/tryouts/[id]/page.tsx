@@ -191,7 +191,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
                     Sign in to register your player for this tryout.
                   </p>
                   <Button
-                    href={`/sign-in?redirect_url=/tryouts/${params.id}`}
+                    href={`/sign-in?callbackUrl=/tryouts/${params.id}`}
                     block
                     size="lg"
                     icon={ICONS.signin}
