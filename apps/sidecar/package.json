@@ -1,0 +1,28 @@
+{
+  "name": "@youthbasketballhub/sidecar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Always-on realtime gateway: Socket.IO rooms + HMAC-verified publish endpoint (+ push workers from M3)",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format cjs --clean",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "fastify": "^4.28.1",
+    "ioredis": "^5.4.1",
+    "jose": "^5.9.6",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.3.3"
+  }
+}
