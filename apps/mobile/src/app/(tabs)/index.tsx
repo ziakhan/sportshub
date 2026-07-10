@@ -7,12 +7,13 @@ import {
   View,
 } from "react-native"
 import { apiJson } from "@/lib/api"
+import { useRealtime } from "@/lib/realtime"
 import { palette, ui } from "@/lib/theme"
 
 /**
  * Home / Scores — live games, this week's finals, what's coming up.
- * Polls GET /api/live (fast while a game is LIVE, slow otherwise);
- * socket pings replace the fast path in a later pass.
+ * game.update pings on the public scores room refetch immediately; polling
+ * stays as the fallback (fast while a game is LIVE, slow otherwise).
  */
 
 interface ScoreTeam {
@@ -114,11 +115,19 @@ export default function ScoresScreen() {
     load()
   }, [load])
 
+  const { connected } = useRealtime({
+    rooms: ["scores"],
+    events: { "game.update": () => void load() },
+  })
+
   const hasLive = (board?.live.length ?? 0) > 0
   useEffect(() => {
-    const timer = setInterval(load, hasLive ? LIVE_POLL_MS : IDLE_POLL_MS)
+    const timer = setInterval(
+      load,
+      connected ? 120_000 : hasLive ? LIVE_POLL_MS : IDLE_POLL_MS
+    )
     return () => clearInterval(timer)
-  }, [load, hasLive])
+  }, [load, hasLive, connected])
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)

@@ -232,11 +232,13 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    // getSessionUserId (not raw getServerSession) so the native app's bearer
+    // tokens work here — this GET is the app's family offers list (M4).
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const searchParams = request.nextUrl.searchParams
     const teamId = searchParams.get("teamId")

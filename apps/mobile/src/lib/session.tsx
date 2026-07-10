@@ -3,9 +3,11 @@ import {
   hasStoredSession,
   signIn as apiSignIn,
   signOut as apiSignOut,
+  storedUser,
   type SessionUser,
 } from "./api"
 import { registerForPush, unregisterDevice } from "./push"
+import { resetRealtime } from "./realtime"
 
 /**
  * Session state for the whole app. Boot: a stored refresh token counts as
@@ -29,10 +31,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null)
 
   useEffect(() => {
-    hasStoredSession()
-      .then((stored) => {
+    Promise.all([hasStoredSession(), storedUser()])
+      .then(([stored, restoredUser]) => {
         setSignedIn(stored)
-        if (stored) void registerForPush() // refresh token + lastSeenAt each launch
+        if (stored) {
+          setUser(restoredUser)
+          void registerForPush() // refresh token + lastSeenAt each launch
+        }
       })
       .finally(() => setIsLoading(false))
   }, [])
@@ -50,6 +55,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async signOut() {
       await unregisterDevice().catch(() => {})
       await apiSignOut()
+      resetRealtime() // drop the authenticated socket + its private rooms
       setUser(null)
       setSignedIn(false)
     },

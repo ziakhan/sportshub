@@ -16,6 +16,7 @@ import * as SecureStore from "expo-secure-store"
 
 const ACCESS_KEY = "sportshub.accessToken"
 const REFRESH_KEY = "sportshub.refreshToken"
+const USER_KEY = "sportshub.user"
 
 /**
  * Base URL resolution, in order:
@@ -47,6 +48,7 @@ export async function clearTokens(): Promise<void> {
   await Promise.all([
     SecureStore.deleteItemAsync(ACCESS_KEY),
     SecureStore.deleteItemAsync(REFRESH_KEY),
+    SecureStore.deleteItemAsync(USER_KEY),
   ])
 }
 
@@ -68,7 +70,19 @@ export async function signIn(email: string, password: string): Promise<SessionUs
     throw new Error(body?.error ?? `Sign-in failed (${res.status})`)
   }
   await setTokens(body.accessToken, body.refreshToken)
+  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(body.user))
   return body.user as SessionUser
+}
+
+/** The user from the last sign-in — survives app restarts. */
+export async function storedUser(): Promise<SessionUser | null> {
+  const raw = await SecureStore.getItemAsync(USER_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as SessionUser
+  } catch {
+    return null
+  }
 }
 
 /** Rotate the refresh token; false means the session is gone — sign out. */

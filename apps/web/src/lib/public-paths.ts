@@ -55,6 +55,8 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/settings",
   "/api/health",
   "/api/live",
+  // Native-app boot handshake (min version + publishable key) — public by design
+  "/api/mobile/config",
   // Personal iCal feed (GET only) — the unguessable token IS the auth
   // (phones fetch it without a session); the route 404s unknown tokens.
   "/api/calendar",

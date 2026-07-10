@@ -7,7 +7,9 @@ import {
   Text,
   View,
 } from "react-native"
+import { useRouter } from "expo-router"
 import { apiFetch, apiJson } from "@/lib/api"
+import { useRealtime } from "@/lib/realtime"
 import { ui } from "@/lib/theme"
 
 /**
@@ -36,6 +38,7 @@ function ago(iso: string): string {
 }
 
 export default function AlertsScreen() {
+  const router = useRouter()
   const [items, setItems] = useState<NotificationItem[]>([])
   const [unread, setUnread] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,11 +58,31 @@ export default function AlertsScreen() {
     }
   }, [])
 
+  // notify pings land on the sidecar-auto-joined user room
+  const { connected } = useRealtime({
+    rooms: [],
+    events: { notify: () => void load() },
+  })
+
   useEffect(() => {
     load()
-    const timer = setInterval(load, 30_000)
+    const timer = setInterval(load, connected ? 120_000 : 30_000)
     return () => clearInterval(timer)
-  }, [load])
+  }, [load, connected])
+
+  /** Deep links: chat + offers open in-app; everything else just marks read. */
+  function follow(item: NotificationItem) {
+    const link = item.link ?? ""
+    const chatMatch = /^\/teams\/([\w-]+)\/chat/.exec(link)
+    if (chatMatch) {
+      router.push({ pathname: "/chat/[teamId]", params: { teamId: chatMatch[1] } })
+      return
+    }
+    const offerMatch = /^\/offers\/([\w-]+)/.exec(link)
+    if (offerMatch) {
+      router.push({ pathname: "/offers/[offerId]", params: { offerId: offerMatch[1] } })
+    }
+  }
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -97,7 +120,10 @@ export default function AlertsScreen() {
       renderItem={({ item }) => (
         <Pressable
           style={[styles.row, !item.isRead && styles.rowUnread]}
-          onPress={() => markRead(item)}
+          onPress={() => {
+            markRead(item)
+            follow(item)
+          }}
         >
           <View style={styles.rowBody}>
             <Text style={[styles.title, !item.isRead && styles.titleUnread]} numberOfLines={1}>
