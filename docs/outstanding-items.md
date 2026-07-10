@@ -25,8 +25,8 @@ tags: [theme/ledgers, type/ledger, status/living]
 > `hasFeature()` wired (enforcement off), recap API param VERIFIED CORRECT, dead surfaces
 > deleted, .env.example completed, 9 pre-existing tsc errors fixed. Suites 243 unit / 226 int
 > green; 26-surface Playwright smoke clean. Statuses flipped in [[gap-audit-2026-07-09]],
-> [[editability-audit]], [[season-continuity-plan]]. **Deploy train pending owner approval:
-> runbooks #18–#20 + ~25 local commits.**
+> [[editability-audit]], [[season-continuity-plan]]. **🚀 DEPLOYED 2026-07-10 (owner-approved): Neon runbooks #10–#20 applied + 109 commits pushed
+> (`b12b548..74baa84`). Owner-side on Vercel: CRON_SECRET (required), APP_TIMEZONE, STRIPE_*, ANTHROPIC_API_KEY.**
 >
 > **🕳️ 2026-07-09 (late): Platform gap audit + season-continuity plan.**
 > Owner asked "what else is missing?" → 5-agent sweep → **[[gap-audit-2026-07-09]]** (ranked

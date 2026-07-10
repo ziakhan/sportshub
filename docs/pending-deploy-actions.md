@@ -18,6 +18,14 @@ Manual steps to run on production (Neon) **before** the next Vercel deploy of ma
 
 ---
 
+> **🚀 Deploy train 2026-07-10 (owner-approved in session):** pre-checks clean
+> (`current_database()=neondb`, 216 users / 188 tenants, zero new tables pre-existing) →
+> one `prisma db push --accept-data-loss --skip-generate` covered runbooks **#10–#20**
+> (verified: 18/18 new tables, 10/10 spot-checked columns, OfferStatus.RESCINDED,
+> both Game perf indexes) → pushed **109 commits** (`b12b548..74baa84`) → Vercel auto-deploy.
+> Still owner-side on Vercel: **CRON_SECRET** (crons fail closed until set), APP_TIMEZONE
+> (optional), STRIPE_* prod vars + webhook, ANTHROPIC_API_KEY (recaps fall back to template).
+
 ## ✅ 1. Backfill `OfferTemplate.tenantId` (Gap 0.1.7) — applied 2026-05-05
 
 **Linked code change:** [apps/web/src/app/api/teams/[id]/offer-templates/route.ts](../apps/web/src/app/api/teams/[id]/offer-templates/route.ts) — POST handler now sets `tenantId: team.tenantId` on new templates.
@@ -297,7 +305,7 @@ additive — nothing renamed, nothing dropped:
 
 Nothing else to backfill.
 
-## 10. Club GTM schema (check-in + featured + chat) — NOT YET APPLIED to Neon
+## ✅ 10. Club GTM schema (check-in + featured + chat) — applied to Neon 2026-07-10
 
 Ships with the club-GTM feature commits (2026-07-06). All additive —
 one `prisma db push` covers everything:
@@ -323,7 +331,7 @@ Nothing to backfill. Note: the same commits UNHID the Review system on
 public club pages (`/club/[slug]`) — no schema change (Review table already
 live), but reviews become writable by any signed-in user on deploy.
 
-## 11. Perf-audit composite indexes — NOT YET APPLIED to Neon
+## ✅ 11. Perf-audit composite indexes — applied to Neon 2026-07-10
 
 Ships with the perf-audit commit (2026-07-06, docs/perf-audit-2026-07-06.md).
 Index-only, additive, zero data risk — one `prisma db push` covers it:
@@ -336,7 +344,7 @@ generated client). While in the Neon console for this: check compute
 **autosuspend** — prime suspect for the "first prod load takes seconds"
 symptom (see audit doc §"suspected but NOT confirmed").
 
-## 12. Team polls & surveys schema — NOT YET APPLIED to Neon
+## ✅ 12. Team polls & surveys schema — applied to Neon 2026-07-10
 
 Ships with the engagement-v1 commit (2026-07-06,
 docs/engagement-features-plan.md). All additive — one `prisma db push`:
@@ -350,7 +358,7 @@ docs/engagement-features-plan.md). All additive — one `prisma db push`:
 Nothing to backfill. Notification type "team_poll" is code-level only (the
 Notification.type column is a plain string).
 
-## 13. Practice scheduling schema — NOT YET APPLIED to Neon
+## ✅ 13. Practice scheduling schema — applied to Neon 2026-07-10 (APP_TIMEZONE env still owner-side)
 
 Ships with the practice-scheduling commit (2026-07-06). All additive — one
 `prisma db push` (expect a benign warning about the new unique constraint
@@ -368,7 +376,7 @@ also America/Toronto, so this is belt-and-suspenders/documentation).
 Nothing to backfill. Notification types practice_schedule/practice_change
 are code-level only.
 
-## 14. Offer package options schema — NOT YET APPLIED to Neon
+## ✅ 14. Offer package options schema — applied to Neon 2026-07-10
 
 Ships with the offer-package-options commit (2026-07-07,
 docs/offer-package-options-design.md). All additive — one `prisma db push`:
@@ -381,7 +389,7 @@ docs/offer-package-options-design.md). All additive — one `prisma db push`:
 Nothing to backfill — existing offers have no option rows and behave
 exactly as before (single package).
 
-## 15. Team events schema — NOT YET APPLIED to Neon
+## ✅ 15. Team events schema — applied to Neon 2026-07-10
 
 Ships with the team-events commit (2026-07-07). All additive — one
 `prisma db push`:
@@ -394,7 +402,7 @@ Ships with the team-events commit (2026-07-07). All additive — one
 
 Nothing to backfill. Notification type "team_event" is code-level only.
 
-## 16. Payments v2 Stage A — card-on-file (NOT YET APPLIED to Neon)
+## ✅ 16. Payments v2 Stage A — card-on-file — applied to Neon 2026-07-10
 
 Ships with the card-on-file commit (2026-07-07, payments v2 Stage A). One
 additive column — `prisma db push`:
@@ -407,7 +415,7 @@ Prod also needs the existing `STRIPE_*` env vars (already on the deploy
 train, runbook §1). Later payments-v2 stages add more schema — separate
 runbook entries as they land.
 
-## 17. Payments v2 Stages B–H schema + CRON_SECRET (NOT YET APPLIED to Neon)
+## ✅ 17. Payments v2 Stages B–H schema — applied to Neon 2026-07-10 (⚠️ CRON_SECRET env var still owner-side on Vercel)
 
 Ships with the payments v2 B–H commit (2026-07-07). Additive — one
 `prisma db push`:
@@ -424,7 +432,7 @@ Ships with the payments v2 B–H commit (2026-07-07). Additive — one
 crons (charge-due 09:00, payment-reminders 09:30 daily) — Vercel picks them
 up on deploy. Nothing to backfill.
 
-## 18. Editability wave 2 schema — RESCINDED + invite expiry (NOT YET APPLIED to Neon)
+## ✅ 18. Editability wave 2 schema — RESCINDED + invite expiry — applied to Neon 2026-07-10
 
 Ships with the editability wave-2 commit (2026-07-09). Additive — one
 `prisma db push`:
@@ -436,7 +444,7 @@ Ships with the editability wave-2 commit (2026-07-09). Additive — one
 (flips stale PENDING offers past `expiresAt` to EXPIRED). Uses the existing
 `CRON_SECRET` — no new env vars. Nothing to backfill.
 
-## 19. Communications & consent schema (NOT YET APPLIED to Neon)
+## ✅ 19. Communications & consent schema — applied to Neon 2026-07-10
 
 Ships with the phase-1 family-communications commit (2026-07-09). Additive —
 one `prisma db push`:
@@ -449,7 +457,7 @@ one `prisma db push`:
 No env vars, no backfill. Unsubscribe tokens sign with the existing
 NEXTAUTH_SECRET.
 
-## 20. Season-continuity schema — team archive + lineage (NOT YET APPLIED to Neon)
+## ✅ 20. Season-continuity schema — team archive + lineage — applied to Neon 2026-07-10
 
 Ships with the phase-3 continuity commit (2026-07-09). Additive — one
 `prisma db push`:
