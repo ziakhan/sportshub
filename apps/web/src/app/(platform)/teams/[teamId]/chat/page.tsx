@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
+import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembers, getChatMembership } from "@/lib/teams/chat-access"
 import { TeamChat } from "./team-chat"
@@ -15,8 +16,15 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
   const membership = await getChatMembership(params.teamId, auth.userId, auth.isPlatformAdmin)
   if (!membership) notFound()
 
-  const members = await getChatMembers(membership.teamId, membership.tenantId)
+  const [members, teamRow] = await Promise.all([
+    getChatMembers(membership.teamId, membership.tenantId),
+    prisma.team.findUnique({
+      where: { id: membership.teamId },
+      select: { archivedAt: true },
+    }),
+  ])
   const isStaffSide = membership.role !== "family"
+  const archived = !!teamRow?.archivedAt
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
@@ -58,6 +66,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
         currentUserId={auth.userId}
         canModerate={isStaffSide}
         members={members}
+        archived={archived}
       />
     </div>
   )

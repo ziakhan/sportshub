@@ -448,3 +448,13 @@ one `prisma db push`:
 
 No env vars, no backfill. Unsubscribe tokens sign with the existing
 NEXTAUTH_SECRET.
+
+## 20. Season-continuity schema — team archive + lineage (NOT YET APPLIED to Neon)
+
+Ships with the phase-3 continuity commit (2026-07-09). Additive — one
+`prisma db push`:
+- `Team.archivedAt DateTime?` (archived teams hide from active lists, keep history)
+- `Team.continuedFromId String?` + self-relation "TeamLineage" (season-instance
+  lineage for the rollover wizard)
+
+No env vars, no backfill.

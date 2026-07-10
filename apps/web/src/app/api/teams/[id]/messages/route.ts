@@ -155,6 +155,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const membership = await getChatMembership(params.id, auth.userId, auth.isPlatformAdmin)
     if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    // Archived teams keep their chat as read-only history (season-continuity
+    // plan §2, owner decision: read-only immediately on archive)
+    const teamRow = await prisma.team.findUnique({
+      where: { id: params.id },
+      select: { archivedAt: true },
+    })
+    if (teamRow?.archivedAt) {
+      return NextResponse.json(
+        { error: "This team is archived — chat is read-only" },
+        { status: 409 }
+      )
+    }
+
     const parsed = sendMessageSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json(

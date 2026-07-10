@@ -10,6 +10,7 @@ interface TeamListItem {
   gender: string | null
   season: string | null
   description: string | null
+  archivedAt: Date | null
   createdAt: Date
   _count: {
     players: number
@@ -46,6 +47,16 @@ const TROPHY_ICON = (
     <path d="M7 4h10v4a5 5 0 01-10 0V4z" />
     <path
       d="M7 4H4v2a3 3 0 003 3M17 4h3v2a3 3 0 01-3 3M9 21h6M12 13v8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+const ROLLOVER_ICON = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path
+      d="M4 9a8 8 0 0114-3M4 4v5h5M20 15a8 8 0 01-14 3M20 20v-5h-5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -112,31 +123,49 @@ export default async function ClubTeamsPage({
   searchParams,
 }: {
   params: { id: string }
-  searchParams: { age?: string; q?: string }
+  searchParams: { age?: string; q?: string; archived?: string }
 }) {
   const [teams, records] = await Promise.all([getTeams(params.id), getRecords(params.id)])
+
+  const showArchived = searchParams.archived === "1"
+  const activeTeams = teams.filter((t) => !t.archivedAt)
+  const archivedTeams = teams.filter((t) => t.archivedAt)
+  const view = showArchived ? archivedTeams : activeTeams
 
   const ageFilter = searchParams.age
   const searchQuery = searchParams.q?.toLowerCase()
 
-  // Get unique age groups for filter
-  const ageGroups = [...new Set(teams.map((t) => t.ageGroup))].sort()
+  // Get unique age groups for filter (within the current view)
+  const ageGroups = [...new Set(view.map((t) => t.ageGroup))].sort()
 
   // Apply filters
-  const filtered = teams.filter((t) => {
+  const filtered = view.filter((t) => {
     if (ageFilter && t.ageGroup !== ageFilter) return false
     if (searchQuery && !t.name.toLowerCase().includes(searchQuery)) return false
     return true
   })
+
+  const baseUrl = `/clubs/${params.id}/teams${showArchived ? "?archived=1" : ""}`
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-condensed text-ink-950 flex items-center gap-2.5 text-2xl font-bold uppercase tracking-wide">
           <span className="h-6 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
-          Teams ({teams.length})
+          {showArchived ? `Archived teams (${archivedTeams.length})` : `Teams (${activeTeams.length})`}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
+          {showArchived ? (
+            <Button href={`/clubs/${params.id}/teams`} variant="subtle">
+              Active teams ({activeTeams.length})
+            </Button>
+          ) : (
+            archivedTeams.length > 0 && (
+              <Button href={`/clubs/${params.id}/teams?archived=1`} variant="subtle">
+                Archived ({archivedTeams.length})
+              </Button>
+            )
+          )}
           <Button href="/browse-leagues" variant="subtle" icon={TROPHY_ICON}>
             Add a Team to a League
           </Button>
@@ -158,6 +187,25 @@ export default async function ClubTeamsPage({
             </Button>
           </div>
         </div>
+      ) : view.length === 0 ? (
+        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+          <h3 className="text-ink-900 mb-2 text-lg font-semibold">
+            {showArchived ? "No archived teams" : "No active teams"}
+          </h3>
+          <p className="text-ink-600 mb-6">
+            {showArchived
+              ? "When a season ends, start the next one from a team — the old team lands here as read-only history."
+              : "All of your teams are archived. Start a new season from an archived team, or create a fresh one."}
+          </p>
+          <div className="flex justify-center">
+            <Button
+              href={showArchived ? `/clubs/${params.id}/teams` : `/clubs/${params.id}/teams?archived=1`}
+              variant="subtle"
+            >
+              {showArchived ? "Back to active teams" : `View archived (${archivedTeams.length})`}
+            </Button>
+          </div>
+        </div>
       ) : (
         <>
           <TeamsFilter
@@ -165,13 +213,14 @@ export default async function ClubTeamsPage({
             ageGroups={ageGroups}
             activeAge={ageFilter}
             activeSearch={searchParams.q}
+            archived={showArchived}
           />
 
           {filtered.length === 0 ? (
             <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
               <p className="text-ink-600 mb-3">No teams match the current filters.</p>
               <div className="flex justify-center">
-                <Button href={`/clubs/${params.id}/teams`} variant="subtle" size="sm">
+                <Button href={baseUrl} variant="subtle" size="sm">
                   Clear filters
                 </Button>
               </div>
@@ -186,18 +235,31 @@ export default async function ClubTeamsPage({
                 const activeSubmissions = team.seasonSubmissions.filter(
                   (s) => s.status !== "WITHDRAWN" && s.status !== "REJECTED"
                 )
+                const isArchived = !!team.archivedAt
 
                 return (
-                  <Link
+                  <div
                     key={team.id}
-                    href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
                     style={{ animationDelay: `${Math.min(i * 50, 400)}ms` }}
-                    className="reveal card-lift border-ink-100 shadow-soft hover:shadow-panel block rounded-2xl border bg-white p-6 hover:border-[color:var(--brand-line)]"
+                    className={`reveal card-lift border-ink-100 shadow-soft hover:shadow-panel relative rounded-2xl border bg-white p-6 hover:border-[color:var(--brand-line)] ${
+                      isArchived ? "opacity-60 transition-opacity hover:opacity-100" : ""
+                    }`}
                   >
+                    {/* Stretched link — whole card opens the dashboard; action
+                        buttons below sit above it (relative) */}
+                    <Link
+                      href={`/clubs/${params.id}/teams/${team.id}/dashboard`}
+                      className="absolute inset-0 rounded-2xl"
+                      aria-label={`Open ${team.name}`}
+                    />
+
                     <div className="mb-3">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-ink-900 text-xl font-bold">{team.name}</h3>
-                        {!headCoach && <Badge tone="hoop">No coach</Badge>}
+                        <span className="flex shrink-0 gap-1.5">
+                          {isArchived && <Badge tone="neutral">Archived</Badge>}
+                          {!headCoach && !isArchived && <Badge tone="hoop">No coach</Badge>}
+                        </span>
                       </div>
                       <p className="text-ink-600 text-sm">
                         {team.ageGroup}
@@ -273,7 +335,29 @@ export default async function ClubTeamsPage({
                         <div className="text-ink-500 mt-1 text-xs">Offers</div>
                       </div>
                     </div>
-                  </Link>
+
+                    {/* Season rollover actions — above the stretched link */}
+                    <div className="relative mt-4 flex justify-end">
+                      {isArchived ? (
+                        <Button
+                          href={`/clubs/${params.id}/teams/${team.id}/next-season`}
+                          size="sm"
+                          icon={ROLLOVER_ICON}
+                        >
+                          Start next season
+                        </Button>
+                      ) : (
+                        <Button
+                          href={`/clubs/${params.id}/teams/${team.id}/next-season`}
+                          variant="subtle"
+                          size="sm"
+                          icon={ROLLOVER_ICON}
+                        >
+                          Next season
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 )
               })}
             </div>

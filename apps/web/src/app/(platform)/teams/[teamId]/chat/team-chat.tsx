@@ -32,11 +32,14 @@ export function TeamChat({
   currentUserId,
   canModerate,
   members,
+  archived = false,
 }: {
   teamId: string
   currentUserId: string
   canModerate: boolean
   members: ChatMembers
+  /** Archived teams keep the thread readable but nothing new can be posted. */
+  archived?: boolean
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -378,7 +381,7 @@ export function TeamChat({
         </div>
       )}
 
-      {showPollForm && (
+      {!archived && showPollForm && (
         <div className="border-ink-100 space-y-2 border-t p-3">
           <div className="flex items-center justify-between">
             <p className="text-ink-700 text-xs font-bold">📊 Quick poll</p>
@@ -449,6 +452,13 @@ export function TeamChat({
         </div>
       )}
 
+      {archived ? (
+        <div className="border-ink-100 bg-ink-50 border-t px-4 py-3 text-center">
+          <p className="text-ink-500 text-xs font-semibold">
+            This team is archived — chat is read-only history.
+          </p>
+        </div>
+      ) : (
       <form onSubmit={sendMessage} className="border-ink-100 flex gap-2 border-t p-3">
         <button
           type="button"
@@ -479,6 +489,7 @@ export function TeamChat({
           Send
         </button>
       </form>
+      )}
     </div>
   )
 }

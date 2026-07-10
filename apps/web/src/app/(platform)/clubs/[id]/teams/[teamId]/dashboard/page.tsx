@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { ArchivedTeamBanner, TeamSeasonActions } from "./team-season-actions"
 
 interface StaffMember {
   id: string
@@ -65,6 +66,7 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     season: string | null
     description: string | null
     seasonFee: any
+    archivedAt: Date | null
     players: TeamPlayer[]
     staff: StaffMember[]
   }
@@ -139,6 +141,7 @@ export default async function TeamDashboardPage({
   const teamId = params.teamId
 
   const players = team.players || []
+  const isArchived = !!team.archivedAt
   const teamStaff = team.staff.filter((s) => s.teamId === teamId)
   const pendingOffers = offers.filter((o) => o.status === "PENDING")
   const acceptedOffers = offers.filter((o) => o.status === "ACCEPTED")
@@ -157,6 +160,9 @@ export default async function TeamDashboardPage({
           View public page &rarr;
         </Link>
       </div>
+
+      {/* Archived — read-only history + Unarchive / Start next season */}
+      {isArchived && <ArchivedTeamBanner clubId={clubId} teamId={teamId} />}
 
       {/* Team Header */}
       <div className="mb-6 flex items-start justify-between">
@@ -208,12 +214,17 @@ export default async function TeamDashboardPage({
           )}
           {team.description && <p className="text-ink-600 mt-2 text-sm">{team.description}</p>}
         </div>
-        <Link
-          href={`/clubs/${clubId}/teams/${teamId}/edit`}
-          className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-        >
-          Edit Team
-        </Link>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {!isArchived && (
+            <TeamSeasonActions clubId={clubId} teamId={teamId} teamName={team.name} />
+          )}
+          <Link
+            href={`/clubs/${clubId}/teams/${teamId}/edit`}
+            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+          >
+            Edit Team
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

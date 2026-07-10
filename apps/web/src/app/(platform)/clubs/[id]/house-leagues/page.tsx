@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { ReactNode } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
@@ -29,10 +29,12 @@ interface HouseLeague {
 
 export default function ClubHouseLeaguesPage() {
   const params = useParams()
+  const router = useRouter()
   const clubId = params?.id as string
   const [leagues, setLeagues] = useState<HouseLeague[]>([])
   const [loading, setLoading] = useState(true)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/house-leagues?tenantId=${clubId}`)
@@ -55,6 +57,23 @@ export default function ClubHouseLeaguesPage() {
       )
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  const duplicateLeague = async (id: string) => {
+    setDuplicatingId(id)
+    try {
+      const res = await fetch(`/api/house-leagues/${id}/duplicate`, { method: "POST" })
+      if (!res.ok) {
+        alert("Failed to duplicate program. Please try again.")
+        return
+      }
+      const data = await res.json()
+      router.push(`/clubs/${clubId}/house-leagues/${data.id}/edit`)
+    } catch {
+      alert("Failed to duplicate program. Please try again.")
+    } finally {
+      setDuplicatingId(null)
     }
   }
 
@@ -154,6 +173,15 @@ export default function ClubHouseLeaguesPage() {
                       </Button>
                     )}
                     <Button
+                      onClick={() => duplicateLeague(league.id)}
+                      disabled={duplicatingId === league.id}
+                      variant="subtle"
+                      size="sm"
+                      icon={ICONS.copy}
+                    >
+                      {duplicatingId === league.id ? "..." : "Duplicate"}
+                    </Button>
+                    <Button
                       href={`/house-league/${league.id}`}
                       variant="subtle"
                       size="sm"
@@ -209,6 +237,12 @@ const ICONS: Record<string, ReactNode> = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  copy: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
 }

@@ -8,17 +8,21 @@ export function TeamsFilter({
   ageGroups,
   activeAge,
   activeSearch,
+  archived,
 }: {
   clubId: string
   ageGroups: string[]
   activeAge?: string
   activeSearch?: string
+  /** Keep the archived-teams view when changing filters. */
+  archived?: boolean
 }) {
   const router = useRouter()
   const [search, setSearch] = useState(activeSearch || "")
 
   function buildUrl(age?: string, q?: string) {
     const params = new URLSearchParams()
+    if (archived) params.set("archived", "1")
     if (age) params.set("age", age)
     if (q) params.set("q", q)
     const qs = params.toString()

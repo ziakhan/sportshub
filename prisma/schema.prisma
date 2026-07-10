@@ -308,6 +308,15 @@ model Team {
   // the public team page shows practice days only after this.
   practiceScheduleAnnouncedAt DateTime?
 
+  // Season continuity (docs/season-continuity-plan.md §2, owner-approved):
+  // archived teams disappear from active lists but keep all history (games,
+  // stats, chat read-only); lineage links a program's season instances
+  // (Huskies U13 2025-26 → U14 2026-27) for rollover + future multi-season stats.
+  archivedAt      DateTime?
+  continuedFromId String?
+  continuedFrom   Team?   @relation("TeamLineage", fields: [continuedFromId], references: [id], onDelete: SetNull)
+  continuations   Team[]  @relation("TeamLineage")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

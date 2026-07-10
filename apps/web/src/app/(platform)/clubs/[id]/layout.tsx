@@ -82,6 +82,7 @@ export default async function ClubLayout({
           { label: "Payments", href: `/clubs/${params.id}/payments` },
           { label: "Staff", href: `/clubs/${params.id}/staff` },
           { label: "Customize page", href: `/clubs/${params.id}/customize` },
+          { label: "Messages", href: `/clubs/${params.id}/messages` },
           { label: "Settings", href: `/clubs/${params.id}/settings` },
         ]
       : []),
