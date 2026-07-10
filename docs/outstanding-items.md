@@ -5,6 +5,17 @@ tags: [theme/ledgers, type/ledger, status/living]
 
 # Outstanding items — master ledger
 
+> **🕳️ NEW 2026-07-09 (late): Platform gap audit + season-continuity plan.**
+> Owner asked "what else is missing?" → 5-agent sweep → **[[gap-audit-2026-07-09]]** (ranked
+> P0–P2 + build order). Headline systemic gap: **families are silent** — no registration
+> confirmations, no payment receipt at offer-accept, refunds/waives notify nobody, game
+> cancellations bell-only, zero CASL/unsubscribe infra. Fixed same-night: venue courts/hours
+> authz holes, 6 IDOR scopings, league-onboarding checklist 404s, sign-in round-trip param,
+> standings-tab brick. Also: **[[season-continuity-plan]]** (owner-directed) — team archive +
+> lineage + "Start next season" wizard w/ carry-over offers, league close-out, camp/HL
+> "duplicate as new", re-engagement messaging with per-org CASL consent (3-layer:
+> platform/club/league; consent ships BEFORE any blast composer). 5 increments + 5 owner forks.
+>
 > **✅ SHIPPED 2026-07-09 (local, unpushed): Editability audit + waves 1 AND 2 + design-system kit & sweep.**
 > 6-agent audit of every entity's editability/transitions → **[[editability-audit]]**
 > (entity × state × action matrix, dead-enum inventory; §5 has what shipped vs what remains).
