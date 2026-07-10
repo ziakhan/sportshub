@@ -423,3 +423,15 @@ Ships with the payments v2 B–H commit (2026-07-07). Additive — one
 `/api/cron/*` jobs fail closed without it. `vercel.json` now declares the
 crons (charge-due 09:00, payment-reminders 09:30 daily) — Vercel picks them
 up on deploy. Nothing to backfill.
+
+## 18. Editability wave 2 schema — RESCINDED + invite expiry (NOT YET APPLIED to Neon)
+
+Ships with the editability wave-2 commit (2026-07-09). Additive — one
+`prisma db push`:
+- enum `OfferStatus`: new value `RESCINDED` (club withdraws a PENDING offer)
+- `StaffInvitation.expiresAt DateTime?` (lazy invite expiry; null = legacy
+  rows never expire)
+
+`vercel.json` adds a third cron: `/api/cron/expire-offers` daily 09:15
+(flips stale PENDING offers past `expiresAt` to EXPIRED). Uses the existing
+`CRON_SECRET` — no new env vars. Nothing to backfill.

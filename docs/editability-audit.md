@@ -76,8 +76,8 @@ Legend: ✅ works · 🔶 API exists, **no UI** · 🔴 nothing exists · 🐛 b
 | Entity | Create | Edit | Publish/Unpub | Delete | Registrants view | Family cancel |
 |---|---|---|---|---|---|---|
 | Tryout | ✅ | ✅ page (Staff/TM can create but **not** edit — authz mismatch) | 🐛 Unpublish broken — `api/tryouts/[id]/publish` hard-codes `true` | 🔴 | ✅ signups + check-in | ✅ unless PAID |
-| Camp | ✅ | 🔶 PATCH full, **no edit page/button** | ✅ toggle | 🔴 | 🔴 club can't see who registered | 🔴 no API/UI |
-| HouseLeague | ✅ | 🔶 same as Camp | ✅ toggle | 🔴 | 🔴 | 🔴 (WAITLISTED/CANCELLED enum dead) |
+| Camp | ✅ | 🔶 PATCH full, **no edit page/button** | ✅ toggle | 🔴 | 🔴 club can't see who registered | ⛔ by owner decision (club-only) |
+| HouseLeague | ✅ | 🔶 same as Camp | ✅ toggle | 🔴 | 🔴 | ⛔ by owner decision (WAITLISTED enum still dead) |
 | Tournament | ✅ | 🔶 PATCH full, **no core-fields form** | 🔶 split: list toggles DRAFT↔REGISTRATION; manage only advances forward; can't reopen | 🔴 | ✅ teams tab | 🔴 club can't withdraw team (WITHDRAWN unreachable) |
 
 Also: club overview dashboard counts **tryouts only** — camps/HL/tournaments invisible in stats
@@ -182,15 +182,33 @@ club role** — any signed-in user can read a club's full program list incl. dra
 - 🐛 fixes: tryout unpublish (publish route now respects body), venue PATCH authz,
   game PATCH COMPLETED guard, pay-intent expiry check.
 
-### Wave 2 — money & league correctness (needs owner sign-off on semantics)
-- **Offer rescind** (club withdraws PENDING offer) — new status `RESCINDED` or reuse EXPIRED;
-  + prominent button on club offers page; + offer-expiry cron.
-- **Club self-withdraw from league** + league-side Withdraw button (cascade exists).
-- **Game "Correct result" button** (owner/admin) on completed games → re-finalize flow.
-- **Division rename** (PATCH route + inline edit, allowed even while locked — it's cosmetic).
-- **Season un-finalize** (explicit owner-only "Reopen season" that reverses roster locks) or
-  formally document finalize as one-way and validate status jumps server-side.
-- StaffInvitation cancel + expiry (copy PlayerInvitation's model).
+### Wave 2 — money & league correctness — OWNER DECISIONS 2026-07-09, BUILT same day
+Owner calls (2026-07-09): **(1)** offer rescind = new **`RESCINDED`** enum status (not reused
+EXPIRED) + expiry cron; **(2)** camp/HL family cancel = **NO — stays club-only by choice**
+(parents contact the club; revisit if support load says otherwise); **(3)** season finalize =
+**one-way, formally** — server now validates single-step-forward transitions instead of
+accepting any jump; no reopen button.
+- ✅ **Offer rescind** — `POST /api/offers/[id]/rescind` (ClubOwner/ClubManager/PlatformAdmin,
+  PENDING-only, race-guarded conditional update, notifies family) + Rescind button on the club
+  offers page + "Withdrawn by club" on the family page + pipeline counts.
+- ✅ **Offer-expiry cron** — `/api/cron/expire-offers` daily 09:15 (vercel.json), CRON_SECRET.
+- ✅ **Season transition validation** — PATCH rejects backward/skipping status jumps (409).
+- ✅ **Game "Correct result"** — button on the console's Final screen (league owner/admin) +
+  link on the schedule tab → re-finalize flow.
+- ✅ **Division rename** — new PATCH (name editable at ANY status; structural fields only while
+  unlocked) + inline rename UI.
+- ✅ **Club self-withdraw from league** — club owner/manager may set WITHDRAWN (only) on their
+  own submission; Withdraw buttons on both league Teams tab and club league-rosters page.
+- ✅ **StaffInvitation cancel + expiry** — `expiresAt` (30d, lazy-checked), DELETE→CANCELLED
+  + Revoke button; CANCELLED/EXPIRED enum values now live.
+- ✅ Wave-3 quick wins pulled forward: parent **Remove player** button (wires the existing
+  soft-delete API), **mediaConsent editor** on the player form, **designation/role
+  promote-in-place**, **reactivate released roster players** (Released section on roster).
+- ✅ Small-bugs batch: multi-role staff Remove now removes all roles; LeagueManager customize
+  403 mismatch fixed (API accepts league-scoped manager); `?tenantId=` program lists role-gated;
+  admin resetPassword random per-reset (was hardcoded literal).
+- Schema: runbook **#18** (RESCINDED + StaffInvitation.expiresAt) — local pushed; Neon pending
+  deploy train.
 
 ### Wave 3 — people & consent
 - `mediaConsent` editor (parent, player edit page) + consent display on rosters.
