@@ -5,6 +5,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { getViewerScope } from "@/lib/privacy/participants"
 import { Badge, ScoreCard, SectionHeader } from "@/components/ui"
+import { RealtimeRefresh } from "@/components/realtime-refresh"
 
 export const dynamic = "force-dynamic"
 
@@ -145,6 +146,8 @@ export default async function ScoresPage({
 
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
+      {/* Live scoring pings re-render this server page (debounced) */}
+      <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       <SectionHeader
         eyebrow="Around the hub"
         title="Scores"

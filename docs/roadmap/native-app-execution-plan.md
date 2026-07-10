@@ -65,7 +65,27 @@ Family Pass entitlement UI · rebuilding the scoring console in RN (webview only
 
 *Verify: `curl /healthz` on the deployed sidecar; a signed test publish round-trips.*
 
-## M1 — Realtime backbone (web gets live chat + live scores) — the foundation
+## M1 — Realtime backbone (web gets live chat + live scores) — ✅ SHIPPED 2026-07-10
+
+> Built as specced below. Design decision: socket events are **pings, not
+> state transfer** — payloads carry ids/scalars and every surface responds by
+> running its existing fetch immediately (no client merge protocol to get
+> wrong). Files: `lib/realtime/publish.ts` (HMAC seam, 50-room chunking,
+> 1.5s bounded timeout, no-op without env) · `api/realtime/ticket` (works
+> with session AND M2 bearer) · `lib/realtime/use-realtime.ts` (singleton
+> socket, refcounted rooms, fresh ticket per reconnect attempt) ·
+> `components/realtime-refresh.tsx` (debounced router.refresh island for
+> server-rendered pages). Publish points: chat POST · scoring events
+> POST/PATCH-void (score recomputed from unvoided events) · games
+> PATCH/DELETE · finalize · notify()/notifyMany/notifyBatch (detached — never
+> holds a transaction). Sidecar auto-joins `user:{id}` on authenticated
+> handshake, so the bell/dock need no client-side user id. Surfaces wired:
+> team chat + chat dock (5s→60s poll stretch), live game view (10s→60s),
+> bell (30s→120s), /scores + homepage strip (refresh islands). Verified live:
+> bearer→ticket→join→chat ping round-trip, anon denied private rooms, notify
+> ping on auto-joined room, sidecar killed mid-flow → API 201 + polling
+> fallback. ⚠️ Local gotcha: use `http://127.0.0.1:8080` not `localhost`
+> (Node 18 fetch dials ::1; sidecar listens IPv4).
 
 **Architecture (adapted §5–6):**
 - **Publish path (serverless-safe):** `apps/web/src/lib/realtime/publish.ts` →

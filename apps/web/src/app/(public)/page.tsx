@@ -10,6 +10,7 @@ import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
 import { formatCurrency } from "@/lib/countries"
+import { RealtimeRefresh } from "@/components/realtime-refresh"
 
 export const dynamic = "force-dynamic"
 
@@ -105,6 +106,8 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Live scoring pings re-render the scoreboard strip (debounced) */}
+      <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       <YourTeamsRail cards={yourTeams} />
       <ScoreboardStrip games={scoreboard} />
       {marketing && (

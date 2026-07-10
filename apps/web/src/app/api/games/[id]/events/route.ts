@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canScoreGame } from "@/lib/scoring/authz"
+import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
 
 export const dynamic = "force-dynamic"
 
@@ -61,6 +62,45 @@ const voidSchema = z.object({
   voided: z.boolean(),
 })
 
+/**
+ * Realtime ping after the scoring stream changes (M1): current score to the
+ * game room + public scoreboard rooms. Score is recomputed from unvoided
+ * events so voids/unvoids stay correct. Clients treat this as "fetch now".
+ */
+async function publishGameUpdate(
+  game: {
+    id: string
+    homeTeamId: string | null
+    awayTeamId: string | null
+    status: string
+    season: { leagueId: string } | null
+  },
+  extra: { status?: string; maxSequence?: number } = {}
+) {
+  const sums = await (prisma as any).gameEvent.groupBy({
+    by: ["teamId"],
+    where: { gameId: game.id, voided: false, points: { not: null } },
+    _sum: { points: true },
+  })
+  const scoreFor = (teamId: string | null) =>
+    sums.find((s: any) => s.teamId === teamId)?._sum?.points ?? 0
+  await publishRealtime({
+    rooms: [
+      rt.game(game.id),
+      rt.scores,
+      ...(game.season?.leagueId ? [rt.leagueScores(game.season.leagueId)] : []),
+    ],
+    event: "game.update",
+    payload: {
+      gameId: game.id,
+      status: extra.status ?? game.status,
+      homeScore: scoreFor(game.homeTeamId),
+      awayScore: scoreFor(game.awayTeamId),
+      ...(extra.maxSequence !== undefined ? { maxSequence: extra.maxSequence } : {}),
+    },
+  })
+}
+
 async function authorize(userId: string, isAdmin: boolean, gameId: string) {
   const game = await (prisma as any).game.findUnique({
     where: { id: gameId },
@@ -71,6 +111,7 @@ async function authorize(userId: string, isAdmin: boolean, gameId: string) {
       awayTeamId: true,
       status: true,
       scoringSessionId: true,
+      season: { select: { leagueId: true } },
     },
   })
   if (!game) return { game: null, error: "Game not found", status: 404 }
@@ -146,14 +187,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         })
       }
 
+      let wentLive = false
       if (game.status === "SCHEDULED" && fresh.some((e) => e.eventType === "PERIOD_START")) {
         await tx.game.update({ where: { id: params.id }, data: { status: "LIVE" } })
+        wentLive = true
       }
 
-      return { appended: fresh.length, skipped: seen.size, maxSequence: seq }
+      return { appended: fresh.length, skipped: seen.size, maxSequence: seq, wentLive }
     })
 
-    return NextResponse.json(result, { status: 201 })
+    if (result.appended > 0) {
+      await publishGameUpdate(game, {
+        status: result.wentLive ? "LIVE" : game.status,
+        maxSequence: result.maxSequence,
+      })
+    }
+
+    return NextResponse.json(
+      { appended: result.appended, skipped: result.skipped, maxSequence: result.maxSequence },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
@@ -187,6 +240,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { gameId: params.id, clientEventId: { in: data.clientEventIds } },
       data: { voided: data.voided },
     })
+
+    // Voiding a made basket changes the score — ping the scoreboards
+    if (result.count > 0) await publishGameUpdate(game)
+
     return NextResponse.json({ updated: result.count })
   } catch (error) {
     if (error instanceof z.ZodError) {

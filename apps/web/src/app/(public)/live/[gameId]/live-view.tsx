@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
 import { monogram } from "@/lib/content/matchup-cover"
+import { useRealtime } from "@/lib/realtime/use-realtime"
 
 /**
  * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
@@ -86,6 +87,14 @@ export function LiveView({ gameId }: { gameId: string }) {
       .catch(() => {})
   }, [gameId])
 
+  // Realtime: a game.update ping (score/event/status) runs the existing
+  // ?sinceSeq poll immediately; the socket never carries event data itself.
+  const pollRef = useRef<(() => void) | null>(null)
+  const { connected } = useRealtime({
+    rooms: [`game:${gameId}`],
+    events: { "game.update": () => pollRef.current?.() },
+  })
+
   useEffect(() => {
     let stop = false
     // After the initial full load, poll with ?sinceSeq — the server then
@@ -136,13 +145,18 @@ export function LiveView({ gameId }: { gameId: string }) {
         if (!stop) setError(true)
       }
     }
+    pollRef.current = poll
     poll()
-    const t = setInterval(poll, 10_000)
+    // Fast cadence without a socket; slow safety net while pings arrive.
+    // (Flipping `connected` re-runs this effect — one fresh full load per
+    // transition, which also covers any events missed while disconnected.)
+    const t = setInterval(poll, connected ? 60_000 : 10_000)
     return () => {
       stop = true
+      pollRef.current = null
       clearInterval(t)
     }
-  }, [gameId])
+  }, [gameId, connected])
 
   const fold = useMemo(
     () =>

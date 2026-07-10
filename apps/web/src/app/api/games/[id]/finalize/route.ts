@@ -9,6 +9,7 @@ import { sendEmail, appBaseUrl } from "@/lib/email"
 import { upsertGameRecap } from "@/lib/content/recap-service"
 import { notifyMany } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
+import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
 
 export const dynamic = "force-dynamic"
 
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         season: {
           select: {
             label: true,
+            leagueId: true,
             league: {
               select: { ownerId: true, name: true, requireRefereeApproval: true },
             },
@@ -279,6 +281,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         console.error("Final-score bell fanout failed:", bellErr)
       }
     }
+
+    // Realtime ping — the game page and scoreboards flip to FINAL instantly
+    await publishRealtime({
+      rooms: [
+        rt.game(game.id),
+        rt.scores,
+        ...(game.season?.leagueId ? [rt.leagueScores(game.season.leagueId)] : []),
+      ],
+      event: "game.update",
+      payload: {
+        gameId: game.id,
+        status: "COMPLETED",
+        homeScore: folded.homeScore,
+        awayScore: folded.awayScore,
+      },
+    })
 
     return NextResponse.json({
       success: true,

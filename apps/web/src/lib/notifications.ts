@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { publishRealtimeDetached, rooms as rt } from "@/lib/realtime/publish"
 
 /**
  * In-app notification service — the single write path to Notification.
@@ -98,6 +99,21 @@ type DbClient =
       }
     }
 
+/**
+ * Bell ping to the recipients' private user rooms (M1 realtime seam).
+ * Detached on purpose: notify() often runs inside a transaction, and a
+ * network call must not hold it open. Payload is a ping — the client
+ * refetches /api/notifications; content never rides the socket. If the
+ * enclosing transaction rolls back, the spurious ping costs one refetch.
+ */
+function pingBell(userIds: string[], type: NotificationType): void {
+  publishRealtimeDetached({
+    rooms: [...new Set(userIds)].map((id) => rt.user(id)),
+    event: "notify",
+    payload: { type },
+  })
+}
+
 /** Create one notification. Use inside transactions by passing the tx client. */
 export async function notify(db: DbClient, input: NotificationInput): Promise<void> {
   await (db as any).notification.create({
@@ -111,6 +127,7 @@ export async function notify(db: DbClient, input: NotificationInput): Promise<vo
       referenceType: input.referenceType ?? null,
     },
   })
+  pingBell([input.userId], input.type)
 }
 
 /** Fan the same notification out to several users (e.g. all platform admins). */
@@ -131,6 +148,7 @@ export async function notifyMany(
       referenceType: input.referenceType ?? null,
     })),
   })
+  pingBell(userIds, input.type)
 }
 
 /** Create several distinct notifications in one write (createMany). */
@@ -147,6 +165,11 @@ export async function notifyBatch(db: DbClient, inputs: NotificationInput[]): Pr
       referenceType: input.referenceType ?? null,
     })),
   })
+  // One publish for the whole batch; type is advisory (clients just refetch)
+  pingBell(
+    inputs.map((i) => i.userId),
+    inputs[0].type
+  )
 }
 
 /**

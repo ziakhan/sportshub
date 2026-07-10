@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useRealtime } from "@/lib/realtime/use-realtime"
 
 interface NotificationItem {
   id: string
@@ -36,11 +37,18 @@ export function NotificationBell() {
     }
   }, [])
 
+  // Realtime: the sidecar auto-joins this socket to its user room, so a
+  // "notify" ping lands here without knowing our own user id client-side.
+  const { connected } = useRealtime({
+    rooms: [],
+    events: { notify: () => void fetchNotifications() },
+  })
+
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 30000)
+    const interval = setInterval(fetchNotifications, connected ? 120_000 : 30_000)
     return () => clearInterval(interval)
-  }, [fetchNotifications])
+  }, [fetchNotifications, connected])
 
   // Close on click outside or Escape
   useEffect(() => {

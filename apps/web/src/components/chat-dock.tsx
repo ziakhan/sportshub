@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
+import { useRealtime } from "@/lib/realtime/use-realtime"
 
 /**
  * Floating team-chat dock (public pages, signed-in members only).
@@ -47,11 +48,18 @@ export function ChatDock({ userId }: { userId: string }) {
     }
   }, [])
 
+  // Realtime: team_chat bells arrive as "notify" pings on our auto-joined
+  // user room — refresh the unread badges right away.
+  const { connected } = useRealtime({
+    rooms: [],
+    events: { notify: () => void loadSummary() },
+  })
+
   useEffect(() => {
     loadSummary()
-    const timer = setInterval(loadSummary, SUMMARY_POLL_MS)
+    const timer = setInterval(loadSummary, connected ? 120_000 : SUMMARY_POLL_MS)
     return () => clearInterval(timer)
-  }, [loadSummary])
+  }, [loadSummary, connected])
 
   if (!teams || teams.length === 0) return null
   const totalUnread = teams.reduce((sum, t) => sum + t.unread, 0)
@@ -207,19 +215,27 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
     }
   }, [teamId])
 
+  const fetchNewer = useCallback(async () => {
+    const last = messages[messages.length - 1]
+    const query = last ? `?after=${encodeURIComponent(last.createdAt)}` : ""
+    const res = await fetch(`/api/teams/${teamId}/messages${query}`).catch(() => null)
+    if (!res?.ok) return
+    const data = await res.json()
+    mergeNewer(data.messages)
+    applyPollUpdates(data.pollUpdates)
+  }, [teamId, messages, mergeNewer, applyPollUpdates])
+
+  // Realtime ping for the open conversation; poll stretches while connected
+  const { connected } = useRealtime({
+    rooms: [`team:${teamId}`],
+    events: { "chat.message": () => void fetchNewer() },
+  })
+
   useEffect(() => {
     if (!loaded) return
-    const timer = setInterval(async () => {
-      const last = messages[messages.length - 1]
-      const query = last ? `?after=${encodeURIComponent(last.createdAt)}` : ""
-      const res = await fetch(`/api/teams/${teamId}/messages${query}`).catch(() => null)
-      if (!res?.ok) return
-      const data = await res.json()
-      mergeNewer(data.messages)
-      applyPollUpdates(data.pollUpdates)
-    }, POLL_MS)
+    const timer = setInterval(fetchNewer, connected ? 60_000 : POLL_MS)
     return () => clearInterval(timer)
-  }, [teamId, loaded, messages, mergeNewer, applyPollUpdates])
+  }, [loaded, connected, fetchNewer])
 
   useEffect(() => {
     const el = listRef.current

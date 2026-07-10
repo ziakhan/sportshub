@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "jose": "^5.9.6",
+    "socket.io-client": "^4.8.1",
     "date-fns": "^3.0.6",
     "next": "^14.0.4",
     "next-auth": "^4.24.13",

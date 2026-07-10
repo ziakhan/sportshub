@@ -485,3 +485,23 @@ requests answer 401, web session auth is unaffected.
 Nothing to backfill (table starts empty; rows are created on native-app
 sign-in). Verify: `SELECT count(*) FROM "RefreshToken";` returns 0 and a
 curl `POST /api/auth/token` with a prod account returns a token pair.
+
+## ⬜ 22. Realtime sidecar env (M1) — no schema; gated on the Railway deploy
+
+No DB change. The realtime seam ships dormant: without these env vars every
+publish is a silent no-op and all surfaces keep their existing polling, so
+this entry only matters when the sidecar goes live on Railway (owner-side
+account is the blocker).
+
+**Railway (apps/sidecar):** `PORT`, `SIDECAR_SHARED_SECRET` (strong random),
+`AUTH_TOKEN_SECRET` (same value as Vercel's), `CORS_ORIGINS` (the prod web
+origin), optional `REDIS_URL`.
+
+**Vercel (add when the sidecar is live):** `SIDECAR_URL` (Railway internal/
+public URL), `SIDECAR_SHARED_SECRET` (same as Railway),
+`NEXT_PUBLIC_SOCKET_URL` (public sidecar URL — build-time var, needs a
+redeploy to take effect).
+
+Verify: sidecar `/healthz` 200; open `/scores` in a browser — the socket
+connects (WS in devtools); score a demo game and watch it move with no
+reload; stop the sidecar and confirm the site quietly falls back to polling.

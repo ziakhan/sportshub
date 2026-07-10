@@ -29,7 +29,9 @@ export default defineConfig(({ mode }) => ({
     include: ["src/**/*.int.test.ts"],
     // DATABASE_URL comes from .env.local locally; in CI the workflow env
     // wins because loadEnv only returns keys present in env files.
-    env: { ...loadEnv(mode, __dirname, ""), TZ: "America/Toronto" },
+    // SIDECAR_URL is blanked so the realtime publish seam no-ops instead of
+    // dialing a (probably absent) local sidecar on every notify/chat write.
+    env: { ...loadEnv(mode, __dirname, ""), TZ: "America/Toronto", SIDECAR_URL: "" },
     // Suites share one database — run files sequentially. Worlds are
     // runId-namespaced so this is about write-load predictability, not
     // correctness; suites must still use unique seeds.

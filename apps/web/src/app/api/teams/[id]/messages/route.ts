@@ -10,6 +10,7 @@ import {
   markChatRead,
 } from "@/lib/teams/chat-access"
 import { pollInclude, serializeChatPoll } from "@/lib/teams/polls"
+import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
 
 export const dynamic = "force-dynamic"
 
@@ -266,6 +267,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         referenceType: "Team",
       })
     }
+
+    // Realtime ping to the team room — members' open chats fetch the delta
+    // immediately instead of waiting out their poll interval. Payload is a
+    // ping (ids only): message content always comes from the API, where
+    // poll state is serialized per viewer.
+    await publishRealtime({
+      rooms: [rt.team(membership.teamId)],
+      event: "chat.message",
+      payload: { teamId: membership.teamId, messageId: message.id },
+    })
 
     const staffIds = await getTeamStaffUserIds(membership.teamId, membership.tenantId)
     const pollById = chatPoll ? new Map([[message.pollId, chatPoll]]) : undefined

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { notifyMany, type NotificationType } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
+import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
 
 export const dynamic = "force-dynamic"
 
@@ -109,10 +110,31 @@ async function loadGameWithOwner(gameId: string) {
     where: { id: gameId },
     include: {
       season: {
-        select: { id: true, status: true, league: { select: { ownerId: true, name: true } } },
+        select: {
+          id: true,
+          status: true,
+          leagueId: true,
+          league: { select: { ownerId: true, name: true } },
+        },
       },
     },
   })) as any
+}
+
+/** Realtime ping after a schedule/status change (M1) — clients refetch. */
+async function publishGameChange(
+  game: { id: string; season?: { leagueId?: string | null } | null },
+  status: string
+) {
+  await publishRealtime({
+    rooms: [
+      rt.game(game.id),
+      rt.scores,
+      ...(game.season?.leagueId ? [rt.leagueScores(game.season.leagueId)] : []),
+    ],
+    event: "game.update",
+    payload: { gameId: game.id, status },
+  })
 }
 
 /**
@@ -341,6 +363,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       )
     }
 
+    await publishGameChange(game, updated.status)
+
     return NextResponse.json({ game: updated })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -400,6 +424,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
         game.season?.league?.name ?? null
       )
     }
+
+    await publishGameChange(game, "CANCELLED")
 
     return NextResponse.json({ game: updated })
   } catch (error) {

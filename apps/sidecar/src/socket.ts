@@ -55,6 +55,11 @@ export async function createSocketServer(http: HttpServer): Promise<Server> {
   io.on("connection", (socket) => {
     const { auth } = socket.data as { auth: SocketAuthState }
 
+    // Authenticated sockets always get their own user room — the bell and
+    // chat-dock summary listen there without needing to know the user id
+    // client-side.
+    if (auth.userId) socket.join(`user:${auth.userId}`)
+
     socket.on("join", (room: unknown, ack?: (ok: boolean) => void) => {
       const ok = typeof room === "string" && room.length < 128 && canJoin(room, auth.rooms)
       if (ok) socket.join(room as string)

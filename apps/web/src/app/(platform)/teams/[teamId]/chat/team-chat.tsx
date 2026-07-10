@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { format, isSameDay, isToday, isYesterday } from "date-fns"
 import type { ChatMembers } from "@/lib/teams/chat-access"
 import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
+import { useRealtime } from "@/lib/realtime/use-realtime"
 
 interface ChatMessage {
   id: string
@@ -20,6 +21,8 @@ interface PollUpdate {
 }
 
 const POLL_MS = 5000
+/** Safety-net interval while the realtime socket is delivering pings */
+const SLOW_POLL_MS = 60_000
 /** Server-enforced window for editing your own message (mirrored client-side) */
 const EDIT_WINDOW_MS = 15 * 60 * 1000
 
@@ -113,24 +116,33 @@ export function TeamChat({
     }
   }, [teamId, applyPollUpdates])
 
-  // Poll for new messages
+  const fetchNewer = useCallback(async () => {
+    const last = messages[messages.length - 1]
+    const query = last ? `?after=${encodeURIComponent(last.createdAt)}` : ""
+    try {
+      const res = await fetch(`/api/teams/${teamId}/messages${query}`)
+      if (!res.ok) return
+      const data = await res.json()
+      mergeNewer(data.messages)
+      applyPollUpdates(data.pollUpdates)
+    } catch {
+      // transient network blip — next tick retries
+    }
+  }, [teamId, messages, mergeNewer, applyPollUpdates])
+
+  // Realtime: a chat.message ping fetches the delta immediately (the payload
+  // is never merged — the API stays the source of truth)
+  const { connected } = useRealtime({
+    rooms: [`team:${teamId}`],
+    events: { "chat.message": () => void fetchNewer() },
+  })
+
+  // Poll for new messages — fast without a socket, slow safety net with one
   useEffect(() => {
     if (!loaded) return
-    const timer = setInterval(async () => {
-      const last = messages[messages.length - 1]
-      const query = last ? `?after=${encodeURIComponent(last.createdAt)}` : ""
-      try {
-        const res = await fetch(`/api/teams/${teamId}/messages${query}`)
-        if (!res.ok) return
-        const data = await res.json()
-        mergeNewer(data.messages)
-        applyPollUpdates(data.pollUpdates)
-      } catch {
-        // transient network blip — next tick retries
-      }
-    }, POLL_MS)
+    const timer = setInterval(fetchNewer, connected ? SLOW_POLL_MS : POLL_MS)
     return () => clearInterval(timer)
-  }, [teamId, loaded, messages, mergeNewer, applyPollUpdates])
+  }, [loaded, connected, fetchNewer])
 
   // Keep pinned to the bottom unless the reader scrolled up
   useEffect(() => {
