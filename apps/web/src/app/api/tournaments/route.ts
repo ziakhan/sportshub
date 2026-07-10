@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 
 export const dynamic = "force-dynamic"
 
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
       const tournaments = await (prisma as any).tournament.findMany({
         where: {
           status: { in: ["REGISTRATION", "IN_PROGRESS"] },
-          startDate: { gte: new Date() },
+          startDate: { gte: todayUtcDateFloor() },
         },
         include: {
           divisions: true,

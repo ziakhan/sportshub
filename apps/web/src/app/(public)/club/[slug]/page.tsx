@@ -10,6 +10,7 @@ import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
+import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 
 async function getClubBySlug(slug: string) {
   const tenant = await prisma.tenant.findUnique({
@@ -22,7 +23,7 @@ async function getClubBySlug(slug: string) {
 
 async function getHouseLeagues(tenantId: string) {
   const raw = await (prisma as any).houseLeague.findMany({
-    where: { tenantId, isPublished: true, endDate: { gte: new Date() } },
+    where: { tenantId, isPublished: true, endDate: { gte: todayUtcDateFloor() } },
     select: {
       id: true, name: true, ageGroups: true, gender: true, season: true,
       startDate: true, endDate: true, location: true, fee: true, maxParticipants: true,
@@ -35,7 +36,7 @@ async function getHouseLeagues(tenantId: string) {
 
 async function getCamps(tenantId: string) {
   const raw = await (prisma as any).camp.findMany({
-    where: { tenantId, isPublished: true, endDate: { gte: new Date() } },
+    where: { tenantId, isPublished: true, endDate: { gte: todayUtcDateFloor() } },
     select: {
       id: true, name: true, campType: true, ageGroup: true, gender: true,
       numberOfWeeks: true, weeklyFee: true, fullCampFee: true, location: true,

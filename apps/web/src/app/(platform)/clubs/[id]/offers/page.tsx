@@ -62,6 +62,8 @@ async function getClubOffers(tenantId: string): Promise<ClubOffer[]> {
       },
     },
     orderBy: { createdAt: "desc" },
+    // Newest 500 — offers accumulate every season (gap-audit P1 #18)
+    take: 500,
   })
   // Convert Decimal to Number for serialization
   return raw.map((o: (typeof raw)[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))

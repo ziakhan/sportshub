@@ -41,6 +41,7 @@ export async function merchantObligations(
       payments: paymentsInclude,
     },
     orderBy: { createdAt: "desc" },
+    take: 500, // obligations accumulate per player per season (gap-audit P1 #18)
   })
   return rows.map((o: any) => ({
     id: o.id,
@@ -73,6 +74,7 @@ export async function payerObligations(
       payments: paymentsInclude,
     },
     orderBy: { createdAt: "desc" },
+    take: 500, // obligations accumulate per player per season (gap-audit P1 #18)
   })
 
   // Payment availability per payee (one config lookup per distinct payee)

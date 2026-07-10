@@ -3,6 +3,19 @@
 import { useState } from "react"
 import { inputClass, type SchedSettings } from "./types"
 
+// Mutations previously ignored res.ok — a 403/500 looked like success and
+// refresh() quietly reverted the UI (gap-audit P1 #20). All mutating fetches
+// in this tab go through here.
+async function checkedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init)
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    window.alert((data as { error?: string }).error || "The change couldn't be saved")
+  }
+  return res
+}
+
+
 export function SchedulingTab({
   seasonId,
   league,
@@ -33,7 +46,7 @@ export function SchedulingTab({
 
   const saveSchedulingSettings = async () => {
     setSchedSaving(true)
-    await fetch(`/api/seasons/${seasonId}`, {
+    await checkedFetch(`/api/seasons/${seasonId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -58,7 +71,7 @@ export function SchedulingTab({
 
   const createSchedulingGroup = async () => {
     if (!newGroupName.trim()) return
-    await fetch(`/api/seasons/${seasonId}/scheduling-groups`, {
+    await checkedFetch(`/api/seasons/${seasonId}/scheduling-groups`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: newGroupName.trim(), divisionIds: newGroupDivisionIds }),
@@ -76,7 +89,7 @@ export function SchedulingTab({
 
   const saveEditGroup = async () => {
     if (!editingGroupId) return
-    await fetch(`/api/seasons/${seasonId}/scheduling-groups/${editingGroupId}`, {
+    await checkedFetch(`/api/seasons/${seasonId}/scheduling-groups/${editingGroupId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editGroupName, divisionIds: editGroupDivisionIds }),
@@ -89,7 +102,7 @@ export function SchedulingTab({
 
   const deleteSchedulingGroup = async (groupId: string) => {
     if (!confirm("Remove this scheduling group?")) return
-    await fetch(`/api/seasons/${seasonId}/scheduling-groups/${groupId}`, { method: "DELETE" })
+    await checkedFetch(`/api/seasons/${seasonId}/scheduling-groups/${groupId}`, { method: "DELETE" })
     if (editingGroupId === groupId) setEditingGroupId(null)
     refresh()
   }
@@ -501,7 +514,7 @@ export function SchedulingTab({
               <select
                 value={league.playoffFormat || ""}
                 onChange={async (e) => {
-                  await fetch(`/api/seasons/${seasonId}`, {
+                  await checkedFetch(`/api/seasons/${seasonId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ playoffFormat: e.target.value || null }),
@@ -527,7 +540,7 @@ export function SchedulingTab({
                 defaultValue={league.playoffTeams || ""}
                 placeholder="e.g. 8"
                 onBlur={async (e) => {
-                  await fetch(`/api/seasons/${seasonId}`, {
+                  await checkedFetch(`/api/seasons/${seasonId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({

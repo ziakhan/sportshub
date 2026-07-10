@@ -74,3 +74,24 @@ export function dateInTz(
     dayOfWeek,
   }
 }
+
+/**
+ * "Today" in APP_TIMEZONE, expressed as a UTC-midnight Date — the correct
+ * comparator for date-only fields (Camp/HouseLeague/Tournament dates are
+ * stored as UTC midnights of the calendar date).
+ *
+ * Comparing those fields against `new Date()` made programs vanish at
+ * 00:00 UTC = ~7-8pm Toronto the EVENING BEFORE their end date
+ * (gap-audit 2026-07-09 P1 #10). `endDate >= todayUtcDateFloor()` keeps a
+ * program live through the end of its final calendar day, app-timezone-wise.
+ */
+export function todayUtcDateFloor(now: Date = new Date()): Date {
+  const dtf = new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+  const parts = Object.fromEntries(dtf.formatToParts(now).map((p) => [p.type, p.value]))
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)))
+}

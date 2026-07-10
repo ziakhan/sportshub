@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 
 export const dynamic = "force-dynamic"
 
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
       const camps = await (prisma as any).camp.findMany({
         where: {
           isPublished: true,
-          endDate: { gte: new Date() },
+          endDate: { gte: todayUtcDateFloor() },
           ...(tenantId ? { tenantId } : {}),
         },
         include: {

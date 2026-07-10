@@ -24,11 +24,17 @@ export function TeamsTab({
     leagueTeamId: string,
     status: "APPROVED" | "REJECTED" | "WITHDRAWN"
   ) => {
-    await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
+    const res = await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     })
+    if (!res.ok) {
+      // Previously silent: a 403/500 looked like success (gap-audit P1 #20)
+      const data = await res.json().catch(() => ({}))
+      window.alert(data.error || "Couldn't update the team's status")
+      return
+    }
     refresh()
   }
 
@@ -46,11 +52,16 @@ export function TeamsTab({
     leagueTeamId: string,
     paymentStatus: "UNPAID" | "PAID_MANUAL" | "WAIVED"
   ) => {
-    await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
+    const res = await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentStatus }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      window.alert(data.error || "Couldn't update the payment status")
+      return
+    }
     refresh()
   }
 

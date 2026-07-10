@@ -285,6 +285,8 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: { createdAt: "desc" },
+        // Grows every season — cap the payload (gap-audit P1 #18)
+        take: 500,
       })
 
       return NextResponse.json({ offers: offers.map(simplifyOffer) })
@@ -324,6 +326,8 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: { createdAt: "desc" },
+        // Grows every season — cap the payload (gap-audit P1 #18)
+        take: 500,
       })
 
       return NextResponse.json({ offers: offers.map(simplifyOffer) })

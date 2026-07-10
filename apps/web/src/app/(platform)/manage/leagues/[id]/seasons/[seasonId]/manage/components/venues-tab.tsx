@@ -5,6 +5,19 @@ import { VenueSelector } from "@/components/venue-selector"
 import { VenueEditor } from "@/components/venue-editor"
 import { panelClass } from "./types"
 
+// Mutations previously ignored res.ok — a 403/500 looked like success and
+// refresh() quietly reverted the UI (gap-audit P1 #20). All mutating fetches
+// in this tab go through here.
+async function checkedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init)
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    window.alert((data as { error?: string }).error || "The change couldn't be saved")
+  }
+  return res
+}
+
+
 export function VenuesTab({
   seasonId,
   venues,
@@ -22,7 +35,7 @@ export function VenuesTab({
 
   const addVenue = async () => {
     if (!selectedVenueId) return
-    await fetch(`/api/seasons/${seasonId}/venues`, {
+    await checkedFetch(`/api/seasons/${seasonId}/venues`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ venueId: selectedVenueId }),
@@ -66,7 +79,7 @@ export function VenuesTab({
                   </button>
                   <button
                     onClick={async () => {
-                      await fetch(
+                      await checkedFetch(
                         `/api/seasons/${seasonId}/venues?leagueVenueId=${v.id}`,
                         { method: "DELETE" }
                       )

@@ -29,6 +29,7 @@ export async function GET() {
         user: { select: { id: true, email: true, firstName: true, lastName: true } },
       },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      take: 100,
     })
 
     return NextResponse.json({ claims })
