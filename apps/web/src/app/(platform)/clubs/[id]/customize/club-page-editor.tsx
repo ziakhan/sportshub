@@ -121,6 +121,11 @@ export function ClubPageEditor({
   const [aTitle, setATitle] = useState("")
   const [aContent, setAContent] = useState("")
   const [aBusy, setABusy] = useState(false)
+  // Inline edit of an existing announcement
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [eTitle, setETitle] = useState("")
+  const [eContent, setEContent] = useState("")
+  const [eBusy, setEBusy] = useState(false)
 
   async function addAnnouncement() {
     if (!aTitle.trim() || !aContent.trim()) return
@@ -143,11 +148,39 @@ export function ClubPageEditor({
     if (res.ok) setAnnouncements((p) => p.filter((a) => a.id !== id))
   }
   async function pinAnnouncement(id: string) {
-    const res = await fetch(`/api/clubs/${clubId}/announcements/${id}`, { method: "PATCH" })
+    const res = await fetch(`/api/clubs/${clubId}/announcements/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "togglePin" }),
+    })
     if (res.ok) {
       const { announcement } = await res.json()
       setAnnouncements((p) => p.map((a) => (a.id === id ? { ...a, isPinned: announcement.isPinned } : a)))
     }
+  }
+  function startEditAnnouncement(a: Announcement) {
+    setEditingId(a.id)
+    setETitle(a.title)
+    setEContent(a.content)
+  }
+  async function saveAnnouncementEdit() {
+    if (!editingId || !eTitle.trim() || !eContent.trim()) return
+    setEBusy(true)
+    const res = await fetch(`/api/clubs/${clubId}/announcements/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: eTitle.trim(), content: eContent.trim() }),
+    })
+    if (res.ok) {
+      const { announcement } = await res.json()
+      setAnnouncements((p) =>
+        p.map((a) =>
+          a.id === editingId ? { ...a, title: announcement.title, content: announcement.content } : a
+        )
+      )
+      setEditingId(null)
+    }
+    setEBusy(false)
   }
 
   return (
@@ -309,37 +342,81 @@ export function ClubPageEditor({
           </div>
           {announcements.length > 0 && (
             <div className="space-y-2">
-              {announcements.map((a) => (
-                <div key={a.id} className="border-ink-100 flex items-start justify-between gap-3 rounded-xl border p-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      {a.isPinned && (
-                        <span className="bg-hoop-50 text-hoop-700 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase">
-                          Pinned
-                        </span>
-                      )}
-                      <span className="text-ink-900 text-sm font-semibold">{a.title}</span>
+              {announcements.map((a) =>
+                editingId === a.id ? (
+                  <div key={a.id} className="border-play-200 rounded-xl border p-3">
+                    <input
+                      className={input}
+                      value={eTitle}
+                      maxLength={160}
+                      placeholder="Announcement title"
+                      onChange={(e) => setETitle(e.target.value)}
+                    />
+                    <textarea
+                      className={`${input} mt-2`}
+                      rows={3}
+                      value={eContent}
+                      placeholder="What&apos;s happening?"
+                      onChange={(e) => setEContent(e.target.value)}
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={saveAnnouncementEdit}
+                        disabled={eBusy || !eTitle.trim() || !eContent.trim()}
+                        className="bg-play-600 hover:bg-play-700 cursor-pointer rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
+                      >
+                        {eBusy ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        disabled={eBusy}
+                        className="border-ink-200 text-ink-600 hover:bg-ink-50 cursor-pointer rounded-xl border px-4 py-1.5 text-xs font-semibold transition disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
                     </div>
-                    <p className="text-ink-600 mt-0.5 line-clamp-2 text-sm">{a.content}</p>
                   </div>
-                  <div className="flex flex-shrink-0 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => pinAnnouncement(a.id)}
-                      className="text-ink-500 hover:text-ink-900 cursor-pointer font-medium"
-                    >
-                      {a.isPinned ? "Unpin" : "Pin"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => delAnnouncement(a.id)}
-                      className="cursor-pointer font-medium text-red-500 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
+                ) : (
+                  <div key={a.id} className="border-ink-100 flex items-start justify-between gap-3 rounded-xl border p-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        {a.isPinned && (
+                          <span className="bg-hoop-50 text-hoop-700 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase">
+                            Pinned
+                          </span>
+                        )}
+                        <span className="text-ink-900 text-sm font-semibold">{a.title}</span>
+                      </div>
+                      <p className="text-ink-600 mt-0.5 line-clamp-2 text-sm">{a.content}</p>
+                    </div>
+                    <div className="flex flex-shrink-0 gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => pinAnnouncement(a.id)}
+                        className="text-ink-500 hover:text-ink-900 cursor-pointer font-medium"
+                      >
+                        {a.isPinned ? "Unpin" : "Pin"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEditAnnouncement(a)}
+                        className="text-play-600 hover:text-play-800 cursor-pointer font-medium"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => delAnnouncement(a.id)}
+                        className="cursor-pointer font-medium text-red-500 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           )}
         </div>

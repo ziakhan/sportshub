@@ -1,8 +1,11 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
-import { getPublishedPost } from "@/lib/queries/content"
+import { getPostBySlug, getPublishedPost } from "@/lib/queries/content"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { canManageRecapPost } from "@/lib/content/recap-authz"
 import { Badge, Card } from "@/components/ui"
+import { AdminBar } from "./admin-bar"
 
 export const dynamic = "force-dynamic"
 
@@ -16,8 +19,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function NewsPostPage({ params }: { params: { slug: string } }) {
-  const post = await getPublishedPost(params.slug)
+  // Fetch any-status, then gate: managers (league owner, club owner/manager,
+  // platform admin) can still see a TAKEN_DOWN story — that's how they
+  // restore it. Everyone else 404s on anything not PUBLISHED.
+  const post = await getPostBySlug(params.slug)
   if (!post) notFound()
+
+  const viewer = await getSessionUserId()
+  const canManage = viewer ? (await canManageRecapPost(post.id, viewer)).allowed : false
+  if (post.status !== "PUBLISHED" && !canManage) notFound()
 
   const gameTag = post.tags.find((t: any) => t.gameId)
   const teamTags = post.tags.filter((t: any) => t.team)
@@ -34,6 +44,16 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           &larr; All news
         </Link>
       </div>
+
+      {canManage && (
+        <AdminBar
+          postId={post.id}
+          status={post.status}
+          title={post.title}
+          body={post.body}
+          isRecap={post.kind === "RECAP_AI"}
+        />
+      )}
 
       <Card className="p-8 sm:p-10">
         <div className="mb-4 flex flex-wrap items-center gap-2">

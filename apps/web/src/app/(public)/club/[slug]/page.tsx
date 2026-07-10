@@ -89,29 +89,38 @@ async function getClubData(tenantId: string) {
 async function getReviewsData(tenantId: string) {
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = session?.user?.id ?? null
+  // Visibility policy ("Gate + moderate"): FLAGGED reviews stay publicly
+  // visible until an admin moderates (a flag is not a takedown); only REMOVED
+  // is hidden. Keep in sync with GET /api/reviews.
+  const publicStatuses = ["PUBLISHED", "FLAGGED"] as any
   const [reviews, aggregate, ownReview] = await Promise.all([
     prisma.review.findMany({
-      where: { tenantId, status: "PUBLISHED" },
+      where: { tenantId, status: { in: publicStatuses } },
       select: {
-        id: true, rating: true, title: true, content: true, createdAt: true,
+        id: true, rating: true, title: true, content: true, status: true, createdAt: true,
         reviewer: { select: { firstName: true, lastName: true } },
       },
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
     prisma.review.aggregate({
-      where: { tenantId, status: "PUBLISHED" },
+      where: { tenantId, status: { in: publicStatuses } },
       _avg: { rating: true },
       _count: { rating: true },
     }),
-    userId ? prisma.review.findFirst({ where: { tenantId, reviewerId: userId }, select: { id: true } }) : null,
+    userId
+      ? prisma.review.findFirst({
+          where: { tenantId, reviewerId: userId },
+          select: { id: true, rating: true, title: true, content: true, status: true },
+        })
+      : null,
   ])
   return {
     reviews,
     averageRating: aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : null,
     totalReviews: aggregate._count.rating,
     signedIn: !!userId,
-    alreadyReviewed: !!ownReview,
+    ownReview,
     userId,
   }
 }
@@ -246,7 +255,8 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     averageRating: reviewsData.averageRating,
     totalReviews: reviewsData.totalReviews,
     signedIn: reviewsData.signedIn,
-    alreadyReviewed: reviewsData.alreadyReviewed,
+    ownReview: reviewsData.ownReview,
+    canManage,
     staffCount,
     announcements,
     recentGames,

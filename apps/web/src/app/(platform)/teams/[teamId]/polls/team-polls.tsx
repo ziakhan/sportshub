@@ -57,6 +57,7 @@ export function TeamPolls({ teamId, isStaff }: { teamId: string; isStaff: boolea
   const [error, setError] = useState<string | null>(null)
   const [busyPoll, setBusyPoll] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [editingPollId, setEditingPollId] = useState<string | null>(null)
 
   const applyPolls = useCallback((list: PollView[]) => {
     setPolls(list)
@@ -208,19 +209,34 @@ export function TeamPolls({ teamId, isStaff }: { teamId: string; isStaff: boolea
         </div>
       )}
 
-      {polls.map((poll) => (
-        <PollCard
-          key={poll.id}
-          poll={poll}
-          isStaff={isStaff}
-          busy={busyPoll === poll.id}
-          selections={selections[poll.id] ?? {}}
-          dirty={isDirty(poll)}
-          onToggle={(q, optionId) => toggleChoice(poll, q, optionId)}
-          onVote={() => submitVote(poll)}
-          onManage={(action) => managePoll(poll, action)}
-        />
-      ))}
+      {polls.map((poll) =>
+        editingPollId === poll.id ? (
+          <EditPollForm
+            key={poll.id}
+            teamId={teamId}
+            poll={poll}
+            onCancel={() => setEditingPollId(null)}
+            onSaved={(updated) => {
+              setPolls((current) => current.map((p) => (p.id === updated.id ? updated : p)))
+              setSelections((current) => ({ ...current, [updated.id]: seedSelections(updated) }))
+              setEditingPollId(null)
+            }}
+          />
+        ) : (
+          <PollCard
+            key={poll.id}
+            poll={poll}
+            isStaff={isStaff}
+            busy={busyPoll === poll.id}
+            selections={selections[poll.id] ?? {}}
+            dirty={isDirty(poll)}
+            onToggle={(q, optionId) => toggleChoice(poll, q, optionId)}
+            onVote={() => submitVote(poll)}
+            onManage={(action) => managePoll(poll, action)}
+            onEdit={() => setEditingPollId(poll.id)}
+          />
+        )
+      )}
     </div>
   )
 }
@@ -234,6 +250,7 @@ function PollCard({
   onToggle,
   onVote,
   onManage,
+  onEdit,
 }: {
   poll: PollView
   isStaff: boolean
@@ -243,6 +260,7 @@ function PollCard({
   onToggle: (question: PollQuestionView, optionId: string) => void
   onVote: () => void
   onManage: (action: "close" | "reopen" | "delete") => void
+  onEdit: () => void
 }) {
   const open = poll.status === "OPEN"
   const answeredAll = poll.questions.every((q) => q.myAnswered)
@@ -269,6 +287,13 @@ function PollCard({
         </div>
         {isStaff && (
           <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              onClick={onEdit}
+              disabled={busy}
+              className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-lg border px-2.5 py-1 text-xs font-semibold disabled:opacity-50"
+            >
+              Edit
+            </button>
             <button
               onClick={() => onManage(open ? "close" : "reopen")}
               disabled={busy}
@@ -559,6 +584,275 @@ function CreatePollForm({
         >
           {saving ? "Publishing…" : "Publish Poll"}
         </button>
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+/**
+ * Inline poll editor (staff). Mirrors the server rules:
+ * - title / description / prompts / option labels: freely editable
+ *   (votes reference option ids, so relabeling is safe)
+ * - adding options: any time; removing an option: only while it has no votes
+ * - adding/removing whole questions: only while the poll has zero votes
+ */
+interface EditOptionDraft {
+  id?: string
+  label: string
+  count: number
+}
+interface EditQuestionDraft {
+  id?: string
+  prompt: string
+  allowMultiple: boolean
+  options: EditOptionDraft[]
+}
+
+function EditPollForm({
+  teamId,
+  poll,
+  onSaved,
+  onCancel,
+}: {
+  teamId: string
+  poll: PollView
+  onSaved: (poll: PollView) => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(poll.title)
+  const [description, setDescription] = useState(poll.description ?? "")
+  const [questions, setQuestions] = useState<EditQuestionDraft[]>(() =>
+    poll.questions.map((q) => ({
+      id: q.id,
+      prompt: q.prompt,
+      allowMultiple: q.allowMultiple,
+      options: q.options.map((o) => ({ id: o.id, label: o.label, count: o.count })),
+    }))
+  )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Any vote on the poll freezes the question set (wording stays editable)
+  const questionsLocked = poll.totalVoters > 0
+  const lockTitle = "Questions are locked once voting starts"
+
+  const valid = useMemo(
+    () =>
+      title.trim().length > 0 &&
+      questions.length > 0 &&
+      questions.every(
+        (q) =>
+          q.prompt.trim().length > 0 &&
+          q.options.length >= 2 &&
+          q.options.every((o) => o.label.trim().length > 0)
+      ),
+    [title, questions]
+  )
+
+  function patchQuestion(index: number, patch: Partial<EditQuestionDraft>) {
+    setQuestions((current) => current.map((q, i) => (i === index ? { ...q, ...patch } : q)))
+  }
+
+  async function submit() {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/teams/${teamId}/polls/${poll.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "edit",
+          title: title.trim(),
+          description: description.trim() || null,
+          // Full desired list: ids = keep/edit, no id = add, omitted = remove
+          questions: questions.map((q) => ({
+            ...(q.id ? { id: q.id } : { allowMultiple: q.allowMultiple }),
+            prompt: q.prompt.trim(),
+            options: q.options.map((o) => ({
+              ...(o.id ? { id: o.id } : {}),
+              label: o.label.trim(),
+            })),
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onSaved(data.poll)
+    } catch (e: any) {
+      setError(e?.message || "Couldn't save the changes — try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputClass =
+    "border-ink-200 focus:border-play-400 w-full rounded-xl border px-3 py-2 text-sm outline-none"
+
+  return (
+    <div className="border-play-200 space-y-4 rounded-2xl border bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-ink-900 text-sm font-bold">Edit poll</p>
+        {questionsLocked && (
+          <p className="text-ink-400 text-[11px]">
+            Voting has started — wording and labels stay editable; questions and voted options are
+            locked in.
+          </p>
+        )}
+      </div>
+      <div>
+        <label className="text-ink-700 mb-1 block text-xs font-semibold">Title</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={150}
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className="text-ink-700 mb-1 block text-xs font-semibold">
+          Description <span className="text-ink-400 font-normal">(optional)</span>
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={1000}
+          rows={2}
+          className={inputClass}
+        />
+      </div>
+
+      {questions.map((question, qi) => (
+        <div key={question.id ?? `new-${qi}`} className="border-ink-100 bg-ink-50/50 space-y-2 rounded-xl border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <label className="text-ink-700 text-xs font-semibold">Question {qi + 1}</label>
+            <div className="flex items-center gap-3">
+              <label
+                className="text-ink-500 flex items-center gap-1.5 text-xs"
+                title={question.id ? "Set when the question was created" : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={question.allowMultiple}
+                  disabled={!!question.id}
+                  onChange={(e) => patchQuestion(qi, { allowMultiple: e.target.checked })}
+                />
+                Allow multiple choices
+              </label>
+              {questions.length > 1 && (
+                <button
+                  onClick={() => setQuestions((current) => current.filter((_, i) => i !== qi))}
+                  disabled={questionsLocked && !!question.id}
+                  title={questionsLocked && question.id ? lockTitle : undefined}
+                  className="text-xs font-semibold text-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
+          <input
+            value={question.prompt}
+            onChange={(e) => patchQuestion(qi, { prompt: e.target.value })}
+            maxLength={300}
+            placeholder="Question prompt"
+            className={inputClass}
+          />
+          <div className="space-y-1.5">
+            {question.options.map((option, oi) => {
+              const votedOption = !!option.id && option.count > 0
+              return (
+                <div key={option.id ?? `new-${oi}`} className="flex items-center gap-2">
+                  <input
+                    value={option.label}
+                    onChange={(e) =>
+                      patchQuestion(qi, {
+                        options: question.options.map((o, i) =>
+                          i === oi ? { ...o, label: e.target.value } : o
+                        ),
+                      })
+                    }
+                    maxLength={100}
+                    placeholder={`Option ${oi + 1}`}
+                    className={inputClass}
+                  />
+                  {votedOption && (
+                    <span className="text-ink-400 shrink-0 text-[11px]">
+                      {option.count} {option.count === 1 ? "vote" : "votes"}
+                    </span>
+                  )}
+                  {question.options.length > 2 && (
+                    <button
+                      onClick={() =>
+                        patchQuestion(qi, {
+                          options: question.options.filter((_, i) => i !== oi),
+                        })
+                      }
+                      disabled={votedOption}
+                      title={
+                        votedOption
+                          ? "This option has votes — relabel it, but it can't be removed"
+                          : "Remove option"
+                      }
+                      className="text-ink-400 hover:text-red-500 shrink-0 text-lg leading-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-400"
+                      aria-label="Remove option"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+            {question.options.length < 12 && (
+              <button
+                onClick={() =>
+                  patchQuestion(qi, {
+                    options: [...question.options, { label: "", count: 0 }],
+                  })
+                }
+                className="text-play-600 hover:text-play-700 text-xs font-semibold"
+              >
+                + Add option
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+
+      <div className="flex items-center justify-between gap-3">
+        {questions.length < 10 ? (
+          <button
+            onClick={() =>
+              setQuestions((current) => [
+                ...current,
+                { prompt: "", allowMultiple: false, options: [{ label: "", count: 0 }, { label: "", count: 0 }] },
+              ])
+            }
+            disabled={questionsLocked}
+            title={questionsLocked ? lockTitle : undefined}
+            className="text-play-600 hover:text-play-700 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            + Add another question
+          </button>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={!valid || saving}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

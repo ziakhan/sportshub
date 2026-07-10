@@ -56,6 +56,25 @@ export default function NotificationsPage() {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
   }
 
+  const dismiss = async (ids: string[]) => {
+    await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+    setNotifications((prev) => prev.filter((n) => !ids.includes(n.id)))
+  }
+
+  // Server-side "all" only clears READ notifications — mirror that here.
+  const clearRead = async () => {
+    await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    })
+    setNotifications((prev) => prev.filter((n) => !n.isRead))
+  }
+
   const handleClick = async (notification: NotificationItem) => {
     if (!notification.isRead) {
       await markAsRead([notification.id])
@@ -124,6 +143,7 @@ export default function NotificationsPage() {
   }
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
+  const readCount = notifications.length - unreadCount
 
   return (
     <div className="space-y-6">
@@ -138,14 +158,24 @@ export default function NotificationsPage() {
               <span className="text-ink-500 ml-2 text-sm font-normal">({unreadCount} unread)</span>
             )}
           </h1>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="text-play-600 hover:text-play-700 text-sm font-semibold"
-            >
-              Mark all as read
-            </button>
-          )}
+          <div className="flex items-center gap-4">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="text-play-600 hover:text-play-700 text-sm font-semibold"
+              >
+                Mark all as read
+              </button>
+            )}
+            {readCount > 0 && (
+              <button
+                onClick={clearRead}
+                className="text-ink-500 hover:text-ink-700 text-sm font-semibold"
+              >
+                Clear read
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -213,6 +243,17 @@ export default function NotificationsPage() {
                       </button>
                     </div>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      dismiss([notification.id])
+                    }}
+                    className="text-ink-300 hover:bg-ink-100 hover:text-ink-600 ml-3 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm transition"
+                    title="Dismiss"
+                    aria-label="Dismiss notification"
+                  >
+                    &#x2715;
+                  </button>
                 </div>
               </div>
             )

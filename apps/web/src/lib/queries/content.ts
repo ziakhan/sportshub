@@ -212,8 +212,13 @@ export const getHighlightPosts = cache(async (limit = 8): Promise<HighlightItem[
   }))
 })
 
-/** A published post by slug, with its tags resolved for entity links. */
-export const getPublishedPost = cache(async (slug: string) => {
+/**
+ * A post by slug REGARDLESS of status, with its tags resolved for entity
+ * links. Not public on its own — callers must gate on `status` (the news
+ * page shows non-PUBLISHED posts only to viewers who can manage them; the
+ * public path is getPublishedPost below).
+ */
+export const getPostBySlug = cache(async (slug: string) => {
   const post = await (prisma as any).post.findUnique({
     where: { slug },
     select: {
@@ -240,6 +245,12 @@ export const getPublishedPost = cache(async (slug: string) => {
       },
     },
   })
+  return post ?? null
+})
+
+/** A published post by slug — the public gate over getPostBySlug. */
+export const getPublishedPost = cache(async (slug: string) => {
+  const post = await getPostBySlug(slug)
   if (!post || post.status !== "PUBLISHED") return null
   return post
 })

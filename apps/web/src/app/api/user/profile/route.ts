@@ -14,6 +14,11 @@ const updateProfileSchema = z.object({
   country: z.string().length(2).optional(),
   city: z.string().min(1).max(100).optional(),
   state: z.string().min(1).max(100).optional(),
+  // Profile photo: client-compressed data URL (~256px, tens of KB), or null
+  // to clear. 500K chars caps abuse while leaving generous headroom.
+  avatarUrl: z
+    .union([z.string().startsWith("data:image/").max(500_000), z.null()])
+    .optional(),
 })
 
 export async function GET() {
@@ -33,6 +38,7 @@ export async function GET() {
       country: true,
       city: true,
       state: true,
+      avatarUrl: true,
     },
   })
 
@@ -64,6 +70,7 @@ export async function PATCH(req: Request) {
         email: true,
         city: true,
         state: true,
+        avatarUrl: true,
       },
     })
 

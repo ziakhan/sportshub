@@ -14,6 +14,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/",
   "/sign-in",
   "/sign-up",
+  "/forgot-password",
+  "/reset-password",
   "/marketplace",
   "/club",
   "/tryout",

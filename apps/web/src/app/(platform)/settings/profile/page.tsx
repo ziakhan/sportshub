@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,11 +18,152 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>
 
+/** Downscale to a small square-ish avatar (longest edge `size`px) → data URL.
+ *  Same client-compression approach as components/club-page/image-upload-field. */
+function downscaleToDataUrl(file: File, size = 256): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("read"))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error("decode"))
+      img.onload = () => {
+        const scale = Math.min(1, size / Math.max(img.width, img.height))
+        const width = Math.max(1, Math.round(img.width * scale))
+        const height = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return reject(new Error("ctx"))
+        ctx.drawImage(img, 0, 0, width, height)
+        // WebP where supported; browsers fall back to png automatically.
+        resolve(canvas.toDataURL("image/webp", 0.85))
+      }
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Circle avatar preview + upload/remove. Saves immediately (own PATCH),
+ *  independent of the profile form below it. */
+function AvatarUploader({
+  value,
+  onSaved,
+}: {
+  value: string | null
+  onSaved: (next: string | null) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function save(next: string | null) {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: next }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Failed to update photo")
+      }
+      onSaved(next)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update photo")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleFile(file: File) {
+    setError(null)
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.")
+      return
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setError("Image is too large (max 12MB before compression).")
+      return
+    }
+    setBusy(true)
+    try {
+      const dataUrl = await downscaleToDataUrl(file, 256)
+      await save(dataUrl)
+    } catch {
+      setError("Could not process that image.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <div className="border-ink-200 bg-ink-50 flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border">
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="Profile photo" className="h-full w-full object-cover" />
+        ) : (
+          <svg
+            viewBox="0 0 24 24"
+            className="text-ink-300 h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+          </svg>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-ink-800 text-sm font-medium">Profile photo</p>
+        <div className="mt-1.5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy}
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-sm font-medium transition disabled:opacity-50"
+          >
+            {busy ? "Saving…" : value ? "Replace" : "Upload"}
+          </button>
+          {value && !busy && (
+            <button
+              type="button"
+              onClick={() => save(null)}
+              className="text-ink-500 rounded-xl px-3 py-1.5 text-sm font-medium transition hover:text-red-600"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) handleFile(f)
+            e.target.value = ""
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function ProfileEditPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   const {
     register,
@@ -46,6 +187,7 @@ export default function ProfileEditPage() {
         const res = await fetch("/api/user/profile")
         if (res.ok) {
           const data = await res.json()
+          setAvatarUrl(data.avatarUrl || null)
           reset({
             firstName: data.firstName || "",
             lastName: data.lastName || "",
@@ -102,6 +244,8 @@ export default function ProfileEditPage() {
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
         <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Edit Profile</h1>
         <p className="text-ink-700 mb-6 text-sm">Update your personal information.</p>
+
+        <AvatarUploader value={avatarUrl} onSaved={setAvatarUrl} />
 
         {error && (
           <div className="border-hoop-200 text-hoop-700 mb-4 rounded-lg border bg-red-50 p-3 text-sm">
@@ -194,12 +338,18 @@ export default function ProfileEditPage() {
           </div>
         </form>
 
-        <div className="border-ink-100 mt-6 border-t pt-4">
+        <div className="border-ink-100 mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t pt-4">
           <Link
             href="/settings/communications"
             className="text-play-600 hover:text-play-700 text-sm font-semibold"
           >
             Email preferences &rarr;
+          </Link>
+          <Link
+            href="/settings/security"
+            className="text-play-600 hover:text-play-700 text-sm font-semibold"
+          >
+            Security &amp; sign-in &rarr;
           </Link>
         </div>
       </div>

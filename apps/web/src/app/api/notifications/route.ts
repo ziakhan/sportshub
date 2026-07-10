@@ -89,3 +89,44 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 })
   }
 }
+
+/**
+ * Dismiss (delete) notifications — they used to accumulate forever.
+ * DELETE /api/notifications
+ * Body: { ids: string[] } — delete these, read or not (an explicit dismiss)
+ *       { all: true }     — clear READ notifications only; unread ones stay
+ *                           until the user has seen them or ids them directly
+ * Always scoped to the session user (getSessionUserId so impersonation
+ * operates on the inbox actually being viewed).
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    const userId = sessionInfo.userId
+
+    const body = await request.json()
+
+    let deleted = 0
+    if (body.all) {
+      const result = await prisma.notification.deleteMany({
+        where: { userId, isRead: true },
+      })
+      deleted = result.count
+    } else if (Array.isArray(body.ids) && body.ids.length > 0) {
+      const result = await prisma.notification.deleteMany({
+        where: { id: { in: body.ids }, userId },
+      })
+      deleted = result.count
+    } else {
+      return NextResponse.json({ error: "Provide ids or all" }, { status: 400 })
+    }
+
+    return NextResponse.json({ success: true, deleted })
+  } catch (error) {
+    console.error("Delete notifications error:", error)
+    return NextResponse.json({ error: "Failed to delete notifications" }, { status: 500 })
+  }
+}

@@ -13,7 +13,9 @@ export async function getClubRatings(tenantIds: string[]): Promise<Map<string, C
   if (tenantIds.length === 0) return new Map()
   const grouped = await prisma.review.groupBy({
     by: ["tenantId"],
-    where: { tenantId: { in: tenantIds }, status: "PUBLISHED" },
+    // FLAGGED reviews stay publicly visible (and counted) until an admin
+    // moderates — only REMOVED drops out. Keep in sync with GET /api/reviews.
+    where: { tenantId: { in: tenantIds }, status: { in: ["PUBLISHED", "FLAGGED"] } },
     _avg: { rating: true },
     _count: { rating: true },
   })

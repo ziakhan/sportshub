@@ -20,6 +20,8 @@ interface PollUpdate {
 }
 
 const POLL_MS = 5000
+/** Server-enforced window for editing your own message (mirrored client-side) */
+const EDIT_WINDOW_MS = 15 * 60 * 1000
 
 function dayLabel(date: Date): string {
   if (isToday(date)) return "Today"
@@ -48,6 +50,12 @@ export function TeamChat({
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showMembers, setShowMembers] = useState(false)
+  // Inline edit of own recent messages. TeamMessage has no editedAt column,
+  // so the "(edited)" marker is session-local only (see the PATCH route).
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState("")
+  const [editSaving, setEditSaving] = useState(false)
+  const [editedIds, setEditedIds] = useState<Set<string>>(new Set())
   // Quick poll composer (staff)
   const [showPollForm, setShowPollForm] = useState(false)
   const [pollQuestion, setPollQuestion] = useState("")
@@ -218,6 +226,44 @@ export function TeamChat({
     }
   }
 
+  function startEdit(message: ChatMessage) {
+    setEditingId(message.id)
+    setEditDraft(message.body)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditDraft("")
+  }
+
+  async function saveEdit(id: string) {
+    const body = editDraft.trim()
+    if (!body || editSaving) return
+    setEditSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/teams/${teamId}/messages/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || "Couldn't edit the message — try again.")
+        return
+      }
+      setMessages((current) =>
+        current.map((m) => (m.id === id ? { ...m, body: data.message?.body ?? body } : m))
+      )
+      setEditedIds((current) => new Set(current).add(id))
+      cancelEdit()
+    } catch {
+      setError("Couldn't edit the message — check your connection.")
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   async function deleteMessage(id: string) {
     const previous = messages
     setMessages((current) => current.filter((m) => m.id !== id))
@@ -314,6 +360,14 @@ export function TeamChat({
               const prev = messages[i - 1]
               const showDay = !prev || !isSameDay(new Date(prev.createdAt), created)
               const mine = message.sender.id === currentUserId
+              // 15-minute window mirrors the server gate; polls edit from the polls page
+              const canEdit =
+                mine &&
+                !message.poll &&
+                !message.pending &&
+                !archived &&
+                Date.now() - created.getTime() < EDIT_WINDOW_MS
+              const isEditing = editingId === message.id
               return (
                 <div key={message.id}>
                   {showDay && (
@@ -347,25 +401,75 @@ export function TeamChat({
                       )}
                       {message.poll ? (
                         <PollBubble teamId={teamId} poll={message.poll} onUpdate={updatePoll} />
+                      ) : isEditing ? (
+                        <div className="min-w-[200px]">
+                          <textarea
+                            value={editDraft}
+                            onChange={(e) => setEditDraft(e.target.value)}
+                            maxLength={2000}
+                            rows={2}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
+                                saveEdit(message.id)
+                              }
+                              if (e.key === "Escape") cancelEdit()
+                            }}
+                            className="border-play-300 text-ink-900 w-full rounded-lg border bg-white px-2 py-1 text-sm focus:outline-none"
+                          />
+                          <div
+                            className={`mt-1 flex items-center justify-end gap-2 text-[11px] font-semibold ${
+                              mine ? "text-play-100" : "text-ink-500"
+                            }`}
+                          >
+                            <button
+                              onClick={cancelEdit}
+                              disabled={editSaving}
+                              className="underline-offset-2 hover:underline disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => saveEdit(message.id)}
+                              disabled={editSaving || !editDraft.trim()}
+                              className="underline-offset-2 hover:underline disabled:opacity-50"
+                            >
+                              {editSaving ? "Saving…" : "Save"}
+                            </button>
+                          </div>
+                        </div>
                       ) : (
                         <p className="whitespace-pre-line break-words text-sm">{message.body}</p>
                       )}
-                      <div
-                        className={`mt-0.5 flex items-center justify-end gap-2 text-[10px] ${
-                          mine && !message.poll ? "text-play-100" : "text-ink-400"
-                        }`}
-                      >
-                        {(mine || canModerate) && (
-                          <button
-                            onClick={() => deleteMessage(message.id)}
-                            className="hidden font-semibold underline-offset-2 hover:underline group-hover:inline"
-                            title={mine ? "Delete message" : "Remove message (staff)"}
-                          >
-                            {mine ? "Delete" : "Remove"}
-                          </button>
-                        )}
-                        <span>{format(created, "h:mm a")}</span>
-                      </div>
+                      {!isEditing && (
+                        <div
+                          className={`mt-0.5 flex items-center justify-end gap-2 text-[10px] ${
+                            mine && !message.poll ? "text-play-100" : "text-ink-400"
+                          }`}
+                        >
+                          {canEdit && (
+                            <button
+                              onClick={() => startEdit(message)}
+                              className="hidden font-semibold underline-offset-2 hover:underline group-hover:inline"
+                              title="Edit message (within 15 minutes of sending)"
+                            >
+                              Edit
+                            </button>
+                          )}
+                          {(mine || canModerate) && (
+                            <button
+                              onClick={() => deleteMessage(message.id)}
+                              className="hidden font-semibold underline-offset-2 hover:underline group-hover:inline"
+                              title={mine ? "Delete message" : "Remove message (staff)"}
+                            >
+                              {mine ? "Delete" : "Remove"}
+                            </button>
+                          )}
+                          {editedIds.has(message.id) && <span className="italic">(edited)</span>}
+                          <span>{format(created, "h:mm a")}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

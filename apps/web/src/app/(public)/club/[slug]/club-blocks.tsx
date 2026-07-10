@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { format } from "date-fns"
 import { Card, StarRating } from "@/components/ui"
 import { formatCurrency } from "@/lib/countries"
-import { ReviewForm } from "./review-form"
+import { ReviewForm, FlagReviewButton, type OwnReview } from "./review-form"
 
 export interface ClubPageData {
   club: any
@@ -18,7 +18,11 @@ export interface ClubPageData {
   averageRating: number | null
   totalReviews: number
   signedIn: boolean
-  alreadyReviewed: boolean
+  /** The viewer's own review of this club (any status), if one exists. */
+  ownReview: OwnReview | null
+  /** Viewer is this club's owner/manager (or platform admin) — unlocks the
+   *  per-review Flag affordance. */
+  canManage: boolean
   staffCount: number
   announcements: any[]
   recentGames: any[]
@@ -564,10 +568,24 @@ function ReviewsBlock({ d }: { d: ClubPageData }) {
               <div key={review.id} className={`${BRAND_LINE} rounded-2xl border-l-[3px] bg-ink-50/40 p-4`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <StarRating rating={review.rating} />
-                  <span className="text-ink-400 text-xs">
-                    {name}
-                    {" · "}
-                    {format(new Date(review.createdAt), "MMM yyyy")}
+                  <span className="flex items-center gap-2">
+                    <span className="text-ink-400 text-xs">
+                      {name}
+                      {" · "}
+                      {format(new Date(review.createdAt), "MMM yyyy")}
+                    </span>
+                    {/* Flag affordance for the club's owner/manager viewing
+                        their own page (not on their own review). FLAGGED
+                        reviews stay publicly visible until moderated. */}
+                    {d.canManage &&
+                      review.id !== d.ownReview?.id &&
+                      (review.status === "FLAGGED" ? (
+                        <span className="text-ink-400 text-[11px] font-semibold uppercase">
+                          Flagged for review
+                        </span>
+                      ) : (
+                        <FlagReviewButton reviewId={review.id} />
+                      ))}
                   </span>
                 </div>
                 {review.title && (
@@ -583,7 +601,7 @@ function ReviewsBlock({ d }: { d: ClubPageData }) {
           })}
         </div>
       )}
-      <ReviewForm tenantId={d.club.id} signedIn={d.signedIn} alreadyReviewed={d.alreadyReviewed} />
+      <ReviewForm tenantId={d.club.id} signedIn={d.signedIn} ownReview={d.ownReview} />
     </Card>
   )
 }

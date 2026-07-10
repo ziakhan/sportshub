@@ -81,6 +81,9 @@ export function AdminSection({ data }: AdminSectionProps) {
           <Button href="/dashboard/admin/payments" variant="subtle" icon={ACTION_ICONS.payments}>
             Payments
           </Button>
+          <Button href="/dashboard/admin/reviews" variant="subtle" icon={ACTION_ICONS.flag}>
+            Reviews
+          </Button>
           <Button href="/dashboard/admin/settings" variant="subtle" icon={ACTION_ICONS.gear}>
             Admin settings
           </Button>
@@ -207,6 +210,12 @@ const ACTION_ICONS = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M2 10h20" strokeLinecap="round" />
+    </svg>
+  ),
+  flag: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" strokeLinejoin="round" />
+      <line x1="4" y1="22" x2="4" y2="15" strokeLinecap="round" />
     </svg>
   ),
   gear: (
