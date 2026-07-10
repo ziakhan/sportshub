@@ -41,6 +41,7 @@ import { getServerSession } from "next-auth"
  *   1124 offer package options (multi-option accept / bulk send / skips)
  *   1131 native auth (M2 bearer: login / refresh rotation / replay / revoke)
  *   1132 realtime ticket (M1: room grants / sidecar-verifiable / not-a-bearer)
+ *   1133 devices (M3 push: register / re-register moves account / revoke-own)
  */
 
 export function actAs(userId: string | null): void {

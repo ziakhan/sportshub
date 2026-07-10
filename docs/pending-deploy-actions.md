@@ -505,3 +505,23 @@ redeploy to take effect).
 Verify: sidecar `/healthz` 200; open `/scores` in a browser — the socket
 connects (WS in devtools); score a demo game and watch it move with no
 reload; stop the sidecar and confirm the site quietly falls back to polling.
+
+## ⬜ 23. Push notifications schema (M3) — Device table + quiet hours
+
+Ships with the M3 push commit (2026-07-10). Additive — one `prisma db push`:
+- New model `Device` (userId FK cascade, platform IOS|ANDROID, provider
+  EXPO|FCM default EXPO, `token @unique`, appVersion, lastSeenAt,
+  revokedAt; index on userId) + new enums `DevicePlatform`, `PushProvider`
+- `User.pushQuietStart` / `User.pushQuietEnd` (String?, "HH:MM" wall time
+  in APP_TIMEZONE; null = no quiet hours)
+
+**Env (Railway sidecar, with runbook #22):** `DATABASE_URL` (pooled Neon
+string — the push worker resolves devices), `APP_TIMEZONE`, `REDIS_URL`
+(recommended: durable BullMQ queue + real delayed receipt checks; without
+it the worker runs in-process), optional `EXPO_ACCESS_TOKEN`.
+
+Nothing to backfill (table starts empty; the app registers devices via
+`POST /api/devices` on launch). Fully dormant until the sidecar is live AND
+a native build (M4) registers a device. Verify:
+`SELECT count(*) FROM "Device";` = 0; a bearer-authed `POST /api/devices`
+creates a row; fire a chat message and watch the sidecar log the Expo send.

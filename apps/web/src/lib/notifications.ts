@@ -1,5 +1,10 @@
 import { prisma } from "@youthbasketballhub/db"
-import { publishRealtimeDetached, rooms as rt } from "@/lib/realtime/publish"
+import {
+  enqueuePushDetached,
+  publishRealtimeDetached,
+  rooms as rt,
+  type PushItem,
+} from "@/lib/realtime/publish"
 
 /**
  * In-app notification service — the single write path to Notification.
@@ -50,6 +55,7 @@ export type NotificationType =
   | "game_cancelled"
   | "game_rescheduled"
   | "game_final" // final score to team audiences
+  | "game_live" // tip-off — to followers of either team (M3 live-push)
   // League lifecycle
   | "season_registration_open"
   // Club announcements
@@ -100,18 +106,51 @@ type DbClient =
     }
 
 /**
- * Bell ping to the recipients' private user rooms (M1 realtime seam).
- * Detached on purpose: notify() often runs inside a transaction, and a
- * network call must not hold it open. Payload is a ping — the client
- * refetches /api/notifications; content never rides the socket. If the
- * enclosing transaction rolls back, the spurious ping costs one refetch.
+ * Notification types that also go to phones (M3 push). The bell gets
+ * everything; push is reserved for the time-sensitive family-facing set so
+ * the app doesn't nag (doc §7 triggers list). Chat is already debounced at
+ * the notify() call site, so its pushes inherit the one-per-unread cadence.
  */
-function pingBell(userIds: string[], type: NotificationType): void {
+const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
+  "team_chat",
+  "offer_received",
+  "offer_rescinded",
+  "game_live",
+  "game_final",
+  "game_cancelled",
+  "game_rescheduled",
+  "practice_schedule",
+  "practice_change",
+  "team_event",
+  "announcement_posted",
+])
+
+/**
+ * Bell ping to the recipients' private user rooms (M1 realtime seam) plus,
+ * for push-enabled types, an M3 push enqueue on the sidecar. Detached on
+ * purpose: notify() often runs inside a transaction, and a network call
+ * must not hold it open. The socket payload is a ping — the client
+ * refetches /api/notifications; content never rides the socket. If the
+ * enclosing transaction rolls back, the cost is one spurious refetch (and,
+ * worst case, one early push for a write that never landed).
+ */
+function pingBell(inputs: NotificationInput[]): void {
+  const userIds = [...new Set(inputs.map((i) => i.userId))]
   publishRealtimeDetached({
-    rooms: [...new Set(userIds)].map((id) => rt.user(id)),
+    rooms: userIds.map((id) => rt.user(id)),
     event: "notify",
-    payload: { type },
+    payload: { type: inputs[0]?.type },
   })
+  const pushable: PushItem[] = inputs
+    .filter((i) => PUSH_TYPES.has(i.type))
+    .map((i) => ({
+      userId: i.userId,
+      type: i.type,
+      title: i.title,
+      message: i.message,
+      link: i.link ?? null,
+    }))
+  enqueuePushDetached(pushable)
 }
 
 /** Create one notification. Use inside transactions by passing the tx client. */
@@ -127,7 +166,7 @@ export async function notify(db: DbClient, input: NotificationInput): Promise<vo
       referenceType: input.referenceType ?? null,
     },
   })
-  pingBell([input.userId], input.type)
+  pingBell([input])
 }
 
 /** Fan the same notification out to several users (e.g. all platform admins). */
@@ -148,7 +187,7 @@ export async function notifyMany(
       referenceType: input.referenceType ?? null,
     })),
   })
-  pingBell(userIds, input.type)
+  pingBell(userIds.map((userId) => ({ ...input, userId })))
 }
 
 /** Create several distinct notifications in one write (createMany). */
@@ -166,10 +205,7 @@ export async function notifyBatch(db: DbClient, inputs: NotificationInput[]): Pr
     })),
   })
   // One publish for the whole batch; type is advisory (clients just refetch)
-  pingBell(
-    inputs.map((i) => i.userId),
-    inputs[0].type
-  )
+  pingBell(inputs)
 }
 
 /**

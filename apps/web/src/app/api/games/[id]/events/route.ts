@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -201,6 +202,40 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         status: result.wentLive ? "LIVE" : game.status,
         maxSequence: result.maxSequence,
       })
+    }
+
+    // Live-push activation (M3): tip-off bells + pushes followers of either
+    // team, once, when the game first flips LIVE. Best-effort — scoring
+    // must never fail on fan-out.
+    if (result.wentLive) {
+      try {
+        const teamIds = [game.homeTeamId, game.awayTeamId].filter(Boolean) as string[]
+        const [follows, teams] = await Promise.all([
+          (prisma as any).follow.findMany({
+            where: { teamId: { in: teamIds } },
+            select: { userId: true },
+          }),
+          (prisma as any).team.findMany({
+            where: { id: { in: teamIds } },
+            select: { id: true, name: true },
+          }),
+        ])
+        const followerIds = [...new Set(follows.map((f: any) => f.userId as string))] as string[]
+        if (followerIds.length > 0) {
+          const nameOf = (id: string | null) =>
+            teams.find((t: any) => t.id === id)?.name ?? "TBD"
+          await notifyMany(prisma, followerIds, {
+            type: "game_live",
+            title: "Tip-off! 🏀",
+            message: `${nameOf(game.homeTeamId)} vs ${nameOf(game.awayTeamId)} is live — follow along.`,
+            link: `/live/${game.id}`,
+            referenceId: game.id,
+            referenceType: "Game",
+          })
+        }
+      } catch (fanoutErr) {
+        console.error("game_live fan-out failed:", fanoutErr)
+      }
     }
 
     return NextResponse.json(

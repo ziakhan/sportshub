@@ -142,7 +142,27 @@ sidecar killed mid-demo → polling silently takes over; Playwright test for bot
 *Verify: integration tests — login/refresh/rotation/reuse-detection/revoke; a curl with a
 bearer token exercises representative family routes (offers, chat, notifications).*
 
-## M3 — Push notifications
+## M3 — Push notifications — ✅ SHIPPED 2026-07-10 (server side; phone delivery testable at M4)
+
+> Built as specced below with one architecture refinement: the web app never
+> touches Redis/BullMQ — it POSTs fully-written notifications to the
+> sidecar's HMAC-verified `/internal/push` (same trust seam as publish),
+> and the sidecar owns the queue + Expo. Schema = runbook **#23** (Device +
+> quiet hours; note #22 became the M1 env entry). Files: `api/devices`
+> (bearer register/revoke; re-register moves shared tablets between
+> accounts) · `lib/notifications.ts` PUSH_TYPES filter on the notify() seam
+> (chat pushes inherit the bell's debounce) + new `game_live` type —
+> events-route fan-out to Follow(team) followers at the SCHEDULED→LIVE flip
+> (the "live push activation") · sidecar `push.ts` (pure, DI'd worker:
+> quiet-hours wall-time in APP_TIMEZONE incl. midnight wrap, 100-message
+> Expo chunks, ticket + delayed-receipt DeviceNotRegistered pruning) +
+> `queue.ts` (BullMQ w/ retries+backoff when REDIS_URL, in-process dev
+> fallback; Prisma via DATABASE_URL, push 503s without it). Tests: 13
+> sidecar unit + 3 seam unit + 5 devices int (seed 1133); 261u/248i green.
+> Verified live end-to-end against a mock Expo server (EXPO_PUSH_URL env
+> override): bearer device registration → chat message → correctly-formed
+> push with title/body/deep-link data. Real-phone delivery = first M4 task
+> after the dev build exists.
 
 - **Schema (runbook #22):** `Device` — id, `userId`, `platform` (IOS|ANDROID), `provider`
   (EXPO now, FCM later), `token @unique`, `appVersion`, `lastSeenAt`, `revokedAt`. Plus

@@ -29,15 +29,15 @@ export interface RealtimeEvent {
 /** Sidecar caps rooms per publish; chunk user fan-outs to stay under it. */
 const MAX_ROOMS_PER_PUBLISH = 50
 
-async function post(event: RealtimeEvent): Promise<void> {
+/** HMAC-signed POST to a sidecar /internal/* endpoint. Never throws. */
+async function signedSidecarPost(path: string, body: string): Promise<void> {
   const url = process.env.SIDECAR_URL
   const secret = process.env.SIDECAR_SHARED_SECRET
-  if (!url || !secret || event.rooms.length === 0) return
-  const body = JSON.stringify(event)
+  if (!url || !secret) return
   const timestamp = String(Date.now())
   const signature = createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex")
   try {
-    await fetch(`${url}/internal/publish`, {
+    await fetch(`${url}${path}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -49,8 +49,13 @@ async function post(event: RealtimeEvent): Promise<void> {
       signal: AbortSignal.timeout(1500),
     })
   } catch (err) {
-    console.error("realtime publish failed:", err instanceof Error ? err.message : err)
+    console.error(`sidecar post ${path} failed:`, err instanceof Error ? err.message : err)
   }
+}
+
+async function post(event: RealtimeEvent): Promise<void> {
+  if (event.rooms.length === 0) return
+  await signedSidecarPost("/internal/publish", JSON.stringify(event))
 }
 
 /**
@@ -82,4 +87,34 @@ export const rooms = {
   leagueScores: (leagueId: string) => `league:${leagueId}:scores`,
   team: (teamId: string) => `team:${teamId}`,
   user: (userId: string) => `user:${userId}`,
+}
+
+/** One queued push notification — mirrors the sidecar's /internal/push. */
+export interface PushItem {
+  userId: string
+  type: string
+  title: string
+  message: string
+  link?: string | null
+}
+
+/** Sidecar caps items per push enqueue. */
+const MAX_PUSH_ITEMS = 500
+
+/**
+ * Enqueue push notifications on the sidecar (M3). Detached like the bell
+ * ping — the notify() seam runs inside transactions. The sidecar worker
+ * resolves devices, applies quiet hours, and talks to the Expo Push API;
+ * nothing here blocks or throws.
+ */
+export function enqueuePushDetached(items: PushItem[]): void {
+  if (items.length === 0) return
+  void (async () => {
+    for (let i = 0; i < items.length; i += MAX_PUSH_ITEMS) {
+      await signedSidecarPost(
+        "/internal/push",
+        JSON.stringify({ items: items.slice(i, i + MAX_PUSH_ITEMS) })
+      )
+    }
+  })()
 }

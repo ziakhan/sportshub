@@ -19,4 +19,10 @@ export const env = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
+  /** M3 push: device lookups. Push endpoint answers 503 without it. */
+  databaseUrl: process.env.DATABASE_URL || null,
+  /** M3 push: quiet-hours wall time (same semantics as the web app). */
+  appTimezone: process.env.APP_TIMEZONE || "America/Toronto",
+  /** M3 push: optional Expo access token (enhanced security orgs). */
+  expoAccessToken: process.env.EXPO_ACCESS_TOKEN || null,
 }
