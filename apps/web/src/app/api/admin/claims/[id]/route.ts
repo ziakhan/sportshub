@@ -4,6 +4,7 @@ import { z } from "zod"
 import { audit } from "@/lib/audit"
 import { notify } from "@/lib/notifications"
 import { withAuth, requirePlatformAdmin, apiError } from "@/lib/api/handler"
+import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -97,6 +98,31 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
           referenceType: "ClubClaim",
         })
       })
+
+      // Email the claimant too — claim review can take days and the bell only
+      // shows on next visit. Best-effort: approval never fails on email trouble.
+      try {
+        const clubLink = `${appBaseUrl()}/clubs/${claim.tenantId}`
+        await sendEmail({
+          to: claim.user.email,
+          subject: `Your claim for ${claim.tenant.name} was approved`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Claim approved</h2>
+              <p>Hi ${escapeHtml(claim.user.firstName || "there")},</p>
+              <p>Your claim for <strong>${escapeHtml(claim.tenant.name)}</strong> has been approved — you now manage ${escapeHtml(claim.tenant.name)} on SportsHub.</p>
+              <p>
+                <a href="${clubLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+                  Go to your club dashboard
+                </a>
+              </p>
+              ${transactionalFooter()}
+            </div>
+          `,
+        })
+      } catch (emailError) {
+        console.error("Failed to send claim-approved email:", emailError)
+      }
     } else {
       await prisma.$transaction(async (tx: any) => {
         await tx.clubClaim.update({

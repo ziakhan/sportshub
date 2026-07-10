@@ -2,6 +2,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
 import { ensureObligation } from "@/lib/payments/obligations"
 import { scheduleInstallments } from "@/lib/payments/installments"
+import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
+import { upsertImpliedConsent } from "@/lib/comms/consent"
 
 /**
  * Offer response domain service — accept/decline with roster formation.
@@ -174,12 +176,13 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
     })
 
     // The deposit/full payment the family just made on-session (Stage C).
+    let onSessionPayment: { id: string } | null = null
     if (data.depositPaymentIntentId && obligation) {
       const depositAmount =
         plan === "INSTALLMENTS" && chosen
           ? Number(chosen.depositAmount ?? 0)
           : Number(offer.seasonFee)
-      await tx.payment.create({
+      onSessionPayment = await tx.payment.create({
         data: {
           obligationId: obligation.id,
           payerId: offer.player.parentId,
@@ -201,7 +204,11 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
     }
 
     await notifyClubOfResponse(tx, offer, updated.id, true)
-    return { updated, obligationId: obligation?.id ?? null }
+    return {
+      updated,
+      obligationId: obligation?.id ?? null,
+      paymentId: onSessionPayment?.id ?? null,
+    }
   })
 
   // Installment invoices are external Stripe calls → after the DB commit.
@@ -226,6 +233,75 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
         label: t.label,
       })),
     }).catch((e) => console.error("scheduleInstallments failed:", e))
+  }
+
+  // Family comms — best-effort, strictly AFTER the commit so a consent/mail
+  // hiccup can never fail (or hold open) the accept transaction.
+
+  // Accepting an offer is a CASL engagement with the club → implied consent.
+  try {
+    await upsertImpliedConsent(
+      offer.player.parentId,
+      "TENANT",
+      offer.team.tenantId,
+      `offer-accept:${offer.id}`
+    )
+  } catch (e) {
+    console.error("offer-accept consent upsert failed:", e)
+  }
+
+  // Receipt for the on-session charge (skip free offers — nothing was charged).
+  const chargedAmount =
+    plan === "INSTALLMENTS" && chosen ? Number(chosen.depositAmount ?? 0) : Number(offer.seasonFee)
+  if (result.paymentId && chargedAmount > 0) {
+    const clubName = offer.team.tenant.name
+    const playerName = `${offer.player.firstName} ${offer.player.lastName}`
+    const isDeposit = plan === "INSTALLMENTS"
+    const money = formatMoney(chargedAmount, offer.team.tenant.currency)
+    try {
+      await notify(prisma, {
+        userId: offer.player.parentId,
+        type: "payment_receipt",
+        title: "Payment received",
+        message: `${isDeposit ? "Deposit" : "Season fee"} for ${playerName} — ${offer.team.name}: ${money} paid. Thank you!`,
+        link: "/payments",
+        referenceId: result.paymentId,
+        referenceType: "Payment",
+      })
+    } catch (e) {
+      console.error("offer-accept receipt bell failed:", e)
+    }
+    try {
+      const parent = await prisma.user.findUnique({
+        where: { id: offer.player.parentId },
+        select: { email: true, firstName: true },
+      })
+      if (parent?.email) {
+        await sendEmail({
+          to: parent.email,
+          subject: `Payment received — ${money}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Payment received</h2>
+              ${parent.firstName ? `<p>Hi ${escapeHtml(parent.firstName)},</p>` : ""}
+              <p>We received your ${isDeposit ? "deposit" : "season fee payment"} of <strong>${money}</strong> for <strong>${escapeHtml(playerName)}</strong> on <strong>${escapeHtml(offer.team.name)}</strong> at <strong>${escapeHtml(clubName)}</strong>.</p>
+              ${
+                isDeposit
+                  ? "<p>The remaining balance will be charged to your card per the installment schedule.</p>"
+                  : "<p>Your season fee is paid in full.</p>"
+              }
+              <p>
+                <a href="${appBaseUrl()}/payments" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+                  View your payments
+                </a>
+              </p>
+              ${transactionalFooter(clubName)}
+            </div>`,
+        })
+      }
+    } catch (e) {
+      console.error("offer-accept receipt email failed:", e)
+    }
   }
 
   return result.updated

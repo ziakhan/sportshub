@@ -41,6 +41,9 @@ export function SignupForm({
 }: SignupFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Kept outside react-hook-form: the shared zod schema would strip unknown
+  // keys via the resolver, so the checkbox is merged into the POST body.
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [success, setSuccess] = useState<{
     playerName: string
     status: string
@@ -69,7 +72,7 @@ export function SignupForm({
       const res = await fetch(`/api/tryouts/${tryoutId}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, marketingConsent }),
       })
 
       if (!res.ok) {
@@ -226,6 +229,16 @@ export function SignupForm({
             signup will be marked as pending until payment is completed.
           </p>
         )}
+
+        <label className="flex items-start gap-2 text-sm text-ink-600">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(e) => setMarketingConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-ink-300"
+          />
+          <span>Email me about future programs from this club</span>
+        </label>
 
         <Button type="submit" disabled={isSubmitting} block size="lg" icon={ICONS.check}>
           {isSubmitting

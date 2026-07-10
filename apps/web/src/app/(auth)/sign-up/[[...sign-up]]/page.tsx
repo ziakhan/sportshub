@@ -18,6 +18,7 @@ function SignUpForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [platformMarketingConsent, setPlatformMarketingConsent] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -41,7 +42,7 @@ function SignUpForm() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+        body: JSON.stringify({ email, password, firstName, lastName, platformMarketingConsent }),
       })
 
       const data = await res.json()
@@ -166,6 +167,17 @@ function SignUpForm() {
               className="border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
             />
           </div>
+
+          <label htmlFor="platformMarketingConsent" className="flex items-start gap-2.5">
+            <input
+              id="platformMarketingConsent"
+              type="checkbox"
+              checked={platformMarketingConsent}
+              onChange={(e) => setPlatformMarketingConsent(e.target.checked)}
+              className="border-ink-300 text-play-600 focus:ring-play-500/20 mt-0.5 h-4 w-4 rounded"
+            />
+            <span className="text-ink-600 text-sm">Send me occasional news about SportsHub</span>
+          </label>
 
           <button
             type="submit"

@@ -1,5 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
-import { sendEmail } from "@/lib/email"
+import { sendEmail, appBaseUrl } from "@/lib/email"
 import { notifyMany } from "@/lib/notifications"
 import { getChatMembers } from "@/lib/teams/chat-access"
 
@@ -137,7 +137,7 @@ export async function notifyEventTeams(opts: {
     where: { id: { in: [...linkByUser.keys()] } },
     select: { id: true, email: true },
   })
-  const appUrl = process.env.NEXTAUTH_URL || ""
+  const appUrl = appBaseUrl()
   await Promise.allSettled(
     users.map((u: { id: string; email: string }) =>
       sendEmail({

@@ -5,8 +5,10 @@ import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
-import { sendEmail } from "@/lib/email"
+import { sendEmail, appBaseUrl } from "@/lib/email"
 import { upsertGameRecap } from "@/lib/content/recap-service"
+import { notifyMany } from "@/lib/notifications"
+import { getGameAudienceUserIds } from "@/lib/game-audience"
 
 export const dynamic = "force-dynamic"
 
@@ -231,7 +233,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           )
         )
       )
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+      const baseUrl = appBaseUrl()
       const title = `${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}`
       const signedName = verifiedRefereeName ?? refereeName
       await Promise.allSettled(
@@ -254,6 +256,28 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     } catch (mailErr) {
       console.error("Scoresheet email failed:", mailErr)
+    }
+
+    // Bell the FULL team audience (both clubs' staff + rostered parents) with
+    // the final score — before this, finals only reached front offices by
+    // email and families never heard the result. First finalize only:
+    // `game.status` is the pre-update row, so COMPLETED here means this was a
+    // re-finalize correction and every family was already pinged. Bell only,
+    // no family email (volume decision). Best-effort — never blocks the whistle.
+    if (game.status !== "COMPLETED") {
+      try {
+        const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
+        await notifyMany(prisma, audienceUserIds, {
+          type: "game_final",
+          title: "Final Score",
+          message: `Final: ${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}`,
+          link: `/live/${game.id}`,
+          referenceId: game.id,
+          referenceType: "Game",
+        })
+      } catch (bellErr) {
+        console.error("Final-score bell fanout failed:", bellErr)
+      }
     }
 
     return NextResponse.json({

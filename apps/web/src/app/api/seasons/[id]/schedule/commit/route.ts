@@ -7,6 +7,7 @@ import { loadSchedulerInput } from "@/lib/scheduler/load"
 import { canCommitSchedule, COMMIT_NOT_READY_MESSAGE } from "@/lib/seasons/season-lock"
 import { notifyMany } from "@/lib/notifications"
 import { notifyTeam } from "@/lib/teams/practices"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       gamesByTeam.set(g.homeTeamId, (gamesByTeam.get(g.homeTeamId) ?? 0) + 1)
       gamesByTeam.set(g.awayTeamId, (gamesByTeam.get(g.awayTeamId) ?? 0) + 1)
     }
-    const appUrl = process.env.NEXTAUTH_URL || ""
+    const appUrl = appBaseUrl()
     for (const sub of submissions) {
       const gameCount = gamesByTeam.get(sub.teamId) ?? 0
       if (gameCount === 0) continue

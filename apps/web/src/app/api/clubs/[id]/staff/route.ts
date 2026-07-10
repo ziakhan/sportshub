@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { sendStaffInviteEmail } from "@/lib/email"
+import { sendStaffInviteEmail, appBaseUrl } from "@/lib/email"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
 
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Send invitation email — unified public landing page handles both
     // signed-in and signed-out invitees (Gap 0.1.2 fix).
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const appUrl = appBaseUrl()
     const inviteLink = `${appUrl}/invitations/${invitation.id}/accept`
     try {
       await sendStaffInviteEmail({

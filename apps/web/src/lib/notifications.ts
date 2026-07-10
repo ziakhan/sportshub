@@ -42,10 +42,17 @@ export type NotificationType =
   | "schedule_published"
   // Program signups
   | "signup_received"
+  | "signup_cancelled"
+  | "registration_confirmed" // family-side confirmation (tryout/camp/HL)
   | "tryout_unpublished"
   // Game changes
   | "game_cancelled"
   | "game_rescheduled"
+  | "game_final" // final score to team audiences
+  // League lifecycle
+  | "season_registration_open"
+  // Club announcements
+  | "announcement_posted"
   // Team chat (debounced — one unread bell per channel)
   | "team_chat"
   // Team polls & surveys (one bell per poll created)
@@ -59,6 +66,8 @@ export type NotificationType =
   | "payment_reminder"
   | "payment_receipt"
   | "payment_failed"
+  | "payment_refunded"
+  | "fee_waived"
   // League roster change flow
   | "roster_change_requested"
   | "roster_change_approved"
@@ -68,6 +77,7 @@ export type NotificationType =
   | "referee_request"
   | "referee_request_accepted"
   | "referee_request_declined"
+  | "referee_request_cancelled"
 
 export interface NotificationInput {
   userId: string

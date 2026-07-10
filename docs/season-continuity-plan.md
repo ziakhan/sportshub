@@ -167,14 +167,18 @@ over-send (org the user never wanted) and under-protect us legally.
 
 Order matters: 4 before 5 (never ship blast email without consent enforcement).
 
-## 8. Owner decision forks
+## 8. Owner decision forks — ✅ ALL DECIDED 2026-07-09
 
-1. Old team chat after archive: read-only immediately vs open 30 days? (rec: read-only)
-2. Carry-over offers: sent immediately from the wizard vs staged as drafts the club reviews?
-   (rec: drafts + one "send all" click)
-3. Express-consent checkbox default at registration: unchecked (strict CASL posture, rec) vs
-   pre-checked-implied-only.
-4. Platform-scope marketing (our own promos): build now with the same rail, or later?
-5. League audience: include club staff beyond Owner/Manager? (rec: no)
+1. Old team chat after archive: **read-only immediately**.
+2. Carry-over offers: **staged as drafts + one "Send all" click** (club reviews fees first).
+3. Express-consent checkbox: **unchecked** (strict CASL posture; implied consent still applies).
+4. Platform-scope marketing: **build now** — admin-side platform composer ships with the
+   club/league composer (phase 3), on the same consent rail (PLATFORM scope).
+5. League re-engagement audience: **Owners + Managers only** (no team staff).
+
+Related decisions from the same session: account deletion = soft-delete **keeping historical
+names** in past box scores/rosters; reviews = **relationship-gated + author edit/delete + admin
+moderation queue**; TenantFeatures = **wire a `hasFeature()` helper with all flags ON, no
+enforcement** until pricing launches.
 
 ⬅ [[_dashboard|Roadmap dashboard]] · related: [[editability-audit]] · [[feature-backlog]] · `docs/league-v2-plan.md`

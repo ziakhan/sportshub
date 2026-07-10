@@ -7,7 +7,7 @@ import {
   offerPackageSchema,
   OfferCreationError,
 } from "@/lib/offers/create-offer"
-import { sendOfferEmail } from "@/lib/email"
+import { sendOfferEmail, appBaseUrl } from "@/lib/email"
 import { audit } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
                 ? data.options.map((o) => ({ label: o.label, fee: o.seasonFee }))
                 : undefined,
             message: data.message,
-            offerLink: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/offers`,
+            offerLink: `${appBaseUrl()}/offers`,
           })
         })
       )

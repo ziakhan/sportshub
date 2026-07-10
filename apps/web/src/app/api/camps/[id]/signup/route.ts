@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { notifyMany } from "@/lib/notifications"
+import { format } from "date-fns"
+import { notifyMany, notifySafe } from "@/lib/notifications"
 import { ensureObligation } from "@/lib/payments/obligations"
+import { sendEmail, appBaseUrl, escapeHtml, formatMoney, transactionalFooter } from "@/lib/email"
+import { upsertImpliedConsent, grantExpressConsent } from "@/lib/comms/consent"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +14,8 @@ const signupSchema = z.object({
   playerId: z.string(),
   weeksSelected: z.number().min(1),
   notes: z.string().optional(),
+  // CASL express-consent checkbox from the public form.
+  marketingConsent: z.boolean().optional(),
 })
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -32,7 +37,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const camp = await (prisma as any).camp.findUnique({
       where: { id: params.id },
-      include: { tenant: { select: { currency: true } }, _count: { select: { signups: true } } },
+      include: {
+        tenant: { select: { name: true, currency: true } },
+        _count: { select: { signups: true } },
+      },
     })
 
     if (!camp || !camp.isPublished) {
@@ -112,6 +120,80 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         referenceType: "CampSignup",
       }
     )
+
+    // ── Family-side confirmation (gap: the paying family got nothing) ──
+    // All additive best-effort side-effects: never fail the registration.
+    const playerName = `${player.firstName} ${player.lastName}`
+    const clubName = camp.tenant?.name ?? "the club"
+    const currency = camp.tenant?.currency ?? "CAD"
+    const feeText = totalFee > 0 ? formatMoney(totalFee, currency) : "Free"
+    const dates = `${format(new Date(camp.startDate), "MMM d")} – ${format(new Date(camp.endDate), "MMM d, yyyy")}`
+    const weeksText = `${data.weeksSelected} week${data.weeksSelected > 1 ? "s" : ""}`
+
+    await notifySafe({
+      userId: sessionInfo.userId,
+      type: "registration_confirmed",
+      title: "You're registered!",
+      message: `${playerName} is registered for "${camp.name}" with ${clubName}.`,
+      link: "/dashboard",
+      referenceId: signup.id,
+      referenceType: "CampSignup",
+    })
+
+    try {
+      const parent = await prisma.user.findUnique({
+        where: { id: sessionInfo.userId },
+        select: { email: true },
+      })
+      if (parent?.email) {
+        await sendEmail({
+          to: parent.email,
+          subject: `Registration confirmed — ${camp.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>You're registered!</h2>
+              <p><strong>${escapeHtml(playerName)}</strong> is registered for <strong>${escapeHtml(camp.name)}</strong> with <strong>${escapeHtml(clubName)}</strong>.</p>
+              <p>
+                <strong>Dates:</strong> ${escapeHtml(dates)} (${escapeHtml(weeksText)})<br />
+                <strong>Daily hours:</strong> ${escapeHtml(camp.dailyStartTime)} – ${escapeHtml(camp.dailyEndTime)}<br />
+                <strong>Where:</strong> ${escapeHtml(camp.location)}<br />
+                <strong>Fee:</strong> ${escapeHtml(feeText)}
+              </p>
+              <p style="color: #666; font-size: 14px;">Payment and registration details are available on your dashboard.</p>
+              <p>
+                <a href="${appBaseUrl()}/dashboard" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+                  View Registration
+                </a>
+              </p>
+              ${transactionalFooter(clubName)}
+            </div>
+          `,
+        })
+      }
+    } catch (emailError) {
+      console.error("Camp confirmation email failed:", emailError)
+    }
+
+    // CASL: registration = existing business relationship (implied consent);
+    // the explicit checkbox upgrades it to express.
+    try {
+      await upsertImpliedConsent(
+        sessionInfo.userId,
+        "TENANT",
+        camp.tenantId,
+        `registration:camp:${params.id}`
+      )
+      if (data.marketingConsent === true) {
+        await grantExpressConsent(
+          sessionInfo.userId,
+          "TENANT",
+          camp.tenantId,
+          `checkbox:camp:${params.id}`
+        )
+      }
+    } catch (consentError) {
+      console.error("Camp consent capture failed:", consentError)
+    }
 
     return NextResponse.json({ success: true, id: signup.id, totalFee }, { status: 201 })
   } catch (error) {

@@ -44,6 +44,7 @@ export function CampSignupForm({
   const [playerId, setPlayerId] = useState("")
   const [weeksSelected, setWeeksSelected] = useState(numberOfWeeks)
   const [notes, setNotes] = useState("")
+  const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<{ playerName: string; total: number } | null>(null)
@@ -73,7 +74,7 @@ export function CampSignupForm({
       const res = await fetch(`/api/camps/${campId}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, weeksSelected, notes: notes || undefined }),
+        body: JSON.stringify({ playerId, weeksSelected, notes: notes || undefined, marketingConsent }),
       })
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))
@@ -209,6 +210,16 @@ export function CampSignupForm({
           placeholder="Allergies, level, anything the club should know..."
         />
       </div>
+
+      <label className="flex items-start gap-2 text-sm text-ink-600">
+        <input
+          type="checkbox"
+          checked={marketingConsent}
+          onChange={(e) => setMarketingConsent(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-ink-300"
+        />
+        <span>Email me about future programs from this club</span>
+      </label>
 
       <Button
         type="submit"

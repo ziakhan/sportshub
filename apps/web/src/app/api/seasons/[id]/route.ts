@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicSeason } from "@/lib/queries/season"
+import { notifyMany } from "@/lib/notifications"
+import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -320,6 +322,70 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: update,
       include: { league: { select: { id: true, name: true, description: true, ownerId: true } } },
     })
+
+    // Season just opened for registration → tell the league's returning clubs.
+    // Before this, opening a season notified no one; clubs found out by word of
+    // mouth. Recipients (owner decision — org-to-org business notice, Owners +
+    // Managers only): every user holding ClubOwner/ClubManager at a tenant that
+    // has a TeamSubmission in ANY OTHER season of this league. Bell + short
+    // email, deduped. Best-effort: runs after the update committed, and the
+    // state-machine guard above means body.status !== season.status here is a
+    // genuine forward transition.
+    if (body.status === "REGISTRATION" && season.status !== "REGISTRATION") {
+      try {
+        const leagueName: string = updated.league?.name ?? "The league"
+        const seasonLabel: string = updated.label ?? "New season"
+        const priorSubmissions = await prisma.teamSubmission.findMany({
+          where: { season: { leagueId: season.leagueId, id: { not: params.id } } },
+          select: { team: { select: { tenantId: true } } },
+        })
+        const tenantIds = Array.from(new Set(priorSubmissions.map((s) => s.team.tenantId)))
+        if (tenantIds.length > 0) {
+          const clubRoles = await prisma.userRole.findMany({
+            where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager"] } },
+            select: { userId: true, user: { select: { email: true } } },
+          })
+          const headline = `${leagueName} — ${seasonLabel} is open for team registration`
+
+          const recipientIds = Array.from(new Set(clubRoles.map((r) => r.userId)))
+          await notifyMany(prisma, recipientIds, {
+            type: "season_registration_open",
+            title: "Registration Open",
+            message: headline,
+            link: `/browse-leagues/${season.leagueId}`,
+            referenceId: params.id,
+            referenceType: "Season",
+          })
+
+          const emails = Array.from(
+            new Set(clubRoles.map((r) => r.user?.email).filter((e): e is string => !!e))
+          )
+          const registerLink = `${appBaseUrl()}/browse-leagues/${season.leagueId}`
+          const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Registration is open</h2>
+              <p><strong>${escapeHtml(leagueName)}</strong> is now accepting team registrations for <strong>${escapeHtml(seasonLabel)}</strong>.</p>
+              <p>Your club has participated in this league before — register early to secure your divisions.</p>
+              <p>
+                <a href="${registerLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+                  Register your teams
+                </a>
+              </p>
+              ${transactionalFooter(leagueName)}
+            </div>
+          `
+          for (const to of emails) {
+            try {
+              await sendEmail({ to, subject: headline, html })
+            } catch (mailErr) {
+              console.error("Registration-open email failed:", to, mailErr)
+            }
+          }
+        }
+      } catch (notifyErr) {
+        console.error("Registration-open fanout failed:", notifyErr)
+      }
+    }
 
     return NextResponse.json({
       success: true,

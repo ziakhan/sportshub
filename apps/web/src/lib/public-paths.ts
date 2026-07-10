@@ -31,10 +31,13 @@ const PUBLIC_PAGE_PREFIXES = [
   "/scores",
   "/for-clubs",
   "/for-leagues",
+  "/unsubscribed",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
 const PUBLIC_API_READ_PREFIXES = [
+  // One-click unsubscribe must work signed-out (CASL); token-authenticated.
+  "/api/comms/unsubscribe",
   "/api/house-leagues",
   "/api/camps",
   "/api/tryouts",

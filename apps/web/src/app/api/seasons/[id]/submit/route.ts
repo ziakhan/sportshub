@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canSubmitTeams, SUBMIT_CLOSED_MESSAGE } from "@/lib/seasons/season-lock"
 import { resolveRosterSelection } from "@/lib/seasons/roster-selection"
+import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         status: true,
         registrationDeadline: true,
         teamFee: true,
+        label: true,
+        league: { select: { id: true, name: true, ownerId: true } },
       } as any,
     })) as any
 
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const team = await prisma.team.findUnique({
       where: { id: data.teamId },
-      select: { id: true, name: true, tenantId: true },
+      select: { id: true, name: true, tenantId: true, tenant: { select: { name: true } } },
     })
     if (!team) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
@@ -168,6 +171,38 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         playerCount: teamPlayers.length,
       }
     })
+
+    // Bell the league's operators — before this, a club registering a team was
+    // invisible until the owner happened to open the manage page. Recipients:
+    // the league owner + anyone holding a league-scoped LeagueOwner/LeagueManager
+    // role, deduped. Bell only (no email). Best-effort — the submission stands
+    // even if the notification write hiccups.
+    try {
+      const leagueId: string | undefined = season.league?.id
+      if (leagueId) {
+        const leagueRoles = await prisma.userRole.findMany({
+          where: { leagueId, role: { in: ["LeagueOwner", "LeagueManager"] } },
+          select: { userId: true },
+        })
+        const recipientIds = Array.from(
+          new Set(
+            [season.league?.ownerId, ...leagueRoles.map((r) => r.userId)].filter(
+              (id): id is string => !!id
+            )
+          )
+        )
+        await notifyMany(prisma, recipientIds, {
+          type: "team_submitted",
+          title: "New Team Registration",
+          message: `${team.tenant?.name ?? "A club"} registered ${team.name} for ${season.label ?? "the season"}`,
+          link: `/manage/leagues/${leagueId}/seasons/${params.id}/manage`,
+          referenceId: result.leagueTeamId,
+          referenceType: "TeamSubmission",
+        })
+      }
+    } catch (notifyErr) {
+      console.error("Team-submitted bell failed:", notifyErr)
+    }
 
     return NextResponse.json(
       {

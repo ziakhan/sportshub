@@ -10,6 +10,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@/lib/email", () => ({
   sendOfferEmail: vi.fn(),
+  appBaseUrl: () => "http://localhost:3000",
 }))
 
 vi.mock("@youthbasketballhub/db", () => ({

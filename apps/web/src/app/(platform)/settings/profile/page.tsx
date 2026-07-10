@@ -193,6 +193,15 @@ export default function ProfileEditPage() {
             </button>
           </div>
         </form>
+
+        <div className="border-ink-100 mt-6 border-t pt-4">
+          <Link
+            href="/settings/communications"
+            className="text-play-600 hover:text-play-700 text-sm font-semibold"
+          >
+            Email preferences &rarr;
+          </Link>
+        </div>
       </div>
     </div>
   )

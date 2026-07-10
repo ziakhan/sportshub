@@ -435,3 +435,16 @@ Ships with the editability wave-2 commit (2026-07-09). Additive — one
 `vercel.json` adds a third cron: `/api/cron/expire-offers` daily 09:15
 (flips stale PENDING offers past `expiresAt` to EXPIRED). Uses the existing
 `CRON_SECRET` — no new env vars. Nothing to backfill.
+
+## 19. Communications & consent schema (NOT YET APPLIED to Neon)
+
+Ships with the phase-1 family-communications commit (2026-07-09). Additive —
+one `prisma db push`:
+- New model `CommunicationConsent` (per-org CASL consent: scope
+  PLATFORM/TENANT/LEAGUE, status EXPRESS/IMPLIED/WITHDRAWN, lastEngagedAt
+  window anchor; unique per user+scope+org)
+- New model `MessageLog` (audit log for marketing/broadcast sends)
+- New enums `ConsentScope`, `ConsentStatus`
+
+No env vars, no backfill. Unsubscribe tokens sign with the existing
+NEXTAUTH_SECRET.

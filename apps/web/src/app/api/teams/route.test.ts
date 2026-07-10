@@ -14,6 +14,7 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/email", () => ({
   sendStaffInviteEmail: vi.fn().mockResolvedValue(undefined),
+  appBaseUrl: () => "http://localhost:3000",
 }))
 
 vi.mock("@youthbasketballhub/db", () => ({

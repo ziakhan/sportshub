@@ -3,7 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { auditSafe } from "@/lib/audit"
 import { getSessionUserId } from "@/lib/auth-helpers"
-import { notify } from "@/lib/notifications"
+import { notify, notifySafe } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -57,6 +57,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         where: { id: req.id },
         data: { status: "CANCELLED", respondedAt: new Date() },
       })
+      // Tell the targeted referee the offer is gone — they may be holding the
+      // day for it. Broadcast offers (no target) skip: no individual referee
+      // was ever promised the day. notifySafe = best-effort, never throws.
+      if (req.targetUserId) {
+        await notifySafe({
+          userId: req.targetUserId,
+          type: "referee_request_cancelled",
+          title: "Session offer withdrawn",
+          message: `The ${new Date(req.sessionDay.date).toLocaleDateString()} session offer was withdrawn.`,
+          link: "/referee/requests",
+          referenceId: req.id,
+          referenceType: "RefereeSessionRequest",
+        })
+      }
       return NextResponse.json({ success: true, status: "CANCELLED" })
     }
 

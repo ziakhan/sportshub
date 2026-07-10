@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
     // staff-invite flow). Never fail team creation on email trouble.
     if (staffInviteEmails.length > 0) {
       try {
-        const { sendStaffInviteEmail } = await import("@/lib/email")
+        const { sendStaffInviteEmail, appBaseUrl } = await import("@/lib/email")
         const [inviterUser, tenantForEmail] = await Promise.all([
           prisma.user.findUnique({
             where: { id: userId },
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
           [inviterUser?.firstName, inviterUser?.lastName].filter(Boolean).join(" ") ||
           inviterUser?.email ||
           "A club admin"
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "http://localhost:3000"
+        const appUrl = appBaseUrl()
         await Promise.all(
           staffInviteEmails.map((e) =>
             sendStaffInviteEmail({

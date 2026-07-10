@@ -9,6 +9,8 @@ import {
 } from "@/lib/payments/obligations"
 import { merchantAccess } from "@/lib/payments/authz"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { notify } from "@/lib/notifications"
+import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +38,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         method: true,
         status: true,
         amount: true,
+        currency: true,
+        description: true,
+        payerId: true,
         refundedAt: true,
         obligationId: true,
         stripePaymentIntentId: true,
@@ -103,6 +108,54 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         },
       })
       if (payment.obligationId) await recomputeObligationStatus(prisma, payment.obligationId)
+
+      // Payer notice — best-effort, the refund already succeeded. The
+      // charge.refunded webhook skips its own notice when refundAmount is
+      // already recorded, so this doesn't double-send.
+      if (payment.payerId) {
+        const money = formatMoney(amount, payment.currency)
+        try {
+          await notify(prisma, {
+            userId: payment.payerId,
+            type: "payment_refunded",
+            title: "Payment refunded",
+            message: `${payment.description ?? "Payment"} — ${money} refunded to your card.`,
+            link: "/payments",
+            referenceId: payment.id,
+            referenceType: "Payment",
+          })
+        } catch (e) {
+          console.error("refund bell notification failed:", e)
+        }
+        try {
+          const orgId = payment.tenantId ?? payment.obligation?.payeeTenantId ?? null
+          const [payer, tenant] = await Promise.all([
+            prisma.user.findUnique({
+              where: { id: payment.payerId },
+              select: { email: true },
+            }),
+            orgId
+              ? prisma.tenant.findUnique({ where: { id: orgId }, select: { name: true } })
+              : Promise.resolve(null),
+          ])
+          if (payer?.email) {
+            await sendEmail({
+              to: payer.email,
+              subject: `Refund issued — ${money}${tenant?.name ? ` from ${tenant.name}` : ""}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>Refund issued</h2>
+                  <p>${tenant?.name ? `<strong>${escapeHtml(tenant.name)}</strong>` : "The organization"} refunded <strong>${money}</strong>${payment.description ? ` for ${escapeHtml(payment.description)}` : ""} to your original payment method. It can take 5&ndash;10 business days to appear on your statement.</p>
+                  <p><a href="${appBaseUrl()}/payments">View your payments</a></p>
+                  ${transactionalFooter(tenant?.name)}
+                </div>`,
+            })
+          }
+        } catch (e) {
+          console.error("refund email failed:", e)
+        }
+      }
+
       return NextResponse.json({
         status: updated.status,
         refundAmount: Number(updated.refundAmount),

@@ -135,6 +135,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const { staffToAdd, staffToRemove, ...teamData } = validatedData
 
+    // Collected during the transaction, delivered after it commits (mirrors
+    // POST /api/teams — the edit path previously created the invitation +
+    // bell but never emailed the invitee).
+    const staffInviteEmails: Array<{ email: string; roleLabel: string; invitationId: string }> = []
+
     // Run everything in a transaction
     const result = await prisma.$transaction(async (tx: any) => {
       // 1. Update team details (if any fields provided)
@@ -233,19 +238,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
               },
             })
 
+            const roleLabel =
+              entry.designation === "HeadCoach"
+                ? "Head Coach"
+                : entry.designation === "AssistantCoach"
+                  ? "Assistant Coach"
+                  : entry.role === "TeamManager"
+                    ? "Team Manager"
+                    : entry.role
+
+            // Queue an email for every invite (existing or brand-new account)
+            // — sent after the transaction commits.
+            staffInviteEmails.push({
+              email: normalizedEmail,
+              roleLabel,
+              invitationId: invitation.id,
+            })
+
             if (invitedUser) {
               const tenant = await tx.tenant.findUnique({
                 where: { id: team.tenantId },
                 select: { name: true },
               })
-              const roleLabel =
-                entry.designation === "HeadCoach"
-                  ? "Head Coach"
-                  : entry.designation === "AssistantCoach"
-                    ? "Assistant Coach"
-                    : entry.role === "TeamManager"
-                      ? "Team Manager"
-                      : entry.role
 
               await notify(tx, {
                 userId: invitedUser.id,
@@ -275,6 +289,42 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         },
       })
     })
+
+    // Deliver staff-invite emails outside the transaction (mirrors the
+    // create-team and club staff-invite flows). Never fail the team edit on
+    // email trouble.
+    if (staffInviteEmails.length > 0) {
+      try {
+        const { sendStaffInviteEmail, appBaseUrl } = await import("@/lib/email")
+        const [inviterUser, tenantForEmail] = await Promise.all([
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { firstName: true, lastName: true, email: true },
+          }),
+          prisma.tenant.findUnique({
+            where: { id: team.tenantId },
+            select: { name: true },
+          }),
+        ])
+        const inviterName =
+          [inviterUser?.firstName, inviterUser?.lastName].filter(Boolean).join(" ") ||
+          inviterUser?.email ||
+          "A club admin"
+        await Promise.all(
+          staffInviteEmails.map((e) =>
+            sendStaffInviteEmail({
+              to: e.email,
+              clubName: tenantForEmail?.name || "the club",
+              role: e.roleLabel,
+              inviterName,
+              inviteLink: `${appBaseUrl()}/invitations/${e.invitationId}/accept`,
+            })
+          )
+        )
+      } catch (emailError) {
+        console.error("Failed to send team staff-invite emails:", emailError)
+      }
+    }
 
     return NextResponse.json(result)
   } catch (error) {

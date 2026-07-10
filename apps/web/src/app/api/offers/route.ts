@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         select: { email: true, firstName: true },
       })
       if (parent?.email) {
-        const { sendOfferEmail } = await import("@/lib/email")
+        const { sendOfferEmail, appBaseUrl } = await import("@/lib/email")
         await sendOfferEmail({
           to: parent.email,
           parentName: parent.firstName || "Parent",
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
               ? data.options.map((o) => ({ label: o.label, fee: o.seasonFee }))
               : undefined,
           message: data.message,
-          offerLink: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/offers`,
+          offerLink: `${appBaseUrl()}/offers`,
         })
       }
     } catch (emailError) {

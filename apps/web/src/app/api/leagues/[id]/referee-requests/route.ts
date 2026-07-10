@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { notifyMany } from "@/lib/notifications"
+import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -178,6 +179,44 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       referenceId: created.id,
       referenceType: "RefereeSessionRequest",
     })
+
+    // Session offers are time-sensitive (broadcasts are first-accept-wins), so
+    // a bell alone is easy to miss — email every offered referee too.
+    // Best-effort: the offer stands even if email delivery hiccups.
+    try {
+      const referees = await prisma.user.findMany({
+        where: { id: { in: notifyIds } },
+        select: { email: true },
+      })
+      const windowLabel = `${data.startTime}–${data.endTime}`
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>${escapeHtml(league.name)} needs a referee</h2>
+          <p><strong>${escapeHtml(dateLabel)}</strong>${day.session.label ? ` (${escapeHtml(day.session.label)})` : ""} — <strong>${windowLabel}</strong>.</p>
+          ${data.targetUserId ? "" : "<p>This offer went to the whole referee pool — first to accept gets the day.</p>"}
+          ${data.message ? `<p style="padding: 12px; background: #f5f5f5; border-radius: 6px; font-style: italic;">"${escapeHtml(data.message)}"</p>` : ""}
+          <p>
+            <a href="${appBaseUrl()}/referee/requests" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+              View &amp; respond
+            </a>
+          </p>
+          ${transactionalFooter(league.name)}
+        </div>
+      `
+      await Promise.allSettled(
+        referees
+          .filter((r: { email: string | null }) => !!r.email)
+          .map((r: { email: string | null }) =>
+            sendEmail({
+              to: r.email as string,
+              subject: `${league.name} needs a referee — ${dateLabel}, ${windowLabel}`,
+              html,
+            })
+          )
+      )
+    } catch (emailError) {
+      console.error("Failed to send referee session-offer emails:", emailError)
+    }
 
     return NextResponse.json({ success: true, requestId: created.id, notified: notifyIds.length }, { status: 201 })
   } catch (error) {

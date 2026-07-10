@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { recomputeObligationStatus } from "@/lib/payments/obligations"
-import { sendEmail } from "@/lib/email"
+import { appBaseUrl, escapeHtml, formatMoney, sendEmail } from "@/lib/email"
 import { notify } from "@/lib/notifications"
 
 /**
@@ -65,12 +65,12 @@ async function onInvoicePaid(invoice: {
 
   // Receipt to the payer
   if (payment.payerId) {
-    const amount = Number(payment.amount)
+    const money = formatMoney(Number(payment.amount), payment.currency)
     await notify(prisma, {
       userId: payment.payerId,
       type: "payment_receipt",
       title: "Payment received",
-      message: `${payment.description ?? "Installment"} — $${amount.toFixed(2)} paid. Thank you!`,
+      message: `${payment.description ?? "Installment"} — ${money} paid. Thank you!`,
       link: "/payments",
       referenceId: payment.id,
       referenceType: "Payment",
@@ -82,8 +82,8 @@ async function onInvoicePaid(invoice: {
     if (user?.email) {
       await sendEmail({
         to: user.email,
-        subject: `Payment received — $${amount.toFixed(2)}`,
-        html: `<p>We received your payment of <strong>$${amount.toFixed(2)}</strong>${payment.description ? ` (${payment.description})` : ""}. Thanks!</p><p><a href="${process.env.NEXTAUTH_URL || ""}/payments">View your payments</a></p>`,
+        subject: `Payment received — ${money}`,
+        html: `<p>We received your payment of <strong>${money}</strong>${payment.description ? ` (${payment.description})` : ""}. Thanks!</p><p><a href="${appBaseUrl()}/payments">View your payments</a></p>`,
       }).catch(() => {})
     }
   }
@@ -99,12 +99,12 @@ async function onInvoicePaymentFailed(invoice: { id: string }): Promise<HandledR
   // its dunning drive recovery. Keep the row PENDING so a later retry can
   // still settle it (don't hard-FAIL a retryable invoice).
   if (payment.payerId) {
-    const amount = Number(payment.amount)
+    const money = formatMoney(Number(payment.amount), payment.currency)
     await notify(prisma, {
       userId: payment.payerId,
       type: "payment_failed",
       title: "Payment didn't go through",
-      message: `${payment.description ?? "Installment"} — $${amount.toFixed(2)} couldn't be charged. We'll retry; you can also update your card.`,
+      message: `${payment.description ?? "Installment"} — ${money} couldn't be charged. We'll retry; you can also update your card.`,
       link: "/payments",
       referenceId: payment.id,
       referenceType: "Payment",
@@ -116,8 +116,8 @@ async function onInvoicePaymentFailed(invoice: { id: string }): Promise<HandledR
     if (user?.email) {
       await sendEmail({
         to: user.email,
-        subject: `Payment failed — $${amount.toFixed(2)}`,
-        html: `<p>We couldn't charge your card for <strong>$${amount.toFixed(2)}</strong>${payment.description ? ` (${payment.description})` : ""}. We'll automatically retry, or you can update your card and pay now: <a href="${process.env.NEXTAUTH_URL || ""}/settings/payments">manage cards</a> · <a href="${process.env.NEXTAUTH_URL || ""}/payments">my payments</a>.</p>`,
+        subject: `Payment failed — ${money}`,
+        html: `<p>We couldn't charge your card for <strong>${money}</strong>${payment.description ? ` (${payment.description})` : ""}. We'll automatically retry, or you can update your card and pay now: <a href="${appBaseUrl()}/settings/payments">manage cards</a> · <a href="${appBaseUrl()}/payments">my payments</a>.</p>`,
       }).catch(() => {})
     }
   }
@@ -177,6 +177,7 @@ async function onChargeRefunded(charge: {
 
   const refunded = charge.amount_refunded / 100
   const fully = charge.amount_refunded >= charge.amount
+  const previouslyRefunded = Number(payment.refundAmount ?? 0)
   await prisma.payment.update({
     where: { id: payment.id },
     data: {
@@ -188,6 +189,34 @@ async function onChargeRefunded(charge: {
     },
   })
   if (payment.obligationId) await recomputeObligationStatus(prisma, payment.obligationId)
+
+  // Payer notice — only when this event actually adds refunded money. The
+  // refund route applies the same refund optimistically (and webhooks
+  // re-deliver), so an unchanged refundAmount means it was already announced.
+  const newlyRefunded = refunded - previouslyRefunded
+  if (payment.payerId && newlyRefunded > 0.001) {
+    const money = formatMoney(newlyRefunded, payment.currency)
+    await notify(prisma, {
+      userId: payment.payerId,
+      type: "payment_refunded",
+      title: "Payment refunded",
+      message: `${payment.description ?? "Payment"} — ${money} refunded to your card.`,
+      link: "/payments",
+      referenceId: payment.id,
+      referenceType: "Payment",
+    }).catch(() => {})
+    const user = await prisma.user.findUnique({
+      where: { id: payment.payerId },
+      select: { email: true },
+    })
+    if (user?.email) {
+      await sendEmail({
+        to: user.email,
+        subject: `Refund issued — ${money}`,
+        html: `<p>A refund of <strong>${money}</strong>${payment.description ? ` (${escapeHtml(payment.description)})` : ""} has been issued to your original payment method. It can take 5&ndash;10 business days to appear on your statement.</p><p><a href="${appBaseUrl()}/payments">View your payments</a></p>`,
+      }).catch(() => {})
+    }
+  }
   return { handled: true }
 }
 

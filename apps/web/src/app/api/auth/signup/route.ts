@@ -4,12 +4,14 @@ import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notifyBatch } from "@/lib/notifications"
+import { grantExpressConsent } from "@/lib/comms/consent"
 
 const signupSchema = z.object({
   email: normalizedEmailSchema("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+  platformMarketingConsent: z.boolean().optional(),
 })
 
 export async function POST(request: Request) {
@@ -46,6 +48,16 @@ export async function POST(request: Request) {
         status: "ACTIVE",
       },
     })
+
+    // Explicit opt-in checkbox → platform-scope EXPRESS marketing consent.
+    // Best-effort: a consent write must never fail the signup itself.
+    if (data.platformMarketingConsent === true) {
+      try {
+        await grantExpressConsent(user.id, "PLATFORM", null, "checkbox:signup")
+      } catch (consentErr) {
+        console.error("Signup platform-consent error:", consentErr)
+      }
+    }
 
     // Attach any pending StaffInvitations sent to this email so the new user
     // can find and accept them. Without this, invitations to fresh emails

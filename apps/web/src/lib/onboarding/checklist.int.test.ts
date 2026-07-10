@@ -162,7 +162,9 @@ describe("getCompletionChecklist — league owner journey", () => {
     expect(step(c.steps, "league-create").done).toBe(true)
     expect(step(c.steps, "league-season").done).toBe(false)
     expect(step(c.steps, "league-divisions").done).toBe(false)
-    expect(step(c.steps, "league-season").href).toBe(`/manage/leagues/${league.id}/seasons`)
+    // The /seasons index route does not exist (gap-audit 2026-07-09) — the
+    // step now points at the league detail page, where seasons are created.
+    expect(step(c.steps, "league-season").href).toBe(`/manage/leagues/${league.id}`)
   })
 
   it("checks season + divisions once a season with a division exists", async () => {

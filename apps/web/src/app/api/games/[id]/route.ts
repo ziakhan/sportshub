@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany, type NotificationType } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
+import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -13,14 +14,17 @@ export const dynamic = "force-dynamic"
  * This is the phone tree the platform replaces: the league changes the game
  * once, and every family is notified automatically (no club→coach→WhatsApp
  * relay). League owners already know (they did it), so they're not re-notified.
+ *
+ * Takes the pre-fetched audience so the bell fanout and the email fanout
+ * (below) hit exactly the same recipients from one audience query.
  */
 async function notifyGameAudience(
-  game: { id: string; seasonId: string | null; homeTeamId: string; awayTeamId: string },
+  game: { id: string; seasonId: string | null },
+  userIds: string[],
   type: NotificationType,
   title: string,
   message: string
 ) {
-  const userIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
   await notifyMany(prisma, userIds, {
     type,
     title,
@@ -31,8 +35,57 @@ async function notifyGameAudience(
   })
 }
 
+/**
+ * Email the same audience the bell reached. Bells alone weren't enough for
+ * game changes — families drove to cancelled games (comms gap-audit phase 1).
+ * Entirely best-effort: an SMTP hiccup must never fail the PATCH/DELETE, so
+ * both the recipient lookup and every individual send are try/caught.
+ */
+async function emailGameAudience(
+  userIds: string[],
+  subject: string,
+  heading: string,
+  bodyHtml: string,
+  gameId: string,
+  orgName?: string | null
+) {
+  try {
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { email: true },
+    })
+    const emails = Array.from(
+      new Set(users.map((u) => u.email).filter((e): e is string => !!e))
+    )
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>${heading}</h2>
+        ${bodyHtml}
+        <p>
+          <a href="${appBaseUrl()}/live/${gameId}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
+            View game details
+          </a>
+        </p>
+        ${transactionalFooter(orgName ?? undefined)}
+      </div>
+    `
+    for (const to of emails) {
+      try {
+        await sendEmail({ to, subject, html })
+      } catch (mailErr) {
+        console.error("Game-change email failed:", to, mailErr)
+      }
+    }
+  } catch (mailErr) {
+    console.error("Game-change email fanout failed:", mailErr)
+  }
+}
+
 const matchupLabel = (g: { homeTeam?: { name?: string }; awayTeam?: { name?: string } }) =>
   `${g.homeTeam?.name ?? "Home"} vs ${g.awayTeam?.name ?? "Away"}`
+
+const fmtWhen = (d: Date | string) =>
+  new Date(d).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })
 
 const patchSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
@@ -55,7 +108,9 @@ async function loadGameWithOwner(gameId: string) {
   return (await (prisma as any).game.findUnique({
     where: { id: gameId },
     include: {
-      season: { select: { id: true, status: true, league: { select: { ownerId: true } } } },
+      season: {
+        select: { id: true, status: true, league: { select: { ownerId: true, name: true } } },
+      },
     },
   })) as any
 }
@@ -200,6 +255,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data.status !== undefined &&
       ["CANCELLED", "POSTPONED"].includes(data.status) &&
       game.status !== data.status
+    const becameDefaulted = data.status === "DEFAULTED" && game.status !== "DEFAULTED"
     const timeChanged =
       data.scheduledAt !== undefined &&
       new Date(data.scheduledAt).getTime() !== new Date(game.scheduledAt).getTime()
@@ -207,19 +263,81 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       (data.venueId !== undefined && data.venueId !== game.venueId) ||
       (data.courtId !== undefined && data.courtId !== game.courtId)
 
+    const leagueName: string | null = game.season?.league?.name ?? null
+    const matchup = matchupLabel(updated)
+    const matchupHtml = `${escapeHtml(updated.homeTeam?.name ?? "Home")} vs ${escapeHtml(updated.awayTeam?.name ?? "Away")}`
+    const whereHtml = `${updated.venue?.name ? ` at ${escapeHtml(updated.venue.name)}` : ""}${updated.court?.name ? ` (${escapeHtml(updated.court.name)})` : ""}`
+
     if (becameInactive) {
+      const verb = data.status === "POSTPONED" ? "postponed" : "cancelled"
+      const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
       await notifyGameAudience(
         game,
+        audienceUserIds,
         "game_cancelled",
         data.status === "POSTPONED" ? "Game Postponed" : "Game Cancelled",
-        `${matchupLabel(updated)} on ${new Date(game.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })} has been ${data.status === "POSTPONED" ? "postponed" : "cancelled"} by the league.`
+        `${matchup} on ${fmtWhen(game.scheduledAt)} has been ${verb} by the league.`
       )
-    } else if ((timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
+      await emailGameAudience(
+        audienceUserIds,
+        `Game ${verb}: ${matchup}`,
+        `Game ${data.status === "POSTPONED" ? "Postponed" : "Cancelled"}`,
+        `<p><strong>${matchupHtml}</strong>, scheduled for <strong>${fmtWhen(game.scheduledAt)}</strong>${whereHtml}, has been ${verb} by the league.</p>
+         <p>This game will not be played as scheduled — please do not travel to the venue.${data.status === "POSTPONED" ? " A new time will be announced." : ""}</p>`,
+        game.id,
+        leagueName
+      )
+    } else if (becameDefaulted) {
+      // A forfeit ends the matchup just like a cancellation — previously this
+      // status change notified NOBODY and families showed up to a dead game.
+      const defaultedById = data.defaultedBy !== undefined ? data.defaultedBy : game.defaultedBy
+      const forfeiter =
+        defaultedById === updated.homeTeam?.id
+          ? updated.homeTeam
+          : defaultedById === updated.awayTeam?.id
+            ? updated.awayTeam
+            : null
+      const winner =
+        forfeiter && forfeiter.id === updated.homeTeam?.id ? updated.awayTeam : updated.homeTeam
+      const forfeitText =
+        forfeiter && winner
+          ? `${forfeiter.name} forfeited; ${winner.name} is awarded the game.`
+          : `${matchup} has been recorded as a forfeit.`
+      const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
       await notifyGameAudience(
         game,
+        audienceUserIds,
+        "game_cancelled",
+        "Game Forfeited",
+        `${matchup} on ${fmtWhen(game.scheduledAt)}: ${forfeitText}`
+      )
+      await emailGameAudience(
+        audienceUserIds,
+        `Game forfeited: ${matchup}`,
+        "Game Forfeited",
+        `<p><strong>${matchupHtml}</strong>, scheduled for <strong>${fmtWhen(game.scheduledAt)}</strong>${whereHtml}, will not be played.</p>
+         <p>${escapeHtml(forfeitText)}</p>`,
+        game.id,
+        leagueName
+      )
+    } else if ((timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
+      const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
+      await notifyGameAudience(
+        game,
+        audienceUserIds,
         "game_rescheduled",
         "Game Rescheduled",
-        `${matchupLabel(updated)} has moved to ${new Date(updated.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })}${updated.venue?.name ? ` at ${updated.venue.name}` : ""}${updated.court?.name ? ` (${updated.court.name})` : ""}.`
+        `${matchup} has moved to ${fmtWhen(updated.scheduledAt)}${updated.venue?.name ? ` at ${updated.venue.name}` : ""}${updated.court?.name ? ` (${updated.court.name})` : ""}.`
+      )
+      await emailGameAudience(
+        audienceUserIds,
+        `Game rescheduled: ${matchup}`,
+        "Game Rescheduled",
+        `<p><strong>${matchupHtml}</strong> has been rescheduled.</p>
+         <p>Previously: ${fmtWhen(game.scheduledAt)}<br />
+         New time: <strong>${fmtWhen(updated.scheduledAt)}</strong>${whereHtml}</p>`,
+        game.id,
+        leagueName
       )
     }
 
@@ -264,11 +382,22 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
     })
 
     if (game.status !== "CANCELLED") {
+      const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
       await notifyGameAudience(
         game,
+        audienceUserIds,
         "game_cancelled",
         "Game Cancelled",
-        `${matchupLabel(updated)} on ${new Date(game.scheduledAt).toLocaleString("en-CA", { dateStyle: "medium", timeStyle: "short" })} has been cancelled by the league.`
+        `${matchupLabel(updated)} on ${fmtWhen(game.scheduledAt)} has been cancelled by the league.`
+      )
+      await emailGameAudience(
+        audienceUserIds,
+        `Game cancelled: ${matchupLabel(updated)}`,
+        "Game Cancelled",
+        `<p><strong>${escapeHtml(updated.homeTeam?.name ?? "Home")} vs ${escapeHtml(updated.awayTeam?.name ?? "Away")}</strong>, scheduled for <strong>${fmtWhen(game.scheduledAt)}</strong>, has been cancelled by the league.</p>
+         <p>This game will not be played — please do not travel to the venue.</p>`,
+        game.id,
+        game.season?.league?.name ?? null
       )
     }
 

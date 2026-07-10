@@ -2553,3 +2553,68 @@ model TournamentVenue {
   @@unique([tournamentId, venueId])
   @@index([tournamentId])
 }
+
+// ============================================
+// COMMUNICATIONS & CONSENT (CASL) — 2026-07-09
+// ============================================
+
+enum ConsentScope {
+  PLATFORM
+  TENANT
+  LEAGUE
+}
+
+enum ConsentStatus {
+  EXPRESS // explicit checkbox — durable until withdrawn
+  IMPLIED // existing business relationship (registration/purchase) — ~2y window
+  WITHDRAWN
+}
+
+/// Marketing-email consent, scoped PER SENDING ORG (CASL: the sender is the
+/// club/league, not the platform). Transactional email is out of scope here.
+/// Bare ids (no FK relations) by design — consent must survive org deletion.
+model CommunicationConsent {
+  id     String @id @default(uuid())
+  userId String
+
+  scope    ConsentScope
+  tenantId String? // set when scope=TENANT
+  leagueId String? // set when scope=LEAGUE
+
+  status ConsentStatus
+  source String // e.g. "registration:camp:<id>" | "checkbox:signup" | "unsubscribe-link"
+
+  /// Rolls forward on each new registration — anchors the implied-consent window.
+  lastEngagedAt DateTime @default(now())
+  withdrawnAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scope, tenantId, leagueId])
+  @@index([userId])
+  @@index([tenantId])
+  @@index([leagueId])
+}
+
+/// Audit log for every marketing/broadcast send (composer ships phase 3, the
+/// log exists from day one so nothing ever sends unrecorded).
+model MessageLog {
+  id       String  @id @default(uuid())
+  senderId String // user who triggered the send
+  scope    ConsentScope
+  tenantId String?
+  leagueId String?
+
+  audience       String // computed-audience descriptor, e.g. "team:<id>:families"
+  subject        String
+  body           String @db.Text
+  recipientCount Int
+  suppressedCount Int   @default(0) // recipients skipped for lack of consent
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([leagueId])
+  @@index([senderId])
+}

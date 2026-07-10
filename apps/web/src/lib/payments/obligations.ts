@@ -9,6 +9,10 @@
  * Pass the transaction client where the product action is transactional.
  */
 
+import { prisma } from "@youthbasketballhub/db"
+import { notify } from "@/lib/notifications"
+import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
+
 export class ObligationError extends Error {
   constructor(
     message: string,
@@ -140,6 +144,72 @@ async function syncReferenceStatus(db: any, obligation: { referenceType: string;
   }
 }
 
+const OFFLINE_METHOD_LABELS: Record<string, string> = {
+  CASH: "cash",
+  ETRANSFER: "e-transfer",
+  CHEQUE: "cheque",
+  OTHER: "offline",
+}
+
+/**
+ * Best-effort payer notice (bell + email) for money events — offline receipts,
+ * refunds, waives. The bell is written with the caller's client so it commits
+ * atomically with the money action; the email (and its user/tenant lookups)
+ * runs fire-and-forget on the global client because recordOfflinePayment /
+ * refundOfflinePayment execute inside route transactions and an SMTP stall
+ * must never hold a money transaction open. Never throws.
+ */
+async function notifyPayer(
+  db: any,
+  input: {
+    payerUserId: string | null | undefined
+    payeeTenantId: string | null | undefined
+    type: "payment_receipt" | "payment_refunded" | "fee_waived"
+    title: string
+    message: string
+    referenceId: string
+    referenceType: string
+    emailSubject: string
+    /** Already-escaped HTML paragraph(s); payments link + footer are appended. */
+    emailBodyHtml: string
+  }
+): Promise<void> {
+  if (!input.payerUserId) return
+  const payerUserId = input.payerUserId
+  try {
+    await notify(db, {
+      userId: payerUserId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      link: "/payments",
+      referenceId: input.referenceId,
+      referenceType: input.referenceType,
+    })
+  } catch (error) {
+    console.error("payer notification failed:", input.type, error)
+  }
+  void (async () => {
+    const [user, tenant] = await Promise.all([
+      prisma.user.findUnique({ where: { id: payerUserId }, select: { email: true } }),
+      input.payeeTenantId
+        ? prisma.tenant.findUnique({ where: { id: input.payeeTenantId }, select: { name: true } })
+        : Promise.resolve(null),
+    ])
+    if (!user?.email) return
+    await sendEmail({
+      to: user.email,
+      subject: input.emailSubject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          ${input.emailBodyHtml}
+          <p><a href="${appBaseUrl()}/payments">View your payments</a></p>
+          ${transactionalFooter(tenant?.name)}
+        </div>`,
+    })
+  })().catch((error) => console.error("payer email failed:", input.type, error))
+}
+
 export interface RecordOfflinePaymentInput {
   obligationId: string
   amount: number
@@ -191,6 +261,22 @@ export async function recordOfflinePayment(db: any, input: RecordOfflinePaymentI
     },
   })
   await recomputeObligationStatus(db, obligation.id)
+
+  // Receipt to the payer — offline money moved silently before this.
+  const money = formatMoney(input.amount, obligation.currency)
+  const methodLabel = OFFLINE_METHOD_LABELS[input.method] ?? "offline"
+  await notifyPayer(db, {
+    payerUserId: obligation.payerUserId,
+    payeeTenantId: obligation.payeeTenantId,
+    type: "payment_receipt",
+    title: "Payment received",
+    message: `${obligation.description} — ${money} received (${methodLabel}). Thank you!`,
+    referenceId: payment.id,
+    referenceType: "Payment",
+    emailSubject: `Payment received — ${money}`,
+    emailBodyHtml: `<p>We received your ${methodLabel} payment of <strong>${money}</strong> for ${escapeHtml(obligation.description)}. Thank you!</p>`,
+  })
+
   return payment
 }
 
@@ -213,6 +299,20 @@ export async function waiveObligation(
     data: { status: "WAIVED", waivedAt: new Date(), waivedReason: input.reason ?? null },
   })
   await syncReferenceStatus(db, updated)
+
+  // Tell the payer — a waived fee is good news that used to arrive silently.
+  await notifyPayer(db, {
+    payerUserId: obligation.payerUserId,
+    payeeTenantId: obligation.payeeTenantId,
+    type: "fee_waived",
+    title: "Fee waived",
+    message: `${obligation.description} — this fee was waived. No further payment is due.`,
+    referenceId: obligation.id,
+    referenceType: "PaymentObligation",
+    emailSubject: "Your fee was waived",
+    emailBodyHtml: `<p><strong>${escapeHtml(obligation.description)}</strong> — this fee was waived. No further payment is due.</p>`,
+  })
+
   return updated
 }
 
@@ -257,6 +357,21 @@ export async function refundOfflinePayment(
     data: { status: "REFUNDED", refundedAt: new Date(), refundAmount: amount },
   })
   if (payment.obligationId) await recomputeObligationStatus(db, payment.obligationId)
+
+  // Tell the payer their money came back (recorded, handed back off-platform).
+  const money = formatMoney(amount, payment.currency)
+  await notifyPayer(db, {
+    payerUserId: payment.payerId,
+    payeeTenantId: payment.tenantId,
+    type: "payment_refunded",
+    title: "Payment refunded",
+    message: `${payment.description ?? "Payment"} — ${money} refunded.`,
+    referenceId: payment.id,
+    referenceType: "Payment",
+    emailSubject: `Refund recorded — ${money}`,
+    emailBodyHtml: `<p>A refund of <strong>${money}</strong>${payment.description ? ` for ${escapeHtml(payment.description)}` : ""} was recorded. This amount was returned to you outside the platform (e.g. cash or e-transfer).</p>`,
+  })
+
   return updated
 }
 

@@ -137,10 +137,10 @@ export async function POST(request: NextRequest) {
 
     // Send the email invite (don't fail the request if email fails)
     try {
-      const { sendPlayerInviteEmail } = await import("@/lib/email")
+      const { sendPlayerInviteEmail, appBaseUrl } = await import("@/lib/email")
       const inviterName =
         [inviter.firstName, inviter.lastName].filter(Boolean).join(" ") || inviter.email
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+      const baseUrl = appBaseUrl()
       // Always land on the invite's accept page. A brand-new recipient goes
       // through sign-up first, carrying the accept page as callbackUrl so signup
       // → onboarding threads them straight back here (invitation continuity).
