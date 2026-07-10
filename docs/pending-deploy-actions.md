@@ -466,3 +466,22 @@ Ships with the phase-3 continuity commit (2026-07-09). Additive — one
   lineage for the rollover wizard)
 
 No env vars, no backfill.
+
+## ⬜ 21. Native auth (M2) — RefreshToken table + AUTH_TOKEN_SECRET env
+
+Ships with the M2 native-auth commit (2026-07-10,
+`docs/roadmap/native-app-execution-plan.md`). Additive — one `prisma db push`:
+- New model `RefreshToken` (userId FK cascade, `tokenHash` sha256 unique,
+  `familyId` rotation lineage, `deviceLabel`, `expiresAt` 60d, `revokedAt`,
+  `lastUsedAt`; indexes on userId + familyId)
+
+**Vercel env: add `AUTH_TOKEN_SECRET`** (strong random string, e.g.
+`openssl rand -base64 32`). Signs the 15-min bearer access JWTs
+(`POST /api/auth/token|refresh|revoke`) and — from M1 — realtime socket
+tickets. **Must be the same value on the Railway sidecar** (it verifies
+socket handshakes with it). Without it, the endpoints fail closed: bearer
+requests answer 401, web session auth is unaffected.
+
+Nothing to backfill (table starts empty; rows are created on native-app
+sign-in). Verify: `SELECT count(*) FROM "RefreshToken";` returns 0 and a
+curl `POST /api/auth/token` with a prod account returns a token pair.

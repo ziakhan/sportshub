@@ -94,7 +94,17 @@ Family Pass entitlement UI · rebuilding the scoring console in RN (webview only
 demo-world game scored on a tablet updates `/scores` and the game page with no reload;
 sidecar killed mid-demo → polling silently takes over; Playwright test for both paths.*
 
-## M2 — Native auth (bearer tokens beside NextAuth v4)
+## M2 — Native auth (bearer tokens beside NextAuth v4) — ✅ SHIPPED 2026-07-10
+
+> Built as specced below (runbook **#21**; local db pushed, Neon pending).
+> Files: `lib/native-auth-tokens.ts` (edge-safe JWT, `token_use=access` claim
+> so M1 socket tickets can never be replayed as API creds),
+> `lib/native-auth.ts` (hashed refresh store, atomic-claim rotation),
+> `lib/rate-limit.ts`, `api/auth/token|refresh|revoke`, bearer paths in
+> `getSessionUserId()` + middleware (edge-verified, fail-closed — an invalid
+> Bearer never falls back to the session cookie). 11 unit + 13 int tests
+> (seed 1131) + live-verified: login → bearer `/api/notifications` through
+> real middleware → rotation → replay kills family → revoke-all.
 
 - **Schema (runbook #21):** `RefreshToken` — id, `userId`, `tokenHash` (sha256), `familyId`
   (rotation lineage), `deviceLabel`, `expiresAt` (60d), `revokedAt`, `createdAt`,

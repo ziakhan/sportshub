@@ -1,8 +1,9 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "./auth"
 import { prisma } from "@youthbasketballhub/db"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { cache } from "./queries/request-cache"
+import { bearerToken, verifyAccessToken } from "./native-auth-tokens"
 
 const IMPERSONATE_COOKIE = "admin-impersonate-uid"
 
@@ -75,6 +76,30 @@ export async function getSessionUserId(): Promise<{
   realUserId: string
   isPlatformAdmin: boolean
 } | null> {
+  // Native-app bearer path (M2): an explicit Authorization header wins over
+  // any session cookie, and an invalid one fails loudly (null → 401) rather
+  // than falling through — the app must know to refresh, not silently ride a
+  // stale cookie. Impersonation stays web-only by design.
+  let bearer: string | null = null
+  try {
+    bearer = bearerToken(headers().get("authorization"))
+  } catch {
+    // headers() throws outside a request scope (direct handler invocation in
+    // integration tests) — no bearer.
+  }
+  if (bearer) {
+    const bearerUserId = await verifyAccessToken(bearer)
+    if (!bearerUserId) return null
+    const bearerAdminRole = await prisma.userRole.findFirst({
+      where: { userId: bearerUserId, role: "PlatformAdmin" },
+    })
+    return {
+      userId: bearerUserId,
+      realUserId: bearerUserId,
+      isPlatformAdmin: !!bearerAdminRole,
+    }
+  }
+
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return null
 

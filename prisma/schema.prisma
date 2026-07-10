@@ -77,6 +77,7 @@ model User {
   refereeAvailabilities   RefereeAvailability[]   @relation("RefereeAvailabilities")
   targetedRefereeRequests RefereeSessionRequest[] @relation("TargetedRefereeRequests")
   acceptedRefereeRequests RefereeSessionRequest[] @relation("AcceptedRefereeRequests")
+  refreshTokens           RefreshToken[]          @relation("UserRefreshTokens")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,6 +92,27 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
   DELETED
+}
+
+// Native-app bearer auth (M2, docs/roadmap/native-app-execution-plan.md).
+// The opaque refresh token is only ever stored hashed. familyId is the
+// rotation lineage: each /api/auth/refresh revokes the presented row and
+// issues a new one in the same family, so presenting a rotated-out token
+// signals theft and revokes the entire family.
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation("UserRefreshTokens", fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique // sha256 hex of the opaque token
+  familyId    String // constant across rotations of one device login
+  deviceLabel String? // e.g. "Pixel 8" — for a future sessions/devices UI
+  expiresAt   DateTime // 60d, sliding on rotation
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([familyId])
 }
 
 model UserRole {
