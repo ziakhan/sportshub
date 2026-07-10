@@ -98,6 +98,41 @@ export function LeagueRosterManager({
     }
   }
 
+  const withdraw = async (v: RosterVersion) => {
+    if (
+      !window.confirm(
+        "Withdraws the team from the season — future games are cancelled and opponents notified."
+      )
+    )
+      return
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch(`/api/seasons/${v.seasonId}/teams/${v.submissionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "WITHDRAWN" }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't withdraw the team")
+      setMessage({
+        type: "success",
+        text: `Withdrawn from ${v.leagueName}${
+          data.cancelledGames > 0
+            ? ` — ${data.cancelledGames} upcoming game(s) cancelled.`
+            : "."
+        }`,
+      })
+      setEditing(null)
+      setRequesting(null)
+      router.refresh()
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Couldn't withdraw" })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const sendRequest = async (v: RosterVersion) => {
     setBusy(true)
     setMessage(null)
@@ -157,6 +192,11 @@ export function LeagueRosterManager({
                     )}
                   </h3>
                   <div className="text-ink-500 mt-1 flex flex-wrap items-center gap-2 text-xs">
+                    {v.submissionStatus === "WITHDRAWN" && (
+                      <span className="bg-ink-100 text-ink-600 rounded-full px-2 py-0.5 font-medium">
+                        Withdrawn
+                      </span>
+                    )}
                     <span
                       className={`rounded-full px-2 py-0.5 font-medium ${
                         v.isLocked ? "bg-ink-100 text-ink-600" : "bg-play-100 text-play-700"
@@ -193,6 +233,15 @@ export function LeagueRosterManager({
                       className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                     >
                       Request change
+                    </button>
+                  )}
+                  {(v.submissionStatus === "PENDING" || v.submissionStatus === "APPROVED") && (
+                    <button
+                      onClick={() => withdraw(v)}
+                      disabled={busy}
+                      className="text-hoop-700 hover:bg-hoop-50 rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                    >
+                      Withdraw from league
                     </button>
                   )}
                 </div>

@@ -82,7 +82,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const isOwner = league.ownerId === sessionInfo.userId
     if (!isOwner && !sessionInfo.isPlatformAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      // League-scoped managers can edit the league (matches the customize UI,
+      // which renders for LeagueOwner/LeagueManager roles on this league).
+      const managerRole = await prisma.userRole.findFirst({
+        where: {
+          userId: sessionInfo.userId,
+          role: { in: ["LeagueOwner", "LeagueManager"] },
+          leagueId: params.id,
+        },
+        select: { id: true },
+      })
+      if (!managerRole) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
     }
 
     const data = updateLeagueSchema.parse(await request.json())

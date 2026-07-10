@@ -7,6 +7,12 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
+// PATCH accepts everything the add-player form does, plus the media-consent
+// choice (matches the MediaConsent enum in prisma/schema.prisma exactly).
+const updatePlayerSchema = addPlayerSchema.extend({
+  mediaConsent: z.enum(["UNSET", "GRANTED", "DENIED"]).optional(),
+})
+
 /**
  * Get a single player
  * GET /api/players/[id]
@@ -39,6 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       height: true,
       weight: true,
       position: true,
+      mediaConsent: true,
     },
   })
 
@@ -80,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const body = await request.json()
-    const data = addPlayerSchema.parse(body)
+    const data = updatePlayerSchema.parse(body)
 
     const dob = new Date(data.dateOfBirth)
     const ageInYears = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -98,6 +105,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         position: data.position || null,
         isMinor: ageInYears < 13,
         canLogin: ageInYears >= 13,
+        // Media consent is written only when explicitly sent; revoking
+        // parentalConsentGiven/consentGivenAt is a separate policy decision.
+        ...(data.mediaConsent ? { mediaConsent: data.mediaConsent } : {}),
       },
       select: {
         id: true,
@@ -109,6 +119,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         height: true,
         weight: true,
         position: true,
+        mediaConsent: true,
       },
     })
 

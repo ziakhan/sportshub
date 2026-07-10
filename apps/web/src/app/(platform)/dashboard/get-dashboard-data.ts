@@ -90,6 +90,7 @@ export interface DashboardData {
       accepted: number
       declined: number
       expired: number
+      rescinded: number
       recent: Array<{
         id: string
         status: string
@@ -400,7 +401,8 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
         (pipelineCounts.PENDING || 0) +
         (pipelineCounts.ACCEPTED || 0) +
         (pipelineCounts.DECLINED || 0) +
-        (pipelineCounts.EXPIRED || 0)
+        (pipelineCounts.EXPIRED || 0) +
+        (pipelineCounts.RESCINDED || 0)
 
       const activity = buildActivityFeed({
         offers: recentOffers as any[],
@@ -417,6 +419,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
           accepted: pipelineCounts.ACCEPTED || 0,
           declined: pipelineCounts.DECLINED || 0,
           expired: pipelineCounts.EXPIRED || 0,
+          rescinded: pipelineCounts.RESCINDED || 0,
           recent: (recentOffers as any[]).slice(0, 3).map((offer) => ({
             id: offer.id,
             status: offer.status,
@@ -431,7 +434,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
       data.clubOwner = {
         tenants: [],
         teams: [],
-        offerPipeline: { pending: 0, accepted: 0, declined: 0, expired: 0, recent: [] },
+        offerPipeline: { pending: 0, accepted: 0, declined: 0, expired: 0, rescinded: 0, recent: [] },
         offerCount: 0,
         activity: [],
       }

@@ -450,6 +450,15 @@ export function ScheduleTab({
                           >
                             Box score ↗
                           </a>
+                          {g.status === "COMPLETED" && (
+                            <a
+                              href={`/games/${g.id}/score`}
+                              className="border-amber-300 text-amber-700 hover:bg-amber-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
+                              title="Reopen the console to correct the finalized result"
+                            >
+                              Correct result
+                            </a>
+                          )}
                           <button
                             onClick={() => patchGame(g.id, { isLocked: !g.isLocked })}
                             className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"

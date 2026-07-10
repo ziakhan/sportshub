@@ -103,6 +103,7 @@ async function getClubOverview(clubId: string) {
   const acceptedOffers = offers.filter((o) => o.status === "ACCEPTED").length
   const declinedOffers = offers.filter((o) => o.status === "DECLINED").length
   const expiredOffers = offers.filter((o) => o.status === "EXPIRED").length
+  const rescindedOffers = offers.filter((o) => o.status === "RESCINDED").length
 
   return {
     primaryColor: branding?.primaryColor || "#4f46e5",
@@ -119,6 +120,7 @@ async function getClubOverview(clubId: string) {
     acceptedOffers,
     declinedOffers,
     expiredOffers,
+    rescindedOffers,
     totalOffers: offers.length,
   }
 }
@@ -138,6 +140,10 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
     { n: data.pendingOffers, seg: "bg-gold-400", dot: "bg-gold-400", num: "text-gold-600", label: "Pending", status: "pending" },
     { n: data.declinedOffers, seg: "bg-hoop-400", dot: "bg-hoop-400", num: "text-hoop-600", label: "Declined", status: "declined" },
     { n: data.expiredOffers, seg: "bg-ink-300", dot: "bg-ink-300", num: "text-ink-500", label: "Expired", status: "expired" },
+    // Only occupies a tile once a rescind exists — keeps the familiar 4-up grid otherwise.
+    ...(data.rescindedOffers > 0
+      ? [{ n: data.rescindedOffers, seg: "bg-ink-400", dot: "bg-ink-400", num: "text-ink-600", label: "Rescinded", status: "rescinded" }]
+      : []),
   ]
 
   return (

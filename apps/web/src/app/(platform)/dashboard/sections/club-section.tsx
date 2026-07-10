@@ -334,6 +334,19 @@ function OfferPipeline({
       num: "text-ink-500",
       box: "bg-ink-50 border-ink-100",
     },
+    // Club-withdrawn offers — only takes a tile once one exists.
+    ...(pipeline.rescinded > 0
+      ? [
+          {
+            value: pipeline.rescinded,
+            label: "Rescinded",
+            seg: "bg-ink-400",
+            dot: "bg-ink-400",
+            num: "text-ink-600",
+            box: "bg-ink-50 border-ink-200",
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -367,7 +380,7 @@ function OfferPipeline({
             ))}
         </div>
 
-        <div className="mb-5 grid grid-cols-4 gap-3">
+        <div className={`mb-5 grid gap-3 ${stages.length === 5 ? "grid-cols-5" : "grid-cols-4"}`}>
           {stages.map((stage) => (
             <div key={stage.label} className={`rounded-xl border p-3 text-center ${stage.box}`}>
               <div className={`font-condensed text-2xl font-bold leading-none ${stage.num}`}>

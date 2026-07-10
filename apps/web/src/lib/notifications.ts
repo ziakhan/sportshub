@@ -17,11 +17,13 @@ export type NotificationType =
   | "offer_received"
   | "offer_accepted"
   | "offer_declined"
+  | "offer_rescinded"
   | "jersey_assigned"
   // Staff invitations & requests
   | "staff_invite"
   | "invite_accepted"
   | "invite_declined"
+  | "invite_cancelled"
   | "staff_request"
   | "request_accepted"
   | "request_declined"

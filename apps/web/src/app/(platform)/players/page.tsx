@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import RemovePlayerButton from "./remove-player-button"
 
 interface PlayerTeam {
   jerseyNumber: number | null
@@ -125,6 +126,11 @@ export default function PlayersPage() {
                     <Link href={`/players/${player.id}/edit`} className="text-play-600 hover:text-play-700">
                       Edit
                     </Link>
+                    <RemovePlayerButton
+                      playerId={player.id}
+                      playerName={`${player.firstName} ${player.lastName}`}
+                      onRemoved={() => setPlayers((prev) => prev.filter((p) => p.id !== player.id))}
+                    />
                   </div>
                 </div>
 

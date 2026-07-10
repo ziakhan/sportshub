@@ -5,6 +5,7 @@ import type { ReactNode } from "react"
 import { formatCurrency } from "@/lib/countries"
 import { StatTile, Button, Badge, type BadgeTone, type StatTileTone } from "@/components/ui"
 import { OffersFilter } from "./offers-filter"
+import { RescindButton } from "./rescind-button"
 
 interface ClubOffer {
   id: string
@@ -88,6 +89,7 @@ const STATUS_BADGE: Record<string, BadgeTone> = {
   ACCEPTED: "court",
   DECLINED: "hoop",
   EXPIRED: "neutral",
+  RESCINDED: "neutral",
 }
 
 export default async function ClubOffersPage({
@@ -107,11 +109,12 @@ export default async function ClubOffersPage({
   const acceptedCount = offers.filter((o) => o.status === "ACCEPTED").length
   const declinedCount = offers.filter((o) => o.status === "DECLINED").length
   const expiredCount = offers.filter((o) => o.status === "EXPIRED").length
+  const rescindedCount = offers.filter((o) => o.status === "RESCINDED").length
 
   // Apply filters
   const statusFilter = searchParams.status?.toUpperCase()
   const teamFilter = searchParams.team
-  const validStatuses = ["PENDING", "ACCEPTED", "DECLINED", "EXPIRED"]
+  const validStatuses = ["PENDING", "ACCEPTED", "DECLINED", "EXPIRED", "RESCINDED"]
 
   const filteredOffers = offers.filter((o) => {
     if (statusFilter && validStatuses.includes(statusFilter) && o.status !== statusFilter)
@@ -135,6 +138,11 @@ export default async function ClubOffersPage({
     { key: "ACCEPTED", label: "Accepted", count: acceptedCount, tone: "court", param: "accepted", icon: TILE_ICONS.accepted },
     { key: "DECLINED", label: "Declined", count: declinedCount, tone: "hoop", param: "declined", icon: TILE_ICONS.declined },
     { key: "EXPIRED", label: "Expired", count: expiredCount, tone: "ink", param: "expired", icon: TILE_ICONS.expired },
+    // Only surfaces once a rescind has actually happened — keeps the common
+    // 4-tile layout until the fifth state exists in the data.
+    ...(rescindedCount > 0
+      ? [{ key: "RESCINDED", label: "Rescinded", count: rescindedCount, tone: "ink" as StatTileTone, param: "rescinded", icon: TILE_ICONS.expired }]
+      : []),
   ]
 
   return (
@@ -319,6 +327,12 @@ export default async function ClubOffersPage({
                         <Badge tone={STATUS_BADGE[offer.status] || "neutral"}>
                           {offer.status.toLowerCase()}
                         </Badge>
+                        {offer.status === "PENDING" && (
+                          <RescindButton
+                            offerId={offer.id}
+                            playerName={`${offer.player.firstName} ${offer.player.lastName}`}
+                          />
+                        )}
                         <span className="text-ink-400 text-xs">
                           {format(new Date(offer.createdAt), "MMM d")}
                         </span>

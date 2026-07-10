@@ -134,10 +134,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (tenantId) {
-      // Tenant-specific tryouts
-      const session = await getServerSession(authOptions)
-      if (!session?.user?.id) {
+      // Tenant-specific tryouts (includes drafts) — club staff only
+      const sessionInfo = await getSessionUserId()
+      if (!sessionInfo) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      const hasAccess = await prisma.userRole.findFirst({
+        where: {
+          userId: sessionInfo.userId,
+          OR: [
+            { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
+            { role: "PlatformAdmin" },
+          ],
+        },
+        select: { id: true },
+      })
+      if (!hasAccess) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
 
       const tryouts = await prisma.tryout.findMany({

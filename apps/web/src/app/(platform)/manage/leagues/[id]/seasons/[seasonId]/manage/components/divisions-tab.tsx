@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -23,6 +24,46 @@ export function DivisionsTab({
   const [divGender, setDivGender] = useState("MALE")
   const [divTier, setDivTier] = useState("1")
   const [divMaxTeams, setDivMaxTeams] = useState("")
+  // Inline edit (rename is always allowed; capacity only while unlocked)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editMaxTeams, setEditMaxTeams] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  const startEdit = (d: any) => {
+    setEditingId(d.id)
+    setEditName(d.name ?? "")
+    setEditMaxTeams(d.maxTeams ? String(d.maxTeams) : "")
+  }
+
+  const saveEdit = async (d: any) => {
+    const name = editName.trim()
+    if (!name) return
+    const body: Record<string, unknown> = {}
+    if (name !== d.name) body.name = name
+    if (!locked) {
+      const nextMax = editMaxTeams ? parseInt(editMaxTeams) : null
+      if (nextMax !== (d.maxTeams ?? null)) body.maxTeams = nextMax
+    }
+    if (Object.keys(body).length === 0) {
+      setEditingId(null)
+      return
+    }
+    setSaving(true)
+    const res = await fetch(`/api/seasons/${seasonId}/divisions?divisionId=${d.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    setSaving(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      window.alert(data.error || "Couldn't update the division.")
+      return
+    }
+    setEditingId(null)
+    refresh()
+  }
 
   const addDivision = async () => {
     if (!divName || !divAgeGroup) return
@@ -59,7 +100,48 @@ export function DivisionsTab({
             divisions are locked. Structural changes need the season reopened.
           </div>
         )}
-        {divisions.map((d: any) => (
+        {divisions.map((d: any) =>
+          editingId === d.id ? (
+            <div
+              key={d.id}
+              className="border-court-100 bg-court-50 mb-2 rounded-xl border px-3 py-2"
+            >
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Division name"
+                  className={inputClass}
+                  autoFocus
+                />
+                {!locked && (
+                  <input
+                    type="number"
+                    min="1"
+                    max="128"
+                    value={editMaxTeams}
+                    onChange={(e) => setEditMaxTeams(e.target.value)}
+                    placeholder="Max teams (blank = unlimited)"
+                    className={inputClass}
+                  />
+                )}
+                {locked && (
+                  <p className="text-ink-400 text-xs">
+                    Season is locked — only the name can be changed.
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => saveEdit(d)} disabled={saving || !editName.trim()}>
+                    Save
+                  </Button>
+                  <Button size="sm" variant="subtle" onClick={() => setEditingId(null)} disabled={saving}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div
             key={d.id}
             className="border-court-100 bg-court-50 mb-2 flex items-center justify-between rounded-xl border px-3 py-2"
@@ -80,6 +162,17 @@ export function DivisionsTab({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-ink-400 text-xs">{d._count?.teams || 0} teams</span>
+              <button
+                onClick={() => startEdit(d)}
+                className="text-ink-400 hover:text-ink-700 transition"
+                title="Rename"
+                aria-label={`Rename ${d.name}`}
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+              </button>
               {!locked && (
                 <button
                   onClick={async () => {
@@ -106,7 +199,8 @@ export function DivisionsTab({
               )}
             </div>
           </div>
-        ))}
+          )
+        )}
         {!locked && (
         <div className="border-ink-200 mt-4 space-y-2 border-t pt-4">
           <div className="grid grid-cols-2 gap-2">

@@ -862,6 +862,7 @@ enum OfferStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+  RESCINDED // withdrawn by the club while still PENDING (owner decision 2026-07-09)
 }
 
 // ============================================
@@ -2070,6 +2071,10 @@ model StaffInvitation {
 
   type   InvitationType
   status InvitationStatus @default(PENDING)
+
+  // Lazy expiry (checked on access, no cron) — stale PENDING invites used to
+  // block re-inviting the same person forever. Null = legacy rows, never expire.
+  expiresAt DateTime?
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

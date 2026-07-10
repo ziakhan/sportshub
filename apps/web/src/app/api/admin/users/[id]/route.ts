@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { auditSafe } from "@/lib/audit"
 import bcrypt from "bcryptjs"
+import { randomBytes } from "crypto"
 import { getSessionUserId } from "@/lib/auth-helpers"
 
 export const dynamic = "force-dynamic"
@@ -79,7 +80,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
 
       case "resetPassword": {
-        const tempPassword = "TempPass123!"
+        // Random per-reset (was a hardcoded shared literal — anyone who knew
+        // it could hijack any freshly-reset account). Admin conveys it to the
+        // user out-of-band; shape stays password-policy-friendly.
+        const tempPassword = `Temp-${randomBytes(6).toString("base64url")}!`
         const hash = await bcrypt.hash(tempPassword, 12)
         await prisma.user.update({
           where: { id: userId },

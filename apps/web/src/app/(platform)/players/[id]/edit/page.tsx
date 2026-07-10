@@ -6,6 +6,9 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
+import RemovePlayerButton from "../../remove-player-button"
+
+type MediaConsent = "UNSET" | "GRANTED" | "DENIED"
 
 export default function EditPlayerPage() {
   const router = useRouter()
@@ -16,6 +19,10 @@ export default function EditPlayerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [playerName, setPlayerName] = useState("")
+  // Kept outside react-hook-form: the shared addPlayerSchema doesn't know this
+  // field; the PATCH API accepts it alongside the form data.
+  const [mediaConsent, setMediaConsent] = useState<MediaConsent>("UNSET")
   const labelClass = "block text-sm font-medium text-ink-700"
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
@@ -35,6 +42,8 @@ export default function EditPlayerPage() {
         const res = await fetch(`/api/players/${playerId}`)
         if (!res.ok) throw new Error("Failed to load player")
         const data = await res.json()
+        setPlayerName(`${data.firstName} ${data.lastName}`)
+        setMediaConsent((data.mediaConsent as MediaConsent) || "UNSET")
         reset({
           firstName: data.firstName,
           lastName: data.lastName,
@@ -63,7 +72,11 @@ export default function EditPlayerPage() {
       const res = await fetch(`/api/players/${playerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          // Only sent once a choice exists — UNSET stays untouched server-side.
+          ...(mediaConsent !== "UNSET" ? { mediaConsent } : {}),
+        }),
       })
 
       if (!res.ok) {
@@ -227,6 +240,60 @@ export default function EditPlayerPage() {
               </div>
             </div>
 
+            {/* Privacy & media consent — gates public full names / photos in
+                game coverage (box scores, recaps, media tagging). */}
+            <div className="border-ink-100 border-t pt-5">
+              <div className="mb-1 flex items-center gap-2.5">
+                <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand,#4f46e5)]" aria-hidden />
+                <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
+                  Privacy &amp; consent
+                </span>
+              </div>
+              <p className="text-ink-500 mb-3 text-xs">
+                Controls how your player appears in public game coverage — box scores, recaps and
+                media tagging.
+                {mediaConsent === "UNSET" && (
+                  <span className="text-hoop-700 font-medium"> Not set yet — first name + initial is used by default.</span>
+                )}
+              </p>
+              <div className="space-y-2">
+                <label className="border-ink-200 hover:bg-ink-50 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm">
+                  <input
+                    type="radio"
+                    name="mediaConsent"
+                    checked={mediaConsent === "GRANTED"}
+                    onChange={() => setMediaConsent("GRANTED")}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="text-ink-900 block font-semibold">
+                      Show full name &amp; photos in public game coverage
+                    </span>
+                    <span className="text-ink-500 block text-xs">
+                      Full name in box scores and recaps; photos and highlights may be tagged.
+                    </span>
+                  </span>
+                </label>
+                <label className="border-ink-200 hover:bg-ink-50 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm">
+                  <input
+                    type="radio"
+                    name="mediaConsent"
+                    checked={mediaConsent === "DENIED"}
+                    onChange={() => setMediaConsent("DENIED")}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="text-ink-900 block font-semibold">
+                      No — first name + initial only
+                    </span>
+                    <span className="text-ink-500 block text-xs">
+                      Public pages show &quot;Miles R.&quot; style naming and no tagged media.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
             <div className="flex gap-4 pt-2">
               <button
                 type="button"
@@ -244,6 +311,21 @@ export default function EditPlayerPage() {
               </button>
             </div>
           </form>
+
+          {/* Danger zone */}
+          <div className="border-ink-100 mt-8 border-t pt-6">
+            <h2 className="text-ink-900 text-sm font-semibold">Remove this player</h2>
+            <p className="text-ink-500 mb-3 mt-1 text-xs">
+              Pending offers are declined and upcoming tryout signups cancelled. Players on an
+              active team roster must be released by the club first.
+            </p>
+            <RemovePlayerButton
+              playerId={playerId}
+              playerName={playerName || "this player"}
+              variant="button"
+              redirectTo="/players"
+            />
+          </div>
         </div>
       </div>
     </div>

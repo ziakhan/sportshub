@@ -139,6 +139,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Tenant-specific house leagues (includes drafts) — club staff only. Any
+    // signed-in user could previously read a club's full program list (audit §4).
+    const hasAccess = await prisma.userRole.findFirst({
+      where: {
+        userId: session.user.id,
+        OR: [
+          { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
+          { role: "PlatformAdmin" },
+        ],
+      },
+      select: { id: true },
+    })
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const leagues = await (prisma as any).houseLeague.findMany({
       where: { tenantId },
       include: { _count: { select: { signups: true } } },

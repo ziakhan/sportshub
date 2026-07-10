@@ -20,6 +20,8 @@ const updateTeamSubmissionSchema = z
 /**
  * PATCH /api/seasons/[id]/teams/[teamId]
  * League owner/manager approves, rejects, or withdraws a submitted team, and/or updates its payment status.
+ * A ClubOwner/ClubManager of the submitting club may also call this — but ONLY to set status WITHDRAWN
+ * (self-withdrawal); any other status or payment change from the club side is rejected.
  */
 export async function PATCH(
   request: NextRequest,
@@ -60,9 +62,7 @@ export async function PATCH(
     })
 
     const isOwner = season.league.ownerId === sessionInfo.userId
-    if (!isOwner && !sessionInfo.isPlatformAdmin && !hasLeagueManagerAccess) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
+    const isLeagueSide = isOwner || sessionInfo.isPlatformAdmin || !!hasLeagueManagerAccess
 
     const submission = await prisma.teamSubmission.findFirst({
       where: { id: params.teamId, seasonId: params.id },
@@ -80,6 +80,27 @@ export async function PATCH(
 
     if (!submission) {
       return NextResponse.json({ error: "Team submission not found" }, { status: 404 })
+    }
+
+    // Second authz path: the submitting club may withdraw its own team — and
+    // do nothing else. League-side callers keep full rights (checked above).
+    if (!isLeagueSide) {
+      const hasClubManagerAccess = await prisma.userRole.findFirst({
+        where: {
+          userId: sessionInfo.userId,
+          tenantId: submission.team.tenantId,
+          role: { in: ["ClubOwner", "ClubManager"] },
+        },
+      })
+      if (!hasClubManagerAccess) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      if (data.status !== "WITHDRAWN" || data.paymentStatus !== undefined) {
+        return NextResponse.json(
+          { error: "Clubs can only withdraw their own team from a season" },
+          { status: 403 }
+        )
+      }
     }
 
     // G4/H19 lock guard: once the season structure is locked, approving or

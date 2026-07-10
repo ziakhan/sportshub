@@ -319,12 +319,16 @@ export default function OffersPage() {
                     ACCEPTED: "border-court-200 bg-court-50",
                     DECLINED: "border-hoop-200 bg-hoop-50",
                     EXPIRED: "border-ink-200 bg-ink-50",
+                    RESCINDED: "border-ink-200 bg-ink-50",
                   }
                   const badgeColors: Record<string, string> = {
                     ACCEPTED: "bg-court-100 text-court-700",
                     DECLINED: "bg-hoop-100 text-hoop-700",
                     EXPIRED: "bg-ink-100 text-ink-600",
+                    RESCINDED: "bg-ink-100 text-ink-600",
                   }
+                  const statusLabel =
+                    offer.status === "RESCINDED" ? "withdrawn by club" : offer.status.toLowerCase()
 
                   return (
                     <div
@@ -345,9 +349,9 @@ export default function OffersPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColors[offer.status]}`}
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColors[offer.status] || "bg-ink-100 text-ink-600"}`}
                           >
-                            {offer.status.toLowerCase()}
+                            {statusLabel}
                           </span>
                           {offer.respondedAt && (
                             <span className="text-ink-400 text-xs">

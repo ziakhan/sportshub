@@ -16,6 +16,18 @@ const inviteSchema = z.object({
   message: z.string().max(500).optional(),
 })
 
+const patchSchema = z
+  .object({
+    roleId: z.string().min(1),
+    designation: z.enum(["HeadCoach", "AssistantCoach"]).nullable().optional(),
+    role: z.enum(["Staff", "ClubManager"]).optional(),
+  })
+  .refine((d) => (d.designation !== undefined) !== (d.role !== undefined), {
+    message: "Provide exactly one of designation or role",
+  })
+
+const INVITE_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
+
 async function verifyClubAccess(userId: string, tenantId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -50,6 +62,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   if (!user) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
+
+  // Lazy expiry: stale PENDING invites flip to EXPIRED here (no cron), so the
+  // pending list stays truthful and stops blocking re-invites.
+  await prisma.staffInvitation.updateMany({
+    where: { tenantId: params.id, status: "PENDING", expiresAt: { lt: new Date() } },
+    data: { status: "EXPIRED" },
+  })
 
   const [staff, invitations] = await Promise.all([
     prisma.userRole.findMany({
@@ -170,6 +189,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         teamId: data.teamId || null,
         message: data.message || null,
         type: "INVITE",
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
       },
     })
 
@@ -214,8 +234,95 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 /**
+ * Change a staff member's designation or club role IN PLACE — previously a
+ * promotion (Assistant → Head Coach, Staff → Club Manager) required removing
+ * and re-adding the person (editability audit §2c).
+ * PATCH /api/clubs/[id]/staff  body: { roleId, designation? } | { roleId, role? }
+ */
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const user = await verifyClubAccess(session.user.id, params.id)
+    if (!user) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const data = patchSchema.parse(body)
+
+    // The role row must belong to this tenant (directly, or via one of its teams).
+    const roleRow = await prisma.userRole.findFirst({
+      where: {
+        id: data.roleId,
+        OR: [{ tenantId: params.id }, { team: { tenantId: params.id } }],
+      },
+      select: { id: true, role: true, teamId: true, tenantId: true },
+    })
+    if (!roleRow) {
+      return NextResponse.json({ error: "Role not found" }, { status: 404 })
+    }
+
+    if (data.designation !== undefined) {
+      // Designation applies to team-scoped coaching (Staff) rows only.
+      if (!roleRow.teamId || roleRow.role !== "Staff") {
+        return NextResponse.json(
+          { error: "Designation applies to team coaching roles only" },
+          { status: 400 }
+        )
+      }
+      // One head coach per team (same rule POST /api/teams enforces).
+      if (data.designation === "HeadCoach") {
+        const existingHead = await prisma.userRole.findFirst({
+          where: {
+            teamId: roleRow.teamId,
+            designation: "HeadCoach",
+            id: { not: roleRow.id },
+          },
+        })
+        if (existingHead) {
+          return NextResponse.json(
+            { error: "This team already has a head coach" },
+            { status: 409 }
+          )
+        }
+      }
+      const updated = await prisma.userRole.update({
+        where: { id: roleRow.id },
+        data: { designation: data.designation },
+      })
+      return NextResponse.json({ success: true, role: updated })
+    }
+
+    // Club-level role change (Staff ↔ ClubManager) on tenant-scoped rows.
+    if (!roleRow.tenantId || roleRow.teamId) {
+      return NextResponse.json(
+        { error: "Role change applies to club-level roles only" },
+        { status: 400 }
+      )
+    }
+    const updated = await prisma.userRole.update({
+      where: { id: roleRow.id },
+      data: { role: data.role },
+    })
+    return NextResponse.json({ success: true, role: updated })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
+    }
+    console.error("Staff patch error:", error)
+    return NextResponse.json({ error: "Failed to update role" }, { status: 500 })
+  }
+}
+
+/**
  * Remove a staff member
- * DELETE /api/clubs/[id]/staff?roleId=xxx
+ * DELETE /api/clubs/[id]/staff?roleId=xxx          — remove one role row
+ * DELETE /api/clubs/[id]/staff?userId=xxx&all=1     — remove ALL of a user's
+ *   roles at this club and its teams (fixes the multi-role partial remove).
  */
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -243,6 +350,29 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const roleId = request.nextUrl.searchParams.get("roleId")
+    const targetUserId = request.nextUrl.searchParams.get("userId")
+    const removeAll = request.nextUrl.searchParams.get("all") === "1"
+
+    // Atomic full removal: every role this user holds at the club or its
+    // teams. The old single-roleId path deleted only roles[0] of a multi-role
+    // member, silently leaving the rest (editability audit §2c).
+    if (removeAll && targetUserId) {
+      if (targetUserId === user.id) {
+        return NextResponse.json({ error: "You cannot remove yourself" }, { status: 400 })
+      }
+      const result = await prisma.userRole.deleteMany({
+        where: {
+          userId: targetUserId,
+          role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
+          OR: [{ tenantId: params.id }, { team: { tenantId: params.id } }],
+        },
+      })
+      if (result.count === 0) {
+        return NextResponse.json({ error: "No roles found for this user" }, { status: 404 })
+      }
+      return NextResponse.json({ success: true, removed: result.count })
+    }
+
     if (!roleId) {
       return NextResponse.json({ error: "roleId is required" }, { status: 400 })
     }

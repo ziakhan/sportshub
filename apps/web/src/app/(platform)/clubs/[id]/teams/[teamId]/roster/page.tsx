@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
+import { Badge } from "@/components/ui"
 import { FinalizeButton } from "./finalize-button"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
@@ -7,6 +8,7 @@ import { RosterRowActions } from "./roster-row-actions"
 interface RosterPlayer {
   id: string
   playerId: string
+  status: string
   jerseyNumber: number | null
   uniformSize: string | null
   tracksuitSize: string | null
@@ -54,7 +56,8 @@ async function getTeamRoster(teamId: string, tenantId: string): Promise<RosterTe
       gender: true,
       season: true,
       players: {
-        where: { status: "ACTIVE" },
+        // Released (INACTIVE) players stay visible so they can be reactivated
+        where: { status: { in: ["ACTIVE", "INACTIVE"] } },
         include: {
           player: {
             select: {
@@ -123,8 +126,13 @@ export default async function TeamRosterPage({
     )
   }
 
+  // Released (INACTIVE) players render in their own section below and never
+  // count toward the active roster, jersey logic, or finalization state.
+  const activePlayers = team.players.filter((tp) => tp.status === "ACTIVE")
+  const releasedPlayers = team.players.filter((tp) => tp.status === "INACTIVE")
+
   // Check if there are unfinalized players (accepted offers without jersey numbers)
-  const hasUnfinalized = team.players.some(
+  const hasUnfinalized = activePlayers.some(
     (tp) => tp.jerseyNumber === null
   )
   const hasAcceptedOffers = offers.length > 0
@@ -163,7 +171,7 @@ export default async function TeamRosterPage({
         }))}
       />
 
-      {team.players.length === 0 ? (
+      {activePlayers.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
           <h3 className="text-lg font-semibold text-ink-900 mb-2">No players on roster</h3>
           <p className="text-ink-600">
@@ -205,7 +213,7 @@ export default async function TeamRosterPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-court-200">
-              {team.players.map((tp) => {
+              {activePlayers.map((tp) => {
                 const offer = offers.find((o) => o.player.id === tp.playerId)
 
                 return (
@@ -268,6 +276,39 @@ export default async function TeamRosterPage({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Released players — kept visible so they can be reactivated */}
+      {releasedPlayers.length > 0 && (
+        <div className="border-ink-200 mt-6 overflow-hidden rounded-2xl border border-dashed bg-white">
+          <div className="bg-ink-50 flex items-center gap-2.5 px-6 py-3">
+            <span className="text-ink-700 text-sm font-semibold">
+              Released ({releasedPlayers.length})
+            </span>
+            <span className="text-ink-400 text-xs">
+              Not on the active roster — reactivate to bring a player back.
+            </span>
+          </div>
+          <ul className="divide-ink-100 divide-y">
+            {releasedPlayers.map((tp) => (
+              <li key={tp.id} className="flex items-center justify-between gap-3 px-6 py-3">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="text-ink-500 truncate text-sm font-medium">
+                    {tp.player.firstName} {tp.player.lastName}
+                  </span>
+                  <Badge tone="neutral">Released</Badge>
+                </span>
+                <RosterRowActions
+                  teamId={team.id}
+                  playerId={tp.playerId}
+                  playerName={`${tp.player.firstName} ${tp.player.lastName}`}
+                  jerseyNumber={tp.jerseyNumber}
+                  status={tp.status}
+                />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

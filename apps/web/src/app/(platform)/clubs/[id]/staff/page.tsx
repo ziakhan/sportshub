@@ -179,11 +179,16 @@ export default function StaffPage() {
     }
   }
 
-  const handleRemove = async (roleId: string, name: string) => {
-    if (!confirm(`Remove ${name} from staff?`)) return
+  // Removes the member entirely — every role at this club and its teams
+  // (the old single-roleId call silently left a multi-role member's other roles).
+  const handleRemove = async (userId: string, name: string) => {
+    if (!confirm(`Remove ${name} from staff? This removes ALL their roles at this club and its teams.`))
+      return
 
     try {
-      const res = await fetch(`/api/clubs/${clubId}/staff?roleId=${roleId}`, { method: "DELETE" })
+      const res = await fetch(`/api/clubs/${clubId}/staff?userId=${userId}&all=1`, {
+        method: "DELETE",
+      })
 
       if (!res.ok) {
         const data = await res.json()
@@ -193,6 +198,41 @@ export default function StaffPage() {
       loadData()
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to remove")
+    }
+  }
+
+  const handleRevokeInvite = async (invitationId: string, email: string) => {
+    if (!confirm(`Revoke the invitation to ${email}?`)) return
+    try {
+      const res = await fetch(`/api/invitations/${invitationId}`, { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to revoke")
+      }
+      loadData()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to revoke")
+    }
+  }
+
+  // Promote/demote in place (designation on team coaching roles, role on club rows).
+  const handleRoleChange = async (
+    roleId: string,
+    change: { designation?: string | null; role?: string }
+  ) => {
+    try {
+      const res = await fetch(`/api/clubs/${clubId}/staff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId, ...change }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to update role")
+      }
+      loadData()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update role")
     }
   }
 
@@ -389,14 +429,28 @@ export default function StaffPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-ink-900 font-medium">{name}</span>
                         {/* Club-level role badges */}
-                        {member.clubRoles.map((r) => (
-                          <span
-                            key={r.id}
-                            className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${getClubRoleBadgeColor(r.role)}`}
-                          >
-                            {getClubRoleLabel(r.role)}
-                          </span>
-                        ))}
+                        {member.clubRoles.map((r) =>
+                          r.role === "ClubOwner" ? (
+                            <span
+                              key={r.id}
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${getClubRoleBadgeColor(r.role)}`}
+                            >
+                              {getClubRoleLabel(r.role)}
+                            </span>
+                          ) : (
+                            // Staff ↔ Manager promoted in place (audit §2c)
+                            <select
+                              key={r.id}
+                              value={r.role}
+                              onChange={(e) => handleRoleChange(r.id, { role: e.target.value })}
+                              className={`cursor-pointer rounded-full border px-2 py-0.5 text-xs font-medium ${getClubRoleBadgeColor(r.role)}`}
+                              title="Change club role"
+                            >
+                              <option value="Staff">Staff</option>
+                              <option value="ClubManager">Manager</option>
+                            </select>
+                          )
+                        )}
                       </div>
                       <div className="text-ink-500 mt-0.5 text-xs">{member.email}</div>
 
@@ -406,30 +460,48 @@ export default function StaffPage() {
                           <div className="text-ink-400 mb-1.5 text-xs font-medium uppercase tracking-wider">
                             Team Assignments
                           </div>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {member.teamRoles.map((tr) => (
-                              <Link
-                                key={tr.id}
-                                href={`/clubs/${clubId}/teams/${tr.team!.id}/edit`}
-                                className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors hover:shadow-sm ${getTeamRoleBadgeColor(tr.designation, tr.role)}`}
-                              >
-                                <span className="font-semibold">{tr.team!.name}</span>
-                                <span className="opacity-60">·</span>
-                                <span>{getTeamRoleLabel(tr.designation, tr.role)}</span>
-                                <svg
-                                  className="h-3 w-3 opacity-40"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
+                              <span key={tr.id} className="inline-flex items-center gap-1">
+                                <Link
+                                  href={`/clubs/${clubId}/teams/${tr.team!.id}/edit`}
+                                  className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors hover:shadow-sm ${getTeamRoleBadgeColor(tr.designation, tr.role)}`}
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5l7 7-7 7"
-                                  />
-                                </svg>
-                              </Link>
+                                  <span className="font-semibold">{tr.team!.name}</span>
+                                  <span className="opacity-60">·</span>
+                                  <span>{getTeamRoleLabel(tr.designation, tr.role)}</span>
+                                  <svg
+                                    className="h-3 w-3 opacity-40"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 5l7 7-7 7"
+                                    />
+                                  </svg>
+                                </Link>
+                                {/* Coaching designation promoted in place */}
+                                {tr.role === "Staff" && (
+                                  <select
+                                    value={tr.designation ?? ""}
+                                    onChange={(e) =>
+                                      handleRoleChange(tr.id, {
+                                        designation: e.target.value === "" ? null : e.target.value,
+                                      })
+                                    }
+                                    className="border-ink-200 text-ink-600 hover:border-ink-300 cursor-pointer rounded-lg border bg-white px-1.5 py-0.5 text-[11px]"
+                                    title="Change coaching designation"
+                                  >
+                                    <option value="">Staff</option>
+                                    <option value="AssistantCoach">Asst. Coach</option>
+                                    <option value="HeadCoach">Head Coach</option>
+                                  </select>
+                                )}
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -447,12 +519,10 @@ export default function StaffPage() {
                         )}
                     </div>
 
-                    {/* Remove button */}
+                    {/* Remove button — removes ALL of the member's roles here */}
                     {!isOwner && (
                       <button
-                        onClick={() =>
-                          handleRemove(member.clubRoles[0]?.id || member.teamRoles[0]?.id, name)
-                        }
+                        onClick={() => handleRemove(member.userId, name)}
                         className="text-hoop-600 hover:text-hoop-700 ml-4 text-xs font-medium"
                       >
                         Remove
@@ -482,6 +552,12 @@ export default function StaffPage() {
                   <div className="text-ink-900 font-medium">{invite.invitedEmail}</div>
                   <div className="text-ink-500 text-xs">Invited as {invite.role} — Pending</div>
                 </div>
+                <button
+                  onClick={() => handleRevokeInvite(invite.id, invite.invitedEmail)}
+                  className="text-hoop-600 hover:text-hoop-700 text-xs font-semibold"
+                >
+                  Revoke
+                </button>
               </div>
             ))}
           </div>

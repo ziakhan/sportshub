@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const season = await (prisma as any).season.findUnique({
       where: { id: params.id },
-      select: { leagueId: true, league: { select: { ownerId: true } } },
+      select: { status: true, leagueId: true, league: { select: { ownerId: true } } },
     })
     if (!season) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -47,6 +47,45 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const body = await request.json()
+
+    // Season lifecycle is one-way (owner decision 2026-07-09 — finalize is
+    // irreversible; its side-effects have no undo). The API used to accept ANY
+    // status jump, including backward "reopens" that left rosters locked.
+    // Rules: never backward, and never leapfrog FINALIZED (that would skip the
+    // preflight + roster locks, which run only when the target is FINALIZED).
+    // Forward shortcuts on either side of it (e.g. REGISTRATION → FINALIZED)
+    // are fine — closing registration has no side-effects of its own.
+    const STATUS_ORDER = [
+      "DRAFT",
+      "REGISTRATION",
+      "REGISTRATION_CLOSED",
+      "FINALIZED",
+      "IN_PROGRESS",
+      "COMPLETED",
+    ]
+    if (body.status !== undefined && body.status !== season.status) {
+      const from = STATUS_ORDER.indexOf(season.status)
+      const to = STATUS_ORDER.indexOf(body.status)
+      const FINALIZED_AT = STATUS_ORDER.indexOf("FINALIZED")
+      if (to === -1) {
+        return NextResponse.json({ error: `Unknown season status: ${body.status}` }, { status: 400 })
+      }
+      if (to < from) {
+        return NextResponse.json(
+          {
+            error: `Season status can't move backward (${season.status} → ${body.status}) — finalization is one-way.`,
+          },
+          { status: 409 }
+        )
+      }
+      if (from < FINALIZED_AT && to > FINALIZED_AT) {
+        return NextResponse.json(
+          { error: "Season must be finalized before it can start — finalize runs the preflight and locks rosters." },
+          { status: 409 }
+        )
+      }
+    }
+
     const update: Record<string, any> = {}
 
     // Tiebreaker order locks at finalize via tiebreakersLockedAt. Reject any

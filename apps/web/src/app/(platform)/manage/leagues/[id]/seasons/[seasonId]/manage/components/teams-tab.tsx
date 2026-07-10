@@ -20,13 +20,26 @@ export function TeamsTab({
   >("ALL")
   const [teamPaymentFilter, setTeamPaymentFilter] = useState<"ALL" | "UNPAID" | "PAID">("ALL")
 
-  const updateTeamStatus = async (leagueTeamId: string, status: "APPROVED" | "REJECTED") => {
+  const updateTeamStatus = async (
+    leagueTeamId: string,
+    status: "APPROVED" | "REJECTED" | "WITHDRAWN"
+  ) => {
     await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     })
     refresh()
+  }
+
+  const withdrawTeam = async (leagueTeamId: string) => {
+    if (
+      !window.confirm(
+        "Withdraws the team from the season — future games are cancelled and opponents notified."
+      )
+    )
+      return
+    await updateTeamStatus(leagueTeamId, "WITHDRAWN")
   }
 
   const updateTeamPayment = async (
@@ -157,8 +170,8 @@ export function TeamsTab({
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       t.status === "APPROVED"
                         ? "bg-court-100 text-court-700"
-                        : t.status === "REJECTED"
-                          ? "bg-hoop-100 text-hoop-700"
+                        : t.status === "WITHDRAWN"
+                          ? "bg-ink-100 text-ink-600"
                           : "bg-hoop-100 text-hoop-700"
                     }`}
                   >
@@ -188,6 +201,14 @@ export function TeamsTab({
                         Reject
                       </button>
                     </>
+                  )}
+                  {(t.status === "PENDING" || t.status === "APPROVED") && (
+                    <button
+                      onClick={() => withdrawTeam(t.id)}
+                      className="text-hoop-700 hover:bg-hoop-50 rounded-lg px-2 py-1 text-xs font-semibold"
+                    >
+                      Withdraw
+                    </button>
                   )}
                   {!paid ? (
                     <>

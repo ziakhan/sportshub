@@ -87,7 +87,15 @@ const EVENT_LABELS: Partial<Record<FoldEventType, string>> = {
   LINEUP: "lineup",
 }
 
-export function ScoringConsole({ gameId }: { gameId: string }) {
+export function ScoringConsole({
+  gameId,
+  canCorrect = false,
+}: {
+  gameId: string
+  /** League owner / platform admin may reopen a COMPLETED game for corrections
+   *  (the finalize API already permits their re-finalize — audit wave 2). */
+  canCorrect?: boolean
+}) {
   const [boot, setBoot] = useState<Bootstrap | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lockedOutBy, setLockedOutBy] = useState<string | null>(null)
@@ -126,6 +134,8 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
   })
   const [finalizing, setFinalizing] = useState(false)
   const [finalized, setFinalized] = useState(false)
+  // True while an owner/admin has reopened a COMPLETED game to fix the record.
+  const [correcting, setCorrecting] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [showBox, setShowBox] = useState(false)
   const [refereeName, setRefereeName] = useState("")
@@ -538,6 +548,31 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
             Public box score →
           </a>
         </div>
+        {canCorrect && (
+          <div className="mt-8">
+            <button
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "Reopen this finalized game for corrections? Use Mark final again to republish the result."
+                  )
+                )
+                  return
+                setCorrecting(true)
+                setFinalized(false)
+              }}
+              className="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Correct result
+            </button>
+            <p className="text-ink-400 mt-2 text-xs">
+              League owner correction — the record stays official until you re-finalize.
+            </p>
+          </div>
+        )}
       </div>
     )
   }
@@ -1211,6 +1246,12 @@ export function ScoringConsole({ gameId }: { gameId: string }) {
 
   return (
     <div className="mx-auto max-w-6xl p-3 max-md:p-2">
+      {correcting && (
+        <div className="border-amber-300 bg-amber-50 text-amber-800 mb-2 rounded-xl border px-3 py-2 text-xs font-semibold">
+          Correcting a finalized game — <span className="font-bold">Mark final</span> again to
+          republish the result.
+        </div>
+      )}
       {/* header */}
       <div className="rounded-2xl border border-ink-200 bg-white p-3 max-md:p-2.5">
         {isShort ? (

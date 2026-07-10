@@ -49,6 +49,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Invitation not found" }, { status: 404 })
     }
 
+    // Lazy expiry — invites now carry a 30-day expiresAt (null = legacy, never expires).
+    if (
+      invitation.status === "PENDING" &&
+      (invitation as any).expiresAt &&
+      new Date((invitation as any).expiresAt) < new Date()
+    ) {
+      await prisma.staffInvitation.update({
+        where: { id: invitation.id },
+        data: { status: "EXPIRED" },
+      })
+      return NextResponse.json({ error: "This invitation has expired" }, { status: 410 })
+    }
+
     if (invitation.status !== "PENDING") {
       return NextResponse.json(
         { error: "This invitation has already been responded to" },
@@ -204,5 +217,69 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     console.error("Invitation response error:", error)
     return NextResponse.json({ error: "Failed to process response" }, { status: 500 })
+  }
+}
+
+/**
+ * Revoke a pending staff invitation — previously stale invites could never be
+ * cancelled and blocked re-inviting the same email forever (audit §2c).
+ * DELETE /api/invitations/[id] — ClubOwner/ClubManager of the tenant, or PlatformAdmin.
+ */
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const invitation = await prisma.staffInvitation.findUnique({
+      where: { id: params.id },
+      include: { tenant: { select: { name: true } } },
+    })
+    if (!invitation) {
+      return NextResponse.json({ error: "Invitation not found" }, { status: 404 })
+    }
+
+    const hasAccess = await prisma.userRole.findFirst({
+      where: {
+        userId: session.user.id,
+        OR: [
+          { tenantId: invitation.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          { role: "PlatformAdmin" },
+        ],
+      },
+    })
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    if (invitation.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "Only pending invitations can be revoked" },
+        { status: 409 }
+      )
+    }
+
+    await prisma.staffInvitation.update({
+      where: { id: invitation.id },
+      data: { status: "CANCELLED", respondedAt: new Date() },
+    })
+
+    if (invitation.invitedUserId) {
+      await notify(prisma, {
+        userId: invitation.invitedUserId,
+        type: "invite_cancelled",
+        title: "Invitation withdrawn",
+        message: `${invitation.tenant?.name || "A club"} withdrew their staff invitation.`,
+        link: "/notifications",
+        referenceId: invitation.id,
+        referenceType: "StaffInvitation",
+      })
+    }
+
+    return NextResponse.json({ success: true, status: "CANCELLED" })
+  } catch (error) {
+    console.error("Invitation revoke error:", error)
+    return NextResponse.json({ error: "Failed to revoke invitation" }, { status: 500 })
   }
 }

@@ -3,17 +3,20 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-/** Per-row manual controls: jersey edit (clash-guarded server-side) + release. */
+/** Per-row manual controls: jersey edit (clash-guarded server-side) + release,
+ *  or reactivate when the row is a released (INACTIVE) player. */
 export function RosterRowActions({
   teamId,
   playerId,
   playerName,
   jerseyNumber,
+  status = "ACTIVE",
 }: {
   teamId: string
   playerId: string
   playerName: string
   jerseyNumber: number | null
+  status?: string
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
@@ -63,6 +66,39 @@ export function RosterRowActions({
     } finally {
       setBusy(false)
     }
+  }
+
+  const reactivate = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/teams/${teamId}/players/${playerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reactivate" }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        // e.g. jersey-number clash returned by the API
+        window.alert(data.error || "Couldn't reactivate the player")
+        return
+      }
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Released players get a single action: bring them back.
+  if (status === "INACTIVE") {
+    return (
+      <button
+        onClick={reactivate}
+        disabled={busy}
+        className="text-court-700 text-xs font-semibold hover:underline disabled:opacity-50"
+      >
+        Reactivate
+      </button>
+    )
   }
 
   if (editing) {
