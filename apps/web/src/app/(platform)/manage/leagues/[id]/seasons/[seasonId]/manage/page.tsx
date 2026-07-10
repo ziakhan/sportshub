@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
+import { Button, Badge, toneForStatus } from "@/components/ui"
 import { OverviewTab } from "./components/overview-tab"
 import { DivisionsTab } from "./components/divisions-tab"
 import { VenuesTab } from "./components/venues-tab"
@@ -203,19 +204,20 @@ export default function LeagueManagePage() {
         </Link>
       </div>
 
-      <div className="mb-6 flex items-start justify-between">
+      <div className="reveal mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-ink-900 text-2xl font-semibold">{league.label}</h1>
-          <p className="text-ink-500 text-sm">{league.name}</p>
-          <span className="bg-play-100 text-play-700 mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-medium">
+          <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase leading-none tracking-wide">
+            {league.label}
+          </h1>
+          <p className="text-ink-500 mt-1 text-sm">{league.name}</p>
+          <Badge className="mt-2" tone={toneForStatus(league.leagueStatus)}>
             {STATUS_LABELS[league.leagueStatus]}
-          </span>
+          </Badge>
         </div>
         {nextStatus && (
-          <button
+          <Button
             onClick={() => handleStatusChange(nextStatus)}
             disabled={nextStatus === "FINALIZED" && !canFinalize}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
           >
             {nextStatus === "REGISTRATION"
               ? "Open Registration"
@@ -226,89 +228,105 @@ export default function LeagueManagePage() {
                   : nextStatus === "IN_PROGRESS"
                     ? "Start Season"
                     : "Mark Completed"}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Tab nav */}
-      <div className="mb-6 flex flex-wrap gap-1 overflow-x-auto border-b border-ink-100">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${
-              activeTab === tab.key
-                ? "border-play-600 text-play-700"
-                : "border-transparent text-ink-500 hover:text-ink-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div
+        role="tablist"
+        aria-label="Season sections"
+        className="reveal border-ink-100 mb-6 flex flex-wrap gap-1 overflow-x-auto border-b"
+        style={{ animationDelay: "80ms" }}
+      >
+        {TABS.map((tab) => {
+          const selected = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              role="tab"
+              aria-selected={selected}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
+                selected ? "text-play-600" : "text-ink-500 hover:text-ink-800"
+              }`}
+            >
+              {tab.label}
+              {selected && (
+                <span
+                  className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full"
+                  aria-hidden
+                />
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {activeTab === "overview" && (
-        <OverviewTab
-          league={league}
-          divisions={divisions}
-          sessions={sessions}
-          venues={venues}
-          preflightChecks={preflightChecks}
-          canFinalize={canFinalize}
-          finalizeErrors={finalizeErrors}
-          finalizeWarnings={finalizeWarnings}
-        />
-      )}
+      <div key={activeTab} role="tabpanel" className="reveal">
+        {activeTab === "overview" && (
+          <OverviewTab
+            league={league}
+            divisions={divisions}
+            sessions={sessions}
+            venues={venues}
+            preflightChecks={preflightChecks}
+            canFinalize={canFinalize}
+            finalizeErrors={finalizeErrors}
+            finalizeWarnings={finalizeWarnings}
+          />
+        )}
 
-      {activeTab === "divisions" && (
-        <DivisionsTab
-          seasonId={seasonId}
-          divisions={divisions}
-          seasonStatus={league?.leagueStatus}
-          refresh={fetchAll}
-        />
-      )}
-      {activeTab === "sessions" && (
-        <SessionsTab
-          seasonId={seasonId}
-          sessions={sessions}
-          seasonStatus={league?.leagueStatus}
-          refresh={fetchAll}
-        />
-      )}
-      {activeTab === "venues" && (
-        <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
-      )}
-      {activeTab === "teams" && (
-        <TeamsTab seasonId={seasonId} league={league} refresh={fetchAll} />
-      )}
-      {activeTab === "referees" && (
-        <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />
-      )}
-      {activeTab === "scheduling" && (
-        <SchedulingTab
-          seasonId={seasonId}
-          league={league}
-          divisions={divisions}
-          schedulingGroups={schedulingGroups}
-          schedSettings={schedSettings}
-          setSchedSettings={setSchedSettings}
-          patchSeason={patchSeason}
-          refresh={fetchAll}
-        />
-      )}
-      {activeTab === "tiebreakers" && (
-        <TiebreakersTab league={league} patchSeason={patchSeason} />
-      )}
-      {activeTab === "schedule" && (
-        <ScheduleTab
-          seasonId={seasonId}
-          league={league}
-          scheduleGames={scheduleGames}
-          refresh={fetchAll}
-        />
-      )}
-      {activeTab === "standings" && <StandingsTab seasonId={seasonId} />}
+        {activeTab === "divisions" && (
+          <DivisionsTab
+            seasonId={seasonId}
+            divisions={divisions}
+            seasonStatus={league?.leagueStatus}
+            refresh={fetchAll}
+          />
+        )}
+        {activeTab === "sessions" && (
+          <SessionsTab
+            seasonId={seasonId}
+            sessions={sessions}
+            seasonStatus={league?.leagueStatus}
+            refresh={fetchAll}
+          />
+        )}
+        {activeTab === "venues" && (
+          <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
+        )}
+        {activeTab === "teams" && (
+          <TeamsTab seasonId={seasonId} league={league} refresh={fetchAll} />
+        )}
+        {activeTab === "referees" && (
+          <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />
+        )}
+        {activeTab === "scheduling" && (
+          <SchedulingTab
+            seasonId={seasonId}
+            league={league}
+            divisions={divisions}
+            schedulingGroups={schedulingGroups}
+            schedSettings={schedSettings}
+            setSchedSettings={setSchedSettings}
+            patchSeason={patchSeason}
+            refresh={fetchAll}
+          />
+        )}
+        {activeTab === "tiebreakers" && (
+          <TiebreakersTab league={league} patchSeason={patchSeason} />
+        )}
+        {activeTab === "schedule" && (
+          <ScheduleTab
+            seasonId={seasonId}
+            league={league}
+            scheduleGames={scheduleGames}
+            refresh={fetchAll}
+          />
+        )}
+        {activeTab === "standings" && <StandingsTab seasonId={seasonId} />}
+      </div>
     </div>
   )
 }

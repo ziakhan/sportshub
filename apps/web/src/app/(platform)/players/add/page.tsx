@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Button } from "@/components/ui"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 
 function calcAge(dobStr: string | undefined): number | null {
@@ -68,10 +69,10 @@ function AddPlayerForm() {
     return (
       <div className="p-6 md:p-8">
         <div className="mx-auto max-w-xl">
-          <div className="border-ink-100 rounded-3xl border bg-white p-8 text-center shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+          <div className="reveal border-ink-100 rounded-3xl border bg-white p-8 text-center shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+            <div className="bg-court-50 mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
               <svg
-                className="h-6 w-6 text-green-600"
+                className="text-court-600 h-6 w-6"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -84,27 +85,27 @@ function AddPlayerForm() {
                 />
               </svg>
             </div>
-            <h2 className="text-ink-900 mb-2 text-xl font-semibold">Player Added!</h2>
+            <h2 className="font-condensed text-ink-950 mb-2 text-2xl font-bold uppercase tracking-wide">
+              Player Added!
+            </h2>
             <p className="text-ink-600 mb-6">
               <span className="font-semibold">{createdPlayer.name}</span> has been registered.
             </p>
             <div className="flex gap-3">
-              <Link
-                href={redirectTo || "/players"}
-                className="bg-play-600 hover:bg-play-700 flex-1 rounded-xl px-4 py-2 text-center font-semibold text-white transition"
-              >
+              <Button href={redirectTo || "/players"} tone="play" className="flex-1">
                 View My Players
-              </Link>
-              <button
+              </Button>
+              <Button
+                variant="subtle"
+                className="flex-1"
                 onClick={() => {
                   setCreatedPlayer(null)
                   setError(null)
                   reset()
                 }}
-                className="border-ink-200 text-ink-700 hover:bg-court-50 flex-1 rounded-xl border px-4 py-2 font-semibold transition"
               >
                 Add Another Player
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -121,8 +122,10 @@ function AddPlayerForm() {
           </Link>
         </div>
 
-        <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-          <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Add a Player</h1>
+        <div className="reveal border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
+          <h1 className="font-condensed text-ink-950 mb-2 text-3xl font-bold uppercase tracking-wide">
+            Add a Player
+          </h1>
           <p className="text-ink-600 mb-6 text-sm">
             Register your child so you can sign them up for tryouts and teams.
           </p>
@@ -274,19 +277,17 @@ function AddPlayerForm() {
             )}
 
             <div className="flex gap-4 pt-2">
-              <Link
-                href={redirectTo || "/players"}
-                className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border bg-white px-4 py-2 font-semibold shadow-sm transition"
-              >
+              <Button href={redirectTo || "/players"} variant="subtle">
                 Cancel
-              </Link>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                tone="play"
                 disabled={isSubmitting || (isMinor && !watchedConsent)}
-                className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
+                className="flex-1"
               >
                 {isSubmitting ? "Adding..." : "Add Player"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

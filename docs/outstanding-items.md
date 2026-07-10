@@ -1,11 +1,34 @@
 ---
-updated: 2026-07-09
+updated: 2026-07-10
 tags: [theme/ledgers, type/ledger, status/living]
 ---
 
 # Outstanding items — master ledger
 
-> **🕳️ NEW 2026-07-09 (late): Platform gap audit + season-continuity plan.**
+> **✅ SHIPPED 2026-07-09/10 (local, unpushed): THE FULL BUILD PROGRAM — six phases, owner-directed
+> ("build each and everything we discussed").**
+> **P1 Consent + family comms** (`8a781f1`): CommunicationConsent/MessageLog (runbook #19), HMAC
+> unsubscribe, registration confirmations, payment receipts, refund/waive/game-change/game-final
+> notifications, announcement + referee-cancel fanout, email hygiene (appBaseUrl/escapeHtml/
+> formatMoney). **P2 Robustness** (`ee481a3`): timezone early-expiry sweep, standings-tab retry,
+> res.ok checks, list caps. **P3 Season continuity** (`6199986`): Team archivedAt + lineage
+> (runbook #20), 4-step rollover wizard w/ carry-over offers (E2E-proven), league close-out,
+> camp/HL duplicate-as-new, team_submitted + season-open bells, consent-enforced Messages
+> composers (clubs + leagues; "Sent to 1, 28 skipped" verified). **P4 Front doors** (`6dbbc65`):
+> tournaments public (allowlist + /events + club pages), league payments-config UI. **P5
+> Editability residue** (`65a477e`): /settings/security (password/email/delete w/ soft-delete-
+> keep-names), stateless forgot-password, avatar upload, reviews relationship-gate + author
+> edit/delete + admin moderation (launch blocker H4 CLOSED), announcement/poll/chat editing,
+> recap takedown/regenerate, notification dismiss. **P6 Design wave 2 + cleanup** (2026-07-10):
+> 16-group sweep onto the UI kit ([[design-system-elevation]] §8 — season tabs, team surfaces,
+> staff, admin, family), `toneForStatus()` kit map, formatCurrency consolidation + CAD fallback,
+> `hasFeature()` wired (enforcement off), recap API param VERIFIED CORRECT, dead surfaces
+> deleted, .env.example completed, 9 pre-existing tsc errors fixed. Suites 243 unit / 226 int
+> green; 26-surface Playwright smoke clean. Statuses flipped in [[gap-audit-2026-07-09]],
+> [[editability-audit]], [[season-continuity-plan]]. **Deploy train pending owner approval:
+> runbooks #18–#20 + ~25 local commits.**
+>
+> **🕳️ 2026-07-09 (late): Platform gap audit + season-continuity plan.**
 > Owner asked "what else is missing?" → 5-agent sweep → **[[gap-audit-2026-07-09]]** (ranked
 > P0–P2 + build order). Headline systemic gap: **families are silent** — no registration
 > confirmations, no payment receipt at offer-accept, refunds/waives notify nobody, game

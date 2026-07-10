@@ -9,6 +9,7 @@ import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
+import { formatCurrency } from "@/lib/countries"
 
 export const dynamic = "force-dynamic"
 
@@ -49,6 +50,7 @@ async function getHomePageData() {
             select: {
               name: true,
               slug: true,
+              currency: true,
               branding: { select: { primaryColor: true } },
             },
           },
@@ -342,7 +344,7 @@ export default async function HomePage() {
                       Tryout
                     </span>
                     <span className="text-ink-500 text-sm font-semibold">
-                      {tryout.fee === 0 ? "Free" : `$${tryout.fee}`}
+                      {tryout.fee === 0 ? "Free" : formatCurrency(tryout.fee, tryout.tenant.currency)}
                     </span>
                   </div>
                   <h3 className="text-ink-950 mb-2 text-2xl font-semibold">{tryout.title}</h3>

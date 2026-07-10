@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
+import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
 
 interface RosterPlayer {
   playerId: string
@@ -169,7 +170,7 @@ export function LeagueRosterManager({
         </div>
       )}
 
-      {versions.map((v) => {
+      {versions.map((v, i) => {
         const pendingRequest = v.requests.find((r) => r.status === "PENDING")
         const isEditing = editing === v.submissionId
         const isRequesting = requesting === v.submissionId
@@ -178,73 +179,72 @@ export function LeagueRosterManager({
         return (
           <div
             key={v.submissionId}
-            className={`border-ink-100 shadow-soft rounded-2xl border bg-white ${
+            style={{ animationDelay: `${i * 70}ms` }}
+            className={`reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white ${
               highlighted ? "ring-play-200 ring-2" : ""
             }`}
           >
-            <div className="border-ink-100 border-b px-6 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 className="text-ink-900 font-semibold">
-                    {v.leagueName} <span className="text-ink-400 font-normal">· {v.seasonLabel}</span>
-                    {v.divisionName && (
-                      <span className="text-ink-400 font-normal"> · {v.divisionName}</span>
-                    )}
-                  </h3>
-                  <div className="text-ink-500 mt-1 flex flex-wrap items-center gap-2 text-xs">
-                    {v.submissionStatus === "WITHDRAWN" && (
-                      <span className="bg-ink-100 text-ink-600 rounded-full px-2 py-0.5 font-medium">
-                        Withdrawn
-                      </span>
-                    )}
-                    <span
-                      className={`rounded-full px-2 py-0.5 font-medium ${
-                        v.isLocked ? "bg-ink-100 text-ink-600" : "bg-play-100 text-play-700"
-                      }`}
-                    >
-                      {v.isLocked ? "🔒 locked" : "open"}
-                    </span>
-                    <span className="bg-court-50 rounded-full px-2 py-0.5">
-                      {POLICY_LABEL[v.policy] ?? v.policy}
-                      {v.deadline ? ` (${format(new Date(v.deadline), "MMM d")})` : ""}
-                    </span>
-                    {v.submittedAt && (
-                      <span>submitted {format(new Date(v.submittedAt), "MMM d, yyyy")}</span>
-                    )}
-                    <span>{v.players.length} players</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
+            <PanelHeader
+              variant="band"
+              title={
+                <>
+                  {v.leagueName}
+                  <span className="text-ink-400 font-medium"> · {v.seasonLabel}</span>
+                  {v.divisionName && (
+                    <span className="text-ink-400 font-medium"> · {v.divisionName}</span>
+                  )}
+                </>
+              }
+              action={
+                <span className="flex flex-wrap items-center gap-2">
                   {v.canEdit && !isEditing && (
-                    <button
-                      onClick={() => startEdit(v)}
-                      className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
-                    >
+                    <Button size="sm" onClick={() => startEdit(v)}>
                       Edit roster
-                    </button>
+                    </Button>
                   )}
                   {v.canRequest && !pendingRequest && !isRequesting && (
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="sm"
                       onClick={() => {
                         setRequesting(v.submissionId)
                         setEditing(null)
                         setMessage(null)
                       }}
-                      className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
                     >
                       Request change
-                    </button>
+                    </Button>
                   )}
                   {(v.submissionStatus === "PENDING" || v.submissionStatus === "APPROVED") && (
-                    <button
+                    <Button
+                      variant="secondary"
+                      tone="hoop"
+                      size="sm"
                       onClick={() => withdraw(v)}
                       disabled={busy}
-                      className="text-hoop-700 hover:bg-hoop-50 rounded-xl px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
                     >
                       Withdraw from league
-                    </button>
+                    </Button>
                   )}
-                </div>
+                </span>
+              }
+            />
+            <div className="border-ink-100 border-b px-6 py-3">
+              <div className="text-ink-500 flex flex-wrap items-center gap-2 text-xs">
+                {v.submissionStatus === "WITHDRAWN" && (
+                  <Badge tone={toneForStatus(v.submissionStatus)}>Withdrawn</Badge>
+                )}
+                <Badge tone={toneForStatus(v.isLocked ? "LOCKED" : "OPEN")} dot>
+                  {v.isLocked ? "Locked" : "Open"}
+                </Badge>
+                <span className="bg-ink-50 text-ink-600 rounded-full px-2.5 py-0.5 font-medium">
+                  {POLICY_LABEL[v.policy] ?? v.policy}
+                  {v.deadline ? ` (${format(new Date(v.deadline), "MMM d")})` : ""}
+                </span>
+                {v.submittedAt && (
+                  <span>submitted {format(new Date(v.submittedAt), "MMM d, yyyy")}</span>
+                )}
+                <span>{v.players.length} players</span>
               </div>
               {!v.canEdit && (
                 <p className="text-ink-400 mt-2 text-xs">{v.reason}</p>
@@ -268,22 +268,19 @@ export function LeagueRosterManager({
                   rows={2}
                   maxLength={2000}
                   placeholder="e.g. Adding two call-ups from our Grade 8 squad after an injury"
-                  className="border-ink-200 focus:border-play-500 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                  className="border-ink-200 focus:border-[color:var(--brand)] w-full rounded-xl border px-3 py-2 text-sm transition-colors focus:outline-none"
                 />
                 <div className="mt-2 flex gap-2">
-                  <button
+                  <Button
+                    size="sm"
                     onClick={() => sendRequest(v)}
                     disabled={busy || requestMessage.trim().length < 5}
-                    className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
                   >
                     {busy ? "Sending…" : "Send request"}
-                  </button>
-                  <button
-                    onClick={() => setRequesting(null)}
-                    className="text-ink-600 hover:bg-ink-50 rounded-xl px-3 py-2 text-xs"
-                  >
+                  </Button>
+                  <Button variant="subtle" size="sm" onClick={() => setRequesting(null)}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -298,13 +295,13 @@ export function LeagueRosterManager({
                   {clubRoster.map((p) => (
                     <label
                       key={p.playerId}
-                      className="hover:bg-court-50 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm"
+                      className="hover:bg-ink-50 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm transition-colors"
                     >
                       <input
                         type="checkbox"
                         checked={selection.has(p.playerId)}
                         onChange={() => toggle(p.playerId)}
-                        className="accent-play-600"
+                        className="accent-[color:var(--brand)]"
                       />
                       <span className="min-w-0 flex-1 truncate">
                         {p.jerseyNumber != null ? `#${p.jerseyNumber} ` : ""}
@@ -315,34 +312,27 @@ export function LeagueRosterManager({
                   ))}
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={() => saveEdit(v)}
-                    disabled={busy || selection.size === 0}
-                    className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                  >
+                  <Button size="sm" onClick={() => saveEdit(v)} disabled={busy || selection.size === 0}>
                     {busy ? "Saving…" : `Save version (${selection.size} players)`}
-                  </button>
-                  <button
-                    onClick={() => setEditing(null)}
-                    className="text-ink-600 hover:bg-ink-50 rounded-xl px-3 py-2 text-xs"
-                  >
+                  </Button>
+                  <Button variant="subtle" size="sm" onClick={() => setEditing(null)}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="divide-court-200 min-w-full divide-y">
-                  <thead className="bg-court-50">
+                <table className="divide-ink-100 min-w-full divide-y">
+                  <thead className="bg-ink-50/60">
                     <tr>
-                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider">#</th>
-                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider">Player</th>
-                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-medium uppercase tracking-wider">Position</th>
+                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">#</th>
+                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">Player</th>
+                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">Position</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-court-200 divide-y">
+                  <tbody className="divide-ink-100 divide-y">
                     {v.players.map((p) => (
-                      <tr key={p.playerId}>
+                      <tr key={p.playerId} className="hover:bg-ink-50/60 transition-colors">
                         <td className="text-ink-600 whitespace-nowrap px-4 py-2 text-sm">
                           {p.jerseyNumber ?? "—"}
                         </td>

@@ -160,7 +160,7 @@ export default async function OrderSheetPage({
     }),
     getJerseyNumbers(params.id),
   ])
-  const currency = tenant?.currency || "USD"
+  const currency = tenant?.currency || "CAD"
 
   const teamFilter = searchParams.team
   const activeFilterTeam = teams.find((t: { id: string; name: string }) => t.id === teamFilter)

@@ -94,7 +94,7 @@ export function RosterRowActions({
       <button
         onClick={reactivate}
         disabled={busy}
-        className="text-court-700 text-xs font-semibold hover:underline disabled:opacity-50"
+        className="text-court-700 text-xs font-semibold transition-colors hover:underline disabled:opacity-50"
       >
         Reactivate
       </button>
@@ -110,19 +110,19 @@ export function RosterRowActions({
           max={99}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="border-ink-200 w-16 rounded-lg border px-2 py-1 text-sm"
+          className="brand-focus border-ink-200 w-16 rounded-lg border bg-white px-2 py-1 text-sm"
           autoFocus
         />
         <button
           onClick={saveJersey}
           disabled={busy}
-          className="text-play-700 text-xs font-semibold hover:underline disabled:opacity-50"
+          className="text-xs font-semibold text-[color:var(--brand-ink)] transition-colors hover:underline disabled:opacity-50"
         >
           Save
         </button>
         <button
           onClick={() => setEditing(false)}
-          className="text-ink-400 text-xs hover:underline"
+          className="text-ink-400 hover:text-ink-600 text-xs transition-colors hover:underline"
         >
           ✕
         </button>
@@ -134,7 +134,7 @@ export function RosterRowActions({
     <span className="flex items-center gap-2">
       <button
         onClick={() => setEditing(true)}
-        className="text-play-700 text-xs font-semibold hover:underline"
+        className="text-xs font-semibold text-[color:var(--brand-ink)] transition-colors hover:underline"
         title="Manually set jersey number"
       >
         Edit #
@@ -142,7 +142,7 @@ export function RosterRowActions({
       <button
         onClick={release}
         disabled={busy}
-        className="text-hoop-600 text-xs font-semibold hover:underline disabled:opacity-50"
+        className="text-hoop-600 hover:text-hoop-700 text-xs font-semibold transition-colors hover:underline disabled:opacity-50"
       >
         Release
       </button>

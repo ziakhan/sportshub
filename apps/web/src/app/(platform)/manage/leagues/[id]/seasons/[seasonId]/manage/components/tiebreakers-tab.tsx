@@ -1,6 +1,8 @@
 "use client"
 
 import { format } from "date-fns"
+import { Badge, PanelHeader, toneForStatus } from "@/components/ui"
+import { panelClass } from "./types"
 
 const TIEBREAKER_OPTIONS: { key: string; label: string }[] = [
   { key: "HEAD_TO_HEAD", label: "Head-to-head record" },
@@ -39,21 +41,30 @@ export function TiebreakersTab({
   }
 
   return (
-    <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-      <div className="mb-3 flex items-start justify-between">
-        <div>
-          <h3 className="text-ink-900 font-semibold">Tiebreaker order</h3>
-          <p className="text-ink-500 mt-0.5 text-xs">
-            Used to rank teams with identical records. Applied top-to-bottom until one team
-            wins the tiebreaker.
-          </p>
-        </div>
-        {league.tiebreakersLockedAt && (
-          <span className="bg-hoop-50 text-hoop-700 rounded-full px-3 py-1 text-xs font-medium">
-            Locked {format(new Date(league.tiebreakersLockedAt), "MMM d, yyyy")}
-          </span>
-        )}
-      </div>
+    <div className={`reveal ${panelClass}`}>
+      <PanelHeader
+        className="mb-1"
+        title="Tiebreaker order"
+        action={
+          league.tiebreakersLockedAt ? (
+            <Badge
+              tone={toneForStatus("LOCKED")}
+              icon={
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="5" y="11" width="14" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+              }
+            >
+              Locked {format(new Date(league.tiebreakersLockedAt), "MMM d, yyyy")}
+            </Badge>
+          ) : undefined
+        }
+      />
+      <p className="text-ink-500 mb-4 text-xs">
+        Used to rank teams with identical records. Applied top-to-bottom until one team
+        wins the tiebreaker.
+      </p>
 
       {Array.isArray(league.tiebreakerOrder) && league.tiebreakerOrder.length > 0 ? (
         <ol className="space-y-2">
@@ -63,7 +74,7 @@ export function TiebreakersTab({
             return (
               <li
                 key={key}
-                className="border-court-100 bg-court-50 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm"
+                className="border-court-100 bg-court-50 hover:border-court-200 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm transition-colors"
               >
                 <span className="text-ink-900">
                   <span className="text-ink-400 mr-2 font-mono text-xs">{idx + 1}.</span>

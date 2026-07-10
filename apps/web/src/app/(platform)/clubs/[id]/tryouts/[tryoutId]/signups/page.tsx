@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
-import Link from "next/link"
+import type { ReactNode } from "react"
+import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
 import { MakeOfferButton } from "./make-offer-button"
 import { BulkOfferButton } from "./bulk-offer-button"
 
@@ -91,28 +92,30 @@ export default async function TryoutSignupsPage({
     return { ...signup, matchedPlayer, allPlayers: parentPlayers }
   })
 
+  const checkedInCount = signupsWithPlayers.filter((s) => s.checkedInAt).length
+
   return (
     <div>
       <div className="mb-6">
-        <Link
+        <Button
           href={`/clubs/${params.id}/tryouts`}
-          className="text-play-700 text-sm hover:underline"
+          variant="subtle"
+          size="sm"
+          icon={ICONS.back}
         >
-          &larr; Back to Tryouts
-        </Link>
+          Back to Tryouts
+        </Button>
       </div>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-ink-900 text-xl font-bold">{tryout.title} - Signups</h2>
-          <div className="text-ink-500 mt-1 flex gap-4 text-sm">
+          <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+            {tryout.title} - Signups
+          </h2>
+          <div className="text-ink-500 mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             <span>{format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>
             <span>{tryout.location}</span>
-            {tryout.team && (
-              <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                {tryout.team.name}
-              </span>
-            )}
+            {tryout.team && <Badge tone="play">{tryout.team.name}</Badge>}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -137,112 +140,116 @@ export default async function TryoutSignupsPage({
             />
           )}
           {signupsWithPlayers.length > 0 && (
-            <Link
+            <Button
               href={`/clubs/${params.id}/tryouts/${params.tryoutId}/check-in`}
-              className="border-play-200 text-play-700 hover:bg-play-50 rounded-xl border bg-white px-4 py-2 text-sm font-semibold"
+              variant="subtle"
+              size="sm"
+              icon={ICONS.check}
             >
-              {`Check-in (${signupsWithPlayers.filter((s) => s.checkedInAt).length}/${signupsWithPlayers.length})`}
-            </Link>
+              {`Check-in (${checkedInCount}/${signupsWithPlayers.length})`}
+            </Button>
           )}
         </div>
       </div>
 
       {signupsWithPlayers.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
-          <h3 className="text-ink-900 mb-2 text-lg font-semibold">No signups yet</h3>
+        <div className="reveal border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-12 text-center">
+          <h3 className="font-condensed text-ink-950 mb-2 text-xl font-bold uppercase tracking-wide">
+            No signups yet
+          </h3>
           <p className="text-ink-600">
             Once parents sign up their children, they&apos;ll appear here.
           </p>
         </div>
       ) : (
-        <div className="border-ink-100 shadow-soft overflow-x-auto rounded-2xl border bg-white">
-          <table className="divide-court-200 min-w-full divide-y">
-            <thead className="bg-court-50">
-              <tr>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Player
-                </th>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Parent
-                </th>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Age / Gender
-                </th>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Signed Up
-                </th>
-                <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-court-200 divide-y">
-              {signupsWithPlayers.map((signup) => {
-                const hasOffer = signup.offers.length > 0
-                const latestOffer = signup.offers[signup.offers.length - 1]
+        <div className="reveal border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white">
+          <PanelHeader
+            variant="band"
+            title="Signups"
+            action={
+              <span className="text-ink-600 text-sm font-semibold">
+                {signupsWithPlayers.length} signup{signupsWithPlayers.length !== 1 ? "s" : ""}
+                {checkedInCount > 0 ? ` • ${checkedInCount} checked in` : ""}
+              </span>
+            }
+          />
+          <div className="overflow-x-auto">
+            <table className="divide-ink-100 min-w-full divide-y">
+              <thead className="bg-ink-50">
+                <tr>
+                  <Th>Player</Th>
+                  <Th>Parent</Th>
+                  <Th>Age / Gender</Th>
+                  <Th>Status</Th>
+                  <Th>Signed Up</Th>
+                  <Th>Action</Th>
+                </tr>
+              </thead>
+              <tbody className="divide-ink-100 divide-y">
+                {signupsWithPlayers.map((signup) => {
+                  const hasOffer = signup.offers.length > 0
+                  const latestOffer = signup.offers[signup.offers.length - 1]
 
-                return (
-                  <tr key={signup.id}>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <div className="text-ink-900 flex items-center gap-1.5 font-medium">
-                        {signup.playerName}
-                        {signup.checkedInAt && (
-                          <span
-                            className="bg-court-100 text-court-700 rounded-full px-1.5 py-0.5 text-xs font-medium"
-                            title={`Checked in ${format(new Date(signup.checkedInAt), "h:mm a")}`}
-                          >
-                            ✓ in
+                  return (
+                    <tr key={signup.id} className="hover:bg-ink-50/60 transition-colors">
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <div className="text-ink-900 flex items-center gap-1.5 font-medium">
+                          {signup.playerName}
+                          {signup.checkedInAt && (
+                            <span
+                              className="bg-court-50 text-court-700 ring-court-100 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset"
+                              title={`Checked in ${format(new Date(signup.checkedInAt), "h:mm a")}`}
+                            >
+                              ✓ in
+                            </span>
+                          )}
+                        </div>
+                        {signup.notes && (
+                          <div className="text-ink-500 mt-0.5 text-xs">{signup.notes}</div>
+                        )}
+                      </td>
+                      <td className="text-ink-600 whitespace-nowrap px-6 py-4 text-sm">
+                        <div>
+                          {signup.user.firstName} {signup.user.lastName}
+                        </div>
+                        <div className="text-ink-400 text-xs">{signup.user.email}</div>
+                      </td>
+                      <td className="text-ink-600 whitespace-nowrap px-6 py-4 text-sm">
+                        {signup.playerAge} / {signup.playerGender}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        <StatusBadge status={signup.status} offerStatus={latestOffer?.status} />
+                      </td>
+                      <td className="text-ink-500 whitespace-nowrap px-6 py-4 text-sm">
+                        {format(new Date(signup.createdAt), "MMM d, yyyy")}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {tryout.team && signup.matchedPlayer && !hasOffer && (
+                          <MakeOfferButton
+                            teamId={tryout.team.id}
+                            teamName={tryout.team.name}
+                            playerId={signup.matchedPlayer.id}
+                            playerName={signup.playerName}
+                            tryoutSignupId={signup.id}
+                            clubId={params.id}
+                          />
+                        )}
+                        {hasOffer && latestOffer && (
+                          <span className="text-ink-500 text-xs">
+                            Offer {latestOffer.status.toLowerCase()}
                           </span>
                         )}
-                      </div>
-                      {signup.notes && (
-                        <div className="text-ink-500 mt-0.5 text-xs">{signup.notes}</div>
-                      )}
-                    </td>
-                    <td className="text-ink-600 whitespace-nowrap px-6 py-4 text-sm">
-                      <div>
-                        {signup.user.firstName} {signup.user.lastName}
-                      </div>
-                      <div className="text-ink-400 text-xs">{signup.user.email}</div>
-                    </td>
-                    <td className="text-ink-600 whitespace-nowrap px-6 py-4 text-sm">
-                      {signup.playerAge} / {signup.playerGender}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <StatusBadge status={signup.status} offerStatus={latestOffer?.status} />
-                    </td>
-                    <td className="text-ink-500 whitespace-nowrap px-6 py-4 text-sm">
-                      {format(new Date(signup.createdAt), "MMM d, yyyy")}
-                    </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      {tryout.team && signup.matchedPlayer && !hasOffer && (
-                        <MakeOfferButton
-                          teamId={tryout.team.id}
-                          teamName={tryout.team.name}
-                          playerId={signup.matchedPlayer.id}
-                          playerName={signup.playerName}
-                          tryoutSignupId={signup.id}
-                          clubId={params.id}
-                        />
-                      )}
-                      {hasOffer && latestOffer && (
-                        <span className="text-ink-500 text-xs">
-                          Offer {latestOffer.status.toLowerCase()}
-                        </span>
-                      )}
-                      {tryout.team && !signup.matchedPlayer && (
-                        <span className="text-ink-400 text-xs">No player profile matched</span>
-                      )}
-                      {!tryout.team && <span className="text-ink-400 text-xs">No team linked</span>}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                        {tryout.team && !signup.matchedPlayer && (
+                          <span className="text-ink-400 text-xs">No player profile matched</span>
+                        )}
+                        {!tryout.team && <span className="text-ink-400 text-xs">No team linked</span>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -251,33 +258,34 @@ export default async function TryoutSignupsPage({
 
 function StatusBadge({ status, offerStatus }: { status: string; offerStatus?: string }) {
   if (offerStatus) {
-    const colors: Record<string, string> = {
-      PENDING: "bg-hoop-100 text-hoop-700",
-      ACCEPTED: "bg-court-100 text-court-700",
-      DECLINED: "bg-hoop-100 text-hoop-700",
-      EXPIRED: "bg-court-100 text-ink-600",
-    }
-    return (
-      <span
-        className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors[offerStatus] || "bg-court-100 text-ink-600"}`}
-      >
-        Offer {offerStatus.toLowerCase()}
-      </span>
-    )
+    return <Badge tone={toneForStatus(offerStatus)}>Offer {offerStatus.toLowerCase()}</Badge>
   }
+  return <Badge tone={toneForStatus(status)}>{status.toLowerCase()}</Badge>
+}
 
-  const colors: Record<string, string> = {
-    PENDING: "bg-hoop-100 text-hoop-700",
-    CONFIRMED: "bg-court-100 text-court-700",
-    PAID: "bg-play-100 text-play-700",
-    OFFERED: "bg-play-100 text-play-700",
-  }
-
+function Th({ children }: { children: ReactNode }) {
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] || "bg-court-100 text-ink-600"}`}
-    >
-      {status.toLowerCase()}
-    </span>
+    <th className="text-ink-500 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+      {children}
+    </th>
   )
+}
+
+/** Leading SVG icons for the kit Buttons (the Button component sizes them). */
+const ICONS: Record<string, ReactNode> = {
+  back: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  check: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path
+        d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"
+        strokeLinejoin="round"
+      />
+      <path d="M9 13l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 }

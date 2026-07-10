@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { Badge, Button, Card, PanelHeader, toneForStatus, type BadgeTone } from "@/components/ui"
 
 const editTeamSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -34,6 +35,12 @@ const ageGroups = [
   "U18",
   "Adult",
 ]
+
+const inputCls =
+  "mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20 disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400"
+
+const inlineSelectCls =
+  "rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
 
 type StaffRoleType = "HeadCoach" | "AssistantCoach" | "TeamManager"
 
@@ -95,14 +102,14 @@ function getStaffRoleLabel(staffRole: StaffRoleType): string {
   }
 }
 
-function getStaffRoleBadgeColor(staffRole: StaffRoleType): string {
+function getStaffRoleTone(staffRole: StaffRoleType): BadgeTone {
   switch (staffRole) {
     case "HeadCoach":
-      return "bg-play-100 text-play-700"
+      return "play"
     case "AssistantCoach":
-      return "bg-court-100 text-court-700"
+      return "court"
     case "TeamManager":
-      return "bg-play-100 text-play-700"
+      return "play"
   }
 }
 
@@ -113,11 +120,11 @@ function getDesignationLabel(designation: string | null, role: string): string {
   return role
 }
 
-function getDesignationBadgeColor(designation: string | null, role: string): string {
-  if (designation === "HeadCoach") return "bg-play-100 text-play-700"
-  if (designation === "AssistantCoach") return "bg-court-100 text-court-700"
-  if (role === "TeamManager") return "bg-play-100 text-play-700"
-  return "bg-court-100 text-ink-700"
+function getDesignationTone(designation: string | null, role: string): BadgeTone {
+  if (designation === "HeadCoach") return "play"
+  if (designation === "AssistantCoach") return "court"
+  if (role === "TeamManager") return "play"
+  return "neutral"
 }
 
 function toStaffRoleType(designation: string | null, role: string): StaffRoleType {
@@ -394,7 +401,9 @@ export default function EditTeamPage() {
         >
           &larr; Back to Teams
         </Link>
-        <h2 className="text-ink-900 text-xl font-bold">Edit Team</h2>
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          Edit Team
+        </h2>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -410,20 +419,15 @@ export default function EditTeamPage() {
         )}
 
         {/* Team Details Card */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-8">
-          <h3 className="text-ink-900 mb-4 text-lg font-semibold">Team Details</h3>
+        <Card className="reveal">
+          <PanelHeader title="Team details" />
 
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="text-ink-700 block text-sm font-medium">
                 Team Name <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("name")}
-                type="text"
-                id="name"
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-1"
-              />
+              <input {...register("name")} type="text" id="name" className={inputCls} />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
             </div>
 
@@ -431,11 +435,7 @@ export default function EditTeamPage() {
               <label htmlFor="ageGroup" className="text-ink-700 block text-sm font-medium">
                 Age Group <span className="text-red-500">*</span>
               </label>
-              <select
-                {...register("ageGroup")}
-                id="ageGroup"
-                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
-              >
+              <select {...register("ageGroup")} id="ageGroup" className={inputCls}>
                 <option value="">Select age group</option>
                 {ageGroups.map((age) => (
                   <option key={age} value={age}>
@@ -453,11 +453,7 @@ export default function EditTeamPage() {
                 <label htmlFor="gender" className="text-ink-700 block text-sm font-medium">
                   Gender
                 </label>
-                <select
-                  {...register("gender")}
-                  id="gender"
-                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
-                >
+                <select {...register("gender")} id="gender" className={inputCls}>
                   <option value="">Select gender</option>
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
@@ -473,7 +469,7 @@ export default function EditTeamPage() {
                   {...register("season")}
                   type="text"
                   id="season"
-                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
+                  className={inputCls}
                   placeholder="Spring 2026"
                 />
               </div>
@@ -487,19 +483,20 @@ export default function EditTeamPage() {
                 {...register("description")}
                 id="description"
                 rows={3}
-                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
+                className={inputCls}
                 placeholder="Team description..."
               />
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Staff Management Card */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-8">
-          <h3 className="text-ink-900 mb-1 text-lg font-semibold">
-            Staff ({activeExistingStaff.length + staffAssignments.length})
-          </h3>
-          <p className="text-ink-600 mb-4 text-sm">
+        <Card className="reveal [animation-delay:80ms]">
+          <PanelHeader
+            title="Staff"
+            action={<Badge>{activeExistingStaff.length + staffAssignments.length}</Badge>}
+          />
+          <p className="text-ink-600 -mt-3 mb-4 text-sm">
             Manage coaches and team managers. Staff can be assigned to multiple teams and clubs.
           </p>
 
@@ -519,10 +516,10 @@ export default function EditTeamPage() {
                   return (
                     <div
                       key={member.id}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-2 ${
+                      className={`flex items-center justify-between rounded-xl border px-3 py-2 transition-colors ${
                         isMarkedForRemoval
                           ? "border-hoop-200 bg-hoop-50 opacity-60"
-                          : "border-ink-200"
+                          : "border-ink-100 hover:border-ink-200"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -534,11 +531,9 @@ export default function EditTeamPage() {
                           </p>
                           <p className="text-ink-500 text-xs">{member.user.email}</p>
                         </div>
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getDesignationBadgeColor(member.designation, member.role)}`}
-                        >
+                        <Badge tone={getDesignationTone(member.designation, member.role)}>
                           {getDesignationLabel(member.designation, member.role)}
-                        </span>
+                        </Badge>
                       </div>
                       {isMarkedForRemoval ? (
                         <button
@@ -552,7 +547,7 @@ export default function EditTeamPage() {
                         <button
                           type="button"
                           onClick={() => markExistingForRemoval(member.id)}
-                          className="text-ink-400 hover:text-hoop-600"
+                          className="text-ink-400 hover:text-hoop-600 transition-colors"
                           title="Remove from team"
                         >
                           <svg
@@ -594,17 +589,15 @@ export default function EditTeamPage() {
                         <p className="text-ink-900 text-sm font-medium">{s.name}</p>
                         <p className="text-ink-500 text-xs">{s.email}</p>
                       </div>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStaffRoleBadgeColor(s.staffRole)}`}
-                      >
+                      <Badge tone={getStaffRoleTone(s.staffRole)}>
                         {getStaffRoleLabel(s.staffRole)}
-                      </span>
+                      </Badge>
                       <span className="text-court-600 text-xs">+ New</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeNewAssignment(s.userId)}
-                      className="text-ink-400 hover:text-hoop-600"
+                      className="text-ink-400 hover:text-hoop-600 transition-colors"
                     >
                       <svg
                         className="h-4 w-4"
@@ -632,16 +625,14 @@ export default function EditTeamPage() {
                         <p className="text-ink-900 text-sm font-medium">{s.email}</p>
                         <p className="text-xs text-amber-600">Pending invite</p>
                       </div>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStaffRoleBadgeColor(s.staffRole)}`}
-                      >
+                      <Badge tone={getStaffRoleTone(s.staffRole)}>
                         {getStaffRoleLabel(s.staffRole)}
-                      </span>
+                      </Badge>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeNewInvite(s.email)}
-                      className="text-ink-400 hover:text-hoop-600"
+                      className="text-ink-400 hover:text-hoop-600 transition-colors"
                     >
                       <svg
                         className="h-4 w-4"
@@ -665,7 +656,7 @@ export default function EditTeamPage() {
 
           {/* Add existing staff */}
           <div className="border-ink-100 mb-4 border-t pt-4">
-            <label className="text-ink-700 mb-1 block text-sm font-medium">
+            <label className="text-ink-500 mb-2 block text-xs font-semibold uppercase tracking-wider">
               Add Existing Staff
             </label>
             {loadingStaff ? (
@@ -679,7 +670,7 @@ export default function EditTeamPage() {
                 <select
                   value={selectedStaffId}
                   onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                  className={`${inlineSelectCls} min-w-0 flex-1`}
                 >
                   <option value="">Select a staff member</option>
                   {unassignedStaff.map((s) => {
@@ -698,7 +689,7 @@ export default function EditTeamPage() {
                 <select
                   value={selectedStaffRole}
                   onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)}
-                  className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                  className={`${inlineSelectCls} w-40`}
                 >
                   <option value="HeadCoach" disabled={hasHeadCoach}>
                     Head Coach
@@ -706,28 +697,25 @@ export default function EditTeamPage() {
                   <option value="AssistantCoach">Assistant Coach</option>
                   <option value="TeamManager">Team Manager</option>
                 </select>
-                <button
-                  type="button"
-                  onClick={handleAddStaff}
-                  disabled={!selectedStaffId}
-                  className="bg-play-600 hover:bg-play-700 disabled:bg-court-300 rounded-xl px-3 py-2 text-sm font-medium text-white"
-                >
+                <Button type="button" size="sm" onClick={handleAddStaff} disabled={!selectedStaffId}>
                   Add
-                </button>
+                </Button>
               </div>
             )}
           </div>
 
           {/* Invite by email */}
           <div className="border-ink-100 border-t pt-4">
-            <label className="text-ink-700 mb-1 block text-sm font-medium">Invite by Email</label>
+            <label className="text-ink-500 mb-2 block text-xs font-semibold uppercase tracking-wider">
+              Invite by Email
+            </label>
             <div className="flex gap-2">
               <input
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="staff@example.com"
-                className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                className={`${inlineSelectCls} min-w-0 flex-1`}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault()
@@ -738,7 +726,7 @@ export default function EditTeamPage() {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as StaffRoleType)}
-                className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                className={`${inlineSelectCls} w-40`}
               >
                 <option value="HeadCoach" disabled={hasHeadCoach}>
                   Head Coach
@@ -746,72 +734,65 @@ export default function EditTeamPage() {
                 <option value="AssistantCoach">Assistant Coach</option>
                 <option value="TeamManager">Team Manager</option>
               </select>
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="subtle"
                 onClick={handleAddInvite}
                 disabled={!inviteEmail.trim()}
-                className="disabled:border-ink-200 disabled:text-ink-300 border-play-600 text-play-600 hover:bg-play-50 rounded-xl border px-3 py-2 text-sm font-medium"
               >
                 Invite
-              </button>
+              </Button>
             </div>
             <p className="text-ink-500 mt-1 text-xs">
               The invited person will receive a notification and be assigned to this team once they
               accept.
             </p>
           </div>
-        </div>
+        </Card>
 
         {/* Save / Cancel buttons */}
-        <div className="flex gap-4">
-          <Link
-            href={`/clubs/${clubId}/teams`}
-            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-4 py-2 font-semibold"
-          >
+        <div className="flex gap-3">
+          <Button variant="subtle" href={`/clubs/${clubId}/teams`}>
             Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-play-600 hover:bg-play-700 disabled:bg-court-300 flex-1 rounded-xl px-4 py-2 font-semibold text-white"
-          >
+          </Button>
+          <Button type="submit" disabled={isSubmitting} className="flex-1">
             {isSubmitting
               ? "Saving..."
               : hasPendingStaffChanges
                 ? "Save All Changes"
                 : "Save Changes"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {/* Tryouts Section */}
-      <div className="border-ink-100 shadow-soft mt-6 rounded-2xl border bg-white p-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-ink-900 text-lg font-semibold">Tryouts ({tryoutList.length})</h3>
-          <Link
-            href={`/clubs/${clubId}/tryouts/create`}
-            className="text-play-700 hover:text-play-700 text-sm font-medium"
-          >
-            Create Tryout
-          </Link>
-        </div>
+      <Card className="reveal mt-6 [animation-delay:160ms]">
+        <PanelHeader
+          title={`Tryouts (${tryoutList.length})`}
+          action={
+            <Button size="sm" variant="subtle" href={`/clubs/${clubId}/tryouts/create`}>
+              Create Tryout
+            </Button>
+          }
+        />
         {tryoutList.length === 0 ? (
           <p className="text-ink-500 text-sm">
             No tryouts linked to this team yet. Link a tryout by selecting this team when creating
             or editing a tryout.
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {tryoutList.map((tryout) => {
               const isPast = new Date(tryout.scheduledAt) < new Date()
               return (
                 <Link
                   key={tryout.id}
                   href={`/clubs/${clubId}/tryouts/${tryout.id}/edit`}
-                  className="border-ink-200 hover:border-play-300 hover:shadow-soft flex items-center justify-between rounded-xl border p-3 transition"
+                  className="border-ink-100 flex items-center justify-between gap-3 rounded-2xl border bg-white p-3 transition-all duration-200 hover:translate-x-0.5 hover:border-[color:var(--brand-line)] hover:shadow-[0_10px_30px_-22px_rgba(15,23,42,0.45)]"
                 >
-                  <div>
-                    <p className="text-ink-900 text-sm font-medium">{tryout.title}</p>
+                  <div className="min-w-0">
+                    <p className="text-ink-900 truncate text-sm font-medium">{tryout.title}</p>
                     <p className="text-ink-500 text-xs">
                       {new Date(tryout.scheduledAt).toLocaleDateString(undefined, {
                         month: "short",
@@ -823,23 +804,20 @@ export default function EditTeamPage() {
                       &middot; {tryout.ageGroup}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      isPast
-                        ? "bg-court-100 text-ink-600"
-                        : tryout.isPublished
-                          ? "bg-court-100 text-court-700"
-                          : "bg-hoop-100 text-hoop-700"
-                    }`}
+                  <Badge
+                    tone={
+                      isPast ? "neutral" : toneForStatus(tryout.isPublished ? "PUBLISHED" : "DRAFT")
+                    }
+                    className="shrink-0"
                   >
                     {isPast ? "Past" : tryout.isPublished ? "Published" : "Draft"}
-                  </span>
+                  </Badge>
                 </Link>
               )
             })}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

@@ -7,7 +7,11 @@ import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/em
 
 export const dynamic = "force-dynamic"
 
-async function requireLeagueSide(userId: string, isPlatformAdmin: boolean, leagueId: string) {
+async function requireLeagueSide(
+  userId: string,
+  isPlatformAdmin: boolean,
+  leagueId: string
+): Promise<{ error: NextResponse; league?: never } | { error?: never; league: any }> {
   const league = (await prisma.league.findUnique({
     where: { id: leagueId },
     select: { id: true, name: true, ownerId: true },
@@ -28,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
 
     const requests = await prisma.refereeSessionRequest.findMany({
       where: { leagueId: params.id },
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
     const { league } = ctx
 
     const parsed = createSchema.safeParse(await request.json().catch(() => null))

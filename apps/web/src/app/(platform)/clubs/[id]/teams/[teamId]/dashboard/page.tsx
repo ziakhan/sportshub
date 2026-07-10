@@ -2,8 +2,10 @@ import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import type { ReactNode } from "react"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { Badge, Button, PanelHeader, StatTile, toneForStatus } from "@/components/ui"
 import { ArchivedTeamBanner, TeamSeasonActions } from "./team-season-actions"
 
 interface StaffMember {
@@ -153,25 +155,24 @@ export default async function TeamDashboardPage({
         <Link href={`/clubs/${clubId}/teams`} className="text-play-700 text-sm hover:underline">
           &larr; Back to Teams
         </Link>
-        <Link
-          href={`/team/${teamId}`}
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
-        >
+        <Button href={`/team/${teamId}`} variant="subtle" size="sm">
           View public page &rarr;
-        </Link>
+        </Button>
       </div>
 
       {/* Archived — read-only history + Unarchive / Start next season */}
       {isArchived && <ArchivedTeamBanner clubId={clubId} teamId={teamId} />}
 
       {/* Team Header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="reveal mb-6 flex items-start justify-between">
         <div>
-          <h2 className="text-ink-900 text-2xl font-bold">{team.name}</h2>
-          <p className="text-ink-500 text-sm">
+          <h2 className="font-condensed text-ink-950 text-3xl font-bold uppercase leading-none tracking-wide">
+            {team.name}
+          </h2>
+          <p className="text-ink-500 mt-1.5 text-sm font-medium">
             {team.ageGroup}
-            {team.gender ? ` \u2022 ${team.gender}` : ""}
-            {team.season ? ` \u2022 ${team.season}` : ""}
+            {team.gender ? ` • ${team.gender}` : ""}
+            {team.season ? ` • ${team.season}` : ""}
           </p>
           {/* Staff / Coaches */}
           {teamStaff.length > 0 && (
@@ -190,7 +191,7 @@ export default async function TeamDashboardPage({
                   }`}
                 >
                   {s.user?.firstName} {s.user?.lastName}
-                  {" \u2022 "}
+                  {" • "}
                   {s.designation === "HeadCoach"
                     ? "Head Coach"
                     : s.designation === "AssistantCoach"
@@ -218,42 +219,52 @@ export default async function TeamDashboardPage({
           {!isArchived && (
             <TeamSeasonActions clubId={clubId} teamId={teamId} teamName={team.name} />
           )}
-          <Link
-            href={`/clubs/${clubId}/teams/${teamId}/edit`}
-            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-          >
+          <Button href={`/clubs/${clubId}/teams/${teamId}/edit`} variant="subtle" size="sm">
             Edit Team
-          </Link>
+          </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4 text-center">
-          <div className="text-court-700 text-2xl font-bold">{players.length}</div>
-          <div className="text-ink-500 text-xs">Players</div>
-        </div>
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4 text-center">
-          <div className="text-hoop-600 text-2xl font-bold">{tryouts.length}</div>
-          <div className="text-ink-500 text-xs">Tryouts</div>
-        </div>
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4 text-center">
-          <div className="text-play-700 text-2xl font-bold">{offers.length}</div>
-          <div className="text-ink-500 text-xs">Offers</div>
-        </div>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile
+          value={players.length}
+          label="Players"
+          tone="court"
+          icon={TILE_ICONS.players}
+          delay={0}
+        />
+        <StatTile
+          value={tryouts.length}
+          label="Tryouts"
+          tone="hoop"
+          icon={TILE_ICONS.tryouts}
+          delay={70}
+        />
+        <StatTile
+          value={offers.length}
+          label="Offers"
+          tone="play"
+          icon={TILE_ICONS.offers}
+          delay={140}
+          sub={pendingOffers.length > 0 ? `${pendingOffers.length} pending` : null}
+          subTone="hoop"
+        />
       </div>
 
       {/* Leagues — where this team plays */}
-      <div className="border-ink-100 shadow-soft mb-6 rounded-2xl border bg-white p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-ink-900 font-semibold">Leagues ({submissions.filter((s: any) => s.status !== "WITHDRAWN").length})</h3>
-          <Link
-            href={`/browse-leagues?team=${teamId}`}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
-          >
-            Add this team to a league
-          </Link>
-        </div>
+      <section
+        className="reveal border-ink-100 shadow-soft mb-6 rounded-[28px] border bg-white p-6"
+        style={{ animationDelay: "210ms" }}
+      >
+        <PanelHeader
+          title={`Leagues (${submissions.filter((s: any) => s.status !== "WITHDRAWN").length})`}
+          action={
+            <Button href={`/browse-leagues?team=${teamId}`} tone="play" size="sm">
+              Add this team to a league
+            </Button>
+          }
+        />
         {submissions.length === 0 ? (
           <p className="text-ink-500 text-sm">
             This team isn&apos;t registered in any league yet. Browse open leagues and submit the
@@ -264,7 +275,7 @@ export default async function TeamDashboardPage({
             {submissions.map((s: any) => (
               <div
                 key={s.id}
-                className="bg-court-50 flex flex-wrap items-center justify-between gap-2 rounded-xl px-4 py-3"
+                className="border-ink-100 bg-ink-50 flex flex-wrap items-center justify-between gap-2 rounded-2xl border px-4 py-3"
               >
                 <div className="min-w-0">
                   <div className="text-ink-900 flex items-center gap-2 text-sm font-semibold">
@@ -274,69 +285,54 @@ export default async function TeamDashboardPage({
                       <span className="text-ink-400 font-normal">· {s.division.name}</span>
                     )}
                   </div>
-                  <div className="text-ink-500 mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-                    <span
-                      className={`rounded-full px-2 py-0.5 font-medium ${
-                        s.status === "APPROVED"
-                          ? "bg-court-100 text-court-700"
-                          : s.status === "PENDING"
-                            ? "bg-hoop-100 text-hoop-700"
-                            : "bg-court-100 text-ink-500"
-                      }`}
-                    >
-                      {s.status.toLowerCase()}
-                    </span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <Badge tone={toneForStatus(s.status)}>{s.status.toLowerCase()}</Badge>
                     {s.paymentStatus && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 font-medium ${
-                          s.paymentStatus === "PAID"
-                            ? "bg-court-100 text-court-700"
-                            : "bg-hoop-100 text-hoop-700"
-                        }`}
-                      >
+                      <Badge tone={toneForStatus(s.paymentStatus)}>
                         fee {s.paymentStatus.toLowerCase()}
-                      </span>
+                      </Badge>
                     )}
                     {s.roster && (
-                      <span
-                        className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
-                          s.roster.isLocked
-                            ? "bg-ink-100 text-ink-600"
-                            : "bg-play-100 text-play-700"
-                        }`}
-                      >
+                      <Badge tone={s.roster.isLocked ? "neutral" : "play"}>
                         {s.roster.isLocked ? "🔒 roster locked" : "roster open"} ·{" "}
                         {s.roster._count.players} players
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </div>
                 {s.roster && (
-                  <Link
+                  <Button
                     href={`/clubs/${clubId}/teams/${teamId}/league-rosters?submission=${s.id}`}
-                    className="border-ink-200 text-ink-700 hover:bg-white shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+                    variant="subtle"
+                    size="sm"
+                    className="shrink-0"
                   >
                     View league roster
-                  </Link>
+                  </Button>
                 )}
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Roster */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-ink-900 font-semibold">Roster ({players.length})</h3>
-            <Link
-              href={`/clubs/${clubId}/teams/${teamId}/roster`}
-              className="text-play-700 text-xs hover:underline"
-            >
-              View Full Roster
-            </Link>
-          </div>
+        <section
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "260ms" }}
+        >
+          <PanelHeader
+            title={`Roster (${players.length})`}
+            action={
+              <Link
+                href={`/clubs/${clubId}/teams/${teamId}/roster`}
+                className="text-play-700 text-xs font-semibold hover:underline"
+              >
+                View Full Roster
+              </Link>
+            }
+          />
           {players.length === 0 ? (
             <p className="text-ink-500 text-sm">
               No players on roster yet. Send offers from tryout signups.
@@ -346,7 +342,7 @@ export default async function TeamDashboardPage({
               {players.slice(0, 8).map((tp) => (
                 <div
                   key={tp.id}
-                  className="bg-court-50 flex items-center justify-between rounded-xl px-3 py-2"
+                  className="bg-ink-50 flex items-center justify-between rounded-xl px-3 py-2"
                 >
                   <div className="flex items-center gap-2">
                     {tp.jerseyNumber !== null && (
@@ -366,19 +362,24 @@ export default async function TeamDashboardPage({
               )}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Tryouts */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-ink-900 font-semibold">Tryouts ({tryouts.length})</h3>
-            <Link
-              href={`/clubs/${clubId}/tryouts/create?teamId=${teamId}`}
-              className="text-play-700 text-xs hover:underline"
-            >
-              Create Tryout
-            </Link>
-          </div>
+        <section
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "320ms" }}
+        >
+          <PanelHeader
+            title={`Tryouts (${tryouts.length})`}
+            action={
+              <Link
+                href={`/clubs/${clubId}/tryouts/create?teamId=${teamId}`}
+                className="text-play-700 text-xs font-semibold hover:underline"
+              >
+                Create Tryout
+              </Link>
+            }
+          />
           {tryouts.length === 0 ? (
             <p className="text-ink-500 text-sm">No tryouts linked to this team.</p>
           ) : (
@@ -389,25 +390,23 @@ export default async function TeamDashboardPage({
                   <Link
                     key={tryout.id}
                     href={`/clubs/${clubId}/tryouts/${tryout.id}/signups`}
-                    className="bg-court-50 hover:bg-court-100 block rounded-xl px-3 py-2"
+                    className="border-ink-100 block rounded-xl border bg-white px-3 py-2 transition-all duration-200 hover:translate-x-0.5 hover:border-[color:var(--brand-line)] hover:shadow-[0_10px_30px_-22px_rgba(15,23,42,0.45)]"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-ink-900 text-sm font-medium">{tryout.title}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      <Badge
+                        tone={
                           isPast
-                            ? "bg-court-100 text-ink-600"
-                            : tryout.isPublished
-                              ? "bg-court-100 text-court-700"
-                              : "bg-hoop-100 text-hoop-700"
-                        }`}
+                            ? "neutral"
+                            : toneForStatus(tryout.isPublished ? "PUBLISHED" : "DRAFT")
+                        }
                       >
                         {isPast ? "Past" : tryout.isPublished ? "Published" : "Draft"}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className="text-ink-500 text-xs">
+                    <div className="text-ink-500 mt-0.5 text-xs">
                       {format(new Date(tryout.scheduledAt), "MMM d, yyyy")}
-                      {" \u2022 "}
+                      {" • "}
                       {tryout._count?.signups || 0} signups
                     </div>
                   </Link>
@@ -415,65 +414,52 @@ export default async function TeamDashboardPage({
               })}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Offers */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-ink-900 font-semibold">Offers ({offers.length})</h3>
-            <div className="flex items-center gap-3">
-              {acceptedOffers.length > 0 && (
+        <section
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "380ms" }}
+        >
+          <PanelHeader
+            title={`Offers (${offers.length})`}
+            action={
+              <span className="flex items-center gap-3">
+                {acceptedOffers.length > 0 && (
+                  <Link
+                    href={`/clubs/${clubId}/offers/summary?team=${teamId}`}
+                    className="text-play-700 text-xs font-semibold hover:underline"
+                  >
+                    Order Sheet
+                  </Link>
+                )}
                 <Link
-                  href={`/clubs/${clubId}/offers/summary?team=${teamId}`}
-                  className="text-play-700 text-xs hover:underline"
+                  href={`/clubs/${clubId}/offers?team=${teamId}`}
+                  className="text-play-700 text-xs font-semibold hover:underline"
                 >
-                  Order Sheet
+                  View All Offers
                 </Link>
-              )}
-              <Link
-                href={`/clubs/${clubId}/offers?team=${teamId}`}
-                className="text-play-700 text-xs hover:underline"
-              >
-                View All Offers
-              </Link>
-            </div>
-          </div>
+              </span>
+            }
+          />
           {offers.length === 0 ? (
             <p className="text-ink-500 text-sm">No offers sent for this team yet.</p>
           ) : (
             <div className="space-y-1">
-              <div className="mb-3 flex gap-3">
-                <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                  {pendingOffers.length} pending
-                </span>
-                <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                  {acceptedOffers.length} accepted
-                </span>
-                <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                  {declinedOffers.length} declined
-                </span>
+              <div className="mb-3 flex flex-wrap gap-2">
+                <Badge tone={toneForStatus("PENDING")}>{pendingOffers.length} pending</Badge>
+                <Badge tone={toneForStatus("ACCEPTED")}>{acceptedOffers.length} accepted</Badge>
+                <Badge tone={toneForStatus("DECLINED")}>{declinedOffers.length} declined</Badge>
               </div>
               {offers.slice(0, 6).map((offer) => (
                 <div
                   key={offer.id}
-                  className="bg-court-50 flex items-center justify-between rounded-xl px-3 py-2"
+                  className="bg-ink-50 flex items-center justify-between rounded-xl px-3 py-2"
                 >
                   <span className="text-ink-900 text-sm">
                     {offer.player?.firstName} {offer.player?.lastName}
                   </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      offer.status === "ACCEPTED"
-                        ? "bg-court-100 text-court-700"
-                        : offer.status === "DECLINED"
-                          ? "bg-hoop-100 text-hoop-700"
-                          : offer.status === "EXPIRED"
-                            ? "bg-court-100 text-ink-600"
-                            : "bg-hoop-100 text-hoop-700"
-                    }`}
-                  >
-                    {offer.status.toLowerCase()}
-                  </span>
+                  <Badge tone={toneForStatus(offer.status)}>{offer.status.toLowerCase()}</Badge>
                 </div>
               ))}
               {offers.length > 6 && (
@@ -481,68 +467,70 @@ export default async function TeamDashboardPage({
               )}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Quick Actions */}
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-          <h3 className="text-ink-900 mb-4 font-semibold">Quick Actions</h3>
+        <section
+          className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6"
+          style={{ animationDelay: "440ms" }}
+        >
+          <PanelHeader title="Quick Actions" />
           <div className="grid grid-cols-2 gap-2">
-            <Link
-              href={`/clubs/${clubId}/teams/${teamId}/roster`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            <Button href={`/clubs/${clubId}/teams/${teamId}/roster`} variant="subtle" block>
               Roster
-            </Link>
-            <Link
-              href={`/clubs/${clubId}/offer-templates`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/clubs/${clubId}/offer-templates`} variant="subtle" block>
               Offer Templates
-            </Link>
-            <Link
-              href={`/clubs/${clubId}/offers/summary?team=${teamId}`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/clubs/${clubId}/offers/summary?team=${teamId}`} variant="subtle" block>
               Order Sheet
-            </Link>
-            <Link
-              href={`/teams/${teamId}/chat`}
-              className="border-ink-200 hover:bg-court-50 relative rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/teams/${teamId}/chat`} variant="subtle" block className="relative">
               Team Chat
               {chatUnread > 0 && (
                 <span className="bg-hoop-500 absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white">
                   {chatUnread}
                 </span>
               )}
-            </Link>
-            <Link
-              href={`/teams/${teamId}/polls`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/teams/${teamId}/polls`} variant="subtle" block>
               Polls
-            </Link>
-            <Link
-              href={`/teams/${teamId}/calendar`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/teams/${teamId}/calendar`} variant="subtle" block>
               Calendar
-            </Link>
-            <Link
-              href={`/clubs/${clubId}/teams/${teamId}/edit`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/clubs/${clubId}/teams/${teamId}/edit`} variant="subtle" block>
               Edit Team
-            </Link>
-            <Link
-              href={`/clubs/${clubId}/tryouts/create?teamId=${teamId}`}
-              className="border-ink-200 hover:bg-court-50 rounded-xl border p-3 text-center text-sm"
-            >
+            </Button>
+            <Button href={`/clubs/${clubId}/tryouts/create?teamId=${teamId}`} variant="subtle" block>
               New Tryout
-            </Link>
+            </Button>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   )
+}
+
+/** Full SVG icons for the stat tiles (20×20). */
+const TILE_ICONS: Record<string, ReactNode> = {
+  players: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" strokeLinecap="round" />
+    </svg>
+  ),
+  tryouts: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <rect x="8" y="2" width="8" height="4" rx="1" />
+      <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" strokeLinejoin="round" />
+      <path d="M9 13l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  offers: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 }

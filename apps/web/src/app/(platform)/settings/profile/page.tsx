@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CountryStateSelector } from "@/components/country-state-selector"
+import { Button, Card } from "@/components/ui"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -123,14 +124,15 @@ function AvatarUploader({
       <div className="min-w-0 flex-1">
         <p className="text-ink-800 text-sm font-medium">Profile photo</p>
         <div className="mt-1.5 flex flex-wrap gap-2">
-          <button
+          <Button
             type="button"
+            variant="subtle"
+            size="sm"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-sm font-medium transition disabled:opacity-50"
           >
             {busy ? "Saving…" : value ? "Replace" : "Upload"}
-          </button>
+          </Button>
           {value && !busy && (
             <button
               type="button"
@@ -241,20 +243,22 @@ export default function ProfileEditPage() {
 
   return (
     <div className="mx-auto max-w-xl p-6 md:p-8">
-      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-        <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Edit Profile</h1>
-        <p className="text-ink-700 mb-6 text-sm">Update your personal information.</p>
+      <Card className="reveal p-8">
+        <h1 className="font-condensed text-ink-950 mb-1 text-3xl font-bold uppercase leading-none tracking-wide">
+          Edit Profile
+        </h1>
+        <p className="text-ink-500 mb-6 text-sm">Update your personal information.</p>
 
         <AvatarUploader value={avatarUrl} onSaved={setAvatarUrl} />
 
         {error && (
-          <div className="border-hoop-200 text-hoop-700 mb-4 rounded-lg border bg-red-50 p-3 text-sm">
+          <div className="border-hoop-100 bg-hoop-50 text-hoop-700 mb-4 rounded-xl border p-3 text-sm">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-court-50 text-court-700 mb-4 rounded-lg border border-green-200 p-3 text-sm">
+          <div className="border-court-100 bg-court-50 text-court-700 mb-4 rounded-xl border p-3 text-sm">
             Profile updated successfully!
           </div>
         )}
@@ -322,37 +326,30 @@ export default function ProfileEditPage() {
           </div>
 
           <div className="flex gap-4 pt-2">
-            <Link
-              href="/dashboard"
-              className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border bg-white px-4 py-2.5 font-semibold transition"
-            >
+            <Button href="/dashboard" variant="subtle">
               Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-2.5 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
-            >
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
               {isSubmitting ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
 
         <div className="border-ink-100 mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t pt-4">
           <Link
             href="/settings/communications"
-            className="text-play-600 hover:text-play-700 text-sm font-semibold"
+            className="text-play-600 hover:text-play-700 text-sm font-semibold transition-colors"
           >
             Email preferences &rarr;
           </Link>
           <Link
             href="/settings/security"
-            className="text-play-600 hover:text-play-700 text-sm font-semibold"
+            className="text-play-600 hover:text-play-700 text-sm font-semibold transition-colors"
           >
             Security &amp; sign-in &rarr;
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { Button, Card } from "@/components/ui"
 import RemovePlayerButton from "./remove-player-button"
 
 interface PlayerTeam {
@@ -56,25 +57,24 @@ export default function PlayersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
+      <Card className="reveal sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           Players
         </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-ink-950 text-3xl font-bold">My players</h1>
+            <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+              My players
+            </h1>
             <p className="text-ink-500 mt-1 text-sm">
               Player profiles on this account — teams, stats and registrations.
             </p>
           </div>
-          <Link
-            href="/players/add"
-            className="bg-play-600 hover:bg-play-700 inline-flex items-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition"
-          >
+          <Button href="/players/add" tone="play" icon={<IconPlus />}>
             Add Player
-          </Link>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {error && (
         <div className="border-hoop-200 bg-hoop-50 text-hoop-700 rounded-xl border p-3 text-sm font-medium">
@@ -83,7 +83,7 @@ export default function PlayersPage() {
       )}
 
       {players.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-10 text-center">
+        <div className="reveal border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-10 text-center">
           <div className="bg-ink-50 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl">
             <IconUsers className="text-ink-500 h-5 w-5" />
           </div>
@@ -91,23 +91,21 @@ export default function PlayersPage() {
           <p className="text-ink-500 mx-auto mb-5 mt-2 max-w-lg text-sm">
             Add a player profile to start signing up for tryouts, camps, and team programs.
           </p>
-          <Link
-            href="/players/add"
-            className="bg-play-600 hover:bg-play-700 inline-flex rounded-xl px-6 py-3 text-sm font-semibold text-white transition"
-          >
+          <Button href="/players/add" tone="play" size="lg" icon={<IconPlus />}>
             Add your first player
-          </Link>
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {players.map((player) => {
+          {players.map((player, index) => {
             const dob = new Date(player.dateOfBirth)
             const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 
             return (
               <div
                 key={player.id}
-                className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
+                style={{ animationDelay: `${index * 70}ms` }}
+                className="reveal border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -141,7 +139,7 @@ export default function PlayersPage() {
                         <li key={tp.team.id}>
                           <Link
                             href={`/team/${tp.team.id}`}
-                            className="bg-ink-50 hover:bg-play-50 group flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition"
+                            className="bg-ink-50 hover:bg-play-50 group flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 hover:translate-x-0.5"
                           >
                             <span className="min-w-0">
                               <span className="text-ink-950 group-hover:text-play-700 block truncate text-sm font-semibold">
@@ -177,6 +175,14 @@ export default function PlayersPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function IconPlus() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+    </svg>
   )
 }
 

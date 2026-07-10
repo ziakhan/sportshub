@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { inputClass, type SchedSettings } from "./types"
+import { Button, PanelHeader } from "@/components/ui"
+import { inputClass, panelClass, type SchedSettings } from "./types"
 
 // Mutations previously ignored res.ok — a 403/500 looked like success and
 // refresh() quietly reverted the UI (gap-audit P1 #20). All mutating fetches
@@ -110,8 +111,8 @@ export function SchedulingTab({
   return (
     <div className="space-y-6">
       {/* Philosophy + cross-division + groups */}
-      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-        <h3 className="text-ink-900 mb-4 font-semibold">Scheduling approach</h3>
+      <div className={`reveal ${panelClass}`}>
+        <PanelHeader title="Scheduling approach" />
         <div className="space-y-4">
           <div>
             <label className="text-ink-700 mb-2 block text-xs font-medium">Philosophy</label>
@@ -176,16 +177,12 @@ export function SchedulingTab({
       </div>
 
       {/* Scheduling groups */}
-      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-        <div className="mb-3 flex items-start justify-between">
-          <div>
-            <h3 className="text-ink-900 font-semibold">Scheduling groups</h3>
-            <p className="text-ink-500 mt-0.5 text-xs">
-              Group divisions that can share a slate (e.g. nearby age groups). Games still
-              follow division rules unless cross-division scheduling is on.
-            </p>
-          </div>
-        </div>
+      <div className={`reveal ${panelClass}`} style={{ animationDelay: "70ms" }}>
+        <PanelHeader title="Scheduling groups" />
+        <p className="text-ink-500 -mt-2 mb-3 text-xs">
+          Group divisions that can share a slate (e.g. nearby age groups). Games still
+          follow division rules unless cross-division scheduling is on.
+        </p>
 
         {schedulingGroups.length === 0 ? (
           <p className="text-ink-500 text-sm">No groups yet. Create one below.</p>
@@ -235,18 +232,12 @@ export function SchedulingTab({
                         ))}
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={saveEditGroup}
-                          className="bg-play-600 hover:bg-play-700 rounded-lg px-3 py-1 text-xs font-semibold text-white"
-                        >
+                        <Button size="sm" onClick={saveEditGroup}>
                           Save
-                        </button>
-                        <button
-                          onClick={() => setEditingGroupId(null)}
-                          className="text-ink-500 hover:text-ink-700 text-xs"
-                        >
+                        </Button>
+                        <Button size="sm" variant="subtle" onClick={() => setEditingGroupId(null)}>
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -317,34 +308,26 @@ export function SchedulingTab({
               ))}
             </div>
           )}
-          <button
-            onClick={createSchedulingGroup}
-            disabled={!newGroupName.trim()}
-            className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-          >
+          <Button size="sm" block onClick={createSchedulingGroup} disabled={!newGroupName.trim()}>
             Add scheduling group
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Scheduling Settings */}
-      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <h3 className="text-ink-900 font-semibold">Scheduling Settings</h3>
-            <p className="text-ink-400 mt-0.5 text-xs">
-              Fields marked <span className="text-hoop-600 font-semibold">*</span> are required
-              before the league can be finalized
-            </p>
-          </div>
-          <button
-            onClick={saveSchedulingSettings}
-            disabled={schedSaving}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-          >
-            {schedSaving ? "Saving…" : "Save Settings"}
-          </button>
-        </div>
+      <div className={`reveal ${panelClass}`} style={{ animationDelay: "140ms" }}>
+        <PanelHeader
+          title="Scheduling Settings"
+          action={
+            <Button size="sm" onClick={saveSchedulingSettings} disabled={schedSaving}>
+              {schedSaving ? "Saving…" : "Save Settings"}
+            </Button>
+          }
+        />
+        <p className="text-ink-400 -mt-2 mb-5 text-xs">
+          Fields marked <span className="text-hoop-600 font-semibold">*</span> are required
+          before the league can be finalized
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Max games per season */}
           <div>

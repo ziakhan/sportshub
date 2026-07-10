@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
-import Link from "next/link"
+import { Button } from "@/components/ui"
 import { CheckInList } from "./check-in-list"
 
 export default async function TryoutCheckInPage({
@@ -43,16 +43,24 @@ export default async function TryoutCheckInPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4">
-        <Link
+        <Button
           href={`/clubs/${params.id}/tryouts/${params.tryoutId}/signups`}
-          className="text-play-700 text-sm hover:underline"
+          variant="subtle"
+          size="sm"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          }
         >
-          &larr; Back to Signups
-        </Link>
+          Back to Signups
+        </Button>
       </div>
 
       <div className="mb-4">
-        <h2 className="text-ink-900 text-xl font-bold">{tryout.title} — Check-in</h2>
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          {tryout.title} — Check-in
+        </h2>
         <p className="text-ink-500 mt-1 text-sm">
           {format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
           {" • "}

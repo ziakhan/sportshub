@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button, PanelHeader } from "@/components/ui"
 
 export function TemplateForm({ clubId }: { clubId: string }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -71,21 +72,25 @@ export function TemplateForm({ clubId }: { clubId: string }) {
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+          </svg>
+        }
       >
         Create Template
-      </button>
+      </Button>
     )
   }
 
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-6 shadow-soft">
-      <h3 className="text-lg font-semibold text-ink-900 mb-4">New Offer Template</h3>
+    <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+      <PanelHeader title="New offer template" />
 
       {error && (
-        <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-hoop-700">{error}</div>
+        <div className="mb-4 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-600">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -151,7 +156,10 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               { label: "Basketball", desc: "Game ball", checked: includesBall, set: setIncludesBall },
               { label: "Bag", desc: "Equipment bag", checked: includesBag, set: setIncludesBag },
             ].map((item) => (
-              <label key={item.label} className="flex items-center gap-2 rounded-md border border-ink-200 p-3 hover:bg-court-50 cursor-pointer">
+              <label
+                key={item.label}
+                className="border-ink-200 hover:border-ink-300 hover:bg-ink-50 flex cursor-pointer items-center gap-2 rounded-xl border p-3 transition-colors"
+              >
                 <input
                   type="checkbox"
                   checked={item.checked}
@@ -168,20 +176,12 @@ export function TemplateForm({ clubId }: { clubId: string }) {
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => { resetForm(); setIsOpen(false) }}
-            className="rounded-md border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 hover:bg-court-50"
-          >
+          <Button variant="subtle" onClick={() => { resetForm(); setIsOpen(false) }}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-play-600 px-4 py-2 text-sm font-semibold text-white hover:bg-play-700 disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Template"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

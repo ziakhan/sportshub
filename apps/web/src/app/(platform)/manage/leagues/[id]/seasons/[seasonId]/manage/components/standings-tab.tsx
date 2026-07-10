@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import { useState, useEffect } from "react"
+import { Button, PanelHeader } from "@/components/ui"
 import { panelClass } from "./types"
 
 export function StandingsTab({ seasonId }: { seasonId: string }) {
@@ -32,23 +33,20 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className={panelClass}>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-ink-900 font-semibold">Standings</h3>
-            <p className="text-ink-500 mt-0.5 text-xs">
-              Computed on read from completed games. Ties are broken in the order
-              configured in the Tiebreakers tab.
-            </p>
-          </div>
-          <button
-            onClick={loadStandings}
-            disabled={standingsLoading}
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-          >
-            {standingsLoading ? "Loading…" : "Refresh"}
-          </button>
-        </div>
+      <div className={`reveal ${panelClass}`}>
+        <PanelHeader
+          className="mb-1"
+          title="Standings"
+          action={
+            <Button size="sm" variant="subtle" onClick={loadStandings} disabled={standingsLoading}>
+              {standingsLoading ? "Loading…" : "Refresh"}
+            </Button>
+          }
+        />
+        <p className="text-ink-500 mb-4 text-xs">
+          Computed on read from completed games. Ties are broken in the order
+          configured in the Tiebreakers tab.
+        </p>
 
         {standingsLoading && standings.length === 0 ? (
           <p className="text-ink-500 text-sm">Loading…</p>
@@ -60,7 +58,7 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
           <div className="space-y-6">
             {standings.map((div: any) => (
               <div key={div.divisionId}>
-                <h4 className="text-ink-800 mb-2 text-sm font-semibold">
+                <h4 className="font-condensed text-ink-800 mb-2 text-sm font-bold uppercase tracking-wide">
                   {div.divisionName}
                 </h4>
                 {div.rows.length === 0 ? (
@@ -85,7 +83,10 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
                       </thead>
                       <tbody>
                         {div.rows.map((row: any, idx: number) => (
-                          <tr key={row.teamId} className="border-ink-100 border-t">
+                          <tr
+                            key={row.teamId}
+                            className="border-ink-100 hover:bg-ink-50/60 border-t transition-colors"
+                          >
                             <td className="px-3 py-1.5 font-mono text-[10px] text-ink-400">
                               {idx + 1}
                             </td>

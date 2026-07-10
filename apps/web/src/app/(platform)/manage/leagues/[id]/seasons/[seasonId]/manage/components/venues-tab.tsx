@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueEditor } from "@/components/venue-editor"
+import { Button, PanelHeader } from "@/components/ui"
 import { panelClass } from "./types"
 
 // Mutations previously ignored res.ok — a 403/500 looked like success and
@@ -48,15 +49,15 @@ export function VenuesTab({
   return (
     <div className="grid gap-6">
       {/* Venues */}
-      <div className={panelClass}>
-        <h3 className="text-ink-900 mb-4 font-semibold">Venues</h3>
+      <div className={`reveal ${panelClass}`}>
+        <PanelHeader title="Venues" />
         {venues.map((v: any) => {
           const expanded = expandedVenueId === v.id
           const courtCount = v.venue.courtList?.length ?? 0
           return (
             <div
               key={v.id}
-              className="border-court-100 bg-court-50 mb-2 rounded-xl border px-3 py-2"
+              className="border-court-100 bg-court-50 hover:border-court-200 mb-2 rounded-xl border px-3 py-2 transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -119,12 +120,9 @@ export function VenuesTab({
             }}
           />
           {selectedVenueId && (
-            <button
-              onClick={addVenue}
-              className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition"
-            >
+            <Button size="sm" block onClick={addVenue}>
               Add to League
-            </button>
+            </Button>
           )}
         </div>
       </div>

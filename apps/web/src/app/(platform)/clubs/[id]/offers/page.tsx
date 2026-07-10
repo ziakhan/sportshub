@@ -3,7 +3,7 @@ import { format } from "date-fns"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { formatCurrency } from "@/lib/countries"
-import { StatTile, Button, Badge, type BadgeTone, type StatTileTone } from "@/components/ui"
+import { StatTile, Button, Badge, toneForStatus, type StatTileTone } from "@/components/ui"
 import { OffersFilter } from "./offers-filter"
 import { RescindButton } from "./rescind-button"
 
@@ -82,16 +82,7 @@ async function getTenantCurrency(tenantId: string) {
     where: { id: tenantId },
     select: { currency: true },
   })
-  return tenant?.currency || "USD"
-}
-
-/** Badge tone per offer status. */
-const STATUS_BADGE: Record<string, BadgeTone> = {
-  PENDING: "gold",
-  ACCEPTED: "court",
-  DECLINED: "hoop",
-  EXPIRED: "neutral",
-  RESCINDED: "neutral",
+  return tenant?.currency || "CAD"
 }
 
 export default async function ClubOffersPage({
@@ -202,7 +193,7 @@ export default async function ClubOffersPage({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-ink-500 text-sm">Filtered by:</span>
           {statusFilter && (
-            <Badge tone={STATUS_BADGE[statusFilter] || "neutral"}>
+            <Badge tone={toneForStatus(statusFilter)}>
               {statusFilter.toLowerCase()}
             </Badge>
           )}
@@ -326,7 +317,7 @@ export default async function ClubOffersPage({
                             {offer.jerseyPref3 !== null ? `, #${offer.jerseyPref3}` : ""}
                           </span>
                         )}
-                        <Badge tone={STATUS_BADGE[offer.status] || "neutral"}>
+                        <Badge tone={toneForStatus(offer.status)}>
                           {offer.status.toLowerCase()}
                         </Badge>
                         {offer.status === "PENDING" && (

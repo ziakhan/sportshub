@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
-import { panelClass } from "./types"
+import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { inputClass, panelClass } from "./types"
 
 interface RosterRequest {
   id: string
@@ -108,17 +109,15 @@ export function RosterRequestsPanel({
   }
 
   return (
-    <div className={panelClass}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-ink-900 font-semibold">
-          Roster changes
-          {requests.length > 0 && (
-            <span className="bg-hoop-100 text-hoop-700 ml-2 rounded-full px-2 py-0.5 text-xs font-bold">
-              {requests.length} pending
-            </span>
-          )}
-        </h3>
-      </div>
+    <div className={`reveal ${panelClass}`}>
+      <PanelHeader
+        title="Roster changes"
+        action={
+          requests.length > 0 ? (
+            <Badge tone={toneForStatus("PENDING")}>{requests.length} pending</Badge>
+          ) : undefined
+        }
+      />
 
       {message && (
         <div className="border-court-200 bg-court-50 text-court-700 mb-3 rounded-xl border px-3 py-2 text-xs">
@@ -133,7 +132,7 @@ export function RosterRequestsPanel({
           <select
             value={policyDraft}
             onChange={(e) => setPolicyDraft(e.target.value)}
-            className="border-ink-200 text-ink-900 rounded-xl border px-2 py-1.5 text-sm"
+            className={inputClass}
           >
             <option value="REQUEST_ONLY">Changes need my approval</option>
             <option value="OPEN_UNTIL_DEADLINE">Clubs edit freely until a deadline</option>
@@ -147,17 +146,13 @@ export function RosterRequestsPanel({
               type="date"
               value={deadlineDraft}
               onChange={(e) => setDeadlineDraft(e.target.value)}
-              className="border-ink-200 text-ink-900 rounded-xl border px-2 py-1.5 text-sm"
+              className={inputClass}
             />
           </div>
         )}
-        <button
-          onClick={savePolicy}
-          disabled={savingPolicy}
-          className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-        >
+        <Button size="sm" onClick={savePolicy} disabled={savingPolicy}>
           {savingPolicy ? "Saving…" : "Save policy"}
-        </button>
+        </Button>
       </div>
 
       {/* Commissioner override: edit any team's league roster directly */}
@@ -169,7 +164,10 @@ export function RosterRequestsPanel({
       ) : (
         <div className="space-y-3">
           {requests.map((r) => (
-            <div key={r.id} className="border-ink-100 rounded-xl border p-3">
+            <div
+              key={r.id}
+              className="border-ink-100 hover:border-ink-200 rounded-xl border p-3 transition-colors"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-ink-900 text-sm font-semibold">{r.teamName}</span>
@@ -185,22 +183,25 @@ export function RosterRequestsPanel({
                   value={notes[r.id] ?? ""}
                   onChange={(e) => setNotes((n) => ({ ...n, [r.id]: e.target.value }))}
                   placeholder="Note back to the club (optional)"
-                  className="border-ink-200 min-w-0 flex-1 rounded-xl border px-2 py-1.5 text-xs"
+                  className={`${inputClass} min-w-0 flex-1`}
                 />
-                <button
+                <Button
+                  size="sm"
+                  tone="court"
                   onClick={() => resolve(r.id, "approve")}
                   disabled={busy === r.id}
-                  className="bg-court-600 rounded-xl px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
                 >
                   Approve
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  tone="hoop"
                   onClick={() => resolve(r.id, "deny")}
                   disabled={busy === r.id}
-                  className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-xl border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
                 >
                   Deny
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -292,7 +293,7 @@ function OverrideEditor({
           <select
             value={teamId}
             onChange={(e) => loadTeam(e.target.value)}
-            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+            className={inputClass}
           >
             <option value="">Choose team…</option>
             {approved.map((t: any) => (
@@ -328,13 +329,9 @@ function OverrideEditor({
                   </label>
                 ))}
               </div>
-              <button
-                onClick={save}
-                disabled={saving || selected.size === 0}
-                className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-              >
+              <Button size="sm" onClick={save} disabled={saving || selected.size === 0}>
                 {saving ? "Saving…" : `Save override (${selected.size} players)`}
-              </button>
+              </Button>
             </>
           )}
           {players && !submissionId && (

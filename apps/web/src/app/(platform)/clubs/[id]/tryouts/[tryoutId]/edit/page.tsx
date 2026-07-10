@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { Badge, Button, Card, PanelHeader } from "@/components/ui"
 
 const editTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -40,6 +41,9 @@ function genderLabel(g: string | null) {
   if (g === "COED") return "Co-ed"
   return "Any"
 }
+
+const inputCls =
+  "mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
 
 export default function EditTryoutPage() {
   const params = useParams()
@@ -164,192 +168,197 @@ export default function EditTryoutPage() {
         >
           &larr; Back to Tryouts
         </Link>
-        <h2 className="text-xl font-bold text-ink-900">Edit Tryout</h2>
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          Edit Tryout
+        </h2>
       </div>
 
-      <div className="rounded-lg bg-white p-8 shadow">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <Card className="reveal">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {error && (
             <div className="rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
               {error}
             </div>
           )}
           {saved && (
-            <div className="rounded-md border border-green-200 bg-court-50 p-3 text-sm text-court-700">
+            <div className="rounded-xl border border-court-200 bg-court-50 p-3 text-sm text-court-700">
               Tryout updated successfully.
             </div>
           )}
 
-          {/* Team Selection (mandatory) */}
-          <div>
-            <label htmlFor="teamId" className="block text-sm font-medium text-ink-700">
-              Team <span className="text-red-500">*</span>
-            </label>
-            {teams.length === 0 ? (
-              <p className="mt-1 text-sm text-ink-500">Loading teams...</p>
-            ) : (
-              <select
-                id="teamId"
-                value={selectedTeamId}
-                onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-              >
-                <option value="">Select a team</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name} ({team.ageGroup}{team.gender ? ` / ${genderLabel(team.gender)}` : ""})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Show age group & gender from team */}
-          {selectedTeam && (
-            <div className="flex gap-4">
-              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
-                <span className="text-play-700">Age Group:</span>{" "}
-                <span className="font-medium text-play-900">{selectedTeam.ageGroup}</span>
+          {/* Tryout details */}
+          <section>
+            <PanelHeader title="Tryout details" />
+            <div className="space-y-4">
+              {/* Team Selection (mandatory) */}
+              <div>
+                <label htmlFor="teamId" className="block text-sm font-medium text-ink-700">
+                  Team <span className="text-red-500">*</span>
+                </label>
+                {teams.length === 0 ? (
+                  <p className="mt-1 text-sm text-ink-500">Loading teams...</p>
+                ) : (
+                  <select
+                    id="teamId"
+                    value={selectedTeamId}
+                    onChange={(e) => setSelectedTeamId(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">Select a team</option>
+                    {teams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} ({team.ageGroup}{team.gender ? ` / ${genderLabel(team.gender)}` : ""})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="rounded-md bg-play-50 px-3 py-2 text-sm">
-                <span className="text-play-700">Gender:</span>{" "}
-                <span className="font-medium text-play-900">{genderLabel(selectedTeam.gender)}</span>
+
+              {/* Show age group & gender from team */}
+              {selectedTeam && (
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone="play">Age group · {selectedTeam.ageGroup}</Badge>
+                  <Badge tone="play">{genderLabel(selectedTeam.gender)}</Badge>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-ink-700">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  {...register("title")}
+                  type="text"
+                  id="title"
+                  className={inputCls}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-ink-700">
+                  Description
+                </label>
+                <textarea
+                  {...register("description")}
+                  id="description"
+                  rows={3}
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-ink-700">
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <input
+                  {...register("location")}
+                  type="text"
+                  id="location"
+                  className={inputCls}
+                />
+                {errors.location && (
+                  <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
+                )}
               </div>
             </div>
-          )}
+          </section>
 
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-ink-700">
-              Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("title")}
-              type="text"
-              id="title"
-              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
-            />
-            {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-            )}
-          </div>
+          {/* Schedule */}
+          <section>
+            <PanelHeader title="Schedule" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
+                  Date & Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  {...register("scheduledAt")}
+                  type="datetime-local"
+                  id="scheduledAt"
+                  className={inputCls}
+                />
+                {errors.scheduledAt && (
+                  <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
+                )}
+              </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-ink-700">
-              Description
-            </label>
-            <textarea
-              {...register("description")}
-              id="description"
-              rows={3}
-              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="location" className="block text-sm font-medium text-ink-700">
-              Location <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("location")}
-              type="text"
-              id="location"
-              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
-            />
-            {errors.location && (
-              <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
-                Date & Time <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("scheduledAt")}
-                type="datetime-local"
-                id="scheduledAt"
-                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-              />
-              {errors.scheduledAt && (
-                <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
-              )}
+              <div>
+                <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
+                  Duration (minutes)
+                </label>
+                <input
+                  {...register("duration")}
+                  type="number"
+                  id="duration"
+                  className={inputCls}
+                />
+              </div>
             </div>
+          </section>
 
-            <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
-                Duration (minutes)
-              </label>
-              <input
-                {...register("duration")}
-                type="number"
-                id="duration"
-                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-              />
+          {/* Fee & capacity */}
+          <section>
+            <PanelHeader title="Fee & capacity" />
+            <div className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="fee" className="block text-sm font-medium text-ink-700">
+                    Fee ($) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register("fee")}
+                    type="number"
+                    id="fee"
+                    min="0"
+                    step="0.01"
+                    className={inputCls}
+                  />
+                  {errors.fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.fee.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-ink-700">
+                    Max Participants
+                  </label>
+                  <input
+                    {...register("maxParticipants")}
+                    type="number"
+                    id="maxParticipants"
+                    min="1"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  {...register("isPublic")}
+                  type="checkbox"
+                  id="isPublic"
+                  className="h-4 w-4 rounded border-ink-200 text-play-700 focus:ring-play-500/20"
+                />
+                <label htmlFor="isPublic" className="text-sm text-ink-700">
+                  Public tryout (visible on marketplace when published)
+                </label>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="fee" className="block text-sm font-medium text-ink-700">
-                Fee ($) <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("fee")}
-                type="number"
-                id="fee"
-                min="0"
-                step="0.01"
-                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-              />
-              {errors.fee && (
-                <p className="mt-1 text-sm text-red-600">{errors.fee.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-ink-700">
-                Max Participants
-              </label>
-              <input
-                {...register("maxParticipants")}
-                type="number"
-                id="maxParticipants"
-                min="1"
-                className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              {...register("isPublic")}
-              type="checkbox"
-              id="isPublic"
-              className="h-4 w-4 rounded border-ink-200 text-play-700"
-            />
-            <label htmlFor="isPublic" className="text-sm text-ink-700">
-              Public tryout (visible on marketplace when published)
-            </label>
-          </div>
-
-          <div className="flex gap-4">
-            <Link
-              href={`/clubs/${clubId}/tryouts`}
-              className="rounded-md border border-ink-200 px-4 py-2 font-semibold text-ink-700 hover:bg-court-50"
-            >
+          <div className="flex gap-3 pt-2">
+            <Button variant="subtle" href={`/clubs/${clubId}/tryouts`}>
               Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting || !selectedTeamId}
-              className="flex-1 rounded-xl bg-play-600 px-4 py-2 font-semibold text-white hover:bg-play-700 disabled:bg-court-300"
-            >
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !selectedTeamId} className="flex-1">
               {isSubmitting ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
     </div>
   )
 }

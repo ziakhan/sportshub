@@ -147,11 +147,11 @@ export function getCountryConfig(countryCode: string): Country | undefined {
 }
 
 export function getCurrencyForCountry(countryCode: string): string {
-  return getCountryConfig(countryCode)?.currency || "USD"
+  return getCountryConfig(countryCode)?.currency || "CAD"
 }
 
 export function formatCurrency(amount: number, currency?: string): string {
-  const cur = (currency || "USD").toUpperCase()
+  const cur = (currency || "CAD").toUpperCase()
   try {
     return new Intl.NumberFormat("en", {
       style: "currency",

@@ -1,6 +1,6 @@
 ---
 updated: 2026-07-09
-status: proposed
+status: shipped
 tier: 1
 area: platform
 effort: L
@@ -154,18 +154,20 @@ over-send (org the user never wanted) and under-protect us legally.
 - **Referee/scorekeeper pools** are per-league and persist — no season work needed.
 - **Club dashboard season-awareness**: "3 teams ended their season — start next season?" nudge.
 
-## 7. Build increments (each shippable alone)
+## 7. Build increments — ✅ ALL FIVE SHIPPED 2026-07-09 (local, unpushed)
 
-1. **Archive + lineage + wizard core** (schema, archive toggle, clone w/ staff carry-over,
-   age-up, template/slot copy) — no email needed.
-2. **Carry-over offers** (wizard step 4; reuses create-offer lib).
-3. **League close-out**: complete-season summary + "Create next season" prefill + past-seasons list.
-4. **Consent foundation** (schema + registration upserts + `/settings/communications` +
-   unsubscribe links added to existing transactional templates for good measure).
-5. **Messages composer + audiences + logs** (clubs first, leagues second) + "Duplicate as new"
-   for camps/HL.
-
-Order matters: 4 before 5 (never ship blast email without consent enforcement).
+1. ✅ **Archive + lineage + wizard core** — `Team.archivedAt` + `continuedFromId`
+   ("TeamLineage" self-relation, runbook #20), archive/rollover APIs, 4-step
+   "Start next season" wizard (staff carry-over, grade-aware age-up). E2E-proven.
+2. ✅ **Carry-over offers** — wizard step 4 stages offers via `createOfferForPlayer`.
+3. ✅ **League close-out** — complete-season summary, "Create next season" prefill,
+   past-seasons list.
+4. ✅ **Consent foundation** — `CommunicationConsent`/`MessageLog` (runbook #19),
+   registration upserts, `/settings/communications`, HMAC unsubscribe, marketing
+   footers (shipped FIRST, in Phase 1, before any composer).
+5. ✅ **Messages composer + audiences + logs** (clubs + leagues) + camp/HL
+   "Duplicate as new". Consent-enforced at send time — live-verified
+   ("Sent to 1, 28 skipped for consent").
 
 ## 8. Owner decision forks — ✅ ALL DECIDED 2026-07-09
 

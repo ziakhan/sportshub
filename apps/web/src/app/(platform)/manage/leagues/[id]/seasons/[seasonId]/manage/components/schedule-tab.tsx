@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
-import { panelClass } from "./types"
+import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { inputClass, panelClass } from "./types"
 
 interface CapacityUnit {
   unitKey: string
@@ -199,48 +200,45 @@ export function ScheduleTab({
 
   return (
     <div className="space-y-6">
-      <div className={panelClass}>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h3 className="text-ink-900 font-semibold">Schedule</h3>
-            <p className="text-ink-500 mt-0.5 text-xs">
-              Preview the scheduler&apos;s proposal, then commit to persist games. Season must
-              be finalized before you can commit.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={runPreview}
-              disabled={previewLoading}
-              className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-            >
-              {previewLoading ? "Running…" : "Preview schedule"}
-            </button>
-            <button
-              onClick={commitSchedule}
-              disabled={
-                committing ||
-                !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
-              }
-              title={
-                !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
-                  ? "Finalize the season before committing"
-                  : ""
-              }
-              className="bg-court-600 hover:bg-court-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition disabled:opacity-50"
-            >
-              {committing ? "Committing…" : "Commit schedule"}
-            </button>
-            {scheduleGames.length > 0 && (
-              <button
-                onClick={wipeSchedule}
-                className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
+      <div className={`reveal ${panelClass}`}>
+        <PanelHeader
+          title="Schedule"
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={runPreview} disabled={previewLoading}>
+                {previewLoading ? "Running…" : "Preview schedule"}
+              </Button>
+              <span
+                title={
+                  !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
+                    ? "Finalize the season before committing"
+                    : ""
+                }
               >
-                Delete all
-              </button>
-            )}
-          </div>
-        </div>
+                <Button
+                  size="sm"
+                  tone="court"
+                  onClick={commitSchedule}
+                  disabled={
+                    committing ||
+                    !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
+                  }
+                >
+                  {committing ? "Committing…" : "Commit schedule"}
+                </Button>
+              </span>
+              {scheduleGames.length > 0 && (
+                <Button size="sm" variant="secondary" tone="hoop" onClick={wipeSchedule}>
+                  Delete all
+                </Button>
+              )}
+            </div>
+          }
+        />
+        <p className="text-ink-500 -mt-2 mb-4 text-xs">
+          Preview the scheduler&apos;s proposal, then commit to persist games. Season must
+          be finalized before you can commit.
+        </p>
 
         {scheduleError && (
           <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-3 rounded-xl border px-3 py-2 text-xs">
@@ -251,8 +249,8 @@ export function ScheduleTab({
         {capacity && capacity.length > 0 && (
           <div className="mb-6 space-y-3">
             <div>
-              <p className="text-ink-900 text-sm font-semibold">Capacity planner</p>
-              <p className="text-ink-500 mt-0.5 text-xs">
+              <PanelHeader title="Capacity planner" />
+              <p className="text-ink-500 -mt-2 text-xs">
                 What each session can hold vs what your divisions need. Untick a division to
                 leave it out of a session — the preview and commit follow this plan.
               </p>
@@ -352,7 +350,7 @@ export function ScheduleTab({
                 </thead>
                 <tbody>
                   {preview.games.map((g: any, i: number) => (
-                    <tr key={i} className="border-ink-100 border-t">
+                    <tr key={i} className="border-ink-100 hover:bg-ink-50/60 border-t transition-colors">
                       <td className="px-3 py-1.5">
                         {format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
                       </td>
@@ -384,29 +382,27 @@ export function ScheduleTab({
         <ManualGameAdd seasonId={seasonId} league={league} refresh={refresh} />
 
         <div>
-          <p className="text-ink-600 mb-2 text-sm font-semibold">
-            Committed games ({scheduleGames.length})
-          </p>
+          <PanelHeader
+            title="Committed games"
+            action={
+              <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                {scheduleGames.length}
+              </span>
+            }
+          />
           {scheduleGames.length === 0 ? (
             <p className="text-ink-500 text-sm">
               No games committed yet. Preview then commit once the season is finalized.
             </p>
           ) : (
             <div className="space-y-2">
-              {scheduleGames.map((g: any) => {
+              {scheduleGames.map((g: any, i: number) => {
                 const open = openGameId === g.id
-                const statusStyle =
-                  g.status === "CANCELLED"
-                    ? "text-hoop-600"
-                    : g.status === "COMPLETED"
-                      ? "text-court-700"
-                      : g.status === "DEFAULTED"
-                        ? "text-amber-700"
-                        : "text-ink-600"
                 return (
                   <div
                     key={g.id}
-                    className="border-ink-100 rounded-xl border bg-white"
+                    style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
+                    className="reveal border-ink-100 hover:border-ink-300 rounded-xl border bg-white transition-colors"
                   >
                     <button
                       onClick={() => setOpenGameId(open ? null : g.id)}
@@ -430,9 +426,7 @@ export function ScheduleTab({
                         {g.isLocked && (
                           <span className="text-ink-500 text-[10px]">🔒</span>
                         )}
-                        <span className={`text-[10px] font-semibold ${statusStyle}`}>
-                          {g.status}
-                        </span>
+                        <Badge tone={toneForStatus(g.status)}>{g.status}</Badge>
                         <span className="text-ink-400 text-[10px]">
                           {open ? "▴" : "▾"}
                         </span>
@@ -537,12 +531,9 @@ export function ScheduleTab({
                                         </span>
                                       )}
                                     </div>
-                                    <button
-                                      onClick={() => applySuggestion(g.id, s)}
-                                      className="bg-play-600 hover:bg-play-700 rounded-lg px-2 py-1 text-[10px] font-semibold text-white"
-                                    >
+                                    <Button size="sm" onClick={() => applySuggestion(g.id, s)}>
                                       Move here
-                                    </button>
+                                    </Button>
                                   </li>
                                 ))}
                               </ul>
@@ -623,7 +614,7 @@ function ManualGameAdd({
           <select
             value={homeTeamId}
             onChange={(e) => setHomeTeamId(e.target.value)}
-            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+            className={inputClass}
           >
             <option value="">Home team…</option>
             {approvedTeams.map((t: any) => (
@@ -635,7 +626,7 @@ function ManualGameAdd({
           <select
             value={awayTeamId}
             onChange={(e) => setAwayTeamId(e.target.value)}
-            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+            className={inputClass}
           >
             <option value="">Away team…</option>
             {approvedTeams
@@ -650,15 +641,11 @@ function ManualGameAdd({
             type="datetime-local"
             value={when}
             onChange={(e) => setWhen(e.target.value)}
-            className="border-ink-200 rounded-xl border px-2 py-1.5 text-xs"
+            className={inputClass}
           />
-          <button
-            onClick={create}
-            disabled={busy || !homeTeamId || !awayTeamId || !when}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-          >
+          <Button size="sm" onClick={create} disabled={busy || !homeTeamId || !awayTeamId || !when}>
             {busy ? "Adding…" : "Add game"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import type { ReactNode } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
+import { formatCurrency } from "@/lib/countries"
 import { tryoutSignupSchema, type TryoutSignupFormData } from "@/lib/validations/tryout-signup"
 import { Button, PanelHeader } from "@/components/ui"
 
@@ -25,6 +26,7 @@ interface ExistingSignup {
 interface SignupFormProps {
   tryoutId: string
   tryoutFee: number
+  currency?: string
   tryoutLocation: string
   tryoutDate: string
   players: Player[]
@@ -34,6 +36,7 @@ interface SignupFormProps {
 export function SignupForm({
   tryoutId,
   tryoutFee,
+  currency,
   tryoutLocation,
   tryoutDate,
   players,
@@ -109,7 +112,7 @@ export function SignupForm({
             ) : (
               <>
                 <strong>{success.playerName}</strong> has been registered. Payment of{" "}
-                <strong>${tryoutFee}</strong> will be required when payment processing is available.
+                <strong>{formatCurrency(tryoutFee, currency)}</strong> will be required when payment processing is available.
               </>
             )}
           </p>
@@ -225,7 +228,7 @@ export function SignupForm({
 
         {tryoutFee > 0 && (
           <p className="text-ink-500 text-xs">
-            This tryout requires a ${tryoutFee} fee. Payment processing will be available soon. Your
+            This tryout requires a {formatCurrency(tryoutFee, currency)} fee. Payment processing will be available soon. Your
             signup will be marked as pending until payment is completed.
           </p>
         )}
@@ -245,7 +248,7 @@ export function SignupForm({
             ? "Signing up..."
             : tryoutFee === 0
               ? "Sign Up (Free)"
-              : `Sign Up ($${tryoutFee})`}
+              : `Sign Up (${formatCurrency(tryoutFee, currency)})`}
         </Button>
       </form>
     </div>

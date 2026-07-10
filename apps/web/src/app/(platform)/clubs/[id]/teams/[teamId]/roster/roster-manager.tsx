@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Badge, Button } from "@/components/ui"
 
 interface Candidate {
   id: string
@@ -115,17 +116,23 @@ export function RosterManager({
   }
 
   return (
-    <div className="border-ink-100 shadow-soft mb-6 rounded-2xl border bg-white">
+    <div
+      className="reveal border-ink-100 shadow-soft mb-6 overflow-hidden rounded-[28px] border bg-white"
+      style={{ animationDelay: "70ms" }}
+    >
       <button
         onClick={() => setOpen((v) => !v)}
-        className="text-ink-900 flex w-full items-center justify-between px-6 py-4 font-semibold"
+        className="hover:bg-ink-50/60 flex w-full items-center justify-between gap-3 px-6 py-4 text-left transition-colors"
       >
-        <span>
-          Add players manually
+        <span className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
+          <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
+            Add players manually
+          </span>
           {pendingInvitations.length > 0 && (
-            <span className="bg-hoop-100 text-hoop-700 ml-2 rounded-full px-2 py-0.5 text-xs font-medium">
+            <Badge tone="gold">
               {pendingInvitations.length} invite{pendingInvitations.length !== 1 ? "s" : ""} pending
-            </span>
+            </Badge>
           )}
         </span>
         <span className="text-ink-400 text-sm">{open ? "▴" : "▾"}</span>
@@ -152,15 +159,16 @@ export function RosterManager({
                 ["invite", "Invite by email"],
               ] as const
             ).map(([key, label]) => (
-              <button
+              <Button
                 key={key}
+                size="sm"
+                variant={tab === key ? "primary" : "secondary"}
+                tone={tab === key ? "brand" : "ink"}
                 onClick={() => setTab(key)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  tab === key ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
-                }`}
+                className="rounded-full"
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -173,7 +181,7 @@ export function RosterManager({
                 <select
                   value={playerId}
                   onChange={(e) => setPlayerId(e.target.value)}
-                  className="border-ink-200 text-ink-900 w-full rounded-xl border px-3 py-2 text-sm"
+                  className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
                 >
                   <option value="">
                     {candidates === null ? "Loading…" : "Choose player…"}
@@ -196,16 +204,12 @@ export function RosterManager({
                   value={jersey}
                   onChange={(e) => setJersey(e.target.value)}
                   placeholder="—"
-                  className="border-ink-200 text-ink-900 w-20 rounded-xl border px-3 py-2 text-sm"
+                  className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-20 rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
                 />
               </div>
-              <button
-                onClick={addPlayer}
-                disabled={busy || !playerId}
-                className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
+              <Button onClick={addPlayer} disabled={busy || !playerId}>
                 {busy ? "Adding…" : "Add to roster"}
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -217,7 +221,7 @@ export function RosterManager({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="parent@example.com"
-                    className="border-ink-200 text-ink-900 w-full rounded-xl border px-3 py-2 text-sm"
+                    className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
                   />
                 </div>
                 <div>
@@ -229,7 +233,7 @@ export function RosterManager({
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     placeholder="e.g. Marcus Chen"
-                    className="border-ink-200 text-ink-900 w-full rounded-xl border px-3 py-2 text-sm"
+                    className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
                   />
                 </div>
               </div>
@@ -241,7 +245,7 @@ export function RosterManager({
                   <select
                     value={templateId}
                     onChange={(e) => setTemplateId(e.target.value)}
-                    className="border-ink-200 text-ink-900 w-full rounded-xl border px-3 py-2 text-sm"
+                    className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
                   >
                     <option value="">No package — roster spot only</option>
                     {templates.map((t) => (
@@ -257,15 +261,11 @@ export function RosterManager({
                 onChange={(e) => setInviteMessage(e.target.value)}
                 rows={2}
                 placeholder="Message to the family (optional)"
-                className="border-ink-200 text-ink-900 w-full rounded-xl border px-3 py-2 text-sm"
+                className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
               />
-              <button
-                onClick={invite}
-                disabled={busy || !email.includes("@")}
-                className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
+              <Button onClick={invite} disabled={busy || !email.includes("@")}>
                 {busy ? "Sending…" : "Send invitation"}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -276,14 +276,17 @@ export function RosterManager({
               </p>
               <div className="space-y-1">
                 {pendingInvitations.map((inv) => (
-                  <div key={inv.id} className="flex items-center justify-between text-sm">
+                  <div
+                    key={inv.id}
+                    className="hover:bg-ink-50/60 flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-sm transition-colors"
+                  >
                     <span className="text-ink-700 min-w-0 truncate">
                       {inv.playerName ? `${inv.playerName} — ` : ""}
                       {inv.email}
                     </span>
                     <button
                       onClick={() => revoke(inv.id)}
-                      className="text-hoop-600 shrink-0 text-xs font-semibold hover:underline"
+                      className="text-hoop-600 hover:text-hoop-700 shrink-0 text-xs font-semibold transition-colors hover:underline"
                     >
                       Revoke
                     </button>

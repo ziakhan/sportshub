@@ -15,9 +15,11 @@ export default async function PaymentMethodsPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-6">
-      <div className="mb-4">
-        <h1 className="text-ink-900 text-xl font-bold md:text-2xl">Payment methods</h1>
-        <p className="text-ink-500 mt-1 text-sm">
+      <div className="reveal mb-5">
+        <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase leading-none tracking-wide md:text-3xl">
+          Payment methods
+        </h1>
+        <p className="text-ink-500 mt-2 text-sm">
           Save a card for registration fees and payment plans. Your card is stored securely by
           Stripe — we never see the full number. See what you owe on{" "}
           <Link href="/payments" className="text-play-600 font-semibold hover:underline">
@@ -26,7 +28,9 @@ export default async function PaymentMethodsPage() {
           .
         </p>
       </div>
-      <PaymentMethodsManager />
+      <div className="reveal" style={{ animationDelay: "80ms" }}>
+        <PaymentMethodsManager />
+      </div>
     </div>
   )
 }

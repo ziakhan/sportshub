@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { formatCurrency } from "@/lib/countries"
+import { Badge, Button, Card, PanelHeader } from "@/components/ui"
 
 interface Template {
   id: string
@@ -20,10 +22,12 @@ export function TemplateCard({
   template,
   clubId,
   isAdmin,
+  currency,
 }: {
   template: Template
   clubId: string
   isAdmin: boolean
+  currency?: string
 }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -118,11 +122,11 @@ export function TemplateCard({
 
   if (isEditing) {
     return (
-      <div className="rounded-lg border-2 border-play-300 bg-white p-5 shadow-sm">
-        <h4 className="font-semibold text-ink-900 mb-3">Edit Template</h4>
+      <div className="shadow-soft h-full rounded-2xl border-2 border-[color:var(--brand-line)] bg-white p-5">
+        <PanelHeader title="Edit template" />
 
         {error && (
-          <div className="mb-3 rounded-md bg-red-50 p-2 text-sm text-hoop-700">{error}</div>
+          <div className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
         )}
 
         <form onSubmit={handleSave} className="space-y-3">
@@ -200,20 +204,12 @@ export function TemplateCard({
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="rounded-xl border border-ink-200 px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-court-50"
-            >
+            <Button size="sm" variant="subtle" onClick={handleCancel}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="rounded-xl bg-play-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-play-700 disabled:opacity-50"
-            >
+            </Button>
+            <Button size="sm" type="submit" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -221,62 +217,62 @@ export function TemplateCard({
   }
 
   return (
-    <div className="rounded-lg border border-ink-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <h4 className="font-semibold text-ink-900">{template.name}</h4>
+    <Card size="sm" className="h-full transition-all duration-200 hover:border-[color:var(--brand-line)]">
+      <div className="flex items-start justify-between gap-2">
+        <h4 className="font-condensed text-ink-950 min-w-0 text-lg font-bold uppercase leading-tight tracking-wide">
+          {template.name}
+        </h4>
         {isAdmin && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-xs text-play-700 hover:text-play-700 font-medium"
-            >
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button size="sm" variant="subtle" onClick={() => setIsEditing(true)}>
               Edit
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
+              variant="subtle"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="text-xs text-ink-400 hover:text-red-600"
+              className="text-ink-400 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             >
               {isDeleting ? "..." : "Archive"}
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       <div className="mt-3 space-y-2">
-        <div className="flex justify-between text-sm">
+        <div className="flex items-center justify-between text-sm">
           <span className="text-ink-500">Season Fee</span>
-          <span className="font-medium text-ink-900">${template.seasonFee.toFixed(2)}</span>
+          <span className="font-condensed text-ink-950 text-base font-bold">
+            {formatCurrency(template.seasonFee, currency)}
+          </span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-ink-500">Payment</span>
-          <span className="text-ink-700">
+          <span className="text-ink-700 font-medium">
             {template.installments === 1 ? "Full payment" : `${template.installments} installments`}
           </span>
         </div>
         {template.practiceSessions > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-ink-500">Practice Sessions</span>
-            <span className="text-ink-700">{template.practiceSessions}</span>
+            <span className="text-ink-700 font-medium">{template.practiceSessions}</span>
           </div>
         )}
       </div>
 
       {includedItems.length > 0 && (
-        <div className="mt-3 border-t pt-3">
-          <div className="text-xs font-medium text-ink-500 mb-1">Includes</div>
+        <div className="border-ink-100 mt-3 border-t pt-3">
+          <div className="text-ink-500 mb-1.5 text-xs font-medium">Includes</div>
           <div className="flex flex-wrap gap-1.5">
             {includedItems.map((item) => (
-              <span
-                key={item as string}
-                className="rounded-full bg-court-100 px-2 py-0.5 text-xs font-medium text-court-700"
-              >
+              <Badge key={item as string} tone="court">
                 {item}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </Card>
   )
 }

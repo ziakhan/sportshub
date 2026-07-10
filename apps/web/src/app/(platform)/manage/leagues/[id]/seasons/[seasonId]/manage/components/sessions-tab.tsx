@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
+import { Button, PanelHeader } from "@/components/ui"
 import { panelClass } from "./types"
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -101,8 +102,8 @@ export function SessionsTab({
   return (
     <div className="grid gap-6">
       {/* Sessions */}
-      <div className={panelClass}>
-        <h3 className="text-ink-900 mb-4 font-semibold">Sessions (Game Days)</h3>
+      <div className={`reveal ${panelClass}`}>
+        <PanelHeader title="Sessions (game days)" />
         {locked && (
           <div className="border-amber-200 bg-amber-50 text-amber-800 mb-4 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs">
             <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -115,7 +116,7 @@ export function SessionsTab({
         {sessions.map((s: any) => (
           <div
             key={s.id}
-            className="border-court-100 bg-court-50 mb-2 rounded-xl border px-3 py-2"
+            className="border-court-100 bg-court-50 hover:border-court-200 mb-2 rounded-xl border px-3 py-2 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-ink-900 font-medium">{s.label || "Session"}</span>
@@ -202,12 +203,9 @@ export function SessionsTab({
               needed.
             </p>
           )}
-          <button
-            onClick={addSession}
-            className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition"
-          >
+          <Button size="sm" block onClick={addSession}>
             Add Session
-          </button>
+          </Button>
         </div>
         )}
       </div>

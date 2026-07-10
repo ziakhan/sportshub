@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { Button, PanelHeader } from "@/components/ui"
 import { POSTURES, postureByKey, postureFromFlags } from "@/lib/payments/postures"
 
 /**
@@ -215,7 +216,11 @@ export default function AdminPaymentsPage() {
   }
 
   if (!postureKey) {
-    return <div className="text-ink-500 py-12 text-center">Loading payment policy...</div>
+    return (
+      <div className="text-ink-500 py-12 text-center motion-safe:animate-pulse">
+        Loading payment policy&hellip;
+      </div>
+    )
   }
 
   const platformPosture = postureByKey(postureKey)
@@ -223,11 +228,11 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+      <div className="border-ink-100 shadow-soft reveal rounded-2xl border bg-white p-6">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
           Admin
         </div>
-        <h2 className="font-display text-ink-950 text-2xl font-bold">Payments</h2>
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">Payments</h2>
         <p className="text-ink-500 mt-1 text-sm">
           How money is collected — one policy every club inherits, overridable per club.
         </p>
@@ -242,8 +247,8 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Platform posture */}
-      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-        <h3 className="font-display text-ink-950 text-lg font-semibold">Platform policy</h3>
+      <div className="border-ink-100 shadow-soft reveal rounded-2xl border bg-white p-6 [animation-delay:80ms]">
+        <PanelHeader title="Platform policy" />
         <p className="text-ink-500 mb-4 mt-1 text-sm">
           Applies to every club without an override below.
         </p>
@@ -298,19 +303,15 @@ export default function AdminPaymentsPage() {
         </div>
 
         <div className="mt-5 flex justify-end">
-          <button
-            onClick={savePolicy}
-            disabled={savingPolicy}
-            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {savingPolicy ? "Saving..." : "Save platform policy"}
-          </button>
+          <Button tone="play" onClick={savePolicy} disabled={savingPolicy}>
+            {savingPolicy ? "Saving…" : "Save platform policy"}
+          </Button>
         </div>
       </div>
 
       {/* Per-club override */}
-      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
-        <h3 className="font-display text-ink-950 text-lg font-semibold">Per-club policy</h3>
+      <div className="border-ink-100 shadow-soft reveal rounded-2xl border bg-white p-6 [animation-delay:160ms]">
+        <PanelHeader title="Per-club policy" />
         <p className="text-ink-500 mb-4 mt-1 text-sm">
           Give one club a different posture — force them through the platform, require their own
           Stripe account, or hand them the choice. &ldquo;Platform default&rdquo; follows the
@@ -421,13 +422,9 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div className="mt-3 flex justify-end">
-              <button
-                onClick={saveClub}
-                disabled={savingClub}
-                className="bg-ink-900 hover:bg-ink-800 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {savingClub ? "Saving..." : "Save club policy"}
-              </button>
+              <Button tone="ink" onClick={saveClub} disabled={savingClub}>
+                {savingClub ? "Saving…" : "Save club policy"}
+              </Button>
             </div>
           </div>
         )}

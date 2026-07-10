@@ -57,16 +57,20 @@ export default async function ClubOfferTemplatesPage({
   const dbUser = await getCurrentUser()
   if (!dbUser) redirect("/sign-in")
 
-  const [templates, isAdmin] = await Promise.all([
+  const [templates, isAdmin, tenant] = await Promise.all([
     getClubTemplates(params.id),
     isClubAdmin(params.id, dbUser.id),
+    prisma.tenant.findUnique({ where: { id: params.id }, select: { currency: true } }),
   ])
+  const currency = tenant?.currency || "CAD"
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-ink-900">Offer Templates</h2>
-        <p className="text-sm text-ink-500 mt-1">
+      <div className="reveal mb-6">
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+          Offer Templates
+        </h2>
+        <p className="text-ink-500 mt-1 text-sm">
           {isAdmin
             ? "Create reusable templates for sending offers to players. All teams in the club share these templates."
             : "Templates created by club management for sending offers to players."}
@@ -75,16 +79,21 @@ export default async function ClubOfferTemplatesPage({
 
       {/* Create new template — admin only */}
       {isAdmin && (
-        <div className="mb-8">
+        <div className="reveal mb-8" style={{ animationDelay: "60ms" }}>
           <TemplateForm clubId={params.id} />
         </div>
       )}
 
       {/* Existing templates */}
       {templates.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-8 text-center shadow-soft">
-          <h3 className="text-lg font-semibold text-ink-900 mb-2">No templates yet</h3>
-          <p className="text-ink-600">
+        <div
+          className="reveal border-ink-300 shadow-soft rounded-[28px] border border-dashed bg-white p-10 text-center"
+          style={{ animationDelay: "120ms" }}
+        >
+          <h3 className="font-condensed text-ink-900 mb-2 text-lg font-bold uppercase tracking-wide">
+            No templates yet
+          </h3>
+          <p className="text-ink-600 mx-auto max-w-xl">
             {isAdmin
               ? "Create your first offer template above. Templates define the fee structure and included items for offers sent to players."
               : "No templates have been created yet. Ask your club owner or manager to set up offer templates."}
@@ -92,13 +101,19 @@ export default async function ClubOfferTemplatesPage({
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((template) => (
-            <TemplateCard
+          {templates.map((template, i) => (
+            <div
               key={template.id}
-              template={template}
-              clubId={params.id}
-              isAdmin={isAdmin}
-            />
+              className="reveal"
+              style={{ animationDelay: `${120 + i * 60}ms` }}
+            >
+              <TemplateCard
+                template={template}
+                clubId={params.id}
+                isAdmin={isAdmin}
+                currency={currency}
+              />
+            </div>
           ))}
         </div>
       )}

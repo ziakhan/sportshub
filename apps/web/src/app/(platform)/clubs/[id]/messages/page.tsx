@@ -18,7 +18,7 @@ export default async function ClubMessagesPage({ params }: { params: { id: strin
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
+      <div className="reveal">
         <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
           Messages
         </h2>
@@ -27,7 +27,9 @@ export default async function ClubMessagesPage({ params }: { params: { id: strin
           who has engaged with {tenant.name}. Consent is enforced automatically on every send.
         </p>
       </div>
-      <MessageComposer scope="TENANT" orgId={params.id} orgName={tenant.name} />
+      <div className="reveal" style={{ animationDelay: "80ms" }}>
+        <MessageComposer scope="TENANT" orgId={params.id} orgName={tenant.name} />
+      </div>
     </div>
   )
 }

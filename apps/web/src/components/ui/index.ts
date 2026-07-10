@@ -2,6 +2,7 @@
 export { cn } from "./cn"
 export { Card } from "./card"
 export { Badge, type BadgeTone } from "./badge"
+export { toneForStatus } from "./status-tone"
 export { SectionHeader } from "./section-header"
 export { StatBlock } from "./stat-block"
 export { AnimatedNumber } from "./animated-number"

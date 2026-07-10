@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic"
 
 /** League referee pool — the refs this league knows and books. */
 
-async function requireLeagueSide(userId: string, isPlatformAdmin: boolean, leagueId: string) {
+async function requireLeagueSide(
+  userId: string,
+  isPlatformAdmin: boolean,
+  leagueId: string
+): Promise<{ error: NextResponse; league?: never } | { error?: never; league: any }> {
   const league = (await prisma.league.findUnique({
     where: { id: leagueId },
     select: { id: true, ownerId: true },
@@ -37,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
 
     const sp = new URL(request.url).searchParams
     const date = sp.get("date") // YYYY-MM-DD
@@ -131,7 +135,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
 
     const parsed = addSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "userId is required" }, { status: 400 })
@@ -160,7 +164,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
 
     const userId = new URL(request.url).searchParams.get("userId")
     if (!userId) return NextResponse.json({ error: "userId is required" }, { status: 400 })

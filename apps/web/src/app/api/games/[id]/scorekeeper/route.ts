@@ -45,7 +45,7 @@ async function authorize(gameId: string) {
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const ctx = await authorize(params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
 
     const q = new URL(request.url).searchParams.get("q")?.trim().toLowerCase() ?? ""
 
@@ -98,7 +98,7 @@ const assignSchema = z.object({ userId: z.string() })
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const ctx = await authorize(params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
     const { auth, game } = ctx
 
     const parsed = assignSchema.safeParse(await request.json().catch(() => null))
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const ctx = await authorize(params.id)
-    if ("error" in ctx) return ctx.error
+    if (ctx.error) return ctx.error
     const { auth } = ctx
 
     const userId = new URL(request.url).searchParams.get("userId")

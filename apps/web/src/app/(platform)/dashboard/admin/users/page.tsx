@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { Badge, Button, toneForStatus } from "@/components/ui"
 
 interface UserRole {
   id: string
@@ -115,22 +116,15 @@ export default function AdminUsersPage() {
     }
   }
 
-  const statusColor: Record<string, string> = {
-    ACTIVE: "bg-court-50 text-court-700",
-    INACTIVE: "bg-ink-100 text-ink-700",
-    SUSPENDED: "bg-hoop-50 text-hoop-700",
-    DELETED: "bg-ink-200 text-ink-500",
-  }
-
   return (
     <div className="space-y-5">
-      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+      <div className="border-ink-100 shadow-soft reveal rounded-2xl border bg-white p-6">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
           Admin
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-ink-950 text-2xl font-bold">User management</h1>
+            <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">User management</h1>
             <p className="text-ink-500 text-sm">{total} total users</p>
           </div>
           <Link
@@ -178,7 +172,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users table */}
-      <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+      <div className="border-ink-100 shadow-soft reveal overflow-hidden rounded-2xl border bg-white [animation-delay:80ms]">
         <table className="divide-ink-100 min-w-full divide-y">
           <thead className="bg-ink-50">
             <tr>
@@ -203,7 +197,7 @@ export default function AdminUsersPage() {
             {loading ? (
               <tr>
                 <td colSpan={5} className="text-ink-500 px-4 py-8 text-center">
-                  Loading...
+                  <span className="motion-safe:animate-pulse">Loading&hellip;</span>
                 </td>
               </tr>
             ) : users.length === 0 ? (
@@ -222,11 +216,7 @@ export default function AdminUsersPage() {
                     <div className="text-ink-500 text-xs">{user.email}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[user.status] || "bg-ink-100 text-ink-700"}`}
-                    >
-                      {user.status}
-                    </span>
+                    <Badge tone={toneForStatus(user.status)}>{user.status}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
@@ -290,23 +280,15 @@ export default function AdminUsersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="border-ink-100 shadow-soft flex items-center justify-between rounded-xl border bg-white p-3">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="border-ink-200 text-ink-700 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
-          >
+          <Button size="sm" variant="secondary" tone="ink" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
             Previous
-          </button>
+          </Button>
           <span className="text-ink-600 text-sm">
             Page {page} of {totalPages}
           </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="border-ink-200 text-ink-700 rounded-lg border px-3 py-1.5 text-sm disabled:opacity-50"
-          >
+          <Button size="sm" variant="secondary" tone="ink" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>

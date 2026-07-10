@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import { useState } from "react"
+import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
 import { panelClass } from "./types"
 import { RosterRequestsPanel } from "./roster-requests-panel"
 
@@ -88,60 +89,62 @@ export function TeamsTab({
       />
 
       {/* Registered Teams */}
-      <div className={panelClass}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-ink-900 font-semibold">Registered Teams</h3>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex flex-wrap items-center gap-1">
-              {[
-                { key: "ALL", label: `All (${allTeams.length})` },
-                {
-                  key: "PENDING",
-                  label: `Pending (${allTeams.filter((t: any) => t.status === "PENDING").length})`,
-                },
-                {
-                  key: "APPROVED",
-                  label: `Approved (${allTeams.filter((t: any) => t.status === "APPROVED").length})`,
-                },
-                {
-                  key: "REJECTED",
-                  label: `Rejected (${allTeams.filter((t: any) => t.status === "REJECTED").length})`,
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => setTeamStatusFilter(opt.key as any)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                    teamStatusFilter === opt.key
-                      ? "bg-play-100 text-play-700"
-                      : "bg-ink-50 text-ink-500 hover:bg-court-100"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-1">
-              {[
-                { key: "ALL", label: `Any payment` },
-                { key: "UNPAID", label: `Unpaid (${unpaidCount})` },
-                { key: "PAID", label: `Paid (${paidCount})` },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => setTeamPaymentFilter(opt.key as any)}
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${
-                    teamPaymentFilter === opt.key
-                      ? "bg-hoop-100 text-hoop-700"
-                      : "bg-ink-50 text-ink-500 hover:bg-court-100"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className={`reveal ${panelClass}`} style={{ animationDelay: "80ms" }}>
+        <PanelHeader
+          title="Registered teams"
+          action={
+            <span className="flex flex-col items-end gap-1">
+              <span className="flex flex-wrap items-center justify-end gap-1">
+                {[
+                  { key: "ALL", label: `All (${allTeams.length})` },
+                  {
+                    key: "PENDING",
+                    label: `Pending (${allTeams.filter((t: any) => t.status === "PENDING").length})`,
+                  },
+                  {
+                    key: "APPROVED",
+                    label: `Approved (${allTeams.filter((t: any) => t.status === "APPROVED").length})`,
+                  },
+                  {
+                    key: "REJECTED",
+                    label: `Rejected (${allTeams.filter((t: any) => t.status === "REJECTED").length})`,
+                  },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setTeamStatusFilter(opt.key as any)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                      teamStatusFilter === opt.key
+                        ? "bg-play-100 text-play-700"
+                        : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </span>
+              <span className="flex flex-wrap items-center justify-end gap-1">
+                {[
+                  { key: "ALL", label: `Any payment` },
+                  { key: "UNPAID", label: `Unpaid (${unpaidCount})` },
+                  { key: "PAID", label: `Paid (${paidCount})` },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setTeamPaymentFilter(opt.key as any)}
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition ${
+                      teamPaymentFilter === opt.key
+                        ? "bg-hoop-100 text-hoop-700"
+                        : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </span>
+            </span>
+          }
+        />
         {!league.teams || league.teams.length === 0 ? (
           <p className="text-ink-500 text-sm">No teams registered yet.</p>
         ) : filteredTeams.length === 0 ? (
@@ -158,7 +161,7 @@ export function TeamsTab({
             return (
               <div
                 key={t.id}
-                className="border-court-100 bg-court-50 mb-2 flex items-center justify-between rounded-xl border px-3 py-2"
+                className="border-court-100 bg-court-50 hover:border-court-200 mb-2 flex items-center justify-between rounded-xl border px-3 py-2 transition-colors"
               >
                 <div>
                   {(t.team as any)?.id ? (
@@ -177,72 +180,48 @@ export function TeamsTab({
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      t.status === "APPROVED"
-                        ? "bg-court-100 text-court-700"
-                        : t.status === "WITHDRAWN"
-                          ? "bg-ink-100 text-ink-600"
-                          : "bg-hoop-100 text-hoop-700"
-                    }`}
-                  >
-                    {t.status.toLowerCase()}
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      paid
-                        ? "bg-green-100 text-green-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
+                  <Badge tone={toneForStatus(t.status)}>{t.status.toLowerCase()}</Badge>
+                  <Badge tone={paid ? "success" : "warning"}>
                     {paymentLabel[t.paymentStatus ?? "UNPAID"] ?? "unpaid"}
-                  </span>
+                  </Badge>
                   {t.status === "PENDING" && (
                     <>
-                      <button
-                        onClick={() => updateTeamStatus(t.id, "APPROVED")}
-                        className="bg-court-600 hover:bg-court-700 rounded-lg px-2 py-1 text-xs font-semibold text-white"
-                      >
+                      <Button size="sm" tone="court" onClick={() => updateTeamStatus(t.id, "APPROVED")}>
                         Approve
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        tone="hoop"
                         onClick={() => updateTeamStatus(t.id, "REJECTED")}
-                        className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 rounded-lg border px-2 py-1 text-xs font-semibold"
                       >
                         Reject
-                      </button>
+                      </Button>
                     </>
                   )}
                   {(t.status === "PENDING" || t.status === "APPROVED") && (
-                    <button
-                      onClick={() => withdrawTeam(t.id)}
-                      className="text-hoop-700 hover:bg-hoop-50 rounded-lg px-2 py-1 text-xs font-semibold"
-                    >
+                    <Button size="sm" variant="subtle" onClick={() => withdrawTeam(t.id)}>
                       Withdraw
-                    </button>
+                    </Button>
                   )}
                   {!paid ? (
                     <>
-                      <button
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        tone="court"
                         onClick={() => updateTeamPayment(t.id, "PAID_MANUAL")}
-                        className="border-green-300 text-green-700 hover:bg-green-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
                       >
                         Mark paid
-                      </button>
-                      <button
-                        onClick={() => updateTeamPayment(t.id, "WAIVED")}
-                        className="border-ink-200 text-ink-600 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
-                      >
+                      </Button>
+                      <Button size="sm" variant="subtle" onClick={() => updateTeamPayment(t.id, "WAIVED")}>
                         Waive
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => updateTeamPayment(t.id, "UNPAID")}
-                      className="border-ink-200 text-ink-500 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
-                    >
+                    <Button size="sm" variant="subtle" onClick={() => updateTeamPayment(t.id, "UNPAID")}>
                       Mark unpaid
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

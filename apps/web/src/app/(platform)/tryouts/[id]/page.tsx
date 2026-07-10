@@ -83,7 +83,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
   const isPast = new Date(tryout.scheduledAt) < new Date()
   const isFull = tryout.maxParticipants !== null && tryout._count.signups >= tryout.maxParticipants
   const fee = Number(tryout.fee)
-  const currency = tryout.tenant.currency || "USD"
+  const currency = tryout.tenant.currency || "CAD"
   const spotsLeft = tryout.maxParticipants ? tryout.maxParticipants - tryout._count.signups : null
   const primaryColor = tryout.tenant.branding?.primaryColor || "#4f46e5"
 
@@ -203,6 +203,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
                 <SignupForm
                   tryoutId={params.id}
                   tryoutFee={fee}
+                  currency={currency}
                   tryoutLocation={tryout.location}
                   tryoutDate={format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
                   players={userData?.players || []}

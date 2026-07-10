@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import { Button, Card } from "@/components/ui"
+
+const inputCls =
+  "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
 
 interface ClubData {
   id: string
@@ -94,11 +98,16 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-6 text-lg font-semibold text-ink-900">
+      <div className="reveal">
+        <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
           Club Settings
         </h2>
+        <p className="text-ink-500 mt-1 text-sm">
+          Your club&apos;s name, public URL, timezone, and brand color.
+        </p>
+      </div>
 
+      <Card className="reveal">
         {error && (
           <div className="mb-4 rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
             {error}
@@ -106,7 +115,7 @@ export default function SettingsPage() {
         )}
 
         {success && (
-          <div className="mb-4 rounded-md border border-green-200 bg-court-50 p-3 text-sm text-court-700">
+          <div className="mb-4 rounded-xl border border-court-200 bg-court-50 p-3 text-sm text-court-700">
             {success}
           </div>
         )}
@@ -121,7 +130,7 @@ export default function SettingsPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
+              className={inputCls}
             />
           </div>
 
@@ -129,8 +138,8 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-ink-700">
               Slug (URL)
             </label>
-            <div className="mt-1 flex rounded-md shadow-sm">
-              <span className="inline-flex items-center rounded-l-md border border-r-0 border-ink-200 bg-court-50 px-3 text-sm text-ink-500">
+            <div className="mt-1 flex">
+              <span className="border-ink-200 bg-ink-50 text-ink-500 inline-flex items-center rounded-l-xl border border-r-0 px-3 text-sm">
                 youthbasketballhub.com/
               </span>
               <input
@@ -144,7 +153,7 @@ export default function SettingsPage() {
                   )
                 }
                 required
-                className="block w-full rounded-r-md border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500"
+                className="border-ink-200 block w-full rounded-r-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
               />
             </div>
           </div>
@@ -156,7 +165,7 @@ export default function SettingsPage() {
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 focus:border-play-500 focus:outline-none"
+              className={inputCls}
             >
               {timezones.map((tz) => (
                 <option key={tz} value={tz}>
@@ -175,29 +184,25 @@ export default function SettingsPage() {
                 type="color"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded border border-ink-200"
+                className="border-ink-200 h-10 w-14 cursor-pointer rounded-lg border"
               />
               <input
                 type="text"
                 value={primaryColor}
                 onChange={(e) => setPrimaryColor(e.target.value)}
-                className="block w-32 rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none"
+                className="border-ink-200 block w-32 rounded-xl border px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
                 placeholder="#1a73e8"
               />
             </div>
           </div>
 
           <div className="pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl bg-play-600 px-6 py-2 font-semibold text-white hover:bg-play-700 disabled:bg-court-300"
-            >
+            <Button type="submit" disabled={saving}>
               {saving ? "Saving..." : "Save Settings"}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
+      </Card>
     </div>
   )
 }

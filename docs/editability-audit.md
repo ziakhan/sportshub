@@ -210,17 +210,20 @@ accepting any jump; no reopen button.
 - Schema: runbook **#18** (RESCINDED + StaffInvitation.expiresAt) — local pushed; Neon pending
   deploy train.
 
-### Wave 3 — people & consent
-- `mediaConsent` editor (parent, player edit page) + consent display on rosters.
-- Player remove button (parent) wiring the existing soft-delete API.
-- Staff designation PATCH (promote in place); fix multi-role remove; reactivate released players.
-- Self-service email/password change + forgot-password; avatar upload.
+### ✅ Wave 3 — people & consent — SHIPPED 2026-07-09 (waves 2+5)
+- ✅ `mediaConsent` editor + player Remove button + designation promote + reactivate released
+  (pulled into Wave 2, above).
+- ✅ Self-service password/email change + account deletion (`/settings/security`,
+  `/api/user/security`; soft-delete keeps names per owner decision) + stateless HMAC
+  forgot-password (`lib/auth-reset.ts`, `/forgot-password`, `/reset-password`) + avatar upload.
+  (Phase 5 `65a477e`.)
 
-### Wave 4 — content round-trips
-- Recap edit/regenerate/takedown (club/league) — honor the promised `PostStatus` states.
-- Review author edit/delete + admin moderation queue (launch blocker H4).
-- Poll edit (pre-votes free; post-votes add-option only) + scheduled auto-close.
-- Announcement content edit. Chat message edit-within-N-minutes. Notification dismiss.
+### ✅ Wave 4 — content round-trips — SHIPPED 2026-07-09 (Phase 5 `65a477e`)
+- ✅ Recap PATCH/takedown/restore/regenerate + admin bar on `/news/[slug]`.
+- ✅ Review author edit/delete + relationship gate + flag flow + `/dashboard/admin/reviews`
+  moderation queue — launch blocker H4 closed.
+- ✅ Poll vote-safe editing (pre-votes free; post-votes add-option only).
+- ✅ Announcement content PATCH · chat 15-min edit window · notification dismiss (DELETE).
 
 ---
 

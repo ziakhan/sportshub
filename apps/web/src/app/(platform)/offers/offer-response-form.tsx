@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
+import { formatCurrency } from "@/lib/countries"
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
@@ -57,7 +58,7 @@ interface PaymentInfo {
   options: OptionTerms[]
 }
 
-const money = (n: number, c?: string) => `$${n.toFixed(2)}${c ? ` ${c}` : ""}`
+const money = (n: number, c?: string) => formatCurrency(n, c)
 
 export function OfferResponseForm({
   offerId,

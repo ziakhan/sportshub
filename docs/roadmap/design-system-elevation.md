@@ -151,6 +151,29 @@ now carries the org color. → every club subpage inherits `--brand*` + Barlow a
 login persona → full-page shots → assert no pageerror/500). Commits `46cf754`, `f748a35`, `22bb189` (+ demo lock).
 The brand rule from §3 held up well in the browser and is the working default.
 
+## 8. Wave 2 — the long tail (2026-07-10, LOCAL/UNPUSHED)
+
+**Workflow `design-sweep-wave2`** — 16 surface groups, 15 by agents (~1.25M tok, 17 min), 1
+(admin pages) finished solo after a session-limit kill (agent left zero partial edits).
+Presentation-only; all data/props/handlers preserved. Now on the kit:
+- **Club admin**: settings, payments, messages shell, staff (4 panels + toneForStatus pills),
+  offer-templates (page/card/form), tryout create + edit forms, tryout signups + check-in.
+- **Team surfaces**: team dashboard (StatTiles + Badge/toneForStatus, deleted 6 hand-rolled
+  status maps), roster + manager + row actions, team edit, league-rosters.
+- **Season manage**: page shell + ALL nine tabs (teams/divisions/venues/sessions/scheduling/
+  schedule/standings/tiebreakers/referees + roster-requests panel).
+- **Consumer**: players list/add, family payments, family offers, settings profile + payments.
+- **Admin** (solo): users/claims/payments — Badge+toneForStatus, kit Buttons, PanelHeader, reveals.
+
+**Kit addition**: `status-tone.ts` — central `toneForStatus()` status→BadgeTone map (PENDING
+gold, ACCEPTED/ACTIVE court, LIVE live, DECLINED hoop, terminal neutral…); hand-rolled per-page
+maps deleted as surfaces adopt it. Deliberately left alone: iPad scoring console, next-season
+wizard (born on the kit), customize drag-drop editor, team-season-actions (already kit-based).
+
+**Verify**: tsc clean · lint clean · 243 unit + 226 int green · Playwright smoke of 26 swept
+surfaces (13 pages × 3 personas, 4 team pages, season shell + 9 tab clicks) — all 200, zero
+pageerrors (`scripts/demo/smoke-wave2.mjs` / `smoke-team.mjs` / `smoke-season.mjs`).
+
 ## Refs
 [[club-page-design-polish]] · [[native-mobile-platform]] · [[demo-shot-list]] · `scripts/demo/` (recorder)
 

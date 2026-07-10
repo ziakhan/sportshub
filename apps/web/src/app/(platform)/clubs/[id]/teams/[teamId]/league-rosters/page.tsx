@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { evaluateRosterEdit } from "@/lib/seasons/roster-policy"
+import { Button } from "@/components/ui"
 import { LeagueRosterManager } from "./league-roster-manager"
 
 /**
@@ -134,25 +135,36 @@ export default async function LeagueRostersPage({
         </Link>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="reveal mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-ink-900 text-xl font-bold">{team.name} — League Rosters</h2>
+          <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
+            {team.name} — League Rosters
+          </h2>
           <p className="text-ink-500 mt-1 text-sm">
             Each league only sees the version you submitted to it — your club roster of{" "}
             {clubRoster.length} stays yours.
           </p>
         </div>
-        <Link
+        <Button
           href={`/browse-leagues?team=${params.teamId}`}
-          className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+            </svg>
+          }
         >
           Add this team to a league
-        </Link>
+        </Button>
       </div>
 
       {versions.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
-          <h3 className="text-ink-900 mb-2 text-lg font-semibold">No league submissions yet</h3>
+        <div
+          className="reveal border-ink-300 shadow-soft rounded-[28px] border border-dashed bg-white p-12 text-center"
+          style={{ animationDelay: "80ms" }}
+        >
+          <h3 className="font-condensed text-ink-900 mb-2 text-lg font-bold uppercase tracking-wide">
+            No league submissions yet
+          </h3>
           <p className="text-ink-600">
             Submit this team to a league and its roster version will appear here.
           </p>

@@ -6,12 +6,13 @@ import { formatCurrency } from "@/lib/countries"
 import { payerObligations } from "@/lib/payments/queries"
 import { ObligationsTable } from "@/components/payments/obligations-table"
 import { paidSoFar } from "@/components/payments/types"
+import { Badge, Card, PanelHeader, type BadgeTone } from "@/components/ui"
 
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  SUCCEEDED: { label: "Paid", tone: "text-court-700 bg-court-50" },
-  PENDING: { label: "Upcoming", tone: "text-ink-600 bg-ink-100" },
-  PROCESSING: { label: "Processing", tone: "text-play-700 bg-play-50" },
-  FAILED: { label: "Failed — retrying", tone: "text-red-700 bg-red-50" },
+const STATUS_LABEL: Record<string, { label: string; tone: BadgeTone }> = {
+  SUCCEEDED: { label: "Paid", tone: "court" },
+  PENDING: { label: "Upcoming", tone: "neutral" },
+  PROCESSING: { label: "Processing", tone: "play" },
+  FAILED: { label: "Failed — retrying", tone: "danger" },
 }
 
 export const dynamic = "force-dynamic"
@@ -48,23 +49,33 @@ export default async function MyPaymentsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-xl font-bold text-ink-900 md:text-2xl">My payments</h1>
-        <p className="mt-1 text-sm text-ink-500">
+      <Card className="reveal sm:p-8">
+        <div className="border-play-100 bg-play-50 text-play-600 mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+          Payments
+        </div>
+        <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+          My payments
+        </h1>
+        <p className="text-ink-500 mt-1 text-sm">
           {open.length === 0
             ? "You're all settled up."
             : `${open.length} open item${open.length > 1 ? "s" : ""} — ${formatCurrency(owing, currency)} outstanding.`}
         </p>
-      </div>
+      </Card>
 
       {installments.length > 0 && (
-        <div className="border-ink-100 rounded-2xl border bg-white p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-ink-900 text-sm font-bold">Payment plan</h2>
-            <Link href="/settings/payments" className="text-play-600 text-xs font-semibold hover:underline">
-              Manage cards →
-            </Link>
-          </div>
+        <section
+          className="reveal border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
+          style={{ animationDelay: "80ms" }}
+        >
+          <PanelHeader
+            title="Payment plan"
+            action={
+              <Link href="/settings/payments" className="text-play-600 text-xs font-semibold hover:underline">
+                Manage cards →
+              </Link>
+            }
+          />
           <ul className="divide-ink-100 divide-y">
             {installments.map((p: any) => {
               const s = STATUS_LABEL[p.status] ?? STATUS_LABEL.PENDING
@@ -84,9 +95,7 @@ export default async function MyPaymentsPage() {
                     <span className="text-ink-800 text-sm font-semibold">
                       {formatCurrency(Number(p.amount), p.currency)}
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.tone}`}>
-                      {s.label}
-                    </span>
+                    <Badge tone={s.tone}>{s.label}</Badge>
                   </div>
                 </li>
               )
@@ -96,10 +105,12 @@ export default async function MyPaymentsPage() {
             Scheduled payments charge automatically to your default card. Update it any time under
             Manage cards.
           </p>
-        </div>
+        </section>
       )}
 
-      <ObligationsTable obligations={obligations} view="payer" />
+      <div className="reveal" style={{ animationDelay: "160ms" }}>
+        <ObligationsTable obligations={obligations} view="payer" />
+      </div>
 
       <p className="text-xs text-ink-400">
         Need a refund or a correction? Contact the club or league directly — they manage

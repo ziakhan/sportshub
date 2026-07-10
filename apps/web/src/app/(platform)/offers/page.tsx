@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
+import { Badge, Button, Card, toneForStatus } from "@/components/ui"
 import { OfferResponseForm } from "./offer-response-form"
 import { formatCurrency } from "@/lib/countries"
 
@@ -98,16 +99,18 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
+      <Card className="reveal sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           Offers
         </div>
-        <h1 className="font-display text-ink-950 text-3xl font-bold">My offers</h1>
+        <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+          My offers
+        </h1>
         <p className="text-ink-500 mt-1 text-sm">Team offers for your players</p>
-      </div>
+      </Card>
 
       {offers.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
+        <div className="reveal border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
           <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">No offers yet</h3>
           <p className="text-ink-600">
             When a club sends an offer for one of your players, it will appear here.
@@ -118,17 +121,19 @@ export default function OffersPage() {
           {/* Pending offers */}
           {pendingOffers.length > 0 && (
             <div>
-              <h2 className="font-display text-ink-950 mb-3 text-lg font-semibold">
+              <h2 className="font-condensed text-ink-950 mb-3 flex items-center gap-2.5 text-xl font-bold uppercase tracking-wide">
+                <span className="bg-gold-400 h-5 w-1.5 shrink-0 rounded-full" aria-hidden />
                 Pending ({pendingOffers.length})
               </h2>
               <div className="space-y-4">
-                {pendingOffers.map((offer) => {
+                {pendingOffers.map((offer, index) => {
                   const isExpired = new Date(offer.expiresAt) < new Date()
 
                   return (
                     <div
                       key={offer.id}
-                      className="border-play-200 shadow-soft rounded-2xl border bg-white p-6"
+                      style={{ animationDelay: `${index * 70}ms` }}
+                      className="reveal border-play-200 shadow-soft rounded-2xl border bg-white p-6"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -152,7 +157,7 @@ export default function OffersPage() {
                         <div className="text-right">
                           {(offer.options?.length ?? 0) > 1 && !offer.chosenOptionId ? (
                             <>
-                              <div className="text-ink-900 text-lg font-bold">
+                              <div className="font-condensed text-ink-950 text-2xl font-bold">
                                 from{" "}
                                 {formatCurrency(
                                   Math.min(...offer.options!.map((o) => o.seasonFee)),
@@ -165,7 +170,7 @@ export default function OffersPage() {
                             </>
                           ) : (
                             <>
-                              <div className="text-ink-900 text-lg font-bold">
+                              <div className="font-condensed text-ink-950 text-2xl font-bold">
                                 {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
                               </div>
                               {offer.chosenOptionId &&
@@ -249,34 +254,37 @@ export default function OffersPage() {
                       })()}
 
                       {offer.message && (
-                        <div className="bg-ink-50 text-ink-700 mt-3 rounded-md p-3 text-sm italic">
+                        <div className="bg-ink-50 text-ink-700 mt-3 rounded-xl p-3 text-sm italic">
                           &ldquo;{offer.message}&rdquo;
                         </div>
                       )}
 
                       <div className="text-ink-500 mt-3 flex items-center justify-between text-xs">
                         <span>Received {format(new Date(offer.createdAt), "MMM d, yyyy")}</span>
-                        <span className={isExpired ? "text-hoop-700 font-medium" : ""}>
-                          {isExpired
-                            ? "Expired"
-                            : `Expires ${format(new Date(offer.expiresAt), "MMM d, yyyy")}`}
-                        </span>
+                        {isExpired ? (
+                          <Badge tone={toneForStatus("EXPIRED")}>Expired</Badge>
+                        ) : (
+                          <span>{`Expires ${format(new Date(offer.expiresAt), "MMM d, yyyy")}`}</span>
+                        )}
                       </div>
 
                       {!isExpired && respondingTo !== offer.id && (
                         <div className="mt-4 flex gap-3">
-                          <button
+                          <Button
+                            tone="court"
+                            className="flex-1"
                             onClick={() => setRespondingTo(offer.id)}
-                            className="bg-court-600 hover:bg-court-700 flex-1 rounded-md px-4 py-2 text-sm font-semibold text-white"
                           >
                             Accept Offer
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            tone="hoop"
+                            className="flex-1"
                             onClick={() => setRespondingTo(offer.id + "-decline")}
-                            className="border-hoop-300 text-hoop-700 hover:bg-hoop-50 flex-1 rounded-md border px-4 py-2 text-sm font-semibold"
                           >
                             Decline
-                          </button>
+                          </Button>
                         </div>
                       )}
 
@@ -310,22 +318,17 @@ export default function OffersPage() {
           {/* Past offers */}
           {respondedOffers.length > 0 && (
             <div>
-              <h2 className="font-display text-ink-950 mb-3 text-lg font-semibold">
+              <h2 className="font-condensed text-ink-950 mb-3 flex items-center gap-2.5 text-xl font-bold uppercase tracking-wide">
+                <span className="bg-ink-300 h-5 w-1.5 shrink-0 rounded-full" aria-hidden />
                 Past Offers ({respondedOffers.length})
               </h2>
               <div className="space-y-3">
-                {respondedOffers.map((offer) => {
+                {respondedOffers.map((offer, index) => {
                   const statusColors: Record<string, string> = {
                     ACCEPTED: "border-court-200 bg-court-50",
                     DECLINED: "border-hoop-200 bg-hoop-50",
                     EXPIRED: "border-ink-200 bg-ink-50",
                     RESCINDED: "border-ink-200 bg-ink-50",
-                  }
-                  const badgeColors: Record<string, string> = {
-                    ACCEPTED: "bg-court-100 text-court-700",
-                    DECLINED: "bg-hoop-100 text-hoop-700",
-                    EXPIRED: "bg-ink-100 text-ink-600",
-                    RESCINDED: "bg-ink-100 text-ink-600",
                   }
                   const statusLabel =
                     offer.status === "RESCINDED" ? "withdrawn by club" : offer.status.toLowerCase()
@@ -333,7 +336,8 @@ export default function OffersPage() {
                   return (
                     <div
                       key={offer.id}
-                      className={`rounded-xl border p-4 ${statusColors[offer.status] || "border-ink-200"}`}
+                      style={{ animationDelay: `${index * 60}ms` }}
+                      className={`reveal rounded-xl border p-4 ${statusColors[offer.status] || "border-ink-200"}`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -348,11 +352,7 @@ export default function OffersPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColors[offer.status] || "bg-ink-100 text-ink-600"}`}
-                          >
-                            {statusLabel}
-                          </span>
+                          <Badge tone={toneForStatus(offer.status)}>{statusLabel}</Badge>
                           {offer.respondedAt && (
                             <span className="text-ink-400 text-xs">
                               {format(new Date(offer.respondedAt), "MMM d")}
@@ -417,24 +417,17 @@ function DeclineConfirm({
   }
 
   return (
-    <div className="border-hoop-200 bg-hoop-50 mt-4 rounded-md border p-4">
+    <div className="border-hoop-200 bg-hoop-50 mt-4 rounded-xl border p-4">
       <p className="text-hoop-700 mb-3 text-sm">
         Are you sure you want to decline this offer? This cannot be undone.
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={handleDecline}
-          disabled={isSubmitting}
-          className="bg-hoop-600 hover:bg-hoop-700 rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-        >
+        <Button tone="hoop" size="sm" disabled={isSubmitting} onClick={handleDecline}>
           {isSubmitting ? "Declining..." : "Confirm Decline"}
-        </button>
-        <button
-          onClick={onCancel}
-          className="border-ink-300 text-ink-700 hover:bg-ink-50 rounded-md border px-4 py-2 text-sm font-medium"
-        >
+        </Button>
+        <Button variant="subtle" size="sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   )

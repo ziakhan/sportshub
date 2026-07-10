@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation"
 import {
   Card,
   Badge,
@@ -14,8 +15,9 @@ import {
 export const metadata = { title: "Style guide — SportsHub", robots: { index: false } }
 
 // Internal design-system preview. Renders every shared component with sample
-// data so we can verify the system visually. Safe to delete or gate later.
+// data so we can verify the system visually. Dev-only: 404s in production.
 export default function StyleGuidePage() {
+  if (process.env.NODE_ENV === "production") notFound()
   const usersIcon = (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />

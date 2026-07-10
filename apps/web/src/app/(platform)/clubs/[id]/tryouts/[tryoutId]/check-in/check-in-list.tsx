@@ -75,18 +75,21 @@ export function CheckInList({
   return (
     <div>
       {/* Progress — sticky so the count stays visible while scrolling the list */}
-      <div className="sticky top-0 z-10 -mx-1 mb-4 bg-court-50/95 px-1 py-2 backdrop-blur-sm">
-        <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-4">
+      <div className="bg-ink-50/95 sticky top-0 z-10 -mx-1 mb-4 px-1 py-2 backdrop-blur-sm">
+        <div className="reveal border-ink-100 shadow-soft rounded-2xl border bg-white p-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-ink-900 text-2xl font-bold">
+            <span className="font-condensed text-ink-950 text-4xl font-bold leading-none">
               {checkedInCount}
-              <span className="text-ink-400 text-base font-medium"> / {signups.length}</span>
+              <span className="text-ink-400 font-barlow text-base font-medium">
+                {" "}
+                / {signups.length}
+              </span>
             </span>
-            <span className="text-ink-500 text-sm">checked in</span>
+            <span className="text-ink-500 text-sm font-medium">checked in</span>
           </div>
-          <div className="bg-court-100 mt-2 h-2 overflow-hidden rounded-full">
+          <div className="bg-ink-100 mt-3 h-2 overflow-hidden rounded-full">
             <div
-              className="bg-court-600 h-full rounded-full transition-all"
+              className="grow-x h-full rounded-full bg-[var(--brand)] transition-all"
               style={{
                 width: signups.length ? `${(checkedInCount / signups.length) * 100}%` : "0%",
               }}
@@ -107,18 +110,18 @@ export function CheckInList({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search player or parent…"
-          className="border-ink-200 focus:border-play-500 mb-3 w-full rounded-xl border px-4 py-2.5 text-sm focus:outline-none"
+          className="border-ink-200 mb-3 w-full rounded-xl border bg-white px-4 py-2.5 text-sm transition-colors focus:border-[color:var(--brand)] focus:outline-none"
         />
       )}
 
       {signups.length === 0 ? (
-        <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-10 text-center">
+        <div className="border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-10 text-center">
           <p className="text-ink-600">No signups for this tryout yet.</p>
         </div>
       ) : visible.length === 0 ? (
         <p className="text-ink-500 py-6 text-center text-sm">No players match “{query}”.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="reveal space-y-2" style={{ animationDelay: "80ms" }}>
           {visible.map((signup) => {
             const isIn = !!signup.checkedInAt
             const isPending = pending.has(signup.id)
@@ -127,14 +130,14 @@ export function CheckInList({
                 key={signup.id}
                 onClick={() => toggle(signup)}
                 disabled={isPending}
-                className={`shadow-soft flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${
+                className={`shadow-soft flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all duration-150 active:scale-[0.99] ${
                   isIn
                     ? "border-court-300 bg-court-50"
-                    : "border-ink-100 hover:bg-court-50 bg-white"
+                    : "border-ink-100 hover:bg-court-50 hover:border-court-200 bg-white"
                 } ${isPending ? "opacity-60" : ""}`}
               >
                 <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold transition-colors ${
                     isIn
                       ? "border-court-600 bg-court-600 text-white"
                       : "border-ink-200 text-transparent"
@@ -155,7 +158,7 @@ export function CheckInList({
                 </span>
                 <span className="shrink-0 text-right">
                   {isIn ? (
-                    <span className="text-court-700 text-xs font-medium">
+                    <span className="text-court-700 text-xs font-semibold">
                       {format(new Date(signup.checkedInAt as string), "h:mm a")}
                     </span>
                   ) : (
