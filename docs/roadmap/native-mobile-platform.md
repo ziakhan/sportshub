@@ -10,7 +10,9 @@ tags: [theme/platform, type/plan, status/planned]
 
 # 📱 Native mobile platform + self-hosted backend (architecture & migration)
 
-**Tier 1 · effort XL · owner-directed · PLANNED (implement later).**
+**Tier 1 · effort XL · owner-directed · ▶ EXECUTION COMMITTED 2026-07-10** — the ordered
+build plan (milestones M0–M4, hosting/auth/push decisions, config matrix) lives in
+[[native-app-execution-plan]]; this doc stays the architecture reference.
 The authoritative plan for taking SportsHub from a Vercel-hosted web app to a **native
 iOS + Android app (React Native/Expo) + a self-hosted backend that owns realtime & push**,
 with the web app kept for operator/admin work. Incorporates the adversarial review
