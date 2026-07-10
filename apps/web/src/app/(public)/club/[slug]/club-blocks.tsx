@@ -13,6 +13,7 @@ export interface ClubPageData {
   tryouts: any[]
   houseLeagues: any[]
   camps: any[]
+  tournaments: any[]
   reviews: any[]
   averageRating: number | null
   totalReviews: number
@@ -47,7 +48,7 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
     case "announcements":
       return d.announcements.length > 0
     case "programs":
-      return d.tryouts.length + d.houseLeagues.length + d.camps.length > 0
+      return d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length > 0
     case "teams":
       return true // shows an empty state
     case "schedule":
@@ -211,7 +212,7 @@ function AnnouncementsBlock({ d, variant }: { d: ClubPageData; variant: Variant 
 }
 
 function ProgramsBlock({ d }: { d: ClubPageData }) {
-  const count = d.tryouts.length + d.houseLeagues.length + d.camps.length
+  const count = d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length
   if (count === 0) return null
   return (
     <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
@@ -247,6 +248,18 @@ function ProgramsBlock({ d }: { d: ClubPageData }) {
             price={`${formatCurrency(c.weeklyFee, d.currency)}/wk`}
           />
         ))}
+        {d.tournaments.map((t: any) => (
+          <ProgramRow
+            key={`tn-${t.id}`}
+            href={`/tournament/${t.id}`}
+            title={t.name}
+            tag="Tournament"
+            meta={`${format(new Date(t.startDate), "MMM d")} – ${format(new Date(t.endDate), "MMM d, yyyy")} · ${[t.city, t.state].filter(Boolean).join(", ")}`}
+            price={`${formatCurrency(t.teamFee, t.currency || d.currency)}/team`}
+            status={t.status === "IN_PROGRESS" ? "live" : "registering"}
+            cta={t.status === "IN_PROGRESS" ? "View" : "Register"}
+          />
+        ))}
       </div>
     </div>
   )
@@ -258,12 +271,16 @@ function ProgramRow({
   tag,
   meta,
   price,
+  status = "registering",
+  cta = "Register",
 }: {
   href: string
   title: string
   tag: string
   meta: string
   price: string
+  status?: "registering" | "live"
+  cta?: string
 }) {
   const free = price === "FREE"
   return (
@@ -279,10 +296,17 @@ function ProgramRow({
             >
               {tag}
             </span>
-            <span className="text-court-700 bg-court-50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
-              <span aria-hidden className="bg-court-500 h-1.5 w-1.5 rounded-full" />
-              Registering
-            </span>
+            {status === "live" ? (
+              <span className="text-live-600 bg-live-50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                <span aria-hidden className="bg-live-500 h-1.5 w-1.5 animate-pulse rounded-full" />
+                Underway
+              </span>
+            ) : (
+              <span className="text-court-700 bg-court-50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                <span aria-hidden className="bg-court-500 h-1.5 w-1.5 rounded-full" />
+                Registering
+              </span>
+            )}
           </div>
           <h3
             className={`text-ink-950 mt-1.5 font-semibold leading-snug ${BRAND_HOVER} transition-colors`}
@@ -300,7 +324,7 @@ function ProgramRow({
             {price}
           </div>
           <div className="text-ink-400 mt-1 inline-flex items-center gap-0.5 text-[11px] font-semibold uppercase tracking-wide">
-            Register
+            {cta}
             <IconArrow />
           </div>
         </div>
@@ -652,7 +676,7 @@ function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 function StatsBlock({ d }: { d: ClubPageData }) {
   const stats = [
     { value: d.teams.length, label: "Teams", cls: BRAND_INK },
-    { value: d.tryouts.length + d.houseLeagues.length + d.camps.length, label: "Programs", cls: "text-court-600" },
+    { value: d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length, label: "Programs", cls: "text-court-600" },
     { value: d.staffCount, label: "Staff", cls: "text-ink-700" },
   ]
   return (

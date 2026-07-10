@@ -56,14 +56,6 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Team fees & payments</h1>
       </div>
 
-      {isOwner && (
-        <PaymentSettingsCard
-          tenantId={params.id}
-          basePath={`/api/leagues/${params.id}`}
-          config={payConfig}
-        />
-      )}
-
       <div className="grid gap-4 sm:grid-cols-3">
         <Tile
           label="Collected"
@@ -89,6 +81,22 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
         canWaive
         canRefund
       />
+
+      {/* Everyone the page admits (owner, league manager, platform admin) may
+          manage config — same audience the payment-config APIs authorize. */}
+      <section className="space-y-3">
+        {!payConfig.stripeAccountId && (
+          <div className="rounded-xl border border-play-200 bg-play-50 px-4 py-3 text-sm text-play-800">
+            Connect Stripe below to collect team fees online — recording offline
+            payments (e-transfer, cash, cheque) works today.
+          </div>
+        )}
+        <PaymentSettingsCard
+          tenantId={params.id}
+          basePath={`/api/leagues/${params.id}`}
+          config={payConfig}
+        />
+      </section>
     </div>
   )
 }

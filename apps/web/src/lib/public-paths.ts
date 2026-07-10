@@ -19,6 +19,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/tryout",
   "/house-league",
   "/camp",
+  "/tournament",
   "/events",
   "/league",
   "/leagues",
@@ -38,6 +39,8 @@ const PUBLIC_PAGE_PREFIXES = [
 const PUBLIC_API_READ_PREFIXES = [
   // One-click unsubscribe must work signed-out (CASL); token-authenticated.
   "/api/comms/unsubscribe",
+  // Public tournament browsing (/events) — GET-only; ?mine + mutations stay guarded.
+  "/api/tournaments",
   "/api/house-leagues",
   "/api/camps",
   "/api/tryouts",

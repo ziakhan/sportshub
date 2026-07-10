@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
+import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicTournament } from "@/lib/queries/tournament"
 import { Card } from "@/components/ui"
@@ -19,6 +20,17 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicTournamentPage({ params }: { params: { id: string } }) {
   const tournament = await getPublicTournament(params.id)
   if (!tournament) notFound()
+
+  // Host club link (tenantId is optional — league-owner tournaments have none).
+  // Only link to clubs whose public page is viewable (mirrors /club/[slug] rules).
+  const hostRaw = tournament.tenantId
+    ? await prisma.tenant.findUnique({
+        where: { id: tournament.tenantId },
+        select: { name: true, slug: true, status: true },
+      })
+    : null
+  const host =
+    hostRaw && (hostRaw.status === "ACTIVE" || hostRaw.status === "UNCLAIMED") ? hostRaw : null
 
   const isOpen = tournament.status === "REGISTRATION"
   const deadlinePassed =
@@ -45,6 +57,17 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
           <p className="text-sm text-white/70">
             {tournament.city}{tournament.state ? `, ${tournament.state}` : ""}
           </p>
+          {host && (
+            <p className="mt-1 text-sm text-white/70">
+              Hosted by{" "}
+              <Link
+                href={`/club/${host.slug}`}
+                className="font-medium text-white underline-offset-2 hover:underline"
+              >
+                {host.name}
+              </Link>
+            </p>
+          )}
         </div>
       </div>
 

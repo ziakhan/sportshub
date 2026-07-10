@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { Badge } from "@/components/ui"
 
-type EventType = "all" | "tryouts" | "house-leagues" | "camps"
+type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "tournaments"
 
 interface EventItem {
   id: string
-  type: "tryout" | "house-league" | "camp"
+  type: "tryout" | "house-league" | "camp" | "tournament"
   name: string
   clubName: string
   clubSlug: string
@@ -23,6 +24,8 @@ interface EventItem {
   primaryColor: string
   spotsInfo: string
   extra?: string
+  status?: string
+  feeUnit?: string
   href: string
 }
 
@@ -43,15 +46,17 @@ export default function EventsPage() {
     async function fetchAll() {
       setLoading(true)
       try {
-        const [tryoutsRes, leaguesRes, campsRes] = await Promise.all([
+        const [tryoutsRes, leaguesRes, campsRes, tournamentsRes] = await Promise.all([
           fetch("/api/tryouts?marketplace=true"),
           fetch("/api/house-leagues?public=true"),
           fetch("/api/camps?public=true"),
+          fetch("/api/tournaments?public=true"),
         ])
 
         const tryoutsData = await tryoutsRes.json()
         const leaguesData = await leaguesRes.json()
         const campsData = await campsRes.json()
+        const tournamentsData = await tournamentsRes.json()
 
         const items: EventItem[] = []
 
@@ -119,6 +124,32 @@ export default function EventsPage() {
           })
         }
 
+        // Tournaments
+        for (const t of tournamentsData.tournaments || []) {
+          const ageGroups = [...new Set((t.divisions || []).map((d: any) => d.ageGroup))].filter(Boolean)
+          const teamCount = t._count?.teams || 0
+          items.push({
+            id: t.id,
+            type: "tournament",
+            name: t.name,
+            clubName: "",
+            clubSlug: "",
+            ageGroup: ageGroups.join(", "),
+            gender: null,
+            startDate: t.startDate,
+            endDate: t.endDate,
+            location: `${t.city}${t.state ? `, ${t.state}` : ""}`,
+            fee: Number(t.teamFee || 0),
+            currency: t.currency || "CAD",
+            primaryColor: "#f97316",
+            spotsInfo: `${teamCount} team${teamCount !== 1 ? "s" : ""} registered`,
+            extra: `${t.gamesGuaranteed} games guaranteed`,
+            status: t.status,
+            feeUnit: "per team",
+            href: `/tournament/${t.id}`,
+          })
+        }
+
         // Sort by start date
         items.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
         setEvents(items)
@@ -132,7 +163,7 @@ export default function EventsPage() {
   }, [])
 
   const filterMap: Record<EventType, string | null> = {
-    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp",
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", tournaments: "tournament",
   }
   const filtered = events.filter((e) => {
     const ft = filterMap[filter]
@@ -148,6 +179,7 @@ export default function EventsPage() {
     tryout: { bg: "bg-hoop-50", text: "text-hoop-600", label: "Tryout" },
     "house-league": { bg: "bg-court-50", text: "text-court-700", label: "House League" },
     camp: { bg: "bg-violet-100", text: "text-violet-700", label: "Camp" },
+    tournament: { bg: "bg-gold-50", text: "text-gold-600", label: "Tournament" },
   }
 
   return (
@@ -155,7 +187,7 @@ export default function EventsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-ink-950">Find Programs &amp; Tryouts</h1>
         <p className="mt-2 text-ink-600">
-          Browse tryouts, house leagues, and camps to find the right fit for your player.
+          Browse tryouts, house leagues, camps, and tournaments to find the right fit for your player.
         </p>
       </div>
 
@@ -167,6 +199,7 @@ export default function EventsPage() {
             { key: "tryouts", label: "Tryouts" },
             { key: "house-leagues", label: "House Leagues" },
             { key: "camps", label: "Camps" },
+            { key: "tournaments", label: "Tournaments" },
           ] as const).map((f) => (
             <button
               key={f.key}
@@ -208,14 +241,22 @@ export default function EventsPage() {
                 <div className="h-2" style={{ backgroundColor: event.primaryColor }} />
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.bg} ${badge.text}`}>
-                      {badge.label}
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.bg} ${badge.text}`}>
+                        {badge.label}
+                      </span>
+                      {event.type === "tournament" && event.status === "REGISTRATION" && (
+                        <Badge tone="court" dot>Open for teams</Badge>
+                      )}
+                      {event.type === "tournament" && event.status === "IN_PROGRESS" && (
+                        <Badge tone="live" dot>Underway</Badge>
+                      )}
                     </span>
                     <span className="text-xs text-ink-400">{event.spotsInfo}</span>
                   </div>
 
                   <h3 className="font-semibold text-ink-950 mb-1">{event.name}</h3>
-                  <p className="text-sm text-ink-500 mb-2">{event.clubName}</p>
+                  {event.clubName && <p className="text-sm text-ink-500 mb-2">{event.clubName}</p>}
 
                   <div className="space-y-1 text-xs text-ink-500">
                     <div>
@@ -223,15 +264,20 @@ export default function EventsPage() {
                       {event.endDate && ` - ${format(new Date(event.endDate), "MMM d, yyyy")}`}
                     </div>
                     <div>{event.location}</div>
-                    <div>
-                      {event.ageGroup}{event.gender ? ` \u2022 ${event.gender}` : ""}
-                    </div>
+                    {(event.ageGroup || event.gender) && (
+                      <div>
+                        {event.ageGroup}{event.gender ? ` \u2022 ${event.gender}` : ""}
+                      </div>
+                    )}
                     {event.extra && <div>{event.extra}</div>}
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between">
                     <span className="text-lg font-bold text-hoop-600">
                       {event.fee === 0 ? "FREE" : formatCurrency(event.fee, event.currency)}
+                      {event.feeUnit && event.fee !== 0 && (
+                        <span className="ml-1 text-xs font-normal text-ink-400">{event.feeUnit}</span>
+                      )}
                     </span>
                   </div>
                 </div>

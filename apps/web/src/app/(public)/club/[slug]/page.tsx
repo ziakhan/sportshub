@@ -50,6 +50,23 @@ async function getCamps(tenantId: string) {
   }))
 }
 
+async function getHostedTournaments(tenantId: string) {
+  const raw = await (prisma as any).tournament.findMany({
+    where: {
+      tenantId,
+      status: { in: ["REGISTRATION", "IN_PROGRESS"] },
+      startDate: { gte: todayUtcDateFloor() },
+    },
+    select: {
+      id: true, name: true, city: true, state: true, status: true,
+      startDate: true, endDate: true, teamFee: true, currency: true,
+      _count: { select: { teams: true } },
+    },
+    orderBy: { startDate: "asc" },
+  })
+  return (raw || []).map((t: any) => ({ ...t, teamFee: Number(t.teamFee) }))
+}
+
 async function getClubData(tenantId: string) {
   const [teams, tryouts, staffCount] = await Promise.all([
     prisma.team.findMany({
@@ -181,10 +198,11 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   const club = await getClubBySlug(params.slug)
   if (!club) notFound()
 
-  const [clubData, houseLeagues, camps, reviewsData, announcements] = await Promise.all([
+  const [clubData, houseLeagues, camps, tournaments, reviewsData, announcements] = await Promise.all([
     getClubData(club.id),
     getHouseLeagues(club.id),
     getCamps(club.id),
+    getHostedTournaments(club.id),
     getReviewsData(club.id),
     getAnnouncements(club.id),
   ])
@@ -223,6 +241,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     tryouts,
     houseLeagues,
     camps,
+    tournaments,
     reviews: reviewsData.reviews,
     averageRating: reviewsData.averageRating,
     totalReviews: reviewsData.totalReviews,
@@ -245,7 +264,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
 
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")
   const nextGame = upcomingGames[0]
-  const programCount = tryouts.length + houseLeagues.length + camps.length
+  const programCount = tryouts.length + houseLeagues.length + camps.length + tournaments.length
 
   // Quick-stats strip under the hero.
   const heroStats: Array<{ value: string; label: string }> = [
