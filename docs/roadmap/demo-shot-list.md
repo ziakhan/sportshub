@@ -77,7 +77,7 @@ Two audiences, one graph:
   claim is true only for **team practice scheduling / announcements** (bell + email — CS-3, CS-4) and
   offer/payment notifications. Frame CO-5 as "one post, live on my branded page," not "blasts every family."
 - **"No other communication channel"** — true *in-app + email*. Chat/polls/announcements are
-  polling-based (5–10s), not real-time push ([[mobile-pwa-push]] planned). Pitch it as "replaces the
+  polling-based (5–10s), not real-time push ([[native-mobile-platform]] realtime track committed). Pitch it as "replaces the
   group chat AND keeps it tied to the roster/schedule/money," not "faster than WhatsApp."
 - **Streaming video — [not built — skip].** GameChanger streams; SportsHub does **live score +
   play-by-play + recaps + embedded YouTube highlights**, not native video. Say "follow the live score
@@ -776,6 +776,6 @@ each visibly reuses data another persona created.
 - **Playoff / bracket generation** ([[playoff-generation]]; regular season + standings are real).
 - **Tournament competition** (schedule/brackets/scores) — registration/divisions/venues only; the rest is
   unbuilt.
-- **Real-time push notifications** to phones ([[mobile-pwa-push]]; in-app + email only).
+- **Real-time push notifications** to phones ([[native-mobile-platform]] FCM push track; in-app + email only today).
 - Club-announcement **follower/email broadcast** (page-only).
 - **PL-3** self-registered 13+ **player login** — confirm it exists before filming; else skip.

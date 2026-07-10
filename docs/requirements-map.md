@@ -100,7 +100,7 @@ the [[_dashboard|Build Dashboard]]. Statuses flip planned → in-progress → sh
 **Tier 0** — [[registration-forms]] · [[waivers-esign]] · [[concussion-rowans-law]] · [[player-safety-medical]] · [[staff-background-checks]] · [[privacy-pipeda-casl]]
 **Tier 1** — [[invitation-continuity]] · [[camp-houseleague-registration]] · [[scorekeeper-access]] · [[waitlists]] · [[season-rollover]] · [[refunds-withdrawals]] · [[referee-payouts]] · [[attendance-rsvp]] · [[tryout-evaluations]] · [[club-page-design-polish]]
 **Tier 2** — [[i18n-accessibility]] · [[data-import-export]] · [[observability-security]] · [[playoff-generation]] · [[broadcast-comms]] · [[financial-aid-discounts]] · [[co-guardian-households]] · [[content-moderation-analytics]]
-**Tier 3** — [[mobile-pwa-push]] · [[differentiators-future]]
+**Tier 3** — ~~[[mobile-pwa-push]]~~ (superseded → [[native-mobile-platform]]) · [[differentiators-future]]
 **Initiative — Identity & Pages** ([[_moc-identity]], draft) — [[handles-identity]] · [[customizable-pages]] · [[player-profile-privacy]]
 
 ## How we build
