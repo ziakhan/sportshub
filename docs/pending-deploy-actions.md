@@ -26,6 +26,18 @@ Manual steps to run on production (Neon) **before** the next Vercel deploy of ma
 > Still owner-side on Vercel: **CRON_SECRET** (crons fail closed until set), APP_TIMEZONE
 > (optional), STRIPE_* prod vars + webhook, ANTHROPIC_API_KEY (recaps fall back to template).
 
+> **🚀 Deploy train #2 same day (native-app infra, owner-approved):** pre-checks clean
+> (neondb, 564 users, no new tables pre-existing) → one `prisma db push` covered runbooks
+> **#21 + #23** (verified: RefreshToken + Device tables, DevicePlatform/PushProvider enums,
+> User.pushQuietStart/End; 0 rows, users untouched) → pushed **10 commits**
+> (`b0387be..00395e8`: M0–M4 native track) → Vercel Git-integration deploy. All realtime/push
+> code ships dormant (no SIDECAR_URL/NEXT_PUBLIC_SOCKET_URL on Vercel) — site behavior
+> unchanged, polling as before. Still owner-side on Vercel: **AUTH_TOKEN_SECRET** (bearer
+> endpoints 401 until set; needed before the native app can point at prod). ⚠️ Found: the
+> GitHub-Actions "Deploy to Vercel" workflow fails on an empty `VERCEL_TOKEN` secret and
+> appears long-vestigial — real deploys ride the Vercel Git integration; delete or re-secret
+> the workflow when convenient.
+
 ## ✅ 1. Backfill `OfferTemplate.tenantId` (Gap 0.1.7) — applied 2026-05-05
 
 **Linked code change:** [apps/web/src/app/api/teams/[id]/offer-templates/route.ts](../apps/web/src/app/api/teams/[id]/offer-templates/route.ts) — POST handler now sets `tenantId: team.tenantId` on new templates.
@@ -467,7 +479,7 @@ Ships with the phase-3 continuity commit (2026-07-09). Additive — one
 
 No env vars, no backfill.
 
-## ⬜ 21. Native auth (M2) — RefreshToken table + AUTH_TOKEN_SECRET env
+## ✅ 21. Native auth (M2) — RefreshToken table — applied to Neon 2026-07-10 (⚠️ AUTH_TOKEN_SECRET env still owner-side on Vercel)
 
 Ships with the M2 native-auth commit (2026-07-10,
 `docs/roadmap/native-app-execution-plan.md`). Additive — one `prisma db push`:
@@ -506,7 +518,7 @@ Verify: sidecar `/healthz` 200; open `/scores` in a browser — the socket
 connects (WS in devtools); score a demo game and watch it move with no
 reload; stop the sidecar and confirm the site quietly falls back to polling.
 
-## ⬜ 23. Push notifications schema (M3) — Device table + quiet hours
+## ✅ 23. Push notifications schema (M3) — Device table + quiet hours — applied to Neon 2026-07-10
 
 Ships with the M3 push commit (2026-07-10). Additive — one `prisma db push`:
 - New model `Device` (userId FK cascade, platform IOS|ANDROID, provider
