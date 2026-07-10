@@ -5,17 +5,22 @@ tags: [theme/ledgers, type/ledger, status/living]
 
 # Outstanding items — master ledger
 
-> **✅ SHIPPED 2026-07-09 (local, unpushed): Editability wave 1 + full lifecycle audit + design-system kit & sweep.**
+> **✅ SHIPPED 2026-07-09 (local, unpushed): Editability audit + waves 1 AND 2 + design-system kit & sweep.**
 > 6-agent audit of every entity's editability/transitions → **[[editability-audit]]**
-> (entity × state × action matrix, dead-enum inventory, fix waves 2–4 prioritized — wave 2
-> headline: club-side offer rescind + offer-expiry cron; game "Correct result" UI; division
-> rename; club self-withdraw from league). Built: `lib/lifecycle.ts` (derived
-> DRAFT/OPEN/FULL/IN_PROGRESS/ENDED + per-state action gates, 10 tests), Camp/HouseLeague
-> **edit pages + registrants views** (were create-only; clubs couldn't see signups),
-> lifecycle chips + always-visible Edit/Registrants/View/Publish actions on program lists,
-> Tournament core-fields edit page. Guards fixed: tryout Unpublish (silent no-op), venue
-> PATCH authz hole, completed-game PATCH block, offer pay-intent expiry (orphaned-deposit
-> risk). Same day: **UI kit + 16-surface design sweep** ([[design-system-elevation]] §7).
+> (entity × state × action matrix, dead-enum inventory; §5 has what shipped vs what remains).
+> **Wave 1:** `lib/lifecycle.ts` (derived states + per-state action gates, 10 tests),
+> Camp/HouseLeague **edit pages + registrants views**, lifecycle chips + always-visible
+> Edit/Registrants/View/Publish on program lists, Tournament edit page, 4 guard fixes
+> (tryout Unpublish no-op, venue PATCH authz, completed-game PATCH, pay-intent expiry).
+> **Wave 2 (owner decisions same day):** **offer RESCIND** (new status, button, family
+> "withdrawn by club", expiry cron), season transitions validated (one-way, no leapfrogging
+> FINALIZED), division rename, club self-withdraw + Withdraw buttons, game "Correct result"
+> UI, staff-invite revoke + 30-day expiry, designation promote-in-place, full multi-role
+> remove, parent Remove-player + mediaConsent editor, roster Released/Reactivate, authz
+> batch (LeagueManager customize 403, ?tenantId gates, random resetPassword). Schema
+> runbook **#18**. Suites 243 unit / 226 int green; rescind verified live E2E. Family
+> camp/HL cancel = deliberately NOT built (owner: club-only). Same day: **UI kit +
+> 16-surface design sweep** ([[design-system-elevation]] §7).
 >
 > **✅ SHIPPED 2026-07-08 (local, unpushed): Customizable club & league pages.**
 > Public `/club/[slug]` is now a branded microsite — hero (banner/logo/colors/
