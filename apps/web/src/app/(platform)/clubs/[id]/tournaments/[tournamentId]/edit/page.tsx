@@ -245,7 +245,7 @@ export default function EditTournamentPage() {
             {/* Format */}
             <div className="space-y-4">
               <PanelHeader title="Format" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-ink-700">
                     Team Registration Fee ($)

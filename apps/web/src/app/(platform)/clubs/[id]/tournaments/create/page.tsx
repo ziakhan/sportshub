@@ -181,7 +181,7 @@ export default function CreateTournamentPage() {
           {/* Format */}
           <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-ink-900">Format</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">
                   Team Registration Fee ($) *

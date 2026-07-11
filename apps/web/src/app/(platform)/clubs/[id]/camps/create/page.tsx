@@ -97,7 +97,7 @@ export default function CreateCampPage() {
           <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-ink-900">Camp Details</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Camp Name *</label>
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
@@ -116,7 +116,7 @@ export default function CreateCampPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Age Group *</label>
                 <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} required
@@ -156,7 +156,7 @@ export default function CreateCampPage() {
           <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-ink-900">Schedule</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Start Date *</label>
                 <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
@@ -169,7 +169,7 @@ export default function CreateCampPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Daily Start *</label>
                 <input type="time" value={dailyStartTime} onChange={(e) => setDailyStartTime(e.target.value)} required
@@ -198,7 +198,7 @@ export default function CreateCampPage() {
           <div className="rounded-lg border border-ink-200 bg-white p-6 space-y-4">
             <h3 className="font-semibold text-ink-900">Pricing</h3>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Per Week ($) *</label>
                 <input type="number" min="0" step="0.01" value={weeklyFee} onChange={(e) => setWeeklyFee(e.target.value)}
