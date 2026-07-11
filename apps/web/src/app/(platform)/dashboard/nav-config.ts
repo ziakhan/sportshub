@@ -148,9 +148,19 @@ export function buildNavSections({
 
   const sections: NavSection[] = []
 
+  // My Calendar rides right under Dashboard for anyone with a team side —
+  // family (Parent / 13+ Player) or staff. The one place to see everything
+  // and RSVP (docs/roadmap/my-calendar-plan.md).
+  const hasCalendar =
+    hasRole("Parent") || hasRole("Player") || isAdmin || isStaff
   sections.push({
     key: "home",
-    items: [{ label: homeLabel, href: "/dashboard", icon: "dashboard" }],
+    items: [
+      { label: homeLabel, href: "/dashboard", icon: "dashboard" },
+      ...(hasCalendar
+        ? [{ label: "My Calendar", href: "/calendar", icon: "calendar" as IconKey }]
+        : []),
+    ],
   })
 
   if (hasRole("PlatformAdmin")) {
@@ -244,7 +254,7 @@ export function buildNavSections({
       label: "Player",
       items: [
         { label: "My Teams", href: "/teams", icon: "users" },
-        { label: "My Schedule", href: "/scores", icon: "calendar" },
+        { label: "My Schedule", href: "/calendar", icon: "calendar" },
         { label: "My Stats", href: "/players", icon: "dashboard" },
       ],
     })

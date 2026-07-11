@@ -2,13 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { addDays, format, isSameDay, isToday, isTomorrow, startOfWeek } from "date-fns"
-import {
-  formatRsvpSummary,
-  rsvpKey,
-  summarizeRsvps,
-  type RsvpItemType,
-  type RsvpStatus,
-} from "@/lib/rsvp-shared"
+import { rsvpKey, type RsvpItemType, type RsvpStatus } from "@/lib/rsvp-shared"
+import { AddToPhone } from "@/components/calendar/add-to-phone"
+import { ItemPopover } from "@/components/calendar/item-popover"
+import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
 
 /**
  * Live agenda: practices + games grouped by week, polling for updates every
@@ -278,6 +275,25 @@ export function TeamCalendar({
     | { kind: "practice"; at: Date; practice: PracticeView }
     | { kind: "game"; at: Date; game: GameView }
     | { kind: "event"; at: Date; event: TeamEventView }
+
+  // Grid chips open this popover so the compact view is interactive too
+  const [openGrid, setOpenGrid] = useState<Entry | null>(null)
+
+  /** RSVP row for one item: family buttons or staff roll-up (upcoming only). */
+  function itemRsvp(itemType: RsvpItemType, itemId: string, at: Date, active: boolean, bare = false) {
+    if (!rsvp || !active || at.getTime() <= Date.now() || rsvp.players.length === 0) return null
+    const answers = rsvp.byItem[rsvpKey(itemType, itemId)] ?? {}
+    const inner = isStaff ? (
+      <RsvpRollup roster={rsvp.players} answers={answers} />
+    ) : (
+      <RsvpControl
+        players={rsvp.players}
+        answers={answers}
+        onSet={(playerId, status) => setRsvpStatus(itemType, itemId, playerId, status)}
+      />
+    )
+    return bare ? inner : <div className="border-ink-100 mt-2 border-t pt-2">{inner}</div>
+  }
   const allEntries = useMemo<Entry[]>(
     () =>
       [
@@ -545,10 +561,10 @@ export function TeamCalendar({
                     <div className="space-y-0.5">
                       {cell.entries.map((entry) =>
                         entry.kind === "game" ? (
-                          <a
+                          <button
                             key={`g-${entry.game.id}`}
-                            href={`/live/${entry.game.id}`}
-                            className={`bg-play-100 text-play-800 hover:bg-play-200 block truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                            onClick={() => setOpenGrid(entry)}
+                            className={`bg-play-100 text-play-800 hover:bg-play-200 block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${
                               entry.game.status === "LIVE" ? "ring-1 ring-red-400" : ""
                             }`}
                             title={`${entry.game.isHome ? "vs" : "@"} ${entry.game.opponent}`}
@@ -560,27 +576,29 @@ export function TeamCalendar({
                             entry.game.themScore != null
                               ? ` · ${entry.game.usScore}–${entry.game.themScore}`
                               : ""}
-                          </a>
+                          </button>
                         ) : entry.kind === "practice" ? (
-                          <p
+                          <button
                             key={`p-${entry.practice.id}`}
-                            className={`bg-ink-100/80 text-ink-700 truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                            onClick={() => setOpenGrid(entry)}
+                            className={`bg-ink-100/80 text-ink-700 hover:bg-ink-200/80 block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${
                               entry.practice.status === "CANCELLED" ? "line-through opacity-60" : ""
                             }`}
                             title={entry.practice.location ?? undefined}
                           >
                             {format(entry.at, "h:mma").toLowerCase()} Practice
-                          </p>
+                          </button>
                         ) : (
-                          <p
+                          <button
                             key={`e-${entry.event.id}`}
-                            className={`bg-hoop-100/80 text-hoop-800 truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                            onClick={() => setOpenGrid(entry)}
+                            className={`bg-hoop-100/80 text-hoop-800 hover:bg-hoop-200/80 block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] font-medium ${
                               entry.event.status === "CANCELLED" ? "line-through opacity-60" : ""
                             }`}
                             title={entry.event.location ?? undefined}
                           >
                             {format(entry.at, "h:mma").toLowerCase()} {entry.event.title}
-                          </p>
+                          </button>
                         )
                       )}
                     </div>
@@ -594,7 +612,8 @@ export function TeamCalendar({
               <span className="bg-ink-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
               Practices ·
               <span className="bg-hoop-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
-              Events — switch to Agenda to {isStaff ? "move or cancel items and see who's coming" : "RSVP (Going / Can't go)"}.
+              Events — click any item to {isStaff ? "see who's coming" : "RSVP"}
+              {isStaff ? "; switch to Agenda to move or cancel items" : ""}.
             </p>
           </div>
         </div>
@@ -715,25 +734,7 @@ export function TeamCalendar({
                         </div>
                       )}
                     </div>
-                    {rsvp &&
-                      (isStaff ? (
-                        <RsvpRollup
-                          itemType="PRACTICE"
-                          itemId={entry.practice.id}
-                          at={entry.at}
-                          active={entry.practice.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                        />
-                      ) : (
-                        <RsvpButtons
-                          itemType="PRACTICE"
-                          itemId={entry.practice.id}
-                          at={entry.at}
-                          active={entry.practice.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                          onSet={setRsvpStatus}
-                        />
-                      ))}
+                    {itemRsvp("PRACTICE", entry.practice.id, entry.at, entry.practice.status === "SCHEDULED")}
                   </div>
                 ) : entry.kind === "event" ? (
                   <div
@@ -796,25 +797,7 @@ export function TeamCalendar({
                         </div>
                       )}
                     </div>
-                    {rsvp &&
-                      (isStaff ? (
-                        <RsvpRollup
-                          itemType="TEAM_EVENT"
-                          itemId={entry.event.id}
-                          at={entry.at}
-                          active={entry.event.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                        />
-                      ) : (
-                        <RsvpButtons
-                          itemType="TEAM_EVENT"
-                          itemId={entry.event.id}
-                          at={entry.at}
-                          active={entry.event.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                          onSet={setRsvpStatus}
-                        />
-                      ))}
+                    {itemRsvp("TEAM_EVENT", entry.event.id, entry.at, entry.event.status === "SCHEDULED")}
                   </div>
                 ) : (
                   <div
@@ -844,25 +827,7 @@ export function TeamCalendar({
                         </div>
                       </div>
                     </a>
-                    {rsvp &&
-                      (isStaff ? (
-                        <RsvpRollup
-                          itemType="GAME"
-                          itemId={entry.game.id}
-                          at={entry.at}
-                          active={entry.game.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                        />
-                      ) : (
-                        <RsvpButtons
-                          itemType="GAME"
-                          itemId={entry.game.id}
-                          at={entry.at}
-                          active={entry.game.status === "SCHEDULED"}
-                          rsvp={rsvp}
-                          onSet={setRsvpStatus}
-                        />
-                      ))}
+                    {itemRsvp("GAME", entry.game.id, entry.at, entry.game.status === "SCHEDULED")}
                   </div>
                 )
               )}
@@ -870,186 +835,47 @@ export function TeamCalendar({
           </div>
         ))
       ))}
-    </div>
-  )
-}
 
-/** Family: Going / Maybe / Can't go per rostered kid — upcoming items only. */
-function RsvpButtons({
-  itemType,
-  itemId,
-  at,
-  active,
-  rsvp,
-  onSet,
-}: {
-  itemType: RsvpItemType
-  itemId: string
-  at: Date
-  active: boolean
-  rsvp: RsvpBlock
-  onSet: (itemType: RsvpItemType, itemId: string, playerId: string, status: RsvpStatus) => void
-}) {
-  if (!active || at.getTime() <= Date.now() || rsvp.players.length === 0) return null
-  const answers = rsvp.byItem[rsvpKey(itemType, itemId)] ?? {}
-  const options: Array<{ status: RsvpStatus; label: string; on: string }> = [
-    { status: "GOING", label: "Going", on: "border-court-400 bg-court-50 text-court-700" },
-    { status: "MAYBE", label: "Maybe", on: "border-amber-400 bg-amber-50 text-amber-700" },
-    { status: "NOT_GOING", label: "Can't go", on: "border-hoop-400 bg-hoop-50 text-hoop-700" },
-  ]
-  return (
-    <div className="border-ink-100 mt-2 space-y-1 border-t pt-2">
-      {rsvp.players.map((p) => (
-        <div key={p.id} className="flex flex-wrap items-center gap-1.5">
-          {rsvp.players.length > 1 && (
-            <span className="text-ink-500 min-w-[64px] text-xs font-medium">
-              {p.name.split(" ")[0]}
-            </span>
-          )}
-          {options.map((o) => {
-            const selected = answers[p.id]?.status === o.status
-            return (
-              <button
-                key={o.status}
-                onClick={() => onSet(itemType, itemId, p.id, o.status)}
-                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                  selected ? o.on : "border-ink-200 text-ink-500 hover:bg-ink-50"
-                }`}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/** Staff: "9 going · 2 out · 3 no reply" per item, with an expandable name list. */
-function RsvpRollup({
-  itemType,
-  itemId,
-  at,
-  active,
-  rsvp,
-}: {
-  itemType: RsvpItemType
-  itemId: string
-  at: Date
-  active: boolean
-  rsvp: RsvpBlock
-}) {
-  const [open, setOpen] = useState(false)
-  if (!active || at.getTime() <= Date.now() || rsvp.players.length === 0) return null
-  const answers = rsvp.byItem[rsvpKey(itemType, itemId)] ?? {}
-  const summary = summarizeRsvps(
-    rsvp.players.length,
-    Object.values(answers).map((a) => a.status)
-  )
-  const withNote = (p: { id: string; name: string }) => {
-    const note = answers[p.id]?.note
-    return note ? `${p.name} (“${note}”)` : p.name
-  }
-  const groups = [
-    { label: "Out", players: rsvp.players.filter((p) => answers[p.id]?.status === "NOT_GOING") },
-    { label: "Maybe", players: rsvp.players.filter((p) => answers[p.id]?.status === "MAYBE") },
-    { label: "Going", players: rsvp.players.filter((p) => answers[p.id]?.status === "GOING") },
-    { label: "No reply", players: rsvp.players.filter((p) => !answers[p.id]) },
-  ].filter((g) => g.players.length > 0)
-  return (
-    <div className="border-ink-100 mt-2 border-t pt-1.5">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="text-ink-500 hover:text-ink-700 text-xs font-medium"
-      >
-        {formatRsvpSummary(summary)} {open ? "▴" : "▾"}
-      </button>
-      {open && (
-        <div className="mt-1 space-y-0.5">
-          {groups.map((g) => (
-            <p key={g.label} className="text-ink-500 text-xs">
-              <span className="text-ink-700 font-semibold">{g.label}:</span>{" "}
-              {g.players.map(withNote).join(", ")}
+      {openGrid && (
+        <ItemPopover
+          title={
+            openGrid.kind === "game"
+              ? `Game ${openGrid.game.isHome ? "vs" : "@"} ${openGrid.game.opponent}`
+              : openGrid.kind === "practice"
+                ? "Practice"
+                : openGrid.event.title
+          }
+          subtitle={`${format(openGrid.at, "EEE MMM d, h:mm a")}${
+            openGrid.kind === "practice" && openGrid.practice.location
+              ? ` · ${openGrid.practice.location}`
+              : openGrid.kind === "game" && openGrid.game.venue
+                ? ` · ${openGrid.game.venue}`
+                : openGrid.kind === "event" && openGrid.event.location
+                  ? ` · ${openGrid.event.location}`
+                  : ""
+          }`}
+          onClose={() => setOpenGrid(null)}
+        >
+          {(openGrid.kind === "game"
+            ? itemRsvp("GAME", openGrid.game.id, openGrid.at, openGrid.game.status === "SCHEDULED", true)
+            : openGrid.kind === "practice"
+              ? itemRsvp("PRACTICE", openGrid.practice.id, openGrid.at, openGrid.practice.status === "SCHEDULED", true)
+              : itemRsvp("TEAM_EVENT", openGrid.event.id, openGrid.at, openGrid.event.status === "SCHEDULED", true)) ?? (
+            <p className="text-ink-500 text-xs">
+              {openGrid.at.getTime() <= Date.now()
+                ? "This item has already started — RSVP is closed."
+                : "Nothing to answer here."}
             </p>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** "Add to phone calendar" — mints the personal feed token, shows links. */
-function AddToPhone() {
-  const [open, setOpen] = useState(false)
-  const [path, setPath] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [failed, setFailed] = useState(false)
-
-  async function openPanel() {
-    setOpen((v) => !v)
-    if (path || open) return
-    try {
-      const res = await fetch("/api/calendar/token", { method: "POST" })
-      if (!res.ok) throw new Error()
-      setPath((await res.json()).path)
-    } catch {
-      setFailed(true)
-    }
-  }
-
-  const httpsUrl = path && typeof window !== "undefined" ? `${window.location.origin}${path}` : null
-  const webcalUrl = httpsUrl ? httpsUrl.replace(/^https?:/, "webcal:") : null
-
-  return (
-    <div className="relative">
-      <button
-        onClick={openPanel}
-        className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-      >
-        📅 Add to phone
-      </button>
-      {open && (
-        <div className="border-ink-200 absolute right-0 z-20 mt-2 w-72 rounded-2xl border bg-white p-4 shadow-lg">
-          {failed ? (
-            <p className="text-sm text-red-600">Couldn&apos;t create your calendar link.</p>
-          ) : !httpsUrl ? (
-            <p className="text-ink-500 text-sm">Creating your calendar link…</p>
-          ) : (
-            <div className="space-y-2 text-sm">
-              <p className="text-ink-800 font-semibold">Subscribe once — updates flow in</p>
-              <p className="text-ink-500 text-xs">
-                Practices and games for all your teams. Moves and cancellations update
-                automatically.
-              </p>
-              <a
-                href={webcalUrl!}
-                className="bg-play-600 hover:bg-play-700 block rounded-xl px-3 py-2 text-center text-xs font-semibold text-white"
-              >
-                iPhone / Apple Calendar
-              </a>
-              <a
-                href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl!)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="border-ink-200 text-ink-700 hover:bg-ink-50 block rounded-xl border px-3 py-2 text-center text-xs font-semibold"
-              >
-                Google Calendar (Android)
-              </a>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(httpsUrl).then(() => {
-                    setCopied(true)
-                    setTimeout(() => setCopied(false), 2000)
-                  })
-                }}
-                className="text-play-600 hover:text-play-700 w-full text-center text-xs font-semibold"
-              >
-                {copied ? "Copied!" : "Copy feed URL"}
-              </button>
-            </div>
           )}
-        </div>
+          {openGrid.kind === "game" && (
+            <a
+              href={`/live/${openGrid.game.id}`}
+              className="text-play-600 hover:text-play-700 mt-3 block text-xs font-semibold"
+            >
+              Open game page →
+            </a>
+          )}
+        </ItemPopover>
       )}
     </div>
   )

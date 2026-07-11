@@ -18,12 +18,14 @@ Legend: 🎯 owner-committed · 💡 owner-suggested · 🔬 researched · ⏸ p
 
 ### ~~RSVP + attendance for calendar items~~ ✅ SHIPPED 2026-07-11
 Built as spec'd (ledger has the full note; runbook #24): EventRsvp +
-`PUT /api/rsvp`, family buttons on the team-calendar agenda, staff
-roll-up with names, scoring-console pre-mark, late-flip staff bell,
-daily reminder cron. Deliberate cuts from the original spec: no buttons
-in the grid view (agenda is the interaction surface) and none on the
-public /live page (it's anonymous — no viewer identity to key on);
-`note` is API-level only, no family input box yet.
+`PUT /api/rsvp`, family buttons on the calendars, staff roll-up with
+names, scoring-console pre-mark, late-flip staff bell, daily reminder
+cron. Same-day follow-up (owner-directed): **My Calendar** — one
+cross-team feed at `/calendar` in the sidebar, color-coded ✓/?/✕
+controls, and interactive grid popovers on both calendars
+([[my-calendar-plan]]). Remaining cuts: no RSVP on the public /live
+page (anonymous — no viewer identity); `note` is API-level only, no
+family input box yet.
 
 ### Playoff generation 🎯 (owner-committed)
 Top-N per division from standings → bracket → PLAYOFF sessions. Settings +

@@ -17,8 +17,20 @@ tags: [theme/ledgers, type/ledger, status/living]
 > exist — crashed); now goes through TeamPlayer. Suites 267 unit / 260 int green (new: unit
 > rsvp-shared, int seed 1125); live-verified on the NPH demo world via
 > `scripts/demo/verify-rsvp.mjs` (13 checks + 4 authz probes, screenshots). New repo verify
-> recipe: `.claude/skills/verify/SKILL.md`. **NEXT quick-wins: clickable venue → IA cleanup →
-> homepage p2, then playoff generation.**
+> recipe: `.claude/skills/verify/SKILL.md`.
+>
+> **✅ SHIPPED 2026-07-11 (same session, owner-directed): MY CALENDAR** —
+> [[my-calendar-plan]]. `/calendar` = ONE cross-team feed per person ("My Calendar" in the
+> sidebar under Dashboard, mobile drawer too): parents see every kid's team, 13+ players
+> their own, staff their teams with roll-ups; mixed roles get both. `GET /api/calendar/mine`
+> (`lib/calendar/my-calendar.ts`, self-scoped; cross-team game dedup). Grid views in BOTH
+> calendars are now interactive — chips open an `ItemPopover` with the same controls. New
+> shared color-coded `RsvpControl` (✓ Going green · ? Maybe amber · ✕ Can't go red) +
+> `RsvpRollup` in `components/calendar/` (team calendar refactored onto them; family
+> accounts default to Agenda). Player-section "My Schedule" now → /calendar. Suites 267
+> unit / 265 int (seed 1126); live-verified (`scripts/demo/verify-my-calendar.mjs`,
+> screenshots). No schema change — still just runbook #24. **NEXT quick-wins: clickable
+> venue → IA cleanup → homepage p2, then playoff generation.**
 >
 > **✅ SHIPPED 2026-07-09/10 (local, unpushed): THE FULL BUILD PROGRAM — six phases, owner-directed
 > ("build each and everything we discussed").**

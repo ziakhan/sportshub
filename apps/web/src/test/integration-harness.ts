@@ -40,6 +40,7 @@ import { getServerSession } from "next-auth"
  *   1123 practices (slots / announce / move-cancel notify / iCal feed)
  *   1124 offer package options (multi-option accept / bulk send / skips)
  *   1125 rsvp (family set/upsert / roster+item authz / roll-up / reminders)
+ *   1126 my-calendar (cross-team feed / family+staff rsvp context / dedup)
  *   1131 native auth (M2 bearer: login / refresh rotation / replay / revoke)
  *   1132 realtime ticket (M1: room grants / sidecar-verifiable / not-a-bearer)
  *   1133 devices (M3 push: register / re-register moves account / revoke-own)
