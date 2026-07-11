@@ -52,6 +52,7 @@ model User {
   players             Player[]            @relation("ParentPlayers")
   tryoutSignups       TryoutSignup[]
   rsvpResponses       EventRsvp[]         @relation("RsvpResponses")
+  programAssignments  ProgramStaff[]      @relation("ProgramAssignments")
   paymentsAsPayer     Payment[]           @relation("PayerPayments")
   paymentsAsPayee     Payment[]           @relation("PayeePayments")
   paymentsRecorded    Payment[]           @relation("RecordedPayments")
@@ -1731,6 +1732,45 @@ model EventRsvp {
 
   @@unique([playerId, itemType, itemId])
   @@index([itemType, itemId])
+}
+
+// ============================================
+// PROGRAM STAFF (docs/roadmap/program-staff-plan.md)
+// ============================================
+
+enum ProgramType {
+  CAMP
+  HOUSE_LEAGUE
+  TOURNAMENT // enum reserved; assignment UI deferred (owner 2026-07-11)
+}
+
+enum ProgramStaffDesignation {
+  LEAD
+  ASSISTANT
+}
+
+// Who runs a program: a LEAD (person in charge) + ASSISTANTs. Soft ref by
+// (programType, programId) — camps/HLs/tournaments live in three tables
+// with no shared parent (same pattern as EventRsvp). Assignment grants
+// manage-lite (view registrants, check-in, edit description/schedule);
+// pricing/publish/delete stay with club admins.
+model ProgramStaff {
+  id String @id @default(uuid())
+
+  programType ProgramType
+  programId   String
+
+  userId String
+  user   User   @relation("ProgramAssignments", fields: [userId], references: [id], onDelete: Cascade)
+
+  designation  ProgramStaffDesignation @default(ASSISTANT)
+  assignedById String
+
+  createdAt DateTime @default(now())
+
+  @@unique([programType, programId, userId])
+  @@index([userId])
+  @@index([programType, programId])
 }
 
 // ============================================

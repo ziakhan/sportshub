@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { getMyPrograms } from "@/lib/programs/staff"
 
 export interface DashboardData {
   roles: string[]
@@ -115,6 +116,14 @@ export interface DashboardData {
       season: string | null
       tenant: { id: string; name: string }
       _count: { players: number }
+    }>
+    programs: Array<{
+      programType: "CAMP" | "HOUSE_LEAGUE"
+      programId: string
+      tenantId: string
+      title: string
+      designation: "LEAD" | "ASSISTANT"
+      startDate: Date | null
     }>
   }
   referee?: {
@@ -447,6 +456,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
       .filter((r) => (r.role === "Staff" || r.role === "TeamManager") && r.teamId)
       .map((r) => r.teamId!)
 
+    const programs = await getMyPrograms(user.id)
     if (teamIds.length > 0) {
       const teams = await prisma.team.findMany({
         where: { id: { in: teamIds } },
@@ -455,9 +465,9 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
           _count: { select: { players: true } },
         },
       })
-      data.staff = { teams }
+      data.staff = { teams, programs }
     } else {
-      data.staff = { teams: [] }
+      data.staff = { teams: [], programs }
     }
   }
 

@@ -267,9 +267,12 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   const layout = resolveLayout(branding?.pageLayout)
   const mainCfg = zoneBlocks(layout, "main")
   const railCfg = zoneBlocks(layout, "rail")
-  const navSections = NAV.filter(
-    ([k]) => layout.find((b) => b.key === k)?.visible && hasBlockContent(k, data)
-  ).map(([anchor, label]) => ({ anchor, label }))
+  // Menus are STATIC (owner rule 2026-07-11): a tab only disappears when the
+  // club hides that block in the customize editor — never because it's empty.
+  // Empty sections render an empty state instead (club-blocks.tsx).
+  const navSections = NAV.filter(([k]) => layout.find((b) => b.key === k)?.visible).map(
+    ([anchor, label]) => ({ anchor, label })
+  )
   const pinnedRail = railCfg.filter((b) => b.pinMobile && hasBlockContent(b.key, data))
 
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")

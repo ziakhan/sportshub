@@ -39,13 +39,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createTournamentSchema.parse(body)
 
-    // Verify user has an appropriate role
+    // Club roles must be scoped to the HOSTING tenant (previously any club's
+    // owner could create under an arbitrary tenantId); league operators and
+    // platform admins pass unscoped. Coaches (Staff) never create tournaments.
     const hasAccess = await prisma.userRole.findFirst({
       where: {
         userId,
         OR: [
-          { role: "ClubOwner" },
-          { role: "ClubManager" },
+          ...(data.tenantId
+            ? [{ tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager"] } }]
+            : []),
           { role: "LeagueOwner" },
           { role: "LeagueManager" },
           { role: "PlatformAdmin" },

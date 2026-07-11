@@ -105,14 +105,20 @@ export function ClubBlock({
 function renderBlock(key: string, variant: Variant, d: ClubPageData) {
   switch (key) {
     case "about":
-      return d.club.description ? (
+      return (
         <Card>
           <BlockHeader title="About" />
-          <p className="text-ink-700 whitespace-pre-line text-[15px] leading-relaxed">
-            {d.club.description}
-          </p>
+          {d.club.description ? (
+            <p className="text-ink-700 whitespace-pre-line text-[15px] leading-relaxed">
+              {d.club.description}
+            </p>
+          ) : (
+            <p className="text-ink-500 text-sm">
+              This club hasn&apos;t written an introduction yet.
+            </p>
+          )}
         </Card>
-      ) : null
+      )
     case "announcements":
       return <AnnouncementsBlock d={d} variant={variant} />
     case "programs":
@@ -217,7 +223,17 @@ function AnnouncementsBlock({ d, variant }: { d: ClubPageData; variant: Variant 
 
 function ProgramsBlock({ d }: { d: ClubPageData }) {
   const count = d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length
-  if (count === 0) return null
+  if (count === 0) {
+    return (
+      <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
+        <BlockHeader title="Open programs" />
+        <p className="text-ink-500 text-sm">
+          Nothing is open for registration right now — check back soon, or follow the club to
+          hear when signups open.
+        </p>
+      </div>
+    )
+  }
   return (
     <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
       <BlockHeader title="Open programs" count={count} />
@@ -382,7 +398,16 @@ function TeamsBlock({ d }: { d: ClubPageData }) {
 }
 
 function ScheduleBlock({ d }: { d: ClubPageData }) {
-  if (d.recentGames.length + d.upcomingGames.length === 0) return null
+  if (d.recentGames.length + d.upcomingGames.length === 0) {
+    return (
+      <Card>
+        <BlockHeader title="Schedule & scores" />
+        <p className="text-ink-500 text-sm">
+          No games on the calendar yet — league schedules land here once published.
+        </p>
+      </Card>
+    )
+  }
   return (
     <Card>
       <BlockHeader title="Schedule & scores" />
@@ -637,7 +662,14 @@ function NextGameBlock({ d }: { d: ClubPageData }) {
 
 function ContactBlock({ d }: { d: ClubPageData }) {
   const c = d.club
-  if (!(c.address || c.phoneNumber || c.contactEmail || c.website)) return null
+  if (!(c.address || c.phoneNumber || c.contactEmail || c.website)) {
+    return (
+      <Card>
+        <RailHeader title="Contact" />
+        <p className="text-ink-500 text-sm">No contact details published yet.</p>
+      </Card>
+    )
+  }
   return (
     <Card>
       <RailHeader title="Contact" />

@@ -129,6 +129,14 @@ describe("My Calendar (integration)", () => {
     expect(data.rsvp.playersByTeam[teamAId].map((p: any) => p.id)).toEqual([kid1])
     expect(data.rsvp.playersByTeam[teamBId].map((p: any) => p.id)).toEqual([kid2])
     expect(data.rsvp.rosterByTeam).toEqual({})
+
+    // Lenses: one calendar per kid×team; the shared game carries both
+    expect(data.lenses.map((l: any) => l.key).sort()).toEqual(
+      [`fam:${kid1}:${teamAId}`, `fam:${kid2}:${teamBId}`].sort()
+    )
+    expect(game.lensKeys.sort()).toEqual(
+      [`fam:${kid1}:${teamAId}`, `fam:${kid2}:${teamBId}`].sort()
+    )
   })
 
   it("answers land in byItem and both kids can RSVP the shared game", async () => {
@@ -158,6 +166,8 @@ describe("My Calendar (integration)", () => {
     expect(data.rsvp.playersByTeam).toEqual({})
     // coach of team A still sees the game (team A plays in it)
     expect(data.items.map((i: any) => i.id)).toContain(gameABId)
+    // and exactly one staff lens for the team they coach
+    expect(data.lenses.map((l: any) => l.key)).toEqual([`staff:${teamAId}`])
   })
 
   it("a user with no team memberships gets an empty calendar", async () => {

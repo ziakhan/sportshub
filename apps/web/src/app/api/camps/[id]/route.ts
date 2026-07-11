@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicCamp } from "@/lib/queries/camp"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { MANAGE_LITE_FIELDS, isAssignedProgramStaff } from "@/lib/programs/staff"
 
 export const dynamic = "force-dynamic"
 
@@ -21,8 +21,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const auth = await getSessionUserId()
+    if (!auth) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -34,20 +34,36 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId: session.user.id,
-        OR: [
-          { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-          { role: "PlatformAdmin" },
-        ],
-      },
-    })
-    if (!hasAccess) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
     const body = await request.json()
+
+    // Club admins edit everything; ASSIGNED program staff get manage-lite
+    // (description/schedule fields only); everyone else 403
+    // (docs/roadmap/program-staff-plan.md, owner 2026-07-11)
+    const isAdmin =
+      auth.isPlatformAdmin ||
+      !!(await prisma.userRole.findFirst({
+        where: {
+          userId: auth.userId,
+          tenantId: camp.tenantId,
+          role: { in: ["ClubOwner", "ClubManager"] },
+        },
+        select: { id: true },
+      }))
+    if (!isAdmin) {
+      const assigned = await isAssignedProgramStaff(auth.userId, "CAMP", params.id)
+      if (!assigned) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      const blocked = Object.keys(body).filter(
+        (k) => body[k] !== undefined && !MANAGE_LITE_FIELDS.CAMP.has(k)
+      )
+      if (blocked.length > 0) {
+        return NextResponse.json(
+          { error: `Program staff can't change: ${blocked.join(", ")}` },
+          { status: 403 }
+        )
+      }
+    }
     const updateData: Record<string, any> = {}
 
     const fields = [

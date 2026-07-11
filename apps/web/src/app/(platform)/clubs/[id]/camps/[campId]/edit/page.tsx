@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 
 const AGE_GROUPS = [
@@ -558,6 +559,12 @@ export default function EditCampPage() {
             </div>
           </form>
         </Card>
+      )}
+
+      {camp && (
+        <div className="mt-6">
+          <ProgramStaffPanel programType="camp" programId={campId} clubId={clubId} />
+        </div>
       )}
     </div>
   )

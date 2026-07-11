@@ -68,17 +68,20 @@ export default async function ClubLayout({
   })
   const primaryColor = branding?.primaryColor || "#4f46e5"
 
+  // Coaches (Staff/TeamManager) get the team-day-to-day tabs only; program
+  // creation (camps/HL/tournaments) and club administration are admin turf
+  // (owner rule 2026-07-11 — a coach must not see program-creation surfaces)
   const tabs = [
     { label: "Overview", href: `/clubs/${params.id}` },
     { label: "Teams", href: `/clubs/${params.id}/teams` },
     { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
     { label: "Offers", href: `/clubs/${params.id}/offers` },
     { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
-    { label: "House League", href: `/clubs/${params.id}/house-leagues` },
-    { label: "Camps", href: `/clubs/${params.id}/camps` },
-    { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
     ...(isAdmin
       ? [
+          { label: "House League", href: `/clubs/${params.id}/house-leagues` },
+          { label: "Camps", href: `/clubs/${params.id}/camps` },
+          { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
           { label: "Payments", href: `/clubs/${params.id}/payments` },
           { label: "Staff", href: `/clubs/${params.id}/staff` },
           { label: "Customize page", href: `/clubs/${params.id}/customize` },

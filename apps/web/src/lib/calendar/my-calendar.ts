@@ -20,11 +20,27 @@ export interface MyCalendarTeam {
   staff: boolean
 }
 
+/**
+ * A lens = ONE of the person's calendars (owner model 2026-07-11): a kid on
+ * a team ("Miles · Lords Gr 9"), a team they coach ("Coaching · Force Gr
+ * 10"), or a league they referee in. The UI colors and toggles by lens.
+ */
+export interface MyCalendarLens {
+  key: string // fam:<playerId>:<teamId> | staff:<teamId> | ref:<leagueId>
+  kind: "family" | "staff" | "referee"
+  label: string
+  teamId?: string
+  playerId?: string
+  leagueId?: string
+}
+
 export interface MyCalendarItem {
   kind: "practice" | "game" | "event"
   id: string
-  /** The viewer's member teams this item belongs to (1..n). */
+  /** The viewer's member teams this item belongs to (0..n; 0 = referee-only). */
   teamIds: string[]
+  /** Which of the viewer's calendars (lenses) this item belongs to. */
+  lensKeys: string[]
   at: Date
   durationMinutes: number
   status: string
@@ -35,6 +51,7 @@ export interface MyCalendarItem {
 
 export interface MyCalendarPayload {
   teams: MyCalendarTeam[]
+  lenses: MyCalendarLens[]
   items: MyCalendarItem[]
   rsvp: {
     /** Family side: my players per team. */
@@ -49,7 +66,7 @@ const fullName = (p: { firstName: string; lastName: string }) =>
   `${p.firstName} ${p.lastName}`.trim()
 
 export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> {
-  const [roles, familyEntries] = await Promise.all([
+  const [roles, familyEntries, refereeRoles] = await Promise.all([
     prisma.userRole.findMany({
       where: { userId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
       select: { role: true, tenantId: true, teamId: true },
@@ -61,6 +78,11 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         playerId: true,
         player: { select: { firstName: true, lastName: true } },
       },
+    }),
+    // Referee lens: games this user is assigned to officiate (per-game roles)
+    prisma.userRole.findMany({
+      where: { userId, role: "Referee", gameId: { not: null } },
+      select: { gameId: true },
     }),
   ])
 
@@ -82,8 +104,14 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
 
   const familyTeamIds = new Set(familyEntries.map((e: any) => e.teamId))
   const allTeamIds = [...new Set([...staffTeamIds, ...familyTeamIds])]
-  if (allTeamIds.length === 0) {
-    return { teams: [], items: [], rsvp: { playersByTeam: {}, rosterByTeam: {}, byItem: {} } }
+  const refGameIds = [...new Set(refereeRoles.map((r: any) => r.gameId as string))]
+  if (allTeamIds.length === 0 && refGameIds.length === 0) {
+    return {
+      teams: [],
+      lenses: [],
+      items: [],
+      rsvp: { playersByTeam: {}, rosterByTeam: {}, byItem: {} },
+    }
   }
 
   const now = Date.now()
@@ -111,7 +139,11 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
     }),
     (prisma as any).game.findMany({
       where: {
-        OR: [{ homeTeamId: { in: allTeamIds } }, { awayTeamId: { in: allTeamIds } }],
+        OR: [
+          { homeTeamId: { in: allTeamIds } },
+          { awayTeamId: { in: allTeamIds } },
+          ...(refGameIds.length > 0 ? [{ id: { in: refGameIds } }] : []),
+        ],
         scheduledAt: { gte: from, lte: to },
         status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
       },
@@ -127,6 +159,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         homeTeam: { select: { name: true } },
         awayTeam: { select: { name: true } },
         venue: { select: { name: true } },
+        season: { select: { league: { select: { id: true, name: true } } } },
       },
       orderBy: { scheduledAt: "asc" },
     }),
@@ -163,11 +196,60 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
       : Promise.resolve([]),
   ])
 
+  // ---- lenses: the person's individual calendars ----
+  const teamName = new Map(teams.map((t: any) => [t.id, t.name]))
+  const famLensesByTeam = new Map<string, string[]>()
+  const familyLenses: MyCalendarLens[] = familyEntries.map((e: any) => {
+    const key = `fam:${e.playerId}:${e.teamId}`
+    famLensesByTeam.set(e.teamId, [...(famLensesByTeam.get(e.teamId) ?? []), key])
+    return {
+      key,
+      kind: "family" as const,
+      label: `${e.player.firstName} · ${teamName.get(e.teamId) ?? "Team"}`,
+      teamId: e.teamId,
+      playerId: e.playerId,
+    }
+  })
+  const staffLenses: MyCalendarLens[] = [...staffTeamIds].map((teamId) => ({
+    key: `staff:${teamId}`,
+    kind: "staff" as const,
+    label: `Coaching · ${teamName.get(teamId) ?? "Team"}`,
+    teamId,
+  }))
+  const refGameIdSet = new Set(refGameIds)
+  const refLensByLeague = new Map<string, MyCalendarLens>()
+  const refLensKeyByGame = new Map<string, string>()
+  for (const g of games as any[]) {
+    if (!refGameIdSet.has(g.id)) continue
+    const leagueId = g.season?.league?.id ?? "independent"
+    const key = `ref:${leagueId}`
+    if (!refLensByLeague.has(leagueId)) {
+      refLensByLeague.set(leagueId, {
+        key,
+        kind: "referee",
+        label: `Refereeing · ${g.season?.league?.name ?? "Assigned games"}`,
+        leagueId,
+      })
+    }
+    refLensKeyByGame.set(g.id, key)
+  }
+  const lenses: MyCalendarLens[] = [
+    ...familyLenses.sort((a, b) => a.label.localeCompare(b.label)),
+    ...staffLenses.sort((a, b) => a.label.localeCompare(b.label)),
+    ...[...refLensByLeague.values()].sort((a, b) => a.label.localeCompare(b.label)),
+  ]
+
+  const lensKeysForTeams = (teamIds: string[]) => [
+    ...teamIds.flatMap((tid) => famLensesByTeam.get(tid) ?? []),
+    ...teamIds.filter((tid) => staffTeamIds.has(tid)).map((tid) => `staff:${tid}`),
+  ]
+
   const items: MyCalendarItem[] = [
     ...practices.map((p: any) => ({
       kind: "practice" as const,
       id: p.id,
       teamIds: [p.teamId],
+      lensKeys: lensKeysForTeams([p.teamId]),
       at: p.scheduledAt,
       durationMinutes: p.duration,
       status: p.status,
@@ -175,37 +257,46 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
       location: p.venue?.name ?? p.location ?? null,
       detail: p.notes ?? null,
     })),
-    ...games.map((g: any) => ({
-      kind: "game" as const,
-      id: g.id,
-      teamIds: [g.homeTeamId, g.awayTeamId].filter((id) =>
+    ...games.map((g: any) => {
+      const memberTeamIds = [g.homeTeamId, g.awayTeamId].filter((id) =>
         allTeamIds.includes(id)
-      ),
-      at: g.scheduledAt,
-      durationMinutes: g.duration,
-      status: g.status,
-      title: `${g.homeTeam.name} vs ${g.awayTeam.name}`,
-      location: g.venue?.name ?? null,
-      detail:
-        g.status === "COMPLETED" && g.homeScore != null && g.awayScore != null
-          ? `Final ${g.homeScore}–${g.awayScore}`
-          : g.status === "LIVE"
-            ? "Live now"
-            : null,
-    })),
-    ...teamEvents.map((e: any) => ({
-      kind: "event" as const,
-      id: e.id,
-      teamIds: e.teams
+      )
+      const refKey = refLensKeyByGame.get(g.id)
+      return {
+        kind: "game" as const,
+        id: g.id,
+        teamIds: memberTeamIds,
+        lensKeys: [...lensKeysForTeams(memberTeamIds), ...(refKey ? [refKey] : [])],
+        at: g.scheduledAt,
+        durationMinutes: g.duration,
+        status: g.status,
+        title: `${g.homeTeam.name} vs ${g.awayTeam.name}`,
+        location: g.venue?.name ?? null,
+        detail:
+          g.status === "COMPLETED" && g.homeScore != null && g.awayScore != null
+            ? `Final ${g.homeScore}–${g.awayScore}`
+            : g.status === "LIVE"
+              ? "Live now"
+              : null,
+      }
+    }),
+    ...teamEvents.map((e: any) => {
+      const memberTeamIds = e.teams
         .map((t: { teamId: string }) => t.teamId)
-        .filter((id: string) => allTeamIds.includes(id)),
-      at: e.startAt,
-      durationMinutes: e.durationMinutes,
-      status: e.status,
-      title: e.title,
-      location: e.location ?? null,
-      detail: e.description ?? null,
-    })),
+        .filter((id: string) => allTeamIds.includes(id))
+      return {
+        kind: "event" as const,
+        id: e.id,
+        teamIds: memberTeamIds,
+        lensKeys: lensKeysForTeams(memberTeamIds),
+        at: e.startAt,
+        durationMinutes: e.durationMinutes,
+        status: e.status,
+        title: e.title,
+        location: e.location ?? null,
+        detail: e.description ?? null,
+      }
+    }),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
 
   const playersByTeam: MyCalendarPayload["rsvp"]["playersByTeam"] = {}
@@ -245,6 +336,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
       family: familyTeamIds.has(t.id),
       staff: staffTeamIds.has(t.id),
     })),
+    lenses,
     items,
     rsvp: { playersByTeam, rosterByTeam, byItem },
   }

@@ -26,10 +26,20 @@ interface TeamView {
   staff: boolean
 }
 
+interface LensView {
+  key: string
+  kind: "family" | "staff" | "referee"
+  label: string
+  teamId?: string
+  playerId?: string
+  leagueId?: string
+}
+
 interface ItemView {
   kind: "practice" | "game" | "event"
   id: string
   teamIds: string[]
+  lensKeys: string[]
   at: string
   durationMinutes: number
   status: string
@@ -40,6 +50,7 @@ interface ItemView {
 
 interface Payload {
   teams: TeamView[]
+  lenses: LensView[]
   items: ItemView[]
   rsvp: {
     playersByTeam: Record<string, RsvpPlayer[]>
@@ -49,6 +60,20 @@ interface Payload {
 }
 
 const POLL_MS = 45_000
+
+// One stable color per calendar (lens), assigned by position. dot = the
+// colored marker; chipOn = the toggle chip when the lens is visible.
+const LENS_COLORS = [
+  { dot: "bg-play-600", chipOn: "border-play-300 bg-play-50 text-play-800" },
+  { dot: "bg-court-600", chipOn: "border-court-300 bg-court-50 text-court-800" },
+  { dot: "bg-hoop-500", chipOn: "border-hoop-300 bg-hoop-50 text-hoop-800" },
+  { dot: "bg-violet-600", chipOn: "border-violet-300 bg-violet-50 text-violet-800" },
+  { dot: "bg-amber-500", chipOn: "border-amber-300 bg-amber-50 text-amber-800" },
+  { dot: "bg-sky-600", chipOn: "border-sky-300 bg-sky-50 text-sky-800" },
+  { dot: "bg-rose-500", chipOn: "border-rose-300 bg-rose-50 text-rose-800" },
+  { dot: "bg-teal-600", chipOn: "border-teal-300 bg-teal-50 text-teal-800" },
+]
+const HIDDEN_LENSES_KEY = "mycal-hidden-lenses"
 
 const itemTypeOf = (kind: ItemView["kind"]): RsvpItemType =>
   kind === "practice" ? "PRACTICE" : kind === "game" ? "GAME" : "TEAM_EVENT"
@@ -76,6 +101,24 @@ export function MyCalendar() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<"agenda" | "grid">("agenda")
   const [openKey, setOpenKey] = useState<string | null>(null)
+  // Lens keys the user switched OFF (persisted; everything on by default)
+  const [hiddenLenses, setHiddenLenses] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(HIDDEN_LENSES_KEY) || "[]")
+      if (Array.isArray(saved)) setHiddenLenses(new Set(saved))
+    } catch {
+      /* fresh start */
+    }
+  }, [])
+  const toggleLens = (key: string) => {
+    setHiddenLenses((prev) => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      localStorage.setItem(HIDDEN_LENSES_KEY, JSON.stringify([...next]))
+      return next
+    })
+  }
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/calendar/mine")
@@ -153,11 +196,40 @@ export function MyCalendar() {
     [data]
   )
 
-  const days = useMemo(() => {
+  const lensColor = useMemo(() => {
+    const map = new Map<string, (typeof LENS_COLORS)[number]>()
+    data?.lenses.forEach((l, i) => map.set(l.key, LENS_COLORS[i % LENS_COLORS.length]))
+    return map
+  }, [data])
+
+  // A hidden lens removes items that belong ONLY to hidden calendars
+  const visibleItems = useMemo(() => {
     if (!data) return []
+    if (hiddenLenses.size === 0) return data.items
+    return data.items.filter(
+      (i) => i.lensKeys.length === 0 || i.lensKeys.some((k) => !hiddenLenses.has(k))
+    )
+  }, [data, hiddenLenses])
+
+  const lensDots = (item: ItemView) => {
+    const keys = item.lensKeys.filter((k) => !hiddenLenses.has(k)).slice(0, 3)
+    if (keys.length === 0) return null
+    return (
+      <span className="mr-1.5 inline-flex items-center gap-0.5 align-middle">
+        {keys.map((k) => (
+          <span
+            key={k}
+            className={`inline-block h-2 w-2 rounded-full ${lensColor.get(k)?.dot ?? "bg-ink-300"}`}
+          />
+        ))}
+      </span>
+    )
+  }
+
+  const days = useMemo(() => {
     const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 })
     const byDay = new Map<string, { date: Date; items: ItemView[] }>()
-    for (const item of data.items) {
+    for (const item of visibleItems) {
       const at = new Date(item.at)
       if (at < cutoff) continue
       const key = format(at, "yyyy-MM-dd")
@@ -166,11 +238,11 @@ export function MyCalendar() {
       byDay.set(key, bucket)
     }
     return [...byDay.values()]
-  }, [data])
+  }, [visibleItems])
 
   const weeks = useMemo(() => {
     const byKey = new Map<string, ItemView[]>()
-    for (const item of data?.items ?? []) {
+    for (const item of visibleItems) {
       const key = format(new Date(item.at), "yyyy-MM-dd")
       byKey.set(key, [...(byKey.get(key) ?? []), item])
     }
@@ -181,7 +253,7 @@ export function MyCalendar() {
         return { date, items: byKey.get(format(date, "yyyy-MM-dd")) ?? [] }
       })
     )
-  }, [data])
+  }, [visibleItems])
 
   if (!loaded) {
     return <p className="text-ink-500 py-10 text-center text-sm">Loading your calendar…</p>
@@ -265,6 +337,32 @@ export function MyCalendar() {
     <div className="space-y-4">
       {error && <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}
 
+      {/* Your calendars — one chip per kid/team/league, click to show/hide */}
+      {data.lenses.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {data.lenses.map((lens) => {
+            const off = hiddenLenses.has(lens.key)
+            const color = lensColor.get(lens.key) ?? LENS_COLORS[0]
+            return (
+              <button
+                key={lens.key}
+                onClick={() => toggleLens(lens.key)}
+                aria-pressed={!off}
+                title={off ? "Show this calendar" : "Hide this calendar"}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                  off ? "border-ink-200 bg-white text-ink-400" : color.chipOn
+                }`}
+              >
+                <span
+                  className={`inline-block h-2 w-2 rounded-full ${off ? "bg-ink-300" : color.dot}`}
+                />
+                <span className={off ? "line-through" : ""}>{lens.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <div className="border-ink-200 inline-flex rounded-xl border p-0.5">
           {(["agenda", "grid"] as const).map((v) => (
@@ -317,6 +415,7 @@ export function MyCalendar() {
                           } ${item.status === "LIVE" ? "ring-1 ring-red-400" : ""}`}
                           title={item.title}
                         >
+                          {lensDots(item)}
                           {format(new Date(item.at), "h:mma").toLowerCase()} {item.title}
                         </button>
                       ))}
@@ -362,6 +461,7 @@ export function MyCalendar() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-ink-800 text-sm font-semibold">
+                          {lensDots(item)}
                           <span className={item.status === "CANCELLED" ? "line-through" : ""}>
                             {item.kind === "game" ? "Game · " : item.kind === "event" ? "" : ""}
                             {item.title} · {format(new Date(item.at), "h:mm a")}
@@ -406,7 +506,9 @@ export function MyCalendar() {
             <p className="text-ink-500 text-xs">
               {new Date(openItem.at).getTime() <= Date.now()
                 ? "This item has already started — RSVP is closed."
-                : "Nothing to answer here."}
+                : openItem.lensKeys.some((k) => k.startsWith("ref:"))
+                  ? "You're officiating this game."
+                  : "Nothing to answer here."}
             </p>
           )}
           {openItem.kind === "game" && (

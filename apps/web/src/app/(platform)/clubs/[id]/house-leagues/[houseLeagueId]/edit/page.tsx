@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 
 const AGE_GROUPS = [
@@ -538,6 +539,16 @@ export default function EditHouseLeaguePage() {
             </div>
           </form>
         </Card>
+      )}
+
+      {league && (
+        <div className="mt-6">
+          <ProgramStaffPanel
+            programType="house-league"
+            programId={houseLeagueId}
+            clubId={clubId}
+          />
+        </div>
       )}
     </div>
   )

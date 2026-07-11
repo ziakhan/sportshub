@@ -152,7 +152,7 @@ export function buildNavSections({
   // family (Parent / 13+ Player) or staff. The one place to see everything
   // and RSVP (docs/roadmap/my-calendar-plan.md).
   const hasCalendar =
-    hasRole("Parent") || hasRole("Player") || isAdmin || isStaff
+    hasRole("Parent") || hasRole("Player") || hasRole("Referee") || isAdmin || isStaff
   sections.push({
     key: "home",
     items: [

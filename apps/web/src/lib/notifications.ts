@@ -88,6 +88,8 @@ export type NotificationType =
   // RSVP: family nudge to answer; staff heads-up on a late "Not going"
   | "rsvp_reminder"
   | "rsvp_change"
+  // Program staff: you were assigned to run a camp / house league
+  | "program_assigned"
 
 export interface NotificationInput {
   userId: string

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { format } from "date-fns"
 import { Badge, Button, StatTile } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
 
@@ -109,6 +110,44 @@ export function StaffSection({ data }: StaffSectionProps) {
             When a club assigns you to a team, it will show up here with roster counts and quick
             actions.
           </p>
+        </div>
+      )}
+
+      {data.programs.length > 0 && (
+        <div className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-condensed text-ink-950 text-xl font-bold uppercase tracking-wide">
+              My programs
+            </h3>
+            <span className="text-ink-400 text-xs font-semibold">
+              {data.programs.length} assigned
+            </span>
+          </div>
+          <ul className="mt-4 space-y-2">
+            {data.programs.map((program) => (
+              <li
+                key={`${program.programType}:${program.programId}`}
+                className="border-ink-100 bg-ink-50 rounded-xl border p-3"
+              >
+                <Link
+                  href={`/clubs/${program.tenantId}/${
+                    program.programType === "CAMP" ? "camps" : "house-leagues"
+                  }/${program.programId}/signups`}
+                  className="text-ink-900 hover:text-play-700 font-medium"
+                >
+                  {program.title}
+                </Link>
+                <div className="text-ink-500 text-xs">
+                  {program.programType === "CAMP" ? "Camp" : "House league"}
+                  {" · "}
+                  <span className="text-court-700 font-semibold">
+                    {program.designation === "LEAD" ? "Lead" : "Assistant"}
+                  </span>
+                  {program.startDate ? ` · ${format(new Date(program.startDate), "MMM d")}` : ""}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

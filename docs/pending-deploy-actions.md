@@ -557,3 +557,26 @@ Nothing to backfill (table starts empty). Verify:
 `SELECT count(*) FROM "EventRsvp";` = 0; as a parent, tap Going on a team
 calendar item and the row appears; `curl -H "x-cron-secret: $CRON_SECRET"
 /api/cron/rsvp-reminders` returns `{ ok: true, reminded: N }`.
+
+## ⬜ 25. Program staff schema — ProgramStaff table (+ behavior change: program creation is admin-only)
+
+Ships with the program-staff commit (2026-07-11, docs/roadmap/
+program-staff-plan.md). Additive — one `prisma db push`:
+- New model `ProgramStaff` (userId FK cascade → User, soft ref
+  `programType`+`programId` into Camp/HouseLeague/Tournament,
+  `designation` LEAD|ASSISTANT, `assignedById`;
+  `@@unique([programType, programId, userId])`)
+- New enums `ProgramType` (CAMP|HOUSE_LEAGUE|TOURNAMENT — tournament
+  assignment deferred, enum reserved), `ProgramStaffDesignation`
+
+**Behavior change riding along (no data impact):** camps/house-league
+CREATION and full-edit now require ClubOwner/ClubManager — the Staff role
+was dropped from those gates (owner rule 2026-07-11: coaches run teams,
+not programs). Assigned program staff get manage-lite instead
+(description/schedule PATCH + registrants view). Tournament creation is
+now tenant-scoped for club roles (was: any club's admin, any tenantId).
+
+Nothing to backfill. Verify: `SELECT count(*) FROM "ProgramStaff";` = 0;
+as a club owner, assign a coach on a camp's edit page → bell arrives, camp
+appears in the coach's "My programs"; as that coach, PATCH description
+succeeds and PATCH weeklyFee 403s.

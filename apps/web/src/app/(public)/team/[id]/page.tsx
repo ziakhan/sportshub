@@ -211,7 +211,16 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
             </section>
           )}
 
-          {playerAverages.length > 0 && (
+          {playerAverages.length === 0 ? (
+            <section>
+              <SectionHeader title="Player stats" accent="gold" className="mb-5" />
+              <Card>
+                <p className="text-ink-500 text-sm">
+                  No stats yet — player averages appear after the first scored game.
+                </p>
+              </Card>
+            </section>
+          ) : (
             <section>
               <SectionHeader title="Player stats" accent="gold" className="mb-5" />
               <Card className="overflow-hidden p-0">
@@ -256,9 +265,15 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
             </section>
           )}
 
-          {posts.length > 0 && (
-            <section>
-              <SectionHeader title="Team news" accent="hoop" className="mb-5" />
+          <section>
+            <SectionHeader title="Team news" accent="hoop" className="mb-5" />
+            {posts.length === 0 ? (
+              <Card>
+                <p className="text-ink-500 text-sm">
+                  No news yet — game recaps publish here automatically after finals.
+                </p>
+              </Card>
+            ) : (
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {posts.map((p: any) => (
                   <NewsCard
@@ -272,8 +287,8 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                   />
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
         </div>
 
         <div className="space-y-6">
@@ -311,9 +326,11 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
             )}
           </Card>
 
-          {staff.length > 0 && (
-            <Card>
-              <h2 className="text-ink-950 mb-4 text-lg font-bold">Coaching staff</h2>
+          <Card>
+            <h2 className="text-ink-950 mb-4 text-lg font-bold">Coaching staff</h2>
+            {staff.length === 0 ? (
+              <p className="text-ink-500 text-sm">No coaching staff listed yet.</p>
+            ) : (
               <ul className="space-y-2.5">
                 {staff.map((s: any, i: number) => (
                   <li key={i} className="flex items-center justify-between gap-3 text-sm">
@@ -332,8 +349,8 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                   </li>
                 ))}
               </ul>
-            </Card>
-          )}
+            )}
+          </Card>
 
           {team.tenant && (
             <Card>

@@ -44,12 +44,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createSchema.parse(body)
 
-    // Verify club permission
+    // Club admins only — coaches (Staff) run teams, not programs (2026-07-11)
     const hasAccess = await prisma.userRole.findFirst({
       where: {
         userId,
         OR: [
-          { tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
+          { tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
           { role: "PlatformAdmin" },
         ],
       },

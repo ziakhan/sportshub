@@ -5,6 +5,31 @@ tags: [theme/ledgers, type/ledger, status/living]
 
 # Outstanding items — master ledger
 
+> **✅ SHIPPED 2026-07-11 (later, local/unpushed): OWNER FEEDBACK BATCH — calendar lenses,
+> coach permission fixes, static menus, program staff.** Owner reviewed My Calendar and gave
+> direction (plan-first this time; forks answered via 3 questions):
+> **1) Calendar "lenses"** ([[my-calendar-plan]] v2): one toggleable, color-coded calendar
+> per kid×team / coached team / refereed league; chip row with on/off (localStorage), lens
+> dots on cards+chips; referee-assigned games now feed the calendar; league owners get no
+> firehose (kept deliberate). **Add-to-phone is one-click** — UA-sniffed webcal (Apple) /
+> Google Calendar (Android), fallback panel stays.
+> **2) Coach leakage FIXED** (found by audit): camps/HL/tournaments tabs + Manage staff/
+> Settings/Create team quick actions + Staff stat-tile link now admin-only; `POST /api/camps`
+> + `/api/house-leagues` + both `/duplicate` routes dropped the Staff role; tournaments POST
+> now tenant-scoped (was: any club admin, any tenantId). Ratchet: camps/HL [id] routes moved
+> to getSessionUserId (2 KNOWN_DEBT entries cleared).
+> **3) Static public menus**: club-page tabs never disappear on empty data (About/Programs/
+> Schedule/Contact render empty states; customize-editor visibility still respected); team
+> page stats/news/staff sections get empty states too. League page has NO menu — separate
+> design item, noted.
+> **4) Program staff** ([[program-staff-plan]]): `ProgramStaff` (runbook **#25**) — LEAD/
+> ASSISTANT per camp/HL, club-admin assigned (owner fork: **manage-lite** — registrants/
+> check-in/description/schedule; pricing+publish stay admin). Assign panel on camp/HL edit
+> pages, `program_assigned` bell, "My programs" block on staff dashboard. **Tournaments
+> deferred by owner** — needs Tournament-Lead/league-like design (notes in plan).
+> Suites 267 unit / 272 int (new seed 1127 program-staff ×7; 1126 lens assertions); build+
+> tsc+lint green; live-verified 14 checks (`scripts/demo/verify-feedback-batch.mjs`).
+>
 > **✅ SHIPPED 2026-07-11 (local, unpushed): RSVP + attendance** — quick-win #1 from
 > [[feature-backlog]]. `EventRsvp` (player-keyed, soft ref to Practice/Game/TeamEvent;
 > runbook **#24**) + `PUT /api/rsvp` (parent/13+-self only, roster + item-state validated,

@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { brandStyle } from "@/lib/club-page/brand"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { StatTile, AnimatedNumber, Button, PanelHeader } from "@/components/ui"
 
 interface OverviewTeam {
@@ -128,6 +129,21 @@ async function getClubOverview(clubId: string) {
 export default async function ClubOverviewPage({ params }: { params: { id: string } }) {
   const data = await getClubOverview(params.id)
 
+  // Coaches share this overview, but not the admin quick actions
+  // (create team / manage staff / settings — owner rule 2026-07-11)
+  const auth = await getSessionUserId()
+  const isAdmin =
+    !!auth &&
+    (auth.isPlatformAdmin ||
+      !!(await prisma.userRole.findFirst({
+        where: {
+          userId: auth.userId,
+          tenantId: params.id,
+          role: { in: ["ClubOwner", "ClubManager"] },
+        },
+        select: { id: true },
+      })))
+
   const hasAttentionItems =
     data.tryoutsNeedingOffers.length > 0 ||
     data.pendingOffers > 0 ||
@@ -181,7 +197,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           subTone="hoop"
         />
         <StatTile
-          href={`/clubs/${params.id}/staff`}
+          href={isAdmin ? `/clubs/${params.id}/staff` : undefined}
           value={data.staffCount}
           label="Staff"
           tone="ink"
@@ -299,15 +315,19 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
       >
         <PanelHeader title="Quick actions" />
         <div className="flex flex-wrap gap-3">
-          <Button href={`/clubs/${params.id}/teams/create`} icon={ACTION_ICONS.plus}>
-            Create team
-          </Button>
+          {isAdmin && (
+            <Button href={`/clubs/${params.id}/teams/create`} icon={ACTION_ICONS.plus}>
+              Create team
+            </Button>
+          )}
           <Button href={`/clubs/${params.id}/tryouts/create`} icon={ACTION_ICONS.plus}>
             Create tryout
           </Button>
-          <Button href={`/clubs/${params.id}/staff`} variant="subtle" icon={ACTION_ICONS.people}>
-            Manage staff
-          </Button>
+          {isAdmin && (
+            <Button href={`/clubs/${params.id}/staff`} variant="subtle" icon={ACTION_ICONS.people}>
+              Manage staff
+            </Button>
+          )}
           {data.acceptedOffers > 0 && (
             <Button href={`/clubs/${params.id}/offers/summary`} tone="court" icon={ACTION_ICONS.list}>
               Accepted summary
@@ -316,9 +336,11 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           <Button href={`/clubs/${params.id}/public`} variant="subtle" icon={ACTION_ICONS.eye}>
             View public page
           </Button>
-          <Button href={`/clubs/${params.id}/settings`} variant="subtle" icon={ACTION_ICONS.gear}>
-            Settings
-          </Button>
+          {isAdmin && (
+            <Button href={`/clubs/${params.id}/settings`} variant="subtle" icon={ACTION_ICONS.gear}>
+              Settings
+            </Button>
+          )}
         </div>
       </section>
     </div>
