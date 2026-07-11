@@ -101,13 +101,18 @@ export function TeamCalendar({
   const [movingId, setMovingId] = useState<string | null>(null)
   const [moveValue, setMoveValue] = useState("")
   // Agenda for phones; week-by-week grid for desktop demos (owner ask).
-  // Default by viewport on mount; the toggle lets either side switch.
+  // Staff default by viewport; families always start in Agenda — that's
+  // where the RSVP buttons live (grid chips are read-only).
   const [view, setView] = useState<"agenda" | "grid">("agenda")
   useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+    if (
+      isStaff &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 1024px)").matches
+    ) {
       setView("grid")
     }
-  }, [])
+  }, [isStaff])
 
   const refresh = useCallback(async () => {
     const [eventsRes, slotsRes] = await Promise.all([
@@ -589,7 +594,7 @@ export function TeamCalendar({
               <span className="bg-ink-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
               Practices ·
               <span className="bg-hoop-100 mx-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" />
-              Events — switch to Agenda to move or cancel items.
+              Events — switch to Agenda to {isStaff ? "move or cancel items and see who's coming" : "RSVP (Going / Can't go)"}.
             </p>
           </div>
         </div>
