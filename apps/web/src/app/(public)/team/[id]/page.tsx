@@ -223,12 +223,12 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
           ) : (
             <section>
               <SectionHeader title="Player stats" accent="gold" className="mb-5" />
-              <Card className="overflow-hidden p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+              <Card className="relative overflow-hidden p-0">
+                <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <table className="w-full min-w-[520px] text-sm">
                     <thead>
                       <tr className="text-ink-400 border-ink-100 border-b text-left text-xs uppercase tracking-wide">
-                        <th className="px-6 py-3 font-semibold">Player</th>
+                        <th className="sticky left-0 z-10 bg-white px-6 py-3 font-semibold">Player</th>
                         <th className="px-4 py-3 text-right font-semibold">GP</th>
                         <th className="px-4 py-3 text-right font-semibold">PPG</th>
                         <th className="px-4 py-3 text-right font-semibold">RPG</th>
@@ -240,7 +240,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                     <tbody>
                       {playerAverages.map((row) => (
                         <tr key={row.playerId} className="border-ink-50 hover:bg-ink-50/50 border-b last:border-0">
-                          <td className="px-6 py-3">
+                          <td className="sticky left-0 z-10 bg-white px-6 py-3">
                             <Link
                               href={`/player/${row.playerId}`}
                               className="text-ink-950 hover:text-play-600 font-medium"
@@ -261,6 +261,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                     </tbody>
                   </table>
                 </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
               </Card>
             </section>
           )}
