@@ -79,6 +79,20 @@ export function LayoutEditor({
     onChange(normalize(next))
   }
 
+  // Touch-friendly reorder for phones (drag fights scrolling there); the
+  // ▲▼ buttons are hidden on sm+ where the drag handle takes over
+  function moveWithinZone(zone: Zone, key: string, dir: -1 | 1) {
+    const keys = zoneKeys(zone)
+    const from = keys.indexOf(key)
+    const to = from + dir
+    if (from === -1 || to < 0 || to >= keys.length) return
+    const reordered = arrayMove(keys, from, to)
+    const next = value.map((b) =>
+      b.zone === zone ? { ...b, order: reordered.indexOf(b.key) + 1 } : b
+    )
+    onChange(normalize(next))
+  }
+
   function patch(key: string, fields: Partial<BlockConfig>) {
     onChange(value.map((b) => (b.key === key ? { ...b, ...fields } : b)))
   }
@@ -99,13 +113,17 @@ export function LayoutEditor({
             >
               <SortableContext items={keys} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
-                  {keys.map((key) => {
+                  {keys.map((key, index) => {
                     const block = value.find((b) => b.key === key)!
                     return (
                       <BlockRow
                         key={key}
                         block={block}
                         zone={zone}
+                        isFirst={index === 0}
+                        isLast={index === keys.length - 1}
+                        onMoveUp={() => moveWithinZone(zone, key, -1)}
+                        onMoveDown={() => moveWithinZone(zone, key, 1)}
                         onMoveZone={() => moveZone(key)}
                         onToggleVisible={() => patch(key, { visible: !block.visible })}
                         onTogglePin={() => patch(key, { pinMobile: !block.pinMobile })}
@@ -125,12 +143,20 @@ export function LayoutEditor({
 function BlockRow({
   block,
   zone,
+  isFirst,
+  isLast,
+  onMoveUp,
+  onMoveDown,
   onMoveZone,
   onToggleVisible,
   onTogglePin,
 }: {
   block: BlockConfig
   zone: Zone
+  isFirst: boolean
+  isLast: boolean
+  onMoveUp: () => void
+  onMoveDown: () => void
   onMoveZone: () => void
   onToggleVisible: () => void
   onTogglePin: () => void
@@ -148,12 +174,14 @@ function BlockRow({
       }`}
     >
       <div className="flex items-center gap-2">
+        {/* Drag is a desktop affordance — on phones it fights scrolling, so
+            the ▲▼ buttons below take over (Shape 3, phone-sized 20%) */}
         <button
           type="button"
           {...attributes}
           {...listeners}
           aria-label="Drag to reorder"
-          className="text-ink-400 hover:text-ink-700 flex-shrink-0 cursor-grab px-1 active:cursor-grabbing"
+          className="text-ink-400 hover:text-ink-700 hidden flex-shrink-0 cursor-grab px-1 active:cursor-grabbing sm:block"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
@@ -161,6 +189,26 @@ function BlockRow({
             <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
           </svg>
         </button>
+        <div className="flex flex-shrink-0 flex-col gap-0.5 sm:hidden">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            aria-label="Move up"
+            className="border-ink-200 text-ink-500 rounded-md border px-1.5 py-0.5 text-xs leading-none disabled:opacity-30"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={isLast}
+            aria-label="Move down"
+            className="border-ink-200 text-ink-500 rounded-md border px-1.5 py-0.5 text-xs leading-none disabled:opacity-30"
+          >
+            ▼
+          </button>
+        </div>
         <div className="min-w-0 flex-1">
           <div className="text-ink-900 text-sm font-medium">{def?.label ?? block.key}</div>
           {def?.hint && <div className="text-ink-400 truncate text-xs">{def.hint}</div>}
