@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { addDays, format, isSameDay, isToday, isTomorrow, startOfWeek } from "date-fns"
 import { rsvpKey, type RsvpItemType, type RsvpStatus } from "@/lib/rsvp-shared"
 import { AddToPhone } from "@/components/calendar/add-to-phone"
+import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
 
@@ -110,6 +111,17 @@ export function TeamCalendar({
       setView("grid")
     }
   }, [isStaff])
+  // Phones never get the grid — it squishes into a horizontal scroller
+  // (owner 2026-07-11). Force agenda below sm, incl. rotation/resize.
+  useEffect(() => {
+    const q = window.matchMedia("(max-width: 639px)")
+    const apply = () => {
+      if (q.matches) setView("agenda")
+    }
+    apply()
+    q.addEventListener("change", apply)
+    return () => q.removeEventListener("change", apply)
+  }, [])
 
   const refresh = useCallback(async () => {
     const [eventsRes, slotsRes] = await Promise.all([
@@ -309,15 +321,14 @@ export function TeamCalendar({
     [practices, games, teamEvents]
   )
 
-  // Agenda projection: day buckets from this week forward
+  // Agenda projection: all fetched days incl. the past week — the list
+  // opens scrolled to today, scroll up for history (TeamSnap pattern)
   const days = useMemo(() => {
-    const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 })
-    const byDay = new Map<string, { date: Date; entries: Entry[] }>()
+    const byDay = new Map<string, { date: Date; items: Entry[] }>()
     for (const entry of allEntries) {
-      if (entry.at < cutoff) continue
       const key = format(entry.at, "yyyy-MM-dd")
-      const bucket = byDay.get(key) ?? { date: entry.at, entries: [] }
-      bucket.entries.push(entry)
+      const bucket = byDay.get(key) ?? { date: entry.at, items: [] }
+      bucket.items.push(entry)
       byDay.set(key, bucket)
     }
     return [...byDay.values()]
@@ -494,7 +505,7 @@ export function TeamCalendar({
 
       {/* View toggle (agenda = phone-first list, grid = desktop weeks) + add event */}
       <div className="flex items-center justify-between gap-2">
-        <div className="border-ink-200 inline-flex rounded-xl border p-0.5">
+        <div className="border-ink-200 hidden rounded-xl border p-0.5 sm:inline-flex">
           {(["agenda", "grid"] as const).map((v) => (
             <button
               key={v}
@@ -620,24 +631,21 @@ export function TeamCalendar({
       )}
 
       {/* Agenda */}
-      {view === "agenda" && (days.length === 0 ? (
-        <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
-          <p className="text-ink-700 text-sm font-semibold">Nothing scheduled yet</p>
-          <p className="text-ink-500 mt-1 text-sm">
-            {isStaff
-              ? "Set practice days above and announce the schedule."
-              : "Practices and games will appear here once scheduled."}
-          </p>
-        </div>
-      ) : (
-        days.map(({ date, entries }) => (
-          <div key={format(date, "yyyy-MM-dd")}>
-            <p className="text-ink-400 mb-1.5 text-xs font-bold uppercase tracking-wide">
-              {dayHeading(date)}
-            </p>
-            <div className="space-y-1.5">
-              {entries.map((entry) =>
-                entry.kind === "practice" ? (
+      {view === "agenda" && (
+        <AgendaList
+          days={days}
+          emptyState={
+            <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
+              <p className="text-ink-700 text-sm font-semibold">Nothing scheduled yet</p>
+              <p className="text-ink-500 mt-1 text-sm">
+                {isStaff
+                  ? "Set practice days above and announce the schedule."
+                  : "Practices and games will appear here once scheduled."}
+              </p>
+            </div>
+          }
+          renderItem={(entry) =>
+            entry.kind === "practice" ? (
                   <div
                     key={`p-${entry.practice.id}`}
                     className={`border-ink-100 rounded-xl border bg-white px-4 py-2.5 ${
@@ -830,11 +838,9 @@ export function TeamCalendar({
                     {itemRsvp("GAME", entry.game.id, entry.at, entry.game.status === "SCHEDULED")}
                   </div>
                 )
-              )}
-            </div>
-          </div>
-        ))
-      ))}
+          }
+        />
+      )}
 
       {openGrid && (
         <ItemPopover

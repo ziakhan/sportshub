@@ -1,9 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { addDays, format, isToday, isTomorrow, startOfWeek } from "date-fns"
+import { addDays, format, isToday, startOfWeek } from "date-fns"
 import { rsvpKey, type RsvpItemType, type RsvpStatus } from "@/lib/rsvp-shared"
 import { AddToPhone } from "@/components/calendar/add-to-phone"
+import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import {
   RsvpControl,
@@ -89,12 +90,6 @@ const KIND_CARD: Record<ItemView["kind"], string> = {
   event: "border-hoop-200 bg-hoop-50/40",
 }
 
-function dayHeading(date: Date): string {
-  if (isToday(date)) return `Today · ${format(date, "EEE MMM d")}`
-  if (isTomorrow(date)) return `Tomorrow · ${format(date, "EEE MMM d")}`
-  return format(date, "EEEE, MMM d")
-}
-
 export function MyCalendar() {
   const [data, setData] = useState<Payload | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -157,6 +152,18 @@ export function MyCalendar() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded])
+
+  // Phones never get the grid — it squishes into a horizontal scroller
+  // (owner 2026-07-11). Force agenda below sm, incl. rotation/resize.
+  useEffect(() => {
+    const q = window.matchMedia("(max-width: 639px)")
+    const apply = () => {
+      if (q.matches) setView("agenda")
+    }
+    apply()
+    q.addEventListener("change", apply)
+    return () => q.removeEventListener("change", apply)
+  }, [])
 
   const setRsvpStatus = useCallback(
     async (item: ItemView, playerId: string, status: RsvpStatus) => {
@@ -226,12 +233,12 @@ export function MyCalendar() {
     )
   }
 
+  // All fetched days, history included — the agenda opens scrolled to today
+  // and you scroll UP for the past (TeamSnap pattern, owner 2026-07-11)
   const days = useMemo(() => {
-    const cutoff = startOfWeek(new Date(), { weekStartsOn: 1 })
     const byDay = new Map<string, { date: Date; items: ItemView[] }>()
     for (const item of visibleItems) {
       const at = new Date(item.at)
-      if (at < cutoff) continue
       const key = format(at, "yyyy-MM-dd")
       const bucket = byDay.get(key) ?? { date: at, items: [] }
       bucket.items.push(item)
@@ -364,7 +371,7 @@ export function MyCalendar() {
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <div className="border-ink-200 inline-flex rounded-xl border p-0.5">
+        <div className="border-ink-200 hidden rounded-xl border p-0.5 sm:inline-flex">
           {(["agenda", "grid"] as const).map((v) => (
             <button
               key={v}
@@ -436,65 +443,59 @@ export function MyCalendar() {
         </div>
       )}
 
-      {view === "agenda" &&
-        (days.length === 0 ? (
-          <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
-            <p className="text-ink-700 text-sm font-semibold">Nothing scheduled yet</p>
-            <p className="text-ink-500 mt-1 text-sm">
-              Games, practices and events from all your teams will appear here.
-            </p>
-          </div>
-        ) : (
-          days.map(({ date, items }) => (
-            <div key={format(date, "yyyy-MM-dd")}>
-              <p className="text-ink-400 mb-1.5 text-xs font-bold uppercase tracking-wide">
-                {dayHeading(date)}
+      {view === "agenda" && (
+        <AgendaList
+          days={days}
+          emptyState={
+            <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
+              <p className="text-ink-700 text-sm font-semibold">Nothing scheduled yet</p>
+              <p className="text-ink-500 mt-1 text-sm">
+                Games, practices and events from all your teams will appear here.
               </p>
-              <div className="space-y-1.5">
-                {items.map((item) => (
-                  <div
-                    key={`${item.kind}-${item.id}`}
-                    className={`rounded-xl border px-4 py-2.5 ${KIND_CARD[item.kind]} ${
-                      item.status === "CANCELLED" ? "opacity-60" : ""
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-ink-800 text-sm font-semibold">
-                          {lensDots(item)}
-                          <span className={item.status === "CANCELLED" ? "line-through" : ""}>
-                            {item.kind === "game" ? "Game · " : item.kind === "event" ? "" : ""}
-                            {item.title} · {format(new Date(item.at), "h:mm a")}
-                          </span>
-                          {item.status === "LIVE" && (
-                            <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                              Live
-                            </span>
-                          )}
-                          {item.status === "CANCELLED" && (
-                            <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">
-                              Cancelled
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-ink-400 text-xs">{metaLine(item)}</p>
-                      </div>
-                      {item.kind === "game" && (
-                        <a
-                          href={`/live/${item.id}`}
-                          className="text-play-600 hover:text-play-700 shrink-0 text-xs font-semibold"
-                        >
-                          {item.status === "LIVE" ? "Watch live →" : "Game page →"}
-                        </a>
-                      )}
-                    </div>
-                    {rsvpBlock(item)}
-                  </div>
-                ))}
-              </div>
             </div>
-          ))
-        ))}
+          }
+          renderItem={(item) => (
+            <div
+              key={`${item.kind}-${item.id}`}
+              className={`rounded-xl border px-4 py-2.5 ${KIND_CARD[item.kind]} ${
+                item.status === "CANCELLED" ? "opacity-60" : ""
+              }`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-ink-800 text-sm font-semibold">
+                    {lensDots(item)}
+                    <span className={item.status === "CANCELLED" ? "line-through" : ""}>
+                      {item.kind === "game" ? "Game · " : ""}
+                      {item.title} · {format(new Date(item.at), "h:mm a")}
+                    </span>
+                    {item.status === "LIVE" && (
+                      <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                        Live
+                      </span>
+                    )}
+                    {item.status === "CANCELLED" && (
+                      <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">
+                        Cancelled
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-ink-400 text-xs">{metaLine(item)}</p>
+                </div>
+                {item.kind === "game" && (
+                  <a
+                    href={`/live/${item.id}`}
+                    className="text-play-600 hover:text-play-700 shrink-0 text-xs font-semibold"
+                  >
+                    {item.status === "LIVE" ? "Watch live →" : "Game page →"}
+                  </a>
+                )}
+              </div>
+              {rsvpBlock(item)}
+            </div>
+          )}
+        />
+      )}
 
       {openItem && (
         <ItemPopover
