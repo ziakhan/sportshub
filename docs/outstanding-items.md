@@ -5,6 +5,18 @@ tags: [theme/ledgers, type/ledger, status/living]
 
 # Outstanding items — master ledger
 
+> **✅ SHIPPED overnight 2026-07-11 (local/unpushed): RESPONSIVE WAVE 1 — six independent
+> commits, owner pre-approved with revert-any-subset.** TeamSnap-style agenda (`f268742`:
+> shared AgendaList — sticky months, date rail, scroll-to-today, Today ↑/↓ pill; phones never
+> get the grid) · nav one-owner-per-level (`cbccfba`: sidebar workspace sub-items removed,
+> club tabs → scrollable pills + edge fade) · forms single-column on phones (`9b24ad5`) ·
+> standings/player-stats sticky column + in-card scroll (`70513d4`) · signups tables → phone
+> cards with tap-open detail (`a94bc3c`) · customize editor ▲▼ touch reorder (`81bca7f`).
+> Concept + rules: [[responsive-design-concept]] (+ artifact mock page). 16/16 live checks at
+> 390px & desktop (`scripts/demo/verify-responsive-batch.mjs`); suites 257 unit (10 fewer =
+> auto-generated per-navlink tests for the removed duplicate links) / 272 int; tsc/lint green.
+> No schema — deploy unchanged (runbooks #24+#25 pending).
+>
 > **✅ SHIPPED 2026-07-11 (later, local/unpushed): OWNER FEEDBACK BATCH — calendar lenses,
 > coach permission fixes, static menus, program staff.** Owner reviewed My Calendar and gave
 > direction (plan-first this time; forks answered via 3 questions):

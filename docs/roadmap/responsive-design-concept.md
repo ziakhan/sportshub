@@ -1,14 +1,24 @@
 ---
 updated: 2026-07-11
-status: planned
+status: in-progress
 tier: 1
 area: platform
 effort: L
 source: owner
-tags: [theme/platform, type/plan, status/planned]
+tags: [theme/platform, type/plan, status/in-progress]
 ---
 
 # 📱 Responsive design concept — phone web vs desktop vs native
+
+> **✅ WAVE 1 SHIPPED overnight 2026-07-11 (owner-approved, 5 independent commits — revert any
+> subset):** `cbccfba` nav one-owner-per-level (sidebar workspaces de-duped, club tabs → scroll
+> pills w/ edge fade) · `9b24ad5` camp/tournament forms single-column on phones · `70513d4`
+> StandingsTable + team player-stats sticky identity column + in-card scroll (GB/STRK no longer
+> dropped) · `a94bc3c` tryout/camp/HL signups → phone cards w/ tap-open detail · `81bca7f`
+> customize editor ▲▼ touch reorder (drag stays desktop). Plus `f268742` TeamSnap agenda
+> (Shape 0). Verified 16/16 live checks at 390px + desktop
+> (`scripts/demo/verify-responsive-batch.mjs`). Concept mocks: the artifact page from
+> 2026-07-11. Remaining offenders land opportunistically per the rules below.
 
 **Owner direction (2026-07-11):** many views don't render well in a phone
 browser. This is the CONCEPT (not a page audit): how views should adapt,
