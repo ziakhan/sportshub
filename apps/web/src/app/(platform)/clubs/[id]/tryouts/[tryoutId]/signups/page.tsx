@@ -173,7 +173,60 @@ export default async function TryoutSignupsPage({
               </span>
             }
           />
-          <div className="overflow-x-auto">
+          {/* Phone shape (responsive-design-concept.md, Shape 1): cards with
+              who/status/what-next; everything else opens per row. The full
+              table stays for sm+ untouched. */}
+          <div className="divide-ink-100 divide-y sm:hidden">
+            {signupsWithPlayers.map((signup) => {
+              const hasOffer = signup.offers.length > 0
+              const latestOffer = signup.offers[signup.offers.length - 1]
+              return (
+                <details key={signup.id} className="group px-4 py-3">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                    <div className="min-w-0">
+                      <div className="text-ink-900 flex items-center gap-1.5 font-medium">
+                        {signup.playerName}
+                        {signup.checkedInAt && (
+                          <span className="bg-court-50 text-court-700 ring-court-100 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset">
+                            ✓ in
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-ink-500 truncate text-xs">
+                        {signup.user.firstName} {signup.user.lastName}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge status={signup.status} offerStatus={latestOffer?.status} />
+                      <span className="text-ink-400 transition-transform group-open:rotate-90">›</span>
+                    </div>
+                  </summary>
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    <MobileField label="Parent">
+                      {signup.user.firstName} {signup.user.lastName} · {signup.user.email}
+                    </MobileField>
+                    <MobileField label="Age / Gender">
+                      {signup.playerAge} / {signup.playerGender}
+                    </MobileField>
+                    <MobileField label="Signed up">
+                      {format(new Date(signup.createdAt), "MMM d, yyyy")}
+                    </MobileField>
+                    {signup.notes && <MobileField label="Notes">{signup.notes}</MobileField>}
+                    <div className="pt-1.5">
+                      <SignupAction
+                        signup={signup}
+                        hasOffer={hasOffer}
+                        latestOffer={latestOffer}
+                        tryout={tryout}
+                        clubId={params.id}
+                      />
+                    </div>
+                  </div>
+                </details>
+              )
+            })}
+          </div>
+          <div className="hidden overflow-x-auto sm:block">
             <table className="divide-ink-100 min-w-full divide-y">
               <thead className="bg-ink-50">
                 <tr>
@@ -224,25 +277,13 @@ export default async function TryoutSignupsPage({
                         {format(new Date(signup.createdAt), "MMM d, yyyy")}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
-                        {tryout.team && signup.matchedPlayer && !hasOffer && (
-                          <MakeOfferButton
-                            teamId={tryout.team.id}
-                            teamName={tryout.team.name}
-                            playerId={signup.matchedPlayer.id}
-                            playerName={signup.playerName}
-                            tryoutSignupId={signup.id}
-                            clubId={params.id}
-                          />
-                        )}
-                        {hasOffer && latestOffer && (
-                          <span className="text-ink-500 text-xs">
-                            Offer {latestOffer.status.toLowerCase()}
-                          </span>
-                        )}
-                        {tryout.team && !signup.matchedPlayer && (
-                          <span className="text-ink-400 text-xs">No player profile matched</span>
-                        )}
-                        {!tryout.team && <span className="text-ink-400 text-xs">No team linked</span>}
+                        <SignupAction
+                          signup={signup}
+                          hasOffer={hasOffer}
+                          latestOffer={latestOffer}
+                          tryout={tryout}
+                          clubId={params.id}
+                        />
                       </td>
                     </tr>
                   )
@@ -252,6 +293,52 @@ export default async function TryoutSignupsPage({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** The one action a signup row offers — shared by the table and the cards. */
+function SignupAction({
+  signup,
+  hasOffer,
+  latestOffer,
+  tryout,
+  clubId,
+}: {
+  signup: any
+  hasOffer: boolean
+  latestOffer: any
+  tryout: any
+  clubId: string
+}) {
+  if (tryout.team && signup.matchedPlayer && !hasOffer) {
+    return (
+      <MakeOfferButton
+        teamId={tryout.team.id}
+        teamName={tryout.team.name}
+        playerId={signup.matchedPlayer.id}
+        playerName={signup.playerName}
+        tryoutSignupId={signup.id}
+        clubId={clubId}
+      />
+    )
+  }
+  if (hasOffer && latestOffer) {
+    return <span className="text-ink-500 text-xs">Offer {latestOffer.status.toLowerCase()}</span>
+  }
+  if (tryout.team && !signup.matchedPlayer) {
+    return <span className="text-ink-400 text-xs">No player profile matched</span>
+  }
+  return <span className="text-ink-400 text-xs">No team linked</span>
+}
+
+function MobileField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-2 text-sm">
+      <span className="text-ink-400 w-24 shrink-0 text-xs font-semibold uppercase leading-5 tracking-wide">
+        {label}
+      </span>
+      <span className="text-ink-700 min-w-0">{children}</span>
     </div>
   )
 }

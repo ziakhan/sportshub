@@ -217,7 +217,46 @@ export default async function HouseLeagueSignupsPage({
               </span>
             }
           />
-          <div className="overflow-x-auto">
+          {/* Phone shape (responsive-design-concept.md, Shape 1): cards with
+              who/status; everything else opens per row. The full table stays
+              for sm+ untouched. */}
+          <div className="divide-ink-100 divide-y sm:hidden">
+            {houseLeague.signups.map((signup) => {
+              const age = ageFrom(signup.player?.dateOfBirth ?? null)
+              const playerName = signup.player
+                ? `${signup.player.firstName} ${signup.player.lastName}`
+                : "—"
+              const parentName =
+                [signup.user.firstName, signup.user.lastName].filter(Boolean).join(" ") || "—"
+              return (
+                <details key={signup.id} className="group px-4 py-3">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                    <div className="min-w-0">
+                      <div className="text-ink-900 font-medium">{playerName}</div>
+                      <div className="text-ink-500 truncate text-xs">{parentName}</div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge tone={STATUS_TONES[signup.status] || "neutral"}>
+                        {statusLabel(signup.status)}
+                      </Badge>
+                      <span className="text-ink-400 transition-transform group-open:rotate-90">›</span>
+                    </div>
+                  </summary>
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    <MobileField label="Parent">
+                      {parentName} · {signup.user.email}
+                    </MobileField>
+                    <MobileField label="Age">{age ?? "—"}</MobileField>
+                    <MobileField label="Registered">
+                      {format(new Date(signup.createdAt), "MMM d, yyyy")}
+                    </MobileField>
+                    {signup.notes && <MobileField label="Notes">{signup.notes}</MobileField>}
+                  </div>
+                </details>
+              )
+            })}
+          </div>
+          <div className="hidden overflow-x-auto sm:block">
             <table className="divide-ink-100 min-w-full divide-y">
               <thead className="bg-ink-50">
                 <tr>
@@ -270,6 +309,17 @@ export default async function HouseLeagueSignupsPage({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function MobileField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-2 text-sm">
+      <span className="text-ink-400 w-24 shrink-0 text-xs font-semibold uppercase leading-5 tracking-wide">
+        {label}
+      </span>
+      <span className="text-ink-700 min-w-0">{children}</span>
     </div>
   )
 }
