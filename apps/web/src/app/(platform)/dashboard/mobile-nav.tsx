@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -56,8 +57,12 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
         </svg>
       </button>
 
-      {/* Overlay */}
-      {open && (
+      {/* Overlay — PORTALED to <body>: the top bar's backdrop-blur makes it
+          the containing block for fixed descendants, which trapped this
+          "full-screen" drawer inside the 64px bar (owner bug 2026-07-12) */}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
         <div className="fixed inset-0 z-50 sm:hidden">
           <div
             className="bg-ink-950/45 absolute inset-0 backdrop-blur-sm"
@@ -93,7 +98,8 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
               ))}
             </div>
           </nav>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

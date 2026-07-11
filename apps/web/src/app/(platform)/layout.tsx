@@ -89,7 +89,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     <div className="bg-ink-50 text-ink-950 flex min-h-screen flex-col">
       {impersonating && <ImpersonationBanner userName={userName} />}
 
-      <nav className="border-ink-100 border-b bg-white/95 backdrop-blur">
+      {/* backdrop-blur creates a stacking context — without an explicit
+          z-index the whole bar (incl. the z-50 user menu + mobile drawer
+          rendered inside it) painted BELOW any page content with z>0,
+          e.g. the calendar's sticky month headers (owner bug 2026-07-12) */}
+      <nav className="border-ink-100 relative z-40 border-b bg-white/95 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <MobileNav roles={roles} tenants={tenants} />
