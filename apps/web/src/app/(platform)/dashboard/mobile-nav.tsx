@@ -126,11 +126,13 @@ function MobileSection({ section, pathname }: { section: NavSection; pathname: s
       {section.workspaces?.map((workspace) => (
         <div key={workspace.key} className="mb-2">
           <NavLink item={workspace.root} pathname={pathname} />
-          <div className="ml-4 space-y-1">
-            {workspace.subItems.map((item) => (
-              <NavSubLink key={item.href} item={item} pathname={pathname} />
-            ))}
-          </div>
+          {workspace.subItems.length > 0 && (
+            <div className="ml-4 space-y-1">
+              {workspace.subItems.map((item) => (
+                <NavSubLink key={item.href} item={item} pathname={pathname} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
       {section.items.map((item) => (

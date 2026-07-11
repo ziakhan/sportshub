@@ -90,11 +90,13 @@ function SidebarSection({ section, pathname }: { section: NavSection; pathname: 
             {workspace.kindLabel}
           </div>
           <SidebarLink item={workspace.root} pathname={pathname} />
-          <div className="border-ink-100 ml-4 mt-1 space-y-1 border-l pl-3">
-            {workspace.subItems.map((item) => (
-              <SidebarSubLink key={item.href} item={item} pathname={pathname} />
-            ))}
-          </div>
+          {workspace.subItems.length > 0 && (
+            <div className="border-ink-100 ml-4 mt-1 space-y-1 border-l pl-3">
+              {workspace.subItems.map((item) => (
+                <SidebarSubLink key={item.href} item={item} pathname={pathname} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
       {section.items.map((item) => (

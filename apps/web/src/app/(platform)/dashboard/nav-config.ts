@@ -80,38 +80,22 @@ function badge(count: number | undefined, toneClass: string): NavBadge | undefin
   return typeof count === "number" && count > 0 ? { count, toneClass } : undefined
 }
 
+// One owner per navigation level (owner rule 2026-07-11): the sidebar
+// SWITCHES workspaces; the club page's tab bar navigates WITHIN one. The
+// old sidebar sub-item lists duplicated the tabs word-for-word — gone.
+// The offers-pending badge survives on the workspace root so the signal
+// isn't lost with the sub-items.
 function clubWorkspace(tenant: NavTenant): NavWorkspace {
   return {
     key: tenant.id,
     kindLabel: "Club workspace",
-    root: { label: tenant.name, href: `/clubs/${tenant.id}`, icon: "dashboard" },
-    subItems: [
-      {
-        label: "Teams",
-        href: `/clubs/${tenant.id}/teams`,
-        icon: "users",
-        badge: badge(tenant.counts?.teams, "bg-court-50 text-court-600"),
-      },
-      {
-        label: "Tryouts",
-        href: `/clubs/${tenant.id}/tryouts`,
-        icon: "clipboard",
-        badge: badge(tenant.counts?.tryouts, "bg-hoop-50 text-hoop-600"),
-      },
-      {
-        label: "Offers",
-        href: `/clubs/${tenant.id}/offers`,
-        icon: "flag",
-        badge: badge(tenant.counts?.offers, "bg-violet-50 text-violet-600"),
-      },
-      { label: "Templates", href: `/clubs/${tenant.id}/offer-templates`, icon: "clipboard" },
-      { label: "House League", href: `/clubs/${tenant.id}/house-leagues`, icon: "star" },
-      { label: "Camps", href: `/clubs/${tenant.id}/camps`, icon: "calendar" },
-      { label: "Tournaments", href: `/clubs/${tenant.id}/tournaments`, icon: "play" },
-      { label: "Payments", href: `/clubs/${tenant.id}/payments`, icon: "card" },
-      { label: "Staff", href: `/clubs/${tenant.id}/staff`, icon: "addUser" },
-      { label: "Settings", href: `/clubs/${tenant.id}/settings`, icon: "settings" },
-    ],
+    root: {
+      label: tenant.name,
+      href: `/clubs/${tenant.id}`,
+      icon: "dashboard",
+      badge: badge(tenant.counts?.offers, "bg-violet-50 text-violet-600"),
+    },
+    subItems: [],
   }
 }
 
@@ -120,10 +104,7 @@ function staffWorkspace(tenant: NavTenant): NavWorkspace {
     key: tenant.id,
     kindLabel: "Staff workspace",
     root: { label: tenant.name, href: `/clubs/${tenant.id}`, icon: "dashboard" },
-    subItems: [
-      { label: "Teams", href: `/clubs/${tenant.id}/teams`, icon: "users" },
-      { label: "Tryouts", href: `/clubs/${tenant.id}/tryouts`, icon: "clipboard" },
-    ],
+    subItems: [],
   }
 }
 
