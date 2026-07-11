@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-08
+updated: 2026-07-11
 tags: [theme/ledgers, type/ledger, status/living]
 ---
 
@@ -16,32 +16,14 @@ Legend: 🎯 owner-committed · 💡 owner-suggested · 🔬 researched · ⏸ p
 
 ## Near-term / high value
 
-### RSVP + attendance for calendar items 💡 (2026-07-07) — spec below
-Members (parent for their kid, or a 13+ player) confirm Going / Not going /
-Maybe on any calendar item — **practices, games, team events** — and the
-event's owners (coaches, team managers, club/league) see the roll-up *in
-advance*: who's confirmed, who's out, who hasn't answered.
-- **Schema (additive):** `enum RsvpStatus { GOING, NOT_GOING, MAYBE }`;
-  `model EventRsvp { id, playerId, itemType (PRACTICE|GAME|TEAM_EVENT),
-  itemId, status, note?, respondedById, updatedAt; @@unique([playerId,
-  itemType, itemId]); @@index([itemType, itemId]) }`. Keyed on the PLAYER
-  (whose attendance matters), submitted by the parent/self.
-- **API:** `PUT /api/rsvp` (set my kid's status for an item), and the
-  calendar/roll-up reads fold RSVPs into their item payloads.
-- **Family UI:** Going / Can't make it / Maybe buttons on each item in the
-  team calendar (agenda + grid), + on the public game/live page for
-  followers-who-are-members.
-- **Owner UI:** a "who's coming" count + list per item (e.g. "9 going · 2
-  out · 3 no reply") on the team dashboard / calendar for staff.
-- **Game-day tie-in (the nice bit):** the live-scoring attendance step
-  **pre-marks absent** any rostered player who RSVP'd Not going — the coach
-  can still toggle, it's just a sensible default (a real gap the owner
-  remembered: today attendance starts blank).
-- **Notifications:** optional reminder to RSVP a couple of days before
-  (reuse the practice/reminder cron pattern); notify staff if someone flips
-  to Not going close to the event.
-- Size: a focused feature-day. Fits cleanly on the existing calendar
-  (Practice/Game/TeamEvent) + live-scoring attendance surfaces.
+### ~~RSVP + attendance for calendar items~~ ✅ SHIPPED 2026-07-11
+Built as spec'd (ledger has the full note; runbook #24): EventRsvp +
+`PUT /api/rsvp`, family buttons on the team-calendar agenda, staff
+roll-up with names, scoring-console pre-mark, late-flip staff bell,
+daily reminder cron. Deliberate cuts from the original spec: no buttons
+in the grid view (agenda is the interaction surface) and none on the
+public /live page (it's anonymous — no viewer identity to key on);
+`note` is API-level only, no family input box yet.
 
 ### Playoff generation 🎯 (owner-committed)
 Top-N per division from standings → bracket → PLAYOFF sessions. Settings +
@@ -87,7 +69,9 @@ Files: `(public)/camp/[id]/page.tsx`, `(public)/house-league/[id]/page.tsx`,
   leaderboard (rules quizzes, film sessions). (engagement-features-plan.md)
 - **Club-wide / league-wide polls + public poll results** 💡 — polls beyond
   a single team; read-only results on public pages.
-- **Web push** — reminders/notifications are email+bell only today. (M2)
+- ~~**Web push**~~ — substantially retired by the native track: M3 ships
+  phone push via the notify() seam (quiet hours, sidecar worker); browser
+  web-push remains unbuilt but is now a niche add-on, not a gap.
 - **Marketing copy refresh** 💡 — "parents" → "parents or players"; refresh
   the platform pitch now that there's more product.
 
@@ -102,7 +86,10 @@ Files: `(public)/camp/[id]/page.tsx`, `(public)/house-league/[id]/page.tsx`,
 
 - **Review moderation queue** — reviews are publicly writable, no moderation
   (also launch-blocker H4).
-- **Chat scalability** 🎯-ish — polling → realtime/push at real volume.
+- ~~**Chat scalability**~~ — substantially retired by M1 realtime: chat,
+  scores and the bell ride sockets when the sidecar is up and fall back to
+  polling when it isn't. Remaining at real volume: sidecar horizontal
+  scale-out (Redis adapter is already in).
 - **Onboarding checklists + /help center + tutorial videos** — scripts
   written (docs/tutorials/), recording pending.
 

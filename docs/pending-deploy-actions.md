@@ -537,3 +537,23 @@ Nothing to backfill (table starts empty; the app registers devices via
 a native build (M4) registers a device. Verify:
 `SELECT count(*) FROM "Device";` = 0; a bearer-authed `POST /api/devices`
 creates a row; fire a chat message and watch the sidecar log the Expo send.
+
+## ⬜ 24. RSVP + attendance schema — EventRsvp table
+
+Ships with the RSVP feature commit (2026-07-11, docs/feature-backlog.md
+spec → shipped). Additive — one `prisma db push`:
+- New model `EventRsvp` (playerId FK cascade → Player, respondedById FK
+  cascade → User, soft item ref `itemType`+`itemId`, `status`, `note`;
+  `@@unique([playerId, itemType, itemId])`, `@@index([itemType, itemId])`)
+- New enums `RsvpStatus` (GOING|NOT_GOING|MAYBE), `RsvpItemType`
+  (PRACTICE|GAME|TEAM_EVENT)
+
+**Cron:** `vercel.json` adds `/api/cron/rsvp-reminders` (daily 9:45 UTC) —
+registers automatically on deploy, but like the other three crons it fails
+closed until **CRON_SECRET** is set on Vercel (already an owner to-do from
+the 2026-07-10 train).
+
+Nothing to backfill (table starts empty). Verify:
+`SELECT count(*) FROM "EventRsvp";` = 0; as a parent, tap Going on a team
+calendar item and the row appears; `curl -H "x-cron-secret: $CRON_SECRET"
+/api/cron/rsvp-reminders` returns `{ ok: true, reminded: N }`.

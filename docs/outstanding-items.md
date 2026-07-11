@@ -1,10 +1,25 @@
 ---
-updated: 2026-07-10
+updated: 2026-07-11
 tags: [theme/ledgers, type/ledger, status/living]
 ---
 
 # Outstanding items — master ledger
 
+> **✅ SHIPPED 2026-07-11 (local, unpushed): RSVP + attendance** — quick-win #1 from
+> [[feature-backlog]]. `EventRsvp` (player-keyed, soft ref to Practice/Game/TeamEvent;
+> runbook **#24**) + `PUT /api/rsvp` (parent/13+-self only, roster + item-state validated,
+> upsert). Family Going/Maybe/Can't-go buttons per kid on the team-calendar agenda; staff
+> per-item roll-up ("0 going · 1 out · 9 no reply" + names/notes); scoring-console roll call
+> pre-marks Not-going players absent (fresh games only, scorer can toggle); late Not-going
+> flip (<48h) bells+pushes staff (`rsvp_change`); daily `/api/cron/rsvp-reminders` nudges
+> unanswered families once per item 3 days out (`rsvp_reminder`, needs CRON_SECRET). Fixed
+> rider: scoring-boot roster fallback for season-less games queried `Player.teamId` (doesn't
+> exist — crashed); now goes through TeamPlayer. Suites 267 unit / 260 int green (new: unit
+> rsvp-shared, int seed 1125); live-verified on the NPH demo world via
+> `scripts/demo/verify-rsvp.mjs` (13 checks + 4 authz probes, screenshots). New repo verify
+> recipe: `.claude/skills/verify/SKILL.md`. **NEXT quick-wins: clickable venue → IA cleanup →
+> homepage p2, then playoff generation.**
+>
 > **✅ SHIPPED 2026-07-09/10 (local, unpushed): THE FULL BUILD PROGRAM — six phases, owner-directed
 > ("build each and everything we discussed").**
 > **P1 Consent + family comms** (`8a781f1`): CommunicationConsent/MessageLog (runbook #19), HMAC

@@ -85,6 +85,9 @@ export type NotificationType =
   | "referee_request_accepted"
   | "referee_request_declined"
   | "referee_request_cancelled"
+  // RSVP: family nudge to answer; staff heads-up on a late "Not going"
+  | "rsvp_reminder"
+  | "rsvp_change"
 
 export interface NotificationInput {
   userId: string
@@ -123,6 +126,8 @@ const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "practice_change",
   "team_event",
   "announcement_posted",
+  "rsvp_reminder",
+  "rsvp_change",
 ])
 
 /**

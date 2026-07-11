@@ -9,6 +9,8 @@ import {
   practiceSelect,
   serializePractice,
 } from "@/lib/teams/practices"
+import { getRsvpsForItems } from "@/lib/rsvp"
+import type { RsvpItemType } from "@/lib/rsvp-shared"
 
 export const dynamic = "force-dynamic"
 
@@ -77,6 +79,33 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         : Promise.resolve([]),
     ])
 
+    // RSVP block: families get their own kids (buttons), staff the full
+    // roster (who's-coming roll-up). byItem is keyed "PRACTICE:<id>" etc.
+    const roster = await prisma.teamPlayer.findMany({
+      where: {
+        teamId: params.id,
+        status: "ACTIVE",
+        player: {
+          deletedAt: null,
+          ...(membership.role === "family" ? { parentId: auth.userId } : {}),
+        },
+      },
+      select: { playerId: true, player: { select: { firstName: true, lastName: true } } },
+    })
+    const rsvpPlayers = roster.map((r: any) => ({
+      id: r.playerId,
+      name: `${r.player.firstName} ${r.player.lastName}`.trim(),
+    }))
+    const rsvpItems: Array<{ itemType: RsvpItemType; itemId: string }> = [
+      ...practices.map((p: any) => ({ itemType: "PRACTICE" as const, itemId: p.id })),
+      ...teamEvents.map((e: any) => ({ itemType: "TEAM_EVENT" as const, itemId: e.id })),
+      ...games.map((g: any) => ({ itemType: "GAME" as const, itemId: g.id })),
+    ]
+    const rsvpByItem = await getRsvpsForItems(
+      rsvpItems,
+      rsvpPlayers.map((p: any) => p.id)
+    )
+
     return NextResponse.json({
       practices: practices.map(serializePractice),
       events: teamEvents,
@@ -91,6 +120,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         venue: g.venue?.name ?? null,
       })),
       membership: { role: membership.role },
+      rsvp: { players: rsvpPlayers, byItem: rsvpByItem },
     })
   } catch (error) {
     console.error("Practice list error:", error)

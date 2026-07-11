@@ -51,6 +51,7 @@ model User {
   roles               UserRole[]
   players             Player[]            @relation("ParentPlayers")
   tryoutSignups       TryoutSignup[]
+  rsvpResponses       EventRsvp[]         @relation("RsvpResponses")
   paymentsAsPayer     Payment[]           @relation("PayerPayments")
   paymentsAsPayee     Payment[]           @relation("PayeePayments")
   paymentsRecorded    Payment[]           @relation("RecordedPayments")
@@ -597,6 +598,7 @@ model Player {
   @@index([parentId])
   @@index([isMinor])
   tryoutSignups TryoutSignup[]
+  rsvps         EventRsvp[]
 }
 
 model TeamPlayer {
@@ -1687,6 +1689,48 @@ enum PracticeStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
+}
+
+// ============================================
+// RSVP (calendar items — docs/feature-backlog.md spec)
+// ============================================
+
+enum RsvpStatus {
+  GOING
+  NOT_GOING
+  MAYBE
+}
+
+enum RsvpItemType {
+  PRACTICE
+  GAME
+  TEAM_EVENT
+}
+
+// Keyed on the PLAYER (whose attendance matters); submitted by the parent
+// or the 13+ self-player (respondedBy). itemId is a soft reference into
+// Practice/Game/TeamEvent by itemType — items live in three tables, so no
+// FK; the API validates existence + roster membership.
+model EventRsvp {
+  id String @id @default(uuid())
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  itemType RsvpItemType
+  itemId   String
+
+  status RsvpStatus
+  note   String?
+
+  respondedById String
+  respondedBy   User   @relation("RsvpResponses", fields: [respondedById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([playerId, itemType, itemId])
+  @@index([itemType, itemId])
 }
 
 // ============================================

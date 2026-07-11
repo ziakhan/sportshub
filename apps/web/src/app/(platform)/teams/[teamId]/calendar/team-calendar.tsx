@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { addDays, format, isSameDay, isToday, isTomorrow, startOfWeek } from "date-fns"
+import {
+  formatRsvpSummary,
+  rsvpKey,
+  summarizeRsvps,
+  type RsvpItemType,
+  type RsvpStatus,
+} from "@/lib/rsvp-shared"
 
 /**
  * Live agenda: practices + games grouped by week, polling for updates every
@@ -48,6 +55,12 @@ interface TeamEventView {
   status: "SCHEDULED" | "CANCELLED"
 }
 
+/** Family view: players = my kids on this team. Staff view: full roster. */
+interface RsvpBlock {
+  players: Array<{ id: string; name: string }>
+  byItem: Record<string, Record<string, { status: RsvpStatus; note: string | null }>>
+}
+
 const POLL_MS = 45_000
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
@@ -76,6 +89,7 @@ export function TeamCalendar({
   const [practices, setPractices] = useState<PracticeView[]>([])
   const [games, setGames] = useState<GameView[]>([])
   const [teamEvents, setTeamEvents] = useState<TeamEventView[]>([])
+  const [rsvp, setRsvp] = useState<RsvpBlock | null>(null)
   const [slots, setSlots] = useState<SlotView[]>([])
   const [announcedAt, setAnnouncedAt] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -106,9 +120,40 @@ export function TeamCalendar({
     setPractices(events.practices)
     setGames(events.games)
     setTeamEvents(events.events ?? [])
+    setRsvp(events.rsvp ?? null)
     setSlots(slotData.slots)
     setAnnouncedAt(slotData.announcedAt)
   }, [teamId])
+
+  // Optimistic write; the 45s poll (and the trailing refresh) reconciles
+  const setRsvpStatus = useCallback(
+    async (itemType: RsvpItemType, itemId: string, playerId: string, status: RsvpStatus) => {
+      const key = rsvpKey(itemType, itemId)
+      setRsvp((prev) =>
+        prev
+          ? {
+              ...prev,
+              byItem: {
+                ...prev.byItem,
+                [key]: { ...(prev.byItem[key] ?? {}), [playerId]: { status, note: null } },
+              },
+            }
+          : prev
+      )
+      try {
+        const res = await fetch("/api/rsvp", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ playerId, itemType, itemId, status }),
+        })
+        if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error)
+      } catch (e: any) {
+        setError(e?.message || "Couldn't save your RSVP — try again.")
+        refresh().catch(() => {})
+      }
+    },
+    [refresh]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -665,6 +710,25 @@ export function TeamCalendar({
                         </div>
                       )}
                     </div>
+                    {rsvp &&
+                      (isStaff ? (
+                        <RsvpRollup
+                          itemType="PRACTICE"
+                          itemId={entry.practice.id}
+                          at={entry.at}
+                          active={entry.practice.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                        />
+                      ) : (
+                        <RsvpButtons
+                          itemType="PRACTICE"
+                          itemId={entry.practice.id}
+                          at={entry.at}
+                          active={entry.practice.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                          onSet={setRsvpStatus}
+                        />
+                      ))}
                   </div>
                 ) : entry.kind === "event" ? (
                   <div
@@ -727,41 +791,185 @@ export function TeamCalendar({
                         </div>
                       )}
                     </div>
+                    {rsvp &&
+                      (isStaff ? (
+                        <RsvpRollup
+                          itemType="TEAM_EVENT"
+                          itemId={entry.event.id}
+                          at={entry.at}
+                          active={entry.event.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                        />
+                      ) : (
+                        <RsvpButtons
+                          itemType="TEAM_EVENT"
+                          itemId={entry.event.id}
+                          at={entry.at}
+                          active={entry.event.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                          onSet={setRsvpStatus}
+                        />
+                      ))}
                   </div>
                 ) : (
-                  <a
+                  <div
                     key={`g-${entry.game.id}`}
-                    href={`/live/${entry.game.id}`}
-                    className="border-play-200 bg-play-50/50 hover:bg-play-50 block rounded-xl border px-4 py-2.5"
+                    className="border-play-200 bg-play-50/50 rounded-xl border px-4 py-2.5"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-ink-800 text-sm font-semibold">
-                          Game · {format(entry.at, "h:mm a")} {entry.game.isHome ? "vs" : "@"}{" "}
-                          {entry.game.opponent}
-                          {entry.game.status === "LIVE" && (
-                            <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                              Live
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-ink-400 text-xs">
-                          {entry.game.status === "COMPLETED" &&
-                          entry.game.usScore != null &&
-                          entry.game.themScore != null
-                            ? `Final ${entry.game.usScore}–${entry.game.themScore} · `
-                            : ""}
-                          {entry.game.venue ?? ""}
-                        </p>
+                    <a href={`/live/${entry.game.id}`} className="block hover:opacity-80">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-ink-800 text-sm font-semibold">
+                            Game · {format(entry.at, "h:mm a")} {entry.game.isHome ? "vs" : "@"}{" "}
+                            {entry.game.opponent}
+                            {entry.game.status === "LIVE" && (
+                              <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                                Live
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-ink-400 text-xs">
+                            {entry.game.status === "COMPLETED" &&
+                            entry.game.usScore != null &&
+                            entry.game.themScore != null
+                              ? `Final ${entry.game.usScore}–${entry.game.themScore} · `
+                              : ""}
+                            {entry.game.venue ?? ""}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </a>
+                    </a>
+                    {rsvp &&
+                      (isStaff ? (
+                        <RsvpRollup
+                          itemType="GAME"
+                          itemId={entry.game.id}
+                          at={entry.at}
+                          active={entry.game.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                        />
+                      ) : (
+                        <RsvpButtons
+                          itemType="GAME"
+                          itemId={entry.game.id}
+                          at={entry.at}
+                          active={entry.game.status === "SCHEDULED"}
+                          rsvp={rsvp}
+                          onSet={setRsvpStatus}
+                        />
+                      ))}
+                  </div>
                 )
               )}
             </div>
           </div>
         ))
       ))}
+    </div>
+  )
+}
+
+/** Family: Going / Maybe / Can't go per rostered kid — upcoming items only. */
+function RsvpButtons({
+  itemType,
+  itemId,
+  at,
+  active,
+  rsvp,
+  onSet,
+}: {
+  itemType: RsvpItemType
+  itemId: string
+  at: Date
+  active: boolean
+  rsvp: RsvpBlock
+  onSet: (itemType: RsvpItemType, itemId: string, playerId: string, status: RsvpStatus) => void
+}) {
+  if (!active || at.getTime() <= Date.now() || rsvp.players.length === 0) return null
+  const answers = rsvp.byItem[rsvpKey(itemType, itemId)] ?? {}
+  const options: Array<{ status: RsvpStatus; label: string; on: string }> = [
+    { status: "GOING", label: "Going", on: "border-court-400 bg-court-50 text-court-700" },
+    { status: "MAYBE", label: "Maybe", on: "border-amber-400 bg-amber-50 text-amber-700" },
+    { status: "NOT_GOING", label: "Can't go", on: "border-hoop-400 bg-hoop-50 text-hoop-700" },
+  ]
+  return (
+    <div className="border-ink-100 mt-2 space-y-1 border-t pt-2">
+      {rsvp.players.map((p) => (
+        <div key={p.id} className="flex flex-wrap items-center gap-1.5">
+          {rsvp.players.length > 1 && (
+            <span className="text-ink-500 min-w-[64px] text-xs font-medium">
+              {p.name.split(" ")[0]}
+            </span>
+          )}
+          {options.map((o) => {
+            const selected = answers[p.id]?.status === o.status
+            return (
+              <button
+                key={o.status}
+                onClick={() => onSet(itemType, itemId, p.id, o.status)}
+                className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                  selected ? o.on : "border-ink-200 text-ink-500 hover:bg-ink-50"
+                }`}
+              >
+                {o.label}
+              </button>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** Staff: "9 going · 2 out · 3 no reply" per item, with an expandable name list. */
+function RsvpRollup({
+  itemType,
+  itemId,
+  at,
+  active,
+  rsvp,
+}: {
+  itemType: RsvpItemType
+  itemId: string
+  at: Date
+  active: boolean
+  rsvp: RsvpBlock
+}) {
+  const [open, setOpen] = useState(false)
+  if (!active || at.getTime() <= Date.now() || rsvp.players.length === 0) return null
+  const answers = rsvp.byItem[rsvpKey(itemType, itemId)] ?? {}
+  const summary = summarizeRsvps(
+    rsvp.players.length,
+    Object.values(answers).map((a) => a.status)
+  )
+  const withNote = (p: { id: string; name: string }) => {
+    const note = answers[p.id]?.note
+    return note ? `${p.name} (“${note}”)` : p.name
+  }
+  const groups = [
+    { label: "Out", players: rsvp.players.filter((p) => answers[p.id]?.status === "NOT_GOING") },
+    { label: "Maybe", players: rsvp.players.filter((p) => answers[p.id]?.status === "MAYBE") },
+    { label: "Going", players: rsvp.players.filter((p) => answers[p.id]?.status === "GOING") },
+    { label: "No reply", players: rsvp.players.filter((p) => !answers[p.id]) },
+  ].filter((g) => g.players.length > 0)
+  return (
+    <div className="border-ink-100 mt-2 border-t pt-1.5">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-ink-500 hover:text-ink-700 text-xs font-medium"
+      >
+        {formatRsvpSummary(summary)} {open ? "▴" : "▾"}
+      </button>
+      {open && (
+        <div className="mt-1 space-y-0.5">
+          {groups.map((g) => (
+            <p key={g.label} className="text-ink-500 text-xs">
+              <span className="text-ink-700 font-semibold">{g.label}:</span>{" "}
+              {g.players.map(withNote).join(", ")}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

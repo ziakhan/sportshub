@@ -7,6 +7,7 @@
   "crons": [
     { "path": "/api/cron/charge-due", "schedule": "0 9 * * *" },
     { "path": "/api/cron/expire-offers", "schedule": "15 9 * * *" },
-    { "path": "/api/cron/payment-reminders", "schedule": "30 9 * * *" }
+    { "path": "/api/cron/payment-reminders", "schedule": "30 9 * * *" },
+    { "path": "/api/cron/rsvp-reminders", "schedule": "45 9 * * *" }
   ]
 }

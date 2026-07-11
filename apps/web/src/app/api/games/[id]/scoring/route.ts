@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { canScoreGame } from "@/lib/scoring/authz"
+import { getGameRsvpAbsentees } from "@/lib/rsvp"
 
 export const dynamic = "force-dynamic"
 
@@ -39,14 +40,21 @@ async function rosterForTeam(seasonId: string | null, teamId: string) {
       }))
     }
   }
-  const players = await prisma.player.findMany({
-    where: { teamId, deletedAt: null } as any,
-    select: { id: true, firstName: true, lastName: true, jerseyNumber: true },
+  // Club roster via the TeamPlayer join (Player has no direct teamId) —
+  // the season-less path was previously a crash, caught by the RSVP suite
+  const roster = await prisma.teamPlayer.findMany({
+    where: { teamId, status: "ACTIVE", player: { deletedAt: null } },
+    select: {
+      playerId: true,
+      jerseyNumber: true,
+      player: { select: { firstName: true, lastName: true, jerseyNumber: true } },
+    },
   })
-  return players.map((p: any) => ({
-    playerId: p.id,
-    jerseyNumber: p.jerseyNumber ?? null,
-    name: `${p.firstName} ${p.lastName}`.trim(),
+  return roster.map((r: any) => ({
+    playerId: r.playerId,
+    jerseyNumber:
+      r.jerseyNumber != null ? String(r.jerseyNumber) : (r.player.jerseyNumber ?? null),
+    name: `${r.player.firstName} ${r.player.lastName}`.trim(),
   }))
 }
 
@@ -103,9 +111,10 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ canScore: true })
     }
 
-    const [homeRoster, awayRoster, refereeRoles, events] = await Promise.all([
+    const [homeRoster, awayRoster, rsvpNotGoing, refereeRoles, events] = await Promise.all([
       rosterForTeam(game.seasonId, game.homeTeamId),
       rosterForTeam(game.seasonId, game.awayTeamId),
+      getGameRsvpAbsentees(params.id),
       prisma.userRole.findMany({
         where: { gameId: params.id, role: "Referee" },
         select: {
@@ -157,6 +166,12 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         requireRefereeApproval: league?.requireRefereeApproval ?? false,
       },
       rosters: { home: homeRoster, away: awayRoster },
+      // Rostered players whose family RSVP'd Not going — the console
+      // pre-marks them absent in the roll call (scorer can still toggle)
+      rsvpAbsent: {
+        home: homeRoster.filter((p: any) => rsvpNotGoing.has(p.playerId)).map((p: any) => p.playerId),
+        away: awayRoster.filter((p: any) => rsvpNotGoing.has(p.playerId)).map((p: any) => p.playerId),
+      },
       events: events.map((e: any) => ({
         ...e,
         timestampMs: new Date(e.timestamp).getTime(),

@@ -38,6 +38,8 @@ interface Bootstrap {
     requireRefereeApproval: boolean
   }
   rosters: { home: RosterEntry[]; away: RosterEntry[] }
+  /** Players whose family RSVP'd Not going — pre-marked absent in roll call */
+  rsvpAbsent?: { home: string[]; away: string[] }
   events: Array<FoldEvent & { clientEventId: string | null }>
   lock: { sessionId: string | null; user: string | null; at: string | null }
   referees: Array<{ userId: string; name: string; hasPin: boolean }>
@@ -228,6 +230,16 @@ export function ScoringConsole({
       setEvents(all)
       setQueue(restored)
       setBoot(data)
+
+      // Fresh roll call only: seed absentees from Not-going RSVPs. Once an
+      // ATTENDANCE event exists (resumed game), the scorer's record wins.
+      const hasAttendance = all.some((e) => e.eventType === "ATTENDANCE" && !e.voided)
+      if (!hasAttendance && data.rsvpAbsent) {
+        setAbsentees({
+          home: new Set(data.rsvpAbsent.home),
+          away: new Set(data.rsvpAbsent.away),
+        })
+      }
 
       // Lock: claim unless someone else actively holds it
       const lockRes = await fetch(`/api/games/${gameId}/scoring/lock`, {
@@ -629,6 +641,8 @@ export function ScoringConsole({
           <p className="text-ink-500 text-xs">
             Everyone starts as present — tap whoever is missing. Absent players show on the
             scoresheet and don&apos;t count a game played in their season stats.
+            {absentees.home.size + absentees.away.size > 0 &&
+              " Players whose family said “Not going” are pre-marked — tap to correct."}
           </p>
         </div>
         <div className="flex flex-col gap-4 md:flex-row">
