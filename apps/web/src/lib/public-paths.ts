@@ -35,6 +35,8 @@ const PUBLIC_PAGE_PREFIXES = [
   // Missing from this list until 2026-07-12 — crawlers and logged-out parents
   // were 302'd to /sign-in, killing the shareable player URL.
   "/p",
+  // Custom-domain resolver target (middleware rewrite; seo-strategy §6c)
+  "/domains",
   "/scores",
   "/for-clubs",
   "/for-leagues",
@@ -61,6 +63,9 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/live",
   // Native-app boot handshake (min version + publishable key) — public by design
   "/api/mobile/config",
+  // Caddy on-demand-TLS "ask" endpoint — must answer before any cert exists,
+  // so it can't require a session (GET-only; returns 200/404 by design).
+  "/api/domains",
   // Personal iCal feed (GET only) — the unguessable token IS the auth
   // (phones fetch it without a session); the route 404s unknown tokens.
   "/api/calendar",

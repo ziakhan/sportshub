@@ -216,6 +216,42 @@ page hurts US. Clubs pay for insight, control, and amplification:
   club-facing analytics page (Plus gate via hasFeature()) → search-preview
   editor → featured/city placement (with Phase P) → AI copy → custom domains.
 
+## 6c. Subdomains & custom domains — mechanics + rollout (owner-approved 2026-07-12)
+
+**Platform subdomains (`eagles.ourdomain.com`):** wildcard DNS (`*.ourdomain
+→ server`, one record). Middleware reads Host, extracts slug, **301s to the
+canonical path URL** `/club/eagles` (SEO decision: one URL per club; the
+subdomain is a speakable vanity front door, not a duplicate site). Reserved
+subdomains (www/app/api/…) are exempt. SHIPPED as plumbing 2026-07-12.
+
+**Custom domains (`eaglesbasketball.ca` → their page) — Pro-tier feature:**
+1. Club adds a DNS record at their registrar: CNAME `www` →
+   `clubs.ourdomain.com` (or A record for apex). We give exact instructions
+   + a Verify button.
+2. We store it: `Tenant.customDomain` (unique) + `customDomainVerifiedAt` +
+   `customDomainCanonical` (mirror vs own-equity mode).
+3. TLS: infra-agnostic. Oracle box → Caddy `on_demand_tls` with an `ask`
+   endpoint (`GET /api/domains/check?domain=`) so certs are only issued for
+   verified tenant domains. Vercel → Domains API instead. Same app code
+   either way.
+4. Routing: middleware (flag `CUSTOM_DOMAINS_ENABLED=1`, default OFF) sends
+   unknown-host requests for `/` through `/domains/[host]` which resolves the
+   tenant and redirects to the club page (v1 = mirror mode: their domain is a
+   vanity redirect; all equity accrues to us). v2 own-equity mode
+   (`customDomainCanonical`) renders in place under their domain with the
+   canonical flipped — build with the Pro tier launch.
+5. **Selling points:** club keeps a domain they own even if they leave
+   (trust); own-equity mode = they build their own ranking asset while every
+   registration/payment still runs on our rails.
+
+**Rollout switchboard (everything inert until flipped):**
+- `CUSTOM_DOMAINS_ENABLED=1` env → middleware + club-owner API activate.
+- `CUSTOM_DOMAIN_TARGET` (CNAME host) / `CUSTOM_DOMAIN_TARGET_IP` (apex A)
+  env → the Verify endpoint starts actually checking DNS.
+- Caddy: uncomment the `on_demand_tls` block in the oracle-box Caddyfile.
+- Nothing above affects localhost/demo (unknown hosts pass through untouched
+  while the flag is off).
+
 ## 7. Measurement & guardrails
 
 - Google Search Console from day one (verify domain, submit segmented

@@ -222,6 +222,9 @@ model Tenant {
   currency     String  @default("CAD") // ISO 4217
   website      String?
   customDomain String? @unique
+  // Custom-domain plumbing (seo-strategy §6c; inert until CUSTOM_DOMAINS_ENABLED)
+  customDomainVerifiedAt DateTime? // set by the DNS Verify endpoint
+  customDomainCanonical  Boolean   @default(false) // false = mirror mode (their domain redirects to us)
 
   // Timezone (Recommended Addition)
   timezone String @default("America/New_York")

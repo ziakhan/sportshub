@@ -160,12 +160,29 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 sudo tee /etc/caddy/Caddyfile >/dev/null <<EOF
+# --- Custom club domains (seo-strategy §6c) — UNCOMMENT AT FEATURE LAUNCH ---
+# The global block lets Caddy mint Let's Encrypt certs on demand for any club
+# domain that the app has verified (the ask endpoint answers 200/404).
+# Also set CUSTOM_DOMAINS_ENABLED=1 + CUSTOM_DOMAIN_TARGET(_IP) in the web env.
+#{
+#	on_demand_tls {
+#		ask http://127.0.0.1:3000/api/domains/check
+#	}
+#}
 ${DOMAIN} {
 	encode gzip
 	@socket path /socket.io/*
 	reverse_proxy @socket 127.0.0.1:8080
 	reverse_proxy 127.0.0.1:3000
 }
+# --- UNCOMMENT AT FEATURE LAUNCH: catch-all for verified club domains ---
+#https:// {
+#	tls {
+#		on_demand
+#	}
+#	encode gzip
+#	reverse_proxy 127.0.0.1:3000
+#}
 EOF
 sudo systemctl daemon-reload
 sudo systemctl enable --now redis-server postgresql

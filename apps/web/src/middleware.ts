@@ -3,9 +3,64 @@ import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { isPublicPath } from "@/lib/public-paths"
 import { bearerToken, verifyAccessToken } from "@/lib/native-auth-tokens"
+import { siteUrl } from "@/lib/site"
+
+// Subdomains that serve the platform itself — never treated as club slugs.
+const RESERVED_SUBDOMAINS = new Set([
+  "www",
+  "app",
+  "api",
+  "mail",
+  "smtp",
+  "admin",
+  "staging",
+  "dev",
+  "clubs", // the CNAME target for custom domains (seo-strategy §6c)
+])
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  // Host-based routing FIRST — a vanity URL must resolve to the public club
+  // page regardless of auth state (an anonymous visitor on a club subdomain
+  // should never be bounced to sign-in on the way).
+  const hostname = req.headers.get("host") || ""
+
+  let tenantSlug: string | null = null
+  let isCustomDomain = false
+
+  if (
+    hostname === "app.youthbasketballhub.com" ||
+    hostname === "localhost:3000" ||
+    hostname.startsWith("localhost:")
+  ) {
+    tenantSlug = null
+  } else if (hostname.endsWith(".youthbasketballhub.com")) {
+    tenantSlug = hostname.split(".")[0]
+  } else {
+    isCustomDomain = true
+  }
+
+  // Club subdomains are vanity front doors, not duplicate sites: 301 to the
+  // canonical path URL (seo-strategy §6c — one URL per club). Reserved
+  // subdomains fall through (www serves the main site, not /club/www).
+  if (tenantSlug && !RESERVED_SUBDOMAINS.has(tenantSlug)) {
+    return NextResponse.redirect(new URL(`/club/${tenantSlug}`, siteUrl()), 301)
+  }
+
+  // Custom club domains (Pro tier) — inert until CUSTOM_DOMAINS_ENABLED=1.
+  // Only the root path is routed; the resolver page (DB lookup lives there,
+  // not in edge middleware) redirects to the club page in mirror mode.
+  // Unknown hosts (e.g. *.vercel.app) pass through untouched either way.
+  if (
+    isCustomDomain &&
+    process.env.CUSTOM_DOMAINS_ENABLED === "1" &&
+    pathname === "/"
+  ) {
+    const rewriteUrl = req.nextUrl.clone()
+    rewriteUrl.pathname = `/domains/${hostname.split(":")[0].toLowerCase()}`
+    return NextResponse.rewrite(rewriteUrl)
+  }
 
   // Auth check for protected routes. Method-aware: public API namespaces
   // are readable anonymously, but their mutating methods still require auth.
@@ -29,24 +84,6 @@ export default async function middleware(req: NextRequest) {
       signInUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search)
       return NextResponse.redirect(signInUrl)
     }
-  }
-
-  // Handle tenant routing
-  const hostname = req.headers.get("host") || ""
-
-  let tenantSlug: string | null = null
-  let isCustomDomain = false
-
-  if (
-    hostname === "app.youthbasketballhub.com" ||
-    hostname === "localhost:3000" ||
-    hostname.startsWith("localhost:")
-  ) {
-    tenantSlug = null
-  } else if (hostname.endsWith(".youthbasketballhub.com")) {
-    tenantSlug = hostname.split(".")[0]
-  } else {
-    isCustomDomain = true
   }
 
   const requestHeaders = new Headers(req.headers)

@@ -45,7 +45,7 @@ describe("middleware", () => {
     expect(response.status).toBe(200)
   })
 
-  it("adds tenant override headers for subdomain requests", async () => {
+  it("301s club subdomains to the canonical path URL (seo-strategy §6c)", async () => {
     vi.mocked(getToken).mockResolvedValue({ sub: "user-1" } as any)
 
     const response = await middleware(
@@ -55,8 +55,27 @@ describe("middleware", () => {
       )
     )
 
-    expect(response.headers.get("x-middleware-override-headers")).toContain("x-tenant-slug")
-    expect(response.headers.get("x-middleware-request-x-tenant-slug")).toBe("warriors")
-    expect(response.headers.get("x-middleware-request-x-is-custom-domain")).toBe("false")
+    expect(response.status).toBe(301)
+    expect(response.headers.get("location")).toBe("http://localhost:3000/club/warriors")
+  })
+
+  it("does not treat reserved subdomains as clubs", async () => {
+    vi.mocked(getToken).mockResolvedValue({ sub: "user-1" } as any)
+
+    const response = await middleware(
+      createRequest("https://www.youthbasketballhub.com/dashboard", "www.youthbasketballhub.com")
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("location")).toBeNull()
+  })
+
+  it("passes unknown custom domains through while the feature flag is off", async () => {
+    const response = await middleware(
+      createRequest("https://eaglesbasketball.ca/", "eaglesbasketball.ca")
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull()
   })
 })

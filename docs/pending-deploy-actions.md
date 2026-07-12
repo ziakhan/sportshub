@@ -598,6 +598,15 @@ combine with #24/#25 + Player.handle in a single push).
   "SEO traffic" (per-club 30d/7d views, organic share — the unclaimed-club
   sales number).
 
+- **Also riding in this push (custom-domain plumbing, seo-strategy §6c):**
+  `Tenant.customDomainVerifiedAt DateTime?` + `Tenant.customDomainCanonical
+  Boolean @default(false)` (customDomain column already existed). All inert
+  until `CUSTOM_DOMAINS_ENABLED=1` + `CUSTOM_DOMAIN_TARGET(_IP)` env are set
+  and the Caddyfile on_demand_tls blocks are uncommented (oracle-box
+  setup.sh has them commented in place). Club subdomains now 301 to
+  /club/<slug> (was: dead header, served the homepage).
+
 Nothing to backfill. Verify post-push: `SELECT "seoIndexingEnabled" FROM
 "PlatformSettings";` = f; curl /robots.txt → `Disallow: /`; open a club page
-then `SELECT count(*) FROM "PublicPageView";` ≥ 1.
+then `SELECT count(*) FROM "PublicPageView";` ≥ 1; curl -H "Host:
+<club-slug>.<domain>" https://<domain>/ → 301 to /club/<slug>.
