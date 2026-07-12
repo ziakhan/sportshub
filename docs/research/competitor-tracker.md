@@ -1,6 +1,6 @@
 ---
 updated: 2026-07-07
-tags: [theme/research, theme/gtm, type/research, status/draft]
+tags: [theme/research, theme/gtm, type/research, status/complete]
 ---
 
 # Competitor tracker — for LATER research (parked 2026-07-07)
@@ -58,6 +58,7 @@ competitors" — read as feature/segment axes to score everyone on, plus
 Exposure Events as a specific competitor to profile.
 
 ## Status
-Parked. Existing GTM research: docs/research/ (183-club census, 5-segment
-taxonomy, pricing v1). This tracker = the consumer/competitor-product side
-to pair with that market-size side when the full comparison is commissioned.
+DONE 2026-07-12 — commissioned by owner; 106-claim pricing sweep synthesized
+into **docs/business-model.md** (pricing v2: club tiers, league per-team fees,
+Family Pass, take-rate strategy). Remaining gaps noted there (Jersey Watch,
+Crossbar price points).
