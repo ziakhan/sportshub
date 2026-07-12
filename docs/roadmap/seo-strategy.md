@@ -226,12 +226,20 @@ sections (`/basketball/...`) confirmed — nav model recorded in
 homepage" preference; logged-in users don't get the sport-link nav
 (seam design deferred). Phase T build STARTED 2026-07-12.
 
-1. Permanent domain/brand (multi-sport future) — §1.1. Biggest decision here.
-2. Approve minors indexing policy (§1.3) — claimed-handle-only indexing.
-3. UNCLAIMED enrichment bar (§1.4) — ok to index shells with city + league
-   teams data? (Recommend yes; it's the activation funnel.)
-4. Comparison pages name competitors directly — comfortable? (Standard
-   practice; we have receipts.)
-5. GSC access / who owns the domain registrar (needed for verification).
+1. ~~Permanent domain/brand~~ **DECIDED 2026-07-12: build with placeholder
+   (everything is env-driven), but the permanent name is DUE AT GO-LIVE** —
+   once production is indexed and widgets/watermarks spread the URL, it's
+   locked. Start the name hunt now.
+2. ~~Minors indexing~~ **DECIDED: index everything (status quo)** — player
+   pages stay indexable with abbreviated names; kept OUT of the sitemap
+   (crawlable via links, not promoted). Revisit at US entry (COPPA mode).
+3. ~~UNCLAIMED shells~~ **DECIDED: index enriched shells** — min-content bar
+   (name + city + ≥1 substantive datum) gates a `noindex` on truly-empty
+   shells; build the gate in Phase E.
+4. ~~Comparison pages~~ **DECIDED: yes, name competitors** with discipline:
+   CONFIRMED matrix cells only, cited sources, "last verified" dates,
+   quarterly re-verification, names never logos, no unsubstantiated
+   superlatives. One-hour marketing-lawyer review before publish.
+5. GSC access / domain registrar (owner-side, needed at go-live).
 
 ⬅ [[expansion-strategy-2026-07]] · [[tool-feature-matrix-2026-07]] · [[player-handles-plan]] · [[business-model]]

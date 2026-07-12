@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
+import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { AnimatedNumber, Badge, Button, Card, PanelHeader } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { HouseLeagueSignupForm } from "./house-league-signup-form"
@@ -62,6 +63,20 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
 
   return (
     <div className="font-barlow" style={brandStyle(primaryColor)}>
+      <JsonLd
+        data={programEventJsonLd({
+          path: `/house-league/${params.id}`,
+          name: league.name,
+          description: league.description,
+          startDate: league.startDate,
+          endDate: league.endDate,
+          locationName: league.location,
+          fee: Number(league.fee),
+          currency,
+          organizerName: league.tenant.name,
+          organizerSlug: league.tenant.slug,
+        })}
+      />
       {/* Banner */}
       <div className="border-b bg-[var(--brand)]">
         <div className="container mx-auto px-4 py-6">

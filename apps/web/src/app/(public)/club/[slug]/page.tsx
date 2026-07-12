@@ -11,6 +11,7 @@ import { brandStyle } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
+import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
 
 async function getClubBySlug(slug: string) {
   const tenant = await prisma.tenant.findUnique({
@@ -183,11 +184,25 @@ async function getClubNews(tenantId: string, teamIds: string[]) {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const tenant = await prisma.tenant.findUnique({
     where: { slug: params.slug },
-    select: { name: true, description: true, city: true, state: true, branding: { select: { tagline: true } } },
+    select: {
+      name: true,
+      description: true,
+      city: true,
+      state: true,
+      status: true,
+      branding: { select: { tagline: true } },
+      _count: { select: { teams: true } },
+    },
   })
   if (!tenant) return { title: "Club Not Found" }
   const place = [tenant.city, tenant.state].filter(Boolean).join(", ")
+  // Min-content bar (seo-strategy §1.4, owner-decided 2026-07-12): imported
+  // UNCLAIMED shells are indexable only once they carry something substantive
+  // (a description or teams). Truly-empty shells stay crawlable but noindex.
+  const isThinShell =
+    tenant.status === "UNCLAIMED" && !tenant.description && tenant._count.teams === 0
   return {
+    ...(isThinShell ? { robots: { index: false, follow: true } } : {}),
     title: place
       ? `${tenant.name} — Youth Basketball Club in ${place}`
       : `${tenant.name} — Youth Basketball Club`,
@@ -298,6 +313,22 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
 
   return (
     <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(primary)}>
+      <JsonLd
+        data={clubJsonLd({
+          slug: params.slug,
+          name: club.name,
+          description: club.description,
+          address: club.address,
+          city: club.city,
+          state: club.state,
+          country: club.country,
+          phoneNumber: club.phoneNumber,
+          website: club.website,
+          logoUrl: club.branding?.logoUrl ?? null,
+          averageRating: reviewsData.averageRating,
+          totalReviews: reviewsData.totalReviews,
+        })}
+      />
       {/* HERO */}
       <header className="relative overflow-hidden text-white" style={{ backgroundColor: primary }}>
         {branding?.bannerUrl && (

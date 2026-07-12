@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/countries"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Badge, Card } from "@/components/ui"
+import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -62,6 +63,21 @@ export default async function PublicTryoutDetailPage({
 
   return (
     <>
+      <JsonLd
+        data={programEventJsonLd({
+          path: `/tryout/${params.id}`,
+          name: tryout.title,
+          description: tryout.description,
+          startDate: tryout.scheduledAt,
+          locationName: tryout.location,
+          city: tryout.tenant.city,
+          state: tryout.tenant.state,
+          fee,
+          currency,
+          organizerName: tryout.tenant.name,
+          organizerSlug: tryout.tenant.slug,
+        })}
+      />
       {/* Club header */}
       <div
         className="border-b"

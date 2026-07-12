@@ -6,6 +6,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { canManageRecapPost } from "@/lib/content/recap-authz"
 import { Badge, Card } from "@/components/ui"
 import { AdminBar } from "./admin-bar"
+import { JsonLd, newsArticleJsonLd } from "@/lib/seo/jsonld"
 
 export const dynamic = "force-dynamic"
 
@@ -40,6 +41,17 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      {post.status === "PUBLISHED" && (
+        <JsonLd
+          data={newsArticleJsonLd({
+            slug: params.slug,
+            title: post.title,
+            body: post.body,
+            publishedAt: post.publishedAt,
+            imageUrls: images.map((m: any) => m.url).filter(Boolean),
+          })}
+        />
+      )}
       <div className="mb-6">
         <Link href="/news" className="text-hoop-600 text-sm hover:underline">
           &larr; All news

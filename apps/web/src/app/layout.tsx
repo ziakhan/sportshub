@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
 import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
+import { JsonLd, siteGraph } from "@/lib/seo/jsonld"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${outfit.variable} ${workSans.variable} ${barlowCondensed.variable} ${barlow.variable} font-body`}
       >
+        <JsonLd data={siteGraph()} />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

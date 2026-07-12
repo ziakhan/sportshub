@@ -4,6 +4,7 @@ import { format } from "date-fns"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicTournament } from "@/lib/queries/tournament"
+import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { Card } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
@@ -40,6 +41,22 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
 
   return (
     <>
+      <JsonLd
+        data={programEventJsonLd({
+          path: `/tournament/${params.id}`,
+          name: tournament.name,
+          description: tournament.description,
+          startDate: tournament.startDate,
+          endDate: tournament.endDate,
+          locationName: [tournament.city, tournament.state].filter(Boolean).join(", "),
+          city: tournament.city,
+          state: tournament.state,
+          fee: tournament.teamFee ?? 0,
+          currency: tournament.currency || "CAD",
+          organizerName: host?.name ?? null,
+          organizerSlug: host?.slug ?? null,
+        })}
+      />
       {/* Banner */}
       <div className="bg-navy-900 border-b border-navy-700">
         <div className="container mx-auto px-4 py-6">

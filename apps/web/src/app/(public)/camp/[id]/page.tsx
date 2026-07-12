@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
+import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { CampSignupForm } from "./camp-signup-form"
@@ -73,6 +74,20 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
 
   return (
     <div className="font-barlow" style={brandStyle(primaryColor)}>
+      <JsonLd
+        data={programEventJsonLd({
+          path: `/camp/${params.id}`,
+          name: camp.name,
+          description: camp.description,
+          startDate: camp.startDate,
+          endDate: camp.endDate,
+          locationName: camp.location,
+          fee: Number(camp.weeklyFee),
+          currency,
+          organizerName: camp.tenant.name,
+          organizerSlug: camp.tenant.slug,
+        })}
+      />
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="container mx-auto px-4 py-6">
           <Link href="/events" className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100">&larr; Back to Events</Link>

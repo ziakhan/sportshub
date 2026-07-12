@@ -21,7 +21,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [clubs, posts, seasons, camps, tryouts, houseLeagues, tournaments, handles] =
     await Promise.all([
       prisma.tenant.findMany({
-        where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
+        // Thin UNCLAIMED shells (no description, no teams) are noindex'd on
+        // the page (min-content bar, seo-strategy §1.4) — keep them out of
+        // the sitemap too.
+        where: {
+          status: { in: ["ACTIVE", "UNCLAIMED"] },
+          OR: [
+            { status: "ACTIVE" },
+            { description: { not: null } },
+            { teams: { some: {} } },
+          ],
+        },
         select: { slug: true, updatedAt: true },
       }),
       prisma.post.findMany({
