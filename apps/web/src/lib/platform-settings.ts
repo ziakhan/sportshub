@@ -43,3 +43,21 @@ export async function isSingleCountryMode() {
   const codes = await getEnabledCountryCodes()
   return codes.length === 1 ? codes[0] : null
 }
+
+/**
+ * Global search-engine indexing switch (admin settings). Defaults FALSE —
+ * the site stays noindex until the owner flips it at go-live
+ * (docs/roadmap/seo-strategy.md §9). Read by robots.ts, sitemap.ts and the
+ * root layout; fails CLOSED (noindex) on any error.
+ */
+export async function isSeoIndexingEnabled(): Promise<boolean> {
+  try {
+    const settings = await prisma.platformSettings.findUnique({
+      where: { id: "default" },
+      select: { seoIndexingEnabled: true },
+    })
+    return settings?.seoIndexingEnabled ?? false
+  } catch {
+    return false
+  }
+}

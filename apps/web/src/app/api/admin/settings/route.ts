@@ -22,6 +22,8 @@ const updateSettingsSchema = z.object({
   payDefaultOnlineMode: z.enum(["NONE", "CONNECT_DIRECT", "PLATFORM_COLLECT"]).optional(),
   payPlatformFeeBps: z.number().int().min(0).max(5000).optional(),
   payPlatformFeeFlat: z.number().min(0).optional(),
+  // Global search-engine indexing switch (seo-strategy §9) — owner-flipped at go-live
+  seoIndexingEnabled: z.boolean().optional(),
 })
 
 function serializeSettings(settings: any) {
@@ -33,6 +35,7 @@ function serializeSettings(settings: any) {
     payDefaultOnlineMode: settings.payDefaultOnlineMode,
     payPlatformFeeBps: settings.payPlatformFeeBps,
     payPlatformFeeFlat: Number(settings.payPlatformFeeFlat),
+    seoIndexingEnabled: settings.seoIndexingEnabled,
   }
 }
 

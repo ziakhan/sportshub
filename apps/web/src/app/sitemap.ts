@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 import { prisma } from "@youthbasketballhub/db"
 import { siteUrl } from "@/lib/site"
 import { isTestWorldSlug } from "@/lib/demo-data"
+import { isSeoIndexingEnabled } from "@/lib/platform-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic"
  * - /live/[gameId] — ephemeral; recaps are the durable game pages.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Empty until the owner flips the indexing switch (admin → settings).
+  if (!(await isSeoIndexingEnabled())) return []
+
   const base = siteUrl()
 
   const [clubs, posts, seasons, camps, tryouts, houseLeagues, tournaments, handles] =

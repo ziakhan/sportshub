@@ -12,6 +12,7 @@ import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
+import { trackPublicView } from "@/lib/seo/track"
 
 async function getClubBySlug(slug: string) {
   const tenant = await prisma.tenant.findUnique({
@@ -225,6 +226,13 @@ const NAV = [
 export default async function ClubProfilePage({ params }: { params: { slug: string } }) {
   const club = await getClubBySlug(params.slug)
   if (!club) notFound()
+
+  await trackPublicView({
+    path: `/club/${params.slug}`,
+    entityType: "CLUB",
+    entityId: club.id,
+    tenantId: club.id,
+  })
 
   const [clubData, houseLeagues, camps, tournaments, reviewsData, announcements] = await Promise.all([
     getClubData(club.id),

@@ -1,7 +1,16 @@
 import type { MetadataRoute } from "next"
 import { siteUrl } from "@/lib/site"
+import { isSeoIndexingEnabled } from "@/lib/platform-settings"
 
-export default function robots(): MetadataRoute.Robots {
+export const dynamic = "force-dynamic"
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  // Owner-controlled kill-switch (admin → settings): until it's flipped at
+  // go-live, tell crawlers to stay out entirely.
+  if (!(await isSeoIndexingEnabled())) {
+    return { rules: [{ userAgent: "*", disallow: "/" }] }
+  }
+
   return {
     rules: [
       {

@@ -12,6 +12,8 @@ interface Country {
 export default function AdminSettingsPage() {
   const [availableCountries, setAvailableCountries] = useState<Country[]>([])
   const [enabledCodes, setEnabledCodes] = useState<string[]>([])
+  const [seoIndexing, setSeoIndexing] = useState(false)
+  const [savingSeo, setSavingSeo] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -22,10 +24,39 @@ export default function AdminSettingsPage() {
       .then((data) => {
         setAvailableCountries(data.availableCountries || [])
         setEnabledCodes(data.enabledCountries || ["US"])
+        setSeoIndexing(!!data.seoIndexingEnabled)
       })
       .catch(() => setMessage({ type: "error", text: "Failed to load settings" }))
       .finally(() => setLoading(false))
   }, [])
+
+  const toggleSeoIndexing = async () => {
+    const next = !seoIndexing
+    setSavingSeo(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seoIndexingEnabled: next }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to save")
+      }
+      setSeoIndexing(next)
+      setMessage({
+        type: "success",
+        text: next
+          ? "Search engine indexing ENABLED — robots.txt, sitemap and meta tags now allow crawling."
+          : "Search engine indexing disabled — the whole site is noindex again.",
+      })
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save" })
+    } finally {
+      setSavingSeo(false)
+    }
+  }
 
   const toggleCountry = (code: string) => {
     setEnabledCodes((prev) => {
@@ -79,6 +110,39 @@ export default function AdminSettingsPage() {
           {message.text}
         </div>
       )}
+
+      {/* Search engine indexing (SEO go-live switch) */}
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">
+          Search engine indexing
+        </h3>
+        <p className="text-ink-500 mb-4 text-sm">
+          Master switch for Google &amp; friends. While OFF, every page carries a noindex tag,
+          robots.txt disallows all crawling, and the sitemap is empty — regardless of per-page
+          rules. Flip it ON at go-live (see docs/roadmap/seo-strategy.md).
+        </p>
+        <div className="flex items-center justify-between rounded-lg border border-ink-200 p-4">
+          <div>
+            <div className="text-ink-900 font-medium">
+              {seoIndexing ? "Indexing is ON" : "Indexing is OFF"}
+            </div>
+            <div className="text-ink-500 text-xs">
+              {seoIndexing
+                ? "Search engines can crawl and index the public site."
+                : "Site is invisible to search engines until you enable this."}
+            </div>
+          </div>
+          <button
+            onClick={toggleSeoIndexing}
+            disabled={savingSeo}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
+              seoIndexing ? "bg-ink-500 hover:bg-ink-600" : "bg-court-600 hover:bg-court-700"
+            }`}
+          >
+            {savingSeo ? "Saving..." : seoIndexing ? "Turn OFF" : "Turn ON"}
+          </button>
+        </div>
+      </div>
 
       {/* Enabled Countries */}
       <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">

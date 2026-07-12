@@ -7,6 +7,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
+import { trackPublicView } from "@/lib/seo/track"
 import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { CampSignupForm } from "./camp-signup-form"
@@ -48,6 +49,13 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicCampDetailPage({ params }: { params: { id: string } }) {
   const camp = await getPublicCamp(params.id)
   if (!camp) notFound()
+
+  await trackPublicView({
+    path: `/camp/${params.id}`,
+    entityType: "CAMP",
+    entityId: params.id,
+    tenantId: camp.tenant.id,
+  })
 
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = session?.user?.id ?? null

@@ -580,3 +580,24 @@ Nothing to backfill. Verify: `SELECT count(*) FROM "ProgramStaff";` = 0;
 as a club owner, assign a coach on a camp's edit page → bell arrives, camp
 appears in the coach's "My programs"; as that coach, PATCH description
 succeeds and PATCH weeklyFee 403s.
+
+## ⬜ 26. SEO schema — PlatformSettings.seoIndexingEnabled + PublicPageView table
+
+One `prisma db push` covers this (applied to LOCAL 2026-07-12; Neon pending —
+combine with #24/#25 + Player.handle in a single push).
+
+- `PlatformSettings.seoIndexingEnabled Boolean @default(false)` — the global
+  search-engine kill-switch. **Defaults OFF**: after deploy, prod serves
+  site-wide noindex + robots disallow + empty sitemap until the owner flips
+  the toggle in Dashboard → Admin → Admin settings → "Search engine indexing"
+  (docs/roadmap/seo-strategy.md §9 — flip at go-live, after the permanent
+  domain is chosen and NEXT_PUBLIC_APP_URL points at it).
+- `PublicPageView` table (+3 indexes) — first-party SEO view tracking, one
+  row per public club/program page render, referrer classified
+  ORGANIC/DIRECT/REFERRAL/INTERNAL/BOT. Report: Dashboard → Admin →
+  "SEO traffic" (per-club 30d/7d views, organic share — the unclaimed-club
+  sales number).
+
+Nothing to backfill. Verify post-push: `SELECT "seoIndexingEnabled" FROM
+"PlatformSettings";` = f; curl /robots.txt → `Disallow: /`; open a club page
+then `SELECT count(*) FROM "PublicPageView";` ≥ 1.

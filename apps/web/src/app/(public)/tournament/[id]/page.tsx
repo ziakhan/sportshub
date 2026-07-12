@@ -5,6 +5,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicTournament } from "@/lib/queries/tournament"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
+import { trackPublicView } from "@/lib/seo/track"
 import { Card } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
@@ -21,6 +22,13 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicTournamentPage({ params }: { params: { id: string } }) {
   const tournament = await getPublicTournament(params.id)
   if (!tournament) notFound()
+
+  await trackPublicView({
+    path: `/tournament/${params.id}`,
+    entityType: "TOURNAMENT",
+    entityId: params.id,
+    tenantId: tournament.tenantId ?? null,
+  })
 
   // Host club link (tenantId is optional — league-owner tournaments have none).
   // Only link to clubs whose public page is viewable (mirrors /club/[slug] rules).

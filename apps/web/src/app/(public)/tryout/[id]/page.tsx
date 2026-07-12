@@ -7,6 +7,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Badge, Card } from "@/components/ui"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
+import { trackPublicView } from "@/lib/seo/track"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -53,6 +54,13 @@ export default async function PublicTryoutDetailPage({
 }) {
   const tryout = await getTryout(params.id)
   if (!tryout) notFound()
+
+  await trackPublicView({
+    path: `/tryout/${params.id}`,
+    entityType: "TRYOUT",
+    entityId: params.id,
+    tenantId: tryout.tenant.id,
+  })
 
   const session = await getServerSession(authOptions)
   const isPast = new Date(tryout.scheduledAt) < new Date()

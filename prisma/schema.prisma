@@ -2539,8 +2539,32 @@ model PlatformSettings {
   payPlatformFeeBps         Int        @default(0)
   payPlatformFeeFlat        Decimal    @default(0) @db.Decimal(10, 2)
 
+  // Global search-engine switch (owner-controlled from admin settings).
+  // OFF = site-wide noindex + robots disallow + empty sitemap, regardless of
+  // per-page rules. Flip ON at go-live (docs/roadmap/seo-strategy.md §9).
+  seoIndexingEnabled Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// First-party view tracking for PUBLIC pages (SEO analytics). One row per
+/// server render of a tracked page; `source` classifies the referrer so we
+/// can report organic-search landings per club — the "your page got N Google
+/// visits without you doing anything" claim-pitch number.
+model PublicPageView {
+  id         String   @id @default(uuid())
+  path       String
+  entityType String // CLUB | CAMP | TRYOUT | HOUSE_LEAGUE | TOURNAMENT | NEWS
+  entityId   String?
+  tenantId   String? // owning club (denormalized for per-club reports)
+  source     String // ORGANIC | DIRECT | REFERRAL | INTERNAL | BOT
+  refHost    String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, createdAt])
+  @@index([source, createdAt])
 }
 
 // ============================================

@@ -3,6 +3,7 @@ import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
 import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
 import { JsonLd, siteGraph } from "@/lib/seo/jsonld"
+import { isSeoIndexingEnabled } from "@/lib/platform-settings"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -31,26 +32,34 @@ const barlow = Barlow({
   weight: ["400", "500", "600", "700"],
 })
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl()),
-  title: {
-    default: SITE_NAME,
-    // Detail pages set their own title; this suffixes index/browse pages.
-    template: `%s | ${SITE_NAME}`,
-  },
-  description: SITE_DESCRIPTION,
-  openGraph: {
-    type: "website",
-    siteName: SITE_NAME,
-    title: SITE_NAME,
+export async function generateMetadata(): Promise<Metadata> {
+  // Site-wide noindex until the owner flips the indexing switch in admin
+  // settings (seo-strategy §9). Child pages inherit robots unless they set
+  // their own — thin-shell club pages set noindex themselves, which is the
+  // same outcome either way.
+  const indexingEnabled = await isSeoIndexingEnabled()
+  return {
+    metadataBase: new URL(siteUrl()),
+    title: {
+      default: SITE_NAME,
+      // Detail pages set their own title; this suffixes index/browse pages.
+      template: `%s | ${SITE_NAME}`,
+    },
     description: SITE_DESCRIPTION,
-    locale: "en_CA",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_NAME,
-    description: SITE_DESCRIPTION,
-  },
+    ...(indexingEnabled ? {} : { robots: { index: false, follow: false } }),
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      title: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      locale: "en_CA",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: SITE_NAME,
+      description: SITE_DESCRIPTION,
+    },
+  }
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

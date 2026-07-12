@@ -7,6 +7,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
+import { trackPublicView } from "@/lib/seo/track"
 import { AnimatedNumber, Badge, Button, Card, PanelHeader } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { HouseLeagueSignupForm } from "./house-league-signup-form"
@@ -41,6 +42,13 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicHouseLeaguePage({ params }: { params: { id: string } }) {
   const league = await getPublicHouseLeague(params.id)
   if (!league) notFound()
+
+  await trackPublicView({
+    path: `/house-league/${params.id}`,
+    entityType: "HOUSE_LEAGUE",
+    entityId: params.id,
+    tenantId: league.tenant.id,
+  })
 
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = session?.user?.id ?? null
