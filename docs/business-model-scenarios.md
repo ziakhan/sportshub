@@ -112,6 +112,54 @@ Family Pass $142K · AI-stream $126K · club subs $41K.
    live game → "get every moment" Family Pass prompt on the live page;
    league finishes season 1 → media-tier recap reel of what families saw.
 
+## V2 — League-anchored adoption (owner correction, 2026-07-12)
+
+**The correction:** adoption within a league must be 100% — a league cannot
+run with half its teams off-platform. Teams that don't proactively join are
+**manually entered at session one** (our substrate already does this:
+team submissions + UNCLAIMED tenants + the manual-override kit) and are
+thereby *in the system* as shells. The adoption unit is therefore the
+**league deal**, not the club decision; clubs convert from shell →
+activated (claimed + running registrations) over subsequent seasons, from
+inside a product their families are already using weekly.
+
+Model change: `LEAGUES_WON` drives everything. Each league ≈ 45 unique
+clubs (census: 183 clubs across 4 operators); shell clubs contribute their
+~3.3 league teams' families (scores/schedules audience, 4% pass attach);
+activation converts 15% → 30% → 45% → 55% of shells cumulatively (+ a small
+direct channel), and activation *is* the payments attach.
+
+**Variant-D pricing under league-anchored adoption:**
+
+| Yr | Leagues | Shell clubs | Activated | GMV | Revenue | Profit |
+|---|---|---|---|---|---|---|
+| 1 | 2 | 90 | 17 | $1.7M | $77K | $65K |
+| 2 | 4 | 180 | 66 | $6.5M | $235K | $168K |
+| 3 | 8 | 360 | 187 | $18.4M | $619K | $471K |
+| 4 | 14 | 630 | 391 | $38.5M | **$1.28M** | **$1.03M** |
+
+**4-yr cumulative profit: $1.73M** (vs $1.19M in the club-by-club v1) —
+because the league channel simultaneously (a) puts every family in won
+leagues onto the scores/content surface from day one, and (b) converts
+shells into paying rails from *inside* the product instead of via sales.
+
+**What one league deal is worth (steady state):** media fee $14K + payments
+take from its activated clubs $35K + family passes $12.6K ≈ **$62K/year**.
+Sensitivity on the only number that now matters — league deals by Y4:
+6 → $679K · 10 → $980K · 14 → $1.28M · 20 → $1.73M revenue.
+
+**Strategic consequence:** the sales motion is ~14 league-operator
+relationships over four years, not 340 club sales. The club funnel is a
+*product* problem (shell → claim → activate), not a sales problem.
+
+**Product hook this requires (backlogged):** the shell→activated funnel as
+a first-class flow — when a league schedules an unclaimed club's team, the
+club's public page carries "Is this your club?" claiming (exists), season-
+one outreach to club contacts (we hold enriched contacts from the GTM
+research), and in-product activation nudges once their families are
+watching scores ("your families are already here — run registration where
+they are").
+
 ## What would change the answer
 - If payments attach lands < 40% (clubs keep e-transfer habits), take
   revenue halves → push Pro Ops attach + Family Pass earlier.

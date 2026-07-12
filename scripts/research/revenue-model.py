@@ -150,3 +150,76 @@ for price in (59, 79, 99, 119):
     cfg = dict(base); cfg["family"] = (price, 0.06)
     print(f"${price}={run('D', cfg, years=(3,))[0][8]:,.0f}  ", end="")
 print()
+
+
+# ============================================================================
+# V2 — LEAGUE-ANCHORED ADOPTION (owner correction 2026-07-12)
+# A league win puts 100% of its teams on-platform (shells entered manually at
+# session one). Clubs then ACTIVATE (claim + run registrations) over seasons.
+# Adoption unit = league deals; clubs/families derive from them.
+# ============================================================================
+LEAGUES_WON = {1: 2, 2: 4, 3: 8, 4: 14}
+CLUBS_PER_LEAGUE = 45          # census: 183 unique clubs across 4 operators ≈ 46/league
+LEAGUE_TEAMS_PER_CLUB = 3.3    # of a shell club, only its league entries are on-platform
+ACTIVATION_SHARE = {1: 0.15, 2: 0.30, 3: 0.45, 4: 0.55}  # cumulative: shells -> activated
+DIRECT_ACTIVATED = {1: 4, 2: 12, 3: 25, 4: 45}           # clubs signing up outside leagues
+FAMILY_ATTACH_SHELL = 0.04     # shell-club families see league scores/content only
+FAMILY_ATTACH_ACTIVE = 0.07    # activated-club families live in the app daily
+
+def run_league_anchored(cfg, leagues_by_year=LEAGUES_WON):
+    rows = []
+    for y in (1, 2, 3, 4):
+        n_leagues = leagues_by_year[y]
+        shells = min(TAM_CLUBS[y], int(n_leagues * CLUBS_PER_LEAGUE))
+        activated = min(shells, int(shells * ACTIVATION_SHARE[y]) + DIRECT_ACTIVATED[y])
+        passive = shells - activated
+
+        # families: passive clubs contribute only league-team families;
+        # activated clubs contribute their whole organization
+        fam_passive = passive * LEAGUE_TEAMS_PER_CLUB * FAMILIES_PER_TEAM
+        fam_active = activated * TEAMS_PER_CLUB * FAMILIES_PER_TEAM
+        fp_price, _ = cfg["family"]
+        fam_rev = (fam_passive * FAMILY_ATTACH_SHELL + fam_active * FAMILY_ATTACH_ACTIVE) * fp_price
+
+        # payments: activation IS the payments attach (claiming = running money)
+        gmv = activated * TEAMS_PER_CLUB * FAMILIES_PER_TEAM * AVG_ANNUAL_FEES * WALLET_SHARE
+        sub_rev = sum(price * attach * activated for price, attach in cfg["sub"])
+        paid_share = min(1.0, sum(a for _, a in cfg["sub"]))
+        blended_bps = cfg["bps"]["paid"] * paid_share + cfg["bps"]["free"] * (1 - paid_share)
+        take_rev = gmv * blended_bps / 10000
+
+        lg_rev = n_leagues * TEAMS_PER_LEAGUE * SEASONS_PER_YEAR * cfg["league_fee"]
+        stream_rev = STREAM_GAMES[y] * STREAM_NET_PER_GAME
+        total = sub_rev + take_rev + fam_rev + lg_rev + stream_rev
+        profit = total - opex(y, shells) - CAMERA_CAPEX[y]
+        rows.append((y, n_leagues, shells, activated, gmv, take_rev, fam_rev, lg_rev, stream_rev, sub_rev, total, profit))
+    return rows
+
+print("\n" + "=" * 118)
+print("V2 LEAGUE-ANCHORED — Variant D pricing. Shells = clubs on-platform via league (100% coverage); Activated = claimed+paying rails.")
+print("=" * 118)
+cfgD = VARIANTS["D  Hybrid rails+relationship (recommended)"]
+print(f"{'Yr':<3}{'Lgs':>4}{'Shells':>7}{'Actv':>6}{'GMV':>13}{'Take':>11}{'Family':>11}{'Leagues':>10}{'Stream':>10}{'Subs':>9}{'REVENUE':>12}{'PROFIT':>12}")
+cum = 0
+for r in run_league_anchored(cfgD):
+    y, lg, sh, act, gmv, take, fam, lgr, st, sub, total, profit = r
+    cum += profit
+    print(f"{y:<3}{lg:>4}{sh:>7}{act:>6}{money(gmv):>13}{money(take):>11}{money(fam):>11}{money(lgr):>10}{money(st):>10}{money(sub):>9}{money(total):>12}{money(profit):>12}")
+print(f"{'':>95}4-yr cumulative profit: {money(cum)}")
+
+print("\nLEAGUE-DEAL SENSITIVITY — Year-4 revenue by number of league operators won:")
+for lgs4 in (6, 10, 14, 20):
+    scaled = {1: max(1, lgs4 // 7), 2: max(2, lgs4 // 3), 3: max(4, int(lgs4 * 0.6)), 4: lgs4}
+    y4 = run_league_anchored(cfgD, leagues_by_year=scaled)[3]
+    print(f"  {lgs4:>2} leagues by Y4  ->  revenue {money(y4[10])}   (shells {y4[2]}, activated {y4[3]})")
+
+print("\nWHAT ONE LEAGUE DEAL IS WORTH (steady state, Variant D):")
+one_shells = CLUBS_PER_LEAGUE
+one_act = int(one_shells * 0.45)
+one_fam_rev = ((one_shells - one_act) * LEAGUE_TEAMS_PER_CLUB * FAMILIES_PER_TEAM * FAMILY_ATTACH_SHELL
+               + one_act * TEAMS_PER_CLUB * FAMILIES_PER_TEAM * FAMILY_ATTACH_ACTIVE) * 79
+one_gmv = one_act * TEAMS_PER_CLUB * FAMILIES_PER_TEAM * AVG_ANNUAL_FEES * WALLET_SHARE
+one_take = one_gmv * 0.018
+one_lg = TEAMS_PER_LEAGUE * SEASONS_PER_YEAR * 39
+print(f"  media fee {money(one_lg)} + take {money(one_take)} + family {money(one_fam_rev)}"
+      f"  =  {money(one_lg + one_take + one_fam_rev)} / year per league")

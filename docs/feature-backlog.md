@@ -65,6 +65,14 @@ Files: `(public)/camp/[id]/page.tsx`, `(public)/house-league/[id]/page.tsx`,
 
 ---
 
+### Shell-club activation funnel 💡 (owner business model, 2026-07-12)
+Leagues enter non-joined clubs manually at session one (100%-coverage rule)
+— those UNCLAIMED shells must get pulled in: claim prompts where league
+schedules touch their teams, season-one contact outreach (GTM enriched
+contacts), and in-product "your families are already here" activation
+nudges toward running registrations. The club funnel is product, not
+sales ([[business-model-scenarios]] V2).
+
 ## Engagement / content
 
 - **Quizzes** 💡 — same engine as polls + a correct answer + scoring/
