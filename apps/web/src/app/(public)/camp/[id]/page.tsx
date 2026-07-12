@@ -37,11 +37,11 @@ const CAMP_TYPE_LABELS: Record<string, string> = {
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const camp = await getPublicCamp(params.id)
-  if (!camp) return { title: "Camp not found — SportsHub" }
+  if (!camp) return { title: "Camp not found" }
   const description = camp.description
     ? String(camp.description).slice(0, 150)
     : `${camp.name} — youth basketball camp by ${camp.tenant.name} on SportsHub.`
-  return { title: `${camp.name} — SportsHub`, description }
+  return { title: `${camp.name} — Basketball Camp`, description, alternates: { canonical: `/camp/${params.id}` } }
 }
 
 export default async function PublicCampDetailPage({ params }: { params: { id: string } }) {

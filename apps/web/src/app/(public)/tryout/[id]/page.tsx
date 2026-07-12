@@ -22,6 +22,29 @@ async function getTryout(id: string) {
   return { ...tryout, fee: Number(tryout.fee) }
 }
 
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const tryout = await prisma.tryout.findUnique({
+    where: { id: params.id },
+    select: {
+      title: true,
+      description: true,
+      location: true,
+      scheduledAt: true,
+      isPublished: true,
+      tenant: { select: { name: true, city: true } },
+    },
+  })
+  if (!tryout?.isPublished) return { title: "Tryout not found" }
+  const when = format(tryout.scheduledAt, "MMM d, yyyy")
+  return {
+    title: `${tryout.title} — Basketball Tryout (${when})`,
+    description:
+      tryout.description?.replace(/\s+/g, " ").slice(0, 155) ||
+      `${tryout.tenant.name} basketball tryout at ${tryout.location} on ${when}. Details and registration.`,
+    alternates: { canonical: `/tryout/${params.id}` },
+  }
+}
+
 export default async function PublicTryoutDetailPage({
   params,
 }: {

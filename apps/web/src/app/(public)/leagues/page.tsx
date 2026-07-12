@@ -8,7 +8,8 @@ import { FollowButton } from "@/components/follow-button"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Browse Leagues — SportsHub",
+  title: "Browse Leagues",
+  alternates: { canonical: "/leagues" },
   description:
     "Follow youth basketball leagues: live scores, standings, stat leaders, schedules and game recaps.",
 }

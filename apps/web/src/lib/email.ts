@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer"
 import { createUnsubscribeToken } from "@/lib/comms/unsubscribe"
 import type { ConsentScope } from "@/lib/comms/consent"
+import { siteUrl } from "@/lib/site"
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "localhost",
@@ -22,11 +23,7 @@ const FROM = process.env.SMTP_FROM || "noreply@youthbasketballhub.com"
  * (gap-audit 2026-07-09). Every email link goes through here now.
  */
 export function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "")
+  return siteUrl()
 }
 
 /** Escape user-supplied text before interpolating into email HTML. */

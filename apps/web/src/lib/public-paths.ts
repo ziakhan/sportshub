@@ -31,6 +31,10 @@ const PUBLIC_PAGE_PREFIXES = [
   "/news",
   "/team",
   "/player",
+  // Public player handle pages (/p/<handle> → resolves to /player/<id>).
+  // Missing from this list until 2026-07-12 — crawlers and logged-out parents
+  // were 302'd to /sign-in, killing the shareable player URL.
+  "/p",
   "/scores",
   "/for-clubs",
   "/for-leagues",

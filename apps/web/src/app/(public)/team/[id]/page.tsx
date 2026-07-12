@@ -16,10 +16,11 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const data = await getTeamPublicData(params.id)
-  if (!data) return { title: "Team not found — SportsHub" }
+  if (!data) return { title: "Team not found" }
   const { team } = data
   return {
     title: `${team.name} (${team.ageGroup}) — ${team.tenant?.name ?? "SportsHub"}`,
+    alternates: { canonical: `/team/${params.id}` },
     description: `Schedule, results, roster and stats for ${team.name}${
       team.tenant ? ` of ${team.tenant.name}` : ""
     }.`,

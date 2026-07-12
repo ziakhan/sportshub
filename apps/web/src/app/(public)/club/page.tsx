@@ -11,7 +11,8 @@ import { ClubSearch } from "../club-search"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Find a Basketball Club - Youth Basketball Hub",
+  title: "Find a Youth Basketball Club Near You",
+  alternates: { canonical: "/club" },
   description: "Discover youth basketball clubs near you, rated by real families.",
 }
 
@@ -40,7 +41,10 @@ const CLUB_SELECT = {
 } as const
 
 /** Browseable directory (audit GAP-024): search on top, but never a blank
- *  page — the most active clubs render immediately, filterable by city. */
+ *  page — the most active clubs render first, filterable by city.
+ *  Renders the FULL directory (no cap): this page is the crawl path to every
+ *  club page — a former .slice(0, 36) orphaned 150+ club pages from search
+ *  engines (SEO Phase T, 2026-07-12). */
 async function getDirectoryClubs(city?: string): Promise<DirectoryClub[]> {
   const clubs = await (prisma as any).tenant.findMany({
     where: {
@@ -49,9 +53,8 @@ async function getDirectoryClubs(city?: string): Promise<DirectoryClub[]> {
     },
     select: CLUB_SELECT,
     orderBy: [{ teams: { _count: "desc" } }, { name: "asc" }],
-    take: 140,
   })
-  return clubs.filter((c: DirectoryClub) => !isTestWorldSlug(c.slug)).slice(0, 36)
+  return clubs.filter((c: DirectoryClub) => !isTestWorldSlug(c.slug))
 }
 
 async function getFeaturedClubs(city?: string): Promise<DirectoryClub[]> {

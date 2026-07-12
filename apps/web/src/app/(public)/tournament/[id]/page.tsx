@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const tournament = await getPublicTournament(params.id)
-  if (!tournament) return { title: "Tournament not found — SportsHub" }
+  if (!tournament) return { title: "Tournament not found" }
   const description = tournament.description
     ? String(tournament.description).slice(0, 150)
     : `${tournament.name} — youth basketball tournament${tournament.city ? ` in ${tournament.city}` : ""} on SportsHub.`
-  return { title: `${tournament.name} — SportsHub`, description }
+  return { title: `${tournament.name} — Basketball Tournament`, description, alternates: { canonical: `/tournament/${params.id}` } }
 }
 
 export default async function PublicTournamentPage({ params }: { params: { id: string } }) {

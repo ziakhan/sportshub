@@ -19,11 +19,12 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
-  if (!season) return { title: "Season not found — SportsHub" }
+  if (!season) return { title: "Season not found" }
   const name = season.league?.name || "League Season"
   return {
-    title: `${name} ${season.label ?? ""} — Scores, Standings & Leaders — SportsHub`,
+    title: `${name} ${season.label ?? ""} — Scores, Standings & Leaders`,
     description: `Live scores, standings, stat leaders, schedule and game recaps for ${name}.`,
+    alternates: { canonical: `/league/${params.id}` },
   }
 }
 

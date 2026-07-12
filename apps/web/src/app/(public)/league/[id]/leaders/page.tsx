@@ -11,10 +11,11 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const leaders = await getSeasonLeaders(params.id)
-  if (!leaders) return { title: "Leaders — SportsHub" }
+  if (!leaders) return { title: "Leaders" }
   return {
-    title: `${leaders.season.leagueName} ${leaders.season.label} — Stat Leaders — SportsHub`,
+    title: `${leaders.season.leagueName} ${leaders.season.label} — Stat Leaders`,
     description: `Points, rebounds, assists, steals and blocks leaders for ${leaders.season.leagueName} ${leaders.season.label}.`,
+    alternates: { canonical: `/league/${params.id}/leaders` },
   }
 }
 

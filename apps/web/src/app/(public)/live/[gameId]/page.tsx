@@ -13,8 +13,8 @@ async function getGameHead(gameId: string) {
 
 export async function generateMetadata({ params }: { params: { gameId: string } }) {
   const game = await getGameHead(params.gameId)
-  if (!game) return { title: "Game not found — SportsHub" }
-  return { title: `${game.homeTeam.name} vs ${game.awayTeam.name} — Live — SportsHub` }
+  if (!game) return { title: "Game not found" }
+  return { title: `${game.homeTeam.name} vs ${game.awayTeam.name} — Live Score`, alternates: { canonical: `/live/${params.gameId}` } }
 }
 
 /** Public live scoreboard — score, box, play-by-play; polls every 10s. */

@@ -2,7 +2,8 @@ import Link from "next/link"
 import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
-  title: "For Leagues — Run your basketball league on SportsHub",
+  title: "For Leagues — Scheduling, Live Scoring & Standings for Youth Basketball",
+  alternates: { canonical: "/for-leagues" },
   description:
     "Registration, rosters, scheduling, live scoring, standings and stat leaders — a complete operating system for youth basketball leagues.",
 }

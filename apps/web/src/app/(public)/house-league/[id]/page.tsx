@@ -30,11 +30,11 @@ async function getRegistrantData(userId: string | null, houseLeagueId: string) {
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const league = await getPublicHouseLeague(params.id)
-  if (!league) return { title: "Program not found — SportsHub" }
+  if (!league) return { title: "Program not found" }
   const description = league.description
     ? String(league.description).slice(0, 150)
     : `${league.name} — youth basketball house league by ${league.tenant.name} on SportsHub.`
-  return { title: `${league.name} — SportsHub`, description }
+  return { title: `${league.name} — House League`, description, alternates: { canonical: `/house-league/${params.id}` } }
 }
 
 export default async function PublicHouseLeaguePage({ params }: { params: { id: string } }) {

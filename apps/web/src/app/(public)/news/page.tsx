@@ -6,7 +6,8 @@ import { NewsCard, SectionHeader } from "@/components/ui"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "News & Game Recaps — SportsHub",
+  title: "News & Game Recaps",
+  alternates: { canonical: "/news" },
   description:
     "The latest youth basketball news: game recaps, club announcements, and league updates.",
 }

@@ -12,6 +12,13 @@ import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from ".
 import { formatCurrency } from "@/lib/countries"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 
+export const metadata = {
+  title: { absolute: "Youth Basketball Hub — Clubs, Leagues, Camps & Live Scores" },
+  description:
+    "Find youth basketball clubs, leagues, camps and tryouts near you. Live scores, standings, stat leaders and game recaps.",
+  alternates: { canonical: "/" },
+}
+
 export const dynamic = "force-dynamic"
 
 async function getHomePageData() {

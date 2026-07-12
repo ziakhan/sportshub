@@ -186,12 +186,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     select: { name: true, description: true, city: true, state: true, branding: { select: { tagline: true } } },
   })
   if (!tenant) return { title: "Club Not Found" }
+  const place = [tenant.city, tenant.state].filter(Boolean).join(", ")
   return {
-    title: `${tenant.name} - Youth Basketball Club`,
+    title: place
+      ? `${tenant.name} — Youth Basketball Club in ${place}`
+      : `${tenant.name} — Youth Basketball Club`,
     description:
       (tenant.branding as any)?.tagline ||
       tenant.description ||
-      `${tenant.name} youth basketball club in ${tenant.city || ""}, ${tenant.state || ""}`,
+      `${tenant.name} youth basketball club${place ? ` in ${place}` : ""} — teams, tryouts, camps, schedules and reviews.`,
+    alternates: { canonical: `/club/${params.slug}` },
   }
 }
 

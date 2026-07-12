@@ -13,9 +13,9 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const data = await getPlayerSeasonData(params.id)
-  if (!data) return { title: "Player not found — SportsHub" }
+  if (!data) return { title: "Player not found" }
   // Metadata is always public-safe regardless of viewer
-  return { title: `${publicPlayerName(data.player)} — Player Profile — SportsHub` }
+  return { title: `${publicPlayerName(data.player)} — Player Profile`, alternates: { canonical: `/player/${params.id}` } }
 }
 
 export default async function PublicPlayerPage({ params }: { params: { id: string } }) {

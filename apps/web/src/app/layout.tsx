@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
+import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -30,8 +31,25 @@ const barlow = Barlow({
 })
 
 export const metadata: Metadata = {
-  title: "Youth Basketball Hub",
-  description: "The complete platform for youth basketball clubs, leagues, and families",
+  metadataBase: new URL(siteUrl()),
+  title: {
+    default: SITE_NAME,
+    // Detail pages set their own title; this suffixes index/browse pages.
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    locale: "en_CA",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

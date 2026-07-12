@@ -5,7 +5,8 @@ import { formatCurrency } from "@/lib/countries"
 import { getEnabledCountries, isSingleCountryMode } from "@/lib/platform-settings"
 
 export const metadata = {
-  title: "Tryout Marketplace - Youth Basketball Hub",
+  title: "Basketball Tryouts & Team Offers",
+  alternates: { canonical: "/marketplace" },
   description: "Find upcoming youth basketball tryouts near you.",
 }
 

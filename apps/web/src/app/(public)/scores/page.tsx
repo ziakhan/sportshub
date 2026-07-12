@@ -10,7 +10,8 @@ import { RealtimeRefresh } from "@/components/realtime-refresh"
 export const dynamic = "force-dynamic"
 
 export const metadata = {
-  title: "Scores — SportsHub",
+  title: "Scores",
+  alternates: { canonical: "/scores" },
   description: "Live youth basketball scores, recent finals and upcoming games across every league.",
 }
 

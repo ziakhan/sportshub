@@ -11,10 +11,11 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const post = await getPublishedPost(params.slug)
-  if (!post) return { title: "Story not found — SportsHub" }
+  if (!post) return { title: "Story not found" }
   return {
-    title: `${post.title} — SportsHub`,
+    title: `${post.title}`,
     description: post.body.replace(/\s+/g, " ").slice(0, 155),
+    alternates: { canonical: `/news/${params.slug}` },
   }
 }
 
