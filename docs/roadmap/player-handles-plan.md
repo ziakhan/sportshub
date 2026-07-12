@@ -18,6 +18,37 @@ probably charge a lot of money on a monthly basis"). Owner is meeting
 league executives before locking the overall business direction — this doc
 captures the product plan + the questions that meeting should answer.
 
+## The thesis (owner + Claude discussion, 2026-07-12 — to be continued)
+
+We are not building a social network. We are **the verified layer under
+the social networks kids already use**: Instagram/TikTok have the audience
+but zero context (no stats, no game link, no roster truth); we have the
+context and borrow their audience. The flywheel: kid/creator posts a
+highlight → it carries verified stats and lands on player + team + league
+pages → shared out with the player's `/p/handle` watermarked into the clip
+→ their followers tap through to the page WE host → more handles, more
+content, richer league pages, more sponsor-worthy reels. Every share is an
+ad we didn't buy. The player→team→league ripple converts individual vanity
+into league media inventory, which raises the League Media tier's value.
+
+Supply/demand split: **supply is free forever** (kids posting/tagging,
+handle claims, creator tagging — content is the inventory); **depth and
+demand pay** (Player Pro families, Creator Pro tools + marketplace,
+recruiter seats). Kid posts stay on their own page (+ team page with coach
+approval); vetted creators ripple to league/news — reconciles the
+content-plan §0 org-vetted rule with personal expression.
+
+**Open for the next conversation:**
+- Which increment first: P1 page control (paid-tier foundation) or P2
+  rung 1 (paste-a-link embeds)? Both are single-session builds on P0.
+- Watermark design: platform mark + `/p/handle` — how loud?
+- Coach-approval mechanic for team-page posts (approve-once per player vs
+  per-post?).
+- Age line for self-posting (13+ with parent veto, per the content policy
+  below) — confirm.
+- Does the exec meeting change whether league reels are OUR inventory or
+  revenue-shared with operators?
+
 ## Why this can out-earn the Family Pass
 
 Market anchors ([[business-model]]): SportsRecruits Pro **$399/yr**
