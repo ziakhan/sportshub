@@ -10,6 +10,14 @@ tags: [theme/gtm, type/plan, status/draft]
 
 # 💰 Business model — pricing & packaging v2
 
+> **⚠️ DIRECTION PENDING (2026-07-12):** owner is meeting league executives
+> before locking the model. Nothing here is final. Current lean: Variant D
+> (league-anchored, [[business-model-scenarios]] V2) + the player-handle
+> social/recruiting layer ([[player-handles-plan]]) as a potential
+> highest-ARPU consumer engine. Open decisions: NPH design-partner terms,
+> take-rate day-one posture, Family Pass unit, seasonal billing default,
+> creator rev-share — plus whatever the exec meetings change.
+
 **Owner brief (2026-07-12):** three-plus audiences (clubs primary, leagues,
 families; creators later), freemium entry that hooks, then upsell hard.
 Built on the July-6 GTM census (183 clubs / 824 teams, [[club-segmentation-taxonomy]])

@@ -576,6 +576,11 @@ model Player {
   // into full names on public stats/rosters/leaders (plan §5/§11.1)
   mediaConsent MediaConsent @default(UNSET)
 
+  // Player handle — the marketable identity (docs/roadmap/player-handles-plan.md
+  // P0). Claimed by the parent (or 13+ self); /p/<handle> resolves to the
+  // player page. Lowercase, validated + reserved-word checked in lib/handles.
+  handle String? @unique
+
   // Soft delete — set when parent removes the child. Preserves history (offers,
   // tryout signups, team rosters) but excludes from active listings.
   deletedAt DateTime?

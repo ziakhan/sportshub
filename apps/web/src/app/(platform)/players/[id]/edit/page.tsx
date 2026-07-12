@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 import RemovePlayerButton from "../../remove-player-button"
+import { ClaimHandleCard } from "@/components/players/claim-handle-card"
 
 type MediaConsent = "UNSET" | "GRANTED" | "DENIED"
 
@@ -311,6 +312,10 @@ export default function EditPlayerPage() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <ClaimHandleCard playerId={playerId} />
+          </div>
 
           {/* Danger zone */}
           <div className="border-ink-100 mt-8 border-t pt-6">

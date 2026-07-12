@@ -46,6 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       weight: true,
       position: true,
       mediaConsent: true,
+      handle: true,
     },
   })
 
