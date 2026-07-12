@@ -26,6 +26,20 @@ running list + the comparison frame to fill in when we do it.
 - **Spond**, **Heja**, **TeamSnap** — messaging, scheduling, RSVPs.
 - **GameChanger** (DICK'S) — live scoring, stats, streaming; team-first app.
 
+**⚠️ TeamLinkt (added 2026-07-12 — most direct Canadian threat):**
+- Saskatoon; free core + embedded-payments (rate undisclosed, volume-tiered) +
+  $425–795/yr bundles + in-app ads. $9.7M CAD raised (Series A Jul 2025,
+  Growth Street Partners); 3,000+ orgs, 3M+ users.
+- HAS live scoring, auto box scores, tournaments, website builder, officials
+  mgmt, Hockey Canada registry integration. Publicly displacing RAMP (Hockey
+  Regina switched). Already in basketball: CMBA Calgary spring hub, DRIVE (BC),
+  Fredericton game-ops, all of Saskatchewan.
+- Weakness: hockey-first; its basketball leagues run standings-only in
+  practice; AI-assisted writing only (no auto recaps); no basketball-native
+  stat depth. **We differentiate on basketball depth + content, not
+  price/breadth.**
+- Full profile in [[expansion-strategy-2026-07]] §2.
+
 **Scores / stats / exposure (content + recruiting):**
 - **MaxPreps** — public scores/standings/leaders/rankings, SEO team pages.
 - **Exposure / Exposure Events** — basketball tournament + exposure/recruiting
