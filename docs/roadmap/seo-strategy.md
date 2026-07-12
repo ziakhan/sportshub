@@ -189,6 +189,33 @@ tournaments ontario` · long-tail via recaps and player handles.
 5. AI recaps syndication hooks: let local sports blogs/news embed recaps with
    attribution (the content-ripple plan).
 
+## 6b. SEO as product — floor vs ceiling (owner discussion 2026-07-12)
+
+**Principle: the platform owns the FLOOR, clubs buy the CEILING.** Baseline
+optimization (titles, schema/stars, sitemap, canonicals, internal links) is
+automatic and free for every club — a platform asset; a badly-optimized free
+page hurts US. Clubs pay for insight, control, and amplification:
+
+| Layer | Free / Starter | Plus ($249/season) | Pro ($649/season) |
+|---|---|---|---|
+| **Insight** | Teaser stat (30d views); health score | Full traffic dashboard (trends, organic split, per-program, referrers; GSC queries later) | + competitor/city benchmarks |
+| **Control** | Templated title/desc/slug (guardrailed defaults) | Search-preview editor (title/desc override, validated), custom OG image, one-time slug rename w/ 301, FAQ block | — |
+| **Amplification** | Standard directory listing; embed widgets (free — each embed backlinks US) | — | Featured placement (isFeatured exists) in directory/city pages, AI-written page copy, custom domain mapping |
+
+- **Unclaimed clubs:** their traffic number is used AT them in the claim
+  pitch ("412 families found you from Google last month") — tracking already
+  built (`e9d7db2`, /dashboard/admin/seo).
+- **SEO health score** on club admin = the engagement engine: free checklist
+  items (description, photos, reviews, announcements) are our content
+  enrichment done for us (and push shells over the noindex bar); paid items
+  sit greyed in the same list with upgrade tags.
+- Headings/page structure stay platform-controlled at every tier — that's
+  how the floor is guaranteed. Outgoing links (website/socials) free.
+- No separate SEO plan — these strengthen the existing club tiers.
+- BUILD ORDER: health score + teaser stat (free tier, drives enrichment) →
+  club-facing analytics page (Plus gate via hasFeature()) → search-preview
+  editor → featured/city placement (with Phase P) → AI copy → custom domains.
+
 ## 7. Measurement & guardrails
 
 - Google Search Console from day one (verify domain, submit segmented
