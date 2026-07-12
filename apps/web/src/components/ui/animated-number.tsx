@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 interface AnimatedNumberProps {
   value: number
@@ -12,8 +12,12 @@ interface AnimatedNumberProps {
 /** Counts up from 0 to `value` on mount (respects reduced-motion). */
 export function AnimatedNumber({ value, className, duration = 750 }: AnimatedNumberProps) {
   const [n, setN] = useState(0)
-  const started = useRef(false)
 
+  // No run-once guard: under React 18 StrictMode the dev double-invoke ran
+  // effect → cleanup (cancelling BOTH the rAF and the safety timeout) → the
+  // guard then blocked the re-run, so every stat tile stuck at 0 on the dev
+  // server (owner bug 2026-07-12). Restarting on the second invoke is
+  // harmless — cleanup cancels the first run's timers.
   useEffect(() => {
     const reduce =
       typeof window !== "undefined" &&
@@ -22,8 +26,6 @@ export function AnimatedNumber({ value, className, duration = 750 }: AnimatedNum
       setN(value)
       return
     }
-    if (started.current) return
-    started.current = true
     const start = performance.now()
     let raf = 0
     const tick = (t: number) => {

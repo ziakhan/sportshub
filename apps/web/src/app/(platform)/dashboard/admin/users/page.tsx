@@ -171,12 +171,14 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      {/* Users table */}
-      <div className="border-ink-100 shadow-soft reveal overflow-hidden rounded-2xl border bg-white [animation-delay:80ms]">
-        <table className="divide-ink-100 min-w-full divide-y">
+      {/* Users table — narrow windows scroll INSIDE the card (sticky User
+          column, hidden scrollbar, edge fade) instead of squishing columns */}
+      <div className="border-ink-100 shadow-soft reveal relative overflow-hidden rounded-2xl border bg-white [animation-delay:80ms]">
+        <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <table className="divide-ink-100 min-w-[820px] w-full divide-y">
           <thead className="bg-ink-50">
             <tr>
-              <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase">
+              <th className="bg-ink-50 sticky left-0 z-10 text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase">
                 User
               </th>
               <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase">
@@ -209,7 +211,7 @@ export default function AdminUsersPage() {
             ) : (
               users.map((user) => (
                 <tr key={user.id} className="hover:bg-ink-50/70">
-                  <td className="px-4 py-3">
+                  <td className="sticky left-0 z-10 bg-white px-4 py-3">
                     <div className="text-ink-950 text-sm font-semibold">
                       {user.firstName} {user.lastName}
                     </div>
@@ -219,18 +221,22 @@ export default function AdminUsersPage() {
                     <Badge tone={toneForStatus(user.status)}>{user.status}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles.map((r) => (
-                        <span
-                          key={r.id}
-                          className="bg-play-50 text-play-700 inline-block rounded-md px-2 py-1 text-xs"
-                        >
-                          {r.role}
-                          {r.designation && ` (${r.designation})`}
-                          {r.tenant && ` @ ${r.tenant.name}`}
-                        </span>
-                      ))}
-                    </div>
+                    {user.roles.length === 0 ? (
+                      <span className="text-ink-300 text-xs">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {user.roles.map((r) => (
+                          <span
+                            key={r.id}
+                            className="bg-play-50 text-play-700 inline-block rounded-md px-2 py-1 text-xs"
+                          >
+                            {r.role}
+                            {r.designation && ` (${r.designation})`}
+                            {r.tenant && ` @ ${r.tenant.name}`}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="text-ink-500 whitespace-nowrap px-4 py-3 text-xs">
                     {new Date(user.createdAt).toLocaleDateString()}
@@ -275,6 +281,8 @@ export default function AdminUsersPage() {
             )}
           </tbody>
         </table>
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-2xl bg-gradient-to-l from-white to-transparent lg:hidden" />
       </div>
 
       {/* Pagination */}

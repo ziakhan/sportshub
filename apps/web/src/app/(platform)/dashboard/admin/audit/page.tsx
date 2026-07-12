@@ -94,11 +94,12 @@ export default async function AdminAuditPage({
           <p className="text-ink-500">No audit entries yet.</p>
         </div>
       ) : (
-        <div className="border-ink-100 shadow-soft overflow-x-auto rounded-2xl border bg-white">
-          <table className="divide-court-200 min-w-full divide-y">
+        <div className="border-ink-100 shadow-soft relative overflow-hidden rounded-2xl border bg-white">
+          <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <table className="divide-court-200 min-w-[880px] w-full divide-y">
             <thead className="bg-court-50">
               <tr>
-                <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">When</th>
+                <th className="bg-court-50 sticky left-0 z-10 text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">When</th>
                 <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Who</th>
                 <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
                 <th className="text-ink-500 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Where</th>
@@ -108,7 +109,7 @@ export default async function AdminAuditPage({
             <tbody className="divide-court-200 divide-y">
               {entries.map((e: any) => (
                 <tr key={e.id}>
-                  <td className="text-ink-500 whitespace-nowrap px-4 py-3 text-xs">
+                  <td className="sticky left-0 z-10 bg-white text-ink-500 whitespace-nowrap px-4 py-3 text-xs">
                     {format(new Date(e.createdAt), "MMM d, h:mm a")}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -141,6 +142,8 @@ export default async function AdminAuditPage({
               ))}
             </tbody>
           </table>
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-2xl bg-gradient-to-l from-white to-transparent lg:hidden" />
         </div>
       )}
     </div>
