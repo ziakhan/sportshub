@@ -44,9 +44,38 @@ visibility controls. Free = the verified basics (name-per-consent, team,
 stats). **Pro = control + depth** (customization, full game logs, pinned
 film, downloadable highlights).
 
-**P2 — Posting & content:** what a player can post — see content policy
-below. Highlights from our media pipeline + creator uploads tagged to
-them; text posts gated by age/consent; comments OFF by default.
+**P2 — Posting, social sync & the content ripple (owner direction 2026-07-12):**
+
+*The social-sync ladder (build in this order — each rung is value on its own):*
+1. **Embed-by-link (no API walls):** player/creator pastes an Instagram /
+   TikTok / YouTube / X URL → renders on their page via oEmbed. This IS
+   "my page shows my socials" for 80% of the value and works for personal
+   accounts, which the platform APIs largely don't.
+2. **Share-OUT kit (the watermark flywheel):** every highlight on our
+   platform is one-tap shareable/downloadable with a burned-in watermark:
+   the player's `/p/handle` + platform mark. Kids post to IG/TikTok
+   themselves (share-sheet intents; TikTok Share Kit) — their audience
+   funnels back to the page we host. Distribution we don't pay for.
+3. **True API cross-posting — creators first:** Instagram content-publishing
+   and TikTok posting APIs require business/creator accounts + app review;
+   X's API is paid. Videographers HAVE creator accounts → "post once,
+   publish everywhere" ships for the creator tier first; personal-account
+   teens keep rungs 1–2. Full two-way sync of a minor's personal feed is
+   also a moderation liability we don't want — **curated, not mirrored**:
+   they choose what appears on their page.
+
+*The ripple (plumbing already exists — MediaAsset, PostTag, team/league/news
+surfaces):* a highlight tagged (player, club/team, game) fans out: player
+page → team hub → league hub → /news. Policy reconciling the owner's
+org-vetted-creators decision (content plan §0): **kid posts live on their
+OWN page** (plus team page with coach approval); **vetted-creator posts
+ripple all the way up** to league/news. League reels become sponsor
+inventory (raises the League Media tier's value).
+
+*Engagement loops:* auto-generated shareable "moment cards" from verified
+stats (career high, tournament win — data already flows); "you were tagged
+in a recap — share it" notifications; weekly league Top-10 plays assembled
+from creator + AI-camera clips.
 
 **P3 — Recruiter hub:** verified-viewer program for coaches/recruiters
 (creator/recruiter roles already in backlog), "who viewed" for Pro
@@ -74,12 +103,23 @@ through parent/club — never direct DMs to minors.
 ## Pricing hypothesis (validate at the exec meeting)
 
 - Handle + verified basics: **free forever** (the land grab + SEO surface).
-- **Player Pro $19.99/mo or $149/yr** intro (page control, full logs,
-  highlight downloads, who-viewed later). Club-bundled wholesale $99/yr
-  via obligation engine (the SportsRecruits channel lesson).
+- Free page includes: tagged-in creator content, up to **3 pinned
+  embeds/highlights**, watermarked share-outs (the watermark is our ad).
+- **Player Pro $19.99/mo or $149/yr** (page control/theming, unlimited
+  embeds + film room, watermark-free or custom-watermark downloads,
+  cross-post tools, pinned mixtapes, who-viewed later). Club-bundled
+  wholesale $99/yr via obligation engine (the SportsRecruits channel
+  lesson).
+- **Creator tier (videographers/photographers):** free tagging + portfolio
+  page (they are a GTM channel — they bring audiences); **Creator Pro
+  ~$19/mo** (API cross-posting, analytics, booking/lead surface) +
+  **marketplace 70/30** on paid mixtape/photo packages sold through us
+  (owner's P4 paid-syndication direction).
 - Recruiter seats (P3): $299–499/yr per verified recruiter — they pay for
   organized, verified, filterable talent; families never pay for exposure
   itself (anti-NCSA positioning).
+- Supply stays free: kids posting/tagging costs nothing — their content is
+  the inventory that makes team/league pages and sponsor reels valuable.
 
 ## Open questions for the owner's league-exec meetings
 
