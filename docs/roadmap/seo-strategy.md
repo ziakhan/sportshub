@@ -220,6 +220,12 @@ today Google cannot even enumerate our pages.
 
 ## 9. Open questions for the owner
 
+**Answered 2026-07-12:** one domain confirmed; ESPN-style public sport
+sections (`/basketball/...`) confirmed — nav model recorded in
+[[site-ia-plan]] §5.5; homepage = cross-sport mix + "lock my default
+homepage" preference; logged-in users don't get the sport-link nav
+(seam design deferred). Phase T build STARTED 2026-07-12.
+
 1. Permanent domain/brand (multi-sport future) — §1.1. Biggest decision here.
 2. Approve minors indexing policy (§1.3) — claimed-handle-only indexing.
 3. UNCLAIMED enrichment bar (§1.4) — ok to index shells with city + league

@@ -120,6 +120,28 @@ a filter). Recommend migrating to league-id URLs with season switcher in N2.
 `/scores` page + the homepage strip; signed-in users get *their* games pinned
 first (ESPN favorites-in-scoreboard pattern).
 
+### 5.5 Multi-sport navigation — OWNER CONFIRMED 2026-07-12
+Decided during the expansion/SEO discussion ([[expansion-strategy-2026-07]],
+[[seo-strategy]]):
+- **One domain, one site.** Public nav gets ESPN-style top-level SPORT
+  sections: `Basketball ▾ · Volleyball ▾ · …` (only sports we operate).
+  Each section carries the subnav `Scores · Leagues & Standings · Clubs ·
+  Camps & Programs · Tournaments · News` — these are the EXISTING global
+  pages, re-scoped to `/basketball/...` URLs (identical to the SEO plan's
+  URL scheme; one build, two payoffs). Ship the section nav even while
+  single-sport (Basketball tab from day one).
+- **Homepage = cross-sport mix.** News/scores/featured from ALL sports,
+  localized; plus a "lock my default homepage" preference (user can pin
+  e.g. Basketball-Mississauga as their landing view). Search bar + operator
+  side-door stay.
+- **Signed-in users do NOT get the public sport-link nav** — dashboards stay
+  role/entity-organized with sport badges (a parent's calendar never forks by
+  sport). Owner notes the logged-in/public nav seam "seems a little broken —
+  figure it out later" → OPEN ITEM for N2/N3 design.
+- Sport lives on League/Team/Program (single-sport each); Tenant = primary
+  sport + supported list. Region enters INSIDE a sport section (city chip),
+  never in the top nav.
+
 ## 6. "My Hub" — the parent/player home (proposed, new)
 
 One page (`/home` or `/my`) answering "what's happening with MY basketball":
