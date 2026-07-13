@@ -26,8 +26,8 @@ ENV_DIR="/etc/sportshub"
 
 echo "==> [1/10] System packages"
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update -y
-sudo apt-get install -y curl git ca-certificates gnupg postgresql postgresql-contrib redis-server
+sudo apt-get -o DPkg::Lock::Timeout=600 update -y
+sudo apt-get -o DPkg::Lock::Timeout=600 install -y curl git ca-certificates gnupg postgresql postgresql-contrib redis-server
 
 echo "==> [2/10] Node 20 LTS"
 if ! command -v node >/dev/null || [[ "$(node -v)" != v20* ]]; then
@@ -79,6 +79,7 @@ SIDECAR_SHARED_SECRET="$(persist_secret sidecar_shared)"
 CRON_SECRET="$(persist_secret cron)"
 
 echo "==> [6/10] Clone / update the repo"
+sudo git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 if [ ! -d "$APP_DIR/.git" ]; then
   sudo git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" "$APP_DIR"
 else
@@ -186,7 +187,7 @@ ${DOMAIN} {
 EOF
 sudo systemctl daemon-reload
 sudo systemctl enable --now redis-server postgresql
-sudo systemctl enable --now sportshub-web sportshub-sidecar
+sudo systemctl enable --now sportshub-web sportshub-sidecar || true
 sudo systemctl reload caddy || sudo systemctl restart caddy
 
 # Crons: same four sweeps Vercel would run, no plan limits here
