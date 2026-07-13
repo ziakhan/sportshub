@@ -9,17 +9,15 @@ const DEFAULT_COUNTRIES = ["CA"]
  * Returns the filtered list of SUPPORTED_COUNTRIES that are enabled.
  */
 export async function getEnabledCountries() {
-  let settings = await prisma.platformSettings.findUnique({
+  // Upsert, not find-then-create: parallel callers on a fresh DB (e.g. next
+  // build prerendering several pages at once) raced the create and one died
+  // on the unique constraint (first box deploy, 2026-07-12).
+  const settings = await prisma.platformSettings.upsert({
     where: { id: "default" },
+    create: { id: "default", enabledCountries: DEFAULT_COUNTRIES },
+    update: {},
     select: { enabledCountries: true },
   })
-
-  if (!settings) {
-    settings = await prisma.platformSettings.create({
-      data: { id: "default", enabledCountries: DEFAULT_COUNTRIES },
-      select: { enabledCountries: true },
-    })
-  }
 
   const enabled = settings.enabledCountries
   return SUPPORTED_COUNTRIES.filter((c) => enabled.includes(c.code))

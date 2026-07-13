@@ -4,6 +4,9 @@ import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { getEnabledCountries, isSingleCountryMode } from "@/lib/platform-settings"
 
+// Lists live tryouts — must not be statically baked at build time.
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Basketball Tryouts & Team Offers",
   alternates: { canonical: "/marketplace" },
