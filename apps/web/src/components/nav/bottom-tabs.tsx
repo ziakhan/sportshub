@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUnreadChats, UnreadDot } from "./unread-chats"
@@ -79,7 +81,7 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
   const tabs = [
     { href: "/", label: "Home", icon: icon.home, exact: true },
     { href: "/messages", label: "Chat", icon: icon.chat, badge: unread },
-    { href: "/calendar", label: "Calendar", icon: icon.calendar },
+    ...(shape.hasCalendar ? [{ href: "/calendar", label: "Calendar", icon: icon.calendar }] : []),
     ...(ctx ? [ctx] : []),
     { href: "/account", label: "Account", icon: icon.account },
   ] as Array<{ href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: number }>

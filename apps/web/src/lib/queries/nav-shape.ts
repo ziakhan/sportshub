@@ -16,6 +16,10 @@ export interface NavShape {
   isPlatformAdmin: boolean
   isOperator: boolean
   isParticipant: boolean
+  /** Personal calendar is meaningful: participant, club staff (whole-club
+   * schedule) or league owner (league games lens). Pure platform admins
+   * get NO calendar affordances (owner ask 2026-07-14). */
+  hasCalendar: boolean
 }
 
 export const EMPTY_NAV_SHAPE: NavShape = {
@@ -27,6 +31,7 @@ export const EMPTY_NAV_SHAPE: NavShape = {
   isPlatformAdmin: false,
   isOperator: false,
   isParticipant: false,
+  hasCalendar: false,
 }
 
 export async function getNavShape(userId: string | null): Promise<NavShape> {
@@ -65,6 +70,7 @@ export async function getNavShape(userId: string | null): Promise<NavShape> {
       isPlatformAdmin,
       isOperator: isClubStaff || isLeagueOwner || isPlatformAdmin,
       isParticipant: hasKids || coachTeams.length > 0 || isRefereeing,
+      hasCalendar: hasKids || coachTeams.length > 0 || isRefereeing || isClubStaff || isLeagueOwner,
     }
   } catch {
     return EMPTY_NAV_SHAPE

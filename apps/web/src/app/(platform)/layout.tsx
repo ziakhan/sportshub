@@ -172,7 +172,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               <CompletionPill percent={checklist.percent} steps={checklist.steps} />
             )}
             <CreateMenu />
-            <QuickIcons />
+            <QuickIcons showCalendar={shape.hasCalendar} />
             <NotificationBell />
             <AccountMenu
               userName={userName}

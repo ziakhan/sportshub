@@ -66,7 +66,7 @@ const fullName = (p: { firstName: string; lastName: string }) =>
   `${p.firstName} ${p.lastName}`.trim()
 
 export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> {
-  const [roles, familyEntries, refereeRoles] = await Promise.all([
+  const [roles, familyEntries, refereeRoles, leagueOwnerRoles] = await Promise.all([
     prisma.userRole.findMany({
       where: { userId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
       select: { role: true, tenantId: true, teamId: true },
@@ -83,6 +83,12 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
     prisma.userRole.findMany({
       where: { userId, role: "Referee", gameId: { not: null } },
       select: { gameId: true },
+    }),
+    // League lens: league owners see every game in their leagues (calendar
+    // purpose for operators — owner ask 2026-07-14)
+    prisma.userRole.findMany({
+      where: { userId, role: "LeagueOwner", leagueId: { not: null } },
+      select: { leagueId: true },
     }),
   ])
 
@@ -105,7 +111,8 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
   const familyTeamIds = new Set(familyEntries.map((e: any) => e.teamId))
   const allTeamIds = [...new Set([...staffTeamIds, ...familyTeamIds])]
   const refGameIds = [...new Set(refereeRoles.map((r: any) => r.gameId as string))]
-  if (allTeamIds.length === 0 && refGameIds.length === 0) {
+  const ownedLeagueIds = [...new Set(leagueOwnerRoles.map((r: any) => r.leagueId as string))]
+  if (allTeamIds.length === 0 && refGameIds.length === 0 && ownedLeagueIds.length === 0) {
     return {
       teams: [],
       lenses: [],
@@ -143,6 +150,9 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
           { homeTeamId: { in: allTeamIds } },
           { awayTeamId: { in: allTeamIds } },
           ...(refGameIds.length > 0 ? [{ id: { in: refGameIds } }] : []),
+          ...(ownedLeagueIds.length > 0
+            ? [{ season: { leagueId: { in: ownedLeagueIds } } }]
+            : []),
         ],
         scheduledAt: { gte: from, lte: to },
         status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
@@ -196,6 +206,13 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
       : Promise.resolve([]),
   ])
 
+  const ownedLeagues = ownedLeagueIds.length
+    ? await prisma.league.findMany({
+        where: { id: { in: ownedLeagueIds } },
+        select: { id: true, name: true },
+      })
+    : []
+
   // ---- lenses: the person's individual calendars ----
   const teamName = new Map(teams.map((t: any) => [t.id, t.name]))
   const famLensesByTeam = new Map<string, string[]>()
@@ -233,9 +250,17 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
     }
     refLensKeyByGame.set(g.id, key)
   }
+  const ownedLeagueSet = new Set(ownedLeagueIds)
+  const leagueLenses: MyCalendarLens[] = (ownedLeagues as any[]).map((l) => ({
+    key: `lg:${l.id}`,
+    kind: "staff" as const,
+    label: `League · ${l.name}`,
+    leagueId: l.id,
+  }))
   const lenses: MyCalendarLens[] = [
     ...familyLenses.sort((a, b) => a.label.localeCompare(b.label)),
     ...staffLenses.sort((a, b) => a.label.localeCompare(b.label)),
+    ...leagueLenses.sort((a, b) => a.label.localeCompare(b.label)),
     ...[...refLensByLeague.values()].sort((a, b) => a.label.localeCompare(b.label)),
   ]
 
@@ -262,11 +287,19 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         allTeamIds.includes(id)
       )
       const refKey = refLensKeyByGame.get(g.id)
+      const lgKey =
+        g.season?.league?.id && ownedLeagueSet.has(g.season.league.id)
+          ? `lg:${g.season.league.id}`
+          : null
       return {
         kind: "game" as const,
         id: g.id,
         teamIds: memberTeamIds,
-        lensKeys: [...lensKeysForTeams(memberTeamIds), ...(refKey ? [refKey] : [])],
+        lensKeys: [
+          ...lensKeysForTeams(memberTeamIds),
+          ...(refKey ? [refKey] : []),
+          ...(lgKey ? [lgKey] : []),
+        ],
         at: g.scheduledAt,
         durationMinutes: g.duration,
         status: g.status,

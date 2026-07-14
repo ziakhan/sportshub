@@ -128,7 +128,7 @@ export default async function PublicLayout({ children }: { children: React.React
                     Dashboard
                   </Link>
                 )}
-                <QuickIcons />
+                <QuickIcons showCalendar={shape.hasCalendar} />
                 <NotificationBell />
                 <AccountMenu
                   userName={userName}

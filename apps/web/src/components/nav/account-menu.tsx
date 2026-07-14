@@ -124,9 +124,11 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
           </div>
 
           <div className="border-ink-100 border-t py-1">
-            <Row href="/calendar" onClick={close} icon={ICONS.calendar}>
-              Calendar
-            </Row>
+            {shape.hasCalendar && (
+              <Row href="/calendar" onClick={close} icon={ICONS.calendar}>
+                Calendar
+              </Row>
+            )}
             <Row href="/messages" onClick={close} icon={ICONS.chat}>
               Chat
             </Row>

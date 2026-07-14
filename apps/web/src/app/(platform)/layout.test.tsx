@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
+  usePathname: () => "/dashboard",
 }))
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -97,7 +98,10 @@ describe("PlatformLayout", () => {
 
     expect(html).toContain("sportshub")
     expect(html).toContain("NotificationBell")
-    expect(html).toContain("UserMenu:Taylor Jordan")
+    // N3-v2 chrome: badge switchboard (initials button) + bottom tab bar
+    expect(html).toContain('aria-label="Open account menu"')
+    expect(html).toContain(">TJ<")
+    expect(html).toContain('aria-label="Primary"')
     expect(html).toContain("DashboardContent")
   })
 })
