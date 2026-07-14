@@ -5,7 +5,7 @@ import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUnreadChats, UnreadDot } from "./unread-chats"
-import type { NavShape } from "@/lib/queries/nav-shape"
+import { coachTeamHref, type NavShape } from "@/lib/queries/nav-shape"
 
 /**
  * Mobile bottom tab bar (site-ia-plan §5.6.6) — the signed-in global layer
@@ -66,7 +66,7 @@ function contextTab(shape: NavShape): { href: string; label: string; icon: React
   // Priority per site-ia-plan §5.6 gap 4: operator > coach > parent > referee
   if (shape.isOperator) return { href: "/dashboard", label: "Dashboard", icon: icon.dashboard }
   if (shape.coachTeams.length === 1)
-    return { href: `/teams/${shape.coachTeams[0].teamId}`, label: "My Team", icon: icon.team }
+    return { href: coachTeamHref(shape.coachTeams[0]), label: "My Team", icon: icon.team }
   if (shape.coachTeams.length > 1) return { href: "/teams", label: "My Teams", icon: icon.team }
   if (shape.hasKids) return { href: "/players", label: "My Kids", icon: icon.team }
   if (shape.isRefereeing) return { href: "/referee", label: "My Games", icon: icon.whistle }

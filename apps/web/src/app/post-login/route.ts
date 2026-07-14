@@ -31,18 +31,18 @@ export async function GET(request: NextRequest) {
     roleSet.has("ClubManager") ||
     roleSet.has("LeagueOwner") ||
     roleSet.has("PlatformAdmin")
-  const coachTeamIds = [
-    ...new Set(
-      user.roles
-        .filter((r: any) => (r.role === "Staff" || r.role === "TeamManager") && r.teamId)
-        .map((r: any) => r.teamId as string)
-    ),
-  ]
+  const coachPairs = new Map<string, string>() // teamId -> tenantId
+  for (const r of user.roles as any[]) {
+    if ((r.role === "Staff" || r.role === "TeamManager") && r.teamId && r.tenantId) {
+      coachPairs.set(r.teamId, r.tenantId)
+    }
+  }
+  const [firstTeam] = coachPairs.entries()
   const landing = isOwnerOperator
     ? "/dashboard"
-    : coachTeamIds.length === 1
-      ? `/teams/${coachTeamIds[0]}`
-      : coachTeamIds.length > 1
+    : coachPairs.size === 1
+      ? `/clubs/${firstTeam[1]}/teams/${firstTeam[0]}/dashboard`
+      : coachPairs.size > 1
         ? "/teams"
         : "/"
 

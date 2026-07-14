@@ -8,7 +8,7 @@ import { prisma } from "@youthbasketballhub/db"
  * the Home personal band. site-ia-plan §5.6.
  */
 export interface NavShape {
-  coachTeams: Array<{ teamId: string; name: string }>
+  coachTeams: Array<{ teamId: string; tenantId: string; name: string }>
   hasKids: boolean
   isRefereeing: boolean
   isClubStaff: boolean
@@ -20,6 +20,11 @@ export interface NavShape {
    * schedule) or league owner (league games lens). Pure platform admins
    * get NO calendar affordances (owner ask 2026-07-14). */
   hasCalendar: boolean
+}
+
+/** The coach's actual workspace — /teams/[id] has no root page (404). */
+export function coachTeamHref(t: { teamId: string; tenantId: string }): string {
+  return `/clubs/${t.tenantId}/teams/${t.teamId}/dashboard`
 }
 
 export const EMPTY_NAV_SHAPE: NavShape = {
@@ -40,7 +45,7 @@ export async function getNavShape(userId: string | null): Promise<NavShape> {
     const [roles, kidTeam] = await Promise.all([
       prisma.userRole.findMany({
         where: { userId },
-        select: { role: true, teamId: true, team: { select: { id: true, name: true } } },
+        select: { role: true, teamId: true, team: { select: { id: true, name: true, tenantId: true } } },
       }),
       prisma.teamPlayer.findFirst({
         where: { status: "ACTIVE", player: { parentId: userId, deletedAt: null } },
@@ -53,7 +58,7 @@ export async function getNavShape(userId: string | null): Promise<NavShape> {
     for (const r of roles as any[]) {
       if ((r.role === "Staff" || r.role === "TeamManager") && r.team && !coachSeen.has(r.team.id)) {
         coachSeen.add(r.team.id)
-        coachTeams.push({ teamId: r.team.id, name: r.team.name })
+        coachTeams.push({ teamId: r.team.id, tenantId: r.team.tenantId, name: r.team.name })
       }
     }
     const isClubStaff = roleNames.has("ClubOwner") || roleNames.has("ClubManager")

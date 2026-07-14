@@ -5,7 +5,7 @@ import React from "react"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
-import type { NavShape } from "@/lib/queries/nav-shape"
+import { coachTeamHref, type NavShape } from "@/lib/queries/nav-shape"
 
 /**
  * The badge menu v2 — the canonical switchboard (site-ia-plan §5.6.5):
@@ -107,7 +107,7 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
               </Row>
             )}
             {shape.coachTeams.slice(0, 3).map((t) => (
-              <Row key={t.teamId} href={`/teams/${t.teamId}`} onClick={close} icon={ICONS.team}>
+              <Row key={t.teamId} href={coachTeamHref(t)} onClick={close} icon={ICONS.team}>
                 <span className="truncate">{t.name}</span>
               </Row>
             ))}
