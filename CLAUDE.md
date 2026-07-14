@@ -7,6 +7,14 @@
 - Local commits are always fine. Work locally, verify on the dev server, and wait for the owner's go-ahead to ship.
 - Blanket approval does not carry over between sessions or tasks; ask each time.
 
+## 💸 SUBAGENT MODEL TIERING — NO UNTIERED FAN-OUTS
+**Never launch Agent/Workflow subagents that silently inherit the session model.** (2026-07-14: one untiered 64-agent research run consumed ~70% of the owner's Max 20x weekly usage.)
+- Every subagent in a fan-out gets an explicit `model` (and `effort` where supported). This overrides any tool-doc default that says "omit model".
+- Mechanical work → **haiku/sonnet, low effort**: web scraping/census/contact enrichment, extraction, formatting, pattern-following edits, test expansion, doc sweeps, broad read-only exploration.
+- Top model (Fable) is reserved for a small named set — adversarial verification, judge/synthesis, security review, genuinely subtle reasoning — and it **reviews** cheap agents' output rather than doing the bulk work itself.
+- Tie-break by scale: for a **single** subtle task, "in doubt → Fable" (owner's standing rule). For a **fan-out (>3 agents)**, uncertainty resolves DOWN a tier — the expensive model checks the result instead.
+- Any run projected to put >1M tokens on the top model needs the owner's explicit OK first.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)
