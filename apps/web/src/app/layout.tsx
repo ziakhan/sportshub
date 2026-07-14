@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Script from "next/script"
 import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
 import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
@@ -70,6 +71,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         <JsonLd data={siteGraph()} />
         <AuthProvider>{children}</AuthProvider>
+        {/* GA4 — inert until NEXT_PUBLIC_GA_ID is set (build-time env).
+            Ads signals/personalization disabled: youth-sports audience
+            (privacy posture per seo-strategy; revisit at US/COPPA entry). */}
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('set', 'allow_google_signals', false);
+                gtag('set', 'allow_ad_personalization_signals', false);
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   )
