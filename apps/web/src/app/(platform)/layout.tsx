@@ -7,7 +7,10 @@ import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { Sidebar } from "./dashboard/sidebar"
 import { MobileNav } from "./dashboard/mobile-nav"
 import { NotificationBell } from "./dashboard/notification-bell"
-import { UserMenu } from "./dashboard/user-menu"
+import { AccountMenu } from "@/components/nav/account-menu"
+import { BottomTabs } from "@/components/nav/bottom-tabs"
+import { QuickIcons } from "@/components/nav/quick-icons"
+import { getNavShape } from "@/lib/queries/nav-shape"
 import { CreateMenu } from "./dashboard/create-menu"
 import { CompletionPill } from "./dashboard/completion-pill"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
@@ -27,6 +30,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   if (!dbUser.onboardedAt && !isPlatformAdmin) {
     return <>{children}</>
   }
+
+  const shape = await getNavShape(dbUser.id)
 
   const rawTenants =
     dbUser?.roles
@@ -97,7 +102,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <MobileNav roles={roles} tenants={tenants} />
-            <Link href="/dashboard" className="hidden items-center gap-2 sm:inline-flex lg:hidden">
+            <Link href="/" className="hidden items-center gap-2 sm:inline-flex lg:hidden">
               <span className="bg-play-600 shadow-play-200 flex h-8 w-8 items-center justify-center rounded-xl text-white shadow-sm">
                 <svg
                   viewBox="0 0 24 24"
@@ -167,8 +172,14 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               <CompletionPill percent={checklist.percent} steps={checklist.steps} />
             )}
             <CreateMenu />
+            <QuickIcons />
             <NotificationBell />
-            <UserMenu userName={userName} userEmail={userEmail} userInitials={userInitials} />
+            <AccountMenu
+              userName={userName}
+              userEmail={userEmail}
+              userInitials={userInitials}
+              shape={shape}
+            />
           </div>
         </div>
       </nav>
@@ -181,8 +192,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           userInitials={userInitials}
           primaryRole={primaryRole}
         />
-        <main className="bg-ink-50 min-w-0 flex-1 overflow-x-hidden">{children}</main>
+        <main className="bg-ink-50 min-w-0 flex-1 overflow-x-hidden pb-16 lg:pb-0">{children}</main>
       </div>
+      <BottomTabs shape={shape} />
     </div>
   )
 }

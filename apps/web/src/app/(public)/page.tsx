@@ -9,6 +9,7 @@ import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
+import { HomePersonalBand } from "./home-personal-band"
 import { formatCurrency } from "@/lib/countries"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 
@@ -115,6 +116,7 @@ export default async function HomePage() {
     <>
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
+      {userId && <HomePersonalBand userId={userId} />}
       <YourTeamsRail cards={yourTeams} />
       <ScoreboardStrip games={scoreboard} />
       {marketing && (

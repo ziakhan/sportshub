@@ -3,7 +3,6 @@ import { cookies } from "next/headers"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { ONBOARDING_DISMISS_COOKIE } from "@/lib/onboarding/constants"
-import { OPERATOR_ROLES } from "@/lib/queries/nav"
 import { siteUrl } from "@/lib/site"
 
 export const dynamic = "force-dynamic"
@@ -23,8 +22,29 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.redirect(new URL("/sign-in", siteUrl()))
 
-  const isOperator = user.roles.some((r: any) => OPERATOR_ROLES.has(r.role))
-  const landing = isOperator ? "/dashboard" : "/"
+  // site-ia-plan §5.6.10: owners/managers → dashboard; coaches → their team
+  // (the thing they opened the app for; picker when they coach several);
+  // parents, players and referees → the personalized Home.
+  const roleSet = new Set(user.roles.map((r: any) => r.role as string))
+  const isOwnerOperator =
+    roleSet.has("ClubOwner") ||
+    roleSet.has("ClubManager") ||
+    roleSet.has("LeagueOwner") ||
+    roleSet.has("PlatformAdmin")
+  const coachTeamIds = [
+    ...new Set(
+      user.roles
+        .filter((r: any) => (r.role === "Staff" || r.role === "TeamManager") && r.teamId)
+        .map((r: any) => r.teamId as string)
+    ),
+  ]
+  const landing = isOwnerOperator
+    ? "/dashboard"
+    : coachTeamIds.length === 1
+      ? `/teams/${coachTeamIds[0]}`
+      : coachTeamIds.length > 1
+        ? "/teams"
+        : "/"
 
   const dismissed = cookies().get(ONBOARDING_DISMISS_COOKIE)?.value
   if (!dismissed) {
