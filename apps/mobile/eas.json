@@ -10,13 +10,15 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app.youthbasketballhub.com"
+        "EXPO_PUBLIC_API_URL": "https://ysportshub.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://ysportshub.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app.youthbasketballhub.com"
+        "EXPO_PUBLIC_API_URL": "https://ysportshub.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://ysportshub.com"
       }
     }
   },
