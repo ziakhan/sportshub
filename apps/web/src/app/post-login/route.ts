@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { ONBOARDING_DISMISS_COOKIE } from "@/lib/onboarding/constants"
 import { OPERATOR_ROLES } from "@/lib/queries/nav"
+import { siteUrl } from "@/lib/site"
 
 export const dynamic = "force-dynamic"
 
@@ -20,7 +21,7 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
-  if (!user) return NextResponse.redirect(new URL("/sign-in", request.url))
+  if (!user) return NextResponse.redirect(new URL("/sign-in", siteUrl()))
 
   const isOperator = user.roles.some((r: any) => OPERATOR_ROLES.has(r.role))
   const landing = isOperator ? "/dashboard" : "/"
@@ -29,9 +30,9 @@ export async function GET(request: NextRequest) {
   if (!dismissed) {
     const checklist = await getCompletionChecklist(user as any)
     if (checklist.applicable && !checklist.complete) {
-      return NextResponse.redirect(new URL("/welcome", request.url))
+      return NextResponse.redirect(new URL("/welcome", siteUrl()))
     }
   }
 
-  return NextResponse.redirect(new URL(landing, request.url))
+  return NextResponse.redirect(new URL(landing, siteUrl()))
 }
