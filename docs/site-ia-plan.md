@@ -142,7 +142,95 @@ Decided during the expansion/SEO discussion ([[expansion-strategy-2026-07]],
   sport + supported list. Region enters INSIDE a sport section (city chip),
   never in the top nav.
 
-## 6. "My Hub" — the parent/player home (proposed, new)
+## 5.6 N3-v2 — Task-first navigation redesign (OWNER-DIRECTED 2026-07-13, planning only — NOT built)
+
+Owner walked the live site on a phone (ysportshub.com) and course-corrected
+the N3 "My Hub" concept. Supersedes §6 below where they conflict. UI/UX
+consultation run (ui-ux-pro-max: 44px targets, 8px gaps, bottom-bar
+ergonomics, back-button integrity).
+
+**Diagnosis:** the "two worlds" (public vs dashboard) split is an OPERATOR
+mental model. Parents think "my kid's basketball life"; coaches think "my
+team". Only club/league staff think "dashboard".
+
+**1. Three layers:** Browse (public content, ESPN sport sections §5.5) ·
+**My basketball** (any signed-in participant) · Operate (staff only).
+Parents/coaches live in the middle layer, embedded in surfaces they already
+touch — they never "choose a world".
+
+**2. Entity-graph navigation (multiplicity rules):** roles grant
+CAPABILITIES, the entity graph (my kids, my teams, my ref assignments)
+drives NAVIGATION. Aggregate all contexts → tag with context chips (kid
+avatar / team color / whistle) → dedupe overlaps (parent-coach of same team
+= ONE context, coach powers in composer) → sort by urgency/recency, never
+by role guess. Kid state is player-centric, parent-agnostic, attributed
+("RSVP'd by Sarah", "Paid by Alex"). Requires a shared "my contexts"
+resolver all surfaces use (chat list, calendar, week band must never
+disagree). Calendar lenses (shipped 2026-07-12) = the house pattern for
+every aggregated surface.
+
+**3. Home = the living surface; "My Hub" name is DEAD.** Signed-in
+participants get a personal band at top of the homepage they already land
+on: Your Week (next events per context, RSVP inline, stacked actions for
+dual-role: "RSVP for Maya" + "11/12 confirmed"), unread chats, actions due
+(pay/vote/RSVP). Public content below. No separate hub destination.
+
+**4. Account = the filing cabinet** (monthly speed): kid profiles, payment
+methods/cards, registration history, receipts, notification prefs,
+security. Real pages under /account/* (linkable; sheets are for toggles
+only), presented as full-height sheets on phone. NEVER called a dashboard —
+"dashboard" is reserved for operators. Two speeds: Home=weekly,
+Account=monthly.
+
+**5. Badge menu = canonical switchboard** (everything, role-aware, 44px
+rows): Home · Dashboard (operators) · My Team(s) (coaches, ordered by next
+event) · Calendar · Messages · Account & Settings (kids/payments/
+registrations/notifications/security) · Sign out. Header icons (desktop:
+chat w/ unread badge + calendar) and bottom tabs are SHORTCUTS to its
+hottest rows — nothing exists only as an icon.
+
+**6. Mobile = bottom tab bar** (signed-in): Home · Chat · Calendar ·
+[context slot: Dashboard→operators / My Team→coaches / My Kids→parents] ·
+Profile(badge sheet). Persistent everywhere incl. Account and dashboard
+(the escape hatch). Always-home invariant: logo→Home always, bottom Home
+tab always, no surface >1 tap from Home, manage keeps "← Back to site".
+
+**7. Chat = never guess, the list answers:** chat icon → one WhatsApp-style
+conversation list (all contexts), unread-first + recency, context chips,
+badge = total unread. Coach multi-team landing: single team → straight in;
+multiple → picker ordered by next upcoming event.
+
+**8. Dropdowns vs pills principle (owner dislikes pill-only nav):**
+dropdown menus = navigating ACROSS things ("go to": badge, browse menus,
+team switcher, dashboard sidebar sub-groups — RESTORE the wave-1-removed
+sidebar sub-items as collapsible groups); tabs/pills = views WITHIN one
+thing ("look at": club page sections, team tabs), max ~6 visible + "More ▾"
+overflow on desktop — horizontal-scroll pills acceptable on MOBILE only.
+Sidebars = operator workspaces only; parents/coaches never see one.
+
+**9. Device scoping — "MOBILE IS MOBILE" invariant (owner rule):** native
+app and mobile web are ONE surface in two wrappers; identical capabilities
+by design (native may TRAIL in ship timing via app-store cycles, never in
+scope). Three classes: **Mobile-full** (road tasks — my-layer, coach kit
+incl. roster/attendance/polls/quick-practice, referee kit, scoring console,
+pay/register) = everywhere · **Mobile-visible** (operator worlds read-only
++ "finish on computer" defer + email-me-a-link; native renders these as
+embedded webviews of the mobile-web pages = single source, no drift) ·
+**Desktop-only** (config/editing: program setup, season scheduling, staff,
+Stripe onboarding, page customization, exports — ABSENT from both mobile
+surfaces, never a broken form). Native's raisons d'être: push, home-screen
+habit, Payment Sheet, later offline scoring. Defer-never-dead-end: mobile
+shows read-only + emails a deep link, never hides silently.
+
+**10. Post-login routing changes (§8 amendment):** coaches land on their
+team (or next-event-ordered picker), not the dashboard; operator+parent
+lands on Home-personal (dashboard is one badge tap); parents/players Home.
+
+**Proposed defaults awaiting explicit owner sign-off at build time:** coach
+team-page landing · operator+parent → Home · chat as global header icon.
+Build order NOT decided — this section is the spec, nothing implemented.
+
+## 6. "My Hub" — the parent/player home (SUPERSEDED by §5.6 — kept for history)
 
 One page (`/home` or `/my`) answering "what's happening with MY basketball":
 - Per kid (or self, for 13+): next game (time/venue/opponent), last game
