@@ -15,6 +15,33 @@ vi.mock("@/lib/auth-helpers", () => ({
   isImpersonating: vi.fn(),
 }))
 
+const EMPTY_SHAPE = {
+  coachTeams: [],
+  hasKids: false,
+  isRefereeing: false,
+  isClubStaff: false,
+  isLeagueOwner: false,
+  isPlatformAdmin: false,
+  isOperator: false,
+  isParticipant: false,
+  hasCalendar: false,
+}
+
+vi.mock("@/lib/queries/nav-shape", () => ({
+  getNavShape: vi.fn(async () => EMPTY_SHAPE),
+  EMPTY_NAV_SHAPE: {
+    coachTeams: [],
+    hasKids: false,
+    isRefereeing: false,
+    isClubStaff: false,
+    isLeagueOwner: false,
+    isPlatformAdmin: false,
+    isOperator: false,
+    isParticipant: false,
+    hasCalendar: false,
+  },
+}))
+
 vi.mock("@/app/(platform)/dashboard/sidebar", () => ({
   Sidebar: () => <div>Sidebar</div>,
 }))
@@ -92,6 +119,13 @@ describe("PlatformLayout", () => {
         },
       ],
     } as any)
+    const { getNavShape } = await import("@/lib/queries/nav-shape")
+    vi.mocked(getNavShape).mockResolvedValueOnce({
+      ...EMPTY_SHAPE,
+      isClubStaff: true,
+      isOperator: true,
+      hasCalendar: true,
+    } as any)
 
     const element = await PlatformLayout({ children: <div>DashboardContent</div> })
     const html = renderToStaticMarkup(element)
@@ -103,5 +137,41 @@ describe("PlatformLayout", () => {
     expect(html).toContain(">TJ<")
     expect(html).toContain('aria-label="Primary"')
     expect(html).toContain("DashboardContent")
+    // Operators DO get the workspace chrome
+    expect(html).toContain("Sidebar")
+    expect(html).toContain("MobileNav")
+  })
+
+  it("hides the operator chrome (sidebar + hamburger + breadcrumb) from non-operators", async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      id: "user-2",
+      firstName: "Priya",
+      lastName: "Patel",
+      email: "priya@example.com",
+      onboardedAt: new Date().toISOString(),
+      roles: [{ role: "Parent", tenant: null }],
+    } as any)
+    const { getNavShape } = await import("@/lib/queries/nav-shape")
+    vi.mocked(getNavShape).mockResolvedValueOnce({
+      ...EMPTY_SHAPE,
+      hasKids: true,
+      isParticipant: true,
+      hasCalendar: true,
+    } as any)
+
+    const element = await PlatformLayout({ children: <div>CalendarContent</div> })
+    const html = renderToStaticMarkup(element)
+
+    // Parents on /calendar, /messages etc. never see the dashboard nav
+    // they've never met (§5.6.8 — owner bug 2026-07-15)
+    expect(html).not.toContain("Sidebar")
+    expect(html).not.toContain("MobileNav")
+    expect(html).not.toContain(">Dashboard<")
+    // …but keep the chrome they know: logo, bell, badge menu, bottom tabs
+    expect(html).toContain("sportshub")
+    expect(html).toContain("NotificationBell")
+    expect(html).toContain('aria-label="Open account menu"')
+    expect(html).toContain('aria-label="Primary"')
+    expect(html).toContain("CalendarContent")
   })
 })

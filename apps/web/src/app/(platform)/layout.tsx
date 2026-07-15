@@ -101,8 +101,19 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       <nav className="border-ink-100 relative z-40 border-b bg-white/95 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <MobileNav roles={roles} tenants={tenants} />
-            <Link href="/" className="hidden items-center gap-2 sm:inline-flex lg:hidden">
+            {/* Dashboard chrome (hamburger drawer + sidebar + breadcrumb) is
+                OPERATOR-ONLY (§5.6.8): parents/coaches on /calendar,
+                /messages, /account etc. get the plain top bar + bottom tabs
+                they already know (owner bug 2026-07-15). */}
+            {shape.isOperator && <MobileNav roles={roles} tenants={tenants} />}
+            <Link
+              href="/"
+              className={
+                shape.isOperator
+                  ? "hidden items-center gap-2 sm:inline-flex lg:hidden"
+                  : "inline-flex items-center gap-2"
+              }
+            >
               <span className="bg-play-600 shadow-play-200 flex h-8 w-8 items-center justify-center rounded-xl text-white shadow-sm">
                 <svg
                   viewBox="0 0 24 24"
@@ -118,6 +129,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               </span>
               <span className="font-display text-ink-950 text-sm font-bold">sportshub</span>
             </Link>
+            {shape.isOperator && (
             <div className="hidden items-center gap-2 text-sm sm:flex">
               <span className="text-ink-400">Dashboard</span>
               <svg
@@ -131,6 +143,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               </svg>
               <span className="text-ink-700 font-medium">{primaryTenantName}</span>
             </div>
+            )}
           </div>
 
           <div className="hidden min-w-0 flex-1 items-center justify-center lg:flex">
@@ -185,13 +198,15 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       </nav>
 
       <div className="flex flex-1">
-        <Sidebar
-          roles={roles}
-          tenants={tenants}
-          userName={userName}
-          userInitials={userInitials}
-          primaryRole={primaryRole}
-        />
+        {shape.isOperator && (
+          <Sidebar
+            roles={roles}
+            tenants={tenants}
+            userName={userName}
+            userInitials={userInitials}
+            primaryRole={primaryRole}
+          />
+        )}
         <main className="bg-ink-50 min-w-0 flex-1 overflow-x-hidden pb-16 lg:pb-0">{children}</main>
       </div>
       <BottomTabs shape={shape} />
