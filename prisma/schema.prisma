@@ -86,6 +86,13 @@ model User {
   acceptedRefereeRequests RefereeSessionRequest[] @relation("AcceptedRefereeRequests")
   refreshTokens           RefreshToken[]          @relation("UserRefreshTokens")
   devices                 Device[]                @relation("UserDevices")
+  submissionRequestsMade    TeamSubmissionRequest[] @relation("SubmissionRequestsMade")
+  submissionRequestsDecided TeamSubmissionRequest[] @relation("SubmissionRequestsDecided")
+  messageReactions          MessageReaction[]       @relation("MessageReactions")
+  chatMutes                 ChatMute[]              @relation("ChatMutes")
+  conversationParticipants  ConversationParticipant[] @relation("ConversationParticipants")
+  directMessagesSent        DirectMessage[]         @relation("DirectMessagesSent")
+  scoreInvitesCreated       GameScoreInvite[]       @relation("ScoreInvitesCreated")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -361,6 +368,9 @@ model Team {
   follows           Follow[]
 
   messages      TeamMessage[]
+  chatMutes          ChatMute[]
+  conversations      Conversation[]
+  submissionRequests TeamSubmissionRequest[]
   chatReads     TeamChatRead[]
   polls         Poll[]
   practiceSlots PracticeSlot[]
@@ -409,10 +419,88 @@ model TeamMessage {
   deletedAt   DateTime?
   deletedById String?
 
+  // Chat enrichment (2026-07-15): own-message edits + staff pins
+  editedAt   DateTime?
+  pinnedAt   DateTime?
+  pinnedById String?
+
+  reactions MessageReaction[]
+
   createdAt DateTime @default(now())
 
   @@index([teamId, createdAt])
+  @@index([teamId, pinnedAt])
   @@index([senderId])
+}
+
+// Emoji reactions on team-chat messages (one per user+emoji+message).
+model MessageReaction {
+  id        String      @id @default(uuid())
+  messageId String
+  message   TeamMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation("MessageReactions", fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime    @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+// Per-user mute of one team's chat (no pushes/bell for that team).
+model ChatMute {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("ChatMutes", fields: [userId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, teamId])
+}
+
+// Direct messages (2026-07-15): 1:1 threads inside a team context —
+// adult-to-adult (staff↔parent, staff↔staff). pairKey = sorted
+// "userA:userB:teamId" so a pair has exactly one thread per team.
+model Conversation {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  pairKey   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     DirectMessage[]
+
+  @@index([teamId])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("ConversationParticipants", fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model DirectMessage {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("DirectMessagesSent", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String       @db.Text
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 // Per-member read cursor for a team chat — unread badges + notification
@@ -439,6 +527,74 @@ enum TeamEventStatus {
   CANCELLED
 }
 
+enum TeamEventKind {
+  WORKOUT
+  TRAINING
+  SCRIMMAGE
+  MEETING
+  OTHER
+}
+
+enum SubmissionRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+// Coach/TeamManager "add my team to this league" REQUEST (2026-07-15):
+// staff can't submit directly (payments hang off it) — a club operator
+// approves, and approval performs the actual TeamSubmission.
+model TeamSubmissionRequest {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  teamId   String
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  divisionId String
+  // Roster version chosen by the requester (playerIds) — used at approval.
+  playerIds Json?
+
+  requestedById String
+  requestedBy   User   @relation("SubmissionRequestsMade", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  status        SubmissionRequestStatus @default(PENDING)
+  decidedById   String?
+  decidedBy     User?     @relation("SubmissionRequestsDecided", fields: [decidedById], references: [id])
+  decidedAt     DateTime?
+  declineReason String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId, status])
+  @@index([seasonId, status])
+}
+
+// One-time "score this game" invite (2026-07-15): a WhatsApp-able link for
+// volunteer scorekeepers who aren't in the system. Token is game-scoped,
+// expires after the game window, revocable; the volunteer's name is stamped
+// on claim for the audit trail.
+model GameScoreInvite {
+  id        String @id @default(uuid())
+  gameId    String
+  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+
+  createdById String
+  createdBy   User   @relation("ScoreInvitesCreated", fields: [createdById], references: [id], onDelete: Cascade)
+
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  claimedAt   DateTime?
+  claimedName String?
+
+  createdAt DateTime @default(now())
+
+  @@index([gameId])
+}
+
 model TeamEvent {
   id          String @id @default(uuid())
   createdById String
@@ -449,6 +605,10 @@ model TeamEvent {
   location        String?
   startAt         DateTime
   durationMinutes Int      @default(60)
+
+  // Typed events (2026-07-15): workout/lift, training, scrimmage… shown as
+  // chips on every calendar surface
+  eventType TeamEventKind @default(OTHER)
 
   status TeamEventStatus @default(SCHEDULED)
 
@@ -1029,6 +1189,7 @@ model Season {
 
   divisions        Division[]
   teamSubmissions  TeamSubmission[]
+  submissionRequests TeamSubmissionRequest[]
   sessions         SeasonSession[]
   seasonVenues     SeasonVenue[]
   rosters          SeasonRoster[]
@@ -1154,6 +1315,12 @@ model RosterChangeRequest {
   requestedBy   User   @relation("RosterChangeRequests", fields: [requestedById], references: [id], onDelete: Cascade)
 
   message String @db.Text
+
+  // Structured changes (2026-07-15): playerIds to add / roster playerIds to
+  // remove — approval APPLIES them to the locked roster. Free-text `message`
+  // stays as the optional note.
+  additions Json?
+  removals  Json?
 
   status         RosterChangeRequestStatus @default(PENDING)
   resolvedById   String?
@@ -1444,6 +1611,7 @@ model Game {
   refereeVerified Boolean @default(false)
 
   events       GameEvent[]
+  scoreInvites GameScoreInvite[]
   stats        PlayerStat[]
   scorekeepers UserRole[]
   postTags     PostTag[]

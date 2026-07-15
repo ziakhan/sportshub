@@ -81,6 +81,11 @@ function SeasonDetailSubmitInner() {
     })
   }
 
+  const selectedTeamObj = myTeams.find((t: any) => t.id === selectedTeam)
+  // Coaches/team managers can't submit directly — their submit becomes a
+  // request the club approves (owner 2026-07-15)
+  const needsClubApproval = !!selectedTeamObj && selectedTeamObj.canSubmitDirectly === false
+
   const handleSubmit = async () => {
     if (!selectedTeam || !selectedDivision) {
       setMessage({ type: "error", text: "Select a team and division" })
@@ -93,7 +98,10 @@ function SeasonDetailSubmitInner() {
     setSubmitting(true)
     setMessage(null)
     try {
-      const res = await fetch(`/api/seasons/${seasonId}/submit`, {
+      const endpoint = needsClubApproval
+        ? `/api/seasons/${seasonId}/submission-requests`
+        : `/api/seasons/${seasonId}/submit`
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -364,8 +372,19 @@ function SeasonDetailSubmitInner() {
                       disabled={submitting || !selectedTeam || !selectedDivision}
                       className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
                     >
-                      {submitting ? "Submitting..." : "Submit Team"}
+                      {submitting
+                        ? "Sending..."
+                        : needsClubApproval
+                          ? "Request club approval"
+                          : "Submit Team"}
                     </button>
+
+                    {needsClubApproval && (
+                      <p className="text-ink-500 bg-ink-50 rounded-lg p-2 text-center text-xs">
+                        League fees are paid by the club, so a club owner/manager approves this
+                        registration before it reaches the league.
+                      </p>
+                    )}
 
                     <p className="text-ink-400 text-center text-xs">
                       Only the selected players are submitted — the league sees this version, not

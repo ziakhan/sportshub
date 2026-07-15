@@ -25,7 +25,7 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
   if (membership.role === "family") redirect(`/team/${params.teamId}`)
 
   const now = new Date()
-  const [team, roster, games, practices, operatorRole] = await Promise.all([
+  const [team, roster, games, practices, operatorRole, pendingRequests] = await Promise.all([
     prisma.team.findUnique({
       where: { id: params.teamId },
       select: { id: true, name: true, ageGroup: true, gender: true },
@@ -60,6 +60,15 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
         role: { in: ["ClubOwner", "ClubManager"] },
       },
       select: { id: true },
+    }),
+    (prisma as any).teamSubmissionRequest.findMany({
+      where: { teamId: params.teamId, status: "PENDING" },
+      select: {
+        id: true,
+        createdAt: true,
+        season: { select: { label: true, league: { select: { name: true } } } },
+      },
+      orderBy: { createdAt: "desc" },
     }),
   ])
   if (!team) notFound()
@@ -101,6 +110,11 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
     { href: `/teams/${team.id}/chat`, title: "Team chat", detail: "Message families and staff" },
     { href: `/teams/${team.id}/polls`, title: "Polls", detail: "Votes and quick decisions" },
     { href: `/team/${team.id}`, title: "Public team page", detail: "What families and fans see" },
+    {
+      href: `/browse-leagues?team=${team.id}`,
+      title: "Register for a league",
+      detail: "Pick a league and roster — your club approves before it's submitted",
+    },
   ]
 
   return (
@@ -122,6 +136,17 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
           </Link>
         )}
       </div>
+
+      {(pendingRequests as any[]).length > 0 && (
+        <div className="border-gold-100 bg-gold-50 rounded-2xl border p-4">
+          {(pendingRequests as any[]).map((r: any) => (
+            <p key={r.id} className="text-gold-600 text-sm font-medium">
+              League registration waiting on your club:{" "}
+              {r.season?.league?.name ?? "league"} — {r.season?.label}
+            </p>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {actions.map((a) => (

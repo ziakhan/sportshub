@@ -40,21 +40,40 @@ function BrowseLeaguesInner() {
   const teamParam = searchParams?.get("team")
   const [leagues, setLeagues] = useState<League[]>([])
   const [loading, setLoading] = useState(true)
+  // Seasons this team is already in (submitted or awaiting club approval) —
+  // hidden from the list so you can't register twice (owner 2026-07-15)
+  const [linkedSeasonIds, setLinkedSeasonIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    fetch("/api/leagues?public=true")
-      .then((res) => res.json())
-      .then((data) => setLeagues(data.leagues || []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    const loads: Promise<void>[] = [
+      fetch("/api/leagues?public=true")
+        .then((res) => res.json())
+        .then((data) => setLeagues(data.leagues || []))
+        .catch(() => {}),
+    ]
+    if (teamParam) {
+      loads.push(
+        fetch(`/api/teams/${teamParam}/season-links`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (!data) return
+            setLinkedSeasonIds(
+              new Set([...(data.submittedSeasonIds ?? []), ...(data.pendingRequestSeasonIds ?? [])])
+            )
+          })
+          .catch(() => {})
+      )
+    }
+    Promise.all(loads).finally(() => setLoading(false))
+  }, [teamParam])
 
   if (loading) return <div className="text-ink-500 py-12 text-center">Loading leagues...</div>
 
   // Flatten: each league card represents one (league, season) pair for the open seasons
-  const entries = leagues.flatMap((league) =>
-    league.seasons.map((season) => ({ league, season }))
-  )
+  const entries = leagues
+    .flatMap((league) => league.seasons.map((season) => ({ league, season })))
+    .filter(({ season }) => !linkedSeasonIds.has(season.id))
+  const hiddenCount = teamParam ? linkedSeasonIds.size : 0
 
   return (
     <div className="p-6 md:p-8">
@@ -62,6 +81,13 @@ function BrowseLeaguesInner() {
         <h1 className="text-ink-900 text-3xl font-semibold">Browse Leagues</h1>
         <p className="text-ink-500 mt-1 text-sm">Find leagues to register your teams</p>
       </div>
+
+      {hiddenCount > 0 && (
+        <p className="text-ink-400 mb-4 text-xs">
+          {hiddenCount} league{hiddenCount === 1 ? "" : "s"} hidden — this team is already
+          registered (or awaiting club approval) there.
+        </p>
+      )}
 
       {entries.length === 0 ? (
         <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">

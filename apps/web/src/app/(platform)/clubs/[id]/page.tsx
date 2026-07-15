@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { brandStyle } from "@/lib/club-page/brand"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { StatTile, AnimatedNumber, Button, PanelHeader } from "@/components/ui"
+import { SubmissionApprovals } from "./submission-approvals"
 
 interface OverviewTeam {
   id: string
@@ -207,6 +208,9 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
           subTone="hoop"
         />
       </div>
+
+      {/* Coach-initiated league registrations awaiting club approval */}
+      <SubmissionApprovals clubId={params.id} />
 
       {/* Needs Attention */}
       {hasAttentionItems && (

@@ -269,17 +269,73 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    // getSessionUserId: bearer (native) + impersonation both work
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const userId = session.user.id
+    const userId = sessionInfo.userId
 
     const searchParams = request.nextUrl.searchParams
     const tenantId = searchParams.get("tenantId")
 
     if (!tenantId) {
-      return NextResponse.json({ error: "tenantId parameter is required" }, { status: 400 })
+      // No tenant → "my submittable teams" (2026-07-15): every ACTIVE team
+      // the viewer can register into a league — as a club operator (all the
+      // club's teams, direct submit) or as team staff (their teams, which
+      // go through club approval). Powers the season-registration page.
+      const roles = await prisma.userRole.findMany({
+        where: {
+          userId,
+          OR: [
+            { role: { in: ["ClubOwner", "ClubManager"] }, tenantId: { not: null } },
+            { role: { in: ["Staff", "TeamManager"] }, teamId: { not: null } },
+          ],
+        },
+        select: { role: true, tenantId: true, teamId: true },
+      })
+      const operatorTenantIds = [
+        ...new Set(
+          roles
+            .filter((r: any) => r.role === "ClubOwner" || r.role === "ClubManager")
+            .map((r: any) => r.tenantId as string)
+        ),
+      ]
+      const staffTeamIds = [
+        ...new Set(
+          roles
+            .filter((r: any) => r.role === "Staff" || r.role === "TeamManager")
+            .map((r: any) => r.teamId as string)
+        ),
+      ]
+      if (operatorTenantIds.length === 0 && staffTeamIds.length === 0) {
+        return NextResponse.json({ teams: [] })
+      }
+      const teams = await prisma.team.findMany({
+        where: {
+          archivedAt: null,
+          OR: [
+            ...(operatorTenantIds.length ? [{ tenantId: { in: operatorTenantIds } }] : []),
+            ...(staffTeamIds.length ? [{ id: { in: staffTeamIds } }] : []),
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          ageGroup: true,
+          gender: true,
+          tenantId: true,
+          tenant: { select: { name: true } },
+        },
+        orderBy: { name: "asc" },
+      })
+      const operatorSet = new Set(operatorTenantIds)
+      return NextResponse.json({
+        teams: teams.map((t: any) => ({
+          ...t,
+          canSubmitDirectly: sessionInfo.isPlatformAdmin || operatorSet.has(t.tenantId),
+        })),
+      })
     }
 
     // Verify user has access to this tenant (or is PlatformAdmin)

@@ -45,6 +45,9 @@ export type NotificationType =
   // League / season
   | "league_registration_status"
   | "team_submitted"
+  | "submission_request" // coach asks club to register a team (2026-07-15)
+  | "submission_request_decided"
+  | "roster_change_decided" // league decided a structured roster change
   | "schedule_published"
   // Program signups
   | "signup_received"
@@ -62,6 +65,7 @@ export type NotificationType =
   | "announcement_posted"
   // Team chat (debounced — one unread bell per channel)
   | "team_chat"
+  | "direct_message"
   // Team polls & surveys (one bell per poll created)
   | "team_poll"
   // Practice schedule announced / a practice moved, added or cancelled
@@ -118,6 +122,9 @@ type DbClient =
  */
 const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "team_chat",
+  "direct_message",
+  "submission_request",
+  "submission_request_decided",
   "offer_received",
   "offer_rescinded",
   "game_live",
