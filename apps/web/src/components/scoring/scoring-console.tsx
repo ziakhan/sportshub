@@ -98,6 +98,19 @@ export function ScoringConsole({
    *  (the finalize API already permits their re-finalize — audit wave 2). */
   canCorrect?: boolean
 }) {
+  // Guest scorekeeper (2026-07-15): the one-time token from /score-guest
+  // rides every scoring API call as a header; middleware + routes validate.
+  const guestToken =
+    typeof window !== "undefined" ? sessionStorage.getItem(`guestScoreToken:${gameId}`) : null
+  const scoreFetch: typeof fetch = (input, init = {}) =>
+    fetch(input, {
+      ...init,
+      headers: {
+        ...((init.headers as Record<string, string>) ?? {}),
+        ...(guestToken ? { "x-guest-score-token": guestToken } : {}),
+      },
+    })
+
   const [boot, setBoot] = useState<Bootstrap | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lockedOutBy, setLockedOutBy] = useState<string | null>(null)
@@ -195,7 +208,7 @@ export function ScoringConsole({
       sessionIdRef.current = localStorage.getItem(sessKey) || uid()
       localStorage.setItem(sessKey, sessionIdRef.current)
 
-      const res = await fetch(`/api/games/${gameId}/scoring`)
+      const res = await scoreFetch(`/api/games/${gameId}/scoring`)
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
         if (!cancelled) {
@@ -242,7 +255,7 @@ export function ScoringConsole({
       }
 
       // Lock: claim unless someone else actively holds it
-      const lockRes = await fetch(`/api/games/${gameId}/scoring/lock`, {
+      const lockRes = await scoreFetch(`/api/games/${gameId}/scoring/lock`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessionId: sessionIdRef.current }),
@@ -281,7 +294,7 @@ export function ScoringConsole({
     setSyncing(true)
     try {
       if (queue.length > 0) {
-        const res = await fetch(`/api/games/${gameId}/events`, {
+        const res = await scoreFetch(`/api/games/${gameId}/events`, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -305,7 +318,7 @@ export function ScoringConsole({
         }
       }
       if (voidQueue.length > 0) {
-        const res = await fetch(`/api/games/${gameId}/events`, {
+        const res = await scoreFetch(`/api/games/${gameId}/events`, {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -332,7 +345,7 @@ export function ScoringConsole({
   useEffect(() => {
     if (lockedOutBy) return
     const t = setInterval(() => {
-      fetch(`/api/games/${gameId}/scoring/lock`, {
+      scoreFetch(`/api/games/${gameId}/scoring/lock`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessionId: sessionIdRef.current }),
@@ -526,7 +539,7 @@ export function ScoringConsole({
         </p>
         <button
           onClick={async () => {
-            const res = await fetch(`/api/games/${gameId}/scoring/lock`, {
+            const res = await scoreFetch(`/api/games/${gameId}/scoring/lock`, {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({ sessionId: sessionIdRef.current, takeover: true }),
@@ -914,7 +927,7 @@ export function ScoringConsole({
                     await new Promise((r) => setTimeout(r, 800))
                     await syncTick()
                   }
-                  const res = await fetch(`/api/games/${gameId}/finalize`, {
+                  const res = await scoreFetch(`/api/games/${gameId}/finalize`, {
                     method: "POST",
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ withoutReferee: true }),
@@ -966,7 +979,7 @@ export function ScoringConsole({
                 if (refereeName.trim()) payload.refereeName = refereeName.trim()
                 if (refereeSignature) payload.refereeSignature = refereeSignature
               }
-              const res = await fetch(`/api/games/${gameId}/finalize`, {
+              const res = await scoreFetch(`/api/games/${gameId}/finalize`, {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify(payload),

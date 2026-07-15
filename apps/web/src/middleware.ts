@@ -62,9 +62,16 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.rewrite(rewriteUrl)
   }
 
+  // Guest scorekeepers (2026-07-15): a one-time game-scoped token in this
+  // header stands in for a session ONLY on the game-scoring APIs — the
+  // route handlers validate the token against the game; the middleware just
+  // lets the request reach them.
+  const guestScoreToken = req.headers.get("x-guest-score-token")
+  const guestScorePath = guestScoreToken && /^\/api\/games\/[^/]+\/(scoring|events|finalize)/.test(pathname)
+
   // Auth check for protected routes. Method-aware: public API namespaces
   // are readable anonymously, but their mutating methods still require auth.
-  if (!isPublicPath(pathname, req.method)) {
+  if (!isPublicPath(pathname, req.method) && !guestScorePath) {
     // Native-app requests authenticate with a Bearer access token (M2). The
     // JWT is verified here at the edge so the middleware stays a real second
     // line of defense; route handlers re-verify via getSessionUserId. An

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { resolveGuestScorer } from "@/lib/scoring/guest"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { canScoreGame } from "@/lib/scoring/authz"
@@ -127,7 +128,20 @@ async function authorize(userId: string, isAdmin: boolean, gameId: string) {
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const sessionInfo = await getSessionUserId()
+    let sessionInfo = await getSessionUserId()
+    let guestScorer: { name: string; actorUserId: string } | null = null
+    if (!sessionInfo) {
+      // Guest scorekeeper: game-scoped one-time token (2026-07-15); acts
+      // under the delegating operator's identity
+      guestScorer = await resolveGuestScorer(request, params.id)
+      if (guestScorer) {
+        sessionInfo = {
+          userId: guestScorer.actorUserId,
+          realUserId: guestScorer.actorUserId,
+          isPlatformAdmin: false,
+        }
+      }
+    }
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { game, error, status } = await authorize(
@@ -253,7 +267,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const sessionInfo = await getSessionUserId()
+    let sessionInfo = await getSessionUserId()
+    let guestScorer: { name: string; actorUserId: string } | null = null
+    if (!sessionInfo) {
+      // Guest scorekeeper: game-scoped one-time token (2026-07-15); acts
+      // under the delegating operator's identity
+      guestScorer = await resolveGuestScorer(request, params.id)
+      if (guestScorer) {
+        sessionInfo = {
+          userId: guestScorer.actorUserId,
+          realUserId: guestScorer.actorUserId,
+          isPlatformAdmin: false,
+        }
+      }
+    }
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { game, error, status } = await authorize(

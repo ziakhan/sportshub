@@ -28,6 +28,10 @@ const PUBLIC_PAGE_PREFIXES = [
   "/invitations",
   "/player-invitations",
   "/live",
+  // Guest scorekeeper landing (one-time tokenized link — 2026-07-15); the
+  // console page itself is opened WITH the token in sessionStorage
+  "/score-guest",
+  "/games",
   "/news",
   "/team",
   "/player",
@@ -66,6 +70,9 @@ const PUBLIC_API_READ_PREFIXES = [
   // Native Browse layer (anonymous, GET-only): clubs, leagues, programs,
   // news, season detail — the app's public content (audit v2 §3)
   "/api/mobile/browse",
+  // Guest scorekeeper token endpoints (GET info; claim/scoring guarded by
+  // the token itself server-side)
+  "/api/score-invites",
   // Caddy on-demand-TLS "ask" endpoint — must answer before any cert exists,
   // so it can't require a session (GET-only; returns 200/404 by design).
   "/api/domains",
@@ -76,7 +83,13 @@ const PUBLIC_API_READ_PREFIXES = [
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;
  * Stripe webhooks authenticate via signature, not session). */
-const PUBLIC_API_ANY_METHOD_PREFIXES = ["/api/auth", "/api/webhooks/stripe"] as const
+const PUBLIC_API_ANY_METHOD_PREFIXES = [
+  "/api/auth",
+  "/api/webhooks/stripe",
+  // Guest scorekeeper: claim + token-authenticated scoring pass-through —
+  // each route validates the game-scoped token itself
+  "/api/score-invites",
+] as const
 
 /** Dev-only utilities — never public in production. */
 const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users"] as const

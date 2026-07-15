@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { resolveGuestScorer } from "@/lib/scoring/guest"
 import { prisma } from "@youthbasketballhub/db"
 import { canScoreGame } from "@/lib/scoring/authz"
 import { getGameRsvpAbsentees } from "@/lib/rsvp"
@@ -58,9 +59,22 @@ async function rosterForTeam(seasonId: string | null, teamId: string) {
   }))
 }
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const sessionInfo = await getSessionUserId()
+    let sessionInfo = await getSessionUserId()
+    let guestScorer: { name: string; actorUserId: string } | null = null
+    if (!sessionInfo) {
+      // Guest scorekeeper: game-scoped one-time token (2026-07-15); acts
+      // under the delegating operator's identity
+      guestScorer = await resolveGuestScorer(request, params.id)
+      if (guestScorer) {
+        sessionInfo = {
+          userId: guestScorer.actorUserId,
+          realUserId: guestScorer.actorUserId,
+          isPlatformAdmin: false,
+        }
+      }
+    }
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const game = await (prisma as any).game.findUnique({
@@ -107,7 +121,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
     // ?probe=1 — authz-only check ("may this viewer score?") without the
     // roster/event payload. The public live page uses it for its Score button.
-    if (new URL(_request.url).searchParams.get("probe") === "1") {
+    if (new URL(request.url).searchParams.get("probe") === "1") {
       return NextResponse.json({ canScore: true })
     }
 

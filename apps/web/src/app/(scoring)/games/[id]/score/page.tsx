@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { ScoringConsole } from "@/components/scoring/scoring-console"
+import { PreGameChecklist } from "@/components/scoring/pre-game-checklist"
 
 /**
  * The scorer's-table console. Server shell only — the console bootstraps
@@ -26,5 +27,10 @@ export default async function ScoreGamePage({ params }: { params: { id: string }
     }
   }
 
-  return <ScoringConsole gameId={params.id} canCorrect={canCorrect} />
+  return (
+    <>
+      <PreGameChecklist gameId={params.id} />
+      <ScoringConsole gameId={params.id} canCorrect={canCorrect} />
+    </>
+  )
 }
