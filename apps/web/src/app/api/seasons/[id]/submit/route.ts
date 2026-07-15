@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
     if (!result.ok) {
       return NextResponse.json(
-        { error: result.error, conflicts: result.conflicts },
+        { error: result.error, code: result.code, conflicts: result.conflicts },
         { status: result.status }
       )
     }

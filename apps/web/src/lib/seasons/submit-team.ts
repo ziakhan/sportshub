@@ -18,7 +18,7 @@ export type SubmitTeamResult =
       playerCount: number
       teamName: string
     }
-  | { ok: false; status: number; error: string; conflicts?: unknown }
+  | { ok: false; status: number; error: string; code?: string; conflicts?: unknown }
 
 export async function submitTeamToSeason(input: {
   seasonId: string
@@ -40,7 +40,7 @@ export async function submitTeamToSeason(input: {
   if (!season) return { ok: false, status: 404, error: "League not found" }
 
   if (!canSubmitTeams(season.status)) {
-    return { ok: false, status: 400, error: SUBMIT_CLOSED_MESSAGE }
+    return { ok: false, status: 400, error: SUBMIT_CLOSED_MESSAGE, code: "SEASON_NOT_OPEN" }
   }
   if (season.registrationDeadline && new Date(season.registrationDeadline) < new Date()) {
     return { ok: false, status: 400, error: "Registration deadline has passed" }
