@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { getActiveSeasonInvolvement, lifecycleLockReason } from "@/lib/teams/lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const parsed = archiveSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json({ error: "archived (boolean) is required" }, { status: 400 })
+    }
+
+    // Mid-season teams can't be archived (owner 2026-07-15) — the league is
+    // counting on this roster. Unarchive stays allowed.
+    if (parsed.data.archived) {
+      const reason = lifecycleLockReason(await getActiveSeasonInvolvement(team.id))
+      if (reason) return NextResponse.json({ error: reason }, { status: 409 })
     }
 
     const updated = await prisma.team.update({

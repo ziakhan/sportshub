@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { getActiveSeasonInvolvement, lifecycleLockReason } from "@/lib/teams/lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -139,6 +140,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         { status: 409 }
       )
     }
+
+    // Rollover archives the old team — blocked mid-season (owner 2026-07-15)
+    const lockReason = lifecycleLockReason(await getActiveSeasonInvolvement(team.id))
+    if (lockReason) return NextResponse.json({ error: lockReason }, { status: 409 })
 
     const parsed = rolloverSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {

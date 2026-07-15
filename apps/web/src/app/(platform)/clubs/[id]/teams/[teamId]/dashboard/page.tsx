@@ -6,6 +6,7 @@ import type { ReactNode } from "react"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { getTeamRoster } from "@/lib/teams/roster"
+import { getActiveSeasonInvolvement, lifecycleLockReason } from "@/lib/teams/lifecycle"
 import { Badge, Button, PanelHeader, StatTile, toneForStatus } from "@/components/ui"
 import { ArchivedTeamBanner, TeamSeasonActions } from "./team-season-actions"
 
@@ -138,6 +139,25 @@ export default async function TeamDashboardPage({
   const { team, players, tryouts, offers, submissions } = data
   const clubId = params.id
   const teamId = params.teamId
+
+  // Lifecycle actions are club-operator-only, and locked mid-season
+  // (owner 2026-07-15) — same rule the APIs enforce.
+  const operatorRole = auth
+    ? await prisma.userRole.findFirst({
+        where: {
+          userId: auth.userId,
+          OR: [
+            { tenantId: clubId, role: { in: ["ClubOwner", "ClubManager"] } },
+            { role: "PlatformAdmin" },
+          ],
+        },
+        select: { id: true },
+      })
+    : null
+  const canLifecycle = !!operatorRole || !!auth?.isPlatformAdmin
+  const lifecycleLock = canLifecycle
+    ? lifecycleLockReason(await getActiveSeasonInvolvement(teamId))
+    : null
   const isArchived = !!team.archivedAt
   const teamStaff = team.staff.filter((s) => s.teamId === teamId)
   const pendingOffers = offers.filter((o) => o.status === "PENDING")
@@ -211,8 +231,13 @@ export default async function TeamDashboardPage({
           {team.description && <p className="text-ink-600 mt-2 text-sm">{team.description}</p>}
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {!isArchived && (
-            <TeamSeasonActions clubId={clubId} teamId={teamId} teamName={team.name} />
+          {!isArchived && canLifecycle && (
+            <TeamSeasonActions
+              clubId={clubId}
+              teamId={teamId}
+              teamName={team.name}
+              lockedReason={lifecycleLock}
+            />
           )}
           <Button href={`/clubs/${clubId}/teams/${teamId}/edit`} variant="subtle" size="sm">
             Edit Team

@@ -51,15 +51,30 @@ export function TeamSeasonActions({
   clubId,
   teamId,
   teamName,
+  lockedReason = null,
 }: {
   clubId: string
   teamId: string
   teamName: string
+  /** Non-null while the team is mid-season — actions render disabled with this explanation. */
+  lockedReason?: string | null
 }) {
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  if (lockedReason) {
+    return (
+      <span
+        title={lockedReason}
+        className="border-ink-200 text-ink-400 inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5"
+      >
+        {ROLLOVER_ICON}
+        In season — archive &amp; rollover locked
+      </span>
+    )
+  }
 
   async function archive() {
     if (busy) return
