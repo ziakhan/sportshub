@@ -610,3 +610,17 @@ Nothing to backfill. Verify post-push: `SELECT "seoIndexingEnabled" FROM
 "PlatformSettings";` = f; curl /robots.txt → `Disallow: /`; open a club page
 then `SELECT count(*) FROM "PublicPageView";` ≥ 1; curl -H "Host:
 <club-slug>.<domain>" https://<domain>/ → 301 to /club/<slug>.
+
+## #27 — 2026-07-15 overnight batch (schema)
+One `prisma db push` covers all (already applied to LOCAL + the box's local
+Postgres deploys automatically via deploy.sh? NO — box runs its own DB; push
+there too on next box deploy: `npx prisma db push` from /opt/sportshub).
+Neon: pending like #24–26.
+- TeamSubmissionRequest (+ enum SubmissionRequestStatus) — coach league-registration approval flow
+- RosterChangeRequest.additions/removals (Json) — structured roster changes
+- TeamMessage.editedAt/pinnedAt/pinnedById + MessageReaction + ChatMute — chat enrichment
+- Conversation/ConversationParticipant/DirectMessage — DMs
+- TeamEvent.eventType (+ enum TeamEventKind) — typed schedule events
+- GameScoreInvite — guest scorekeeper links
+No new env vars. New notification types: submission_request(_decided),
+direct_message, roster_change_decided (code-side only).

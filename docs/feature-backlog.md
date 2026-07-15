@@ -1,5 +1,5 @@
 ---
-updated: 2026-07-11
+updated: 2026-07-15
 tags: [theme/ledgers, type/ledger, status/living]
 ---
 
@@ -15,6 +15,20 @@ Legend: 🎯 owner-committed · 💡 owner-suggested · 🔬 researched · ⏸ p
 ---
 
 ## Near-term / high value
+
+### Chat: photo sharing 💡 (owner-confirmed 2026-07-15)
+Blocked on the object-storage decision (no bucket yet — same gate as the
+content-feed creator uploads, see [[content-feed-strategy]] §9.2). When it
+lands: image messages in team chat + DMs, consent-scoped for minors.
+
+### Chat: read receipts 💡 (owner-confirmed 2026-07-15)
+Privacy trade-off is the owner's call (staff-only visibility vs everyone).
+Plumbing half-exists (ChatRead cursors + DM lastReadAt).
+
+### Chat: @mentions 💡 (owner-confirmed 2026-07-15)
+Roster-derived autocomplete, mention = targeted bell even when the thread
+is otherwise debounced; pairs well with per-team mute exceptions.
+
 
 ### ~~RSVP + attendance for calendar items~~ ✅ SHIPPED 2026-07-11
 Built as spec'd (ledger has the full note; runbook #24): EventRsvp +
