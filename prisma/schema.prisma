@@ -93,6 +93,7 @@ model User {
   conversationParticipants  ConversationParticipant[] @relation("ConversationParticipants")
   directMessagesSent        DirectMessage[]         @relation("DirectMessagesSent")
   scoreInvitesCreated       GameScoreInvite[]       @relation("ScoreInvitesCreated")
+  loginTokens               LoginToken[]            @relation("UserLoginTokens")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,6 +158,24 @@ model RefreshToken {
 
   @@index([userId])
   @@index([familyId])
+}
+
+// Magic sign-in (Slack-style, 2026-07-15): one row per requested email, carrying
+// BOTH redemption shapes — the tokenized link and the 6-digit code the user can
+// type on another device. Stored hashed only; single-use via atomic consume;
+// the code path is brute-force-bound by `attempts` (row dies at MAX_CODE_ATTEMPTS).
+model LoginToken {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation("UserLoginTokens", fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique // sha256 hex of the emailed link token
+  codeHash   String // sha256 hex of "<loginTokenId>:<6-digit code>" (id-salted)
+  expiresAt  DateTime // 15 minutes
+  consumedAt DateTime?
+  attempts   Int       @default(0) // failed code entries against this row
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model UserRole {

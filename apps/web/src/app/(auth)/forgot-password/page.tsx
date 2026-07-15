@@ -96,6 +96,14 @@ export default function ForgotPasswordPage() {
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
+
+            <p className="text-ink-500 mt-4 text-center text-sm">
+              Don&apos;t want to deal with a password?{" "}
+              <Link href="/sign-in" className="text-play-600 hover:text-play-700 font-semibold">
+                Get a sign-in link
+              </Link>{" "}
+              emailed to you instead.
+            </p>
           </>
         )}
 

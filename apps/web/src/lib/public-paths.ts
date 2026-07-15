@@ -16,6 +16,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/sign-up",
   "/forgot-password",
   "/reset-password",
+  // Magic sign-in landing (emailed tokenized link — 2026-07-15)
+  "/magic-link",
   "/marketplace",
   "/club",
   "/tryout",

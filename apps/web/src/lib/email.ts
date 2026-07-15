@@ -101,6 +101,48 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
   })
 }
 
+export async function sendMagicLinkEmail({
+  to,
+  firstName,
+  link,
+  code,
+}: {
+  to: string
+  firstName?: string | null
+  link: string
+  code: string
+}) {
+  const greeting = firstName ? `Hi ${escapeHtml(firstName)},` : "Hi,"
+  const subject = `Your SportsHub sign-in code: ${code}`
+  const html = `
+    <div style="font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 8px;">
+      <div style="background: #18181b; border-radius: 20px; padding: 32px; color: #ffffff;">
+        <p style="margin: 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #fbbf24; font-weight: 700;">SportsHub</p>
+        <h1 style="margin: 10px 0 0; font-size: 22px; color: #ffffff;">Sign in to SportsHub</h1>
+        <p style="margin: 14px 0 0; font-size: 14px; line-height: 1.6; color: #d9d9df;">
+          ${greeting} tap the button below to sign in — no password needed.
+        </p>
+        <p style="margin: 22px 0 0;">
+          <a href="${link}" style="display: inline-block; padding: 13px 28px; background: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px;">
+            Sign in to SportsHub
+          </a>
+        </p>
+        <p style="margin: 24px 0 0; font-size: 13px; color: #9191a1;">
+          On another device? Enter this code on the sign-in page:
+        </p>
+        <p style="margin: 8px 0 0; font-size: 30px; font-weight: 800; letter-spacing: 8px; color: #ffffff; font-family: 'SF Mono', Menlo, Consolas, monospace;">${code}</p>
+        <p style="margin: 24px 0 0; font-size: 12px; line-height: 1.6; color: #747486;">
+          The link and code expire in 15 minutes and work once. If you didn't request this,
+          you can safely ignore this email — nobody can sign in without it.
+        </p>
+      </div>
+      ${transactionalFooter()}
+    </div>
+  `
+  const text = `${greeting}\n\nSign in to SportsHub: ${link}\n\nOr enter this code on the sign-in page: ${code}\n\nThe link and code expire in 15 minutes and work once. If you didn't request this, ignore this email.`
+  return sendEmail({ to, subject, html, text })
+}
+
 export async function sendStaffInviteEmail({
   to,
   clubName,

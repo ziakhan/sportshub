@@ -624,3 +624,15 @@ Neon: pending like #24–26.
 - GameScoreInvite — guest scorekeeper links
 No new env vars. New notification types: submission_request(_decided),
 direct_message, roster_change_decided (code-side only).
+
+## #28 — 2026-07-15 magic sign-in (schema)
+`prisma db push` — applied to LOCAL. Box + Neon pending (same push as #24–27).
+- LoginToken table — magic sign-in links + 6-digit codes (hashed at rest,
+  single-use, 15-min TTL, attempt-capped).
+Env: none new locally; PROD SMTP_* already installed on the box (OCI Email
+Delivery, 2026-07-15). Google sign-in stays dormant until GOOGLE_CLIENT_ID +
+GOOGLE_CLIENT_SECRET exist (owner to create OAuth client; add to box web.env
++ local .env.local, then the Google button appears by itself).
+Verify post-push: request a link from /sign-in on prod for a real account →
+email lands (OCI) → link signs in; replay of the same link lands on the
+"expired" panel.
