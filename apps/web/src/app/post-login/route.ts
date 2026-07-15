@@ -22,6 +22,14 @@ export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
   if (!user) return NextResponse.redirect(new URL("/sign-in", siteUrl()))
 
+  // First-ever sign-in via Google (or any future OAuth) lands here without
+  // role selection — adapter-less NextAuth never fires its newUser redirect,
+  // and only the password sign-up form routes to /onboarding itself. This is
+  // the funnel for everyone else; /onboarding self-guards once complete.
+  if (!(user as any).onboardedAt) {
+    return NextResponse.redirect(new URL("/onboarding", siteUrl()))
+  }
+
   // site-ia-plan §5.6.10: owners/managers → dashboard; coaches → their team
   // (the thing they opened the app for; picker when they coach several);
   // parents, players and referees → the personalized Home.
