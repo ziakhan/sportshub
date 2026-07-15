@@ -626,7 +626,7 @@ No new env vars. New notification types: submission_request(_decided),
 direct_message, roster_change_decided (code-side only).
 
 ## #28 — 2026-07-15 magic sign-in (schema)
-`prisma db push` — applied to LOCAL. Box + Neon pending (same push as #24–27).
+`prisma db push` — applied to LOCAL + **BOX (2026-07-15, via deploy.sh)**. Neon pending (same push as #24–27).
 - LoginToken table — magic sign-in links + 6-digit codes (hashed at rest,
   single-use, 15-min TTL, attempt-capped).
 Env: none new locally; PROD SMTP_* already installed on the box (OCI Email
