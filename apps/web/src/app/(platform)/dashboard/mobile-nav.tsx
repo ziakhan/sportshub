@@ -6,6 +6,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   buildNavSections,
+  isWorkspacePath,
   type IconKey,
   type NavItem,
   type NavSection,
@@ -38,7 +39,11 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
     }
   }, [open])
 
-  const sections = buildNavSections({ roles, tenants, homeLabel: "Home" })
+  // Workspace-only chrome (owner 2026-07-15): the hamburger exists only
+  // inside the management area — personal pages stay two-nav clean.
+  if (!isWorkspacePath(pathname)) return null
+
+  const sections = buildNavSections({ roles, tenants, homeLabel: "Overview" })
 
   return (
     <>

@@ -27,6 +27,31 @@ export function coachTeamHref(t: { teamId: string; tenantId: string }): string {
   return `/clubs/${t.tenantId}/teams/${t.teamId}/dashboard`
 }
 
+/**
+ * The operator entry's label — "Dashboard" retired as a label (owner
+ * 2026-07-15): name the thing being managed. Short form for the bottom tab,
+ * longer form for the badge-menu row.
+ */
+export function operatorTabLabel(
+  shape: Pick<NavShape, "isClubStaff" | "isLeagueOwner" | "isPlatformAdmin">
+): string {
+  if (shape.isClubStaff && shape.isLeagueOwner) return "Manage"
+  if (shape.isClubStaff) return "My Club"
+  if (shape.isLeagueOwner) return "My League"
+  if (shape.isPlatformAdmin) return "Admin"
+  return "Manage"
+}
+
+export function operatorMenuLabel(
+  shape: Pick<NavShape, "isClubStaff" | "isLeagueOwner" | "isPlatformAdmin">
+): string {
+  if (shape.isClubStaff && shape.isLeagueOwner) return "Manage club & league"
+  if (shape.isClubStaff) return "Manage my club"
+  if (shape.isLeagueOwner) return "Manage my league"
+  if (shape.isPlatformAdmin) return "Platform admin"
+  return "Manage"
+}
+
 export const EMPTY_NAV_SHAPE: NavShape = {
   coachTeams: [],
   hasKids: false,

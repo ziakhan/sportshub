@@ -5,7 +5,8 @@ import React from "react"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
-import { coachTeamHref, type NavShape } from "@/lib/queries/nav-shape"
+import { coachTeamHref, operatorMenuLabel, type NavShape } from "@/lib/queries/nav-shape"
+import { useUnreadNotifications } from "./unread-notifications"
 
 /**
  * The badge menu v2 — the canonical switchboard (site-ia-plan §5.6.5):
@@ -58,12 +59,17 @@ const ICONS = {
   chat: ic("M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"),
   account: ic("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21a8 8 0 0 1 16 0"),
   whistle: ic("M15 13a6 6 0 1 1-6-6h6zM15 7l6-3-2 6"),
+  bell: ic("M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"),
+  plus: ic("M12 5v14M5 12h14"),
 }
 
 export function AccountMenu({ userName, userEmail, userInitials, shape }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const close = () => setOpen(false)
+  // On phones the bell folds into this badge (owner 2026-07-15): the dot
+  // says "something's waiting", the Notifications row inside says what.
+  const unreadNotifications = useUnreadNotifications()
 
   useEffect(() => {
     if (!open) return
@@ -85,9 +91,15 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
         onClick={() => setOpen((v) => !v)}
         aria-label="Open account menu"
         aria-expanded={open}
-        className="bg-play-600 hover:bg-play-700 flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
+        className="bg-play-600 hover:bg-play-700 relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
       >
         {userInitials}
+        {unreadNotifications > 0 && (
+          <span
+            className="bg-hoop-600 absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white md:hidden"
+            aria-label={`${unreadNotifications} unread notifications`}
+          />
+        )}
       </button>
 
       {open && (
@@ -103,7 +115,7 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
             </Row>
             {shape.isOperator && (
               <Row href="/dashboard" onClick={close} icon={ICONS.dashboard}>
-                Dashboard
+                {operatorMenuLabel(shape)}
               </Row>
             )}
             {shape.coachTeams.slice(0, 3).map((t) => (
@@ -132,9 +144,37 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
             <Row href="/messages" onClick={close} icon={ICONS.chat}>
               Chat
             </Row>
+            <Row href="/notifications" onClick={close} icon={ICONS.bell}>
+              <span className="flex flex-1 items-center justify-between">
+                Notifications
+                {unreadNotifications > 0 && (
+                  <span className="bg-hoop-600 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </span>
+            </Row>
             <Row href="/account" onClick={close} icon={ICONS.account}>
               Account &amp; settings
             </Row>
+          </div>
+
+          {/* The old top-bar plus button, foldered away (owner 2026-07-15) */}
+          <div className="border-ink-100 border-t py-1">
+            <Row href="/players/add" onClick={close} icon={ICONS.plus}>
+              Add a player
+            </Row>
+            <Row href="/clubs/create" onClick={close} icon={ICONS.plus}>
+              Create a club
+            </Row>
+            <Row href="/manage/leagues/create" onClick={close} icon={ICONS.plus}>
+              Create a league
+            </Row>
+            {!shape.isRefereeing && (
+              <Row href="/referee/profile" onClick={close} icon={ICONS.whistle}>
+                Become a referee
+              </Row>
+            )}
           </div>
 
           <div className="border-ink-100 border-t py-1">

@@ -45,19 +45,14 @@ export function TopBar({
 
         <View style={styles.actions}>
           {signedIn ? (
-            <>
-              <Pressable
-                style={styles.iconButton}
-                onPress={() => router.push("/alerts")}
-                hitSlop={6}
-              >
-                <Ionicons name="notifications-outline" size={20} color={ui.text} />
-                {unread > 0 ? <View style={styles.unreadDot} /> : null}
-              </Pressable>
-              <Pressable onPress={() => router.navigate("/account")} hitSlop={6}>
+            // One control, not three (owner 2026-07-15): the badge carries
+            // the unread dot; Alerts is a row inside Account + a Home chip.
+            <Pressable onPress={() => router.navigate("/account")} hitSlop={6}>
+              <View>
                 <Avatar name={user?.name ?? user?.email} size={32} />
-              </Pressable>
-            </>
+                {unread > 0 ? <View style={styles.unreadDot} /> : null}
+              </View>
+            </Pressable>
           ) : (
             <>
               <Pressable onPress={() => router.push("/sign-in")} hitSlop={6}>
@@ -154,14 +149,15 @@ const styles = StyleSheet.create({
     color: ui.text,
   },
   actions: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconButton: { padding: 4 },
   unreadDot: {
     position: "absolute",
-    top: 3,
-    right: 3,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: "#fff",
     backgroundColor: ui.danger,
   },
   logIn: { fontSize: 13, fontWeight: "600", color: ui.textMuted, paddingHorizontal: 4 },

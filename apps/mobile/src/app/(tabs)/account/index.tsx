@@ -70,12 +70,18 @@ export default function AccountScreen() {
 
             <SectionHeader eyebrow="Family" title="My stuff" accent="play" />
             <Card>
-              <ListRow icon="people-outline" text="My kids" onPress={() => router.push("/kids")} />
-              <ListRow
-                icon="document-text-outline"
-                text="Offers"
-                onPress={() => router.push("/offers")}
-              />
+              {/* Kids/offers rows only when the account has players — same
+                  gating as the web account hub */}
+              {home?.shape.hasKids ? (
+                <ListRow icon="people-outline" text="My kids" onPress={() => router.push("/kids")} />
+              ) : null}
+              {home?.shape.hasKids ? (
+                <ListRow
+                  icon="document-text-outline"
+                  text="Offers"
+                  onPress={() => router.push("/offers")}
+                />
+              ) : null}
               <ListRow
                 icon="card-outline"
                 text="Payments & receipts"

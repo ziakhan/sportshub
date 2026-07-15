@@ -72,8 +72,29 @@ export interface NavTenant {
 export interface BuildNavSectionsInput {
   roles: string[]
   tenants?: NavTenant[]
-  /** Label for the top-level dashboard link ("Dashboard" on desktop, "Home" on mobile). */
+  /** Label for the top-level workspace-overview link. */
   homeLabel?: string
+}
+
+/**
+ * The operator workspace's territory. The sidebar/drawer renders ONLY here
+ * (owner 2026-07-15): on personal pages (/calendar, /messages, /account,
+ * /players…) even operators get the clean two-nav chrome. Crossing into the
+ * workspace is what makes the third nav appear.
+ */
+const WORKSPACE_PREFIXES = [
+  "/dashboard",
+  "/manage",
+  "/clubs",
+  "/browse-leagues",
+  "/browse-tournaments",
+  "/score",
+  "/teams",
+] as const
+
+export function isWorkspacePath(pathname: string | null): boolean {
+  if (!pathname) return false
+  return WORKSPACE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
 function badge(count: number | undefined, toneClass: string): NavBadge | undefined {
@@ -108,10 +129,14 @@ function staffWorkspace(tenant: NavTenant): NavWorkspace {
   }
 }
 
+// WORKSPACE SECTIONS ONLY (owner 2026-07-15): the drawer/sidebar never
+// duplicates the bottom tabs or badge menu. Personal-layer entries (My
+// Calendar, Parent, Player, Officiating, Notifications, Profile) are gone —
+// they live in the two global navs every user already has.
 export function buildNavSections({
   roles,
   tenants = [],
-  homeLabel = "Dashboard",
+  homeLabel = "Overview",
 }: BuildNavSectionsInput): NavSection[] {
   const hasRole = (role: string) => roles.includes(role)
 
@@ -129,19 +154,9 @@ export function buildNavSections({
 
   const sections: NavSection[] = []
 
-  // My Calendar rides right under Dashboard for anyone with a team side —
-  // family (Parent / 13+ Player) or staff. The one place to see everything
-  // and RSVP (docs/roadmap/my-calendar-plan.md).
-  const hasCalendar =
-    hasRole("Parent") || hasRole("Player") || hasRole("Referee") || isAdmin || isStaff
   sections.push({
     key: "home",
-    items: [
-      { label: homeLabel, href: "/dashboard", icon: "dashboard" },
-      ...(hasCalendar
-        ? [{ label: "My Calendar", href: "/calendar", icon: "calendar" as IconKey }]
-        : []),
-    ],
+    items: [{ label: homeLabel, href: "/dashboard", icon: "dashboard" }],
   })
 
   if (hasRole("PlatformAdmin")) {
@@ -156,19 +171,6 @@ export function buildNavSections({
         { label: "Payments", href: "/dashboard/admin/payments", icon: "card" },
         { label: "Audit Trail", href: "/dashboard/admin/audit", icon: "clipboard" },
         { label: "Settings", href: "/dashboard/admin/settings", icon: "settings" },
-      ],
-    })
-  }
-
-  if (hasRole("Parent")) {
-    sections.push({
-      key: "parent",
-      label: "Parent",
-      items: [
-        { label: "My Players", href: "/players", icon: "users" },
-        { label: "Offers Received", href: "/offers", icon: "flag" },
-        { label: "Browse Programs", href: "/events", icon: "search" },
-        { label: "My Payments", href: "/payments", icon: "card" },
       ],
     })
   }
@@ -212,35 +214,6 @@ export function buildNavSections({
     })
   }
 
-  if (hasRole("Referee") || hasRole("Scorekeeper")) {
-    sections.push({
-      key: "referee",
-      label: "Officiating",
-      items: [
-        // Game-day hub: live + upcoming games to score / officiate
-        { label: "Score games", href: "/score", icon: "play" },
-        ...(hasRole("Referee")
-          ? [
-              { label: "Shifts & Availability", href: "/referee/requests", icon: "clipboard" as IconKey },
-              { label: "My Profile", href: "/referee/profile", icon: "users" as IconKey },
-            ]
-          : []),
-      ],
-    })
-  }
-
-  if (hasRole("Player")) {
-    sections.push({
-      key: "player",
-      label: "Player",
-      items: [
-        { label: "My Teams", href: "/teams", icon: "users" },
-        { label: "My Schedule", href: "/calendar", icon: "calendar" },
-        { label: "My Stats", href: "/players", icon: "dashboard" },
-      ],
-    })
-  }
-
   if (hasRole("LeagueOwner") || hasRole("LeagueManager")) {
     sections.push({
       key: "league",
@@ -255,10 +228,9 @@ export function buildNavSections({
   sections.push({
     key: "footer",
     items: [
-      // The door back to the PUBLIC world (site-ia-plan §7)
+      // The door back to the PUBLIC world (site-ia-plan §7) — the one
+      // non-workspace row, because the desktop sidebar has no bottom tabs.
       { label: "Public site", href: "/", icon: "play" },
-      { label: "Notifications", href: "/notifications", icon: "bell" },
-      { label: "Profile", href: "/settings/profile", icon: "users" },
     ],
   })
 

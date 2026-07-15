@@ -7,7 +7,7 @@ import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { AccountMenu } from "@/components/nav/account-menu"
 import { BottomTabs } from "@/components/nav/bottom-tabs"
 import { QuickIcons } from "@/components/nav/quick-icons"
-import { getNavShape, EMPTY_NAV_SHAPE } from "@/lib/queries/nav-shape"
+import { getNavShape, operatorTabLabel, EMPTY_NAV_SHAPE } from "@/lib/queries/nav-shape"
 import { AuthLink } from "@/components/auth-link"
 import { ChatDock } from "@/components/chat-dock"
 
@@ -125,11 +125,14 @@ export default async function PublicLayout({ children }: { children: React.React
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                     </svg>
-                    Dashboard
+                    {operatorTabLabel(shape)}
                   </Link>
                 )}
                 <QuickIcons showCalendar={shape.hasCalendar} />
-                <NotificationBell />
+                {/* Bell is desktop-only — on phones it folds into the badge */}
+                <div className="hidden md:block">
+                  <NotificationBell />
+                </div>
                 <AccountMenu
                   userName={userName}
                   userEmail={userEmail}

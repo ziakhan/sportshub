@@ -11,7 +11,6 @@ import { AccountMenu } from "@/components/nav/account-menu"
 import { BottomTabs } from "@/components/nav/bottom-tabs"
 import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape } from "@/lib/queries/nav-shape"
-import { CreateMenu } from "./dashboard/create-menu"
 import { CompletionPill } from "./dashboard/completion-pill"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
 
@@ -167,7 +166,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
           <div className="flex items-center gap-2 md:gap-3">
             <Link
-              href="/"
+              href="/settings/profile"
               className="border-ink-200 text-ink-500 hover:bg-ink-50 hover:text-ink-950 hidden rounded-2xl border bg-white p-2 transition md:inline-flex"
             >
               <svg
@@ -181,12 +180,19 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82.33v.16a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15v-.16a2 2 0 0 1 4 0v.09c.08.63.5 1.16 1.08 1.41" />
               </svg>
             </Link>
+            {/* Mobile top bar = logo + badge only (owner 2026-07-15): the
+                bell folds into the badge (dot + Notifications row), the old
+                plus menu lives in the badge menu, the completion pill is
+                desktop-only. */}
             {checklist.applicable && !checklist.complete && (
-              <CompletionPill percent={checklist.percent} steps={checklist.steps} />
+              <div className="hidden md:block">
+                <CompletionPill percent={checklist.percent} steps={checklist.steps} />
+              </div>
             )}
-            <CreateMenu />
             <QuickIcons showCalendar={shape.hasCalendar} />
-            <NotificationBell />
+            <div className="hidden md:block">
+              <NotificationBell />
+            </div>
             <AccountMenu
               userName={userName}
               userEmail={userEmail}

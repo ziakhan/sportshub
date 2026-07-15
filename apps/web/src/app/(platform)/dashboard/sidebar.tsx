@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   buildNavSections,
+  isWorkspacePath,
   type IconKey,
   type NavItem,
   type NavSection,
@@ -26,6 +27,9 @@ export function Sidebar({
   primaryRole,
 }: SidebarProps) {
   const pathname = usePathname()
+  // Workspace-only chrome (owner 2026-07-15): on personal pages (/calendar,
+  // /messages, /account…) even operators get the clean two-nav layout.
+  if (!isWorkspacePath(pathname)) return null
   const sections = buildNavSections({ roles, tenants })
 
   return (

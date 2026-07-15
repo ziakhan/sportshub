@@ -15,9 +15,21 @@ import { ui } from "@/lib/theme"
 
 type IoniconName = keyof typeof Ionicons.glyphMap
 
+function operatorTitle(shape: NavShape): string {
+  // "Dashboard" retired as a label (owner 2026-07-15) — name the thing.
+  if (shape.isClubStaff && shape.isLeagueOwner) return "Manage"
+  if (shape.isClubStaff) return "My Club"
+  if (shape.isLeagueOwner) return "My League"
+  return "Admin"
+}
+
 function contextTab(shape: NavShape | undefined): { title: string; icon: IoniconName } | null {
   if (!shape) return null
-  if (shape.isOperator) return { title: "Dashboard", icon: "grid-outline" }
+  if (shape.isOperator)
+    return {
+      title: operatorTitle(shape),
+      icon: shape.isClubStaff ? "business-outline" : shape.isLeagueOwner ? "trophy-outline" : "grid-outline",
+    }
   if (shape.coachTeams.length === 1) return { title: "My Team", icon: "people-outline" }
   if (shape.coachTeams.length > 1) return { title: "My Teams", icon: "people-outline" }
   if (shape.hasKids) return { title: "My Kids", icon: "people-outline" }

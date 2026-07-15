@@ -29,6 +29,10 @@ const EMPTY_SHAPE = {
 
 vi.mock("@/lib/queries/nav-shape", () => ({
   getNavShape: vi.fn(async () => EMPTY_SHAPE),
+  coachTeamHref: (t: { teamId: string; tenantId: string }) =>
+    `/clubs/${t.tenantId}/teams/${t.teamId}/dashboard`,
+  operatorTabLabel: () => "My Club",
+  operatorMenuLabel: () => "Manage my club",
   EMPTY_NAV_SHAPE: {
     coachTeams: [],
     hasKids: false,

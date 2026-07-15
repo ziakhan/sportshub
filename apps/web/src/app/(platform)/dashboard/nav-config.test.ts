@@ -72,7 +72,9 @@ describe("navigation links resolve to real routes", () => {
 
   it("collected a meaningful set of links and routes", () => {
     expect(routes.length).toBeGreaterThan(40)
-    expect(hrefs.size).toBeGreaterThan(15)
+    // Workspace-only nav (2026-07-15): personal-layer links moved to the
+    // badge menu/bottom tabs, so the drawer's set is deliberately smaller.
+    expect(hrefs.size).toBeGreaterThan(10)
   })
 
   for (const href of [...hrefs].sort()) {
