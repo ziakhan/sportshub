@@ -7,6 +7,7 @@
  */
 
 const RULES: Array<{ re: RegExp; to: (m: RegExpExecArray) => string }> = [
+  { re: /^\/messages\/dm\/([\w-]+)/, to: (m) => `/chat/dm/${m[1]}` },
   { re: /^\/teams\/([\w-]+)\/chat/, to: (m) => `/chat/${m[1]}` },
   { re: /^\/offers\/([\w-]+)/, to: (m) => `/offers/${m[1]}` },
   { re: /^\/live\/([\w-]+)/, to: (m) => `/browse/game/${m[1]}` },

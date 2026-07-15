@@ -22,6 +22,53 @@ export default async function MessagesPage() {
 
   const summaries = await getChatTeamSummaries(auth.userId)
 
+  // Direct messages (2026-07-15) — 1:1 threads beside the team channels
+  const dmRows = await (prisma as any).conversation.findMany({
+    where: { participants: { some: { userId: auth.userId } } },
+    select: {
+      id: true,
+      updatedAt: true,
+      team: { select: { name: true } },
+      participants: {
+        select: {
+          userId: true,
+          lastReadAt: true,
+          user: { select: { firstName: true, lastName: true } },
+        },
+      },
+      messages: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { body: true, createdAt: true, senderId: true },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 30,
+  })
+  const dms = await Promise.all(
+    dmRows.map(async (c: any) => {
+      const me = c.participants.find((p: any) => p.userId === auth.userId)
+      const other = c.participants.find((p: any) => p.userId !== auth.userId)
+      const unread = await (prisma as any).directMessage.count({
+        where: {
+          conversationId: c.id,
+          deletedAt: null,
+          senderId: { not: auth.userId },
+          ...(me?.lastReadAt ? { createdAt: { gt: me.lastReadAt } } : {}),
+        },
+      })
+      return {
+        id: c.id,
+        name:
+          [other?.user?.firstName, other?.user?.lastName].filter(Boolean).join(" ") || "Member",
+        teamName: c.team?.name ?? null,
+        preview: c.messages[0] ?? null,
+        unread,
+      }
+    })
+  )
+
   const previews = summaries.length
     ? await prisma.teamMessage.findMany({
         where: { teamId: { in: summaries.map((s) => s.teamId) }, deletedAt: null },
@@ -50,6 +97,62 @@ export default async function MessagesPage() {
     <div className="mx-auto max-w-2xl px-4 py-6">
       <h1 className="text-ink-950 font-display text-2xl font-bold">Chat</h1>
       <p className="text-ink-500 mt-1 text-sm">Every team conversation you&apos;re part of.</p>
+
+      {dms.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-ink-400 mb-2 px-1 text-xs font-bold uppercase tracking-wider">
+            Direct messages
+          </h2>
+          <div className="border-ink-100 divide-y divide-ink-50 overflow-hidden rounded-2xl border bg-white">
+            {dms.map((dm) => (
+              <Link
+                key={dm.id}
+                href={`/messages/dm/${dm.id}`}
+                className="hover:bg-ink-50 flex min-h-[64px] items-center gap-3 px-4 py-3 transition"
+              >
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    dm.unread > 0 ? "bg-play-600 text-white" : "bg-ink-100 text-ink-600"
+                  }`}
+                >
+                  {dm.name.slice(0, 2).toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="text-ink-950 truncate text-sm font-semibold">
+                      {dm.name}
+                      {dm.teamName && (
+                        <span className="text-ink-400 font-normal"> · {dm.teamName}</span>
+                      )}
+                    </span>
+                    {dm.preview && (
+                      <span className="text-ink-400 shrink-0 text-xs">
+                        {formatDistanceToNow(new Date(dm.preview.createdAt), { addSuffix: true })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 flex items-center justify-between gap-2">
+                    <span className="text-ink-500 truncate text-xs">
+                      {dm.preview ? dm.preview.body : "New conversation"}
+                    </span>
+                    {dm.unread > 0 && (
+                      <span className="bg-hoop-600 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white">
+                        {dm.unread > 9 ? "9+" : dm.unread}
+                      </span>
+                    )}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {dms.length > 0 && rows.length > 0 && (
+        <h2 className="text-ink-400 mb-2 mt-6 px-1 text-xs font-bold uppercase tracking-wider">
+          Team chats
+        </h2>
+      )}
 
       {rows.length === 0 ? (
         <div className="border-ink-100 mt-6 rounded-2xl border bg-white p-8 text-center">

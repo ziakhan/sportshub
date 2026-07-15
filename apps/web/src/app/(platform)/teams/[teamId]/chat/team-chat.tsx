@@ -5,6 +5,7 @@ import { format, isSameDay, isToday, isYesterday } from "date-fns"
 import type { ChatMembers } from "@/lib/teams/chat-access"
 import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
 import { useRealtime } from "@/lib/realtime/use-realtime"
+import { useRouter } from "next/navigation"
 
 interface ChatMessage {
   id: string
@@ -67,6 +68,27 @@ export function TeamChat({
   const listRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
   const memberCount = members.userIds.length
+  const router = useRouter()
+  const [dmBusy, setDmBusy] = useState<string | null>(null)
+
+  // Open (or create) a 1:1 thread with this member (2026-07-15)
+  const startDm = async (userId: string) => {
+    setDmBusy(userId)
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamId, userId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't start the conversation")
+      router.push(`/messages/dm/${data.conversationId}`)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Couldn't start the conversation")
+    } finally {
+      setDmBusy(null)
+    }
+  }
 
   const mergeNewer = useCallback((incoming: ChatMessage[]) => {
     if (incoming.length === 0) return
@@ -315,8 +337,19 @@ export function TeamChat({
                         {s.name}
                         {s.userId === currentUserId ? " (you)" : ""}
                       </span>
-                      <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-[10px] font-semibold">
-                        {s.label}
+                      <span className="flex items-center gap-1.5">
+                        {s.userId !== currentUserId && (
+                          <button
+                            onClick={() => void startDm(s.userId)}
+                            disabled={dmBusy === s.userId}
+                            className="text-play-700 hover:bg-play-100 rounded-full px-2 py-0.5 text-[10px] font-semibold disabled:opacity-50"
+                          >
+                            Message
+                          </button>
+                        )}
+                        <span className="bg-play-100 text-play-700 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                          {s.label}
+                        </span>
                       </span>
                     </div>
                   ))}
@@ -335,7 +368,18 @@ export function TeamChat({
                         {f.name}
                         {f.userId === currentUserId ? " (you)" : ""}
                       </span>
-                      <span className="text-ink-500 truncate">{f.playerNames.join(", ")}</span>
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        {f.userId !== currentUserId && (
+                          <button
+                            onClick={() => void startDm(f.userId)}
+                            disabled={dmBusy === f.userId}
+                            className="text-play-700 hover:bg-play-100 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold disabled:opacity-50"
+                          >
+                            Message
+                          </button>
+                        )}
+                        <span className="text-ink-500 truncate">{f.playerNames.join(", ")}</span>
+                      </span>
                     </div>
                   ))}
                 </div>
