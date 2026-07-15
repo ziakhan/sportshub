@@ -8,6 +8,8 @@ import { inputClass, panelClass } from "./types"
 interface RosterRequest {
   id: string
   message: string
+  additions?: string[]
+  removals?: string[]
   status: string
   createdAt: string
   requestedBy: string
@@ -56,10 +58,14 @@ export function RosterRequestsPanel({
   }, [loadRequests])
 
   const resolve = async (requestId: string, action: "approve" | "deny") => {
+    const target = requests.find((r) => r.id === requestId)
+    const structured = (target?.additions?.length ?? 0) + (target?.removals?.length ?? 0) > 0
     if (
       action === "approve" &&
       !window.confirm(
-        "Approve this roster change? The team's roster unlocks until the club saves its changes, then locks again."
+        structured
+          ? "Approve this roster change? The listed adds/removes are applied to the locked roster immediately."
+          : "Approve this roster change? The team's roster unlocks until the club saves its changes, then locks again."
       )
     )
       return
@@ -73,7 +79,13 @@ export function RosterRequestsPanel({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Couldn't resolve the request")
-      setMessage(action === "approve" ? "Approved — roster unlocked for one change." : "Denied.")
+      setMessage(
+        action === "approve"
+          ? structured
+            ? "Approved — changes applied to the roster."
+            : "Approved — roster unlocked for one change."
+          : "Denied."
+      )
       await loadRequests()
       refresh()
     } catch (err) {
@@ -176,7 +188,19 @@ export function RosterRequestsPanel({
                   </span>
                 </div>
               </div>
-              <p className="text-ink-700 mt-1 text-sm">“{r.message}”</p>
+              {(r.additions?.length || r.removals?.length) ? (
+                <div className="mt-1 space-y-0.5 text-sm">
+                  {r.additions && r.additions.length > 0 && (
+                    <p className="text-court-700">+ Add: {r.additions.join(", ")}</p>
+                  )}
+                  {r.removals && r.removals.length > 0 && (
+                    <p className="text-hoop-700">− Remove: {r.removals.join(", ")}</p>
+                  )}
+                  {r.message && <p className="text-ink-500 text-xs">“{r.message}”</p>}
+                </div>
+              ) : (
+                <p className="text-ink-700 mt-1 text-sm">“{r.message}”</p>
+              )}
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <input
                   type="text"

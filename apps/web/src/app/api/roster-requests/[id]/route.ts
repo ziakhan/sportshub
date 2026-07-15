@@ -28,6 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         id: true,
         status: true,
         requestedById: true,
+        additions: true,
+        removals: true,
         roster: {
           select: {
             id: true,
@@ -78,8 +80,66 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           resolvedAt: new Date(),
         },
       })
-      if (approved) {
-        // One-shot window: unlocked now, re-locked by the club's next save
+      const additions: string[] = Array.isArray(req.additions) ? req.additions : []
+      const removals: string[] = Array.isArray(req.removals) ? req.removals : []
+      const structured = additions.length + removals.length > 0
+      if (approved && structured) {
+        // Structured request (2026-07-15): approval APPLIES the changes —
+        // the roster stays locked, no unlock window.
+        if (removals.length > 0) {
+          await tx.seasonRosterPlayer.deleteMany({
+            where: { rosterId: req.roster.id, playerId: { in: removals } },
+          })
+        }
+        if (additions.length > 0) {
+          // Same-season eligibility re-check at apply time
+          const conflict = await tx.seasonRosterPlayer.findFirst({
+            where: {
+              playerId: { in: additions },
+              roster: { seasonId: req.roster.season.id, id: { not: req.roster.id } },
+            },
+            select: { playerId: true },
+          })
+          if (conflict) {
+            throw new Error(
+              "APPLY_CONFLICT: a requested player is already rostered elsewhere this season"
+            )
+          }
+          const teamPlayers = await tx.teamPlayer.findMany({
+            where: {
+              teamId: req.roster.teamSubmission.team.id,
+              playerId: { in: additions },
+              status: "ACTIVE",
+            },
+            select: {
+              playerId: true,
+              jerseyNumber: true,
+              player: { select: { position: true } },
+            },
+          })
+          if (teamPlayers.length !== additions.length) {
+            throw new Error("APPLY_CONFLICT: a requested player is no longer on the club roster")
+          }
+          const already = await tx.seasonRosterPlayer.findMany({
+            where: { rosterId: req.roster.id, playerId: { in: additions } },
+            select: { playerId: true },
+          })
+          const skip = new Set(already.map((a: any) => a.playerId))
+          const toCreate = teamPlayers.filter((tp: any) => !skip.has(tp.playerId))
+          if (toCreate.length > 0) {
+            await tx.seasonRosterPlayer.createMany({
+              data: toCreate.map((tp: any) => ({
+                rosterId: req.roster.id,
+                playerId: tp.playerId,
+                jerseyNumber: tp.jerseyNumber,
+                position: tp.player?.position ?? null,
+              })),
+            })
+          }
+        }
+      } else if (approved) {
+        // Legacy free-text ask: one-shot window — unlocked now, re-locked by
+        // the club's next save
         await tx.seasonRoster.update({
           where: { id: req.roster.id },
           data: { isLocked: false },
@@ -90,7 +150,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         type: approved ? "roster_change_approved" : "roster_change_denied",
         title: approved ? "Roster change approved" : "Roster change denied",
         message: approved
-          ? `${league.name} approved your roster change for ${req.roster.season.label} — the roster is unlocked until you save your changes.${parsed.data.note ? ` Note: ${parsed.data.note}` : ""}`
+          ? Array.isArray(req.additions) || Array.isArray(req.removals)
+            ? `${league.name} approved and applied your ${req.roster.season.label} roster change (${Array.isArray(req.additions) ? req.additions.length : 0} added, ${Array.isArray(req.removals) ? req.removals.length : 0} removed).${parsed.data.note ? ` Note: ${parsed.data.note}` : ""}`
+            : `${league.name} approved your roster change for ${req.roster.season.label} — the roster is unlocked until you save your changes.${parsed.data.note ? ` Note: ${parsed.data.note}` : ""}`
           : `${league.name} denied your roster change for ${req.roster.season.label}.${parsed.data.note ? ` Note: ${parsed.data.note}` : ""}`,
         link: `/clubs/${req.roster.teamSubmission.team.tenantId}/teams/${req.roster.teamSubmission.team.id}/league-rosters`,
         referenceId: req.id,
@@ -100,6 +162,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     return NextResponse.json({ success: true, status: approved ? "APPROVED" : "DENIED" })
   } catch (error) {
+    if (error instanceof Error && error.message.startsWith("APPLY_CONFLICT:")) {
+      return NextResponse.json(
+        { error: error.message.replace("APPLY_CONFLICT: ", ""), requestStillPending: true },
+        { status: 409 }
+      )
+    }
     console.error("Roster request resolve error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

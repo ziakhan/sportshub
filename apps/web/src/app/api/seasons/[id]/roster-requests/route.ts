@@ -40,6 +40,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       select: {
         id: true,
         message: true,
+        additions: true,
+        removals: true,
         status: true,
         createdAt: true,
         resolvedAt: true,
@@ -60,10 +62,34 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       orderBy: { createdAt: "desc" },
     })
 
+    // Resolve player names for structured requests so the commissioner sees
+    // exactly who is being added/removed (2026-07-15)
+    const allPlayerIds = [
+      ...new Set(
+        requests.flatMap((r: any) => [
+          ...(Array.isArray(r.additions) ? r.additions : []),
+          ...(Array.isArray(r.removals) ? r.removals : []),
+        ])
+      ),
+    ] as string[]
+    const players = allPlayerIds.length
+      ? await prisma.player.findMany({
+          where: { id: { in: allPlayerIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : []
+    const playerName = new Map(
+      players.map((p: any) => [p.id, `${p.firstName} ${p.lastName}`.trim()])
+    )
+    const names = (ids: unknown) =>
+      Array.isArray(ids) ? ids.map((id) => playerName.get(id) ?? "Unknown player") : []
+
     return NextResponse.json({
       requests: requests.map((r: any) => ({
         id: r.id,
         message: r.message,
+        additions: names(r.additions),
+        removals: names(r.removals),
         status: r.status,
         createdAt: r.createdAt,
         resolvedAt: r.resolvedAt,

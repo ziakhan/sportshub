@@ -201,9 +201,17 @@ export async function PATCH(
   }
 }
 
-const requestSchema = z.object({
-  message: z.string().trim().min(5, "Tell the league what you need to change").max(2000),
-})
+const requestSchema = z
+  .object({
+    message: z.string().trim().max(2000).optional().default(""),
+    // Structured changes (2026-07-15): saved on the request, applied by the
+    // league's approval — the roster itself doesn't move until then.
+    additions: z.array(z.string()).max(30).optional().default([]),
+    removals: z.array(z.string()).max(30).optional().default([]),
+  })
+  .refine((d) => d.additions.length + d.removals.length > 0 || d.message.trim().length >= 5, {
+    message: "Pick players to add/remove (or describe the change)",
+  })
 
 /**
  * POST /api/seasons/[id]/submissions/[submissionId]/roster — ask the league
@@ -259,12 +267,45 @@ export async function POST(
       )
     }
 
+    const additions = [...new Set(parsed.data.additions)]
+    const removals = [...new Set(parsed.data.removals)]
+    if (additions.length > 0 || removals.length > 0) {
+      const [clubActive, onRoster] = await Promise.all([
+        prisma.teamPlayer.findMany({
+          where: { teamId: submission.team.id, status: "ACTIVE" },
+          select: { playerId: true },
+        }),
+        prisma.seasonRosterPlayer.findMany({
+          where: { rosterId: submission.roster.id },
+          select: { playerId: true },
+        }),
+      ])
+      const clubIds = new Set(clubActive.map((p: any) => p.playerId))
+      const rosterIds = new Set(onRoster.map((p: any) => p.playerId))
+      const badAdd = additions.find((id) => !clubIds.has(id) || rosterIds.has(id))
+      if (badAdd) {
+        return NextResponse.json(
+          { error: "Additions must be active club players not already on this league roster" },
+          { status: 400 }
+        )
+      }
+      const badRemove = removals.find((id) => !rosterIds.has(id))
+      if (badRemove) {
+        return NextResponse.json(
+          { error: "Removals must be players currently on this league roster" },
+          { status: 400 }
+        )
+      }
+    }
+
     const created = await prisma.$transaction(async (tx: any) => {
       const req = await tx.rosterChangeRequest.create({
         data: {
           rosterId: submission.roster.id,
           requestedById: auth.userId,
           message: parsed.data.message,
+          additions: additions.length ? additions : undefined,
+          removals: removals.length ? removals : undefined,
         },
         select: { id: true },
       })
@@ -272,7 +313,10 @@ export async function POST(
         userId: submission.season.league.ownerId,
         type: "roster_change_requested",
         title: "Roster change requested",
-        message: `${submission.team.name} is asking to change their ${submission.season.label} roster: "${parsed.data.message.slice(0, 120)}"`,
+        message:
+          additions.length + removals.length > 0
+            ? `${submission.team.name} is asking to change their ${submission.season.label} roster: +${additions.length} / -${removals.length} players${parsed.data.message ? ` — "${parsed.data.message.slice(0, 100)}"` : ""}`
+            : `${submission.team.name} is asking to change their ${submission.season.label} roster: "${parsed.data.message.slice(0, 120)}"`,
         link: `/manage/leagues/${submission.season.league.id}/seasons/${submission.season.id}/manage`,
         referenceId: req.id,
         referenceType: "RosterChangeRequest",

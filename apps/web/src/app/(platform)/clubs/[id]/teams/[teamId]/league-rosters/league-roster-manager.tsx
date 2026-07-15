@@ -56,6 +56,8 @@ export function LeagueRosterManager({
   const [selection, setSelection] = useState<Set<string>>(new Set())
   const [requesting, setRequesting] = useState<string | null>(null)
   const [requestMessage, setRequestMessage] = useState("")
+  const [requestAdds, setRequestAdds] = useState<Set<string>>(new Set())
+  const [requestRemoves, setRequestRemoves] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -141,13 +143,19 @@ export function LeagueRosterManager({
       const res = await fetch(`/api/seasons/${v.seasonId}/submissions/${v.submissionId}/roster`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: requestMessage }),
+        body: JSON.stringify({
+          message: requestMessage,
+          additions: [...requestAdds],
+          removals: [...requestRemoves],
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Couldn't send the request")
       setMessage({ type: "success", text: "Request sent — the league will review it." })
       setRequesting(null)
       setRequestMessage("")
+      setRequestAdds(new Set())
+      setRequestRemoves(new Set())
       router.refresh()
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Couldn't send" })
@@ -210,6 +218,8 @@ export function LeagueRosterManager({
                         setRequesting(v.submissionId)
                         setEditing(null)
                         setMessage(null)
+                        setRequestAdds(new Set())
+                        setRequestRemoves(new Set())
                       }}
                     >
                       Request change
@@ -257,33 +267,111 @@ export function LeagueRosterManager({
               )}
             </div>
 
-            {isRequesting && (
-              <div className="border-ink-100 border-b px-6 py-4">
-                <label className="text-ink-600 mb-1 block text-xs font-medium">
-                  What do you need to change, and why?
-                </label>
-                <textarea
-                  value={requestMessage}
-                  onChange={(e) => setRequestMessage(e.target.value)}
-                  rows={2}
-                  maxLength={2000}
-                  placeholder="e.g. Adding two call-ups from our Grade 8 squad after an injury"
-                  className="border-ink-200 focus:border-[color:var(--brand)] w-full rounded-xl border px-3 py-2 text-sm transition-colors focus:outline-none"
-                />
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => sendRequest(v)}
-                    disabled={busy || requestMessage.trim().length < 5}
-                  >
-                    {busy ? "Sending…" : "Send request"}
-                  </Button>
-                  <Button variant="subtle" size="sm" onClick={() => setRequesting(null)}>
-                    Cancel
-                  </Button>
+            {isRequesting && (() => {
+              const onRosterIds = new Set(v.players.map((p) => p.playerId))
+              const addable = clubRoster.filter((p) => !onRosterIds.has(p.playerId))
+              const toggle = (set: Set<string>, setter: (s: Set<string>) => void, id: string) => {
+                const next = new Set(set)
+                if (next.has(id)) next.delete(id)
+                else next.add(id)
+                setter(next)
+              }
+              return (
+                <div className="border-ink-100 border-b px-6 py-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-ink-600 mb-1 text-xs font-medium">
+                        Remove from league roster ({requestRemoves.size})
+                      </p>
+                      <div className="border-ink-200 max-h-44 space-y-0.5 overflow-y-auto rounded-xl border p-2">
+                        {v.players.length === 0 && (
+                          <p className="text-ink-400 p-1 text-xs">Roster is empty.</p>
+                        )}
+                        {v.players.map((p) => (
+                          <label
+                            key={p.playerId}
+                            className="hover:bg-hoop-50 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={requestRemoves.has(p.playerId)}
+                              onChange={() => toggle(requestRemoves, setRequestRemoves, p.playerId)}
+                              className="accent-hoop-600"
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              {p.jerseyNumber != null ? `#${p.jerseyNumber} ` : ""}
+                              {p.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-ink-600 mb-1 text-xs font-medium">
+                        Add from club roster ({requestAdds.size})
+                      </p>
+                      <div className="border-ink-200 max-h-44 space-y-0.5 overflow-y-auto rounded-xl border p-2">
+                        {addable.length === 0 && (
+                          <p className="text-ink-400 p-1 text-xs">
+                            Everyone on the club roster is already in this league.
+                          </p>
+                        )}
+                        {addable.map((p) => (
+                          <label
+                            key={p.playerId}
+                            className="hover:bg-court-50 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={requestAdds.has(p.playerId)}
+                              onChange={() => toggle(requestAdds, setRequestAdds, p.playerId)}
+                              className="accent-court-600"
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                              {p.jerseyNumber != null ? `#${p.jerseyNumber} ` : ""}
+                              {p.name}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <label className="text-ink-600 mb-1 mt-3 block text-xs font-medium">
+                    Note for the league (optional)
+                  </label>
+                  <textarea
+                    value={requestMessage}
+                    onChange={(e) => setRequestMessage(e.target.value)}
+                    rows={2}
+                    maxLength={2000}
+                    placeholder="e.g. Two call-ups from our Grade 8 squad after an injury"
+                    className="border-ink-200 focus:border-[color:var(--brand)] w-full rounded-xl border px-3 py-2 text-sm transition-colors focus:outline-none"
+                  />
+                  <p className="text-ink-400 mt-1 text-xs">
+                    Nothing changes until the league approves — approval applies these
+                    adds/removes to the locked roster.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => sendRequest(v)}
+                      disabled={
+                        busy ||
+                        (requestAdds.size + requestRemoves.size === 0 &&
+                          requestMessage.trim().length < 5)
+                      }
+                    >
+                      {busy
+                        ? "Sending…"
+                        : `Send request${requestAdds.size + requestRemoves.size > 0 ? ` (+${requestAdds.size} / -${requestRemoves.size})` : ""}`}
+                    </Button>
+                    <Button variant="subtle" size="sm" onClick={() => setRequesting(null)}>
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {isEditing ? (
               <div className="px-6 py-4">
