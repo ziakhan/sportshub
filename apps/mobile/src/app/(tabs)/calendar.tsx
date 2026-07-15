@@ -1,111 +1,153 @@
-import { useCallback, useState } from "react"
-import { RefreshControl, ScrollView, StyleSheet, Text, Pressable, View } from "react-native"
-import * as WebBrowser from "expo-web-browser"
-import Ionicons from "@expo/vector-icons/Ionicons"
-import { apiBaseUrl } from "@/lib/api"
+import { useCallback, useMemo, useState } from "react"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { TopBar } from "@/components/top-bar"
+import { EventCard } from "@/components/event-card"
+import { EmptyState, Loading } from "@/components/ui"
+import { useMyCalendar, type CalItem } from "@/lib/calendar"
 import { useHome } from "@/lib/home"
-import { palette, ui } from "@/lib/theme"
+import { ui } from "@/lib/theme"
 
 /**
- * Calendar (stage 1) — the personal week across every lens, from the same
- * resolver as the web home band. Month/list views live on the web calendar;
- * a native month grid is the stage-2 follow-up.
+ * Calendar — the FULL personal agenda (same /api/calendar/mine feed as the
+ * web calendar): every practice/game/event across every lens, grouped by
+ * day, lens filter chips, inline RSVP. Native replaces the old "open full
+ * calendar on the web" punt.
  */
 
+function dayKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+function dayLabel(iso: string): string {
+  const d = new Date(iso)
+  const today = new Date()
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+  if (dayKey(iso) === dayKey(today.toISOString())) return "Today"
+  if (dayKey(iso) === dayKey(tomorrow.toISOString())) return "Tomorrow"
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+}
+
 export default function CalendarScreen() {
-  const { home, refresh } = useHome()
+  const { calendar, loaded, refresh } = useMyCalendar()
+  const { home } = useHome()
   const [refreshing, setRefreshing] = useState(false)
+  const [lensFilter, setLensFilter] = useState<string | null>(null)
+  const [showPast, setShowPast] = useState(false)
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     await refresh()
     setRefreshing(false)
   }, [refresh])
 
-  const events = home?.contexts.weekEvents ?? []
+  const groups = useMemo(() => {
+    if (!calendar) return []
+    const now = Date.now()
+    const items = calendar.items
+      .filter((i) => (showPast ? true : new Date(i.at).getTime() >= now - 3 * 60 * 60 * 1000))
+      .filter((i) => (lensFilter ? i.lensKeys.includes(lensFilter) : true))
+      .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    const byDay = new Map<string, CalItem[]>()
+    for (const item of items) {
+      const key = dayKey(item.at)
+      byDay.set(key, [...(byDay.get(key) ?? []), item])
+    }
+    return [...byDay.entries()]
+  }, [calendar, lensFilter, showPast])
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <Text style={styles.heading}>Next 7 days</Text>
-      {events.length === 0 ? (
-        <Text style={styles.muted}>Nothing scheduled this week.</Text>
-      ) : (
-        events.map((e) => (
-          <View key={e.item.id} style={styles.card}>
-            <Text style={styles.when}>
-              {new Date(e.item.startsAt).toLocaleString(undefined, {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </Text>
-            <Text style={styles.title}>{e.item.title}</Text>
-            {e.item.location ? <Text style={styles.muted}>{e.item.location}</Text> : null}
-            <View style={styles.chipRow}>
-              {e.chips.map((chip) => (
-                <Text key={chip} style={styles.chip}>
-                  {chip}
-                </Text>
-              ))}
-              {e.awaitingRsvp.length > 0 ? (
-                <Text style={[styles.chip, styles.chipWarn]}>RSVP: {e.awaitingRsvp.join(", ")}</Text>
-              ) : null}
-            </View>
-          </View>
-        ))
-      )}
-      <Pressable
-        style={({ pressed }) => [styles.webButton, pressed && { opacity: 0.7 }]}
-        onPress={() => void WebBrowser.openBrowserAsync(`${apiBaseUrl()}/calendar`)}
+    <View style={styles.root}>
+      <TopBar unread={home?.unreadNotifications ?? 0} />
+      {calendar && calendar.lenses.length > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.lensRow}
+          contentContainerStyle={styles.lensRowContent}
+        >
+          <Pressable
+            style={[styles.lensChip, lensFilter === null && styles.lensChipOn]}
+            onPress={() => setLensFilter(null)}
+          >
+            <Text style={[styles.lensText, lensFilter === null && styles.lensTextOn]}>All</Text>
+          </Pressable>
+          {calendar.lenses.map((lens) => (
+            <Pressable
+              key={lens.key}
+              style={[styles.lensChip, lensFilter === lens.key && styles.lensChipOn]}
+              onPress={() => setLensFilter((cur) => (cur === lens.key ? null : lens.key))}
+            >
+              <Text style={[styles.lensText, lensFilter === lens.key && styles.lensTextOn]}>
+                {lens.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
+
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <Ionicons name="calendar-outline" size={16} color="#fff" />
-        <Text style={styles.webButtonText}>Open full calendar</Text>
-      </Pressable>
-    </ScrollView>
+        {!loaded ? <Loading /> : null}
+        {loaded && groups.length === 0 ? (
+          <EmptyState
+            icon="calendar-outline"
+            title="Nothing scheduled"
+            body="Practices, games and team events land here."
+          />
+        ) : null}
+        {groups.map(([key, items]) => (
+          <View key={key} style={styles.dayGroup}>
+            <Text style={styles.dayHeading}>{dayLabel(items[0].at)}</Text>
+            {items.map((item) => (
+              <EventCard key={`${item.kind}:${item.id}`} item={item} calendar={calendar!} />
+            ))}
+          </View>
+        ))}
+        {loaded && calendar ? (
+          <Pressable onPress={() => setShowPast((v) => !v)} hitSlop={8}>
+            <Text style={styles.pastToggle}>
+              {showPast ? "Hide past events" : "Show past events"}
+            </Text>
+          </Pressable>
+        ) : null}
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
-  content: { padding: 16, paddingBottom: 32, gap: 10 },
-  heading: { fontSize: 18, fontWeight: "800", color: ui.text },
-  card: {
-    backgroundColor: ui.surface,
-    borderRadius: ui.radius.md,
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32, gap: 12 },
+  lensRow: {
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: ui.border,
+    flexGrow: 0,
+  },
+  lensRowContent: { gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
+  lensChip: {
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: ui.border,
-    padding: 12,
-    gap: 2,
+    borderColor: ui.borderStrong,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    backgroundColor: "#fff",
   },
-  when: { fontSize: 12, fontWeight: "700", color: palette.play[700] },
-  title: { fontSize: 15, color: ui.text, fontWeight: "600" },
-  muted: { fontSize: 13, color: ui.textMuted },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
-  chip: {
-    fontSize: 11,
-    color: ui.textMuted,
-    borderWidth: 1,
-    borderColor: ui.border,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    overflow: "hidden",
+  lensChipOn: { backgroundColor: ui.primary, borderColor: ui.primary },
+  lensText: { fontSize: 12, fontWeight: "600", color: ui.textMuted },
+  lensTextOn: { color: "#fff" },
+  dayGroup: { gap: 8 },
+  dayHeading: { fontSize: 14, fontWeight: "800", color: ui.text, marginTop: 4 },
+  pastToggle: {
+    textAlign: "center",
+    color: ui.primary,
+    fontWeight: "700",
+    fontSize: 13,
+    paddingVertical: 8,
   },
-  chipWarn: { color: "#9a3412", borderColor: "#fdba74", backgroundColor: "#fff7ed" },
-  webButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: ui.primary,
-    borderRadius: ui.radius.md,
-    paddingVertical: 12,
-    marginTop: 8,
-  },
-  webButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 })

@@ -1,16 +1,6 @@
 import { Stack } from "expo-router"
-import { ui } from "@/lib/theme"
 
+/** Offers stack — screens render their own SubHeader. */
 export default function OffersStack() {
-  return (
-    <Stack
-      screenOptions={{
-        headerTitleStyle: { fontWeight: "700", color: ui.text },
-        headerTintColor: ui.primary,
-      }}
-    >
-      <Stack.Screen name="index" options={{ title: "Offers" }} />
-      <Stack.Screen name="[offerId]" options={{ title: "Offer" }} />
-    </Stack>
-  )
+  return <Stack screenOptions={{ headerShown: false }} />
 }

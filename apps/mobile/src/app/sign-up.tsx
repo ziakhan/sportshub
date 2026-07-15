@@ -4,19 +4,27 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native"
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
-import { ui, palette } from "@/lib/theme"
+import { apiBaseUrl } from "@/lib/api"
 import { useSession } from "@/lib/session"
+import { palette, ui } from "@/lib/theme"
 
-/** Sign-in modal — the app browses fine without it (no login wall). */
-export default function SignInScreen() {
+/**
+ * Native account creation (owner rule: nothing punts to the website).
+ * POST /api/auth/signup, then straight into a bearer session. Role
+ * onboarding (parent/coach/etc.) happens naturally the first time a
+ * role-specific action needs it — same event-driven model as the web.
+ */
+export default function SignUpScreen() {
   const { signIn } = useSession()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -28,14 +36,30 @@ export default function SignInScreen() {
   }
 
   async function onSubmit() {
-    if (!email.trim() || !password || busy) return
+    if (busy) return
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+      setError("All fields are required")
+      return
+    }
     setBusy(true)
     setError(null)
     try {
+      const res = await fetch(`${apiBaseUrl()}/api/auth/signup`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          password,
+        }),
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(body?.error ?? `Sign-up failed (${res.status})`)
       await signIn(email.trim(), password)
       dismiss()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-in failed")
+      setError(err instanceof Error ? err.message : "Sign-up failed")
     } finally {
       setBusy(false)
     }
@@ -49,12 +73,28 @@ export default function SignInScreen() {
       <Pressable style={styles.close} onPress={dismiss} hitSlop={8}>
         <Ionicons name="close" size={24} color={ui.textMuted} />
       </Pressable>
-      <View style={styles.card}>
+      <ScrollView contentContainerStyle={styles.card} keyboardShouldPersistTaps="handled">
         <Text style={styles.logo}>
           sports<Text style={{ color: ui.primary }}>hub</Text>
         </Text>
-        <Text style={styles.tagline}>Live scores, team chat and your family’s basketball life</Text>
+        <Text style={styles.tagline}>Create your free account</Text>
 
+        <TextInput
+          style={styles.input}
+          placeholder="First name"
+          placeholderTextColor={ui.textFaint}
+          autoComplete="given-name"
+          value={firstName}
+          onChangeText={setFirstName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Last name"
+          placeholderTextColor={ui.textFaint}
+          autoComplete="family-name"
+          value={lastName}
+          onChangeText={setLastName}
+        />
         <TextInput
           style={styles.input}
           placeholder="Email"
@@ -67,10 +107,10 @@ export default function SignInScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password (8+ characters)"
           placeholderTextColor={ui.textFaint}
           secureTextEntry
-          autoComplete="password"
+          autoComplete="new-password"
           value={password}
           onChangeText={setPassword}
           onSubmitEditing={onSubmit}
@@ -86,29 +126,24 @@ export default function SignInScreen() {
           {busy ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Sign in</Text>
+            <Text style={styles.buttonText}>Create account</Text>
           )}
         </Pressable>
 
-        <Pressable onPress={() => router.replace("/sign-up")} hitSlop={6}>
+        <Pressable onPress={() => router.replace("/sign-in")} hitSlop={6}>
           <Text style={styles.footnote}>
-            New to SportsHub? <Text style={styles.footnoteLink}>Create an account</Text>
+            Already have an account? <Text style={styles.footnoteLink}>Sign in</Text>
           </Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: ui.background,
-    justifyContent: "center",
-    padding: 24,
-  },
+  screen: { flex: 1, backgroundColor: ui.background },
   close: { position: "absolute", top: 20, right: 20, zIndex: 1, padding: 4 },
-  card: { gap: 12 },
+  card: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 12 },
   logo: {
     fontSize: 36,
     fontWeight: "800",
@@ -116,12 +151,7 @@ const styles = StyleSheet.create({
     color: ui.text,
     textAlign: "center",
   },
-  tagline: {
-    fontSize: 14,
-    color: ui.textMuted,
-    textAlign: "center",
-    marginBottom: 16,
-  },
+  tagline: { fontSize: 14, color: ui.textMuted, textAlign: "center", marginBottom: 16 },
   input: {
     borderWidth: 1,
     borderColor: ui.borderStrong,
@@ -132,11 +162,7 @@ const styles = StyleSheet.create({
     color: ui.text,
     backgroundColor: "#fff",
   },
-  error: {
-    color: palette.hoop[600],
-    fontSize: 14,
-    textAlign: "center",
-  },
+  error: { color: palette.hoop[600], fontSize: 14, textAlign: "center" },
   button: {
     backgroundColor: ui.primary,
     borderRadius: ui.radius.md,
@@ -145,11 +171,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  footnote: {
-    fontSize: 13,
-    color: ui.textMuted,
-    textAlign: "center",
-    marginTop: 16,
-  },
+  footnote: { fontSize: 13, color: ui.textMuted, textAlign: "center", marginTop: 16 },
   footnoteLink: { color: ui.primary, fontWeight: "700" },
 })

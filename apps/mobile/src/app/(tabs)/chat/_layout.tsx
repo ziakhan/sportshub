@@ -1,16 +1,6 @@
 import { Stack } from "expo-router"
-import { ui } from "@/lib/theme"
 
+/** Chat stack — list renders the TopBar, the thread renders a SubHeader. */
 export default function ChatStack() {
-  return (
-    <Stack
-      screenOptions={{
-        headerTitleStyle: { fontWeight: "700", color: ui.text },
-        headerTintColor: ui.primary,
-      }}
-    >
-      <Stack.Screen name="index" options={{ title: "Team chat" }} />
-      <Stack.Screen name="[teamId]" options={{ title: "Chat" }} />
-    </Stack>
-  )
+  return <Stack screenOptions={{ headerShown: false }} />
 }

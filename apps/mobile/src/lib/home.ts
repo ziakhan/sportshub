@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from "react"
 import { apiJson } from "@/lib/api"
+import { useSession } from "@/lib/session"
 
 /**
  * Native twin of the web's nav-shape + my-contexts resolvers (N3-v2 parity),
  * served by GET /api/mobile/home in one round trip. Drives which tabs exist
  * (calendar, role context slot) and the Home personal band. Module-level
  * cache keeps tabs stable across screen remounts; refresh() re-fetches.
+ * Signed-out users never fetch (Home shows public content only), and a
+ * failed first fetch retries on an interval so the tab set can't get stuck
+ * missing (audit v2 §B5).
  */
 
 export interface NavShape {
@@ -49,40 +53,61 @@ export interface MyContexts {
 export interface HomeData {
   shape: NavShape
   contexts: MyContexts
+  unreadNotifications?: number
 }
 
 let cached: HomeData | null = null
-const listeners = new Set<(d: HomeData) => void>()
+const listeners = new Set<(d: HomeData | null) => void>()
+
+/** Sign-out must drop the cached band so the next account never sees it. */
+export function resetHome(): void {
+  cached = null
+  listeners.forEach((fn) => fn(null))
+}
+
+const RETRY_MS = 20_000
 
 export function useHome(): { home: HomeData | null; loaded: boolean; refresh: () => Promise<void> } {
+  const { signedIn } = useSession()
   const [home, setHome] = useState<HomeData | null>(cached)
   const [loaded, setLoaded] = useState(cached !== null)
 
   const refresh = useCallback(async () => {
+    if (!signedIn) return
     try {
       const data = await apiJson<HomeData>("/api/mobile/home")
       cached = data
       listeners.forEach((fn) => fn(data))
     } catch {
-      // keep last known shape; next focus/interval retries
+      // keep last known shape; the retry interval below tries again
     } finally {
       setLoaded(true)
     }
-  }, [])
+  }, [signedIn])
 
   useEffect(() => {
-    const fn = (d: HomeData) => setHome(d)
+    const fn = (d: HomeData | null) => setHome(d)
     listeners.add(fn)
-    if (!cached) void refresh()
+    if (signedIn && !cached) void refresh()
     return () => {
       listeners.delete(fn)
     }
-  }, [refresh])
+  }, [refresh, signedIn])
+
+  // A cold start that couldn't reach the server must not leave the tab set
+  // incomplete forever — retry until the shape arrives.
+  useEffect(() => {
+    if (!signedIn || cached) return
+    const timer = setInterval(() => {
+      if (!cached) void refresh()
+    }, RETRY_MS)
+    return () => clearInterval(timer)
+  }, [signedIn, refresh, home])
 
   return { home, loaded, refresh }
 }
 
-/** The coach's actual workspace on the web — /teams/[id] has no root page. */
-export function coachTeamWebPath(t: { teamId: string; tenantId: string }): string {
-  return `/clubs/${t.tenantId}/teams/${t.teamId}/dashboard`
+/** The coach's team workspace route (native — audit v2 §2). */
+export function coachTeamPath(t: { teamId: string }): string {
+  return `/team/${t.teamId}`
 }

@@ -2,9 +2,11 @@ import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect, type ReactElement } from "react"
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native"
+import { StatusBar } from "expo-status-bar"
 import { StripeProvider } from "@stripe/stripe-react-native"
 import { SessionProvider, useSession } from "@/lib/session"
 import { useMobileConfig } from "@/lib/config"
+import { routePushResponses } from "@/lib/push"
 import { ui } from "@/lib/theme"
 
 SplashScreen.preventAutoHideAsync()
@@ -30,24 +32,35 @@ function ForcedUpgrade({ minVersion }: { minVersion: string }) {
   )
 }
 
+/**
+ * No login wall (audit v2 §1): the tabs render for everyone — anonymous
+ * users browse the public layer; sign-in/sign-up are modals invoked from
+ * the top bar or a gated action. Push taps deep-link once the navigator
+ * is mounted.
+ */
 function RootNavigator() {
-  const { isLoading, signedIn } = useSession()
+  const { isLoading } = useSession()
 
   useEffect(() => {
     if (!isLoading) SplashScreen.hideAsync()
   }, [isLoading])
 
+  useEffect(() => {
+    if (isLoading) return
+    return routePushResponses()
+  }, [isLoading])
+
   if (isLoading) return null
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={signedIn}>
+    <>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="sign-in" />
-      </Stack.Protected>
-    </Stack>
+        <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
+        <Stack.Screen name="sign-up" options={{ presentation: "modal" }} />
+      </Stack>
+    </>
   )
 }
 

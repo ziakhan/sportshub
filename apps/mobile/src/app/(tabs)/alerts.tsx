@@ -8,14 +8,16 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { SubHeader } from "@/components/top-bar"
 import { apiFetch, apiJson } from "@/lib/api"
+import { nativeRouteForLink } from "@/lib/nav-links"
 import { useRealtime } from "@/lib/realtime"
 import { ui } from "@/lib/theme"
 
 /**
  * Notifications inbox — the same /api/notifications feed as the web bell,
- * with mark-as-read. Deep links land here as pushes; tapping just marks
- * read in v1 (per-screen deep-link routing comes with the remaining tabs).
+ * with mark-as-read. Tapping follows the notification's link through the
+ * shared web-path → native-route map (chat, offers, games, kids, …).
  */
 
 interface NotificationItem {
@@ -70,18 +72,10 @@ export default function AlertsScreen() {
     return () => clearInterval(timer)
   }, [load, connected])
 
-  /** Deep links: chat + offers open in-app; everything else just marks read. */
+  /** Follow the link natively — one shared route map for bell + push taps. */
   function follow(item: NotificationItem) {
-    const link = item.link ?? ""
-    const chatMatch = /^\/teams\/([\w-]+)\/chat/.exec(link)
-    if (chatMatch) {
-      router.push({ pathname: "/chat/[teamId]", params: { teamId: chatMatch[1] } })
-      return
-    }
-    const offerMatch = /^\/offers\/([\w-]+)/.exec(link)
-    if (offerMatch) {
-      router.push({ pathname: "/offers/[offerId]", params: { offerId: offerMatch[1] } })
-    }
+    const route = nativeRouteForLink(item.link)
+    if (route) router.push(route as any)
   }
 
   const onRefresh = useCallback(async () => {
@@ -101,7 +95,9 @@ export default function AlertsScreen() {
   }
 
   return (
-    <FlatList
+    <View style={styles.root}>
+      <SubHeader title="Alerts" />
+      <FlatList
       style={styles.screen}
       contentContainerStyle={items.length === 0 ? styles.emptyWrap : undefined}
       data={items}
@@ -136,12 +132,14 @@ export default function AlertsScreen() {
           <Text style={styles.time}>{ago(item.createdAt)}</Text>
         </Pressable>
       )}
-    />
+      />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   unreadHeader: {
     padding: 12,
     fontSize: 13,

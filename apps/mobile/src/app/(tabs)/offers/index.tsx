@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { SubHeader } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
 import { palette, ui } from "@/lib/theme"
 
@@ -64,7 +65,9 @@ export default function OffersListScreen() {
   }, [load])
 
   return (
-    <FlatList
+    <View style={styles.root}>
+      <SubHeader title="Offers" />
+      <FlatList
       style={styles.screen}
       contentContainerStyle={!offers || offers.length === 0 ? styles.emptyWrap : undefined}
       data={offers ?? []}
@@ -108,16 +111,19 @@ export default function OffersListScreen() {
           </Pressable>
         )
       }}
-    />
+      />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   card: {
     borderWidth: 1,
     borderColor: ui.border,
     borderRadius: ui.radius.md,
+    backgroundColor: ui.surface,
     padding: 14,
     marginHorizontal: 12,
     marginTop: 12,

@@ -11,8 +11,9 @@ import {
   View,
 } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { Stack, useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
+import { SubHeader } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
 import { useSession } from "@/lib/session"
@@ -35,8 +36,8 @@ interface ChatMessage {
 
 const POLL_MS = 5000
 const SLOW_POLL_MS = 60_000
-// Stack-header toolbar height (react-navigation defaults); safe-area top is added at use site.
-const HEADER_TOOLBAR = Platform.OS === "ios" ? 44 : 56
+// SubHeader bar height; safe-area top is added at use site.
+const HEADER_TOOLBAR = 56
 
 export default function ConversationScreen() {
   const { teamId, title } = useLocalSearchParams<{ teamId: string; title?: string }>()
@@ -121,14 +122,15 @@ export default function ConversationScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      // Edge-to-edge Android (SDK 57 default) no longer resizes the window for
-      // the keyboard, so "padding" is required on BOTH platforms.
-      behavior="padding"
-      keyboardVerticalOffset={insets.top + HEADER_TOOLBAR}
-    >
-      <Stack.Screen options={{ title: (title as string) || "Chat" }} />
+    <View style={styles.root}>
+      <SubHeader title={(title as string) || "Chat"} />
+      <KeyboardAvoidingView
+        style={styles.screen}
+        // Edge-to-edge Android (SDK 57 default) no longer resizes the window for
+        // the keyboard, so "padding" is required on BOTH platforms.
+        behavior="padding"
+        keyboardVerticalOffset={insets.top + HEADER_TOOLBAR}
+      >
       <FlatList
         style={styles.list}
         data={newestFirst}
@@ -155,7 +157,12 @@ export default function ConversationScreen() {
               ) : null}
               <Text style={[styles.body, mine && styles.bodyMine]}>{item.body}</Text>
               {item.poll ? (
-                <Text style={styles.pollNote}>📊 Poll — vote on the website</Text>
+                <Text
+                  style={styles.pollNote}
+                  onPress={() => router.push(`/team/${teamId}`)}
+                >
+                  📊 Poll — tap to vote
+                </Text>
               ) : null}
             </View>
           )
@@ -185,12 +192,14 @@ export default function ConversationScreen() {
           )}
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   list: { flex: 1, paddingHorizontal: 12 },
   listContent: { paddingVertical: 8 },
   empty: { textAlign: "center", color: ui.textMuted, marginTop: 40, fontSize: 15 },

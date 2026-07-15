@@ -24,17 +24,21 @@ const USER_KEY = "sportshub.user"
  * 2. The Metro dev-server host with the web app's port 3000 — in a dev
  *    build the phone already knows the Mac's LAN address, so pointing the
  *    API at the same host Just Works on shared Wi-Fi.
+ * 3. Production — a release build must NEVER fall back to localhost (that
+ *    bricked the first OTA); the live site is the safe default.
  */
 export function apiBaseUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_URL
   if (configured) return configured.replace(/\/$/, "")
   const hostUri = Constants.expoConfig?.hostUri
   if (hostUri) return `http://${hostUri.split(":")[0]}:3000`
-  return "http://localhost:3000"
+  return "https://ysportshub.com"
 }
 
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_KEY)
+  // SecureStore can throw on Android after a backup restore / keystore
+  // change — treat unreadable as absent rather than crashing the caller.
+  return SecureStore.getItemAsync(ACCESS_KEY).catch(() => null)
 }
 
 async function setTokens(accessToken: string, refreshToken: string): Promise<void> {
@@ -76,7 +80,7 @@ export async function signIn(email: string, password: string): Promise<SessionUs
 
 /** The user from the last sign-in — survives app restarts. */
 export async function storedUser(): Promise<SessionUser | null> {
-  const raw = await SecureStore.getItemAsync(USER_KEY)
+  const raw = await SecureStore.getItemAsync(USER_KEY).catch(() => null)
   if (!raw) return null
   try {
     return JSON.parse(raw) as SessionUser
@@ -85,19 +89,41 @@ export async function storedUser(): Promise<SessionUser | null> {
   }
 }
 
-/** Rotate the refresh token; false means the session is gone — sign out. */
+/**
+ * The session context registers here to hear about definitive sign-outs
+ * (refresh answered 401/403 → tokens are gone server-side). Transient
+ * failures (5xx during a deploy, rate limits, network blips) never fire it.
+ */
+let sessionLostHandler: (() => void) | null = null
+export function setSessionLostHandler(fn: (() => void) | null): void {
+  sessionLostHandler = fn
+}
+
+/**
+ * Rotate the refresh token; false means this call couldn't get a new pair.
+ * Tokens are cleared ONLY when the server says the session is dead (401/403)
+ * — a 500/502 during a box deploy or a dropped connection must not sign the
+ * user out (audit v2 §1).
+ */
 async function refreshSession(): Promise<boolean> {
   const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY)
   if (!refreshToken) return false
-  const res = await fetch(`${apiBaseUrl()}/api/auth/refresh`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ refreshToken }),
-  })
-  if (!res.ok) {
+  let res: Response
+  try {
+    res = await fetch(`${apiBaseUrl()}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    })
+  } catch {
+    return false // offline — retry on the next 401
+  }
+  if (res.status === 401 || res.status === 403) {
     await clearTokens()
+    sessionLostHandler?.()
     return false
   }
+  if (!res.ok) return false // transient server trouble — keep the tokens
   const body = await res.json()
   await setTokens(body.accessToken, body.refreshToken)
   return true
@@ -118,9 +144,10 @@ export async function signOut(): Promise<void> {
   await clearTokens()
 }
 
-/** True when a refresh token exists — the app boots straight to the tabs. */
+/** True when a refresh token exists — the app boots signed in. */
 export async function hasStoredSession(): Promise<boolean> {
-  return (await SecureStore.getItemAsync(REFRESH_KEY)) !== null
+  const token = await SecureStore.getItemAsync(REFRESH_KEY).catch(() => null)
+  return token !== null
 }
 
 let refreshInFlight: Promise<boolean> | null = null

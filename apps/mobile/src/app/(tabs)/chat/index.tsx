@@ -8,7 +8,9 @@ import {
   View,
 } from "react-native"
 import { useRouter } from "expo-router"
+import { TopBar } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
+import { useHome } from "@/lib/home"
 import { useRealtime } from "@/lib/realtime"
 import { ui } from "@/lib/theme"
 
@@ -27,6 +29,7 @@ interface ChatTeam {
 
 export default function ChatListScreen() {
   const router = useRouter()
+  const { home } = useHome()
   const [teams, setTeams] = useState<ChatTeam[] | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -57,7 +60,9 @@ export default function ChatListScreen() {
   }, [load])
 
   return (
-    <FlatList
+    <View style={styles.root}>
+      <TopBar unread={home?.unreadNotifications ?? 0} />
+      <FlatList
       style={styles.screen}
       contentContainerStyle={!teams || teams.length === 0 ? styles.emptyWrap : undefined}
       data={teams ?? []}
@@ -88,12 +93,14 @@ export default function ChatListScreen() {
           ) : null}
         </Pressable>
       )}
-    />
+      />
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   row: {
     flexDirection: "row",
     alignItems: "center",

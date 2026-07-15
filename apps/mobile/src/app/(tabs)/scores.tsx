@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react"
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native"
+import { router } from "expo-router"
+import { SubHeader } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
 import { palette, ui } from "@/lib/theme"
@@ -56,7 +59,10 @@ function GameCard({ game }: { game: ScoreGame }) {
   const isLive = game.status === "LIVE"
   const isFinal = game.status === "COMPLETED"
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}
+      onPress={() => router.push(`/browse/game/${game.id}`)}
+    >
       <View style={styles.cardHeader}>
         {isLive ? (
           <View style={styles.liveBadge}>
@@ -81,7 +87,7 @@ function GameCard({ game }: { game: ScoreGame }) {
         </View>
       ))}
       {game.venue ? <Text style={styles.venue}>{game.venue}</Text> : null}
-    </View>
+    </Pressable>
   )
 }
 
@@ -136,30 +142,34 @@ export default function ScoresScreen() {
   }, [load])
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      {error && !board ? (
-        <Text style={styles.empty}>Couldn’t reach SportsHub — pull to retry.</Text>
-      ) : null}
-      {board ? (
-        <>
-          <Section title="Live now" games={board.live} />
-          <Section title="This week’s finals" games={board.finals} />
-          <Section title="Coming up" games={board.upcoming} />
-          {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
-            <Text style={styles.empty}>No games this week.</Text>
-          ) : null}
-        </>
-      ) : null}
-    </ScrollView>
+    <View style={styles.root}>
+      <SubHeader title="Live scores" />
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {error && !board ? (
+          <Text style={styles.empty}>Couldn’t reach SportsHub — pull to retry.</Text>
+        ) : null}
+        {board ? (
+          <>
+            <Section title="Live now" games={board.live} />
+            <Section title="This week’s finals" games={board.finals} />
+            <Section title="Coming up" games={board.upcoming} />
+            {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
+              <Text style={styles.empty}>No games this week.</Text>
+            ) : null}
+          </>
+        ) : null}
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   content: { padding: 16, gap: 8 },
   section: { marginBottom: 16 },
   sectionTitle: {
@@ -176,7 +186,7 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.md,
     padding: 12,
     marginBottom: 8,
-    backgroundColor: ui.background,
+    backgroundColor: ui.surface,
     gap: 6,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

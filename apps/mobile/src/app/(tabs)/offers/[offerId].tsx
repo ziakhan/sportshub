@@ -9,8 +9,9 @@ import {
   TextInput,
   View,
 } from "react-native"
-import { Stack, useLocalSearchParams, useRouter } from "expo-router"
+import { useLocalSearchParams, useRouter } from "expo-router"
 import { useStripe } from "@stripe/stripe-react-native"
+import { SubHeader } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
 import { palette, ui } from "@/lib/theme"
 
@@ -166,8 +167,11 @@ export default function OfferDetailScreen() {
 
   if (!offer) {
     return (
-      <View style={styles.center}>
-        {error ? <Text style={styles.error}>{error}</Text> : <ActivityIndicator />}
+      <View style={styles.root}>
+        <SubHeader title="Offer" />
+        <View style={styles.center}>
+          {error ? <Text style={styles.error}>{error}</Text> : <ActivityIndicator />}
+        </View>
       </View>
     )
   }
@@ -176,8 +180,9 @@ export default function OfferDetailScreen() {
   const needsSizes = !!(offer.includesUniform || offer.includesShoes || offer.includesTracksuit)
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: offer.team.name }} />
+    <View style={styles.root}>
+      <SubHeader title={offer.team.name} />
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
 
       <View style={styles.card}>
         <Text style={styles.heading}>
@@ -258,18 +263,21 @@ export default function OfferDetailScreen() {
           </Pressable>
         </>
       ) : null}
-    </ScrollView>
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.background },
+  root: { flex: 1, backgroundColor: ui.background },
+  screen: { flex: 1 },
   content: { padding: 16, gap: 12 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   card: {
     borderWidth: 1,
     borderColor: ui.border,
     borderRadius: ui.radius.md,
+    backgroundColor: ui.surface,
     padding: 14,
     gap: 6,
   },

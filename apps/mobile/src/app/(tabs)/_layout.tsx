@@ -1,14 +1,16 @@
 import { Tabs } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useHome, type NavShape } from "@/lib/home"
+import { useSession } from "@/lib/session"
 import { ui } from "@/lib/theme"
 
 /**
- * N3-v2 tab bar parity with the web's mobile bottom tabs (site-ia-plan
- * §5.6.6): Home · Chat · Calendar (role-gated) · context slot (operator >
- * coach > parent > referee) · Account. Scores/Offers/Alerts stay as hidden
- * routes reachable from Home. Tab set derives from /api/mobile/home's nav
- * shape; until it loads, only the base tabs show.
+ * Tab bar (N3-v2 §5.6.6 + audit v2): Home and Browse exist for EVERYONE —
+ * anonymous users browse like the public web. Signed-in users additionally
+ * get Chat · Calendar (role-gated) · the role context slot (operator >
+ * coach > parent > referee) · Account. Scores/Offers/Alerts and the native
+ * detail stacks (kids, team, referee, operator) are hidden routes reachable
+ * from Home, the top bar and deep links.
  */
 
 type IoniconName = keyof typeof Ionicons.glyphMap
@@ -24,6 +26,7 @@ function contextTab(shape: NavShape | undefined): { title: string; icon: Ionicon
 }
 
 export default function TabsLayout() {
+  const { signedIn } = useSession()
   const { home } = useHome()
   const shape = home?.shape
   const ctx = contextTab(shape)
@@ -31,9 +34,10 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
+        headerShown: false, // screens render the branded TopBar themselves
         tabBarActiveTintColor: ui.primary,
         tabBarInactiveTintColor: ui.textMuted,
-        headerTitleStyle: { fontWeight: "700", color: ui.text },
+        tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border },
       }}
     >
       <Tabs.Screen
@@ -44,10 +48,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="browse"
+        options={{
+          title: "Browse",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
-          headerShown: false,
+          href: signedIn ? "/(tabs)/chat" : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles-outline" size={size} color={color} />
           ),
@@ -57,7 +70,7 @@ export default function TabsLayout() {
         name="calendar"
         options={{
           title: "Calendar",
-          href: shape?.hasCalendar ? "/(tabs)/calendar" : null,
+          href: signedIn && shape?.hasCalendar ? "/(tabs)/calendar" : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -67,7 +80,7 @@ export default function TabsLayout() {
         name="context"
         options={{
           title: ctx?.title ?? "Mine",
-          href: ctx ? "/(tabs)/context" : null,
+          href: signedIn && ctx ? "/(tabs)/context" : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name={ctx?.icon ?? "people-outline"} size={size} color={color} />
           ),
@@ -82,10 +95,14 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* Reachable from Home, not tabs (web parity: these aren't top-level). */}
+      {/* Hidden routes — reachable from Home, the top bar and deep links. */}
       <Tabs.Screen name="scores" options={{ href: null, title: "Live scores" }} />
-      <Tabs.Screen name="offers" options={{ href: null, headerShown: false }} />
+      <Tabs.Screen name="offers" options={{ href: null }} />
       <Tabs.Screen name="alerts" options={{ href: null, title: "Alerts" }} />
+      <Tabs.Screen name="kids" options={{ href: null }} />
+      <Tabs.Screen name="team" options={{ href: null }} />
+      <Tabs.Screen name="referee" options={{ href: null, title: "Refereeing" }} />
+      <Tabs.Screen name="operator" options={{ href: null, title: "Operations" }} />
     </Tabs>
   )
 }
