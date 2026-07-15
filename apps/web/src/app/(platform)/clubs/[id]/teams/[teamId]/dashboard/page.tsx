@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { getTeamRoster } from "@/lib/teams/roster"
 import { Badge, Button, PanelHeader, StatTile, toneForStatus } from "@/components/ui"
 import { ArchivedTeamBanner, TeamSeasonActions } from "./team-season-actions"
 
@@ -41,14 +42,6 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
   const teamRaw = await prisma.team.findFirst({
     where: { id: teamId, tenantId },
     include: {
-      players: {
-        include: {
-          player: {
-            select: { id: true, firstName: true, lastName: true, position: true },
-          },
-        },
-        orderBy: { joinedAt: "asc" },
-      },
       staff: {
         where: { teamId },
         include: {
@@ -69,9 +62,12 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
     description: string | null
     seasonFee: any
     archivedAt: Date | null
-    players: TeamPlayer[]
     staff: StaffMember[]
   }
+
+  // Shared roster source (lib/teams/roster.ts) — same helper as the coach
+  // team home, so roster changes land in one place.
+  const players: TeamPlayer[] = await getTeamRoster(teamId, { orderBy: "joined" })
 
   const tryouts: TeamTryout[] = (await prisma.tryout.findMany({
     where: { tenantId, teamId },
@@ -119,6 +115,7 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
       // Convert any Decimal fields
       seasonFee: team.seasonFee ? Number(team.seasonFee) : null,
     },
+    players,
     tryouts,
     offers,
     submissions,
@@ -138,11 +135,9 @@ export default async function TeamDashboardPage({
     ? ((await getUnreadChatCounts(auth.userId, [params.teamId])).get(params.teamId) ?? 0)
     : 0
 
-  const { team, tryouts, offers, submissions } = data
+  const { team, players, tryouts, offers, submissions } = data
   const clubId = params.id
   const teamId = params.teamId
-
-  const players = team.players || []
   const isArchived = !!team.archivedAt
   const teamStaff = team.staff.filter((s) => s.teamId === teamId)
   const pendingOffers = offers.filter((o) => o.status === "PENDING")

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
+import { getTeamRoster } from "@/lib/teams/roster"
 
 export const dynamic = "force-dynamic"
 
@@ -29,14 +30,7 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
       where: { id: params.teamId },
       select: { id: true, name: true, ageGroup: true, gender: true },
     }),
-    prisma.teamPlayer.findMany({
-      where: { teamId: params.teamId, status: "ACTIVE" },
-      select: {
-        jerseyNumber: true,
-        player: { select: { id: true, firstName: true, lastName: true, position: true } },
-      },
-      orderBy: { jerseyNumber: "asc" },
-    }),
+    getTeamRoster(params.teamId, { activeOnly: true }),
     prisma.game.findMany({
       where: {
         OR: [{ homeTeamId: params.teamId }, { awayTeamId: params.teamId }],
