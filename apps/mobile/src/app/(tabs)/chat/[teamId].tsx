@@ -31,7 +31,7 @@ interface ChatMessage {
   body: string
   createdAt: string
   poll?: { id: string; question?: string } | null
-  sender: { id: string; name: string; isStaff: boolean }
+  sender: { id: string; name: string; isStaff: boolean; context?: string | null }
 }
 
 const POLL_MS = 5000
@@ -152,7 +152,7 @@ export default function ConversationScreen() {
               {!mine ? (
                 <Text style={styles.sender}>
                   {item.sender.name}
-                  {item.sender.isStaff ? "  ·  Staff" : ""}
+                  {item.sender.isStaff ? "  ·  Staff" : item.sender.context ? `  ·  ${item.sender.context}` : ""}
                 </Text>
               ) : null}
               <Text style={[styles.body, mine && styles.bodyMine]}>{item.body}</Text>

@@ -11,7 +11,7 @@ interface ChatMessage {
   body: string
   createdAt: string
   poll?: ChatPollData | null
-  sender: { id: string; name: string; isStaff: boolean }
+  sender: { id: string; name: string; isStaff: boolean; context?: string | null }
   pending?: boolean
 }
 
@@ -403,6 +403,9 @@ export function TeamChat({
                         <div className="mb-0.5 flex items-center gap-1.5">
                           <span className="text-ink-800 text-xs font-semibold">
                             {mine ? "You" : message.sender.name}
+                          {!mine && message.sender.context && (
+                            <span className="text-ink-400 font-normal"> · {message.sender.context}</span>
+                          )}
                           </span>
                           {message.sender.isStaff && (
                             <span className="bg-play-100 text-play-700 rounded-full px-1.5 py-px text-[10px] font-bold">

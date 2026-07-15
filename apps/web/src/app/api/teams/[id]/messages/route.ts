@@ -6,6 +6,7 @@ import { notifyMany } from "@/lib/notifications"
 import {
   getChatMembers,
   getChatMembership,
+  getSenderContexts,
   getTeamStaffUserIds,
   markChatRead,
 } from "@/lib/teams/chat-access"
@@ -35,7 +36,13 @@ const sendMessageSchema = z
   })
   .refine((data) => data.body || data.poll, { message: "Message can't be empty" })
 
-function serialize(message: any, staffIds: Set<string>, pollById?: Map<string, any>) {
+function serialize(
+  message: any,
+  staffIds: Set<string>,
+  pollById?: Map<string, any>,
+  senderContexts?: Map<string, string>
+) {
+  const isStaff = staffIds.has(message.sender.id)
   return {
     id: message.id,
     body: message.body,
@@ -44,7 +51,9 @@ function serialize(message: any, staffIds: Set<string>, pollById?: Map<string, a
     sender: {
       id: message.sender.id,
       name: [message.sender.firstName, message.sender.lastName].filter(Boolean).join(" "),
-      isStaff: staffIds.has(message.sender.id),
+      isStaff,
+      // "Miles's parent" / "player" — which family this adult belongs to
+      context: isStaff ? null : (senderContexts?.get(message.sender.id) ?? null),
     },
   }
 }
@@ -117,8 +126,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
     const ordered = after ? rows : [...rows].reverse()
 
-    const [staffIds, { pollById, pollUpdates }] = await Promise.all([
+    const [staffIds, senderContexts, { pollById, pollUpdates }] = await Promise.all([
       getTeamStaffUserIds(membership.teamId, membership.tenantId),
+      getSenderContexts(membership.teamId),
       loadChatPolls(
         membership.teamId,
         auth.userId,
@@ -133,7 +143,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({
-      messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds, pollById)),
+      messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds, pollById, senderContexts)),
       pollUpdates,
       hasMore: !after && rows.length === PAGE_SIZE,
       membership: { role: membership.role },

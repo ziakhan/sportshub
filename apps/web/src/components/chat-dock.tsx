@@ -26,7 +26,7 @@ interface DockMessage {
   body: string
   createdAt: string
   poll?: ChatPollData | null
-  sender: { id: string; name: string; isStaff: boolean }
+  sender: { id: string; name: string; isStaff: boolean; context?: string | null }
 }
 
 const POLL_MS = 5000
@@ -287,6 +287,9 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
                   {(!mine || message.poll) && (
                     <span className="text-ink-800 flex items-center gap-1 text-[11px] font-semibold">
                       {mine ? "You" : message.sender.name}
+                      {!mine && message.sender.context && (
+                        <span className="text-ink-400 font-normal"> · {message.sender.context}</span>
+                      )}
                       {message.sender.isStaff && (
                         <span className="bg-play-100 text-play-700 rounded-full px-1 py-px text-[9px] font-bold">
                           STAFF

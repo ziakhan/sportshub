@@ -61,6 +61,51 @@ export async function getChatMembership(
   return null
 }
 
+/**
+ * Family-side sender context for chat (owner 2026-07-15): a parent's
+ * messages read "Jordan Reyes · Miles's parent" so coaches know which adult
+ * belongs to which kid. 13+ self-managed players (their own account) get
+ * "player" instead. Keyed by userId; staff senders aren't in the map.
+ */
+export async function getSenderContexts(teamId: string): Promise<Map<string, string>> {
+  const roster = await prisma.teamPlayer.findMany({
+    where: { teamId, status: "ACTIVE" },
+    select: {
+      player: {
+        select: {
+          firstName: true,
+          lastName: true,
+          parentId: true,
+          parent: { select: { firstName: true, lastName: true } },
+        },
+      },
+    },
+  })
+  const kidsByParent = new Map<string, { kidNames: string[]; self: boolean }>()
+  for (const row of roster as any[]) {
+    const p = row.player
+    if (!p.parentId) continue
+    const entry = kidsByParent.get(p.parentId) ?? { kidNames: [], self: false }
+    const isSelf =
+      `${p.firstName} ${p.lastName}`.trim().toLowerCase() ===
+      `${p.parent?.firstName ?? ""} ${p.parent?.lastName ?? ""}`.trim().toLowerCase()
+    if (isSelf) entry.self = true
+    else entry.kidNames.push(p.firstName)
+    kidsByParent.set(p.parentId, entry)
+  }
+  const out = new Map<string, string>()
+  for (const [userId, { kidNames, self }] of kidsByParent) {
+    if (self && kidNames.length === 0) out.set(userId, "player")
+    else if (kidNames.length === 1) out.set(userId, `${kidNames[0]}'s parent`)
+    else if (kidNames.length > 1)
+      out.set(
+        userId,
+        `${kidNames.slice(0, -1).join(", ")} & ${kidNames[kidNames.length - 1]}'s parent`
+      )
+  }
+  return out
+}
+
 /** Staff-level user ids for a team — used to badge senders as Coach/Club. */
 export async function getTeamStaffUserIds(
   teamId: string,
