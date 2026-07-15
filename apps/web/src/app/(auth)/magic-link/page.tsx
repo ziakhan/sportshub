@@ -25,12 +25,29 @@ function MagicLinkLanding() {
     redeeming.current = true
     ;(async () => {
       try {
-        const result = await signIn("magic", { token, redirect: false })
-        if (result?.error) {
-          setFailed(true)
-        } else {
+        // SessionProvider's parallel /session fetches each rotate the CSRF
+        // cookie on first load, so signIn()'s token can lose the race and be
+        // rejected with a signin?csrf=true "success" (no error field, no
+        // session). That rejection happens BEFORE the grant is checked, so
+        // retrying is free — and we only navigate once a session truly exists.
+        let redeemed = false
+        for (let attempt = 0; attempt < 3 && !redeemed; attempt++) {
+          const result = await signIn("magic", { token, redirect: false })
+          if (result?.error) break // real rejection — grant dead/expired
+          if ((result?.url ?? "").includes("csrf=true")) continue
+          redeemed = true
+        }
+        if (redeemed) {
+          const session = await fetch("/api/auth/session")
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null)
+          redeemed = !!session?.user
+        }
+        if (redeemed) {
           // Full page reload to pick up session cookie in server layouts
           window.location.href = callbackUrl
+        } else {
+          setFailed(true)
         }
       } catch {
         setFailed(true)

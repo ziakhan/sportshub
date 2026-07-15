@@ -86,11 +86,20 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
     setCodeLoading(true)
     setCodeError("")
     try {
-      const result = await signIn("magic", { email, code: value, redirect: false })
-      if (result?.error) {
-        setCodeError("That code didn't work. Check the newest email, or resend below.")
-      } else {
+      // A CSRF-cookie race with SessionProvider's fetches can reject the POST
+      // before the code is checked (url contains signin?csrf=true, no error
+      // field) — retrying is free since the grant was never touched.
+      let redeemed = false
+      for (let attempt = 0; attempt < 3 && !redeemed; attempt++) {
+        const result = await signIn("magic", { email, code: value, redirect: false })
+        if (result?.error) break // real rejection — wrong/expired code
+        if ((result?.url ?? "").includes("csrf=true")) continue
+        redeemed = true
+      }
+      if (redeemed) {
         window.location.href = callbackUrl
+      } else {
+        setCodeError("That code didn't work. Check the newest email, or resend below.")
       }
     } catch {
       setCodeError("Something went wrong. Please try again.")
