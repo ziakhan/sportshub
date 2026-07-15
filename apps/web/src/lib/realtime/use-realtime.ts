@@ -116,3 +116,9 @@ export function useRealtime({ rooms, events, enabled = true }: UseRealtimeOption
 
   return { connected }
 }
+
+/** Fire-and-forget typing signal — the sidecar rebroadcasts to the room. */
+export function emitTyping(room: string): void {
+  const s = getSocket()
+  if (s?.connected) s.emit("typing", room)
+}

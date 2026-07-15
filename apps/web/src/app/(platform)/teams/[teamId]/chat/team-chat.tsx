@@ -4,17 +4,22 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { format, isSameDay, isToday, isYesterday } from "date-fns"
 import type { ChatMembers } from "@/lib/teams/chat-access"
 import { PollBubble, type ChatPollData } from "@/components/chat/poll-bubble"
-import { useRealtime } from "@/lib/realtime/use-realtime"
+import { emitTyping, useRealtime } from "@/lib/realtime/use-realtime"
 import { useRouter } from "next/navigation"
 
 interface ChatMessage {
   id: string
   body: string
   createdAt: string
+  editedAt?: string | null
+  pinned?: boolean
+  reactions?: Array<{ emoji: string; count: number; mine: boolean }>
   poll?: ChatPollData | null
   sender: { id: string; name: string; isStaff: boolean; context?: string | null }
   pending?: boolean
 }
+
+const REACTION_SET = ["👍", "❤️", "😂", "🎉", "🔥", "🏀"]
 
 interface PollUpdate {
   messageId: string
@@ -51,12 +56,26 @@ export function TeamChat({
   const [hasMore, setHasMore] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [input, setInput] = useState("")
+  const onComposerChange = (value: string) => {
+    setInput(value)
+    const now = Date.now()
+    if (now - lastTypingSentRef.current > 1500) {
+      lastTypingSentRef.current = now
+      emitTyping(`team:${teamId}`)
+    }
+  }
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showMembers, setShowMembers] = useState(false)
   // Inline edit of own recent messages. TeamMessage has no editedAt column,
   // so the "(edited)" marker is session-local only (see the PATCH route).
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [pinnedMsgs, setPinnedMsgs] = useState<ChatMessage[]>([])
+  const [muted, setMuted] = useState(false)
+  const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const [typingUserId, setTypingUserId] = useState<string | null>(null)
+  const typingClearRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastTypingSentRef = useRef(0)
   const [editDraft, setEditDraft] = useState("")
   const [editSaving, setEditSaving] = useState(false)
   const [editedIds, setEditedIds] = useState<Set<string>>(new Set())
@@ -68,6 +87,12 @@ export function TeamChat({
   const listRef = useRef<HTMLDivElement>(null)
   const stickToBottom = useRef(true)
   const memberCount = members.userIds.length
+  const memberName = (userId: string): string => {
+    const st = members.staff.find((x) => x.userId === userId)
+    if (st) return st.name
+    const fam = members.families.find((x) => x.userId === userId)
+    return fam?.name ?? "Someone"
+  }
   const router = useRouter()
   const [dmBusy, setDmBusy] = useState<string | null>(null)
 
@@ -123,6 +148,8 @@ export function TeamChat({
         const res = await fetch(`/api/teams/${teamId}/messages`)
         if (!res.ok) throw new Error()
         const data = await res.json()
+        if (Array.isArray(data.pinned)) setPinnedMsgs(data.pinned)
+        if (typeof data.muted === "boolean") setMuted(data.muted)
         if (cancelled) return
         setMessages(data.messages)
         setHasMore(data.hasMore)
@@ -156,7 +183,14 @@ export function TeamChat({
   // is never merged — the API stays the source of truth)
   const { connected } = useRealtime({
     rooms: [`team:${teamId}`],
-    events: { "chat.message": () => void fetchNewer() },
+    events: {
+      typing: (payload: unknown) => {
+        const p = payload as { room?: string; userId?: string }
+        if (!p?.userId || p.userId === currentUserId) return
+        setTypingUserId(p.userId)
+        if (typingClearRef.current) clearTimeout(typingClearRef.current)
+        typingClearRef.current = setTimeout(() => setTypingUserId(null), 3000)
+      }, "chat.message": () => void fetchNewer() },
   })
 
   // Poll for new messages — fast without a socket, slow safety net with one
@@ -260,6 +294,53 @@ export function TeamChat({
     }
   }
 
+  const toggleReaction = async (messageId: string, emoji: string) => {
+    setPickerFor(null)
+    try {
+      const res = await fetch(`/api/teams/${teamId}/messages/${messageId}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setMessages((cur) =>
+        cur.map((m) => (m.id === messageId ? { ...m, reactions: data.reactions } : m))
+      )
+    } catch {
+      // best-effort
+    }
+  }
+
+  const togglePin = async (message: ChatMessage) => {
+    try {
+      const res = await fetch(`/api/teams/${teamId}/messages/${message.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: !message.pinned }),
+      })
+      if (!res.ok) return
+      setMessages((cur) =>
+        cur.map((m) => (m.id === message.id ? { ...m, pinned: !message.pinned } : m))
+      )
+      setPinnedMsgs((cur) =>
+        message.pinned ? cur.filter((p) => p.id !== message.id) : [{ ...message, pinned: true }, ...cur].slice(0, 3)
+      )
+    } catch {
+      // best-effort
+    }
+  }
+
+  const toggleMute = async () => {
+    const next = !muted
+    setMuted(next)
+    await fetch(`/api/teams/${teamId}/mute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ muted: next }),
+    }).catch(() => setMuted(!next))
+  }
+
   function startEdit(message: ChatMessage) {
     setEditingId(message.id)
     setEditDraft(message.body)
@@ -312,6 +393,27 @@ export function TeamChat({
 
   return (
     <div className="border-ink-100 shadow-soft flex min-h-0 flex-1 flex-col rounded-2xl border bg-white">
+      {/* Pinned messages (staff-curated) */}
+      {pinnedMsgs.length > 0 && (
+        <div className="border-gold-100 bg-gold-50 border-b px-4 py-2">
+          {pinnedMsgs.map((p) => (
+            <div key={p.id} className="flex items-start gap-2 py-0.5">
+              <span className="text-gold-600 mt-0.5 text-xs">📌</span>
+              <p className="text-ink-800 min-w-0 flex-1 truncate text-xs">
+                <span className="font-semibold">{p.sender?.name ?? ""}:</span> {p.body}
+              </p>
+              {canModerate && (
+                <button
+                  onClick={() => void togglePin({ ...p, pinned: true })}
+                  className="text-gold-600 shrink-0 text-[10px] font-semibold hover:underline"
+                >
+                  Unpin
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {/* Members bar */}
       <div className="border-ink-100 border-b">
         <button
@@ -323,6 +425,17 @@ export function TeamChat({
           </span>
           <span className="text-ink-400">{showMembers ? "Hide ▴" : "Show ▾"}</span>
         </button>
+        <div className="flex items-center justify-end px-4 pb-1.5 -mt-1">
+          <button
+            onClick={() => void toggleMute()}
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              muted ? "bg-ink-100 text-ink-600" : "text-ink-400 hover:bg-ink-50"
+            }`}
+            title={muted ? "Notifications are off for this chat" : "Mute this chat's notifications"}
+          >
+            {muted ? "🔕 Muted" : "🔔 Mute"}
+          </button>
+        </div>
         {showMembers && (
           <div className="bg-court-50/60 max-h-56 space-y-3 overflow-y-auto px-4 py-3">
             {members.staff.length > 0 && (
@@ -389,6 +502,11 @@ export function TeamChat({
         )}
       </div>
 
+      {typingUserId && (
+        <p className="text-ink-400 px-4 pb-0.5 text-[11px] italic">
+          {memberName(typingUserId)} is typing…
+        </p>
+      )}
       <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto p-4">
         {!loaded ? (
           <p className="text-ink-400 py-10 text-center text-sm">Loading chat…</p>
@@ -525,8 +643,56 @@ export function TeamChat({
                               {mine ? "Delete" : "Remove"}
                             </button>
                           )}
-                          {editedIds.has(message.id) && <span className="italic">(edited)</span>}
+                          {canModerate && (
+                            <button
+                              onClick={() => void togglePin(message)}
+                              className="hidden font-semibold underline-offset-2 hover:underline group-hover:inline"
+                              title={message.pinned ? "Unpin" : "Pin to top"}
+                            >
+                              {message.pinned ? "Unpin" : "Pin"}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setPickerFor(pickerFor === message.id ? null : message.id)}
+                            className="hidden font-semibold underline-offset-2 hover:underline group-hover:inline"
+                            title="React"
+                          >
+                            React
+                          </button>
+                          {(message.editedAt || editedIds.has(message.id)) && (
+                            <span className="italic">(edited)</span>
+                          )}
                           <span>{format(created, "h:mm a")}</span>
+                        </div>
+                      )}
+                      {pickerFor === message.id && (
+                        <div className="border-ink-100 mt-1 flex gap-1 rounded-full border bg-white px-2 py-1 shadow-sm">
+                          {REACTION_SET.map((e) => (
+                            <button
+                              key={e}
+                              onClick={() => void toggleReaction(message.id, e)}
+                              className="hover:bg-ink-50 rounded-full px-1 text-base"
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(message.reactions?.length ?? 0) > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {message.reactions!.map((r) => (
+                            <button
+                              key={r.emoji}
+                              onClick={() => void toggleReaction(message.id, r.emoji)}
+                              className={`rounded-full border px-1.5 py-0.5 text-xs ${
+                                r.mine
+                                  ? "border-play-300 bg-play-50 text-play-700"
+                                  : "border-ink-200 bg-white text-ink-600"
+                              }`}
+                            >
+                              {r.emoji} {r.count}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -639,7 +805,7 @@ export function TeamChat({
         <input
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => onComposerChange(e.target.value)}
           maxLength={2000}
           placeholder="Message the team…"
           className="border-ink-200 focus:border-play-500 min-w-0 flex-1 rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none"

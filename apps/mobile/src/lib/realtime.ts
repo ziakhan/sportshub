@@ -121,3 +121,8 @@ export function resetRealtime(): void {
   socket = null
   roomCounts.clear()
 }
+
+/** Fire-and-forget typing signal — the sidecar rebroadcasts to the room. */
+export function emitTyping(room: string): void {
+  if (socket?.connected) socket.emit("typing", room)
+}

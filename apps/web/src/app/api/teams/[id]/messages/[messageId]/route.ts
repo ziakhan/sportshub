@@ -14,16 +14,10 @@ const editSchema = z.object({
 })
 
 /**
- * Edit a message's text: sender-only, within 15 minutes of sending, not
- * deleted, team not archived. Poll-bearing messages are excluded (the bubble
- * renders the poll, not the body — edit the poll from the polls page).
- *
- * LIMITATION: TeamMessage has no editedAt column (schema changes are out of
- * scope here), so edited state is NOT persisted — the client may show an
- * "(edited)" marker for the current session only. A future `editedAt
- * DateTime?` column would make the badge durable for all readers.
- *
- * PATCH /api/teams/[id]/messages/[messageId]  { body }
+ * PATCH /api/teams/[id]/messages/[messageId]
+ * { body }            — sender edits their text (15-min window); persists
+ *                       editedAt so every reader sees "(edited)" (2026-07-15).
+ * { pinned: boolean } — staff pin/unpin the message to the top of the chat.
  */
 export async function PATCH(
   request: NextRequest,
@@ -35,6 +29,27 @@ export async function PATCH(
 
     const membership = await getChatMembership(params.id, auth.userId, auth.isPlatformAdmin)
     if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+    // Staff pin/unpin (2026-07-15) — separate branch from sender edits
+    const rawBody = await request.clone().json().catch(() => null)
+    if (rawBody && typeof rawBody.pinned === "boolean" && rawBody.body === undefined) {
+      if (membership.role !== "staff" && membership.role !== "admin") {
+        return NextResponse.json({ error: "Only staff can pin messages" }, { status: 403 })
+      }
+      const target = await prisma.teamMessage.findFirst({
+        where: { id: params.messageId, teamId: params.id, deletedAt: null },
+        select: { id: true },
+      })
+      if (!target) return NextResponse.json({ error: "Message not found" }, { status: 404 })
+      const pinnedMsg = await prisma.teamMessage.update({
+        where: { id: target.id },
+        data: rawBody.pinned
+          ? { pinnedAt: new Date(), pinnedById: auth.userId }
+          : { pinnedAt: null, pinnedById: null },
+        select: { id: true, pinnedAt: true },
+      })
+      return NextResponse.json({ message: pinnedMsg })
+    }
 
     const message = await prisma.teamMessage.findFirst({
       where: { id: params.messageId, teamId: params.id, deletedAt: null },
@@ -79,8 +94,8 @@ export async function PATCH(
 
     const updated = await prisma.teamMessage.update({
       where: { id: message.id },
-      data: { body: parsed.data.body },
-      select: { id: true, body: true, createdAt: true },
+      data: { body: parsed.data.body, editedAt: new Date() },
+      select: { id: true, body: true, createdAt: true, editedAt: true },
     })
 
     return NextResponse.json({ message: updated })

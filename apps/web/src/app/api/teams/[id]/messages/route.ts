@@ -40,13 +40,17 @@ function serialize(
   message: any,
   staffIds: Set<string>,
   pollById?: Map<string, any>,
-  senderContexts?: Map<string, string>
+  senderContexts?: Map<string, string>,
+  reactionsByMessage?: Map<string, Array<{ emoji: string; count: number; mine: boolean }>>
 ) {
   const isStaff = staffIds.has(message.sender.id)
   return {
     id: message.id,
     body: message.body,
     createdAt: message.createdAt,
+    editedAt: message.editedAt ?? null,
+    pinned: !!message.pinnedAt,
+    reactions: reactionsByMessage?.get(message.id) ?? [],
     poll: message.pollId ? (pollById?.get(message.pollId) ?? null) : null,
     sender: {
       id: message.sender.id,
@@ -118,6 +122,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: true,
         body: true,
         createdAt: true,
+        editedAt: true,
+        pinnedAt: true,
         pollId: true,
         sender: { select: { id: true, firstName: true, lastName: true } },
       },
@@ -126,15 +132,54 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
     const ordered = after ? rows : [...rows].reverse()
 
-    const [staffIds, senderContexts, { pollById, pollUpdates }] = await Promise.all([
-      getTeamStaffUserIds(membership.teamId, membership.tenantId),
-      getSenderContexts(membership.teamId),
-      loadChatPolls(
-        membership.teamId,
-        auth.userId,
-        rows.filter((r: any) => r.pollId).map((r: any) => r.pollId as string)
-      ),
-    ])
+    const [staffIds, senderContexts, { pollById, pollUpdates }, reactionRows, pinnedRows, muteRow] =
+      await Promise.all([
+        getTeamStaffUserIds(membership.teamId, membership.tenantId),
+        getSenderContexts(membership.teamId),
+        loadChatPolls(
+          membership.teamId,
+          auth.userId,
+          rows.filter((r: any) => r.pollId).map((r: any) => r.pollId as string)
+        ),
+        rows.length
+          ? (prisma as any).messageReaction.findMany({
+              where: { messageId: { in: rows.map((r: any) => r.id) } },
+              select: { messageId: true, emoji: true, userId: true },
+            })
+          : Promise.resolve([]),
+        prisma.teamMessage.findMany({
+          where: { teamId: params.id, deletedAt: null, pinnedAt: { not: null } },
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
+            editedAt: true,
+            pinnedAt: true,
+            pollId: true,
+            sender: { select: { id: true, firstName: true, lastName: true } },
+          },
+          orderBy: { pinnedAt: "desc" },
+          take: 3,
+        }),
+        (prisma as any).chatMute.findFirst({
+          where: { userId: auth.userId, teamId: params.id },
+          select: { id: true },
+        }),
+      ])
+
+    // Aggregate reactions per message with the viewer's own marked
+    const reactionsByMessage = new Map<string, Array<{ emoji: string; count: number; mine: boolean }>>()
+    for (const r of reactionRows as any[]) {
+      const list = reactionsByMessage.get(r.messageId) ?? []
+      const found = list.find((x) => x.emoji === r.emoji)
+      if (found) {
+        found.count += 1
+        if (r.userId === auth.userId) found.mine = true
+      } else {
+        list.push({ emoji: r.emoji, count: 1, mine: r.userId === auth.userId })
+      }
+      reactionsByMessage.set(r.messageId, list)
+    }
 
     // Reading advances the cursor: on open, and whenever a poll actually
     // delivers something new (a poll that returns nothing writes nothing).
@@ -143,7 +188,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json({
-      messages: ordered.map((m: (typeof rows)[number]) => serialize(m, staffIds, pollById, senderContexts)),
+      messages: ordered.map((m: (typeof rows)[number]) =>
+        serialize(m, staffIds, pollById, senderContexts, reactionsByMessage)
+      ),
+      pinned: pinnedRows.map((m: any) => serialize(m, staffIds, pollById, senderContexts)),
+      muted: !!muteRow,
       pollUpdates,
       hasMore: !after && rows.length === PAGE_SIZE,
       membership: { role: membership.role },
@@ -250,7 +299,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // this team get one — a busy thread bells each member once until they
     // visit the chat (which clears it via markChatRead).
     const members = await getChatMembers(membership.teamId, membership.tenantId)
-    const candidates = members.userIds.filter((id) => id !== auth.userId)
+    const mutes = await (prisma as any).chatMute.findMany({
+      where: { teamId: membership.teamId },
+      select: { userId: true },
+    })
+    const mutedSet = new Set(mutes.map((m: any) => m.userId))
+    const candidates = members.userIds.filter((id) => id !== auth.userId && !mutedSet.has(id))
     if (candidates.length > 0) {
       const alreadyBelled = await prisma.notification.findMany({
         where: {
