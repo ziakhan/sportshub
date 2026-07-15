@@ -63,6 +63,9 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/live",
   // Native-app boot handshake (min version + publishable key) — public by design
   "/api/mobile/config",
+  // Native Browse layer (anonymous, GET-only): clubs, leagues, programs,
+  // news, season detail — the app's public content (audit v2 §3)
+  "/api/mobile/browse",
   // Caddy on-demand-TLS "ask" endpoint — must answer before any cert exists,
   // so it can't require a session (GET-only; returns 200/404 by design).
   "/api/domains",

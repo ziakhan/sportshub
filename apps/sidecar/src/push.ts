@@ -86,6 +86,7 @@ export interface ExpoPushMessage {
   body: string
   data: { link: string | null; type: string }
   sound: "default"
+  channelId: "alerts"
 }
 
 /**
@@ -120,6 +121,9 @@ export function buildMessages(
         body: item.message,
         data: { link: item.link ?? null, type: item.type },
         sound: "default",
+        // Android: the app's HIGH-importance channel (heads-up banners).
+        // Older installs without it fall back to their default channel.
+        channelId: "alerts",
       })
     }
   }

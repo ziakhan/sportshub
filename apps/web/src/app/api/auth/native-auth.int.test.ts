@@ -142,7 +142,7 @@ describe("POST /api/auth/token — native login", () => {
 })
 
 describe("POST /api/auth/refresh — rotation + replay detection", () => {
-  it("rotates through a chain, then a replayed token kills the family", async () => {
+  it("rotates through a chain, then a stale replay (past grace) kills the family", async () => {
     const r0 = (await (await login(mainUser)).json()).refreshToken as string
 
     const res1 = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: r0 }))
@@ -156,12 +156,51 @@ describe("POST /api/auth/refresh — rotation + replay detection", () => {
     expect(res2.status).toBe(200)
     const r2 = (await res2.json()).refreshToken as string
 
+    // Age r0's revocation past the lost-response grace window — this replay
+    // is a genuine theft signal, not a dropped rotation response.
+    await prisma.refreshToken.updateMany({
+      where: { userId: mainUser.id, revokedAt: { not: null } },
+      data: { revokedAt: new Date(Date.now() - 5 * 60_000) },
+    })
+
     // Replay the rotated-out r0 → 401 and the whole family is revoked…
     const replay = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: r0 }))
     expect(replay.status).toBe(401)
     // …so the live tip r2 is dead too.
     const tip = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: r2 }))
     expect(tip.status).toBe(401)
+  })
+
+  it("re-presenting a just-rotated token inside the grace window recovers the session (lost response)", async () => {
+    // Other tests leave live tokens for this user — assert on the delta.
+    const liveBefore = await prisma.refreshToken.count({
+      where: { userId: mainUser.id, revokedAt: null },
+    })
+    const r0 = (await (await login(mainUser)).json()).refreshToken as string
+
+    // Rotation whose response the client "never received"
+    const res1 = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: r0 }))
+    expect(res1.status).toBe(200)
+    const r1 = (await res1.json()).refreshToken as string
+
+    // The phone still holds r0 and retries — inside the grace window this is
+    // recovery, not theft: 200, fresh token, family alive.
+    const retry = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: r0 }))
+    expect(retry.status).toBe(200)
+    const rG = (await retry.json()).refreshToken as string
+    expect(rG).not.toBe(r0)
+    expect(rG).not.toBe(r1)
+
+    // The recovered token is fully usable.
+    const next = await refreshPOST(authRequest("/api/auth/refresh", { refreshToken: rG }))
+    expect(next.status).toBe(200)
+
+    // Exactly one live token remains in this family (the unseen successor r1
+    // was revoked by the recovery).
+    const live = await prisma.refreshToken.count({
+      where: { userId: mainUser.id, revokedAt: null },
+    })
+    expect(live).toBe(liveBefore + 1)
   })
 
   it("unknown token → 401", async () => {

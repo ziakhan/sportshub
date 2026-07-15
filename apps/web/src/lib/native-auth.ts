@@ -15,6 +15,15 @@ import { prisma } from "@youthbasketballhub/db"
 
 export const REFRESH_TOKEN_TTL_DAYS = 60
 
+/**
+ * A token re-presented within this window of being rotated out is treated
+ * as a LOST RESPONSE (the phone never got the successor — killed app, OTA
+ * JS reload, dropped connection) rather than theft: the family survives and
+ * a fresh successor is issued. Outside the window it's a genuine replay and
+ * the family is revoked. Audit v2 §A1b.
+ */
+export const ROTATION_GRACE_MS = 60_000
+
 function hashToken(raw: string): string {
   return createHash("sha256").update(raw).digest("hex")
 }
@@ -63,6 +72,28 @@ export async function rotateRefreshToken(
   if (!row) return null
 
   if (row.revokedAt) {
+    if (
+      // lastUsedAt marks a rotation claim — ONLY those get grace. Tokens
+      // revoked by sign-out/family revocation have no lastUsedAt and stay
+      // dead: explicit revocation is final.
+      row.lastUsedAt !== null &&
+      Date.now() - row.revokedAt.getTime() < ROTATION_GRACE_MS &&
+      row.expiresAt >= new Date() &&
+      row.user.status === "ACTIVE"
+    ) {
+      // Lost-response recovery: the client re-presented the token we just
+      // rotated out because it never received the successor. Revoke every
+      // live token in the family (including that unseen successor) and
+      // issue a fresh one — the family stays alive, exactly one token ends
+      // up active, and a thief who stole the OLD token gets at most the
+      // same one-minute window the legitimate client has.
+      await revokeFamily(row.familyId)
+      const refreshToken = await issueRefreshToken(row.userId, {
+        familyId: row.familyId,
+        deviceLabel: row.deviceLabel,
+      })
+      return { userId: row.userId, refreshToken }
+    }
     // Replay of a rotated-out token — theft signal.
     await revokeFamily(row.familyId)
     return null

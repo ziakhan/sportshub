@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
@@ -18,11 +19,12 @@ const updatePlayerSchema = addPlayerSchema.extend({
  * GET /api/players/[id]
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  // getSessionUserId so native bearer tokens work (kid detail screen)
+  const sessionInfo = await getSessionUserId()
+  if (!sessionInfo) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-  const userId = session.user.id
+  const userId = sessionInfo.userId
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
