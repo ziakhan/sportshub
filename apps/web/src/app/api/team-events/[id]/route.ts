@@ -20,6 +20,7 @@ const patchSchema = z
     location: z.string().trim().max(200).nullable().optional(),
     startAt: z.string().datetime().optional(),
     durationMinutes: z.number().int().min(15).max(720).optional(),
+    eventType: z.enum(["WORKOUT", "TRAINING", "SCRIMMAGE", "MEETING", "OTHER"]).optional(),
     status: z.enum(["SCHEDULED", "CANCELLED"]).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Nothing to update" })

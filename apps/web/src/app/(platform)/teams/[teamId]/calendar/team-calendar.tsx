@@ -754,6 +754,11 @@ export function TeamCalendar({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="text-ink-800 text-sm font-semibold">
+                          {(entry.event as any).eventType && (entry.event as any).eventType !== "OTHER" && (
+                            <span className="bg-hoop-100 text-hoop-700 mr-1.5 rounded-full px-2 py-0.5 align-middle text-[10px] font-bold uppercase">
+                              {String((entry.event as any).eventType).toLowerCase().replace("workout", "workout/lift")}
+                            </span>
+                          )}
                           <span
                             className={entry.event.status === "CANCELLED" ? "line-through" : ""}
                           >
@@ -904,6 +909,7 @@ function AddEventForm({
   const [title, setTitle] = useState("")
   const [startAt, setStartAt] = useState("")
   const [duration, setDuration] = useState("60")
+  const [eventType, setEventType] = useState("OTHER")
   const [location, setLocation] = useState("")
   const [description, setDescription] = useState("")
   const [clubTeams, setClubTeams] = useState<Array<{ id: string; name: string }>>([])
@@ -937,6 +943,7 @@ function AddEventForm({
         body: JSON.stringify({
           teamIds: [teamId, ...extraIds],
           title: title.trim(),
+          eventType,
           startAt: new Date(startAt).toISOString(),
           durationMinutes: Number(duration),
           location: location.trim() || undefined,
@@ -974,6 +981,17 @@ function AddEventForm({
             placeholder="Team photo day"
             className={inputClass}
           />
+          <select
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+            className="border-ink-200 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+          >
+            <option value="OTHER">Event type: Other</option>
+            <option value="WORKOUT">Workout / Lift</option>
+            <option value="TRAINING">Training</option>
+            <option value="SCRIMMAGE">Scrimmage</option>
+            <option value="MEETING">Meeting</option>
+          </select>
         </div>
         <div>
           <label className="text-ink-700 mb-1 block text-xs font-semibold">When</label>

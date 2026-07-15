@@ -2,6 +2,13 @@ import { prisma } from "@youthbasketballhub/db"
 import { getMyCalendar, type MyCalendarItem, type MyCalendarLens } from "@/lib/calendar/my-calendar"
 import { getChatTeamSummaries } from "@/lib/teams/chat-access"
 
+const EVENT_TYPE_LABEL: Record<string, string> = {
+  WORKOUT: "Workout / Lift",
+  TRAINING: "Training",
+  SCRIMMAGE: "Scrimmage",
+  MEETING: "Meeting",
+}
+
 /**
  * The shared "my contexts" resolver (site-ia-plan §5.6.2): one place that
  * answers "who is this person, entity-graph-wise, and what needs them?".
@@ -119,6 +126,10 @@ export async function getMyContexts(userId: string): Promise<MyContexts> {
             ? (l!.label.split(" · ")[1] ?? l!.label)
             : (l!.label.split(" · ")[0] ?? l!.label)
       )
+    // Typed team events carry their kind as a chip (2026-07-15) — flows to
+    // web home band, native home + calendar automatically.
+    const typeLabel = EVENT_TYPE_LABEL[(item as any).eventType as string]
+    if (item.kind === "event" && typeLabel) chips.push(typeLabel)
     const uniqueChips = [...new Set(chips)]
 
     const awaitingRsvp: string[] = []

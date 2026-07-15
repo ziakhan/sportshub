@@ -62,6 +62,7 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
           startAt: true,
           durationMinutes: true,
           status: true,
+          eventType: true,
           updatedAt: true,
           teams: { select: { team: { select: { name: true } } } },
         },
@@ -104,7 +105,7 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
       const teamNames = e.teams.map((l: any) => l.team.name).join(", ")
       events.push({
         uid: `event-${e.id}@sportshub`,
-        title: `${e.title} — ${teamNames}`,
+        title: `${e.eventType && e.eventType !== "OTHER" ? `[${e.eventType.charAt(0) + e.eventType.slice(1).toLowerCase()}] ` : ""}${e.title} — ${teamNames}`,
         start,
         end: new Date(start.getTime() + e.durationMinutes * 60_000),
         location: e.location,

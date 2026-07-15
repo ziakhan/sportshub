@@ -76,7 +76,11 @@ export function EventCard({
         </Text>
         <TonePill
           tone={item.kind === "game" ? "info" : item.kind === "practice" ? "positive" : "gold"}
-          label={item.kind}
+          label={
+            item.kind === "event" && item.eventType && item.eventType !== "OTHER"
+              ? item.eventType.toLowerCase().replace("workout", "workout/lift")
+              : item.kind
+          }
         />
       </View>
       <Text style={[styles.title, cancelled && styles.cancelled]}>{item.title}</Text>

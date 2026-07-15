@@ -38,6 +38,7 @@ interface LensView {
 
 interface ItemView {
   kind: "practice" | "game" | "event"
+  eventType?: string | null
   id: string
   teamIds: string[]
   lensKeys: string[]
@@ -467,6 +468,9 @@ export function MyCalendar() {
                     {lensDots(item)}
                     <span className={item.status === "CANCELLED" ? "line-through" : ""}>
                       {item.kind === "game" ? "Game · " : ""}
+                      {item.kind === "event" && item.eventType && item.eventType !== "OTHER"
+                        ? `${item.eventType.charAt(0) + item.eventType.slice(1).toLowerCase()} · `
+                        : ""}
                       {item.title} · {format(new Date(item.at), "h:mm a")}
                     </span>
                     {item.status === "LIVE" && (

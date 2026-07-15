@@ -47,6 +47,8 @@ export interface MyCalendarItem {
   title: string
   location: string | null
   detail: string | null
+  /** Team-event type (WORKOUT/TRAINING/SCRIMMAGE/MEETING/OTHER) — events only */
+  eventType?: string | null
 }
 
 export interface MyCalendarPayload {
@@ -186,6 +188,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         startAt: true,
         durationMinutes: true,
         status: true,
+        eventType: true,
         teams: { select: { teamId: true } },
       },
       orderBy: { startAt: "asc" },
@@ -328,6 +331,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         title: e.title,
         location: e.location ?? null,
         detail: e.description ?? null,
+        eventType: e.eventType ?? null,
       }
     }),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())

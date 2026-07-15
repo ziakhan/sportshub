@@ -19,6 +19,8 @@ const createSchema = z.object({
   location: z.string().trim().max(200).optional(),
   startAt: z.string().datetime(),
   durationMinutes: z.number().int().min(15).max(720).default(60),
+  // Typed events (2026-07-15): workout/lift, training, scrimmage…
+  eventType: z.enum(["WORKOUT", "TRAINING", "SCRIMMAGE", "MEETING", "OTHER"]).default("OTHER"),
 })
 
 /**
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
         location: parsed.data.location || null,
         startAt: new Date(parsed.data.startAt),
         durationMinutes: parsed.data.durationMinutes,
+        eventType: parsed.data.eventType,
         teams: { create: authz.teams.map((t) => ({ teamId: t.id })) },
       },
       include: eventInclude,

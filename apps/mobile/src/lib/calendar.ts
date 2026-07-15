@@ -36,6 +36,7 @@ export interface CalItem {
   title: string
   location: string | null
   detail: string | null
+  eventType?: string | null
 }
 
 export interface MyCalendar {
