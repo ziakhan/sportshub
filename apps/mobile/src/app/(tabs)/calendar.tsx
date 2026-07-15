@@ -1,33 +1,17 @@
 import { useCallback, useMemo, useState } from "react"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { TopBar } from "@/components/top-bar"
-import { EventCard } from "@/components/event-card"
-import { EmptyState, Loading } from "@/components/ui"
-import { useMyCalendar, type CalItem } from "@/lib/calendar"
+import { AgendaList } from "@/components/agenda-list"
+import { Loading } from "@/components/ui"
+import { useMyCalendar } from "@/lib/calendar"
 import { useHome } from "@/lib/home"
 import { ui } from "@/lib/theme"
 
 /**
- * Calendar — the FULL personal agenda (same /api/calendar/mine feed as the
- * web calendar): every practice/game/event across every lens, grouped by
- * day, lens filter chips, inline RSVP. Native replaces the old "open full
- * calendar on the web" punt.
+ * Calendar — TeamSnap-style agenda (owner 2026-07-15): sticky day headers
+ * with a clear date block beside each day's events, mirroring the mobile
+ * web. Same /api/calendar/mine feed, lens filter chips, inline RSVP.
  */
-
-function dayKey(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-}
-
-function dayLabel(iso: string): string {
-  const d = new Date(iso)
-  const today = new Date()
-  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-  if (dayKey(iso) === dayKey(today.toISOString())) return "Today"
-  if (dayKey(iso) === dayKey(tomorrow.toISOString())) return "Tomorrow"
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
-}
-
 export default function CalendarScreen() {
   const { calendar, loaded, refresh } = useMyCalendar()
   const { home } = useHome()
@@ -41,19 +25,13 @@ export default function CalendarScreen() {
     setRefreshing(false)
   }, [refresh])
 
-  const groups = useMemo(() => {
+  const items = useMemo(() => {
     if (!calendar) return []
     const now = Date.now()
-    const items = calendar.items
+    return calendar.items
       .filter((i) => (showPast ? true : new Date(i.at).getTime() >= now - 3 * 60 * 60 * 1000))
       .filter((i) => (lensFilter ? i.lensKeys.includes(lensFilter) : true))
       .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
-    const byDay = new Map<string, CalItem[]>()
-    for (const item of items) {
-      const key = dayKey(item.at)
-      byDay.set(key, [...(byDay.get(key) ?? []), item])
-    }
-    return [...byDay.entries()]
   }, [calendar, lensFilter, showPast])
 
   return (
@@ -86,43 +64,28 @@ export default function CalendarScreen() {
         </ScrollView>
       ) : null}
 
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {!loaded ? <Loading /> : null}
-        {loaded && groups.length === 0 ? (
-          <EmptyState
-            icon="calendar-outline"
-            title="Nothing scheduled"
-            body="Practices, games and team events land here."
-          />
-        ) : null}
-        {groups.map(([key, items]) => (
-          <View key={key} style={styles.dayGroup}>
-            <Text style={styles.dayHeading}>{dayLabel(items[0].at)}</Text>
-            {items.map((item) => (
-              <EventCard key={`${item.kind}:${item.id}`} item={item} calendar={calendar!} />
-            ))}
-          </View>
-        ))}
-        {loaded && calendar ? (
-          <Pressable onPress={() => setShowPast((v) => !v)} hitSlop={8}>
-            <Text style={styles.pastToggle}>
-              {showPast ? "Hide past events" : "Show past events"}
-            </Text>
-          </Pressable>
-        ) : null}
-      </ScrollView>
+      {!loaded || !calendar ? (
+        <Loading />
+      ) : (
+        <AgendaList
+          items={items}
+          calendar={calendar}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          header={
+            <Pressable onPress={() => setShowPast((v) => !v)} hitSlop={8}>
+              <Text style={styles.pastToggle}>
+                {showPast ? "Hide past events ▴" : "Show past events ▾"}
+              </Text>
+            </Pressable>
+          }
+        />
+      )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
-  screen: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32, gap: 12 },
   lensRow: {
     backgroundColor: "#fff",
     borderBottomWidth: 1,
@@ -141,13 +104,11 @@ const styles = StyleSheet.create({
   lensChipOn: { backgroundColor: ui.primary, borderColor: ui.primary },
   lensText: { fontSize: 12, fontWeight: "600", color: ui.textMuted },
   lensTextOn: { color: "#fff" },
-  dayGroup: { gap: 8 },
-  dayHeading: { fontSize: 14, fontWeight: "800", color: ui.text, marginTop: 4 },
   pastToggle: {
     textAlign: "center",
     color: ui.primary,
     fontWeight: "700",
-    fontSize: 13,
+    fontSize: 12,
     paddingVertical: 8,
   },
 })
