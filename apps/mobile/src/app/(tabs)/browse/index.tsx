@@ -2,7 +2,7 @@ import { useCallback, useState } from "react"
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { TopBar } from "@/components/top-bar"
-import { Card, ListRow, Loading, SectionHeader, TonePill } from "@/components/ui"
+import { Card, CoverImage, ListRow, Loading, Monogram, SectionHeader, TonePill } from "@/components/ui"
 import { useBrowseHome } from "@/lib/browse"
 import { useHome } from "@/lib/home"
 import { ui } from "@/lib/theme"
@@ -81,7 +81,7 @@ export default function BrowseHubScreen() {
               {browse.clubs.slice(0, 5).map((c) => (
                 <ListRow
                   key={c.id}
-                  icon="business-outline"
+                  left={<Monogram name={c.name} logoUrl={c.logoUrl} color={c.primaryColor} size={34} />}
                   text={c.name}
                   sub={[c.city, `${c.teamCount} teams`].filter(Boolean).join(" · ")}
                   onPress={() => router.push(`/browse/club/${c.slug}`)}
@@ -127,21 +127,36 @@ export default function BrowseHubScreen() {
               action="More"
               onAction={() => router.push("/browse/news")}
             />
-            <Card>
-              {browse.news.slice(0, 4).map((n) => (
-                <ListRow
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.newsStrip}
+            >
+              {browse.news.slice(0, 6).map((n) => (
+                <Card
                   key={n.id}
-                  icon="newspaper-outline"
-                  text={n.title}
-                  sub={new Date(n.dateISO).toLocaleDateString()}
+                  style={styles.newsCard}
                   onPress={
                     n.href?.startsWith("/news/")
                       ? () => router.push(`/browse/article/${n.href!.split("/")[2]}`)
                       : undefined
                   }
-                />
+                >
+                  <CoverImage url={n.coverUrl} icon="newspaper-outline" />
+                  <View style={styles.newsBody}>
+                    <Text style={styles.newsTitle} numberOfLines={2}>
+                      {n.title}
+                    </Text>
+                    <Text style={styles.newsDate}>
+                      {new Date(n.dateISO).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Text>
+                  </View>
+                </Card>
               ))}
-            </Card>
+            </ScrollView>
           </>
         ) : null}
 
@@ -158,4 +173,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 10 },
   footnote: { fontSize: 12, color: ui.textFaint, textAlign: "center", marginTop: 12 },
+  newsStrip: { gap: 10, paddingRight: 4 },
+  newsCard: { width: 220, padding: 0, overflow: "hidden" },
+  newsBody: { padding: 10, gap: 2 },
+  newsTitle: { fontSize: 13, fontWeight: "700", color: ui.text, lineHeight: 17 },
+  newsDate: { fontSize: 11, color: ui.textFaint },
 })

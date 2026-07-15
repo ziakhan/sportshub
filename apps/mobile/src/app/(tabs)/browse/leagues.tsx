@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { FlatList, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, ListRow, Loading, TonePill } from "@/components/ui"
+import { Card, EmptyState, ListRow, Loading, Monogram, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import type { BrowseLeague } from "@/lib/browse"
 import { ui } from "@/lib/theme"
@@ -44,7 +44,12 @@ export default function LeaguesScreen() {
           }
           renderItem={({ item }) => (
             <Card style={styles.cardSpacing}>
-              <Text style={styles.leagueName}>{item.name}</Text>
+              <View style={styles.leagueHead}>
+                <Monogram name={item.name} size={40} />
+                <Text style={[styles.leagueName, { flex: 1 }]} numberOfLines={2}>
+                  {item.name}
+                </Text>
+              </View>
               {item.description ? (
                 <Text style={styles.description} numberOfLines={2}>
                   {item.description}
@@ -78,6 +83,7 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
   cardSpacing: { marginBottom: 10 },
+  leagueHead: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 2 },
   leagueName: { fontSize: 16, fontWeight: "800", color: ui.text },
   description: { fontSize: 12, color: ui.textMuted, lineHeight: 17, marginBottom: 4 },
 })

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, Loading, TonePill } from "@/components/ui"
+import { Card, CoverImage, EmptyState, Loading, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { ui } from "@/lib/theme"
 
@@ -14,6 +14,7 @@ interface Article {
   title: string
   body: string
   publishedAt: string | null
+  media: Array<{ id: string; type: string; url: string; posterUrl: string | null }>
   tags: Array<{
     team: { id: string; name: string } | null
     tenant: { id: string; name: string; slug: string } | null
@@ -49,6 +50,10 @@ export default function ArticleScreen() {
     )
   }
 
+  const hero =
+    post.media?.find((m) => m.type === "IMAGE")?.url ??
+    post.media?.find((m) => m.posterUrl)?.posterUrl ??
+    null
   const tagLine = post.tags
     .map((t) => t.team?.name ?? t.tenant?.name ?? t.league?.name)
     .filter(Boolean)
@@ -72,6 +77,7 @@ export default function ArticleScreen() {
         </View>
         <Text style={styles.title}>{post.title}</Text>
         {tagLine ? <Text style={styles.tagLine}>{tagLine}</Text> : null}
+        {hero ? <CoverImage url={hero} style={styles.hero} /> : null}
         <Card>
           <Text style={styles.body}>{post.body}</Text>
         </Card>
@@ -88,5 +94,6 @@ const styles = StyleSheet.create({
   date: { fontSize: 12, color: ui.textFaint },
   title: { fontSize: 22, fontWeight: "800", color: ui.text, letterSpacing: -0.4, lineHeight: 28 },
   tagLine: { fontSize: 13, color: ui.primaryInk, fontWeight: "600" },
+  hero: { borderRadius: ui.radius.lg },
   body: { fontSize: 15, color: ui.text, lineHeight: 23 },
 })

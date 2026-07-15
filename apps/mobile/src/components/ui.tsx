@@ -10,8 +10,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native"
+import { Image } from "expo-image"
 import Ionicons from "@expo/vector-icons/Ionicons"
-import { cardShadow, tones, ui, type Tone } from "@/lib/theme"
+import { cardShadow, palette, tones, ui, type Tone } from "@/lib/theme"
 
 /**
  * Shared native primitives — the web design language (cards on a #fafafa
@@ -82,15 +83,18 @@ export function SectionHeader({
   )
 }
 
-/** Tappable list row: icon · text (+sub) · chevron. */
+/** Tappable list row: icon (or custom left mark) · text (+sub) · chevron. */
 export function ListRow({
   icon,
+  left,
   text,
   sub,
   right,
   onPress,
 }: {
   icon?: IoniconName
+  /** Custom leading element (logo/monogram) — wins over `icon`. */
+  left?: ReactNode
   text: string
   sub?: string | null
   right?: ReactNode
@@ -102,7 +106,7 @@ export function ListRow({
       onPress={onPress}
       disabled={!onPress}
     >
-      {icon ? <Ionicons name={icon} size={18} color={ui.primary} /> : null}
+      {left ?? (icon ? <Ionicons name={icon} size={18} color={ui.primary} /> : null)}
       <View style={{ flex: 1 }}>
         <Text style={styles.listRowText} numberOfLines={1}>
           {text}
@@ -196,6 +200,100 @@ export function EmptyState({
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {body ? <Text style={styles.emptyBody}>{body}</Text> : null}
+    </View>
+  )
+}
+
+/**
+ * Cover image with the web NewsCard's contract: 16:9 photo when there is one,
+ * a soft tinted placeholder (never a blank gap) when there isn't.
+ */
+export function CoverImage({
+  url,
+  aspectRatio = 16 / 9,
+  icon = "basketball-outline",
+  style,
+}: {
+  url: string | null | undefined
+  aspectRatio?: number
+  icon?: IoniconName
+  style?: StyleProp<ViewStyle>
+}) {
+  if (!url) {
+    return (
+      <View style={[styles.coverFallback, { aspectRatio }, style]}>
+        <Ionicons name={icon} size={28} color={ui.primary} />
+      </View>
+    )
+  }
+  return (
+    <Image
+      source={{ uri: url }}
+      alt=""
+      style={[{ width: "100%", aspectRatio, backgroundColor: ui.surfaceSunken }, style as object]}
+      contentFit="cover"
+      transition={150}
+    />
+  )
+}
+
+/** Deterministic accent for entities without branding — same name, same color. */
+const MONOGRAM_COLORS = [palette.play[600], palette.court[600], palette.hoop[600], palette.gold[600]]
+function accentFor(name: string): string {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0
+  return MONOGRAM_COLORS[Math.abs(hash) % MONOGRAM_COLORS.length]
+}
+
+/**
+ * Entity mark: real logo when the org has one, otherwise initials on the
+ * org's brand color (tinted) — the web club-card treatment.
+ */
+export function Monogram({
+  name,
+  logoUrl,
+  color,
+  size = 40,
+}: {
+  name: string
+  logoUrl?: string | null
+  color?: string | null
+  size?: number
+}) {
+  const radius = size / 4
+  if (logoUrl) {
+    return (
+      <Image
+        source={{ uri: logoUrl }}
+        alt={name}
+        style={{ width: size, height: size, borderRadius: radius, backgroundColor: ui.surfaceSunken }}
+        contentFit="cover"
+        transition={150}
+      />
+    )
+  }
+  const accent = color || accentFor(name)
+  const initials =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        // 8-digit hex: brand color at ~12% for the tile, full for the letters
+        backgroundColor: `${accent}1F`,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ color: accent, fontWeight: "800", fontSize: size * 0.38 }}>{initials}</Text>
     </View>
   )
 }
@@ -316,4 +414,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: { color: "#fff", fontWeight: "800" },
+  coverFallback: {
+    width: "100%",
+    backgroundColor: ui.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 })
