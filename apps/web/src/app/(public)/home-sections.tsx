@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { format } from "date-fns"
 import { Badge, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
+import { OverflowStrip } from "@/components/overflow-strip"
 import type { FeedItem, HighlightItem, ScoreboardGame } from "@/lib/queries/content"
 import type { SeasonLeaders } from "@/lib/queries/season-stats"
 import type { YourTeamCard } from "@/lib/queries/home"
@@ -23,7 +24,7 @@ export function ScoreboardStrip({ games }: { games: ScoreboardGame[] }) {
           </span>
           {games.some((g) => g.status === "LIVE") && <Badge tone="live" dot>Live now</Badge>}
         </div>
-        <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+        <OverflowStrip wrapperClassName="-mx-1" className="gap-4 px-1 pb-2">
           {games.map((g) => (
             <Link key={g.id} href={`/live/${g.id}`} className="w-72 shrink-0">
               <ScoreCard
@@ -36,7 +37,7 @@ export function ScoreboardStrip({ games }: { games: ScoreboardGame[] }) {
               />
             </Link>
           ))}
-        </div>
+        </OverflowStrip>
       </div>
     </section>
   )
@@ -164,7 +165,7 @@ export function HighlightsRow({ highlights }: { highlights: HighlightItem[] }) {
             All highlights &rarr;
           </Link>
         </div>
-        <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+        <OverflowStrip wrapperClassName="-mx-1" tone="dark" className="gap-4 px-1 pb-2">
           {highlights.map((h) => (
             <Link key={h.id} href={`/news/${h.slug}`} className="group w-80 shrink-0">
               <div className="relative overflow-hidden rounded-2xl">
@@ -190,7 +191,7 @@ export function HighlightsRow({ highlights }: { highlights: HighlightItem[] }) {
               <p className="text-ink-400 mt-0.5 text-xs">{format(new Date(h.dateISO), "MMM d, yyyy")}</p>
             </Link>
           ))}
-        </div>
+        </OverflowStrip>
       </div>
     </section>
   )

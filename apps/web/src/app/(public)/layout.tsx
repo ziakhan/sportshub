@@ -10,6 +10,7 @@ import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape, operatorTabLabel, EMPTY_NAV_SHAPE } from "@/lib/queries/nav-shape"
 import { AuthLink } from "@/components/auth-link"
 import { ChatDock } from "@/components/chat-dock"
+import { OverflowStrip } from "@/components/overflow-strip"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -160,7 +161,7 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
 
         <div className="border-ink-100 border-t px-4 py-2 lg:hidden">
-          <div className="flex gap-2 overflow-x-auto">
+          <OverflowStrip className="gap-2">
             <Link
               href="/scores"
               className="text-ink-600 ring-ink-200 hover:bg-ink-50 hover:text-ink-950 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium ring-1 transition-colors"
@@ -197,7 +198,7 @@ export default async function PublicLayout({ children }: { children: React.React
             >
               Marketplace
             </Link>
-          </div>
+          </OverflowStrip>
         </div>
       </header>
 

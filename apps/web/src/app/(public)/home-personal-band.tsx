@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { OverflowStrip } from "@/components/overflow-strip"
 import { format, isToday, isTomorrow } from "date-fns"
 import { getMyContexts } from "@/lib/queries/my-contexts"
 
@@ -73,7 +74,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
             <h2 className="text-ink-400 mb-2 text-xs font-semibold uppercase tracking-[0.16em]">
               Needs your attention
             </h2>
-            <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+            <OverflowStrip wrapperClassName="-mx-4 sm:mx-0" className="gap-3 px-4 pb-1 sm:px-0">
               {actionCards.slice(0, 4).map((card, i) => (
                 <Link
                   key={i}
@@ -84,7 +85,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
                   <p className="mt-0.5 text-xs opacity-80">{card.detail}</p>
                 </Link>
               ))}
-            </div>
+            </OverflowStrip>
           </div>
         )}
 

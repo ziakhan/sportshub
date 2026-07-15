@@ -40,7 +40,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
             href={`/teams/${membership.teamId}/calendar`}
             className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
           >
-            Calendar
+            Team Calendar
           </Link>
           <Link
             href={`/teams/${membership.teamId}/polls`}
