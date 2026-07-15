@@ -10,6 +10,9 @@ import {
   View,
 } from "react-native"
 import Constants from "expo-constants"
+import { router } from "expo-router"
+import * as WebBrowser from "expo-web-browser"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { useSession } from "@/lib/session"
 import { apiBaseUrl, apiJson } from "@/lib/api"
 import { palette, ui } from "@/lib/theme"
@@ -137,6 +140,17 @@ export default function ProfileScreen() {
       <QuietHours />
 
       <View style={styles.card}>
+        <Text style={styles.label}>My stuff</Text>
+        <HubRow icon="document-text-outline" text="Offers & payments" onPress={() => router.push("/(tabs)/offers")} />
+        <HubRow icon="notifications-outline" text="Alerts" onPress={() => router.push("/(tabs)/alerts")} />
+        <HubRow
+          icon="globe-outline"
+          text="Full account on the web"
+          onPress={() => void WebBrowser.openBrowserAsync(`${apiBaseUrl()}/account`)}
+        />
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.label}>App</Text>
         <Text style={styles.subValue}>Version {Constants.expoConfig?.version ?? "dev"}</Text>
         <Text style={styles.subValue}>Server: {apiBaseUrl()}</Text>
@@ -157,9 +171,21 @@ export default function ProfileScreen() {
   )
 }
 
+function HubRow({ icon, text, onPress }: { icon: any; text: string; onPress: () => void }) {
+  return (
+    <Pressable style={({ pressed }) => [styles.hubRow, pressed && { opacity: 0.7 }]} onPress={onPress}>
+      <Ionicons name={icon} size={18} color={ui.primary} />
+      <Text style={styles.hubRowText}>{text}</Text>
+      <Ionicons name="chevron-forward" size={16} color={ui.textMuted} />
+    </Pressable>
+  )
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.background },
   content: { padding: 16, gap: 12 },
+  hubRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9 },
+  hubRowText: { flex: 1, fontSize: 14, color: ui.text },
   card: {
     borderWidth: 1,
     borderColor: ui.border,

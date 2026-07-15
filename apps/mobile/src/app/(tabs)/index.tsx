@@ -1,139 +1,55 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import {
+  ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native"
-import { apiJson } from "@/lib/api"
-import { useRealtime } from "@/lib/realtime"
+import { router } from "expo-router"
+import * as WebBrowser from "expo-web-browser"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import { apiBaseUrl } from "@/lib/api"
+import { useHome, coachTeamWebPath } from "@/lib/home"
+import { useSession } from "@/lib/session"
 import { palette, ui } from "@/lib/theme"
 
 /**
- * Home / Scores — live games, this week's finals, what's coming up.
- * game.update pings on the public scores room refetch immediately; polling
- * stays as the fallback (fast while a game is LIVE, slow otherwise).
+ * Home — native twin of the web home's personal band (site-ia-plan §5.6):
+ * actions due, this week across every lens, coach teams, plus quick entries
+ * to live scores / alerts and public browse (web). One /api/mobile/home
+ * fetch, pull-to-refresh.
  */
 
-interface ScoreTeam {
-  id: string | null
-  name: string
-  color: string | null
-}
-interface ScoreGame {
-  id: string
-  status: string
-  scheduledAt: string
-  homeScore: number | null
-  awayScore: number | null
-  homeTeam: ScoreTeam
-  awayTeam: ScoreTeam
-  venue: string | null
-  league: string | null
-}
-interface Scoreboard {
-  live: ScoreGame[]
-  finals: ScoreGame[]
-  upcoming: ScoreGame[]
+function openWeb(path: string) {
+  void WebBrowser.openBrowserAsync(`${apiBaseUrl()}${path}`)
 }
 
-const LIVE_POLL_MS = 15_000
-const IDLE_POLL_MS = 60_000
-
-function timeLabel(iso: string): string {
+function fmtWhen(iso: string): string {
   const d = new Date(iso)
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  })
+  const day = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+  return `${day} · ${time}`
 }
 
-function GameCard({ game }: { game: ScoreGame }) {
-  const isLive = game.status === "LIVE"
-  const isFinal = game.status === "COMPLETED"
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        {isLive ? (
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
-        ) : (
-          <Text style={styles.statusText}>{isFinal ? "FINAL" : timeLabel(game.scheduledAt)}</Text>
-        )}
-        {game.league ? <Text style={styles.leagueText}>{game.league}</Text> : null}
-      </View>
-      {[
-        { team: game.homeTeam, score: game.homeScore },
-        { team: game.awayTeam, score: game.awayScore },
-      ].map(({ team, score }, i) => (
-        <View key={i} style={styles.teamRow}>
-          <View style={[styles.teamDot, { backgroundColor: team.color ?? ui.border }]} />
-          <Text style={styles.teamName} numberOfLines={1}>
-            {team.name}
-          </Text>
-          {isLive || isFinal ? <Text style={styles.score}>{score ?? 0}</Text> : null}
-        </View>
-      ))}
-      {game.venue ? <Text style={styles.venue}>{game.venue}</Text> : null}
-    </View>
-  )
-}
-
-function Section({ title, games }: { title: string; games: ScoreGame[] }) {
-  if (games.length === 0) return null
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {games.map((g) => (
-        <GameCard key={g.id} game={g} />
-      ))}
-    </View>
-  )
-}
-
-export default function ScoresScreen() {
-  const [board, setBoard] = useState<Scoreboard | null>(null)
+export default function HomeScreen() {
+  const { user } = useSession()
+  const { home, loaded, refresh } = useHome()
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState(false)
-
-  const load = useCallback(async () => {
-    try {
-      setBoard(await apiJson<Scoreboard>("/api/live"))
-      setError(false)
-    } catch {
-      setError(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  const { connected } = useRealtime({
-    rooms: ["scores"],
-    events: { "game.update": () => void load() },
-  })
-
-  const hasLive = (board?.live.length ?? 0) > 0
-  useEffect(() => {
-    const timer = setInterval(
-      load,
-      connected ? 120_000 : hasLive ? LIVE_POLL_MS : IDLE_POLL_MS
-    )
-    return () => clearInterval(timer)
-  }, [load, hasLive, connected])
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
-    await load()
+    await refresh()
     setRefreshing(false)
-  }, [load])
+  }, [refresh])
+
+  const c = home?.contexts
+  const due = c?.actionsDue
+  const dueCount = due
+    ? due.openOffers.length + due.paymentsDue + due.rsvpsNeeded + due.unreadChats
+    : 0
 
   return (
     <ScrollView
@@ -141,54 +57,184 @@ export default function ScoresScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {error && !board ? (
-        <Text style={styles.empty}>Couldn’t reach SportsHub — pull to retry.</Text>
-      ) : null}
-      {board ? (
-        <>
-          <Section title="Live now" games={board.live} />
-          <Section title="This week’s finals" games={board.finals} />
-          <Section title="Coming up" games={board.upcoming} />
-          {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
-            <Text style={styles.empty}>No games this week.</Text>
+      <Text style={styles.greeting}>Hi{user?.name ? `, ${user.name.split(" ")[0]}` : ""} 👋</Text>
+
+      {/* Quick entries — live scores + alerts stay one tap away (web parity: header icons) */}
+      <View style={styles.quickRow}>
+        <QuickChip icon="basketball-outline" label="Live scores" onPress={() => router.push("/(tabs)/scores")} />
+        <QuickChip icon="notifications-outline" label="Alerts" onPress={() => router.push("/(tabs)/alerts")} />
+      </View>
+
+      {!loaded && !home ? <ActivityIndicator style={{ marginTop: 32 }} /> : null}
+
+      {/* Actions due */}
+      {due && dueCount > 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Needs your attention</Text>
+          {due.openOffers.map((o) => (
+            <Row
+              key={o.id}
+              icon="document-text-outline"
+              text={`Offer for ${o.playerName} — ${o.teamName}`}
+              onPress={() => router.push(`/(tabs)/offers/${o.id}`)}
+            />
+          ))}
+          {due.paymentsDue > 0 ? (
+            <Row
+              icon="card-outline"
+              text={`${due.paymentsDue} payment${due.paymentsDue > 1 ? "s" : ""} due`}
+              onPress={() => router.push("/(tabs)/offers")}
+            />
           ) : null}
-        </>
+          {due.rsvpsNeeded > 0 ? (
+            <Row
+              icon="calendar-outline"
+              text={`${due.rsvpsNeeded} RSVP${due.rsvpsNeeded > 1 ? "s" : ""} needed`}
+              onPress={() => router.push("/(tabs)/calendar")}
+            />
+          ) : null}
+          {due.unreadChats > 0 ? (
+            <Row
+              icon="chatbubbles-outline"
+              text={`${due.unreadChats} unread chat${due.unreadChats > 1 ? "s" : ""}`}
+              onPress={() => router.push("/(tabs)/chat")}
+            />
+          ) : null}
+        </View>
       ) : null}
+
+      {/* This week */}
+      {c && c.weekEvents.length > 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>This week</Text>
+          {c.weekEvents.slice(0, 6).map((e) => (
+            <View key={e.item.id} style={styles.eventRow}>
+              <Text style={styles.eventWhen}>{fmtWhen(e.item.startsAt)}</Text>
+              <Text style={styles.eventTitle}>{e.item.title}</Text>
+              <View style={styles.chipRow}>
+                {e.chips.map((chip) => (
+                  <Text key={chip} style={styles.chip}>
+                    {chip}
+                  </Text>
+                ))}
+                {e.awaitingRsvp.length > 0 ? (
+                  <Text style={[styles.chip, styles.chipWarn]}>
+                    RSVP: {e.awaitingRsvp.join(", ")}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ))}
+          {c.weekEvents.length > 6 ? (
+            <Row icon="calendar-outline" text="Full week in Calendar" onPress={() => router.push("/(tabs)/calendar")} />
+          ) : null}
+        </View>
+      ) : null}
+
+      {/* Coach teams */}
+      {c && c.coachTeams.length > 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>My teams</Text>
+          {c.coachTeams.map((t) => {
+            const shapeTeam = home?.shape.coachTeams.find((s) => s.teamId === t.teamId)
+            return (
+              <Row
+                key={t.teamId}
+                icon="people-outline"
+                text={`${t.name}${t.clubName ? ` · ${t.clubName}` : ""}`}
+                onPress={() => (shapeTeam ? openWeb(coachTeamWebPath(shapeTeam)) : undefined)}
+              />
+            )
+          })}
+        </View>
+      ) : null}
+
+      {/* Empty state for brand-new accounts */}
+      {loaded && c && !c.isParticipant && dueCount === 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Welcome to SportsHub</Text>
+          <Text style={styles.muted}>
+            Follow a team, register a player, or browse what's happening in the league below.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* Browse — full experience lives on the web (opens in-app) */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Browse</Text>
+        <Row icon="business-outline" text="Clubs" onPress={() => openWeb("/clubs")} />
+        <Row icon="pricetags-outline" text="Programs & registration" onPress={() => openWeb("/marketplace")} />
+        <Row icon="trophy-outline" text="Standings & schedules" onPress={() => openWeb("/scores")} />
+      </View>
     </ScrollView>
+  )
+}
+
+function QuickChip({ icon, label, onPress }: { icon: any; label: string; onPress: () => void }) {
+  return (
+    <Pressable style={({ pressed }) => [styles.quickChip, pressed && { opacity: 0.7 }]} onPress={onPress}>
+      <Ionicons name={icon} size={16} color={ui.primary} />
+      <Text style={styles.quickChipText}>{label}</Text>
+    </Pressable>
+  )
+}
+
+function Row({ icon, text, onPress }: { icon: any; text: string; onPress?: () => void }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <Ionicons name={icon} size={18} color={ui.primary} />
+      <Text style={styles.rowText}>{text}</Text>
+      {onPress ? <Ionicons name="chevron-forward" size={16} color={ui.textMuted} /> : null}
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.background },
-  content: { padding: 16, gap: 8 },
-  section: { marginBottom: 16 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: ui.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  card: {
+  content: { padding: 16, paddingBottom: 32, gap: 12 },
+  greeting: { fontSize: 22, fontWeight: "800", color: ui.text },
+  quickRow: { flexDirection: "row", gap: 8 },
+  quickChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     borderWidth: 1,
     borderColor: ui.border,
-    borderRadius: ui.radius.md,
-    padding: 12,
-    marginBottom: 8,
-    backgroundColor: ui.background,
-    gap: 6,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: ui.surface,
   },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  liveBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: ui.live },
-  liveText: { color: palette.court[700], fontWeight: "800", fontSize: 12 },
-  statusText: { color: ui.textMuted, fontSize: 12, fontWeight: "600" },
-  leagueText: { color: ui.textMuted, fontSize: 12 },
-  teamRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  teamDot: { width: 10, height: 10, borderRadius: 5 },
-  teamName: { flex: 1, fontSize: 16, fontWeight: "600", color: ui.text },
-  score: { fontSize: 18, fontWeight: "800", color: ui.text, minWidth: 32, textAlign: "right" },
-  venue: { fontSize: 12, color: ui.textMuted },
-  empty: { textAlign: "center", color: ui.textMuted, marginTop: 48, fontSize: 15 },
+  quickChipText: { fontSize: 13, fontWeight: "600", color: ui.text },
+  card: {
+    backgroundColor: ui.surface,
+    borderRadius: ui.radius.md,
+    borderWidth: 1,
+    borderColor: ui.border,
+    padding: 14,
+    gap: 4,
+  },
+  cardTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  muted: { fontSize: 14, color: ui.textMuted, lineHeight: 20 },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9 },
+  rowText: { flex: 1, fontSize: 14, color: ui.text },
+  eventRow: { paddingVertical: 8, gap: 2 },
+  eventWhen: { fontSize: 12, fontWeight: "700", color: palette.play[700] },
+  eventTitle: { fontSize: 14, color: ui.text },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 },
+  chip: {
+    fontSize: 11,
+    color: ui.textMuted,
+    borderWidth: 1,
+    borderColor: ui.border,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    overflow: "hidden",
+  },
+  chipWarn: { color: "#9a3412", borderColor: "#fdba74", backgroundColor: "#fff7ed" },
 })
