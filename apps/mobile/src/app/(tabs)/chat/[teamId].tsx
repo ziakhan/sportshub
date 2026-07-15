@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   ActivityIndicator,
   FlatList,
@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Stack, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { apiJson } from "@/lib/api"
@@ -34,16 +35,21 @@ interface ChatMessage {
 
 const POLL_MS = 5000
 const SLOW_POLL_MS = 60_000
+// Stack-header toolbar height (react-navigation defaults); safe-area top is added at use site.
+const HEADER_TOOLBAR = Platform.OS === "ios" ? 44 : 56
 
 export default function ConversationScreen() {
   const { teamId, title } = useLocalSearchParams<{ teamId: string; title?: string }>()
   const { user } = useSession()
+  const insets = useSafeAreaInsets()
   const meId = user?.id ?? null
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loaded, setLoaded] = useState(false)
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
-  const listRef = useRef<FlatList>(null)
+  // State stays chronological (append-only merge, ?after= cursor); the list
+  // renders inverted, so newest-first is derived here.
+  const newestFirst = useMemo(() => [...messages].reverse(), [messages])
 
   const mergeNewer = useCallback((incoming: ChatMessage[]) => {
     if (!incoming || incoming.length === 0) return
@@ -117,16 +123,19 @@ export default function ConversationScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
+      // Edge-to-edge Android (SDK 57 default) no longer resizes the window for
+      // the keyboard, so "padding" is required on BOTH platforms.
+      behavior="padding"
+      keyboardVerticalOffset={insets.top + HEADER_TOOLBAR}
     >
       <Stack.Screen options={{ title: (title as string) || "Chat" }} />
       <FlatList
-        ref={listRef}
         style={styles.list}
-        data={messages}
+        data={newestFirst}
+        inverted={messages.length > 0}
         keyExtractor={(m) => m.id}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           loaded ? (
             <Text style={styles.empty}>No messages yet — say hi to the team.</Text>
@@ -160,6 +169,9 @@ export default function ConversationScreen() {
           value={input}
           onChangeText={setInput}
           multiline
+          returnKeyType="send"
+          submitBehavior="submit"
+          onSubmitEditing={() => void send()}
         />
         <Pressable
           style={({ pressed }) => [styles.sendButton, (pressed || sending) && { opacity: 0.7 }]}
@@ -180,6 +192,7 @@ export default function ConversationScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.background },
   list: { flex: 1, paddingHorizontal: 12 },
+  listContent: { paddingVertical: 8 },
   empty: { textAlign: "center", color: ui.textMuted, marginTop: 40, fontSize: 15 },
   bubble: {
     maxWidth: "82%",
