@@ -49,14 +49,10 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
             Polls
           </Link>
           <Link
-            href={
-              isStaffSide
-                ? `/clubs/${membership.tenantId}/teams/${membership.teamId}/dashboard`
-                : `/team/${membership.teamId}`
-            }
+            href={isStaffSide ? `/teams/${membership.teamId}` : `/team/${membership.teamId}`}
             className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
           >
-            {isStaffSide ? "Team Dashboard" : "Team Page"}
+            {isStaffSide ? "Team Home" : "Team Page"}
           </Link>
         </div>
       </div>

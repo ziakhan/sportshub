@@ -17,6 +17,7 @@ const RULES: Array<{ re: RegExp; to: (m: RegExpExecArray) => string }> = [
   { re: /^\/account/, to: () => "/account" },
   { re: /^\/referee/, to: () => "/referee" },
   { re: /^\/clubs\/[\w-]+\/teams\/([\w-]+)/, to: (m) => `/team/${m[1]}` },
+  { re: /^\/teams\/([\w-]+)/, to: (m) => `/team/${m[1]}` },
   { re: /^\/club\/([\w-]+)/, to: (m) => `/browse/club/${m[1]}` },
   { re: /^\/news\/([\w-]+)/, to: (m) => `/browse/article/${m[1]}` },
 ]

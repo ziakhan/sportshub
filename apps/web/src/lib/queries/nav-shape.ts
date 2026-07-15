@@ -22,9 +22,13 @@ export interface NavShape {
   hasCalendar: boolean
 }
 
-/** The coach's actual workspace — /teams/[id] has no root page (404). */
+/**
+ * The coach's team HOME — /teams/[id] (owner 2026-07-15): clean, team-scoped,
+ * no club-workspace chrome. The club-management team dashboard stays at
+ * /clubs/[tenantId]/teams/[id]/dashboard for operators.
+ */
 export function coachTeamHref(t: { teamId: string; tenantId: string }): string {
-  return `/clubs/${t.tenantId}/teams/${t.teamId}/dashboard`
+  return `/teams/${t.teamId}`
 }
 
 /**

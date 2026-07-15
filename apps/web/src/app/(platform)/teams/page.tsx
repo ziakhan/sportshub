@@ -66,7 +66,18 @@ export default async function MyTeamsPage() {
       who: `${p.firstName} ${p.lastName}`,
     }))
   )
-  const staffing = staffRoles.filter((r: any) => r.team)
+  // One card per team even when someone holds two roles on it
+  const staffing = Array.from(
+    new Map(
+      staffRoles.filter((r: any) => r.team).map((r: any) => [r.team.id, r])
+    ).values()
+  ) as any[]
+
+  // A coach with exactly one team and nothing else goes straight to it —
+  // the picker only exists when there's something to pick (owner 2026-07-15)
+  if (playing.length === 0 && staffing.length === 1) {
+    redirect(`/teams/${staffing[0].team.id}`)
+  }
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -154,13 +165,10 @@ export default async function MyTeamsPage() {
                     </span>
                     <span className="flex shrink-0 gap-3 text-sm font-semibold">
                       <Link
-                        href={`/clubs/${r.team.tenantId}/teams/${r.team.id}/dashboard`}
-                        className="text-ink-600 hover:text-ink-950"
+                        href={`/teams/${r.team.id}`}
+                        className="text-play-600 hover:text-play-700"
                       >
-                        Manage
-                      </Link>
-                      <Link href={`/team/${r.team.id}`} className="text-play-600 hover:text-play-700">
-                        Public page
+                        Open team &rarr;
                       </Link>
                     </span>
                   </div>
