@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { AppleButton } from "@/components/auth/apple-button"
 import { GoogleButton } from "@/components/auth/google-button"
 
 /** Same-origin relative paths only — anything else falls back to the app. */
@@ -15,7 +16,13 @@ function safeCallbackUrl(raw: string | null | undefined): string | null {
 const inputClass =
   "border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
 
-export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function SignInForm({
+  googleEnabled,
+  appleEnabled,
+}: {
+  googleEnabled: boolean
+  appleEnabled: boolean
+}) {
   const searchParams = useSearchParams()
   const rawCallback = safeCallbackUrl(searchParams?.get("callbackUrl"))
   // No deep link → role-aware landing: operators → dashboard, parents/players
@@ -196,12 +203,22 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
               </div>
             )}
 
-            {googleEnabled && (
+            {(googleEnabled || appleEnabled) && (
               <>
-                <GoogleButton
-                  label="Continue with Google"
-                  onClick={() => void signIn("google", { callbackUrl })}
-                />
+                <div className="space-y-3">
+                  {googleEnabled && (
+                    <GoogleButton
+                      label="Continue with Google"
+                      onClick={() => void signIn("google", { callbackUrl })}
+                    />
+                  )}
+                  {appleEnabled && (
+                    <AppleButton
+                      label="Continue with Apple"
+                      onClick={() => void signIn("apple", { callbackUrl })}
+                    />
+                  )}
+                </div>
                 <div className="my-5 flex items-center gap-3">
                   <div className="bg-ink-100 h-px flex-1" />
                   <span className="text-ink-400 text-xs font-medium uppercase tracking-wider">

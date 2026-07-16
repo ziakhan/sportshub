@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { AppleButton } from "@/components/auth/apple-button"
 import { GoogleButton } from "@/components/auth/google-button"
 
 function safeCallbackUrl(raw: string | null | undefined): string | null {
@@ -14,7 +15,13 @@ function safeCallbackUrl(raw: string | null | undefined): string | null {
 const inputClass =
   "border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
 
-export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
+export function SignUpForm({
+  googleEnabled,
+  appleEnabled,
+}: {
+  googleEnabled: boolean
+  appleEnabled: boolean
+}) {
   const searchParams = useSearchParams()
   const callbackUrl = safeCallbackUrl(searchParams?.get("callbackUrl"))
   const [firstName, setFirstName] = useState("")
@@ -105,12 +112,22 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
           </div>
         )}
 
-        {googleEnabled && (
+        {(googleEnabled || appleEnabled) && (
           <>
-            <GoogleButton
-              label="Sign up with Google"
-              onClick={() => void signIn("google", { callbackUrl: googleCallback })}
-            />
+            <div className="space-y-3">
+              {googleEnabled && (
+                <GoogleButton
+                  label="Sign up with Google"
+                  onClick={() => void signIn("google", { callbackUrl: googleCallback })}
+                />
+              )}
+              {appleEnabled && (
+                <AppleButton
+                  label="Sign up with Apple"
+                  onClick={() => void signIn("apple", { callbackUrl: googleCallback })}
+                />
+              )}
+            </div>
             <div className="my-5 flex items-center gap-3">
               <div className="bg-ink-100 h-px flex-1" />
               <span className="text-ink-400 text-xs font-medium uppercase tracking-wider">or</span>
