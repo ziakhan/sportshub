@@ -84,8 +84,11 @@ export function EventCard({
     }
   }
 
+  const kindEdge =
+    item.kind === "game" ? ui.energy : item.kind === "practice" ? ui.primary : palette.gold[500]
+
   return (
-    <Card style={styles.card}>
+    <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: kindEdge }]}>
       <View style={styles.top}>
         <Text style={styles.when}>{timeRange}</Text>
         <TonePill

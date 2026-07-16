@@ -87,9 +87,17 @@ const KIND_CHIP: Record<ItemView["kind"], string> = {
   event: "bg-hoop-100/80 text-hoop-800 hover:bg-hoop-200/80",
 }
 const KIND_CARD: Record<ItemView["kind"], string> = {
-  game: "border-play-200 bg-play-50/50",
-  practice: "border-ink-100 bg-white",
-  event: "border-hoop-200 bg-hoop-50/40",
+  game: "bg-energy-soft/60 border-ink-100",
+  practice: "bg-white border-ink-100",
+  event: "bg-highlight-soft/60 border-ink-100",
+}
+
+/** Energy Pass mock (§4): the card carries its type's color — games burn
+ *  hot, practices stay brand, socials go gold — via a bold left edge. */
+const KIND_EDGE: Record<ItemView["kind"], string> = {
+  game: "var(--energy)",
+  practice: "var(--brand)",
+  event: "var(--highlight)",
 }
 
 export function MyCalendar() {
@@ -484,9 +492,10 @@ export function MyCalendar() {
             return (
               <div
                 key={`${item.kind}-${item.id}`}
-                className={`flex gap-3 rounded-xl border px-4 py-3 ${KIND_CARD[item.kind]} ${
+                className={`flex gap-3 rounded-xl border border-l-4 px-4 py-3 ${KIND_CARD[item.kind]} ${
                   item.status === "CANCELLED" ? "opacity-60" : ""
                 }`}
+                style={{ borderLeftColor: KIND_EDGE[item.kind] }}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">

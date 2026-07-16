@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,7 +22,22 @@ import { palette, ui } from "@/lib/theme"
  * role-specific action needs it — same event-driven model as the web.
  */
 export default function SignUpScreen() {
-  const { signIn } = useSession()
+  const { signIn, signInApple } = useSession()
+  // Sign UP with Apple (owner 2026-07-16: Apple sign-in IS account creation)
+  // — guarded require: binaries without the native module must not crash.
+  const [appleReady, setAppleReady] = useState(false)
+  useEffect(() => {
+    if (Platform.OS !== "ios") return
+    try {
+      const apple = require("expo-apple-authentication")
+      apple
+        .isAvailableAsync()
+        .then((ok: boolean) => setAppleReady(ok))
+        .catch(() => {})
+    } catch {
+      // binary without the module
+    }
+  }, [])
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -131,6 +146,40 @@ export default function SignUpScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.replace("/sign-in")} hitSlop={6}>
+          {appleReady ? (
+            <Pressable
+              style={({ pressed }) => [styles.appleButton, (pressed || busy) && { opacity: 0.75 }]}
+              onPress={async () => {
+                if (busy) return
+                setBusy(true)
+                setError(null)
+                try {
+                  const apple = require("expo-apple-authentication")
+                  const cred = await apple.signInAsync({
+                    requestedScopes: [
+                      apple.AppleAuthenticationScope.FULL_NAME,
+                      apple.AppleAuthenticationScope.EMAIL,
+                    ],
+                  })
+                  if (!cred.identityToken) throw new Error("Apple didn't return a token")
+                  await signInApple(cred.identityToken, cred.fullName)
+                  dismiss()
+                } catch (err) {
+                  const code = (err as { code?: string })?.code
+                  if (code !== "ERR_REQUEST_CANCELED") {
+                    setError(err instanceof Error ? err.message : "Apple sign-up failed")
+                  }
+                } finally {
+                  setBusy(false)
+                }
+              }}
+              disabled={busy}
+            >
+              <Ionicons name="logo-apple" size={18} color="#fff" />
+              <Text style={styles.appleButtonText}>Sign up with Apple</Text>
+            </Pressable>
+          ) : null}
+
           <Text style={styles.footnote}>
             Already have an account? <Text style={styles.footnoteLink}>Sign in</Text>
           </Text>
@@ -171,6 +220,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  appleButton: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  appleButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   footnote: { fontSize: 13, color: ui.textMuted, textAlign: "center", marginTop: 16 },
   footnoteLink: { color: ui.primary, fontWeight: "700" },
 })
