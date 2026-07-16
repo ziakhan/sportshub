@@ -13,6 +13,7 @@ import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { apiBaseUrl } from "@/lib/api"
 import { useSession } from "@/lib/session"
+import { googleAvailable, googleIdToken } from "@/lib/google-auth"
 import { palette, ui } from "@/lib/theme"
 
 /**
@@ -22,7 +23,7 @@ import { palette, ui } from "@/lib/theme"
  * role-specific action needs it — same event-driven model as the web.
  */
 export default function SignUpScreen() {
-  const { signIn, signInApple } = useSession()
+  const { signIn, signInApple, signInGoogle } = useSession()
   // Sign UP with Apple (owner 2026-07-16: Apple sign-in IS account creation)
   // — guarded require: binaries without the native module must not crash.
   const [appleReady, setAppleReady] = useState(false)
@@ -38,12 +39,29 @@ export default function SignUpScreen() {
       // binary without the module
     }
   }, [])
+  const [googleReady] = useState(googleAvailable)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  async function onGoogle() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const idToken = await googleIdToken()
+      if (!idToken) return // user backed out of the sheet
+      await signInGoogle(idToken)
+      dismiss()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-up failed")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   function dismiss() {
     if (router.canGoBack()) router.back()
@@ -145,41 +163,52 @@ export default function SignUpScreen() {
           )}
         </Pressable>
 
-        <Pressable onPress={() => router.replace("/sign-in")} hitSlop={6}>
-          {appleReady ? (
-            <Pressable
-              style={({ pressed }) => [styles.appleButton, (pressed || busy) && { opacity: 0.75 }]}
-              onPress={async () => {
-                if (busy) return
-                setBusy(true)
-                setError(null)
-                try {
-                  const apple = require("expo-apple-authentication")
-                  const cred = await apple.signInAsync({
-                    requestedScopes: [
-                      apple.AppleAuthenticationScope.FULL_NAME,
-                      apple.AppleAuthenticationScope.EMAIL,
-                    ],
-                  })
-                  if (!cred.identityToken) throw new Error("Apple didn't return a token")
-                  await signInApple(cred.identityToken, cred.fullName)
-                  dismiss()
-                } catch (err) {
-                  const code = (err as { code?: string })?.code
-                  if (code !== "ERR_REQUEST_CANCELED") {
-                    setError(err instanceof Error ? err.message : "Apple sign-up failed")
-                  }
-                } finally {
-                  setBusy(false)
+        {appleReady ? (
+          <Pressable
+            style={({ pressed }) => [styles.appleButton, (pressed || busy) && { opacity: 0.75 }]}
+            onPress={async () => {
+              if (busy) return
+              setBusy(true)
+              setError(null)
+              try {
+                const apple = require("expo-apple-authentication")
+                const cred = await apple.signInAsync({
+                  requestedScopes: [
+                    apple.AppleAuthenticationScope.FULL_NAME,
+                    apple.AppleAuthenticationScope.EMAIL,
+                  ],
+                })
+                if (!cred.identityToken) throw new Error("Apple didn't return a token")
+                await signInApple(cred.identityToken, cred.fullName)
+                dismiss()
+              } catch (err) {
+                const code = (err as { code?: string })?.code
+                if (code !== "ERR_REQUEST_CANCELED") {
+                  setError(err instanceof Error ? err.message : "Apple sign-up failed")
                 }
-              }}
-              disabled={busy}
-            >
-              <Ionicons name="logo-apple" size={18} color="#fff" />
-              <Text style={styles.appleButtonText}>Sign up with Apple</Text>
-            </Pressable>
-          ) : null}
+              } finally {
+                setBusy(false)
+              }
+            }}
+            disabled={busy}
+          >
+            <Ionicons name="logo-apple" size={18} color="#fff" />
+            <Text style={styles.appleButtonText}>Sign up with Apple</Text>
+          </Pressable>
+        ) : null}
 
+        {googleReady ? (
+          <Pressable
+            style={({ pressed }) => [styles.googleButton, (pressed || busy) && { opacity: 0.75 }]}
+            onPress={onGoogle}
+            disabled={busy}
+          >
+            <Ionicons name="logo-google" size={18} color="#4285F4" />
+            <Text style={styles.googleButtonText}>Sign up with Google</Text>
+          </Pressable>
+        ) : null}
+
+        <Pressable onPress={() => router.replace("/sign-in")} hitSlop={6}>
           <Text style={styles.footnote}>
             Already have an account? <Text style={styles.footnoteLink}>Sign in</Text>
           </Text>
@@ -231,6 +260,19 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   appleButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  googleButton: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: ui.borderStrong,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  googleButtonText: { color: ui.text, fontSize: 15, fontWeight: "700" },
   footnote: { fontSize: 13, color: ui.textMuted, textAlign: "center", marginTop: 16 },
   footnoteLink: { color: ui.primary, fontWeight: "700" },
 })

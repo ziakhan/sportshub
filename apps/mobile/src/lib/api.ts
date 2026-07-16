@@ -97,6 +97,22 @@ export async function signInWithApple(
   return body.user as SessionUser
 }
 
+/** Sign in with Google: exchange Google's idToken for our token pair. */
+export async function signInWithGoogle(idToken: string): Promise<SessionUser> {
+  const res = await fetch(`${apiBaseUrl()}/api/auth/token/google`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ idToken, deviceLabel: deviceLabel() }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(body?.error ?? `Google sign-in failed (${res.status})`)
+  }
+  await setTokens(body.accessToken, body.refreshToken)
+  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(body.user))
+  return body.user as SessionUser
+}
+
 /** The user from the last sign-in — survives app restarts. */
 export async function storedUser(): Promise<SessionUser | null> {
   const raw = await SecureStore.getItemAsync(USER_KEY).catch(() => null)

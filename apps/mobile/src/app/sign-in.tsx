@@ -13,10 +13,11 @@ import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { ui, palette } from "@/lib/theme"
 import { useSession } from "@/lib/session"
+import { googleAvailable, googleIdToken } from "@/lib/google-auth"
 
 /** Sign-in modal — the app browses fine without it (no login wall). */
 export default function SignInScreen() {
-  const { signIn, signInApple } = useSession()
+  const { signIn, signInApple, signInGoogle } = useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +37,24 @@ export default function SignInScreen() {
       // binary without the native module — no Apple button
     }
   }, [])
+
+  const [googleReady] = useState(googleAvailable)
+
+  async function onGoogle() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const idToken = await googleIdToken()
+      if (!idToken) return // user backed out of the sheet
+      await signInGoogle(idToken)
+      dismiss()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function onApple() {
     if (busy) return
@@ -141,6 +160,17 @@ export default function SignInScreen() {
           </Pressable>
         ) : null}
 
+        {googleReady ? (
+          <Pressable
+            style={({ pressed }) => [styles.googleButton, (pressed || busy) && { opacity: 0.75 }]}
+            onPress={onGoogle}
+            disabled={busy}
+          >
+            <Ionicons name="logo-google" size={18} color="#4285F4" />
+            <Text style={styles.googleButtonText}>Sign in with Google</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable onPress={() => router.replace("/sign-up")} hitSlop={6}>
           <Text style={styles.footnote}>
             New to SportsHub? <Text style={styles.footnoteLink}>Create an account</Text>
@@ -206,6 +236,19 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   appleButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  googleButton: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: ui.borderStrong,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  googleButtonText: { color: ui.text, fontSize: 15, fontWeight: "700" },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   footnote: {
     fontSize: 13,

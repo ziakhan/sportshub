@@ -4,6 +4,7 @@ import {
   setSessionLostHandler,
   signIn as apiSignIn,
   signInWithApple as apiSignInWithApple,
+  signInWithGoogle as apiSignInWithGoogle,
   signOut as apiSignOut,
   storedUser,
   type SessionUser,
@@ -30,6 +31,7 @@ interface SessionContextValue {
     identityToken: string,
     fullName?: { givenName?: string | null; familyName?: string | null } | null
   ): Promise<void>
+  signInGoogle(idToken: string): Promise<void>
   signOut(): Promise<void>
 }
 
@@ -77,6 +79,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     },
     async signInApple(identityToken, fullName) {
       const sessionUser = await apiSignInWithApple(identityToken, fullName)
+      setUser(sessionUser)
+      setSignedIn(true)
+      void registerForPush()
+    },
+    async signInGoogle(idToken) {
+      const sessionUser = await apiSignInWithGoogle(idToken)
       setUser(sessionUser)
       setSignedIn(true)
       void registerForPush()
