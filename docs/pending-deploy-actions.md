@@ -651,3 +651,18 @@ change instantly; /api/mobile/config returns `palette`.
   scorekeeper's pre-game clock choice (checklist "Run the game clock?").
 Verify post-push: open a SCHEDULED game's scoring page → checklist shows the
 clock question; No clock → public hero shows LIVE·Q# with no ticking clock.
+
+## #31 — 2026-07-16 native Google sign-in (no schema)
+Code only — **BOX deployed 2026-07-16 (c131643, via deploy.sh; owner-approved)**.
+- POST /api/auth/token/google — verifies Google idToken (JWKS, verified email
+  required, aud = web/iOS/Android client ids hardcoded from owner's GCP
+  project 1011644585799), ensureGoogleUser links by email, mints the normal
+  native access/refresh pair.
+No schema, no new env (uses existing GOOGLE_CLIENT_ID). Neon/Vercel: rides
+the eventual code sync, nothing extra.
+Mobile side (same feature): @react-native-google-signin 16.1.2 + iOS URL
+scheme + expo-build-properties modular-headers fix (613d679) — NEW BINARIES:
+iOS TestFlight build 7, fresh Android APK. Old binaries hide the button
+(guarded require), they don't crash.
+Verify: POST {} → 400; garbage idToken → 401; button on device signs in and
+lands on the personal home.

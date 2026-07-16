@@ -24,7 +24,7 @@ code; "iOS looks different" is almost always a stale binary/OTA, not a fork.
 - Referee + Operator tabs, Account (profile/payments/notifications), Alerts + push taps
 
 ## Known gaps (each needs an owner priority call)
-1. **Native Google sign-in** — backlog §Auth cross-platform (new builds + 2 OAuth clients).
+1. ~~**Native Google sign-in**~~ ✅ shipped 2026-07-16 (backlog §Auth cross-platform has detail).
 2. **Offer installments** — native is full-pay only ("installments stay on
    the website for now" v1 note). Web offers FULL vs INSTALLMENTS.
 3. **Practice/team-event creation** — coaches can create typed events on web

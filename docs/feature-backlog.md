@@ -151,7 +151,11 @@ feature is greenlit for build.
   domain ysportshub.com) + a Sign in with Apple key from the developer portal →
   NextAuth Apple provider → buttons on web sign-in + sign-up. Owner explicitly
   asked to be reminded.
-- **Native Google sign-in (Android + iOS)**: @react-native-google-signin +
-  /api/auth/token/google (verify idToken, ensureGoogleUser) + Android OAuth
-  client (SHA-1 from EAS keystore) + iOS OAuth client in owner's GCP project.
-  New binaries required (not OTA-able). Buttons on native sign-in AND sign-up.
+- ~~**Native Google sign-in (Android + iOS)**~~ ✅ SHIPPED 2026-07-16
+  (`c131643` + pod fix `613d679`): owner created both OAuth clients;
+  /api/auth/token/google live on box (JWKS verify, verified-email required,
+  ensureGoogleUser); buttons on native sign-in + sign-up, guarded require so
+  old binaries never crash. iOS TestFlight build 7 + fresh Android APK carry
+  the native module. Gotcha fixed en route: GoogleSignIn's AppCheckCore Swift
+  pod needs GoogleUtilities + RecaptchaInterop `modular_headers` (via
+  expo-build-properties extraPods) or pod install fails on EAS.
