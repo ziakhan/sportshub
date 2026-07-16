@@ -34,6 +34,21 @@
     --brand-soft: #eef2ff;
     --brand-softer: #f5f7ff;
     --brand-line: #c7d2fe;
+
+    /* Energy Pass semantic tokens (design-tokens PALETTES; hardwood defaults).
+       The root layout stamps the admin-chosen palette on <html>, so these
+       fallbacks only matter on error. energy = the one hot color per screen;
+       stage = broadcast-dark score surfaces; highlight = leaders/winners/
+       pinned. Always pair *-on for text sitting on the filled color. */
+    --energy: #f24e1e;
+    --energy-ink: #bc2711;
+    --energy-soft: #fef3ee;
+    --energy-on: #ffffff;
+    --stage: #0b1628;
+    --stage-2: #1e2d4d;
+    --highlight: #fbbf24;
+    --highlight-soft: #fffbeb;
+    --highlight-on: #3b2a06;
   }
 
   .dark {

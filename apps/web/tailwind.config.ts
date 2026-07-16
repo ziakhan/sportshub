@@ -130,6 +130,25 @@ const config = {
           500: "#f59e0b",
           600: "#d97706",
         },
+        // Energy Pass semantic tokens — CSS-var backed so the admin-chosen
+        // palette (PlatformSettings.themePalette → <html> style stamp) reskins
+        // the site with zero rebuild. NOTE: plain var() colors don't support
+        // Tailwind opacity modifiers (energy/50) — use the *-soft shades.
+        energy: {
+          DEFAULT: "var(--energy)",
+          ink: "var(--energy-ink)",
+          soft: "var(--energy-soft)",
+          on: "var(--energy-on)",
+        },
+        stage: {
+          DEFAULT: "var(--stage)",
+          2: "var(--stage-2)",
+        },
+        highlight: {
+          DEFAULT: "var(--highlight)",
+          soft: "var(--highlight-soft)",
+          on: "var(--highlight-on)",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],

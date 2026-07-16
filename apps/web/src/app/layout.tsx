@@ -4,7 +4,8 @@ import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
 import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
 import { JsonLd, siteGraph } from "@/lib/seo/jsonld"
-import { isSeoIndexingEnabled } from "@/lib/platform-settings"
+import { isSeoIndexingEnabled, getThemePalette } from "@/lib/platform-settings"
+import { paletteCssVars } from "@youthbasketballhub/design-tokens"
 import "./globals.css"
 
 const outfit = Outfit({
@@ -63,9 +64,12 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Admin-chosen palette (Energy Pass) — stamped as CSS vars so the semantic
+  // Tailwind colors (energy/stage/highlight + brand) reskin without a rebuild.
+  const palette = await getThemePalette()
   return (
-    <html lang="en">
+    <html lang="en" data-palette={palette.id} style={paletteCssVars(palette) as React.CSSProperties}>
       <body
         className={`${outfit.variable} ${workSans.variable} ${barlowCondensed.variable} ${barlow.variable} font-body`}
       >

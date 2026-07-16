@@ -94,13 +94,13 @@ export function AgendaList<T>({
                 >
                   {/* Date tile — the left rail the eye scans down */}
                   <div
-                    className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl ${
+                    className={`flex h-[60px] w-[60px] shrink-0 flex-col items-center justify-center rounded-2xl ${
                       isToday
                         ? "bg-play-600 text-white"
                         : "bg-ink-100/70 text-ink-700"
                     }`}
                   >
-                    <span className="text-xl font-bold leading-none">
+                    <span className="text-2xl font-extrabold leading-none">
                       {format(day.date, "d")}
                     </span>
                     <span

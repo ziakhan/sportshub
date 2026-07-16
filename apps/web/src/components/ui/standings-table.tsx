@@ -40,15 +40,15 @@ export function StandingsTable({ rows, highlightLeaders = 1, className }: Standi
   return (
     <div className={cn("border-ink-100 relative overflow-hidden rounded-2xl border bg-white", className)}>
       <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <table className="w-full min-w-[430px] text-sm">
+        <table className="w-full min-w-[430px] text-[15px]">
           <thead>
-            <tr className="border-ink-100 text-ink-400 border-b text-left text-xs uppercase tracking-[0.12em]">
-              <th className="sticky left-0 z-10 bg-white px-4 py-3 font-semibold">Team</th>
-              <th className="px-2 py-3 text-center font-semibold">W</th>
-              <th className="px-2 py-3 text-center font-semibold">L</th>
-              <th className="px-2 py-3 text-center font-semibold">PCT</th>
-              <th className="px-2 py-3 text-center font-semibold">GB</th>
-              <th className="px-4 py-3 text-center font-semibold">STRK</th>
+            <tr className="border-ink-100 text-ink-500 border-b text-left text-[11.5px] uppercase tracking-[0.12em]">
+              <th className="sticky left-0 z-10 bg-white px-4 py-3 font-extrabold">Team</th>
+              <th className="px-2 py-3 text-center font-extrabold">W</th>
+              <th className="px-2 py-3 text-center font-extrabold">L</th>
+              <th className="px-2 py-3 text-center font-extrabold">PCT</th>
+              <th className="px-2 py-3 text-center font-extrabold">GB</th>
+              <th className="px-4 py-3 text-center font-extrabold">STRK</th>
             </tr>
           </thead>
           <tbody>
@@ -57,11 +57,11 @@ export function StandingsTable({ rows, highlightLeaders = 1, className }: Standi
               return (
                 <tr
                   key={row.rank}
-                  className={cn("border-ink-50 border-b last:border-0", leader && "bg-gold-50/50")}
+                  className={cn("border-ink-50 border-b last:border-0", leader && "bg-highlight-soft")}
                 >
                   {/* Sticky identity cell needs an OPAQUE bg to cover the
                       stats sliding beneath it */}
-                  <td className={cn("sticky left-0 z-10 px-4 py-3", leader ? "bg-gold-50" : "bg-white")}>
+                  <td className={cn("sticky left-0 z-10 px-4 py-3", leader ? "bg-highlight-soft" : "bg-white")}>
                     <div className="flex items-center gap-2.5">
                       <span
                         className={cn(
@@ -79,21 +79,36 @@ export function StandingsTable({ rows, highlightLeaders = 1, className }: Standi
                       {row.href ? (
                         <Link
                           href={row.href}
-                          className="text-ink-900 hover:text-play-600 font-semibold transition-colors"
+                          className="text-ink-950 hover:text-play-600 font-bold transition-colors"
                         >
                           {row.name}
                         </Link>
                       ) : (
-                        <span className="text-ink-900 font-semibold">{row.name}</span>
+                        <span className="text-ink-950 font-bold">{row.name}</span>
                       )}
                     </div>
                   </td>
-                  <td className="text-ink-700 px-2 py-3 text-center font-semibold tabular-nums">{row.wins}</td>
-                  <td className="text-ink-700 px-2 py-3 text-center font-semibold tabular-nums">{row.losses}</td>
-                  <td className="text-ink-900 px-2 py-3 text-center font-semibold tabular-nums">{pctLabel(row.pct)}</td>
+                  <td className="text-energy-ink px-2 py-3 text-center font-extrabold tabular-nums">{row.wins}</td>
+                  <td className="text-ink-700 px-2 py-3 text-center font-bold tabular-nums">{row.losses}</td>
+                  <td className="text-ink-900 px-2 py-3 text-center font-bold tabular-nums">{pctLabel(row.pct)}</td>
                   <td className="text-ink-500 px-2 py-3 text-center tabular-nums">{row.gamesBack ?? "—"}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className="text-ink-500 text-xs font-semibold">{row.streak ?? "—"}</span>
+                    {row.streak ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-extrabold",
+                          row.streak.startsWith("W")
+                            ? "bg-court-100 text-court-700"
+                            : row.streak.startsWith("L")
+                              ? "bg-hoop-50 text-hoop-700"
+                              : "text-ink-500"
+                        )}
+                      >
+                        {row.streak}
+                      </span>
+                    ) : (
+                      <span className="text-ink-400 text-xs font-semibold">—</span>
+                    )}
                   </td>
                 </tr>
               )

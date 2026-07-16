@@ -2734,6 +2734,12 @@ model PlatformSettings {
   // per-page rules. Flip ON at go-live (docs/roadmap/seo-strategy.md §9).
   seoIndexingEnabled Boolean @default(false)
 
+  // Platform theme palette (admin-switchable; Energy Pass 2026-07-15).
+  // One of design-tokens' PALETTES ids ("hardwood" | "fastbreak" | "primetime").
+  // Unknown values fail open to hardwood. Future custom palettes will add a
+  // JSON override column beside this.
+  themePalette String @default("hardwood")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

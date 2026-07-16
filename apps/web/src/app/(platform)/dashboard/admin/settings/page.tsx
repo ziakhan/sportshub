@@ -14,6 +14,8 @@ export default function AdminSettingsPage() {
   const [enabledCodes, setEnabledCodes] = useState<string[]>([])
   const [seoIndexing, setSeoIndexing] = useState(false)
   const [savingSeo, setSavingSeo] = useState(false)
+  const [palette, setPalette] = useState("hardwood")
+  const [savingPalette, setSavingPalette] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -25,6 +27,7 @@ export default function AdminSettingsPage() {
         setAvailableCountries(data.availableCountries || [])
         setEnabledCodes(data.enabledCountries || ["US"])
         setSeoIndexing(!!data.seoIndexingEnabled)
+        setPalette(data.themePalette || "hardwood")
       })
       .catch(() => setMessage({ type: "error", text: "Failed to load settings" }))
       .finally(() => setLoading(false))
@@ -55,6 +58,30 @@ export default function AdminSettingsPage() {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save" })
     } finally {
       setSavingSeo(false)
+    }
+  }
+
+  const choosePalette = async (id: string) => {
+    if (id === palette) return
+    setSavingPalette(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ themePalette: id }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to save")
+      }
+      setPalette(id)
+      // The palette is stamped on <html> by the server layout — reload so the
+      // admin sees the change everywhere immediately.
+      window.location.reload()
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save" })
+      setSavingPalette(false)
     }
   }
 
@@ -141,6 +168,59 @@ export default function AdminSettingsPage() {
           >
             {savingSeo ? "Saving..." : seoIndexing ? "Turn OFF" : "Turn ON"}
           </button>
+        </div>
+      </div>
+
+      {/* Theme palette (Energy Pass) */}
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">Theme palette</h3>
+        <p className="text-ink-500 mb-4 text-sm">
+          Site-wide color direction — applies instantly to every visitor, no deploy needed. Club
+          and team colors are never affected; this changes the chrome around them.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            {
+              id: "hardwood",
+              label: "Hardwood",
+              blurb: "Indigo brand, hot orange energy, navy score surfaces",
+              chips: ["#4f46e5", "#f24e1e", "#0b1628", "#fbbf24"],
+            },
+            {
+              id: "fastbreak",
+              label: "Fastbreak",
+              blurb: "Violet brand, volt-lime energy, deep-violet surfaces",
+              chips: ["#6d28d9", "#a3e635", "#190a2e", "#22d3ee"],
+            },
+            {
+              id: "primetime",
+              label: "Prime Time",
+              blurb: "Scarlet brand, gold energy, broadcast-black surfaces",
+              chips: ["#dc2626", "#f59e0b", "#0c0f13", "#f59e0b"],
+            },
+          ].map((p) => (
+            <button
+              key={p.id}
+              onClick={() => void choosePalette(p.id)}
+              disabled={savingPalette}
+              className={`rounded-xl border-2 p-4 text-left transition disabled:opacity-60 ${
+                palette === p.id
+                  ? "border-play-500 bg-play-50"
+                  : "border-ink-200 hover:border-ink-300 bg-white"
+              }`}
+            >
+              <div className="mb-2 flex gap-1.5">
+                {p.chips.map((c) => (
+                  <span key={c} className="h-5 w-5 rounded-md" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+              <div className="text-ink-900 text-sm font-bold">
+                {p.label}
+                {palette === p.id && <span className="text-play-600 ml-2 text-xs">Active</span>}
+              </div>
+              <div className="text-ink-500 mt-0.5 text-xs">{p.blurb}</div>
+            </button>
+          ))}
         </div>
       </div>
 

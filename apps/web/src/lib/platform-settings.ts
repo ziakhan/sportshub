@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { resolvePalette, type ThemePalette } from "@youthbasketballhub/design-tokens"
 import { SUPPORTED_COUNTRIES } from "./countries"
 
 const DEFAULT_COUNTRIES = ["CA"]
@@ -40,6 +41,23 @@ export async function getEnabledCountryCodes(): Promise<string[]> {
 export async function isSingleCountryMode() {
   const codes = await getEnabledCountryCodes()
   return codes.length === 1 ? codes[0] : null
+}
+
+/**
+ * Admin-chosen platform palette (Energy Pass). Read by the root layout on
+ * every request to stamp the palette's CSS variables on <html>. Fails open
+ * to hardwood on any error — the site must render even if the DB hiccups.
+ */
+export async function getThemePalette(): Promise<ThemePalette> {
+  try {
+    const settings = await prisma.platformSettings.findUnique({
+      where: { id: "default" },
+      select: { themePalette: true },
+    })
+    return resolvePalette(settings?.themePalette)
+  } catch {
+    return resolvePalette(null)
+  }
 }
 
 /**

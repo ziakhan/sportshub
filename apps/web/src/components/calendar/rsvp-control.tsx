@@ -80,7 +80,7 @@ export function RsvpControl({
                 key={o.status}
                 onClick={() => onSet(p.id, o.status)}
                 aria-pressed={selected}
-                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-[13px] font-bold transition ${
                   selected ? o.on : o.off
                 }`}
               >

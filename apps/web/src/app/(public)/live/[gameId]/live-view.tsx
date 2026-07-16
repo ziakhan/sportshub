@@ -319,12 +319,6 @@ export function LiveView({ gameId }: { gameId: string }) {
     </span>
   )
 
-  const recordLine = (rec: TeamRecord | null) =>
-    rec ? (
-      <p className="text-ink-500 mt-0.5 text-xs">
-        {rec.record} · {ordinal(rec.rank)} in {rec.divisionName}
-      </p>
-    ) : null
 
   const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
     <tr
@@ -332,7 +326,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       className="border-ink-50 hover:bg-ink-50 border-t transition-colors"
       style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
     >
-      <td className="text-ink-800 whitespace-nowrap py-1.5 pl-4 pr-2 font-medium">
+      <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
         <span className="text-ink-400 mr-1.5 font-normal">#{jerseyOf(l.playerId)}</span>
         <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
           {shortName(l.playerId)}
@@ -340,7 +334,7 @@ export function LiveView({ gameId }: { gameId: string }) {
         {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
         {isTop && (
           <span
-            className="ml-2 align-[2px] text-[9px] font-extrabold tracking-widest"
+            className="bg-highlight text-highlight-on ml-2 rounded px-1.5 py-0.5 align-[2px] text-[9.5px] font-extrabold tracking-widest"
             style={{ color: teamColor }}
           >
             TOP
@@ -348,13 +342,13 @@ export function LiveView({ gameId }: { gameId: string }) {
         )}
       </td>
       {showMin && <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>}
-      <td className="text-ink-950 px-1.5 text-right font-bold">{l.points}</td>
+      <td className="text-energy-ink px-1.5 text-right text-base font-extrabold">{l.points}</td>
       <td className="px-1.5 text-right">{totalRebounds(l)}</td>
       <td className="px-1.5 text-right">{l.assists}</td>
       <td className="px-1.5 text-right">{l.steals}</td>
-      <td className="px-1.5 text-right">{l.blocks}</td>
-      <td className="px-1.5 text-right">{l.turnovers}</td>
-      <td className="px-1.5 pr-4 text-right">
+      <td className="hidden px-1.5 text-right sm:table-cell">{l.blocks}</td>
+      <td className="px-1.5 pr-4 text-right sm:pr-1.5">{l.turnovers}</td>
+      <td className="hidden px-1.5 pr-4 text-right sm:table-cell">
         {l.fouls}
         {l.technicalFouls > 0 ? "T" : ""}
       </td>
@@ -382,7 +376,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
     )
     const header = (
-      <thead className="text-ink-400 text-left text-[10px] uppercase tracking-wide">
+      <thead className="text-ink-500 text-left text-[11.5px] uppercase tracking-wide">
         <tr>
           <th className="py-2 pl-4 pr-2 font-bold">Player</th>
           {showMinutes && <th className="px-1.5 text-right font-bold">Min</th>}
@@ -390,9 +384,9 @@ export function LiveView({ gameId }: { gameId: string }) {
           <th className="px-1.5 text-right font-bold">Reb</th>
           <th className="px-1.5 text-right font-bold">Ast</th>
           <th className="px-1.5 text-right font-bold">Stl</th>
-          <th className="px-1.5 text-right font-bold">Blk</th>
-          <th className="px-1.5 text-right font-bold">TO</th>
-          <th className="px-1.5 pr-4 text-right font-bold">PF</th>
+          <th className="hidden px-1.5 text-right font-bold sm:table-cell">Blk</th>
+          <th className="px-1.5 pr-4 text-right font-bold sm:pr-1.5">TO</th>
+          <th className="hidden px-1.5 pr-4 text-right font-bold sm:table-cell">PF</th>
         </tr>
       </thead>
     )
@@ -407,7 +401,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className="bg-ink-50 text-ink-400 border-ink-100 border-y px-4 py-1 text-[9px] font-extrabold uppercase tracking-widest"
+                  className="bg-ink-50 text-ink-500 border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest"
                 >
                   Bench
                 </td>
@@ -421,9 +415,9 @@ export function LiveView({ gameId }: { gameId: string }) {
               <td className="px-1.5 text-right">{totals.reb}</td>
               <td className="px-1.5 text-right">{totals.ast}</td>
               <td className="px-1.5 text-right">{totals.stl}</td>
-              <td className="px-1.5 text-right">{totals.blk}</td>
-              <td className="px-1.5 text-right">{totals.to}</td>
-              <td className="px-1.5 pr-4 text-right">{totals.pf}</td>
+              <td className="hidden px-1.5 text-right sm:table-cell">{totals.blk}</td>
+              <td className="px-1.5 pr-4 text-right sm:pr-1.5">{totals.to}</td>
+              <td className="hidden px-1.5 pr-4 text-right sm:table-cell">{totals.pf}</td>
             </tr>
           </tbody>
         </table>
@@ -443,7 +437,7 @@ export function LiveView({ gameId }: { gameId: string }) {
         {name}
       </Link>
       {total != null && (
-        <span className="ml-auto text-lg tabular-nums">{total}</span>
+        <span className="font-condensed ml-auto text-2xl font-bold tabular-nums">{total}</span>
       )}
     </div>
   )
@@ -459,8 +453,8 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-xs lg:text-[13px]">
-          <thead className="text-ink-400 text-left text-[10px] uppercase tracking-wide">
+        <table className="w-full text-[15px] tabular-nums">
+          <thead className="text-ink-500 text-left text-[11.5px] uppercase tracking-wide">
             <tr>
               <th className="py-2 pl-4 pr-2 font-bold">Player</th>
               <th className="px-1.5 text-right font-bold">GP</th>
@@ -472,7 +466,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           <tbody>
             {roster.map((p) => (
               <tr key={p.playerId} className="border-ink-50 hover:bg-ink-50 border-t transition-colors">
-                <td className="text-ink-800 whitespace-nowrap py-1.5 pl-4 pr-2 font-medium">
+                <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
                   <span className="text-ink-400 mr-1.5 font-normal">
                     {p.jerseyNumber ? `#${p.jerseyNumber}` : ""}
                   </span>
@@ -507,10 +501,10 @@ export function LiveView({ gameId }: { gameId: string }) {
               className="h-2 w-2 shrink-0 rounded-sm"
               style={{ backgroundColor: colorOf(teamId) }}
             />
-            <span className="text-ink-700 min-w-0 truncate text-xs font-semibold">
+            <span className="text-ink-800 min-w-0 truncate text-[13.5px] font-bold">
               {shortName(l.playerId)}
             </span>
-            <span className="text-ink-950 shrink-0 text-sm font-extrabold tabular-nums">
+            <span className="text-ink-950 shrink-0 text-lg font-extrabold tabular-nums">
               {get(l)}
             </span>
           </>
@@ -522,7 +516,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     return (
       <div key={label} className="flex items-center gap-2 px-4 py-2">
         {cell(h, game.homeTeamId, false)}
-        <span className="text-ink-400 w-10 shrink-0 text-center text-[9px] font-extrabold uppercase tracking-widest">
+        <span className="text-ink-500 w-10 shrink-0 text-center text-[10px] font-extrabold uppercase tracking-widest">
           {label.slice(0, 3)}
         </span>
         {cell(a, game.awayTeamId, true)}
@@ -532,17 +526,22 @@ export function LiveView({ gameId }: { gameId: string }) {
 
   return (
     <div className="pb-10">
-      {/* ---------- score hero: full-bleed, team-color washed ---------- */}
+      {/* ---------- score hero: broadcast-dark stage (Energy Pass) ----------
+          Owner spec 2026-07-15: each team stacks vertically (crest → name →
+          record → score) so BOTH teams always fit at 390px (the old side-by-
+          side layout clipped the away team), and the freed center column
+          gives the quarter-by-quarter table real size. Winner reads in the
+          highlight color; team colors stay content, never theme. */}
       <div
-        className="border-ink-100 border-b"
+        className="from-stage to-stage-2 bg-gradient-to-br text-white"
         style={{
-          background: `linear-gradient(105deg, ${homeColor}20 0%, #ffffff 38%, #ffffff 62%, ${awayColor}20 100%)`,
+          backgroundImage: `radial-gradient(90% 140% at 0% 0%, ${homeColor}38 0%, transparent 50%), radial-gradient(90% 140% at 100% 0%, ${awayColor}38 0%, transparent 50%), linear-gradient(135deg, var(--stage), var(--stage-2))`,
         }}
       >
-        <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6">
-          <p className="text-ink-500 pt-4 text-center text-xs font-semibold">
+        <div className="mx-auto w-full max-w-[1760px] px-4 pb-5 pt-4 sm:px-6">
+          <p className="text-center text-xs font-semibold text-white/60">
             {game.seasonId && game.leagueName ? (
-              <Link href={`/league/${game.seasonId}`} className="text-play-600 hover:underline">
+              <Link href={`/league/${game.seasonId}`} className="text-highlight hover:underline">
                 {game.leagueName}
               </Link>
             ) : (
@@ -551,127 +550,115 @@ export function LiveView({ gameId }: { gameId: string }) {
             {game.seasonName ? ` · ${game.seasonName}` : ""}
           </p>
 
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 py-5 lg:gap-8 lg:py-7">
-            {/* home */}
-            <div className="flex items-center justify-end gap-3 lg:gap-4">
-              <div className="hidden text-right sm:block">
-                <Link
-                  href={`/team/${game.homeTeamId}`}
-                  className="text-ink-950 hover:text-play-600 text-sm font-extrabold leading-tight transition-colors lg:text-lg"
-                >
-                  {game.homeTeamName}
-                </Link>
-                {recordLine(game.homeRecord)}
-              </div>
-              {crest(game.homeTeamId, "h-10 w-10 text-sm lg:h-14 lg:w-14 lg:text-lg", monogram(game.homeTeamName))}
-              <span className="text-ink-950 text-4xl font-extrabold tabular-nums lg:text-6xl">
-                {homeScore}
+          <div className="mt-2 text-center">
+            {live && (
+              <span className="bg-live-600 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                Live · {periodLabel(fold.period)}
               </span>
-            </div>
+            )}
+            {final && (
+              <span className="bg-energy text-energy-on rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.18em]">
+                Final
+              </span>
+            )}
+            {!live && !final && (
+              <span className="text-sm font-bold text-white/80">
+                {new Date(game.scheduledAt).toLocaleString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
+          </div>
 
-            {/* middle */}
-            <div className="text-center">
-              {live && (
-                <span className="bg-live-50 text-live-600 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide">
-                  <span className="bg-live-600 h-1.5 w-1.5 animate-pulse rounded-full" />
-                  LIVE · {periodLabel(fold.period)}
-                </span>
-              )}
-              {final && (
-                <span className="bg-ink-100 text-ink-700 rounded-full px-3 py-1 text-[11px] font-extrabold tracking-wide">
-                  FINAL
-                </span>
-              )}
-              {!live && !final && (
-                <span className="text-ink-500 text-xs font-semibold">
-                  {new Date(game.scheduledAt).toLocaleString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
+          <div className="mt-3 grid grid-cols-[minmax(84px,1fr)_auto_minmax(84px,1fr)] items-start gap-2 sm:gap-6 lg:mx-auto lg:max-w-3xl">
+            {(
+              [
+                [game.homeTeamId, game.homeTeamName, game.homeRecord, homeScore, awayScore],
+                [game.awayTeamId, game.awayTeamName, game.awayRecord, awayScore, homeScore],
+              ] as Array<[string, string, TeamRecord | null, number, number]>
+            ).map(([tid, tname, rec, score, other], i) => (
+              <div key={tid} className={`text-center ${i === 1 ? "order-3" : "order-1"}`}>
+                {crest(
+                  tid,
+                  "mx-auto h-14 w-14 text-lg lg:h-[72px] lg:w-[72px] lg:text-2xl",
+                  monogram(tname)
+                )}
+                <Link
+                  href={`/team/${tid}`}
+                  className="mt-1.5 block text-[13px] font-extrabold leading-tight text-white hover:underline lg:text-base"
+                >
+                  {tname}
+                </Link>
+                {rec && <p className="text-[11px] font-semibold text-white/50">{rec.record}</p>}
+                <p
+                  className={`font-condensed mt-0.5 text-6xl font-bold tabular-nums leading-none lg:text-7xl ${
+                    final && score > other ? "text-highlight" : "text-white"
+                  } ${final && score < other ? "text-white/60" : ""}`}
+                >
+                  {score}
+                </p>
+              </div>
+            ))}
 
-              {periods.length > 0 && (
-                <table className="mx-auto mt-2.5 border-collapse text-center text-xs tabular-nums">
+            {/* center: the quarter-by-quarter gets the whole column */}
+            <div className="order-2 min-w-0 pt-1">
+              {periods.length > 0 ? (
+                <table className="mx-auto border-collapse text-center text-[15px] font-bold tabular-nums lg:text-base">
                   <thead>
-                    <tr className="text-ink-400 text-[10px]">
-                      <th className="px-2 py-0.5 text-left" />
+                    <tr className="text-[11px] uppercase tracking-wide text-white/45">
+                      <th className="px-1.5 py-1 text-left" />
                       {periods.map((p) => (
-                        <th key={p} className="px-2 py-0.5 font-bold">
+                        <th key={p} className="px-2 py-1 font-extrabold sm:px-3">
                           {periodLabel(p)}
                         </th>
                       ))}
-                      <th className="px-2 py-0.5 font-extrabold">T</th>
+                      <th className="text-highlight px-2 py-1 font-extrabold sm:px-3">T</th>
                     </tr>
                   </thead>
-                  <tbody className="text-ink-700">
+                  <tbody>
                     {(
                       [
                         [game.homeTeamId, game.homeTeamName, homeScore],
                         [game.awayTeamId, game.awayTeamName, awayScore],
                       ] as Array<[string, string, number]>
                     ).map(([tid, tname, total]) => (
-                      <tr key={tid} className="border-ink-100 border-t">
-                        <td className="py-0.5 pr-2 text-left font-bold">
-                          <span
-                            className="mr-1.5 inline-block h-2 w-2 rounded-sm align-middle"
-                            style={{ backgroundColor: colorOf(tid) }}
-                          />
+                      <tr key={tid} className="border-t border-white/15">
+                        <td
+                          className="py-1.5 pr-1.5 text-left text-xs font-extrabold"
+                          style={{ color: `color-mix(in srgb, ${colorOf(tid)} 45%, white)` }}
+                        >
                           {monogram(tname)}
                         </td>
                         {periods.map((p) => (
-                          <td key={p} className="px-2 py-0.5">
+                          <td key={p} className="px-2 py-1.5 text-white/85 sm:px-3">
                             {periodPoints(tid, p)}
                           </td>
                         ))}
-                        <td className="px-2 py-0.5 font-extrabold">{total}</td>
+                        <td className="text-highlight px-2 py-1.5 font-extrabold sm:px-3">
+                          {total}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              ) : (
+                <p className="px-2 pt-4 text-center text-xs font-semibold text-white/40">
+                  {live ? "First basket coming up" : final ? "" : "Tip-off soon"}
+                </p>
               )}
-              {game.venueName && (
-                <p className="text-ink-400 mt-2 text-[11px]">{game.venueName}</p>
-              )}
-            </div>
-
-            {/* away */}
-            <div className="flex items-center justify-start gap-3 lg:gap-4">
-              <span className="text-ink-950 text-4xl font-extrabold tabular-nums lg:text-6xl">
-                {awayScore}
-              </span>
-              {crest(game.awayTeamId, "h-10 w-10 text-sm lg:h-14 lg:w-14 lg:text-lg", monogram(game.awayTeamName))}
-              <div className="hidden sm:block">
-                <Link
-                  href={`/team/${game.awayTeamId}`}
-                  className="text-ink-950 hover:text-play-600 text-sm font-extrabold leading-tight transition-colors lg:text-lg"
-                >
-                  {game.awayTeamName}
-                </Link>
-                {recordLine(game.awayRecord)}
-              </div>
             </div>
           </div>
 
-          {/* phone-width team names (hidden ≥sm where they sit beside crests) */}
-          <div className="flex items-start justify-between pb-4 sm:hidden">
-            {(
-              [
-                [game.homeTeamId, game.homeTeamName, game.homeRecord],
-                [game.awayTeamId, game.awayTeamName, game.awayRecord],
-              ] as Array<[string, string, TeamRecord | null]>
-            ).map(([tid, tname, rec], i) => (
-              <div key={tid} className={`max-w-[45%] ${i === 1 ? "text-right" : ""}`}>
-                <Link href={`/team/${tid}`} className="text-ink-900 text-xs font-bold leading-tight">
-                  {tname}
-                </Link>
-                {rec && <p className="text-ink-400 text-[10px]">{rec.record}</p>}
-              </div>
-            ))}
-          </div>
+          {game.venueName && (
+            <p className="mt-2.5 text-center text-xs font-medium text-white/50">
+              {game.venueName}
+            </p>
+          )}
         </div>
       </div>
 

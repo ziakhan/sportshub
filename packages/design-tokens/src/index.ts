@@ -205,6 +205,124 @@ export const tailwindTokens = {
 } as const
 
 /* -------------------------------------------------------------------------- */
+/*  Theme palettes (Energy Pass, 2026-07-15)                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Admin-switchable platform palettes. Semantic roles, not raw scales:
+ *   - brand:     chrome accent (links, active nav, primary buttons)
+ *   - energy:    THE hot color — key stat, live states, one CTA per screen
+ *   - stage:     broadcast-dark surface pair (anything with a score on it)
+ *   - highlight: leaders/winners/pinned (gold family)
+ * Each color ships with an `*On` ink so contrast survives palette swaps
+ * (fastbreak's volt lime needs dark text where hardwood's orange takes white).
+ * Web consumes these as CSS variables (globals.css + <html> style stamp);
+ * native reads them off /api/mobile/config at boot.
+ */
+export interface ThemePalette {
+  id: "hardwood" | "fastbreak" | "primetime"
+  label: string
+  brand: string
+  brandInk: string
+  brandSoft: string
+  brandLine: string
+  brandOn: string
+  energy: string
+  energyInk: string
+  energySoft: string
+  energyOn: string
+  stage: string
+  stage2: string
+  highlight: string
+  highlightSoft: string
+  highlightOn: string
+}
+
+export const PALETTES: Record<ThemePalette["id"], ThemePalette> = {
+  hardwood: {
+    id: "hardwood",
+    label: "Hardwood",
+    brand: "#4f46e5",
+    brandInk: "#4338ca",
+    brandSoft: "#eef2ff",
+    brandLine: "#c7d2fe",
+    brandOn: "#ffffff",
+    energy: "#f24e1e",
+    energyInk: "#bc2711",
+    energySoft: "#fef3ee",
+    energyOn: "#ffffff",
+    stage: "#0b1628",
+    stage2: "#1e2d4d",
+    highlight: "#fbbf24",
+    highlightSoft: "#fffbeb",
+    highlightOn: "#3b2a06",
+  },
+  fastbreak: {
+    id: "fastbreak",
+    label: "Fastbreak",
+    brand: "#6d28d9",
+    brandInk: "#5b21b6",
+    brandSoft: "#f5f0ff",
+    brandLine: "#d8b4fe",
+    brandOn: "#ffffff",
+    energy: "#a3e635",
+    energyInk: "#4d7c0f",
+    energySoft: "#f4fce3",
+    energyOn: "#1a2e05",
+    stage: "#190a2e",
+    stage2: "#3b1372",
+    highlight: "#22d3ee",
+    highlightSoft: "#ecfeff",
+    highlightOn: "#083344",
+  },
+  primetime: {
+    id: "primetime",
+    label: "Prime Time",
+    brand: "#dc2626",
+    brandInk: "#b91c1c",
+    brandSoft: "#fef2f2",
+    brandLine: "#fca5a5",
+    brandOn: "#ffffff",
+    energy: "#f59e0b",
+    energyInk: "#b45309",
+    energySoft: "#fffbeb",
+    energyOn: "#3b2306",
+    stage: "#0c0f13",
+    stage2: "#1c2430",
+    highlight: "#f59e0b",
+    highlightSoft: "#fffbeb",
+    highlightOn: "#3b2306",
+  },
+} as const
+
+export const DEFAULT_PALETTE_ID: ThemePalette["id"] = "hardwood"
+
+/** Unknown/legacy values fail open to hardwood — never crash on a bad row. */
+export function resolvePalette(id: string | null | undefined): ThemePalette {
+  return PALETTES[(id as ThemePalette["id"]) ?? DEFAULT_PALETTE_ID] ?? PALETTES[DEFAULT_PALETTE_ID]
+}
+
+/** CSS custom properties for a palette — stamped on <html> by the web layout. */
+export function paletteCssVars(p: ThemePalette): Record<string, string> {
+  return {
+    "--brand": p.brand,
+    "--brand-ink": p.brandInk,
+    "--brand-soft": p.brandSoft,
+    "--brand-line": p.brandLine,
+    "--brand-on": p.brandOn,
+    "--energy": p.energy,
+    "--energy-ink": p.energyInk,
+    "--energy-soft": p.energySoft,
+    "--energy-on": p.energyOn,
+    "--stage": p.stage,
+    "--stage-2": p.stage2,
+    "--highlight": p.highlight,
+    "--highlight-soft": p.highlightSoft,
+    "--highlight-on": p.highlightOn,
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
 

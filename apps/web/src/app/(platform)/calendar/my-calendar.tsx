@@ -458,13 +458,13 @@ export function MyCalendar() {
           renderItem={(item) => (
             <div
               key={`${item.kind}-${item.id}`}
-              className={`rounded-xl border px-4 py-2.5 ${KIND_CARD[item.kind]} ${
+              className={`rounded-xl border px-4 py-3 ${KIND_CARD[item.kind]} ${
                 item.status === "CANCELLED" ? "opacity-60" : ""
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-ink-800 text-sm font-semibold">
+                  <p className="text-ink-950 text-[15.5px] font-bold">
                     {lensDots(item)}
                     <span className={item.status === "CANCELLED" ? "line-through" : ""}>
                       {item.kind === "game" ? "Game · " : ""}
@@ -484,12 +484,12 @@ export function MyCalendar() {
                       </span>
                     )}
                   </p>
-                  <p className="text-ink-400 text-xs">{metaLine(item)}</p>
+                  <p className="text-ink-600 mt-0.5 text-[13px]">{metaLine(item)}</p>
                 </div>
                 {item.kind === "game" && (
                   <a
                     href={`/live/${item.id}`}
-                    className="text-play-600 hover:text-play-700 shrink-0 text-xs font-semibold"
+                    className="text-play-600 hover:text-play-700 shrink-0 text-[13px] font-bold"
                   >
                     {item.status === "LIVE" ? "Watch live →" : "Game page →"}
                   </a>

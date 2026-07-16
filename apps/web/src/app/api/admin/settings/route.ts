@@ -24,6 +24,8 @@ const updateSettingsSchema = z.object({
   payPlatformFeeFlat: z.number().min(0).optional(),
   // Global search-engine indexing switch (seo-strategy §9) — owner-flipped at go-live
   seoIndexingEnabled: z.boolean().optional(),
+  // Energy Pass palette (design-tokens PALETTES)
+  themePalette: z.enum(["hardwood", "fastbreak", "primetime"]).optional(),
 })
 
 function serializeSettings(settings: any) {
@@ -36,6 +38,7 @@ function serializeSettings(settings: any) {
     payPlatformFeeBps: settings.payPlatformFeeBps,
     payPlatformFeeFlat: Number(settings.payPlatformFeeFlat),
     seoIndexingEnabled: settings.seoIndexingEnabled,
+    themePalette: settings.themePalette,
   }
 }
 
