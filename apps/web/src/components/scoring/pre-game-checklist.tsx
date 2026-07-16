@@ -21,6 +21,10 @@ export function PreGameChecklist({ gameId }: { gameId: string }) {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [inviteBusy, setInviteBusy] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Pre-game clock choice (owner 2026-07-15): unoperated clocks count minutes
+  // wrongly, so the scorekeeper opts in/out per game before tip-off.
+  const [clockChoice, setClockChoice] = useState<boolean | null>(null)
+  const [clockBusy, setClockBusy] = useState(false)
 
   useEffect(() => {
     // Guests skip the checklist — the operator did this part already
@@ -29,16 +33,18 @@ export function PreGameChecklist({ gameId }: { gameId: string }) {
     let cancelled = false
     ;(async () => {
       try {
-        const [live, sk, ref] = await Promise.all([
+        const [live, sk, ref, clock] = await Promise.all([
           fetch(`/api/live/${gameId}`).then((r) => (r.ok ? r.json() : null)),
           fetch(`/api/games/${gameId}/scorekeeper`).then((r) => (r.ok ? r.json() : null)),
           fetch(`/api/games/${gameId}/referee`).then((r) => (r.ok ? r.json() : null)),
+          fetch(`/api/games/${gameId}/clock`).then((r) => (r.ok ? r.json() : null)),
         ])
         if (cancelled) return
         const status = live?.game?.status ?? null
         if (status !== "SCHEDULED") return // live/finished games skip straight in
         const scorekeeper = sk?.assigned?.[0]?.name ?? null
         const referee = ref?.assigned?.[0]?.name ?? null
+        if (clock) setClockChoice(clock.clockEnabled ?? clock.effectiveMode === "SIMPLE")
         setReady({ status, scorekeeper, referee })
         setOpen(true)
       } catch {
@@ -58,6 +64,20 @@ export function PreGameChecklist({ gameId }: { gameId: string }) {
       if (res.ok) setInviteUrl(`${window.location.origin}${data.path}`)
     } finally {
       setInviteBusy(false)
+    }
+  }
+
+  async function chooseClock(useClock: boolean) {
+    setClockBusy(true)
+    try {
+      const res = await fetch(`/api/games/${gameId}/clock`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ useClock }),
+      })
+      if (res.ok) setClockChoice(useClock)
+    } finally {
+      setClockBusy(false)
     }
   }
 
@@ -97,7 +117,39 @@ export function PreGameChecklist({ gameId }: { gameId: string }) {
           ))}
         </div>
 
-        <div className="border-ink-100 mt-4 rounded-xl border p-3">
+        <div className="border-ink-100 mt-3 rounded-xl border p-3">
+          <p className="text-ink-800 text-sm font-semibold">Run the game clock?</p>
+          <p className="text-ink-500 mt-0.5 text-xs">
+            Only choose Yes if you&apos;ll operate start/stop during play — otherwise minutes
+            count wrongly. Most games just use the arena clock.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => void chooseClock(true)}
+              disabled={clockBusy}
+              className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                clockChoice === true
+                  ? "border-court-600 bg-court-600 text-white"
+                  : "border-ink-200 text-ink-600 hover:border-court-400"
+              }`}
+            >
+              Yes — I&apos;ll run it
+            </button>
+            <button
+              onClick={() => void chooseClock(false)}
+              disabled={clockBusy}
+              className={`flex-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                clockChoice === false
+                  ? "border-ink-700 bg-ink-700 text-white"
+                  : "border-ink-200 text-ink-600 hover:border-ink-400"
+              }`}
+            >
+              No clock
+            </button>
+          </div>
+        </div>
+
+        <div className="border-ink-100 mt-3 rounded-xl border p-3">
           <p className="text-ink-800 text-sm font-semibold">Need a volunteer scorekeeper?</p>
           <p className="text-ink-500 mt-0.5 text-xs">
             Generate a one-time link and send it over WhatsApp — they type their name and start

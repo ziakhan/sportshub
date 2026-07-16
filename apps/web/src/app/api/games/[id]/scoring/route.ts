@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { resolveGuestScorer } from "@/lib/scoring/guest"
 import { prisma } from "@youthbasketballhub/db"
 import { canScoreGame } from "@/lib/scoring/authz"
+import { effectiveClockMode } from "@/lib/scoring/clock-mode"
 import { getGameRsvpAbsentees } from "@/lib/rsvp"
 
 export const dynamic = "force-dynamic"
@@ -94,6 +95,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         awayTeamId: true,
         homeTeam: { select: { id: true, name: true } },
         awayTeam: { select: { id: true, name: true } },
+        clockEnabled: true,
         venue: { select: { name: true } },
         season: {
           select: {
@@ -174,7 +176,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       },
       config: {
         statDepth: league?.statDepth ?? "STANDARD",
-        gameClockMode: league?.gameClockMode ?? "SIMPLE",
+        gameClockMode: effectiveClockMode((game as any).clockEnabled, league?.gameClockMode),
         periodType: league?.periodType ?? "QUARTERS",
         periodMinutes: league?.periodMinutes ?? 10,
         requireRefereeApproval: league?.requireRefereeApproval ?? false,

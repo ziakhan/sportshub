@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { effectiveClockMode } from "@/lib/scoring/clock-mode"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
           select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
         },
         venue: { select: { name: true } },
+        clockEnabled: true,
         season: {
           select: {
             label: true,
@@ -200,7 +202,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         // League-level clock switch (ClockMode SIMPLE|OFF) — the public page
         // shows a ticking clock only when the league runs one (owner
         // 2026-07-15: many games run on the arena clock instead).
-        clockMode: game.season?.league?.gameClockMode ?? "OFF",
+        clockMode: effectiveClockMode((game as any).clockEnabled, game.season?.league?.gameClockMode ?? "OFF"),
         seasonName: game.season?.label ?? null,
       },
       events: events.map((e: any) => ({ ...e, timestampMs: new Date(e.timestamp).getTime() })),

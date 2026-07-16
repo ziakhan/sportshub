@@ -644,3 +644,10 @@ email lands (OCI) → link signs in; replay of the same link lands on the
 No new env vars. Admin picker: /dashboard/admin/settings → "Theme palette".
 Verify post-push: flip palette in admin → game page FINAL pill + score colors
 change instantly; /api/mobile/config returns `palette`.
+
+## #30 — 2026-07-15 game clock per-game override (schema)
+`prisma db push` — applied to LOCAL + BOX (deploy.sh). Neon pending.
+- Game.clockEnabled (Boolean?, null=inherit League.gameClockMode) — the
+  scorekeeper's pre-game clock choice (checklist "Run the game clock?").
+Verify post-push: open a SCHEDULED game's scoring page → checklist shows the
+clock question; No clock → public hero shows LIVE·Q# with no ticking clock.

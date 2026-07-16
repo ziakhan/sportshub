@@ -391,16 +391,20 @@ export function LiveView({ gameId }: { gameId: string }) {
     </div>
   )
 
+  // Always show all four quarters — a dash marks the unplayed ones (owner:
+  // fixed columns read better); overtime columns append only when reached.
+  const displayPeriods = [1, 2, 3, 4, ...periods.filter((p) => p > 4)]
+  const playedPeriods = new Set(periods)
   const linescoreCard =
     periods.length > 0 ? (
       <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white">
         <table className="w-full text-center text-[15px] font-bold tabular-nums">
           <thead>
             <tr className="text-ink-400 border-ink-100 border-b text-[11px] uppercase tracking-wide">
-              <th className="py-2 pl-4 text-left font-extrabold">Team</th>
-              {periods.map((p) => (
+              <th className="py-2 pl-4 text-left font-extrabold" />
+              {displayPeriods.map((p) => (
                 <th key={p} className="px-2.5 py-2 font-extrabold sm:px-4">
-                  {periodLabel(p).replace("Q", "")}
+                  {p <= 4 ? p : periodLabel(p)}
                 </th>
               ))}
               <th className="text-ink-950 px-3 py-2 pr-4 font-extrabold">Tot</th>
@@ -425,9 +429,13 @@ export function LiveView({ gameId }: { gameId: string }) {
                     </span>
                   </span>
                 </td>
-                {periods.map((p) => (
+                {displayPeriods.map((p) => (
                   <td key={p} className="text-ink-600 px-2.5 py-2.5 sm:px-4">
-                    <FlashNum value={periodPoints(tid, p)} />
+                    {playedPeriods.has(p) ? (
+                      <FlashNum value={periodPoints(tid, p)} />
+                    ) : (
+                      <span className="text-ink-300">–</span>
+                    )}
                   </td>
                 ))}
                 <td className="text-ink-950 px-3 py-2.5 pr-4 font-extrabold">
@@ -442,9 +450,6 @@ export function LiveView({ gameId }: { gameId: string }) {
 
   const leadersCard = (
     <div className="border-ink-100 rounded-2xl border bg-white">
-      <h3 className="text-ink-500 border-ink-100 border-b px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em]">
-        Game leaders
-      </h3>
       <div className="divide-ink-50 divide-y">
         {LEADER_SECTIONS.map((sec) => {
           const h = sec.pick(game.homeTeamId)
@@ -513,13 +518,10 @@ export function LiveView({ gameId }: { gameId: string }) {
     return (
       <div className="border-ink-100 rounded-2xl border bg-white">
         <div className="border-ink-100 flex items-center justify-between border-b px-4 py-2.5">
-          <span className="text-[12px] font-extrabold" style={{ color: homeColor }}>
+          <span className="text-[13px] font-extrabold" style={{ color: homeColor }}>
             {shortTeam(game.homeTeamName)}
           </span>
-          <h3 className="text-ink-500 text-[11px] font-extrabold uppercase tracking-[0.14em]">
-            Team stats
-          </h3>
-          <span className="text-[12px] font-extrabold" style={{ color: awayColor }}>
+          <span className="text-[13px] font-extrabold" style={{ color: awayColor }}>
             {shortTeam(game.awayTeamName)}
           </span>
         </div>
@@ -908,12 +910,18 @@ export function LiveView({ gameId }: { gameId: string }) {
       </div>
 
       <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6">
+        {/* Scorekeeper entry: floating pill instead of a block banner (owner:
+            the banner ate the top of the page while testing). Sits above the
+            mobile bottom tabs; bottom corner on desktop. */}
         {canScore && !final && (
           <a
             href={`/games/${gameId}/score`}
-            className="bg-play-600 hover:bg-play-700 mt-4 block rounded-2xl px-4 py-3 text-center text-sm font-bold text-white"
+            className="bg-energy text-energy-on fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-extrabold shadow-xl transition hover:brightness-110 lg:bottom-6"
           >
-            You can score this game — open the scoring console →
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+            Score
           </a>
         )}
 
@@ -969,9 +977,19 @@ export function LiveView({ gameId }: { gameId: string }) {
             {/* Game tab: linescore + leaders + team stats (always on desktop) */}
             <div className={`mt-3 ${tab === "game" ? "block" : "hidden"} lg:block`}>
               {linescoreCard}
-              <div className="mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-                {leadersCard}
-                {teamStatsCard}
+              <div className="grid grid-cols-1 items-start gap-x-4 lg:grid-cols-2">
+                <div>
+                  <h3 className="text-ink-950 mb-2 mt-5 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]">
+                    Game leaders
+                  </h3>
+                  {leadersCard}
+                </div>
+                <div>
+                  <h3 className="text-ink-950 mb-2 mt-5 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]">
+                    Team stats
+                  </h3>
+                  {teamStatsCard}
+                </div>
               </div>
             </div>
 
