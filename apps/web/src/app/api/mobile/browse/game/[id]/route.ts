@@ -57,7 +57,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       if (parts.length < 2) return parts[0] || "—"
       const last = parts[parts.length - 1]
       if (/^[A-Z]\.?$/.test(last)) return name
-      return `${parts[0][0]}. ${last}`
+      // Owner 2026-07-16: FIRST name + last initial ("Aiden M."), matching
+      // the public privacy form — never "A. Mensah".
+      return `${parts[0]} ${last[0]}.`
     }
 
     const live = game.status === "LIVE"
@@ -167,6 +169,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       row("Fouls", H.pf, A.pf),
     ]
 
+    // Starters = the first LINEUP event per team (permanent, owner v2 rule);
+    // the on-court flag carries "on the floor right now" during live games.
+    const firstLineup = new Map<string, Set<string>>()
+    for (const e of data.events as Array<{ eventType: string; teamId?: string | null; voided?: boolean; metadata?: { playerIds?: string[] } }>) {
+      if (e.eventType === "LINEUP" && e.teamId && !e.voided && !firstLineup.has(e.teamId)) {
+        firstLineup.set(e.teamId, new Set(e.metadata?.playerIds ?? []))
+      }
+    }
+
     const boxFor = (teamId: string, name: string, color: string | null, total: number) => {
       const onFloorNow = live
         ? new Set(teamId === game.homeTeamId ? fold.onFloor.home : fold.onFloor.away)
@@ -180,6 +191,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         rows: teamLines(teamId).map((l) => ({
           jersey: String(jerseyOf(l.playerId)),
           name: shortName(l.playerId),
+          starter: firstLineup.get(teamId)?.has(l.playerId) ?? false,
           onCourt: onFloorNow ? onFloorNow.has(l.playerId) : false,
           pts: l.points,
           reb: totalRebounds(l),

@@ -229,10 +229,11 @@ export function LiveView({ gameId }: { gameId: string }) {
     const parts = name.split(" ")
     if (parts.length < 2) return parts[0] || "—"
     // Privacy-abbreviated names ("Cameron K.") arrive pre-shortened — never
-    // initial them again ("C. K."). Only compress genuine full names.
+    // initial them again. Compression matches the privacy form (owner
+    // 2026-07-16): FIRST name + last initial, "Aiden M.", never "A. Mensah".
     const last = parts[parts.length - 1]
     if (/^[A-Z]\.?$/.test(last)) return name
-    return `${parts[0][0]}. ${last}`
+    return `${parts[0]} ${last[0]}.`
   }
 
   // Youth team names run long ("Burlington Force Grade 10") — the score
@@ -654,17 +655,13 @@ export function LiveView({ gameId }: { gameId: string }) {
     const lines = teamLines(teamId)
     const teamColor = colorOf(teamId)
     const showMinutes = lines.some((l) => l.secondsPlayed > 0)
-    // LIVE games group by who's on the floor RIGHT NOW (substitutions
-    // applied — owner 2026-07-16: consumers read "Starters" as the current
-    // lineup); finished games keep the historical starters split.
-    const onFloorNow = live
-      ? new Set(teamId === game.homeTeamId ? fold.onFloor.home : fold.onFloor.away)
-      : null
+    // Starters stay starters forever (owner 2026-07-16 v2) — the green
+    // on-court dot carries "who's on the floor right now" during live games.
     const starters = starterIds.get(teamId)
-    const groupSet = onFloorNow && onFloorNow.size > 0 ? onFloorNow : starters
+    const groupSet = starters
     const starterLines = groupSet ? lines.filter((l) => groupSet.has(l.playerId)) : []
     const benchLines = groupSet ? lines.filter((l) => !groupSet.has(l.playerId)) : lines
-    const groupLabel = onFloorNow && onFloorNow.size > 0 ? "On the floor" : "Starters"
+    const groupLabel = "Starters"
     const topId = lines.length > 0 && lines[0].points > 0 ? lines[0].playerId : null
     const totals = lines.reduce(
       (t, l) => ({
@@ -703,11 +700,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className={`border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest ${
-                    groupLabel === "On the floor"
-                      ? "bg-court-50 text-court-700"
-                      : "bg-ink-50 text-ink-500"
-                  }`}
+                  className="bg-ink-50 text-ink-500 border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest"
                 >
                   {groupLabel}
                 </td>

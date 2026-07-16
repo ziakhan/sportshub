@@ -68,7 +68,7 @@ interface GameView {
     short: string
     color: string | null
     total: number
-    rows: Array<{ jersey: string; name: string; onCourt?: boolean; pts: number; reb: number; ast: number; stl: number; to: number }>
+    rows: Array<{ jersey: string; name: string; starter?: boolean; onCourt?: boolean; pts: number; reb: number; ast: number; stl: number; to: number }>
   }>
   plays: Array<{ key: number; marker: boolean; text: string; score: string | null; teamId: string | null }>
 }
@@ -370,22 +370,33 @@ export default function GameScreen() {
                       </Text>
                     ))}
                   </View>
-                  {box.rows.map((r, i) => (
-                    <View key={i} style={styles.boxRow}>
-                      <View style={[styles.boxPlayer, styles.boxPlayerCell]}>
-                        {r.onCourt ? <View style={styles.onCourtDot} /> : null}
-                        <Text style={styles.boxJersey}>#{r.jersey}</Text>
-                        <Text style={styles.boxName} numberOfLines={1}>
-                          {r.name}
-                        </Text>
-                      </View>
-                      <Text style={[styles.boxCell, styles.boxPts]}>{r.pts}</Text>
-                      <Text style={styles.boxCell}>{r.reb}</Text>
-                      <Text style={styles.boxCell}>{r.ast}</Text>
-                      <Text style={styles.boxCell}>{r.stl}</Text>
-                      <Text style={styles.boxCell}>{r.to}</Text>
-                    </View>
-                  ))}
+                  {/* Starters stay starters (owner rule); green dot = on the
+                      floor right now. Bench under its own strip, web parity. */}
+                  {[...box.rows.filter((r) => r.starter), null, ...box.rows.filter((r) => !r.starter)].map(
+                    (r, i) =>
+                      r === null ? (
+                        box.rows.some((x) => !x.starter) && box.rows.some((x) => x.starter) ? (
+                          <View key="bench" style={styles.benchStrip}>
+                            <Text style={styles.benchStripText}>BENCH</Text>
+                          </View>
+                        ) : null
+                      ) : (
+                        <View key={i} style={styles.boxRow}>
+                          <View style={[styles.boxPlayer, styles.boxPlayerCell]}>
+                            {r.onCourt ? <View style={styles.onCourtDot} /> : null}
+                            <Text style={styles.boxJersey}>#{r.jersey}</Text>
+                            <Text style={styles.boxName} numberOfLines={1}>
+                              {r.name}
+                            </Text>
+                          </View>
+                          <Text style={[styles.boxCell, styles.boxPts]}>{r.pts}</Text>
+                          <Text style={styles.boxCell}>{r.reb}</Text>
+                          <Text style={styles.boxCell}>{r.ast}</Text>
+                          <Text style={styles.boxCell}>{r.stl}</Text>
+                          <Text style={styles.boxCell}>{r.to}</Text>
+                        </View>
+                      )
+                  )}
                 </View>
               </>
             )}
@@ -564,6 +575,8 @@ const styles = StyleSheet.create({
     borderTopColor: palette.ink[50],
   },
   onCourtDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: palette.court[500] },
+  benchStrip: { backgroundColor: palette.ink[50], paddingVertical: 3, alignItems: "center" },
+  benchStripText: { fontSize: 9.5, fontWeight: "900", color: ui.textMuted, letterSpacing: 1.5 },
   boxJersey: { fontSize: 12, color: ui.textFaint, fontWeight: "700" },
   boxName: { fontSize: 14.5, fontWeight: "700", color: ui.text, flexShrink: 1 },
   boxCell: { width: 40, textAlign: "right", fontSize: 15, fontWeight: "600", color: ui.text, fontVariant: ["tabular-nums"] },
