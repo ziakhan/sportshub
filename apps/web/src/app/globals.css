@@ -200,3 +200,32 @@
     transform: translateX(-50%);
   }
 }
+
+/* Live score change pulse (Energy Pass): any stat that changes mid-game
+   flashes green so the update is unmissable — on light tables it washes the
+   cell, on the dark stage hero it glows. Corrections-go-red is a future pass. */
+@keyframes score-flash {
+  0% {
+    background-color: rgb(34 197 94 / 0.55);
+    box-shadow: 0 0 0 5px rgb(34 197 94 / 0.3);
+    transform: scale(1.08);
+  }
+  60% {
+    background-color: rgb(34 197 94 / 0.25);
+    box-shadow: 0 0 0 3px rgb(34 197 94 / 0.12);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+    transform: scale(1);
+  }
+}
+.score-flash {
+  animation: score-flash 1.1s ease-out;
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-flash {
+    animation: none;
+  }
+}

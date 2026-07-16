@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
 import { monogram } from "@/lib/content/matchup-cover"
 import { useRealtime } from "@/lib/realtime/use-realtime"
+import { FlashNum } from "@/components/scoring/flash-num"
 
 /**
  * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
@@ -342,12 +343,12 @@ export function LiveView({ gameId }: { gameId: string }) {
         )}
       </td>
       {showMin && <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>}
-      <td className="text-energy-ink px-1.5 text-right text-base font-extrabold">{l.points}</td>
-      <td className="px-1.5 text-right">{totalRebounds(l)}</td>
-      <td className="px-1.5 text-right">{l.assists}</td>
-      <td className="px-1.5 text-right">{l.steals}</td>
+      <td className="text-energy-ink px-1.5 text-right text-base font-extrabold"><FlashNum value={l.points} /></td>
+      <td className="px-1.5 text-right"><FlashNum value={totalRebounds(l)} /></td>
+      <td className="px-1.5 text-right"><FlashNum value={l.assists} /></td>
+      <td className="px-1.5 text-right"><FlashNum value={l.steals} /></td>
       <td className="hidden px-1.5 text-right sm:table-cell">{l.blocks}</td>
-      <td className="px-1.5 pr-4 text-right sm:pr-1.5">{l.turnovers}</td>
+      <td className="px-1.5 pr-4 text-right sm:pr-1.5"><FlashNum value={l.turnovers} /></td>
       <td className="hidden px-1.5 pr-4 text-right sm:table-cell">
         {l.fouls}
         {l.technicalFouls > 0 ? "T" : ""}
@@ -437,7 +438,7 @@ export function LiveView({ gameId }: { gameId: string }) {
         {name}
       </Link>
       {total != null && (
-        <span className="font-condensed ml-auto text-2xl font-bold tabular-nums">{total}</span>
+        <span className="font-condensed ml-auto text-2xl font-bold tabular-nums"><FlashNum value={total} /></span>
       )}
     </div>
   )
@@ -505,7 +506,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               {shortName(l.playerId)}
             </span>
             <span className="text-ink-950 shrink-0 text-lg font-extrabold tabular-nums">
-              {get(l)}
+              <FlashNum value={get(l)} />
             </span>
           </>
         ) : (
@@ -600,7 +601,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                     final && score > other ? "text-highlight" : "text-white"
                   } ${final && score < other ? "text-white/60" : ""}`}
                 >
-                  {score}
+                  <FlashNum value={score} />
                 </p>
               </div>
             ))}
@@ -636,11 +637,11 @@ export function LiveView({ gameId }: { gameId: string }) {
                         </td>
                         {periods.map((p) => (
                           <td key={p} className="px-2 py-1.5 text-white/85 sm:px-3">
-                            {periodPoints(tid, p)}
+                            <FlashNum value={periodPoints(tid, p)} />
                           </td>
                         ))}
                         <td className="text-highlight px-2 py-1.5 font-extrabold sm:px-3">
-                          {total}
+                          <FlashNum value={total} />
                         </td>
                       </tr>
                     ))}
