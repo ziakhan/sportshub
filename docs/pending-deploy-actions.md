@@ -638,7 +638,7 @@ email lands (OCI) → link signs in; replay of the same link lands on the
 "expired" panel.
 
 ## #29 — 2026-07-15 Energy Pass phase 1–3 plumbing (schema)
-`prisma db push` — applied to LOCAL. Box + Neon pending.
+`prisma db push` — applied to LOCAL + **BOX (2026-07-15, via deploy.sh)**. Neon pending.
 - PlatformSettings.themePalette (String, default "hardwood") — admin-switchable
   site palette (hardwood/fastbreak/primetime; design-tokens PALETTES).
 No new env vars. Admin picker: /dashboard/admin/settings → "Theme palette".
