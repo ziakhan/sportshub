@@ -45,6 +45,9 @@ export interface MyCalendarItem {
   durationMinutes: number
   status: string
   title: string
+  /** Games: the other team's name when the viewer is on exactly one side —
+   *  cards render "vs Opponent" (owner 2026-07-16: you know your own team). */
+  opponent?: string | null
   location: string | null
   detail: string | null
   /** Team-event type (WORKOUT/TRAINING/SCRIMMAGE/MEETING/OTHER) — events only */
@@ -307,6 +310,12 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         durationMinutes: g.duration,
         status: g.status,
         title: `${g.homeTeam.name} vs ${g.awayTeam.name}`,
+        opponent:
+          memberTeamIds.length === 1
+            ? memberTeamIds[0] === g.homeTeamId
+              ? g.awayTeam.name
+              : g.homeTeam.name
+            : null,
         location: g.venue?.name ?? null,
         detail:
           g.status === "COMPLETED" && g.homeScore != null && g.awayScore != null

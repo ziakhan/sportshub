@@ -48,6 +48,25 @@ export function EventCard({
   }
 
   const when = new Date(item.at)
+  const end = new Date(when.getTime() + (item.durationMinutes ?? 0) * 60_000)
+  const fmt = (d: Date) => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+  const startStr = fmt(when)
+  const endStr = fmt(end)
+  const samePeriod = startStr.slice(-2) === endStr.slice(-2)
+  // "6:30 – 8:00 PM" — drop the start's AM/PM when it matches the end's
+  const timeRange = `${samePeriod ? startStr.replace(/\s?[AP]M$/i, "") : startStr} – ${endStr}`
+  const label =
+    item.kind === "practice"
+      ? "Practice"
+      : item.kind === "game"
+        ? item.opponent
+          ? `vs ${item.opponent}`
+          : item.title
+        : item.title
+  const teamName =
+    calendar.teams.length > 1 && item.teamIds.length === 1
+      ? calendar.teams.find((t) => t.teamId === item.teamIds[0])?.teamName
+      : null
   const cancelled = item.status === "CANCELLED"
 
   async function setStatus(playerId: string, status: RsvpStatus) {
@@ -68,12 +87,7 @@ export function EventCard({
   return (
     <Card style={styles.card}>
       <View style={styles.top}>
-        <Text style={styles.when}>
-          {when.toLocaleString(undefined, {
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-        </Text>
+        <Text style={styles.when}>{timeRange}</Text>
         <TonePill
           tone={item.kind === "game" ? "info" : item.kind === "practice" ? "positive" : "gold"}
           label={
@@ -83,8 +97,10 @@ export function EventCard({
           }
         />
       </View>
-      <Text style={[styles.title, cancelled && styles.cancelled]}>{item.title}</Text>
-      {item.location ? <Text style={styles.meta}>{item.location}</Text> : null}
+      <Text style={[styles.title, cancelled && styles.cancelled]}>{label}</Text>
+      {item.location || teamName ? (
+        <Text style={styles.meta}>{[item.location, teamName].filter(Boolean).join(" · ")}</Text>
+      ) : null}
       {item.detail ? <Text style={styles.meta}>{item.detail}</Text> : null}
       {cancelled ? <TonePill tone="danger" label="Cancelled" /> : null}
 
@@ -129,10 +145,10 @@ export function EventCard({
 const styles = StyleSheet.create({
   card: { gap: 3 },
   top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  when: { fontSize: 12, fontWeight: "800", color: palette.play[700] },
-  title: { fontSize: 15, fontWeight: "700", color: ui.text },
+  when: { fontSize: 16.5, fontWeight: "800", color: ui.text, fontVariant: ["tabular-nums"] },
+  title: { fontSize: 15.5, fontWeight: "800", color: ui.text, marginTop: 1 },
   cancelled: { textDecorationLine: "line-through", color: ui.textMuted },
-  meta: { fontSize: 12, color: ui.textMuted },
+  meta: { fontSize: 13, color: palette.ink[600] },
   rsvpRow: {
     flexDirection: "row",
     alignItems: "center",

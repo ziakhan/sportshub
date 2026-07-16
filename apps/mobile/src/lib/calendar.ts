@@ -34,6 +34,7 @@ export interface CalItem {
   durationMinutes: number
   status: string
   title: string
+  opponent?: string | null
   location: string | null
   detail: string | null
   eventType?: string | null

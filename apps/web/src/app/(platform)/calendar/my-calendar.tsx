@@ -46,6 +46,7 @@ interface ItemView {
   durationMinutes: number
   status: string
   title: string
+  opponent?: string | null
   location: string | null
   detail: string | null
 }
@@ -279,6 +280,26 @@ export function MyCalendar() {
   }
 
   /** Everything RSVP-related for one item, agenda card or popover alike. */
+  // "6:30 – 8:00 PM" — start/end range instead of a duration (owner 2026-07-16)
+  const timeRange = (item: ItemView) => {
+    const start = new Date(item.at)
+    const end = new Date(start.getTime() + (item.durationMinutes ?? 0) * 60_000)
+    const sameHalf = format(start, "a") === format(end, "a")
+    return `${format(start, sameHalf ? "h:mm" : "h:mm a")} – ${format(end, "h:mm a")}`
+  }
+
+  const eventLabel = (item: ItemView) => {
+    if (item.kind === "practice") return "Practice"
+    if (item.kind === "game") return item.opponent ? `vs ${item.opponent}` : item.title
+    const type =
+      item.eventType && item.eventType !== "OTHER"
+        ? item.eventType.charAt(0) + item.eventType.slice(1).toLowerCase()
+        : null
+    return type && !item.title.toLowerCase().includes(type.toLowerCase())
+      ? `${type} · ${item.title}`
+      : item.title
+  }
+
   const rsvpBlock = (item: ItemView, inPopover = false) => {
     const key = rsvpKey(itemTypeOf(item.kind), item.id)
     const answers = data.rsvp.byItem[key] ?? {}
@@ -455,49 +476,63 @@ export function MyCalendar() {
               </p>
             </div>
           }
-          renderItem={(item) => (
-            <div
-              key={`${item.kind}-${item.id}`}
-              className={`rounded-xl border px-4 py-3 ${KIND_CARD[item.kind]} ${
-                item.status === "CANCELLED" ? "opacity-60" : ""
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-ink-950 text-[15.5px] font-bold">
+          renderItem={(item) => {
+            const teamName =
+              data.teams.length > 1 && item.teamIds.length === 1
+                ? data.teams.find((t) => t.teamId === item.teamIds[0])?.teamName
+                : null
+            return (
+              <div
+                key={`${item.kind}-${item.id}`}
+                className={`flex gap-3 rounded-xl border px-4 py-3 ${KIND_CARD[item.kind]} ${
+                  item.status === "CANCELLED" ? "opacity-60" : ""
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-ink-950 text-[16px] font-extrabold tabular-nums">
+                      <span className={item.status === "CANCELLED" ? "line-through" : ""}>
+                        {timeRange(item)}
+                      </span>
+                      {item.status === "LIVE" && (
+                        <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 align-[2px] text-[10px] font-bold uppercase text-white">
+                          Live
+                        </span>
+                      )}
+                      {item.status === "CANCELLED" && (
+                        <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 align-[2px] text-[10px] font-bold uppercase text-red-600">
+                          Cancelled
+                        </span>
+                      )}
+                    </p>
+                    {item.kind === "game" && (
+                      <a
+                        href={`/live/${item.id}`}
+                        className="text-play-600 hover:text-play-700 shrink-0 text-[13px] font-bold"
+                      >
+                        {item.status === "LIVE" ? "Watch live →" : "Game page →"}
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-ink-900 mt-0.5 text-[15px] font-bold">
                     {lensDots(item)}
-                    <span className={item.status === "CANCELLED" ? "line-through" : ""}>
-                      {item.kind === "game" ? "Game · " : ""}
-                      {item.kind === "event" && item.eventType && item.eventType !== "OTHER"
-                        ? `${item.eventType.charAt(0) + item.eventType.slice(1).toLowerCase()} · `
-                        : ""}
-                      {item.title} · {format(new Date(item.at), "h:mm a")}
-                    </span>
-                    {item.status === "LIVE" && (
-                      <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                        Live
+                    {eventLabel(item)}
+                    {item.detail && item.kind === "game" ? (
+                      <span className="text-ink-500 ml-2 text-[13px] font-semibold">
+                        {item.detail}
                       </span>
-                    )}
-                    {item.status === "CANCELLED" && (
-                      <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-red-600">
-                        Cancelled
-                      </span>
-                    )}
+                    ) : null}
                   </p>
-                  <p className="text-ink-600 mt-0.5 text-[13px]">{metaLine(item)}</p>
+                  {(item.location || teamName) && (
+                    <p className="text-ink-600 mt-0.5 text-[13px]">
+                      {[item.location, teamName].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                  {rsvpBlock(item)}
                 </div>
-                {item.kind === "game" && (
-                  <a
-                    href={`/live/${item.id}`}
-                    className="text-play-600 hover:text-play-700 shrink-0 text-[13px] font-bold"
-                  >
-                    {item.status === "LIVE" ? "Watch live →" : "Game page →"}
-                  </a>
-                )}
               </div>
-              {rsvpBlock(item)}
-            </div>
-          )}
+            )
+          }}
         />
       )}
 
