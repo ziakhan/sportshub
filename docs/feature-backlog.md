@@ -125,12 +125,20 @@ from "Near-term / high value" first. Move an item to the ledger when it
 ships. Keep specs light here; expand into a dedicated doc only when a
 feature is greenlit for build.
 
-## Shot chart (owner 2026-07-15, from Yahoo game-page review)
-- Scoring console: optional shot-LOCATION capture — tap-on-court when logging a
-  shot. Per-scorekeeper/game toggle (enable/disable freely); when off, console
-  behaves exactly as today. Owner wants it demonstrable but never mandatory.
-- Public game page Plays tab: court shot-chart visual (made/missed markers per
-  quarter, Yahoo-style) — renders only when location data exists.
+## Shot chart (owner 2026-07-15/16 — DESIGN SETTLED, roadmapped for a later scoring round)
+- Location = `{x,y}` metadata ON the shot event itself — NO third action; the
+  assist/rebound/narrative-line linkage and future chart all hang off the one
+  shot event. Undo unchanged, no schema change.
+- Capture UX: after the player tap, a half-court flashes up — tap to place or
+  ignore (auto-dismiss, no location). FTs skip it. Cost: +1 optional tap per
+  FGA (~60-100/game) — hence discretion below.
+- Three-layer scorekeeper discretion: pre-game checklist question (default
+  OFF, like the clock question) + live in-console toggle + per-shot skip.
+  Guest scorekeepers default OFF. Partial charts are valid charts.
+- Rendering: Plays-tab half-court (made = filled team-color dot, missed = X,
+  quarter filter) — only when data exists; old games unaffected. Native chart
+  needs react-native-svg → ship with the next BINARY (bundle with the native
+  Google sign-in build). Estimate: console+web ~2 evenings, native +1.
 
 ## Team preferred short name (owner 2026-07-15)
 - Youth team names are long and collide within a club ("Toronto Lords" for
