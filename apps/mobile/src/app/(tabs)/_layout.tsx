@@ -36,7 +36,13 @@ function TabButton({
   label: string
   accessibilityState?: { selected?: boolean }
 } & React.ComponentProps<typeof Pressable>) {
-  const focused = !!accessibilityState?.selected
+  // expo-router's vendored bottom-tabs passes `aria-selected`, NOT
+  // accessibilityState.selected (BottomTabItem.js:109) — reading only the
+  // latter left every tab unfocused/gray in build 6 (owner report).
+  const focused =
+    ((props as Record<string, unknown>)["aria-selected"] as boolean | undefined) ??
+    accessibilityState?.selected ??
+    false
   return (
     <Pressable
       {...props}

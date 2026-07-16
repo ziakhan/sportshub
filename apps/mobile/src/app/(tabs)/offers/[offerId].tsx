@@ -52,6 +52,12 @@ export default function OfferDetailScreen() {
   const [optionId, setOptionId] = useState<string | null>(null)
   const [uniformSize, setUniformSize] = useState("")
   const [shoeSize, setShoeSize] = useState("")
+  const [tracksuitSize, setTracksuitSize] = useState("")
+  // At least one jersey preference is ALWAYS required to accept
+  // (respond-to-offer.ts) — the missing UI that blocked iOS accepts.
+  const [jersey1, setJersey1] = useState("")
+  const [jersey2, setJersey2] = useState("")
+  const [jersey3, setJersey3] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,6 +82,11 @@ export default function OfferDetailScreen() {
   const amountDue = chosen?.seasonFee ?? offer?.seasonFee ?? 0
   const currency = pay?.currency ?? "CAD"
 
+  const jerseyNum = (v: string) => {
+    const n = parseInt(v.trim(), 10)
+    return Number.isInteger(n) && n >= 0 && n <= 99 ? n : undefined
+  }
+
   async function acceptOffer(depositPaymentIntentId?: string) {
     await apiJson(`/api/offers/${offerId}`, {
       method: "PATCH",
@@ -86,6 +97,10 @@ export default function OfferDetailScreen() {
         ...(depositPaymentIntentId ? { depositPaymentIntentId } : {}),
         ...(uniformSize.trim() ? { uniformSize: uniformSize.trim() } : {}),
         ...(shoeSize.trim() ? { shoeSize: shoeSize.trim() } : {}),
+        ...(tracksuitSize.trim() ? { tracksuitSize: tracksuitSize.trim() } : {}),
+        ...(jerseyNum(jersey1) !== undefined ? { jerseyPref1: jerseyNum(jersey1) } : {}),
+        ...(jerseyNum(jersey2) !== undefined ? { jerseyPref2: jerseyNum(jersey2) } : {}),
+        ...(jerseyNum(jersey3) !== undefined ? { jerseyPref3: jerseyNum(jersey3) } : {}),
       }),
     })
     Alert.alert("Welcome to the team! 🏀", `${offer?.player.firstName} is on the roster.`, [
@@ -95,6 +110,10 @@ export default function OfferDetailScreen() {
 
   async function payAndAccept() {
     if (busy || !offer) return
+    if (jerseyNum(jersey1) === undefined) {
+      setError("Enter at least a first-choice jersey number (0–99).")
+      return
+    }
     setBusy(true)
     setError(null)
     try {
@@ -236,6 +255,40 @@ export default function OfferDetailScreen() {
               onChangeText={setShoeSize}
             />
           ) : null}
+          {offer.includesTracksuit ? (
+            <TextInput
+              style={styles.input}
+              placeholder="Tracksuit size (e.g. YL, AS, AM)"
+              placeholderTextColor={ui.textMuted}
+              value={tracksuitSize}
+              onChangeText={setTracksuitSize}
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      {open ? (
+        <View style={styles.card}>
+          <Text style={styles.label}>Jersey number preferences</Text>
+          <Text style={styles.hint}>First choice is required — 0 to 99.</Text>
+          <View style={styles.jerseyRow}>
+            {[
+              ["1st", jersey1, setJersey1],
+              ["2nd", jersey2, setJersey2],
+              ["3rd", jersey3, setJersey3],
+            ].map(([ph, val, set]) => (
+              <TextInput
+                key={ph as string}
+                style={[styles.input, styles.jerseyInput]}
+                placeholder={ph as string}
+                placeholderTextColor={ui.textMuted}
+                keyboardType="number-pad"
+                maxLength={2}
+                value={val as string}
+                onChangeText={set as (v: string) => void}
+              />
+            ))}
+          </View>
         </View>
       ) : null}
 
@@ -313,6 +366,9 @@ const styles = StyleSheet.create({
     color: ui.text,
     backgroundColor: ui.surface,
   },
+  hint: { fontSize: 12, color: ui.textMuted, marginBottom: 6 },
+  jerseyRow: { flexDirection: "row", gap: 8 },
+  jerseyInput: { flex: 1, textAlign: "center" },
   error: { color: palette.hoop[600], fontSize: 14, textAlign: "center" },
   payButton: {
     backgroundColor: ui.primary,
