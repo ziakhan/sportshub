@@ -70,6 +70,7 @@ export default function CalendarScreen() {
         <AgendaList
           items={items}
           calendar={calendar}
+          onChanged={() => void refresh()}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           header={
             <Pressable onPress={() => setShowPast((v) => !v)} hitSlop={8}>

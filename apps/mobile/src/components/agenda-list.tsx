@@ -38,6 +38,7 @@ export function AgendaList({
   emptyTitle = "Nothing scheduled",
   emptyBody = "Practices, games and team events land here.",
   header,
+  onChanged,
 }: {
   items: CalItem[]
   calendar: MyCalendar
@@ -46,6 +47,7 @@ export function AgendaList({
   emptyTitle?: string
   emptyBody?: string
   header?: React.ReactElement | null
+  onChanged?: () => void
 }) {
   const sections = useMemo<Section[]>(() => {
     const byDay = new Map<string, CalItem[]>()
@@ -101,7 +103,12 @@ export function AgendaList({
               ) : null}
             </View>
             <View style={styles.cardWrap}>
-              <EventCard item={item} calendar={calendar} playerFilter={playerFilter} />
+              <EventCard
+                item={item}
+                calendar={calendar}
+                playerFilter={playerFilter}
+                onChanged={onChanged}
+              />
             </View>
           </View>
         )

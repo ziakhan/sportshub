@@ -1,5 +1,7 @@
 import { useState } from "react"
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native"
+import { router } from "expo-router"
+import { apiJson } from "@/lib/api"
 import { Card, TonePill } from "@/components/ui"
 import {
   putRsvp,
@@ -26,12 +28,17 @@ export function EventCard({
   item,
   calendar,
   playerFilter,
+  onChanged,
 }: {
   item: CalItem
   calendar: MyCalendar
   /** Limit RSVP rows to one player (kid detail screen). */
   playerFilter?: string
+  /** Called after a cancel/restore so the parent list refreshes. */
+  onChanged?: () => void
 }) {
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [actionBusy, setActionBusy] = useState(false)
   const key = rsvpKeyOf(item)
   const [local, setLocal] = useState<Record<string, RsvpStatus>>({})
   const [failed, setFailed] = useState(false)
@@ -87,8 +94,58 @@ export function EventCard({
   const kindEdge =
     item.kind === "game" ? ui.energy : item.kind === "practice" ? ui.primary : palette.gold[500]
 
+  // Role-gated actions (web parity): staff cancel practices/events; league
+  // managers postpone/cancel games. Server re-checks — these only gate UI.
+  const isStaff = item.teamIds.some((tid) => calendar.teams.find((t) => t.teamId === tid)?.staff)
+  const isLeagueMgr = item.lensKeys.some((k) => k.startsWith("lg:"))
+  const runAction = async (verb: "cancel" | "restore" | "postpone") => {
+    setActionBusy(true)
+    try {
+      if (item.kind === "practice") {
+        await apiJson(`/api/teams/${item.teamIds[0]}/practices/${item.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ action: verb === "cancel" ? "cancel" : "restore" }),
+        })
+      } else if (item.kind === "event") {
+        await apiJson(`/api/team-events/${item.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: verb === "cancel" ? "CANCELLED" : "SCHEDULED" }),
+        })
+      } else {
+        await apiJson(`/api/games/${item.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            status: verb === "postpone" ? "POSTPONED" : verb === "cancel" ? "CANCELLED" : "SCHEDULED",
+          }),
+        })
+      }
+      setSheetOpen(false)
+      onChanged?.()
+    } catch (err) {
+      Alert.alert("Couldn't update", err instanceof Error ? err.message : "Try again.")
+    } finally {
+      setActionBusy(false)
+    }
+  }
+  const confirmAction = (verb: "cancel" | "postpone") => {
+    const noun = item.kind === "game" ? "game" : item.kind
+    Alert.alert(
+      `${verb === "postpone" ? "Postpone" : "Cancel"} this ${noun}?`,
+      "Everyone affected is notified.",
+      [
+        { text: "Back", style: "cancel" },
+        { text: verb === "postpone" ? "Postpone" : `Cancel ${noun}`, style: "destructive", onPress: () => void runAction(verb) },
+      ]
+    )
+  }
+  const hasActions = item.kind === "game" ? true : isStaff
+
+
   return (
-    <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: kindEdge }]}>
+    <Card
+      style={[styles.card, { borderLeftWidth: 4, borderLeftColor: kindEdge }]}
+      onPress={hasActions ? () => setSheetOpen(true) : undefined}
+    >
       <View style={styles.top}>
         <Text style={styles.when}>{timeRange}</Text>
         <TonePill
@@ -141,6 +198,58 @@ export function EventCard({
           )
         })}
       {failed ? <Text style={styles.error}>Couldn’t save — tap again.</Text> : null}
+
+      <Modal visible={sheetOpen} transparent animationType="slide" onRequestClose={() => setSheetOpen(false)}>
+        <Pressable style={styles.sheetBackdrop} onPress={() => setSheetOpen(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <Text style={styles.sheetTitle}>
+              {item.kind === "game" ? "Game" : item.kind === "practice" ? "Practice" : item.title}
+            </Text>
+            <Text style={styles.sheetSub}>
+              {timeRange}
+              {item.location ? ` · ${item.location}` : ""}
+            </Text>
+            {item.kind === "game" ? (
+              <Pressable
+                style={styles.sheetAction}
+                onPress={() => {
+                  setSheetOpen(false)
+                  router.push(`/browse/game/${item.id}`)
+                }}
+              >
+                <Text style={styles.sheetActionText}>Open game page →</Text>
+              </Pressable>
+            ) : null}
+            {item.kind !== "game" && isStaff && !cancelled ? (
+              <Pressable style={[styles.sheetAction, styles.sheetDanger]} disabled={actionBusy} onPress={() => confirmAction("cancel")}>
+                <Text style={styles.sheetDangerText}>
+                  Cancel {item.kind === "practice" ? "practice" : "event"}
+                </Text>
+              </Pressable>
+            ) : null}
+            {item.kind !== "game" && isStaff && cancelled ? (
+              <Pressable style={[styles.sheetAction, styles.sheetPositive]} disabled={actionBusy} onPress={() => void runAction("restore")}>
+                <Text style={styles.sheetPositiveText}>
+                  Restore {item.kind === "practice" ? "practice" : "event"}
+                </Text>
+              </Pressable>
+            ) : null}
+            {item.kind === "game" && isLeagueMgr && item.status === "SCHEDULED" ? (
+              <>
+                <Pressable style={[styles.sheetAction, styles.sheetWarn]} disabled={actionBusy} onPress={() => confirmAction("postpone")}>
+                  <Text style={styles.sheetWarnText}>Postpone game</Text>
+                </Pressable>
+                <Pressable style={[styles.sheetAction, styles.sheetDanger]} disabled={actionBusy} onPress={() => confirmAction("cancel")}>
+                  <Text style={styles.sheetDangerText}>Cancel game</Text>
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable style={styles.sheetAction} onPress={() => setSheetOpen(false)}>
+              <Text style={styles.sheetCloseText}>Close</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Card>
   )
 }
@@ -175,4 +284,30 @@ const styles = StyleSheet.create({
   rsvpText: { fontSize: 12, fontWeight: "700", color: ui.textMuted },
   rsvpTextOn: { color: "#fff" },
   error: { fontSize: 12, color: palette.hoop[600], marginTop: 4 },
+  sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 18,
+    paddingBottom: 34,
+    gap: 8,
+  },
+  sheetTitle: { fontSize: 17, fontWeight: "800", color: ui.text },
+  sheetSub: { fontSize: 13, color: ui.textMuted, marginBottom: 6 },
+  sheetAction: {
+    borderWidth: 1,
+    borderColor: ui.borderStrong,
+    borderRadius: 13,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  sheetActionText: { fontSize: 14.5, fontWeight: "800", color: ui.text },
+  sheetDanger: { borderColor: palette.hoop[200], backgroundColor: palette.hoop[50] },
+  sheetDangerText: { fontSize: 14.5, fontWeight: "800", color: palette.hoop[700] },
+  sheetWarn: { borderColor: "#fcd34d", backgroundColor: "#fffbeb" },
+  sheetWarnText: { fontSize: 14.5, fontWeight: "800", color: "#b45309" },
+  sheetPositive: { borderColor: palette.court[200], backgroundColor: palette.court[50] },
+  sheetPositiveText: { fontSize: 14.5, fontWeight: "800", color: palette.court[700] },
+  sheetCloseText: { fontSize: 14.5, fontWeight: "700", color: ui.textMuted },
 })

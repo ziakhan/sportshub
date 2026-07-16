@@ -106,6 +106,7 @@ export function MyCalendar() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<"agenda" | "grid">("agenda")
   const [openKey, setOpenKey] = useState<string | null>(null)
+  const [actionBusy, setActionBusy] = useState(false)
   // Lens keys the user switched OFF (persisted; everything on by default)
   const [hiddenLenses, setHiddenLenses] = useState<Set<string>>(new Set())
   useEffect(() => {
@@ -308,6 +309,41 @@ export function MyCalendar() {
       : item.title
   }
 
+  const isStaffFor = (item: ItemView) =>
+    item.teamIds.some((tid) => data?.teams.find((t) => t.teamId === tid)?.staff)
+  const isLeagueMgrFor = (item: ItemView) => item.lensKeys.some((k) => k.startsWith("lg:"))
+
+  const runItemAction = async (item: ItemView, verb: "cancel" | "restore" | "postpone") => {
+    const noun = item.kind === "game" ? "game" : item.kind
+    if (verb !== "restore" && !window.confirm(`${verb === "postpone" ? "Postpone" : "Cancel"} this ${noun}? Everyone affected is notified.`)) return
+    setActionBusy(true)
+    try {
+      if (item.kind === "practice") {
+        await fetch(`/api/teams/${item.teamIds[0]}/practices/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: verb === "cancel" ? "cancel" : "restore" }),
+        })
+      } else if (item.kind === "event") {
+        await fetch(`/api/team-events/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: verb === "cancel" ? "CANCELLED" : "SCHEDULED" }),
+        })
+      } else {
+        await fetch(`/api/games/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: verb === "postpone" ? "POSTPONED" : verb === "cancel" ? "CANCELLED" : "SCHEDULED" }),
+        })
+      }
+      setOpenKey(null)
+      await refresh()
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
   const rsvpBlock = (item: ItemView, inPopover = false) => {
     const key = rsvpKey(itemTypeOf(item.kind), item.id)
     const answers = data.rsvp.byItem[key] ?? {}
@@ -492,7 +528,11 @@ export function MyCalendar() {
             return (
               <div
                 key={`${item.kind}-${item.id}`}
-                className={`flex gap-3 rounded-xl border border-l-4 px-4 py-3 ${KIND_CARD[item.kind]} ${
+                role="button"
+                tabIndex={0}
+                onClick={() => setOpenKey(`${item.kind}-${item.id}`)}
+                onKeyDown={(e) => e.key === "Enter" && setOpenKey(`${item.kind}-${item.id}`)}
+                className={`flex cursor-pointer gap-3 rounded-xl border border-l-4 px-4 py-3 transition hover:shadow-sm ${KIND_CARD[item.kind]} ${
                   item.status === "CANCELLED" ? "opacity-60" : ""
                 }`}
                 style={{ borderLeftColor: KIND_EDGE[item.kind] }}
@@ -514,12 +554,13 @@ export function MyCalendar() {
                         </span>
                       )}
                     </p>
-                    {item.kind === "game" && (
+                    {item.status === "LIVE" && (
                       <a
                         href={`/live/${item.id}`}
-                        className="text-play-600 hover:text-play-700 shrink-0 text-[13px] font-bold"
+                        onClick={(e) => e.stopPropagation()}
+                        className="shrink-0 text-[13px] font-bold text-red-600"
                       >
-                        {item.status === "LIVE" ? "Watch live →" : "Game page →"}
+                        Watch live →
                       </a>
                     )}
                   </div>
@@ -537,7 +578,7 @@ export function MyCalendar() {
                       {[item.location, teamName].filter(Boolean).join(" · ")}
                     </p>
                   )}
-                  {rsvpBlock(item)}
+                  <div onClick={(e) => e.stopPropagation()}>{rsvpBlock(item)}</div>
                 </div>
               </div>
             )
@@ -560,14 +601,52 @@ export function MyCalendar() {
                   : "Nothing to answer here."}
             </p>
           )}
-          {openItem.kind === "game" && (
-            <a
-              href={`/live/${openItem.id}`}
-              className="text-play-600 hover:text-play-700 mt-3 block text-xs font-semibold"
-            >
-              Open game page →
-            </a>
-          )}
+          <div className="mt-3 space-y-1.5">
+            {openItem.kind === "game" && (
+              <a
+                href={`/live/${openItem.id}`}
+                className="border-ink-200 text-ink-800 hover:bg-ink-50 block rounded-xl border px-3 py-2 text-center text-sm font-bold"
+              >
+                Open game page →
+              </a>
+            )}
+            {openItem.kind !== "game" && isStaffFor(openItem) && openItem.status !== "CANCELLED" && (
+              <button
+                onClick={() => void runItemAction(openItem, "cancel")}
+                disabled={actionBusy}
+                className="border-hoop-200 text-hoop-700 hover:bg-hoop-50 block w-full rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              >
+                Cancel {openItem.kind === "practice" ? "practice" : "event"}
+              </button>
+            )}
+            {openItem.kind !== "game" && isStaffFor(openItem) && openItem.status === "CANCELLED" && (
+              <button
+                onClick={() => void runItemAction(openItem, "restore")}
+                disabled={actionBusy}
+                className="border-court-200 text-court-700 hover:bg-court-50 block w-full rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50"
+              >
+                Restore {openItem.kind === "practice" ? "practice" : "event"}
+              </button>
+            )}
+            {openItem.kind === "game" && isLeagueMgrFor(openItem) && openItem.status === "SCHEDULED" && (
+              <>
+                <button
+                  onClick={() => void runItemAction(openItem, "postpone")}
+                  disabled={actionBusy}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 block w-full rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50"
+                >
+                  Postpone game
+                </button>
+                <button
+                  onClick={() => void runItemAction(openItem, "cancel")}
+                  disabled={actionBusy}
+                  className="border-hoop-200 text-hoop-700 hover:bg-hoop-50 block w-full rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-50"
+                >
+                  Cancel game
+                </button>
+              </>
+            )}
+          </div>
         </ItemPopover>
       )}
     </div>
