@@ -67,8 +67,8 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const close = () => setOpen(false)
-  // On phones the bell folds into this badge (owner 2026-07-15): the dot
-  // says "something's waiting", the Notifications row inside says what.
+  // Bell sits BESIDE the badge on all platforms (owner 2026-07-16 — was
+  // briefly folded into the menu; two taps to notifications was too many).
   const unreadNotifications = useUnreadNotifications()
 
   useEffect(() => {
@@ -86,7 +86,25 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
   }, [open])
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative flex items-center gap-1.5" ref={ref}>
+      {/* Bell beside the badge on EVERY platform (owner 2026-07-16):
+          notifications are one tap; the unread dot lives on the bell. */}
+      <Link
+        href="/notifications"
+        aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}
+        className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 relative inline-flex rounded-xl p-2 transition"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"
+          />
+        </svg>
+        {unreadNotifications > 0 && (
+          <span className="bg-hoop-600 absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-white" />
+        )}
+      </Link>
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Open account menu"
@@ -94,12 +112,6 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
         className="bg-play-600 hover:bg-play-700 relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
       >
         {userInitials}
-        {unreadNotifications > 0 && (
-          <span
-            className="bg-hoop-600 absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white md:hidden"
-            aria-label={`${unreadNotifications} unread notifications`}
-          />
-        )}
       </button>
 
       {open && (

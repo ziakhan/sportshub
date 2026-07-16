@@ -16,6 +16,12 @@ import { ui } from "@/lib/theme"
 
 type IoniconName = keyof typeof Ionicons.glyphMap
 
+/** ⚠️ expo-router Tabs THROWS if a screen sets both `href` and
+ *  `tabBarButton` (TabsClient.js "Cannot use href and tabBarButton
+ *  together") — this crashed the first TestFlight OTA at launch. Signed-out
+ *  gating therefore lives INSIDE tabBarButton (return null), never via
+ *  href, on any screen with a custom button. */
+
 /** Energy Pass tab (owner-refined): the WHOLE focused tab — icon and label —
  *  sits in one filled energy capsule. Rendered via tabBarButton (not the
  *  tabBarIcon slot): iOS constrains the icon slot and ellipsized our labels
@@ -119,24 +125,37 @@ export default function TabsLayout() {
         name="chat"
         options={{
           title: "Chat",
-          href: signedIn ? "/(tabs)/chat" : null,
-          tabBarButton: (props) => <TabButton {...(props as object)} name="chatbubbles-outline" label="Chat" />,
+          tabBarItemStyle: signedIn ? undefined : { display: "none" },
+          tabBarButton: (props) =>
+            signedIn ? (
+              <TabButton {...(props as object)} name="chatbubbles-outline" label="Chat" />
+            ) : null,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: "Calendar",
-          href: signedIn && shape?.hasCalendar ? "/(tabs)/calendar" : null,
-          tabBarButton: (props) => <TabButton {...(props as object)} name="calendar-outline" label="Calendar" />,
+          tabBarItemStyle: signedIn && shape?.hasCalendar ? undefined : { display: "none" },
+          tabBarButton: (props) =>
+            signedIn && shape?.hasCalendar ? (
+              <TabButton {...(props as object)} name="calendar-outline" label="Calendar" />
+            ) : null,
         }}
       />
       <Tabs.Screen
         name="context"
         options={{
           title: ctx?.title ?? "Mine",
-          href: signedIn && ctx ? "/(tabs)/context" : null,
-          tabBarButton: (props) => <TabButton {...(props as object)} name={ctx?.icon ?? "people-outline"} label={ctx?.title ?? "Mine"} />,
+          tabBarItemStyle: signedIn && ctx ? undefined : { display: "none" },
+          tabBarButton: (props) =>
+            signedIn && ctx ? (
+              <TabButton
+                {...(props as object)}
+                name={ctx?.icon ?? "people-outline"}
+                label={ctx?.title ?? "Mine"}
+              />
+            ) : null,
         }}
       />
       <Tabs.Screen
