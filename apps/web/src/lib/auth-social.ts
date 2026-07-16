@@ -46,3 +46,10 @@ export async function ensureGoogleUser(input: {
     name: [created.firstName, created.lastName].filter(Boolean).join(" ") || null,
   }
 }
+
+/**
+ * Apple sign-in uses the identical linking rule — Apple attests the email
+ * (private-relay addresses included), so it attaches to the existing account
+ * or creates one with an unusable password.
+ */
+export const ensureAppleUser = ensureGoogleUser

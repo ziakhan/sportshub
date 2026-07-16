@@ -73,3 +73,4 @@ Thumbs.db
 .claude/**/__pycache__/
 .claude/**/*.pyc
 demo-clips/
+.credentials/
