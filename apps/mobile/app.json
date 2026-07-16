@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.ysportshub.app",
       "supportsTablet": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "SportsHub uses the camera to scan your payment card when you add one at checkout."
       }
     },
     "android": {
