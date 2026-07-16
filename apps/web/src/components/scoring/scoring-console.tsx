@@ -153,6 +153,9 @@ export function ScoringConsole({
   const [correcting, setCorrecting] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [showBox, setShowBox] = useState(false)
+  // Manual clock correction (owner 2026-07-16): the table clock drifts from
+  // the arena clock — let the scorekeeper set MM:SS at any stoppage.
+  const [clockEdit, setClockEdit] = useState<{ min: string; sec: string } | null>(null)
   const [refereeName, setRefereeName] = useState("")
   const [refereeSignature, setRefereeSignature] = useState<string | null>(null)
   const [refereePin, setRefereePin] = useState("")
@@ -495,6 +498,27 @@ export function ScoringConsole({
       })
     }
     setChain(null)
+  }
+
+  const openClockEdit = () => {
+    const secs = clockDisplay ?? config.periodMinutes * 60
+    setClockEdit({ min: String(Math.floor(secs / 60)), sec: String(secs % 60).padStart(2, "0") })
+  }
+
+  const applyClockEdit = () => {
+    if (!clockEdit) return
+    const min = Math.max(0, Math.min(99, parseInt(clockEdit.min || "0", 10) || 0))
+    const sec = Math.max(0, Math.min(59, parseInt(clockEdit.sec || "0", 10) || 0))
+    const total = min * 60 + sec
+    // One corrective event keeps the run/pause state: a running clock restarts
+    // from the corrected value, a paused clock just re-bases.
+    if (fold.clockRunning) {
+      append("CLOCK_START", { clockSeconds: total })
+    } else {
+      append("CLOCK_STOP", { clockSeconds: total })
+    }
+    setClockDisplay(total)
+    setClockEdit(null)
   }
 
   /** Taps on the main on-floor tiles — ALWAYS selection. An open chain toast
@@ -1136,18 +1160,17 @@ export function ScoringConsole({
       {/* Status strip: FIXED height, content swaps — never inserts.
           Hosts the idle hint, the two-tap hint, or the chain prompt. */}
       <div className="mb-1.5 flex min-h-[52px] items-center justify-center gap-2 overflow-x-auto px-1 max-md:min-h-[46px] [@media(max-height:520px)]:min-h-[40px]">
-        {chain ? (
+        {chain && chain.kind === "assist" ? (
           <>
             <span className="text-play-800 whitespace-nowrap text-xs font-semibold">
-              {chain.kind === "assist" ? "Assist by?" : "Rebound by?"}
+              Assist by?
             </span>
-            {(chain.kind === "assist"
-              ? (chain.shooterTeamId === game.homeTeam.id
-                  ? fold.onFloor.home
-                  : fold.onFloor.away
-                ).filter((pid) => pid !== chain.shooterId)
-              : [...fold.onFloor.home, ...fold.onFloor.away]
-            ).map((pid) => {
+            {(chain.shooterTeamId === game.homeTeam.id
+              ? fold.onFloor.home
+              : fold.onFloor.away
+            )
+              .filter((pid) => pid !== chain.shooterId)
+              .map((pid) => {
               const teamId = fold.onFloor.home.includes(pid)
                 ? game.homeTeam.id
                 : game.awayTeam.id
@@ -1249,7 +1272,7 @@ export function ScoringConsole({
               key={pid}
               onClick={() => tapPlayer(pid, teamId)}
               disabled={line?.fouledOut}
-              className={`flex h-10 w-full items-center gap-1.5 rounded-lg border border-l-4 bg-white px-2 text-left ${accent} ${
+              className={`flex h-[54px] w-full flex-col justify-center rounded-lg border border-l-4 bg-white px-2.5 text-left ${accent} ${
                 selected
                   ? "border-play-500 bg-play-100"
                   : pendingAction
@@ -1257,12 +1280,16 @@ export function ScoringConsole({
                     : "border-ink-200"
               } ${line?.fouledOut ? "opacity-40" : ""}`}
             >
-              <span className="text-ink-950 text-sm font-bold">#{jerseyOf(pid)}</span>
-              <span className="text-ink-500 min-w-0 flex-1 truncate text-[10px]">
-                {nameOf(pid).split(" ").slice(-1)[0]}
+              <span className="flex w-full items-baseline justify-between">
+                <span className="text-ink-950 text-base font-extrabold leading-tight">
+                  #{jerseyOf(pid)}
+                </span>
+                <span className="text-ink-400 text-[9px]">
+                  {"•".repeat(Math.min(line?.fouls ?? 0, FOUL_LIMIT))}
+                </span>
               </span>
-              <span className="text-ink-400 text-[8px]">
-                {"•".repeat(Math.min(line?.fouls ?? 0, FOUL_LIMIT))}
+              <span className="text-ink-600 w-full truncate text-[11.5px] font-medium leading-tight">
+                {nameOf(pid)}
               </span>
             </button>
           )
@@ -1310,6 +1337,15 @@ export function ScoringConsole({
                 >
                   {fmtClock(clockDisplay ?? config.periodMinutes * 60)}{" "}
                   {fold.clockRunning ? "⏸" : "▶"}
+                </button>
+              )}
+              {config.gameClockMode === "SIMPLE" && (
+                <button
+                  onClick={openClockEdit}
+                  aria-label="Adjust the clock"
+                  className="border-ink-200 text-ink-500 hover:bg-ink-50 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
+                >
+                  ✎
                 </button>
               )}
               {fold.periodOpen ? (
@@ -1408,6 +1444,15 @@ export function ScoringConsole({
               >
                 {fmtClock(clockDisplay ?? config.periodMinutes * 60)}{" "}
                 <span className="text-[10px]">{fold.clockRunning ? "⏸" : "▶"}</span>
+              </button>
+            )}
+            {config.gameClockMode === "SIMPLE" && (
+              <button
+                onClick={openClockEdit}
+                aria-label="Adjust the clock"
+                className="border-ink-200 text-ink-500 hover:bg-ink-50 mt-0.5 rounded-lg border px-2 py-1 text-xs font-semibold"
+              >
+                ✎
               </button>
             )}
             <div className="mt-1 flex items-center justify-center gap-1.5">
@@ -1566,6 +1611,133 @@ export function ScoringConsole({
             </div>
           )}
           {actionPad}
+        </div>
+      )}
+
+      {/* manual clock correction (owner: table clock drifts from the arena's) */}
+      {clockEdit && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center"
+          onClick={() => setClockEdit(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-t-2xl bg-white p-5 md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-ink-950 text-base font-bold">Set the clock</h3>
+            <p className="text-ink-500 mt-0.5 text-xs">
+              Match it to the arena clock — {fold.clockRunning ? "it keeps running from the new time" : "it stays paused at the new time"}.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={99}
+                value={clockEdit.min}
+                onChange={(e) => setClockEdit({ ...clockEdit, min: e.target.value })}
+                className="border-ink-200 w-24 rounded-xl border px-3 py-3 text-center font-mono text-2xl font-bold"
+                aria-label="Minutes"
+              />
+              <span className="text-ink-400 text-2xl font-bold">:</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={59}
+                value={clockEdit.sec}
+                onChange={(e) => setClockEdit({ ...clockEdit, sec: e.target.value })}
+                className="border-ink-200 w-24 rounded-xl border px-3 py-3 text-center font-mono text-2xl font-bold"
+                aria-label="Seconds"
+              />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setClockEdit(null)}
+                className="border-ink-200 text-ink-600 hover:bg-ink-50 flex-1 rounded-xl border py-2.5 text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={applyClockEdit}
+                className="bg-play-600 hover:bg-play-700 flex-1 rounded-xl py-2.5 text-sm font-bold text-white"
+              >
+                Set clock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* rebound picker — a real sheet, not a cramped strip (owner: players
+          were hidden and the "why" was unclear) */}
+      {chain?.kind === "rebound" && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center"
+          onClick={() => setChain(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-4 md:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-ink-950 text-base font-bold">Who got the rebound?</h3>
+            <p className="text-ink-500 mt-0.5 text-xs">
+              Missed shot{chain.shooterId ? ` by #${jerseyOf(chain.shooterId)}` : ""} — tap
+              whoever grabbed the ball. Their team keeps it (offensive) or takes it over
+              (defensive).
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              {(
+                [
+                  [chain.shooterTeamId, "Offense"],
+                  [
+                    chain.shooterTeamId === game.homeTeam.id ? game.awayTeam.id : game.homeTeam.id,
+                    "Defense",
+                  ],
+                ] as Array<[string, string]>
+              ).map(([tid, role]) => {
+                const home = tid === game.homeTeam.id
+                const ids = home ? fold.onFloor.home : fold.onFloor.away
+                return (
+                  <div key={tid}>
+                    <p
+                      className={`mb-1.5 truncate text-[11px] font-extrabold uppercase tracking-wide ${
+                        home ? "text-play-700" : "text-court-700"
+                      }`}
+                    >
+                      {role} · {home ? game.homeTeam.name : game.awayTeam.name}
+                    </p>
+                    <div className="space-y-1.5">
+                      {ids.map((pid) => (
+                        <button
+                          key={pid}
+                          onClick={() => chainPick(pid, tid)}
+                          className={`flex min-h-[46px] w-full items-center gap-2 rounded-xl border px-3 text-left ${
+                            home
+                              ? "border-play-200 hover:bg-play-50"
+                              : "border-court-200 hover:bg-court-50"
+                          }`}
+                        >
+                          <span className="text-ink-950 text-base font-extrabold">
+                            #{jerseyOf(pid)}
+                          </span>
+                          <span className="text-ink-600 min-w-0 flex-1 truncate text-xs font-semibold">
+                            {nameOf(pid)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={() => setChain(null)}
+              className="border-ink-200 text-ink-600 hover:bg-ink-50 mt-3 w-full rounded-xl border py-2.5 text-sm font-semibold"
+            >
+              Skip — no rebound recorded
+            </button>
+          </div>
         </div>
       )}
 
