@@ -32,7 +32,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://ysportshub.com",
         "EXPO_PUBLIC_SOCKET_URL": "https://ysportshub.com"
-      }
+      },
+      "credentialsSource": "local"
     }
   },
   "submit": {
