@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { View } from "react-native"
+import { Text, View } from "react-native"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useHome, type NavShape } from "@/lib/home"
 import { useSession } from "@/lib/session"
@@ -16,21 +16,42 @@ import { ui } from "@/lib/theme"
 
 type IoniconName = keyof typeof Ionicons.glyphMap
 
-/** Energy Pass tab icon: the focused tab's icon sits in a filled energy
- *  pill — one hot point on a quiet bar (web BottomTabs twin). */
-function TabIcon({ name, focused, size }: { name: IoniconName; focused: boolean; size: number }) {
+/** Energy Pass tab (owner-refined 2026-07-15): the WHOLE focused tab — icon
+ *  and label — sits in one filled energy capsule (web BottomTabs twin).
+ *  Labels render in here, so the navigator's own labels are switched off. */
+function TabIcon({
+  name,
+  label,
+  focused,
+}: {
+  name: IoniconName
+  label: string
+  focused: boolean
+}) {
   return (
     <View
       style={{
-        width: focused ? 46 : 30,
-        height: 29,
-        borderRadius: 999,
+        minWidth: 58,
+        borderRadius: 17,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
         backgroundColor: focused ? ui.energy : "transparent",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      <Ionicons name={name} size={size - 2} color={focused ? ui.energyOn : ui.textMuted} />
+      <Ionicons name={name} size={20} color={focused ? ui.energyOn : ui.textMuted} />
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: 10,
+          fontWeight: "700",
+          color: focused ? ui.energyOn : ui.textMuted,
+          marginTop: 1,
+        }}
+      >
+        {label}
+      </Text>
     </View>
   )
 }
@@ -67,24 +88,23 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false, // screens render the branded TopBar themselves
-        tabBarActiveTintColor: ui.energyInk,
-        tabBarInactiveTintColor: ui.textMuted,
-        tabBarLabelStyle: { fontWeight: "700" },
-        tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border },
+        tabBarShowLabel: false, // labels live inside the TabIcon capsule
+        tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border, height: 78 },
+        tabBarItemStyle: { paddingTop: 10 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ focused, size }) => <TabIcon name="home-outline" focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="home-outline" label="Home" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="browse"
         options={{
           title: "Browse",
-          tabBarIcon: ({ focused, size }) => <TabIcon name="search-outline" focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="search-outline" label="Browse" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -92,7 +112,7 @@ export default function TabsLayout() {
         options={{
           title: "Chat",
           href: signedIn ? "/(tabs)/chat" : null,
-          tabBarIcon: ({ focused, size }) => <TabIcon name="chatbubbles-outline" focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="chatbubbles-outline" label="Chat" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -100,7 +120,7 @@ export default function TabsLayout() {
         options={{
           title: "Calendar",
           href: signedIn && shape?.hasCalendar ? "/(tabs)/calendar" : null,
-          tabBarIcon: ({ focused, size }) => <TabIcon name="calendar-outline" focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="calendar-outline" label="Calendar" focused={focused} />,
         }}
       />
       <Tabs.Screen
@@ -108,14 +128,14 @@ export default function TabsLayout() {
         options={{
           title: ctx?.title ?? "Mine",
           href: signedIn && ctx ? "/(tabs)/context" : null,
-          tabBarIcon: ({ focused, size }) => <TabIcon name={ctx?.icon ?? "people-outline"} focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name={ctx?.icon ?? "people-outline"} label={ctx?.title ?? "Mine"} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ focused, size }) => <TabIcon name="person-circle-outline" focused={focused} size={size} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="person-circle-outline" label="Account" focused={focused} />,
         }}
       />
       {/* Hidden routes — reachable from Home, the top bar and deep links. */}

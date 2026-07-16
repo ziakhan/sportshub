@@ -104,22 +104,24 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
               key={t.href}
               href={t.href}
               aria-current={active ? "page" : undefined}
-              className={`relative flex min-w-[56px] flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-bold transition-colors ${
-                active ? "text-energy-ink" : "text-ink-500 hover:text-ink-800"
-              }`}
+              className="relative flex min-w-[56px] flex-col items-center justify-center px-1 py-2"
             >
-              {/* Energy Pass: the active tab's icon sits in a filled energy
-                  pill — the one hot point on an otherwise quiet bar, and it
-                  follows the admin palette automatically. */}
+              {/* Energy Pass (owner-refined): the whole active tab — icon AND
+                  label — sits in one filled energy capsule; follows the admin
+                  palette automatically. */}
               <span
-                className={`relative flex h-7 items-center justify-center rounded-full transition-colors ${
-                  active ? "bg-energy text-energy-on w-12" : "w-7"
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3.5 py-1 text-[10px] font-bold transition-colors ${
+                  active
+                    ? "bg-energy text-energy-on"
+                    : "text-ink-500 hover:text-ink-800"
                 }`}
               >
-                {t.icon}
-                {t.badge ? <UnreadDot count={t.badge} /> : null}
+                <span className="relative">
+                  {t.icon}
+                  {t.badge ? <UnreadDot count={t.badge} /> : null}
+                </span>
+                {t.label}
               </span>
-              {t.label}
             </Link>
           )
         })}
