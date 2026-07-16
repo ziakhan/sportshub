@@ -167,22 +167,28 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       row("Fouls", H.pf, A.pf),
     ]
 
-    const boxFor = (teamId: string, name: string, color: string | null, total: number) => ({
-      teamId,
-      name,
-      short: shortTeam(name),
-      color,
-      total,
-      rows: teamLines(teamId).map((l) => ({
-        jersey: String(jerseyOf(l.playerId)),
-        name: shortName(l.playerId),
-        pts: l.points,
-        reb: totalRebounds(l),
-        ast: l.assists,
-        stl: l.steals,
-        to: l.turnovers,
-      })),
-    })
+    const boxFor = (teamId: string, name: string, color: string | null, total: number) => {
+      const onFloorNow = live
+        ? new Set(teamId === game.homeTeamId ? fold.onFloor.home : fold.onFloor.away)
+        : null
+      return {
+        teamId,
+        name,
+        short: shortTeam(name),
+        color,
+        total,
+        rows: teamLines(teamId).map((l) => ({
+          jersey: String(jerseyOf(l.playerId)),
+          name: shortName(l.playerId),
+          onCourt: onFloorNow ? onFloorNow.has(l.playerId) : false,
+          pts: l.points,
+          reb: totalRebounds(l),
+          ast: l.assists,
+          stl: l.steals,
+          to: l.turnovers,
+        })),
+      }
+    }
 
     const SCORE_PTS: Record<string, number> = { SCORE_2PT: 2, SCORE_3PT: 3, SCORE_FT: 1 }
     let runHome = 0

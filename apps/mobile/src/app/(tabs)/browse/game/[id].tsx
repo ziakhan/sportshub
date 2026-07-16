@@ -68,7 +68,7 @@ interface GameView {
     short: string
     color: string | null
     total: number
-    rows: Array<{ jersey: string; name: string; pts: number; reb: number; ast: number; stl: number; to: number }>
+    rows: Array<{ jersey: string; name: string; onCourt?: boolean; pts: number; reb: number; ast: number; stl: number; to: number }>
   }>
   plays: Array<{ key: number; marker: boolean; text: string; score: string | null; teamId: string | null }>
 }
@@ -373,6 +373,7 @@ export default function GameScreen() {
                   {box.rows.map((r, i) => (
                     <View key={i} style={styles.boxRow}>
                       <View style={[styles.boxPlayer, styles.boxPlayerCell]}>
+                        {r.onCourt ? <View style={styles.onCourtDot} /> : null}
                         <Text style={styles.boxJersey}>#{r.jersey}</Text>
                         <Text style={styles.boxName} numberOfLines={1}>
                           {r.name}
@@ -562,6 +563,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: palette.ink[50],
   },
+  onCourtDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: palette.court[500] },
   boxJersey: { fontSize: 12, color: ui.textFaint, fontWeight: "700" },
   boxName: { fontSize: 14.5, fontWeight: "700", color: ui.text, flexShrink: 1 },
   boxCell: { width: 40, textAlign: "right", fontSize: 15, fontWeight: "600", color: ui.text, fontVariant: ["tabular-nums"] },

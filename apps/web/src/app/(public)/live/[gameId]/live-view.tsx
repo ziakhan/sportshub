@@ -654,9 +654,17 @@ export function LiveView({ gameId }: { gameId: string }) {
     const lines = teamLines(teamId)
     const teamColor = colorOf(teamId)
     const showMinutes = lines.some((l) => l.secondsPlayed > 0)
+    // LIVE games group by who's on the floor RIGHT NOW (substitutions
+    // applied — owner 2026-07-16: consumers read "Starters" as the current
+    // lineup); finished games keep the historical starters split.
+    const onFloorNow = live
+      ? new Set(teamId === game.homeTeamId ? fold.onFloor.home : fold.onFloor.away)
+      : null
     const starters = starterIds.get(teamId)
-    const starterLines = starters ? lines.filter((l) => starters.has(l.playerId)) : []
-    const benchLines = starters ? lines.filter((l) => !starters.has(l.playerId)) : lines
+    const groupSet = onFloorNow && onFloorNow.size > 0 ? onFloorNow : starters
+    const starterLines = groupSet ? lines.filter((l) => groupSet.has(l.playerId)) : []
+    const benchLines = groupSet ? lines.filter((l) => !groupSet.has(l.playerId)) : lines
+    const groupLabel = onFloorNow && onFloorNow.size > 0 ? "On the floor" : "Starters"
     const topId = lines.length > 0 && lines[0].points > 0 ? lines[0].playerId : null
     const totals = lines.reduce(
       (t, l) => ({
@@ -688,11 +696,25 @@ export function LiveView({ gameId }: { gameId: string }) {
     const cols = showMinutes ? 9 : 8
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-xs lg:text-[13px]">
+        <table className="w-full text-[15px] tabular-nums">
           {header}
           <tbody>
+            {groupSet && starterLines.length > 0 && (
+              <tr>
+                <td
+                  colSpan={cols}
+                  className={`border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest ${
+                    groupLabel === "On the floor"
+                      ? "bg-court-50 text-court-700"
+                      : "bg-ink-50 text-ink-500"
+                  }`}
+                >
+                  {groupLabel}
+                </td>
+              </tr>
+            )}
             {starterLines.map((l) => statRow(l, teamColor, l.playerId === topId, showMinutes))}
-            {starters && benchLines.length > 0 && (
+            {groupSet && benchLines.length > 0 && (
               <tr>
                 <td
                   colSpan={cols}
