@@ -24,9 +24,26 @@
         "EXPO_PUBLIC_SOCKET_URL": "https://ysportshub.com"
       },
       "channel": "production"
+    },
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://ysportshub.com",
+        "EXPO_PUBLIC_SOCKET_URL": "https://ysportshub.com"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "testflight": {
+      "ios": {
+        "ascApiKeyPath": "../../.credentials/AuthKey_VN2RSPS28C.p8",
+        "ascApiKeyId": "VN2RSPS28C",
+        "ascApiKeyIssuerId": "1625d2d6-04c1-44d8-911f-ede580fae917",
+        "appleTeamId": "V5S8N9K3X8"
+      }
+    }
   }
 }

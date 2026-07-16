@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.sportshub.app",
+      "bundleIdentifier": "com.ysportshub.app",
       "supportsTablet": true
     },
     "android": {
