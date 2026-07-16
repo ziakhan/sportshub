@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router"
-import { Text, View } from "react-native"
+import { Pressable, Text, View } from "react-native"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useHome, type NavShape } from "@/lib/home"
 import { useSession } from "@/lib/session"
@@ -16,43 +16,52 @@ import { ui } from "@/lib/theme"
 
 type IoniconName = keyof typeof Ionicons.glyphMap
 
-/** Energy Pass tab (owner-refined 2026-07-15): the WHOLE focused tab — icon
- *  and label — sits in one filled energy capsule (web BottomTabs twin).
- *  Labels render in here, so the navigator's own labels are switched off. */
-function TabIcon({
+/** Energy Pass tab (owner-refined): the WHOLE focused tab — icon and label —
+ *  sits in one filled energy capsule. Rendered via tabBarButton (not the
+ *  tabBarIcon slot): iOS constrains the icon slot and ellipsized our labels
+ *  + misaligned the capsule (owner screenshot, first TestFlight build). */
+function TabButton({
   name,
   label,
-  focused,
+  accessibilityState,
+  ...props
 }: {
   name: IoniconName
   label: string
-  focused: boolean
-}) {
+  accessibilityState?: { selected?: boolean }
+} & React.ComponentProps<typeof Pressable>) {
+  const focused = !!accessibilityState?.selected
   return (
-    <View
-      style={{
-        minWidth: 58,
-        borderRadius: 17,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        backgroundColor: focused ? ui.energy : "transparent",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+    <Pressable
+      {...props}
+      accessibilityState={accessibilityState}
+      style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
     >
-      <Ionicons name={name} size={20} color={focused ? ui.energyOn : ui.textMuted} />
-      <Text
-        numberOfLines={1}
+      <View
         style={{
-          fontSize: 10,
-          fontWeight: "700",
-          color: focused ? ui.energyOn : ui.textMuted,
-          marginTop: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 17,
+          paddingHorizontal: 13,
+          paddingVertical: 4,
+          minWidth: 62,
+          backgroundColor: focused ? ui.energy : "transparent",
         }}
       >
-        {label}
-      </Text>
-    </View>
+        <Ionicons name={name} size={20} color={focused ? ui.energyOn : ui.textMuted} />
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 10,
+            fontWeight: "700",
+            marginTop: 1,
+            color: focused ? ui.energyOn : ui.textMuted,
+          }}
+        >
+          {label}
+        </Text>
+      </View>
+    </Pressable>
   )
 }
 
@@ -88,23 +97,22 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false, // screens render the branded TopBar themselves
-        tabBarShowLabel: false, // labels live inside the TabIcon capsule
-        tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border, height: 78 },
-        tabBarItemStyle: { paddingTop: 10 },
+        tabBarShowLabel: false, // labels live inside the TabButton capsule
+        tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ focused }) => <TabIcon name="home-outline" label="Home" focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name="home-outline" label="Home" />,
         }}
       />
       <Tabs.Screen
         name="browse"
         options={{
           title: "Browse",
-          tabBarIcon: ({ focused }) => <TabIcon name="search-outline" label="Browse" focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name="search-outline" label="Browse" />,
         }}
       />
       <Tabs.Screen
@@ -112,7 +120,7 @@ export default function TabsLayout() {
         options={{
           title: "Chat",
           href: signedIn ? "/(tabs)/chat" : null,
-          tabBarIcon: ({ focused }) => <TabIcon name="chatbubbles-outline" label="Chat" focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name="chatbubbles-outline" label="Chat" />,
         }}
       />
       <Tabs.Screen
@@ -120,7 +128,7 @@ export default function TabsLayout() {
         options={{
           title: "Calendar",
           href: signedIn && shape?.hasCalendar ? "/(tabs)/calendar" : null,
-          tabBarIcon: ({ focused }) => <TabIcon name="calendar-outline" label="Calendar" focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name="calendar-outline" label="Calendar" />,
         }}
       />
       <Tabs.Screen
@@ -128,14 +136,14 @@ export default function TabsLayout() {
         options={{
           title: ctx?.title ?? "Mine",
           href: signedIn && ctx ? "/(tabs)/context" : null,
-          tabBarIcon: ({ focused }) => <TabIcon name={ctx?.icon ?? "people-outline"} label={ctx?.title ?? "Mine"} focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name={ctx?.icon ?? "people-outline"} label={ctx?.title ?? "Mine"} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ focused }) => <TabIcon name="person-circle-outline" label="Account" focused={focused} />,
+          tabBarButton: (props) => <TabButton {...(props as object)} name="person-circle-outline" label="Account" />,
         }}
       />
       {/* Hidden routes — reachable from Home, the top bar and deep links. */}

@@ -15,12 +15,12 @@ import { palette, ui } from "@/lib/theme"
  * identical everywhere.
  */
 
-const BROWSE_PILLS: Array<{ label: string; href: string }> = [
-  { label: "Scores", href: "/scores" },
-  { label: "Programs", href: "/browse/programs" },
-  { label: "Clubs", href: "/browse/clubs" },
-  { label: "Leagues", href: "/browse/leagues" },
-  { label: "News", href: "/browse/news" },
+const BROWSE_PILLS: Array<{ label: string; href: string; bg: string; fg: string }> = [
+  { label: "Scores", href: "/scores", bg: "#fef3ee", fg: "#bc2711" },
+  { label: "Programs", href: "/browse/programs", bg: palette.hoop[50], fg: palette.hoop[700] },
+  { label: "Clubs", href: "/browse/clubs", bg: palette.play[50], fg: palette.play[700] },
+  { label: "Leagues", href: "/browse/leagues", bg: palette.court[50], fg: palette.court[700] },
+  { label: "News", href: "/browse/news", bg: palette.gold[50], fg: palette.gold[600] },
 ]
 
 export function TopBar({
@@ -45,14 +45,19 @@ export function TopBar({
 
         <View style={styles.actions}>
           {signedIn ? (
-            // One control, not three (owner 2026-07-15): the badge carries
-            // the unread dot; Alerts is a row inside Account + a Home chip.
-            <Pressable onPress={() => router.navigate("/account")} hitSlop={6}>
-              <View>
+            // Bell beside the badge (owner 2026-07-16): notifications are one
+            // tap, and the unread dot lives on the bell where it belongs.
+            <>
+              <Pressable onPress={() => router.push("/alerts")} hitSlop={8}>
+                <View>
+                  <Ionicons name="notifications-outline" size={23} color={ui.text} />
+                  {unread > 0 ? <View style={styles.unreadDot} /> : null}
+                </View>
+              </Pressable>
+              <Pressable onPress={() => router.navigate("/account")} hitSlop={6}>
                 <Avatar name={user?.name ?? user?.email} size={32} />
-                {unread > 0 ? <View style={styles.unreadDot} /> : null}
-              </View>
-            </Pressable>
+              </Pressable>
+            </>
           ) : (
             <>
               <Pressable onPress={() => router.push("/sign-in")} hitSlop={6}>
@@ -76,10 +81,11 @@ export function TopBar({
           {BROWSE_PILLS.map((p) => (
             <Pressable
               key={p.href}
-              style={({ pressed }) => [styles.pill, pressed && { opacity: 0.7 }]}
+              style={({ pressed }) => [styles.pill, { backgroundColor: p.bg }, pressed && { opacity: 0.7 }]}
               onPress={() => router.push(p.href as any)}
             >
-              <Text style={styles.pillText}>{p.label}</Text>
+              <View style={[styles.pillDot, { backgroundColor: p.fg }]} />
+              <Text style={[styles.pillText, { color: p.fg }]}>{p.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -171,12 +177,13 @@ const styles = StyleSheet.create({
   pillRow: { borderTopWidth: 1, borderTopColor: ui.border },
   pillRowContent: { gap: 8, paddingHorizontal: 16, paddingVertical: 8 },
   pill: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: ui.borderStrong,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 6.5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  pillText: { fontSize: 12, fontWeight: "600", color: ui.textMuted },
+  pillDot: { width: 6, height: 6, borderRadius: 3, opacity: 0.7 },
+  pillText: { fontSize: 12.5, fontWeight: "800" },
 })
