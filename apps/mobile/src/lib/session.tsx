@@ -3,6 +3,7 @@ import {
   hasStoredSession,
   setSessionLostHandler,
   signIn as apiSignIn,
+  signInWithApple as apiSignInWithApple,
   signOut as apiSignOut,
   storedUser,
   type SessionUser,
@@ -25,6 +26,10 @@ interface SessionContextValue {
   signedIn: boolean
   user: SessionUser | null
   signIn(email: string, password: string): Promise<void>
+  signInApple(
+    identityToken: string,
+    fullName?: { givenName?: string | null; familyName?: string | null } | null
+  ): Promise<void>
   signOut(): Promise<void>
 }
 
@@ -66,6 +71,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     user,
     async signIn(email, password) {
       const sessionUser = await apiSignIn(email, password)
+      setUser(sessionUser)
+      setSignedIn(true)
+      void registerForPush()
+    },
+    async signInApple(identityToken, fullName) {
+      const sessionUser = await apiSignInWithApple(identityToken, fullName)
       setUser(sessionUser)
       setSignedIn(true)
       void registerForPush()

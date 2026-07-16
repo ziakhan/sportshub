@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,11 +16,51 @@ import { useSession } from "@/lib/session"
 
 /** Sign-in modal — the app browses fine without it (no login wall). */
 export default function SignInScreen() {
-  const { signIn } = useSession()
+  const { signIn, signInApple } = useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Sign in with Apple — guarded require: binaries built before the native
+  // module shipped share this JS via OTA and must not crash on import.
+  const [appleReady, setAppleReady] = useState(false)
+  useEffect(() => {
+    if (Platform.OS !== "ios") return
+    try {
+      const apple = require("expo-apple-authentication")
+      apple
+        .isAvailableAsync()
+        .then((ok: boolean) => setAppleReady(ok))
+        .catch(() => {})
+    } catch {
+      // binary without the native module — no Apple button
+    }
+  }, [])
+
+  async function onApple() {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const apple = require("expo-apple-authentication")
+      const cred = await apple.signInAsync({
+        requestedScopes: [
+          apple.AppleAuthenticationScope.FULL_NAME,
+          apple.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+      if (!cred.identityToken) throw new Error("Apple didn't return a token")
+      await signInApple(cred.identityToken, cred.fullName)
+      dismiss()
+    } catch (err) {
+      const code = (err as { code?: string })?.code
+      if (code !== "ERR_REQUEST_CANCELED") {
+        setError(err instanceof Error ? err.message : "Apple sign-in failed")
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
 
   function dismiss() {
     if (router.canGoBack()) router.back()
@@ -90,6 +130,17 @@ export default function SignInScreen() {
           )}
         </Pressable>
 
+        {appleReady ? (
+          <Pressable
+            style={({ pressed }) => [styles.appleButton, (pressed || busy) && { opacity: 0.75 }]}
+            onPress={onApple}
+            disabled={busy}
+          >
+            <Ionicons name="logo-apple" size={18} color="#fff" />
+            <Text style={styles.appleButtonText}>Sign in with Apple</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable onPress={() => router.replace("/sign-up")} hitSlop={6}>
           <Text style={styles.footnote}>
             New to SportsHub? <Text style={styles.footnoteLink}>Create an account</Text>
@@ -144,6 +195,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 4,
   },
+  appleButton: {
+    marginTop: 10,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+  },
+  appleButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   footnote: {
     fontSize: 13,

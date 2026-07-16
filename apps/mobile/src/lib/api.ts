@@ -78,6 +78,25 @@ export async function signIn(email: string, password: string): Promise<SessionUs
   return body.user as SessionUser
 }
 
+/** Sign in with Apple: exchange Apple's identityToken for our token pair. */
+export async function signInWithApple(
+  identityToken: string,
+  fullName?: { givenName?: string | null; familyName?: string | null } | null
+): Promise<SessionUser> {
+  const res = await fetch(`${apiBaseUrl()}/api/auth/token/apple`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ identityToken, fullName, deviceLabel: deviceLabel() }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(body?.error ?? `Apple sign-in failed (${res.status})`)
+  }
+  await setTokens(body.accessToken, body.refreshToken)
+  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(body.user))
+  return body.user as SessionUser
+}
+
 /** The user from the last sign-in — survives app restarts. */
 export async function storedUser(): Promise<SessionUser | null> {
   const raw = await SecureStore.getItemAsync(USER_KEY).catch(() => null)

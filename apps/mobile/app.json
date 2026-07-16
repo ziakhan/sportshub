@@ -14,7 +14,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "SportsHub uses the camera to scan your payment card when you add one at checkout."
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -47,7 +48,8 @@
         {
           "enableGooglePay": true
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
