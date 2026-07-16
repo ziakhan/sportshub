@@ -137,3 +137,13 @@ feature is greenlit for build.
   every grade). Add owner-editable short name (e.g. "Lords G10", "Force U11")
   used on score surfaces, chips and native cards. Until then the game page
   derives "initials · G##/U##" from the full name (shortTeam() in live-view).
+
+## Auth cross-platform completion (owner 2026-07-16 — REMIND HIM)
+- **Web Sign in with Apple**: needs owner-created Services ID (com.ysportshub.web,
+  domain ysportshub.com) + a Sign in with Apple key from the developer portal →
+  NextAuth Apple provider → buttons on web sign-in + sign-up. Owner explicitly
+  asked to be reminded.
+- **Native Google sign-in (Android + iOS)**: @react-native-google-signin +
+  /api/auth/token/google (verify idToken, ensureGoogleUser) + Android OAuth
+  client (SHA-1 from EAS keystore) + iOS OAuth client in owner's GCP project.
+  New binaries required (not OTA-able). Buttons on native sign-in AND sign-up.
