@@ -1,4 +1,4 @@
-import { colors, radii, shadows } from "@youthbasketballhub/design-tokens"
+import { colors, radii, shadows, PALETTES } from "@youthbasketballhub/design-tokens"
 
 /**
  * SportsHub visual constants for React Native, straight from the shared
@@ -33,6 +33,11 @@ export const ui = {
   primary: colors.play[600],
   primaryInk: colors.play[700],
   primarySoft: colors.play[50],
+  // Energy Pass hot color (hardwood defaults; live palette from
+  // /api/mobile/config is the planned follow-up — see box file)
+  energy: PALETTES.hardwood.energy,
+  energyOn: PALETTES.hardwood.energyOn,
+  energyInk: PALETTES.hardwood.energyInk,
   live: colors.court[500],
   danger: colors.hoop[600],
   radius: {

@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router"
+import { View } from "react-native"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useHome, type NavShape } from "@/lib/home"
 import { useSession } from "@/lib/session"
@@ -14,6 +15,25 @@ import { ui } from "@/lib/theme"
  */
 
 type IoniconName = keyof typeof Ionicons.glyphMap
+
+/** Energy Pass tab icon: the focused tab's icon sits in a filled energy
+ *  pill — one hot point on a quiet bar (web BottomTabs twin). */
+function TabIcon({ name, focused, size }: { name: IoniconName; focused: boolean; size: number }) {
+  return (
+    <View
+      style={{
+        width: focused ? 46 : 30,
+        height: 29,
+        borderRadius: 999,
+        backgroundColor: focused ? ui.energy : "transparent",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Ionicons name={name} size={size - 2} color={focused ? ui.energyOn : ui.textMuted} />
+    </View>
+  )
+}
 
 function operatorTitle(shape: NavShape): string {
   // "Dashboard" retired as a label (owner 2026-07-15) — name the thing.
@@ -47,8 +67,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false, // screens render the branded TopBar themselves
-        tabBarActiveTintColor: ui.primary,
+        tabBarActiveTintColor: ui.energyInk,
         tabBarInactiveTintColor: ui.textMuted,
+        tabBarLabelStyle: { fontWeight: "700" },
         tabBarStyle: { backgroundColor: "#fff", borderTopColor: ui.border },
       }}
     >
@@ -56,16 +77,14 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          tabBarIcon: ({ focused, size }) => <TabIcon name="home-outline" focused={focused} size={size} />,
         }}
       />
       <Tabs.Screen
         name="browse"
         options={{
           title: "Browse",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused, size }) => <TabIcon name="search-outline" focused={focused} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -73,9 +92,7 @@ export default function TabsLayout() {
         options={{
           title: "Chat",
           href: signedIn ? "/(tabs)/chat" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused, size }) => <TabIcon name="chatbubbles-outline" focused={focused} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -83,9 +100,7 @@ export default function TabsLayout() {
         options={{
           title: "Calendar",
           href: signedIn && shape?.hasCalendar ? "/(tabs)/calendar" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused, size }) => <TabIcon name="calendar-outline" focused={focused} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -93,18 +108,14 @@ export default function TabsLayout() {
         options={{
           title: ctx?.title ?? "Mine",
           href: signedIn && ctx ? "/(tabs)/context" : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name={ctx?.icon ?? "people-outline"} size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused, size }) => <TabIcon name={ctx?.icon ?? "people-outline"} focused={focused} size={size} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused, size }) => <TabIcon name="person-circle-outline" focused={focused} size={size} />,
         }}
       />
       {/* Hidden routes — reachable from Home, the top bar and deep links. */}

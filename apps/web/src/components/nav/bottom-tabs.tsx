@@ -97,21 +97,32 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">
-        {tabs.map((t) => (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`relative flex min-w-[56px] flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-semibold transition-colors ${
-              isActive(t) ? "text-play-700" : "text-ink-500 hover:text-ink-800"
-            }`}
-          >
-            <span className="relative">
-              {t.icon}
-              {t.badge ? <UnreadDot count={t.badge} /> : null}
-            </span>
-            {t.label}
-          </Link>
-        ))}
+        {tabs.map((t) => {
+          const active = isActive(t)
+          return (
+            <Link
+              key={t.href}
+              href={t.href}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex min-w-[56px] flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-bold transition-colors ${
+                active ? "text-energy-ink" : "text-ink-500 hover:text-ink-800"
+              }`}
+            >
+              {/* Energy Pass: the active tab's icon sits in a filled energy
+                  pill — the one hot point on an otherwise quiet bar, and it
+                  follows the admin palette automatically. */}
+              <span
+                className={`relative flex h-7 items-center justify-center rounded-full transition-colors ${
+                  active ? "bg-energy text-energy-on w-12" : "w-7"
+                }`}
+              >
+                {t.icon}
+                {t.badge ? <UnreadDot count={t.badge} /> : null}
+              </span>
+              {t.label}
+            </Link>
+          )
+        })}
       </div>
     </nav>
   )
