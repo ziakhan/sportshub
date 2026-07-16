@@ -555,20 +555,50 @@ export function LiveView({ gameId }: { gameId: string }) {
     "PERIOD_START",
     "PERIOD_END",
   ])
+  // Narrative merge (owner 2026-07-16): the console writes ASSIST right
+  // after a made shot and REBOUND right after a miss (single-scorer lock →
+  // always adjacent), so shots absorb their follow-up into one line:
+  // "Basket by X, assisted by Y" / "X misses — defensive rebound Z".
   let runHome = 0
   let runAway = 0
-  const playByPlay = fold.playByPlay
-    .map((e) => {
-      const pts = SCORE_PTS[e.eventType]
-      const scored = pts != null && e.made !== false && !!e.teamId
-      if (scored) {
-        if (e.teamId === game.homeTeamId) runHome += pts
-        else if (e.teamId === game.awayTeamId) runAway += pts
+  const ordered = fold.playByPlay
+  const consumed = new Set<number>()
+  const playByPlay: Array<{ e: FoldEvent; score: string | null; tail: string | null }> = []
+  for (let i = 0; i < ordered.length; i++) {
+    if (consumed.has(i)) continue
+    const e = ordered[i]
+    const pts = SCORE_PTS[e.eventType]
+    const scored = pts != null && e.made !== false && !!e.teamId
+    if (scored) {
+      if (e.teamId === game.homeTeamId) runHome += pts
+      else if (e.teamId === game.awayTeamId) runAway += pts
+    }
+    let tail: string | null = null
+    if (pts != null && e.eventType !== "SCORE_FT") {
+      // look at the next two entries for the chained follow-up
+      for (let j = i + 1; j <= i + 2 && j < ordered.length; j++) {
+        if (consumed.has(j)) continue
+        const n = ordered[j]
+        if (e.made !== false && n.eventType === "ASSIST" && n.teamId === e.teamId) {
+          tail = n.playerId ? `, assisted by #${jerseyOf(n.playerId)} ${shortName(n.playerId)}` : null
+          consumed.add(j)
+          break
+        }
+        if (e.made === false && n.eventType === "REBOUND") {
+          const off = (n.metadata as { offensive?: boolean } | null)?.offensive
+          tail = n.playerId
+            ? ` — ${off ? "offensive" : "defensive"} rebound #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
+            : null
+          consumed.add(j)
+          break
+        }
+        if (["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "PERIOD_START", "PERIOD_END"].includes(n.eventType)) break
       }
-      return { e, score: scored ? `${runHome}–${runAway}` : null }
-    })
-    .filter(({ e }) => PBP_TYPES.has(e.eventType))
-    .reverse()
+    }
+    if (!PBP_TYPES.has(e.eventType)) continue
+    playByPlay.push({ e, score: scored ? `${runHome}–${runAway}` : null, tail })
+  }
+  playByPlay.reverse()
   const visiblePlays = playByPlay.filter(({ e, score }) => {
     if (playFilter === "all") return true
     if (playFilter === "scoring") return score !== null || e.eventType.startsWith("PERIOD")
@@ -1078,7 +1108,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                   ))}
                 </div>
                 <ul className="max-h-[420px] overflow-y-auto xl:max-h-[calc(100vh-190px)]">
-                  {visiblePlays.map(({ e, score }, i) =>
+                  {visiblePlays.map(({ e, score, tail }, i) =>
                     e.eventType.startsWith("PERIOD") ? (
                       <li
                         key={i}
@@ -1097,7 +1127,10 @@ export function LiveView({ gameId }: { gameId: string }) {
                           className="w-1 self-stretch rounded-full"
                           style={{ backgroundColor: colorOf(e.teamId) }}
                         />
-                        <span className="min-w-0 flex-1">{describe(e)}</span>
+                        <span className="min-w-0 flex-1">
+                          {describe(e)}
+                          {tail}
+                        </span>
                         {score && (
                           <span className="text-ink-900 shrink-0 text-[11px] font-bold tabular-nums">
                             {score}

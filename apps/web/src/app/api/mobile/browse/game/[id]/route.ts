@@ -202,55 +202,84 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
+    // Narrative merge (owner 2026-07-16): shots absorb the adjacent
+    // ASSIST/REBOUND chained right after them by the console — one line:
+    // "Basket by X, assisted by Y" / "X misses — defensive rebound Z".
     const SCORE_PTS: Record<string, number> = { SCORE_2PT: 2, SCORE_3PT: 3, SCORE_FT: 1 }
+    const PLAY_TYPES = ["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "FOUL", "PERIOD_START", "PERIOD_END"]
     let runHome = 0
     let runAway = 0
-    const plays = fold.playByPlay
-      .map((e) => {
-        const pts = SCORE_PTS[e.eventType]
-        const scored = pts != null && e.made !== false && !!e.teamId
-        if (scored) {
-          if (e.teamId === game.homeTeamId) runHome += pts
-          else if (e.teamId === game.awayTeamId) runAway += pts
-        }
-        return { e, score: scored ? `${runHome}–${runAway}` : null }
-      })
-      .filter(({ e }) =>
-        ["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "FOUL", "PERIOD_START", "PERIOD_END"].includes(e.eventType)
-      )
-      .map(({ e, score }, i) => {
-        const who = e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "Team"
-        let text: string
-        switch (e.eventType) {
-          case "SCORE_2PT":
-          case "SCORE_3PT":
-          case "SCORE_FT": {
-            const pts = SCORE_PTS[e.eventType]
-            text =
-              e.made === false
-                ? `${who} misses ${e.eventType === "SCORE_FT" ? "a free throw" : `a ${pts}-pointer`}`
-                : `${who} ${e.eventType === "SCORE_FT" ? "makes a free throw" : `scores ${pts}`}`
+    const ordered = fold.playByPlay
+    const consumed = new Set<number>()
+    const plays: Array<{
+      key: number
+      period: number | null
+      marker: boolean
+      text: string
+      score: string | null
+      teamId: string | null
+    }> = []
+    for (let i = 0; i < ordered.length; i++) {
+      if (consumed.has(i)) continue
+      const e = ordered[i]
+      const pts = SCORE_PTS[e.eventType]
+      const scored = pts != null && e.made !== false && !!e.teamId
+      if (scored) {
+        if (e.teamId === game.homeTeamId) runHome += pts
+        else if (e.teamId === game.awayTeamId) runAway += pts
+      }
+      let tail = ""
+      if (pts != null && e.eventType !== "SCORE_FT") {
+        for (let j = i + 1; j <= i + 2 && j < ordered.length; j++) {
+          if (consumed.has(j)) continue
+          const n = ordered[j]
+          if (e.made !== false && n.eventType === "ASSIST" && n.teamId === e.teamId) {
+            if (n.playerId) tail = `, assisted by #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
+            consumed.add(j)
             break
           }
-          case "FOUL":
-            text = `Foul on ${who}`
+          if (e.made === false && n.eventType === "REBOUND") {
+            const off = (n.metadata as { offensive?: boolean } | null)?.offensive
+            if (n.playerId)
+              tail = ` — ${off ? "offensive" : "defensive"} rebound #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
+            consumed.add(j)
             break
-          case "PERIOD_START":
-            text = periodLabel(e.period ?? 1)
-            break
-          default:
-            text = "End of period"
+          }
+          if (["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "PERIOD_START", "PERIOD_END"].includes(n.eventType)) break
         }
-        return {
-          key: i,
-          period: e.period ?? null,
-          marker: e.eventType.startsWith("PERIOD"),
-          text,
-          score,
-          teamId: e.teamId ?? null,
+      }
+      if (!PLAY_TYPES.includes(e.eventType)) continue
+      const who = e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "Team"
+      let text: string
+      switch (e.eventType) {
+        case "SCORE_2PT":
+        case "SCORE_3PT":
+        case "SCORE_FT": {
+          text =
+            e.made === false
+              ? `${who} misses ${e.eventType === "SCORE_FT" ? "a free throw" : `a ${pts}-pointer`}`
+              : `${who} ${e.eventType === "SCORE_FT" ? "makes a free throw" : `scores ${pts}`}`
+          break
         }
+        case "FOUL":
+          text = `Foul on ${who}`
+          break
+        case "PERIOD_START":
+          text = periodLabel(e.period ?? 1)
+          break
+        default:
+          text = "End of period"
+      }
+      plays.push({
+        key: i,
+        period: e.period ?? null,
+        marker: e.eventType.startsWith("PERIOD"),
+        text: text + tail,
+        score: scored ? `${runHome}–${runAway}` : null,
+        teamId: e.teamId ?? null,
       })
-      .reverse()
+    }
+    plays.reverse()
 
     return NextResponse.json({
       game: {
