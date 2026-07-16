@@ -43,7 +43,8 @@
         "ascApiKeyPath": "../../.credentials/AuthKey_VN2RSPS28C.p8",
         "ascApiKeyId": "VN2RSPS28C",
         "ascApiKeyIssuerId": "1625d2d6-04c1-44d8-911f-ede580fae917",
-        "appleTeamId": "V5S8N9K3X8"
+        "appleTeamId": "V5S8N9K3X8",
+        "ascAppId": "6791453028"
       }
     }
   }
