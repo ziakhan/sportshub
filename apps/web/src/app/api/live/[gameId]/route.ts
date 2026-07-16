@@ -197,6 +197,10 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         awayRecord: records[game.awayTeamId] ?? null,
         venueName: game.venue?.name ?? null,
         leagueName: game.season?.league?.name ?? null,
+        // League-level clock switch (ClockMode SIMPLE|OFF) — the public page
+        // shows a ticking clock only when the league runs one (owner
+        // 2026-07-15: many games run on the arena clock instead).
+        clockMode: game.season?.league?.gameClockMode ?? "OFF",
         seasonName: game.season?.label ?? null,
       },
       events: events.map((e: any) => ({ ...e, timestampMs: new Date(e.timestamp).getTime() })),

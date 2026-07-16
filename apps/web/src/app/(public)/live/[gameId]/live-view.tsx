@@ -54,6 +54,7 @@ interface LivePayload {
     awayRecord: TeamRecord | null
     venueName: string | null
     leagueName: string | null
+    clockMode?: "SIMPLE" | "OFF"
     seasonName: string | null
   }
   events: FoldEvent[]
@@ -85,6 +86,8 @@ export function LiveView({ gameId }: { gameId: string }) {
   // Sticky mini score chip (Yahoo pattern): appears when the hero scrolls off
   const heroRef = useRef<HTMLDivElement | null>(null)
   const [chipVisible, setChipVisible] = useState(false)
+  // Ticking game clock (only when the league runs one — clockMode SIMPLE)
+  const [clockDisplay, setClockDisplay] = useState<number | null>(null)
 
   useEffect(() => {
     fetch(`/api/games/${gameId}/scoring?probe=1`)
@@ -172,6 +175,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     return () => obs.disconnect()
   }, [loaded])
 
+
   const fold = useMemo(
     () =>
       data
@@ -182,6 +186,26 @@ export function LiveView({ gameId }: { gameId: string }) {
         : null,
     [data]
   )
+  const clockOn = data?.game.clockMode === "SIMPLE" && data.game.status === "LIVE"
+  const foldClockRunning = fold?.clockRunning ?? false
+  const foldClockBase = fold?.clockSecondsAtLastEvent ?? null
+  useEffect(() => {
+    if (!clockOn) {
+      setClockDisplay(null)
+      return
+    }
+    if (!foldClockRunning) {
+      setClockDisplay(foldClockBase)
+      return
+    }
+    const startedAt = Date.now()
+    const t = setInterval(() => {
+      if (foldClockBase != null) {
+        setClockDisplay(Math.max(0, foldClockBase - Math.round((Date.now() - startedAt) / 1000)))
+      }
+    }, 500)
+    return () => clearInterval(t)
+  }, [clockOn, foldClockRunning, foldClockBase])
 
   if (!data || !fold) {
     return (
@@ -366,6 +390,55 @@ export function LiveView({ gameId }: { gameId: string }) {
       )}
     </div>
   )
+
+  const linescoreCard =
+    periods.length > 0 ? (
+      <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white">
+        <table className="w-full text-center text-[15px] font-bold tabular-nums">
+          <thead>
+            <tr className="text-ink-400 border-ink-100 border-b text-[11px] uppercase tracking-wide">
+              <th className="py-2 pl-4 text-left font-extrabold">Team</th>
+              {periods.map((p) => (
+                <th key={p} className="px-2.5 py-2 font-extrabold sm:px-4">
+                  {periodLabel(p).replace("Q", "")}
+                </th>
+              ))}
+              <th className="text-ink-950 px-3 py-2 pr-4 font-extrabold">Tot</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(
+              [
+                [game.homeTeamId, game.homeTeamName, homeScore],
+                [game.awayTeamId, game.awayTeamName, awayScore],
+              ] as Array<[string, string, number]>
+            ).map(([tid, tname, total]) => (
+              <tr key={tid} className="border-ink-50 border-b last:border-0">
+                <td className="py-2.5 pl-4 text-left">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-4 w-4 shrink-0 rounded"
+                      style={{ backgroundColor: colorOf(tid) }}
+                    />
+                    <span className="text-ink-900 whitespace-nowrap font-extrabold">
+                      {shortTeam(tname)}
+                    </span>
+                  </span>
+                </td>
+                {periods.map((p) => (
+                  <td key={p} className="text-ink-600 px-2.5 py-2.5 sm:px-4">
+                    <FlashNum value={periodPoints(tid, p)} />
+                  </td>
+                ))}
+                <td className="text-ink-950 px-3 py-2.5 pr-4 font-extrabold">
+                  <FlashNum value={total} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : null
 
   const leadersCard = (
     <div className="border-ink-100 rounded-2xl border bg-white">
@@ -756,32 +829,7 @@ export function LiveView({ gameId }: { gameId: string }) {
             {game.seasonName ? ` · ${game.seasonName}` : ""}
           </p>
 
-          <div className="mt-2 text-center">
-            {live && (
-              <span className="bg-live-600 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                Live · {periodLabel(fold.period)}
-              </span>
-            )}
-            {final && (
-              <span className="bg-energy text-energy-on rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.18em]">
-                Final
-              </span>
-            )}
-            {!live && !final && (
-              <span className="text-sm font-bold text-white/80">
-                {new Date(game.scheduledAt).toLocaleString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-3 grid grid-cols-[minmax(84px,1fr)_auto_minmax(84px,1fr)] items-start gap-2 sm:gap-6 lg:mx-auto lg:max-w-3xl">
+          <div className="mt-3 grid grid-cols-[minmax(84px,1fr)_auto_minmax(84px,1fr)] items-center gap-2 sm:gap-6 lg:mx-auto lg:max-w-3xl">
             {(
               [
                 [game.homeTeamId, game.homeTeamName, game.homeRecord, homeScore, awayScore],
@@ -812,50 +860,40 @@ export function LiveView({ gameId }: { gameId: string }) {
               </div>
             ))}
 
-            {/* center: the quarter-by-quarter gets the whole column */}
-            <div className="order-2 min-w-0 pt-1">
-              {periods.length > 0 ? (
-                <table className="mx-auto border-collapse text-center text-[15px] font-bold tabular-nums lg:text-base">
-                  <thead>
-                    <tr className="text-[11px] uppercase tracking-wide text-white/45">
-                      <th className="px-1.5 py-1 text-left" />
-                      {periods.map((p) => (
-                        <th key={p} className="px-2 py-1 font-extrabold sm:px-3">
-                          {periodLabel(p)}
-                        </th>
-                      ))}
-                      <th className="text-highlight px-2 py-1 font-extrabold sm:px-3">T</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(
-                      [
-                        [game.homeTeamId, game.homeTeamName, homeScore],
-                        [game.awayTeamId, game.awayTeamName, awayScore],
-                      ] as Array<[string, string, number]>
-                    ).map(([tid, tname, total]) => (
-                      <tr key={tid} className="border-t border-white/15">
-                        <td
-                          className="py-1.5 pr-1.5 text-left text-xs font-extrabold"
-                          style={{ color: `color-mix(in srgb, ${colorOf(tid)} 45%, white)` }}
-                        >
-                          {monogram(tname)}
-                        </td>
-                        {periods.map((p) => (
-                          <td key={p} className="px-2 py-1.5 text-white/85 sm:px-3">
-                            <FlashNum value={periodPoints(tid, p)} />
-                          </td>
-                        ))}
-                        <td className="text-highlight px-2 py-1.5 font-extrabold sm:px-3">
-                          <FlashNum value={total} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p className="px-2 pt-4 text-center text-xs font-semibold text-white/40">
-                  {live ? "First basket coming up" : final ? "" : "Tip-off soon"}
+            {/* center: game state — the quarter table lives in the Game tab
+                (owner 2026-07-15: not everyone needs it, and it crowded the
+                hero). Ticking clock only when the league runs one. */}
+            <div className="order-2 min-w-0 self-center text-center">
+              {live && (
+                <>
+                  <span className="bg-live-600 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                    Live
+                  </span>
+                  <p className="font-condensed mt-1.5 text-2xl font-bold text-white">
+                    {periodLabel(fold.period)}
+                  </p>
+                  {clockOn && clockDisplay != null && (
+                    <p className="text-highlight mt-0.5 text-lg font-extrabold tabular-nums">
+                      {Math.floor(clockDisplay / 60)}:{String(clockDisplay % 60).padStart(2, "0")}
+                    </p>
+                  )}
+                </>
+              )}
+              {final && (
+                <span className="bg-energy text-energy-on rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-[0.18em]">
+                  Final
+                </span>
+              )}
+              {!live && !final && (
+                <p className="text-sm font-bold text-white/80">
+                  {new Date(game.scheduledAt).toLocaleString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </p>
               )}
             </div>
@@ -928,14 +966,13 @@ export function LiveView({ gameId }: { gameId: string }) {
               ))}
             </div>
 
-            {/* Game tab: leaders + team stats (always visible on desktop) */}
-            <div
-              className={`mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2 ${
-                tab === "game" ? "grid" : "hidden"
-              } lg:grid`}
-            >
-              {leadersCard}
-              {teamStatsCard}
+            {/* Game tab: linescore + leaders + team stats (always on desktop) */}
+            <div className={`mt-3 ${tab === "game" ? "block" : "hidden"} lg:block`}>
+              {linescoreCard}
+              <div className="mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+                {leadersCard}
+                {teamStatsCard}
+              </div>
             </div>
 
             <div className="mt-3 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
