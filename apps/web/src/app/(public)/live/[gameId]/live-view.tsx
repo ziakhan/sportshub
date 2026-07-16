@@ -158,7 +158,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     // Fast cadence without a socket; slow safety net while pings arrive.
     // (Flipping `connected` re-runs this effect — one fresh full load per
     // transition, which also covers any events missed while disconnected.)
-    const t = setInterval(poll, connected ? 60_000 : 10_000)
+    const t = setInterval(poll, connected ? 20_000 : 10_000)
     return () => {
       stop = true
       pollRef.current = null

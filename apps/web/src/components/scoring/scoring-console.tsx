@@ -318,6 +318,14 @@ export function ScoringConsole({
         if (res.ok) {
           const sent = new Set(queue.map((e) => e.clientEventId))
           setQueue((q) => q.filter((e) => !sent.has(e.clientEventId)))
+        } else if (res.status === 409) {
+          // Another device took the lock — every append was bouncing
+          // SILENTLY while this screen showed its local reality and the
+          // public page showed the server's (owner-reported desync).
+          // Surface the takeover screen; the queue is kept and flushes
+          // after "Take over" reclaims the session.
+          const body = await res.json().catch(() => ({}))
+          setLockedOutBy(body.holder || "another device")
         }
       }
       if (voidQueue.length > 0) {
@@ -352,7 +360,14 @@ export function ScoringConsole({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessionId: sessionIdRef.current }),
-      }).catch(() => {})
+      })
+        .then(async (res) => {
+          if (res.status === 409) {
+            const body = await res.json().catch(() => ({}))
+            setLockedOutBy(body.holder || "another device")
+          }
+        })
+        .catch(() => {})
     }, 60_000)
     return () => clearInterval(t)
   }, [gameId, lockedOutBy])
@@ -1517,15 +1532,20 @@ export function ScoringConsole({
             ))}
           </div>
           <span
-            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] ${
+            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold ${
               queue.length + voidQueue.length === 0
                 ? "bg-court-50 text-court-700"
-                : "bg-amber-50 text-amber-700"
+                : "animate-pulse bg-red-600 text-white"
             }`}
+            title={
+              queue.length + voidQueue.length === 0
+                ? "All events saved"
+                : "Events not reaching the server yet — check connection or lock"
+            }
           >
             {queue.length + voidQueue.length === 0
               ? "synced"
-              : `${queue.length + voidQueue.length} pending`}
+              : `${queue.length + voidQueue.length} not saved`}
           </span>
           <button
             onClick={() => setShowBox(true)}

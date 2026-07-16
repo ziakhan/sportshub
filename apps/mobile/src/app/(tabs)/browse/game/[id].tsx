@@ -103,7 +103,7 @@ export default function GameScreen() {
   })
   useEffect(() => {
     if (!isLive) return
-    const timer = setInterval(load, connected ? 60_000 : 12_000)
+    const timer = setInterval(load, connected ? 20_000 : 12_000)
     return () => clearInterval(timer)
   }, [isLive, connected, load])
 
