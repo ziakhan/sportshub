@@ -124,3 +124,16 @@ Add a line the moment an idea comes up. When picking the next build, pull
 from "Near-term / high value" first. Move an item to the ledger when it
 ships. Keep specs light here; expand into a dedicated doc only when a
 feature is greenlit for build.
+
+## Shot chart (owner 2026-07-15, from Yahoo game-page review)
+- Scoring console: optional shot-LOCATION capture — tap-on-court when logging a
+  shot. Per-scorekeeper/game toggle (enable/disable freely); when off, console
+  behaves exactly as today. Owner wants it demonstrable but never mandatory.
+- Public game page Plays tab: court shot-chart visual (made/missed markers per
+  quarter, Yahoo-style) — renders only when location data exists.
+
+## Team preferred short name (owner 2026-07-15)
+- Youth team names are long and collide within a club ("Toronto Lords" for
+  every grade). Add owner-editable short name (e.g. "Lords G10", "Force U11")
+  used on score surfaces, chips and native cards. Until then the game page
+  derives "initials · G##/U##" from the full name (shortTeam() in live-view).

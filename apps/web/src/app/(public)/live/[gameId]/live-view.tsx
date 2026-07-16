@@ -63,7 +63,7 @@ interface LivePayload {
   seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }>
 }
 
-type Tab = "box" | "plays"
+type Tab = "game" | "box" | "plays"
 
 const HOME_FALLBACK = "#4f46e5" // play-600
 const AWAY_FALLBACK = "#16a34a" // court-600
@@ -78,9 +78,13 @@ export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
   const [error, setError] = useState(false)
   const [canScore, setCanScore] = useState(false)
-  const [tab, setTab] = useState<Tab>("box")
+  const [tab, setTab] = useState<Tab>("game")
   const [boxSide, setBoxSide] = useState<"home" | "away">("home")
   const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
+
+  // Sticky mini score chip (Yahoo pattern): appears when the hero scrolls off
+  const heroRef = useRef<HTMLDivElement | null>(null)
+  const [chipVisible, setChipVisible] = useState(false)
 
   useEffect(() => {
     fetch(`/api/games/${gameId}/scoring?probe=1`)
@@ -159,6 +163,15 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
   }, [gameId, connected])
 
+  const loaded = !!data
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => setChipVisible(!entry.isIntersecting))
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [loaded])
+
   const fold = useMemo(
     () =>
       data
@@ -196,6 +209,16 @@ export function LiveView({ gameId }: { gameId: string }) {
     const last = parts[parts.length - 1]
     if (/^[A-Z]\.?$/.test(last)) return name
     return `${parts[0][0]}. ${last}`
+  }
+
+  // Youth team names run long ("Burlington Force Grade 10") — the score
+  // surfaces show initials + a grade/age qualifier ("BF · G10") until teams
+  // get an owner-set short name (backlog).
+  const shortTeam = (name: string) => {
+    const m = name.match(/\b(?:grade\s*(\d{1,2})|gr\s*(\d{1,2})|u(\d{1,2})|(\d{1,2})u)\b/i)
+    const qual = m ? (m[1] || m[2] ? `G${m[1] ?? m[2]}` : `U${m[3] ?? m[4]}`) : null
+    const base = m ? name.replace(m[0], "").trim() : name
+    return qual ? `${monogram(base)} · ${qual}` : monogram(base)
   }
 
   const live = game.status === "LIVE"
@@ -240,11 +263,207 @@ export function LiveView({ gameId }: { gameId: string }) {
     return lines.reduce((best, l) => (stat(l) > stat(best) ? l : best))
   }
 
-  const LEADER_STATS: Array<{ label: string; get: (l: PlayerLine) => number }> = [
-    { label: "Points", get: (l) => l.points },
-    { label: "Rebounds", get: (l) => totalRebounds(l) },
-    { label: "Assists", get: (l) => l.assists },
+  // ---------- Game tab (Yahoo pattern): leaders + team stat comparison ----------
+  const teamAgg = (teamId: string) => {
+    const lines = teamLines(teamId)
+    const sum = (get: (l: PlayerLine) => number) => lines.reduce((t, l) => t + get(l), 0)
+    return {
+      fgm: sum((l) => l.fgMade2 + l.fgMade3),
+      fga: sum((l) => l.fgMade2 + l.fgMiss2 + l.fgMade3 + l.fgMiss3),
+      tpm: sum((l) => l.fgMade3),
+      tpa: sum((l) => l.fgMade3 + l.fgMiss3),
+      ftm: sum((l) => l.ftMade),
+      fta: sum((l) => l.ftMade + l.ftMiss),
+      reb: sum(totalRebounds),
+      ast: sum((l) => l.assists),
+      stl: sum((l) => l.steals),
+      blk: sum((l) => l.blocks),
+      to: sum((l) => l.turnovers),
+      pf: sum((l) => l.fouls),
+    }
+  }
+
+  const defLeader = (teamId: string): { l: PlayerLine; value: number; unit: string } | null => {
+    const st = leaderOf(teamId, (l) => l.steals)
+    const bl = leaderOf(teamId, (l) => l.blocks)
+    const sv = st?.steals ?? 0
+    const bv = bl?.blocks ?? 0
+    if (sv === 0 && bv === 0) return null
+    return bv > sv ? { l: bl!, value: bv, unit: "BLK" } : { l: st!, value: sv, unit: "STL" }
+  }
+
+  const LEADER_SECTIONS: Array<{
+    label: string
+    unit: string
+    pick: (teamId: string) => { l: PlayerLine; value: number; unit: string } | null
+    sub: (l: PlayerLine) => string
+  }> = [
+    {
+      label: "Points",
+      unit: "PTS",
+      pick: (tid) => {
+        const l = leaderOf(tid, (x) => x.points)
+        return l ? { l, value: l.points, unit: "PTS" } : null
+      },
+      sub: (l) => `${totalRebounds(l)} REB · ${l.assists} AST`,
+    },
+    {
+      label: "Rebounds",
+      unit: "REB",
+      pick: (tid) => {
+        const l = leaderOf(tid, totalRebounds)
+        return l ? { l, value: totalRebounds(l), unit: "REB" } : null
+      },
+      sub: (l) => `${l.defRebounds} DReb · ${l.offRebounds} OReb`,
+    },
+    {
+      label: "Assists",
+      unit: "AST",
+      pick: (tid) => {
+        const l = leaderOf(tid, (x) => x.assists)
+        return l ? { l, value: l.assists, unit: "AST" } : null
+      },
+      sub: (l) => `${l.points} PTS · ${l.turnovers} TO`,
+    },
+    {
+      label: "Defense",
+      unit: "",
+      pick: defLeader,
+      sub: (l) => `${l.steals} STL · ${l.blocks} BLK`,
+    },
   ]
+
+  const leaderCell = (
+    entry: { l: PlayerLine; value: number; unit: string } | null,
+    teamId: string,
+    sub: (l: PlayerLine) => string,
+    right: boolean
+  ) => (
+    <div
+      className={`flex min-w-0 flex-1 items-center gap-2.5 ${right ? "flex-row-reverse text-right" : ""}`}
+    >
+      {entry ? (
+        <>
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[12px] font-extrabold text-white"
+            style={{ backgroundColor: colorOf(teamId) }}
+          >
+            #{jerseyOf(entry.l.playerId)}
+          </span>
+          <div className="min-w-0">
+            <p className="text-ink-900 truncate text-[13px] font-bold leading-tight">
+              {shortName(entry.l.playerId)}
+            </p>
+            <p className="text-ink-950 text-lg font-extrabold leading-tight tabular-nums">
+              <FlashNum value={entry.value} />{" "}
+              <span className="text-ink-400 text-[10px] font-extrabold">{entry.unit}</span>
+            </p>
+            <p className="text-ink-500 truncate text-[11px]">{sub(entry.l)}</p>
+          </div>
+        </>
+      ) : (
+        <span className="text-ink-300 text-xs">—</span>
+      )}
+    </div>
+  )
+
+  const leadersCard = (
+    <div className="border-ink-100 rounded-2xl border bg-white">
+      <h3 className="text-ink-500 border-ink-100 border-b px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-[0.14em]">
+        Game leaders
+      </h3>
+      <div className="divide-ink-50 divide-y">
+        {LEADER_SECTIONS.map((sec) => {
+          const h = sec.pick(game.homeTeamId)
+          const a = sec.pick(game.awayTeamId)
+          if (!h && !a) return null
+          return (
+            <div key={sec.label} className="px-4 py-3">
+              <p className="text-ink-400 mb-1.5 text-center text-[10px] font-extrabold uppercase tracking-widest">
+                {sec.label}
+              </p>
+              <div className="flex items-center gap-3">
+                {leaderCell(h, game.homeTeamId, sec.sub, false)}
+                {leaderCell(a, game.awayTeamId, sec.sub, true)}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  const compareRow = (
+    label: string,
+    h: number,
+    a: number,
+    displayH?: string,
+    displayA?: string
+  ) => {
+    const total = h + a
+    const hShare = total === 0 ? 50 : (h / total) * 100
+    const hWins = h > a
+    const aWins = a > h
+    const num = (wins: boolean, value: number, display?: string) => (
+      <span
+        className={`text-[15px] tabular-nums ${wins ? "text-ink-950 font-extrabold" : "text-ink-500 font-semibold"}`}
+      >
+        {display ?? <FlashNum value={value} />}
+      </span>
+    )
+    return (
+      <div key={label} className="px-4 py-2.5">
+        <div className="flex items-baseline justify-between gap-3">
+          {num(hWins, h, displayH)}
+          <span className="text-ink-500 text-[11px] font-extrabold uppercase tracking-wide">
+            {label}
+          </span>
+          {num(aWins, a, displayA)}
+        </div>
+        <div className="mt-1.5 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
+          <span
+            style={{ width: `${hShare}%`, backgroundColor: homeColor, opacity: hWins ? 1 : 0.3 }}
+          />
+          <span className="flex-1" style={{ backgroundColor: awayColor, opacity: aWins ? 1 : 0.3 }} />
+        </div>
+      </div>
+    )
+  }
+
+  const shooting = (m: number, at: number) =>
+    at === 0 ? "0-0" : `${m}-${at} · ${Math.round((m / at) * 100)}%`
+
+  const teamStatsCard = (() => {
+    const H = teamAgg(game.homeTeamId)
+    const A = teamAgg(game.awayTeamId)
+    const pct = (m: number, at: number) => (at === 0 ? 0 : m / at)
+    return (
+      <div className="border-ink-100 rounded-2xl border bg-white">
+        <div className="border-ink-100 flex items-center justify-between border-b px-4 py-2.5">
+          <span className="text-[12px] font-extrabold" style={{ color: homeColor }}>
+            {shortTeam(game.homeTeamName)}
+          </span>
+          <h3 className="text-ink-500 text-[11px] font-extrabold uppercase tracking-[0.14em]">
+            Team stats
+          </h3>
+          <span className="text-[12px] font-extrabold" style={{ color: awayColor }}>
+            {shortTeam(game.awayTeamName)}
+          </span>
+        </div>
+        <div className="divide-ink-50 divide-y">
+          {compareRow("Field goals", pct(H.fgm, H.fga), pct(A.fgm, A.fga), shooting(H.fgm, H.fga), shooting(A.fgm, A.fga))}
+          {compareRow("3-pointers", pct(H.tpm, H.tpa), pct(A.tpm, A.tpa), shooting(H.tpm, H.tpa), shooting(A.tpm, A.tpa))}
+          {compareRow("Free throws", pct(H.ftm, H.fta), pct(A.ftm, A.fta), shooting(H.ftm, H.fta), shooting(A.ftm, A.fta))}
+          {compareRow("Rebounds", H.reb, A.reb)}
+          {compareRow("Assists", H.ast, A.ast)}
+          {compareRow("Steals", H.stl, A.stl)}
+          {compareRow("Blocks", H.blk, A.blk)}
+          {compareRow("Turnovers", H.to, A.to)}
+          {compareRow("Fouls", H.pf, A.pf)}
+        </div>
+      </div>
+    )
+  })()
 
   const hasAnyStats = Object.keys(fold.players).length > 0
   const boxTeamId = boxSide === "home" ? game.homeTeamId : game.awayTeamId
@@ -487,46 +706,31 @@ export function LiveView({ gameId }: { gameId: string }) {
     )
   }
 
-  // Compact one-liner per stat: dot #4 C. Lewis 10 · PTS · 14 O. Wright #3
-  const leaderDuel = (label: string, get: (l: PlayerLine) => number) => {
-    const h = leaderOf(game.homeTeamId, get)
-    const a = leaderOf(game.awayTeamId, get)
-    if (!h && !a) return null
-    const cell = (l: PlayerLine | null, teamId: string, right: boolean) => (
-      <div
-        className={`flex min-w-0 flex-1 items-center gap-1.5 ${right ? "flex-row-reverse text-right" : ""}`}
-      >
-        {l ? (
-          <>
-            <span
-              className="h-2 w-2 shrink-0 rounded-sm"
-              style={{ backgroundColor: colorOf(teamId) }}
-            />
-            <span className="text-ink-800 min-w-0 truncate text-[13.5px] font-bold">
-              {shortName(l.playerId)}
-            </span>
-            <span className="text-ink-950 shrink-0 text-lg font-extrabold tabular-nums">
-              <FlashNum value={get(l)} />
-            </span>
-          </>
-        ) : (
-          <span className="text-ink-300 text-xs">—</span>
-        )}
-      </div>
-    )
-    return (
-      <div key={label} className="flex items-center gap-2 px-4 py-2">
-        {cell(h, game.homeTeamId, false)}
-        <span className="text-ink-500 w-10 shrink-0 text-center text-[10px] font-extrabold uppercase tracking-widest">
-          {label.slice(0, 3)}
-        </span>
-        {cell(a, game.awayTeamId, true)}
-      </div>
-    )
-  }
-
   return (
     <div className="pb-10">
+      {/* Sticky mini score chip (Yahoo pattern) — appears once the hero
+          scrolls away; tapping it returns to the top. */}
+      {chipVisible && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to the scoreboard"
+          className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 px-4 py-2 text-white shadow-lg"
+          style={{ background: "linear-gradient(120deg, var(--stage), var(--stage-2))" }}
+        >
+          {crest(game.homeTeamId, "h-6 w-6 text-[10px]", monogram(game.homeTeamName))}
+          <span className="text-lg font-extrabold tabular-nums">
+            <FlashNum value={homeScore} />
+          </span>
+          <span className="min-w-14 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/60">
+            {live ? `Live · ${periodLabel(fold.period)}` : final ? "Final" : "vs"}
+          </span>
+          <span className="text-lg font-extrabold tabular-nums">
+            <FlashNum value={awayScore} />
+          </span>
+          {crest(game.awayTeamId, "h-6 w-6 text-[10px]", monogram(game.awayTeamName))}
+        </button>
+      )}
+
       {/* ---------- score hero: broadcast-dark stage (Energy Pass) ----------
           Owner spec 2026-07-15: each team stacks vertically (crest → name →
           record → score) so BOTH teams always fit at 390px (the old side-by-
@@ -534,6 +738,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           gives the quarter-by-quarter table real size. Winner reads in the
           highlight color; team colors stay content, never theme. */}
       <div
+        ref={heroRef}
         className="from-stage to-stage-2 bg-gradient-to-br text-white"
         style={{
           backgroundImage: `radial-gradient(90% 140% at 0% 0%, ${homeColor}38 0%, transparent 50%), radial-gradient(90% 140% at 100% 0%, ${awayColor}38 0%, transparent 50%), linear-gradient(135deg, var(--stage), var(--stage-2))`,
@@ -592,8 +797,9 @@ export function LiveView({ gameId }: { gameId: string }) {
                 <Link
                   href={`/team/${tid}`}
                   className="mt-1.5 block text-[13px] font-extrabold leading-tight text-white hover:underline lg:text-base"
+                  title={tname}
                 >
-                  {tname}
+                  {shortTeam(tname)}
                 </Link>
                 {rec && <p className="text-[11px] font-semibold text-white/50">{rec.record}</p>}
                 <p
@@ -699,22 +905,15 @@ export function LiveView({ gameId }: { gameId: string }) {
           </>
         )}
 
-        {/* ---------- leaders: one slim strip, three duels ---------- */}
-        {hasAnyStats && (
-          <div className="border-ink-100 divide-ink-50 mt-3 divide-y rounded-2xl border bg-white sm:grid sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {LEADER_STATS.map(({ label, get }) => leaderDuel(label, get))}
-          </div>
-        )}
-
-        {/* ---------- box scores + play-by-play ---------- */}
+        {/* ---------- Game | Stats | Plays (Yahoo pattern, phones) ---------- */}
         {hasAnyStats && (
           <>
-            {/* phone tabs: filled active state, impossible to miss */}
             <div className="bg-ink-100 mt-3 flex rounded-xl p-1 lg:hidden">
               {(
                 [
-                  ["box", "Box score"],
-                  ["plays", "Play-by-play"],
+                  ["game", "Game"],
+                  ["box", "Stats"],
+                  ["plays", "Plays"],
                 ] as Array<[Tab, string]>
               ).map(([key, label]) => (
                 <button
@@ -727,6 +926,16 @@ export function LiveView({ gameId }: { gameId: string }) {
                   {label}
                 </button>
               ))}
+            </div>
+
+            {/* Game tab: leaders + team stats (always visible on desktop) */}
+            <div
+              className={`mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2 ${
+                tab === "game" ? "grid" : "hidden"
+              } lg:grid`}
+            >
+              {leadersCard}
+              {teamStatsCard}
             </div>
 
             <div className="mt-3 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
