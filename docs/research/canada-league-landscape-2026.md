@@ -636,3 +636,19 @@ Yellowknife 9 · Whitehorse 3 · Hay River 2 · Cambridge Bay 1 · Iqaluit 1 · 
 - **CONFIRMED** — Yellowknife Eagles Basketball exists and its teams play in out-of-territory tournaments (e.g., Volvo of Edmonton Challenge) (BallerTV streamed 'Yellowknife Eagles 17U Girls vs. Supreme Hoops U17 Girls' at the Swoosh Volvo of Edmonton Challenge (2022) — https://www.ballertv.com/streams/yellowknife-eagles-17u-girls-vs-supreme-hoops-u17-girls-20220521021243-kxtqzmbq. NNSL (May 2023): Eagles U19 won the U17 girls silver division at the Swoosh Volvo of Edmonton Challenge, with U13/U15 Eagles also travelling (U15 beat Win Basketball of Calgary 40-38 OT) — https://www.nnsl.com/sports/a-winning-weekend-on-the-basketball-court-for-yellowknife-eagles-and-winmar-spartans-7273864. Tournament itself: https://www.swooshcanadatournaments.com/volvo-of-edmonton-challenge.)
 - **PLAUSIBLE** — Yellowknife Ravens Basketball Club exists and its teams play in out-of-territory tournaments (Existence confirmed (https://www.ykravensbasketball.com/ + legacy BNWT listing http://bnwt.ca/page.php?page_id=124835). But no source found showing teams under the RAVENS name at an out-of-territory tournament. Strong indirect support: the Yellowknife boys HP program — which the Ravens site says 'has evolved with different names' since the early 90s — competed as the Winmar Spartans at the Swoosh Volvo of Edmonton Challenge in May 2023, winning the U17 boys bronze division (https://www.nnsl.com/sports/a-winning-weekend-on-the-basketball-court-for-yellowknife-eagles-and-winmar-spartans-7273864), and the Ravens site celebrates Team NT results. Nothing contradicts the claim; keep as plausible until a Ravens-branded tournament entry is found.)
 
+
+## Addendum 2026-07-18 — follow-up pass COMPLETE
+The 2026-07-14 paused follow-up finished (checkpoints reused; 30 remaining
+enrich batches on Haiku + 2 Opus 4.8 adversarial verifiers; zero top-model
+agents). Final state:
+- **Contact enrichment**: 48/48 batches — 342 unique clubs enriched; 358
+  CSV rows matched, 351 empty Address/Phone/Email/Website/Principal fields
+  filled (`canada-basketball-clubs.csv`, rows tagged "enriched 2026-07-18").
+- **Verification (Opus 4.8)**: 16 spot-checks → 11 confirmed · 4 plausible ·
+  1 refuted (Seymour Basketball email — domain belongs to an unrelated
+  Seymour org; removed from the CSV).
+- **Atlantic verify (NB/NL/PEI)** and **all 14 Basketball Québec regional
+  PDFs**: completed in the original run's checkpoints (BNB provincial
+  structure on RAMP confirmed; QC regional club registries mined).
+- Source data archived repo-side under docs/research/raw/ (QC PDFs, run
+  journal, manifests) — no longer at reboot risk in /tmp.
