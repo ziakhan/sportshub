@@ -147,10 +147,12 @@ feature is greenlit for build.
   derives "initials · G##/U##" from the full name (shortTeam() in live-view).
 
 ## Auth cross-platform completion (owner 2026-07-16 — REMIND HIM)
-- **Web Sign in with Apple**: needs owner-created Services ID (com.ysportshub.web,
-  domain ysportshub.com) + a Sign in with Apple key from the developer portal →
-  NextAuth Apple provider → buttons on web sign-in + sign-up. Owner explicitly
-  asked to be reminded.
+- **Web Sign in with Apple**: BUILT `691bf89` (NextAuth Apple provider, ES256
+  client-secret JWT from portal key 74SRFS3C24, buttons both auth pages,
+  SameSite=None cookie fix for Apple's form_post callback). ⚠️ Services ID is
+  **`om.ysportshub.web`** — owner typo'd the identifier (immutable at Apple,
+  live and working; users never see it). Awaiting box deploy + 4 APPLE_* env
+  vars in box web.env.
 - ~~**Native Google sign-in (Android + iOS)**~~ ✅ SHIPPED 2026-07-16
   (`c131643` + pod fix `613d679`): owner created both OAuth clients;
   /api/auth/token/google live on box (JWKS verify, verified-email required,
