@@ -92,7 +92,8 @@ sales ([[business-model-scenarios]] V2).
 - **Quizzes** 💡 — same engine as polls + a correct answer + scoring/
   leaderboard (rules quizzes, film sessions). (engagement-features-plan.md)
 - **Club-wide / league-wide polls + public poll results** 💡 — polls beyond
-  a single team; read-only results on public pages.
+  a single team; read-only results on public pages. (Team-poll UI itself
+  redesigned 2026-07-16 — Energy Pass bubble, native in-place voting.)
 - ~~**Web push**~~ — substantially retired by the native track: M3 ships
   phone push via the notify() seam (quiet hours, sidecar worker); browser
   web-push remains unbuilt but is now a niche add-on, not a gap.

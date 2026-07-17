@@ -178,6 +178,7 @@
   },
   "active": "9ca28c83a7c0cb4c",
   "lastOpenFiles": [
+    "native-parity-audit.md",
     "roadmap/content-feed-strategy.md",
     "native-app-audit-2026-07-14.md",
     "research/sheets/canada-basketball-research-2026-07.xlsx",
@@ -208,7 +209,6 @@
     "roadmap/player-profile-privacy.md",
     "roadmap/customizable-pages.md",
     "roadmap/handles-identity.md",
-    "_moc-identity.md",
     "roadmap"
   ]
 }

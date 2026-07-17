@@ -25,10 +25,10 @@ code; "iOS looks different" is almost always a stale binary/OTA, not a fork.
 
 ## Known gaps (each needs an owner priority call)
 1. ~~**Native Google sign-in**~~ ✅ shipped 2026-07-16 (backlog §Auth cross-platform has detail).
-2. **Offer installments** — native is full-pay only ("installments stay on
-   the website for now" v1 note). Web offers FULL vs INSTALLMENTS.
-3. **Practice/team-event creation** — coaches can create typed events on web
-   only; native team screen is read/RSVP/chat.
+2. ~~**Offer installments**~~ ✅ built 2026-07-16 (plan picker w/ deposit +
+   schedule; awaiting deploy).
+3. ~~**Practice/team-event creation**~~ ✅ built 2026-07-16 (/team/new-event,
+   chip-based scheduling, staff-gated; awaiting deploy).
 4. **Scoring console** — web-only by design (works in the phone browser;
    guest links open web). Decide: keep as deliberate difference or build native.
 5. **League/club operator deep management** — deliberate: native operator tab
