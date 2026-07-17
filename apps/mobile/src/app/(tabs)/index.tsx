@@ -7,7 +7,7 @@ import { Card, ListRow, SectionHeader, TonePill, Monogram } from "@/components/u
 import { useBrowseHome } from "@/lib/browse"
 import { useHome, coachTeamPath } from "@/lib/home"
 import { useSession } from "@/lib/session"
-import { palette, ui } from "@/lib/theme"
+import { palette, tones, ui } from "@/lib/theme"
 
 /**
  * Home — the web homepage's shape (site-ia-plan §5.6.3): personal band on
@@ -16,11 +16,28 @@ import { palette, ui } from "@/lib/theme"
  * programs, news). Anonymous users land here too — no login wall.
  */
 
-function fmtWhen(iso: string): string {
+function dayLabel(iso: string): string {
   const d = new Date(iso)
-  const day = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
-  return `${day} · ${time}`
+  const today = new Date()
+  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+  if (d.toDateString() === today.toDateString()) return "Today"
+  if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow"
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso)
+    .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+    .toLowerCase()
+    .replace(" ", "")
 }
 
 export default function HomeScreen() {
@@ -65,63 +82,80 @@ export default function HomeScreen() {
 
         {/* Personal band — signed-in participants only */}
         {signedIn && due && dueCount > 0 ? (
-          <Card>
-            <Text style={styles.cardTitle}>Needs your attention</Text>
-            {due.openOffers.map((o) => (
-              <ListRow
-                key={o.id}
-                icon="document-text-outline"
-                text={`Offer for ${o.playerName} — ${o.teamName}`}
-                onPress={() => router.push(`/offers/${o.id}`)}
-              />
-            ))}
-            {due.paymentsDue > 0 ? (
-              <ListRow
-                icon="card-outline"
-                text={`${due.paymentsDue} payment${due.paymentsDue > 1 ? "s" : ""} due`}
-                onPress={() => router.push("/account/payments")}
-              />
-            ) : null}
-            {due.rsvpsNeeded > 0 ? (
-              <ListRow
-                icon="calendar-outline"
-                text={`${due.rsvpsNeeded} RSVP${due.rsvpsNeeded > 1 ? "s" : ""} needed`}
-                onPress={() => router.push("/calendar")}
-              />
-            ) : null}
-            {due.unreadChats > 0 ? (
-              <ListRow
-                icon="chatbubbles-outline"
-                text={`${due.unreadChats} unread chat${due.unreadChats > 1 ? "s" : ""}`}
-                onPress={() => router.push("/chat")}
-              />
-            ) : null}
-          </Card>
+          <View>
+            <Text style={styles.bandEyebrow}>Needs your attention</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionStrip}>
+              {due.openOffers.slice(0, 2).map((o) => (
+                <Pressable key={o.id} style={[styles.actionCard, { backgroundColor: tones.danger.bg, borderColor: tones.danger.border }]} onPress={() => router.push(`/offers/${o.id}`)}>
+                  <Text style={[styles.actionTitle, { color: tones.danger.fg }]}>Offer for {o.playerName}</Text>
+                  <Text style={[styles.actionDetail, { color: tones.danger.fg }]}>{o.teamName} — accept or decline</Text>
+                </Pressable>
+              ))}
+              {due.paymentsDue > 0 ? (
+                <Pressable style={[styles.actionCard, { backgroundColor: tones.gold.bg, borderColor: tones.gold.border }]} onPress={() => router.push("/account/payments")}>
+                  <Text style={[styles.actionTitle, { color: tones.gold.fg }]}>{due.paymentsDue} payment{due.paymentsDue > 1 ? "s" : ""} due</Text>
+                  <Text style={[styles.actionDetail, { color: tones.gold.fg }]}>View and pay</Text>
+                </Pressable>
+              ) : null}
+              {due.rsvpsNeeded > 0 ? (
+                <Pressable style={[styles.actionCard, { backgroundColor: tones.info.bg, borderColor: tones.info.border }]} onPress={() => router.push("/calendar")}>
+                  <Text style={[styles.actionTitle, { color: tones.info.fg }]}>{due.rsvpsNeeded} event{due.rsvpsNeeded > 1 ? "s" : ""} awaiting RSVP</Text>
+                  <Text style={[styles.actionDetail, { color: tones.info.fg }]}>Going or can&apos;t go?</Text>
+                </Pressable>
+              ) : null}
+              {due.unreadChats > 0 ? (
+                <Pressable style={[styles.actionCard, { backgroundColor: tones.positive.bg, borderColor: tones.positive.border }]} onPress={() => router.push("/chat")}>
+                  <Text style={[styles.actionTitle, { color: tones.positive.fg }]}>{due.unreadChats} unread message{due.unreadChats > 1 ? "s" : ""}</Text>
+                  <Text style={[styles.actionDetail, { color: tones.positive.fg }]}>Open chat</Text>
+                </Pressable>
+              ) : null}
+            </ScrollView>
+          </View>
         ) : null}
 
         {signedIn && c && c.weekEvents.length > 0 ? (
-          <Card>
-            <Text style={styles.cardTitle}>This week</Text>
-            {c.weekEvents.slice(0, 5).map((e) => (
-              <View key={e.item.id} style={styles.eventRow}>
-                <Text style={styles.eventWhen}>{fmtWhen(e.item.at)}</Text>
-                <Text style={styles.eventTitle}>{e.item.title}</Text>
-                <View style={styles.chipRow}>
-                  {e.chips.map((chip) => (
-                    <TonePill key={chip} tone="neutral" label={chip} />
-                  ))}
-                  {e.awaitingRsvp.length > 0 ? (
-                    <TonePill tone="warning" label={`RSVP: ${e.awaitingRsvp.join(", ")}`} />
-                  ) : null}
-                </View>
-              </View>
-            ))}
-            <ListRow
-              icon="calendar-outline"
-              text="Full calendar"
-              onPress={() => router.push("/calendar")}
-            />
-          </Card>
+          <View>
+            <View style={styles.bandHeaderRow}>
+              <Text style={styles.bandEyebrow}>Your week</Text>
+              <Text style={styles.bandLink} onPress={() => router.push("/calendar")}>
+                Full calendar →
+              </Text>
+            </View>
+            <Card style={{ padding: 0, gap: 0, overflow: "hidden" }}>
+              {(() => {
+                const groups: { label: string; events: typeof c.weekEvents }[] = []
+                for (const e of c.weekEvents.slice(0, 8)) {
+                  const label = dayLabel(e.item.at)
+                  const last = groups[groups.length - 1]
+                  if (last && last.label === label) last.events.push(e)
+                  else groups.push({ label, events: [e] })
+                }
+                return groups.slice(0, 4).map((g) => (
+                  <View key={g.label}>
+                    <Text style={styles.dayHeader}>{g.label}</Text>
+                    {g.events.slice(0, 4).map((e) => (
+                      <Pressable
+                        key={`${e.item.kind}:${e.item.id}`}
+                        style={({ pressed }) => [styles.weekRow, pressed && { backgroundColor: ui.surfaceSunken }]}
+                        onPress={() => router.push("/calendar")}
+                      >
+                        <Text style={styles.weekTime}>{fmtTime(e.item.at)}</Text>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={styles.weekTitle} numberOfLines={1}>{e.item.title}</Text>
+                          <Text style={styles.weekSub} numberOfLines={1}>
+                            {[...e.chips, e.item.location].filter(Boolean).join(" · ")}
+                          </Text>
+                        </View>
+                        {e.awaitingRsvp.length > 0 ? (
+                          <TonePill tone="info" label={`RSVP: ${e.awaitingRsvp.join(", ")}`} />
+                        ) : null}
+                      </Pressable>
+                    ))}
+                  </View>
+                ))
+              })()}
+            </Card>
+          </View>
         ) : null}
 
         {signedIn && c && c.coachTeams.length > 0 ? (
@@ -169,7 +203,7 @@ export default function HomeScreen() {
                 <Text style={styles.programName}>{p.name}</Text>
                 <Text style={styles.mutedSmall}>
                   {p.clubName ? `${p.clubName} · ` : ""}
-                  {fmtWhen(p.startDate)}
+                  {fmtDate(p.startDate)}
                 </Text>
               </Card>
             ))}
@@ -281,10 +315,58 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
   section: { gap: 8 },
   sectionCard: { marginTop: 2 },
-  eventRow: { paddingVertical: 8, gap: 2 },
-  eventWhen: { fontSize: 12, fontWeight: "700", color: palette.play[700] },
-  eventTitle: { fontSize: 14, color: ui.text, fontWeight: "500" },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+  bandEyebrow: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: ui.textFaint,
+    textTransform: "uppercase",
+    letterSpacing: 1.6,
+    marginBottom: 8,
+  },
+  bandHeaderRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginBottom: 0,
+  },
+  bandLink: { fontSize: 12, fontWeight: "700", color: ui.primaryInk, marginBottom: 8 },
+  actionStrip: { gap: 10, paddingRight: 4 },
+  actionCard: {
+    minWidth: 200,
+    borderWidth: 1,
+    borderRadius: ui.radius.lg,
+    padding: 13,
+  },
+  actionTitle: { fontSize: 14, fontWeight: "700" },
+  actionDetail: { fontSize: 12, marginTop: 2, opacity: 0.8 },
+  dayHeader: {
+    backgroundColor: ui.surfaceSunken,
+    color: ui.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+  },
+  weekRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ui.border,
+  },
+  weekTime: {
+    width: 56,
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: ui.text,
+    fontVariant: ["tabular-nums"],
+  },
+  weekTitle: { fontSize: 14, fontWeight: "600", color: ui.text },
+  weekSub: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
   liveBanner: {
     flexDirection: "row",
     alignItems: "center",
