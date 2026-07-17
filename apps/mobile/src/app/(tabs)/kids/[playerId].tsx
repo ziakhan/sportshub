@@ -3,15 +3,26 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { EventCard } from "@/components/event-card"
-import { Avatar, Card, EmptyState, ListRow, Loading, SectionHeader, Monogram } from "@/components/ui"
+import {
+  Avatar,
+  Card,
+  EmptyState,
+  ListRow,
+  Loading,
+  Monogram,
+  SectionHeader,
+  TonePill,
+} from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useMyCalendar } from "@/lib/calendar"
 import { ui } from "@/lib/theme"
+import type { KidRow } from "./index"
 
 /**
- * Kid detail — profile + teams + THEIR upcoming schedule with inline RSVP
- * (the family lens for this player from /api/calendar/mine), plus quick
- * links to offers. Fully native (audit v2 §2).
+ * Kid detail — web /players card anatomy (element sweep 2026-07-17): hero
+ * with chips (age/position/jersey), team rows with monogram + jersey +
+ * club·age-group line linking to team home, then THEIR upcoming schedule
+ * with inline RSVP (family lens from /api/calendar/mine).
  */
 
 interface KidProfile {
@@ -30,12 +41,19 @@ export default function KidDetailScreen() {
   const { playerId } = useLocalSearchParams<{ playerId: string }>()
   const { calendar, refresh } = useMyCalendar()
   const [kid, setKid] = useState<KidProfile | null>(null)
+  // Full team detail (jersey/age group/club) — same payload the index uses
+  const [teamRows, setTeamRows] = useState<KidRow["teams"] | null>(null)
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
     try {
-      setKid(await apiJson<KidProfile>(`/api/players/${playerId}`))
+      const [profile, list] = await Promise.all([
+        apiJson<KidProfile>(`/api/players/${playerId}`),
+        apiJson<{ players: KidRow[] }>(`/api/players`).catch(() => null),
+      ])
+      setKid(profile)
+      setTeamRows(list?.players.find((p) => p.id === playerId)?.teams ?? null)
     } catch {
       setError(true)
     }
@@ -68,7 +86,8 @@ export default function KidDetailScreen() {
       .slice(0, 12)
   }, [calendar, playerId])
 
-  const teams = useMemo(() => {
+  // Calendar fallback when /api/players didn't answer (older payloads)
+  const fallbackTeams = useMemo(() => {
     if (!calendar) return []
     const teamIds = new Set(
       calendar.lenses.filter((l) => l.playerId === playerId && l.teamId).map((l) => l.teamId)
@@ -96,6 +115,12 @@ export default function KidDetailScreen() {
   const age = kid.dateOfBirth
     ? Math.floor((Date.now() - new Date(kid.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null
+  const chips = [
+    age != null ? `Age ${age}` : null,
+    kid.position,
+    kid.jerseyNumber != null ? `#${kid.jerseyNumber}` : null,
+    kid.height,
+  ].filter(Boolean) as string[]
 
   return (
     <View style={styles.root}>
@@ -107,25 +132,51 @@ export default function KidDetailScreen() {
       >
         <Card>
           <View style={styles.profileRow}>
-            <Avatar name={`${kid.firstName} ${kid.lastName}`} size={48} />
+            <Avatar name={`${kid.firstName} ${kid.lastName}`} size={56} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>
                 {kid.firstName} {kid.lastName}
               </Text>
-              <Text style={styles.meta}>
-                {[
-                  age != null ? `${age} yrs` : null,
-                  kid.position,
-                  kid.jerseyNumber != null ? `#${kid.jerseyNumber}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ") || "Profile"}
-              </Text>
+              {chips.length > 0 ? (
+                <View style={styles.chipRow}>
+                  {chips.map((c) => (
+                    <TonePill key={c} tone="neutral" label={c} />
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.meta}>Profile</Text>
+              )}
             </View>
           </View>
-          {teams.map((t) => (
-            <ListRow key={t.teamId} left={<Monogram name={t.teamName} size={36} />} text={t.teamName} sub={t.clubName} />
-          ))}
+        </Card>
+
+        <SectionHeader eyebrow="Rosters" title="Teams" accent="court" />
+        <Card>
+          {teamRows && teamRows.length > 0 ? (
+            teamRows.map((t) => (
+              <ListRow
+                key={t.team.id}
+                left={<Monogram name={t.team.name} size={36} />}
+                text={`${t.team.name}${t.jerseyNumber != null ? `  ·  #${t.jerseyNumber}` : ""}`}
+                sub={[t.team.tenant.name, t.team.ageGroup].filter(Boolean).join(" · ")}
+                onPress={() => router.push(`/team/${t.team.id}`)}
+              />
+            ))
+          ) : fallbackTeams.length > 0 ? (
+            fallbackTeams.map((t) => (
+              <ListRow
+                key={t.teamId}
+                left={<Monogram name={t.teamName} size={36} />}
+                text={t.teamName}
+                sub={t.clubName}
+                onPress={() => router.push(`/team/${t.teamId}`)}
+              />
+            ))
+          ) : (
+            <Text style={styles.emptyTeams}>
+              Not on a team yet — accepted offers place players on their team automatically.
+            </Text>
+          )}
           <ListRow
             icon="document-text-outline"
             text="Offers & payments"
@@ -161,7 +212,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
   screen: { flex: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 12 },
-  profileRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 4 },
-  name: { fontSize: 18, fontWeight: "800", color: ui.text },
+  profileRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  name: { fontSize: 20, fontWeight: "800", color: ui.text },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
   meta: { fontSize: 13, color: ui.textMuted, marginTop: 1 },
+  emptyTeams: { fontSize: 12.5, color: ui.textFaint, paddingVertical: 6 },
 })
