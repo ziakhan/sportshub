@@ -65,7 +65,7 @@ colors. Log every mismatch here; fix in ONE cross-platform pass per screen.
 | Team home | ⏳ to sweep | Web /teams/[id] (staff) vs /team/[id] (family) vs native /team/[id] — three variants. |
 | Calendar | ⏳ to sweep | Cards recently unified (type-color edges) — verify start–end formats + action sheets match. |
 | Scores | ⏳ to sweep | — |
-| Account | ⏳ to sweep | — |
+| Account | ✅ fixed `e157f6d` | Web tiles adopt brand icon tiles (palette-following); native rows adopt web's detail lines. One language both sides. |
 | Game page | ⏳ to sweep | Rebuilt for parity 2026-07-15/16 — verify leaders/team-stats blocks match current web. |
 
 ## Row & icon language RULING (2026-07-17, answers owner's "should they even be there?")
