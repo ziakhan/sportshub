@@ -95,7 +95,17 @@ export default function TeamScreen() {
           <Loading />
         ) : null}
 
-        <SectionHeader eyebrow="Schedule" title="Coming up" accent="play" />
+        <SectionHeader
+          eyebrow="Schedule"
+          title="Coming up"
+          accent="play"
+          {...(team?.staff
+            ? {
+                action: "+ New",
+                onAction: () => router.push(`/team/new-event?teamId=${teamId}`),
+              }
+            : {})}
+        />
         {calendar && upcoming.length === 0 ? (
           <EmptyState icon="calendar-outline" title="Nothing scheduled" />
         ) : null}
