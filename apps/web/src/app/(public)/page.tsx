@@ -111,6 +111,15 @@ export default async function HomePage() {
   // CTA) are for prospects only. Their teams, scores, news, leaders and
   // program discovery carry the page (docs/home-redesign-plan.md).
   const marketing = !userId
+  // Owner law #4 (2026-07-17): participants get THEIR material first — one
+  // compact live-scores link instead of a wall of other games, and news
+  // demoted to the bottom. iOS home's content priority, adopted by web.
+  const participantView =
+    !!userId &&
+    (yourTeams.length > 0 ||
+      scope.teamIds.size > 0 ||
+      scope.playerIds.size > 0 ||
+      scope.leagueIds.size > 0)
 
   return (
     <>
@@ -118,7 +127,21 @@ export default async function HomePage() {
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}
       <YourTeamsRail cards={yourTeams} />
-      <ScoreboardStrip games={scoreboard} />
+      {participantView ? (
+        <section className="border-ink-100 border-b bg-white">
+          <div className="container mx-auto px-4 py-3 sm:px-6">
+            <Link
+              href="/scores"
+              className="bg-stage text-ink-50 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold"
+            >
+              <span>Live scores &amp; this week&rsquo;s games</span>
+              <span aria-hidden>&rarr;</span>
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <ScoreboardStrip games={scoreboard} />
+      )}
       {marketing && (
       <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
         <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
@@ -187,7 +210,9 @@ export default async function HomePage() {
       </section>
       )}
 
-      <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
+      {!participantView && (
+        <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
+      )}
 
       <HighlightsRow highlights={highlights} />
 
@@ -752,6 +777,10 @@ export default async function HomePage() {
         </div>
       </section>
       </>
+      )}
+
+      {participantView && (
+        <NewsAndLeaders feed={feed} leaders={leaders} participantLeagueIds={scope.leagueIds} />
       )}
     </>
   )
