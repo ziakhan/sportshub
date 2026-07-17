@@ -20,7 +20,9 @@ import { palette, ui } from "@/lib/theme"
  * (Google Pay / card) and accept, or decline. This is the M4 payment
  * spike: PaymentSheet confirming the existing Connect destination-charge
  * pay-intent, then the accept PATCH carries the confirmed intent id.
- * Full-pay only in v1; installments stay on the website for now.
+ * FULL and INSTALLMENTS both native (web offer-response-form parity): the
+ * plan picker shows the deposit + schedule; pay-intent charges fee or
+ * deposit and saves the card server-side for off-session installments.
  */
 
 interface OfferDetail {
@@ -35,11 +37,21 @@ interface OfferDetail {
   options: { id: string; label: string; seasonFee: number; allowFullPay: boolean }[]
 }
 
+interface OptionTerms {
+  id: string
+  label: string
+  seasonFee: number
+  allowFullPay: boolean
+  allowInstallments: boolean
+  depositAmount: number | null
+  installmentTerms: { sequence: number; amount: number; dueDate: string; label: string | null }[]
+}
+
 interface PaymentInfo {
   online: boolean
   currency: string
   seasonFee: number
-  options: { id: string; label: string; seasonFee: number; allowFullPay: boolean }[]
+  options: OptionTerms[]
 }
 
 export default function OfferDetailScreen() {
@@ -58,6 +70,7 @@ export default function OfferDetailScreen() {
   const [jersey1, setJersey1] = useState("")
   const [jersey2, setJersey2] = useState("")
   const [jersey3, setJersey3] = useState("")
+  const [plan, setPlan] = useState<"FULL" | "INSTALLMENTS">("FULL")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -79,7 +92,11 @@ export default function OfferDetailScreen() {
   }, [load])
 
   const chosen = offer?.options.find((o) => o.id === optionId) ?? null
-  const amountDue = chosen?.seasonFee ?? offer?.seasonFee ?? 0
+  const fee = chosen?.seasonFee ?? offer?.seasonFee ?? 0
+  const terms = pay?.options.find((o) => o.id === optionId) ?? null
+  const canPlan = !!terms?.allowInstallments && (terms.depositAmount ?? 0) > 0
+  const activePlan: "FULL" | "INSTALLMENTS" = canPlan ? plan : "FULL"
+  const amountDue = activePlan === "INSTALLMENTS" ? (terms?.depositAmount ?? 0) : fee
   const currency = pay?.currency ?? "CAD"
 
   const jerseyNum = (v: string) => {
@@ -93,7 +110,7 @@ export default function OfferDetailScreen() {
       body: JSON.stringify({
         action: "accept",
         ...(optionId ? { optionId } : {}),
-        paymentPlan: "FULL",
+        paymentPlan: activePlan,
         ...(depositPaymentIntentId ? { depositPaymentIntentId } : {}),
         ...(uniformSize.trim() ? { uniformSize: uniformSize.trim() } : {}),
         ...(shoeSize.trim() ? { shoeSize: shoeSize.trim() } : {}),
@@ -127,7 +144,7 @@ export default function OfferDetailScreen() {
         method: "POST",
         body: JSON.stringify({
           ...(optionId ? { chosenOptionId: optionId } : {}),
-          paymentPlan: "FULL",
+          paymentPlan: activePlan,
         }),
       })
 
@@ -234,6 +251,53 @@ export default function OfferDetailScreen() {
         </View>
       ) : null}
 
+      {open && canPlan && pay?.online ? (
+        <View style={styles.card}>
+          <Text style={styles.label}>How you&apos;ll pay</Text>
+          <Pressable
+            style={[styles.planRow, activePlan === "FULL" && styles.planRowChosen]}
+            onPress={() => setPlan("FULL")}
+          >
+            <View style={[styles.radio, activePlan === "FULL" && styles.radioChosen]}>
+              {activePlan === "FULL" ? <View style={styles.radioDot} /> : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.planTitle}>Pay in full</Text>
+              <Text style={styles.planSub}>
+                {currency} {fee.toFixed(2)} now
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            style={[styles.planRow, activePlan === "INSTALLMENTS" && styles.planRowChosen]}
+            onPress={() => setPlan("INSTALLMENTS")}
+          >
+            <View style={[styles.radio, activePlan === "INSTALLMENTS" && styles.radioChosen]}>
+              {activePlan === "INSTALLMENTS" ? <View style={styles.radioDot} /> : null}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.planTitle}>Payment plan</Text>
+              <Text style={styles.planSub}>
+                {currency} {(terms?.depositAmount ?? 0).toFixed(2)} deposit now
+              </Text>
+              {(terms?.installmentTerms ?? []).map((t) => (
+                <Text key={t.sequence} style={styles.planTerm}>
+                  {currency} {t.amount.toFixed(2)} on{" "}
+                  {new Date(t.dueDate).toLocaleDateString("en-CA", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                  {t.label ? ` — ${t.label}` : ""}
+                </Text>
+              ))}
+              <Text style={styles.planHint}>
+                Your card is saved securely and charged on each date.
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
+
       {open && needsSizes ? (
         <View style={styles.card}>
           <Text style={styles.label}>Gear sizes</Text>
@@ -306,7 +370,9 @@ export default function OfferDetailScreen() {
             ) : (
               <Text style={styles.payButtonText}>
                 {amountDue > 0 && pay?.online
-                  ? `Pay ${currency} ${amountDue.toFixed(2)} & accept`
+                  ? activePlan === "INSTALLMENTS"
+                    ? `Pay ${currency} ${amountDue.toFixed(2)} deposit & accept`
+                    : `Pay ${currency} ${amountDue.toFixed(2)} & accept`
                   : "Accept offer"}
               </Text>
             )}
@@ -369,6 +435,31 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, color: ui.textMuted, marginBottom: 6 },
   jerseyRow: { flexDirection: "row", gap: 8 },
   jerseyInput: { flex: 1, textAlign: "center" },
+  planRow: {
+    flexDirection: "row",
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: ui.border,
+    borderRadius: ui.radius.sm,
+    padding: 12,
+  },
+  planRowChosen: { borderColor: ui.primary, backgroundColor: palette.play[50] },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: ui.borderStrong,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  radioChosen: { borderColor: ui.primary },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: ui.primary },
+  planTitle: { fontSize: 15, fontWeight: "700", color: ui.text },
+  planSub: { fontSize: 13.5, color: ui.text, marginTop: 1 },
+  planTerm: { fontSize: 12.5, color: ui.textMuted, marginTop: 2 },
+  planHint: { fontSize: 11.5, color: ui.textFaint, marginTop: 5 },
   error: { color: palette.hoop[600], fontSize: 14, textAlign: "center" },
   payButton: {
     backgroundColor: ui.primary,
