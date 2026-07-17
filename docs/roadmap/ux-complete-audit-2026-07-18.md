@@ -72,3 +72,65 @@ Severity: 🐛 defect · 🔴 structural (wrong content for the persona) ·
 - 🐛 /events overflow (above).
 
 (continued below as the audit proceeds)
+
+## Cross-platform parity state (native vs mobile web)
+Native screens are all natively-built with parity intent (no webviews).
+Remaining ELEMENT-level gaps are the known sweep rows: calendar detail
+pass, team home (3 variants), scores list, game page detail, chat body.
+New from this audit:
+- 🟡 Native "My Team" context tab (coach) vs web /teams/[id]: web version
+  has "Register for a league" action — native team screen doesn't. Add to
+  native or accept as desktop-only admin (owner call).
+- 🟡 Native operator tab is read-only by design ("what needs me on the
+  road") — GOOD design, but the WEB club-owner dashboard should learn from
+  it (see below), not the other way around.
+
+## Discovery IA — the confirmed overlap (owner flagged this weeks ago)
+🔴 THREE anonymous discovery surfaces do one job: /marketplace ("Tryout
+Marketplace"), /events ("Find Programs & Tryouts — tryouts, house leagues,
+camps, tournaments"), and the Programs section pill. /events is a superset
+of /marketplace. Recommendation: ONE "Programs" destination with type
+filters; /marketplace 301s to it; nav pill count drops to 5
+(Scores·Programs·Clubs·Leagues·News), matching the 5-tab rule in spirit.
+
+## Features that should be MORE available (day-by-day value, buried today)
+1. **RSVP from the week rows** — home band rows link to /calendar; the RSVP
+   pill names who owes but you can't answer from home. One-tap Going/Can't-go
+   on the home card = the single highest-frequency parent action.
+2. **Pay from the payments card** — home says "5 payments due"; /payments
+   then buries the 5 due under paid history (fix ordering + a Pay button per
+   row at top).
+3. **Operator briefing on web home/dashboard** — club owner's most-visited
+   screens show them browse content and vanity stats. They need: approvals
+   pending · registrations this week · live games in their org · unread org
+   messages. (The NATIVE operator tab already has the right shape — port its
+   content priorities to the web dashboard.)
+4. **Referee next-assignment on home** — refs get a generic scoreboard;
+   their next assignment + open offers should be the home card.
+5. **Coach's team rail on web home** — getYourTeams excludes coached teams
+   on web; native shows them. Fix the query, not the layout.
+
+## LESS priority (currently over-weighted)
+- Hub-wide HIGHLIGHTS video row renders high on participant homes (coach,
+  club owner) — move below personal content or behind Browse.
+- The 6-pill section nav (incl. Marketplace) on every signed-in page —
+  becomes 5 after the Programs merge.
+- Vanity stat rows on operator dashboard (36 Teams · 161 Games) — replace
+  with actionable counts.
+- "Browse programs" CTA on the operator dashboard — remove.
+
+## Priority order (recommendation for the owner's morning)
+1. 🐛 Fix the 4 defects (events overflow; 3 text-join bugs: offers rows,
+   referee offers, players jersey join).
+2. 🔴 Payments ordering (due first) + calendar anchors at today — two small
+   changes, both high-frequency parent pain.
+3. 🔴 Operator web dashboard rebuild to the briefing shape (native operator
+   tab is the template) + drop Browse-programs CTA.
+4. 🔴 Coach team rail on web home (query fix) + referee home card.
+5. 🔴 Team-home nav-tile cleanup (web /teams/[id]) per no-redundant-nav.
+6. 🟡 Programs/Marketplace/Events merge (IA decision — needs owner sign-off
+   on naming).
+7. Then: the persona Home briefing rebuild (persona-screen-review.md) —
+   items 2–5 above are compatible stepping stones toward it.
+
+## Status: audit complete; NOTHING implemented from this doc yet.
