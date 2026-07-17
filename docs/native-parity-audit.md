@@ -33,9 +33,10 @@ code; "iOS looks different" is almost always a stale binary/OTA, not a fork.
    guest links open web). Decide: keep as deliberate difference or build native.
 5. **League/club operator deep management** — deliberate: native operator tab
    is a cockpit; heavy admin stays web.
-6. **Polls visual redesign** — queued (owner: basic/small/bad colors), applies
-   web + native together.
-7. App icon/splash still stock Expo; iOS APNs push key pending; Apple Pay deferred.
+6. ~~**Polls visual redesign**~~ ✅ built 2026-07-16 (Energy Pass bubble web +
+   native, in-place native voting; awaiting deploy).
+7. ~~App icon/splash still stock Expo~~ ✅ rebranded 2026-07-16 (ships with
+   build 8/vc6); iOS APNs push key pending (owner); Apple Pay deferred.
 
 ## Audit method note
 Screens enumerated from src/app; workflows spot-checked against their web
