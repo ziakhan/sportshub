@@ -65,3 +65,26 @@ colors. Log every mismatch here; fix in ONE cross-platform pass per screen.
 | Scores | ⏳ to sweep | — |
 | Account | ⏳ to sweep | — |
 | Game page | ⏳ to sweep | Rebuilt for parity 2026-07-15/16 — verify leaders/team-stats blocks match current web. |
+
+## Row & icon language RULING (2026-07-17, answers owner's "should they even be there?")
+Two row tiers, IDENTICAL on web + native:
+1. **Entity rows** (club, league, team, kid, program — anything with an
+   identity): the leading mark is the entity's REAL mark — uploaded logo,
+   else branded monogram initials (Monogram component / web club-card
+   treatment). **Never a generic glyph** — no trophy-for-league,
+   basketball-for-team, person-for-kid. Generic glyphs made native look
+   "decorated" while web wasn't; they carry no information.
+2. **Utility rows** (actions/settings: payments, alerts, edit profile,
+   quiet hours): tinted icon tile riding the live brand color (the "purple
+   tiles"). Web ADOPTS this treatment where it has bare text links — the
+   tile language becomes shared, not native-only.
+Empty-state icons keep their glyphs (they're illustrations, not marks).
+
+## My Kids sweep spec (owner-called-out 2026-07-17)
+- Kid DETAIL (native kids/[playerId]): replace generic ListRow+arrow stacks
+  with the web /players page anatomy — kid header card (avatar, name, age,
+  position), per-team cards w/ monogram + jersey + club line, upcoming
+  items, RSVP state. Teams = entity rows (monogram, not people-glyph).
+- Kids INDEX: already card-based; align type scale with web card.
+- Web /players: adopt any richer elements native ends up with (single pass,
+  both directions).
