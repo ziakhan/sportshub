@@ -42,3 +42,26 @@ code; "iOS looks different" is almost always a stale binary/OTA, not a fork.
 Screens enumerated from src/app; workflows spot-checked against their web
 APIs (offer accept validated against respond-to-offer.ts requirements — the
 kind of drift to re-check whenever web adds required fields to a shared API).
+
+## Element-level parity sweep (owner escalation 2026-07-17 — "tired of the discrepancies")
+The feature checklist above says WHAT exists on each platform; it never
+compared HOW screens render. That gap is where the owner keeps finding
+differences (chat header being the third strike). This section tracks the
+retrofit, screen by screen — each row is a rendered-element comparison, not
+a feature claim.
+
+**Method (per screen):** open web-desktop, web-mobile (390px) and native
+side by side → compare: header (title, subtitle, truncation, actions),
+quick links/pills, list-item anatomy, empty states, type scale, status
+colors. Log every mismatch here; fix in ONE cross-platform pass per screen.
+
+| Screen | Status | Findings |
+|---|---|---|
+| Team chat header | ✅ fixed `f7ab4e2` | Native lacked the 3 quick links; web truncated the name on phones. Remaining nit: native header has no club-name subtitle (web shows "{club} • Team chat"). |
+| Team chat body | ⏳ to sweep | Poll bubbles now shared (01b3d37). Compare: reactions row, pinned strip, sender context lines, edited tag. |
+| Home (signed-in band) | ⏳ to sweep | Native "This week" rows are plain text stacks; web band styles differ. Date bug fixed `8e43e18`. |
+| Team home | ⏳ to sweep | Web /teams/[id] (staff) vs /team/[id] (family) vs native /team/[id] — three variants. |
+| Calendar | ⏳ to sweep | Cards recently unified (type-color edges) — verify start–end formats + action sheets match. |
+| Scores | ⏳ to sweep | — |
+| Account | ⏳ to sweep | — |
+| Game page | ⏳ to sweep | Rebuilt for parity 2026-07-15/16 — verify leaders/team-stats blocks match current web. |
