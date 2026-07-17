@@ -49,23 +49,7 @@ export default async function DashboardPage() {
               Here&apos;s what&apos;s happening across your roles.
             </p>
           </div>
-          <Link
-            href="/events"
-            className="bg-play-600 shadow-play-200 hover:bg-play-700 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
-          >
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              aria-hidden="true"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Browse programs
-          </Link>
+
         </div>
       </div>
 

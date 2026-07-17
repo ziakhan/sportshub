@@ -32,31 +32,31 @@ export function LeagueSection({ data }: LeagueSectionProps) {
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatTile
-              label="Leagues"
-              value={data.leagues.length}
-              tone="brand"
-              icon={<IconTrophy className="h-5 w-5" />}
+              label="Live now"
+              value={data.liveNow}
+              tone="hoop"
+              icon={<IconChart className="h-5 w-5" />}
               delay={0}
+            />
+            <StatTile
+              label="Games this week"
+              value={data.gamesThisWeek}
+              tone="brand"
+              icon={<IconCalendar className="h-5 w-5" />}
+              delay={70}
+            />
+            <StatTile
+              label="Rosters awaiting approval"
+              value={data.pendingSubmissions}
+              tone="court"
+              icon={<IconUsers className="h-5 w-5" />}
+              delay={140}
             />
             <StatTile
               label="Teams"
               value={totalTeams}
-              tone="court"
-              icon={<IconUsers className="h-5 w-5" />}
-              delay={70}
-            />
-            <StatTile
-              label="Games"
-              value={totalGames}
-              tone="hoop"
-              icon={<IconCalendar className="h-5 w-5" />}
-              delay={140}
-            />
-            <StatTile
-              label="Games per league"
-              value={Math.round(totalGames / Math.max(data.leagues.length, 1))}
               tone="ink"
-              icon={<IconChart className="h-5 w-5" />}
+              icon={<IconTrophy className="h-5 w-5" />}
               delay={210}
             />
           </div>

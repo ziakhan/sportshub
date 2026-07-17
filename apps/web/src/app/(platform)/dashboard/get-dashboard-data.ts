@@ -150,6 +150,10 @@ export interface DashboardData {
       season: string
       _count: { teams: number; games: number }
     }>
+    /** Actionable counts (UX audit 2026-07-18) — what needs the operator */
+    liveNow: number
+    gamesThisWeek: number
+    pendingSubmissions: number
   }
   player?: {
     teams: Array<{
@@ -545,6 +549,21 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
         },
         orderBy: { createdAt: "desc" },
       })
+      const seasonIds = seasons.map((s: any) => s.id)
+      const weekEnd = new Date(Date.now() + 7 * 24 * 3600_000)
+      const [liveNow, gamesThisWeek, pendingSubmissions] = await Promise.all([
+        prisma.game.count({ where: { seasonId: { in: seasonIds }, status: "LIVE" } }),
+        prisma.game.count({
+          where: {
+            seasonId: { in: seasonIds },
+            status: "SCHEDULED",
+            scheduledAt: { gte: new Date(), lte: weekEnd },
+          },
+        }),
+        prisma.teamSubmission.count({
+          where: { seasonId: { in: seasonIds }, status: "PENDING" },
+        }),
+      ])
       data.leagueOwner = {
         leagues: seasons.map((s: any) => ({
           id: s.id,
@@ -553,9 +572,12 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
           season: s.label,
           _count: { teams: s._count.teamSubmissions, games: s._count.games },
         })),
+        liveNow,
+        gamesThisWeek,
+        pendingSubmissions,
       }
     } else {
-      data.leagueOwner = { leagues: [] }
+      data.leagueOwner = { leagues: [], liveNow: 0, gamesThisWeek: 0, pendingSubmissions: 0 }
     }
   }
 

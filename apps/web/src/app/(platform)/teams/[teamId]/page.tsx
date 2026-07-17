@@ -101,14 +101,28 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
       minute: "2-digit",
     })
 
+  // UX audit 2026-07-18 (no-redundant-nav): on phones the bottom tabs
+  // already reach Chat/Calendar/this screen — those tiles hide below sm.
+  // Desktop (no tab bar) keeps all five.
   const actions = [
     {
       href: `/teams/${team.id}/calendar`,
       title: "Calendar & RSVPs",
       detail: "Schedule, attendance roll-ups, practice planning",
+      phoneRedundant: true,
     },
-    { href: `/teams/${team.id}/chat`, title: "Team chat", detail: "Message families and staff" },
-    { href: `/teams/${team.id}/polls`, title: "Polls", detail: "Votes and quick decisions" },
+    {
+      href: `/teams/${team.id}/chat`,
+      title: "Team chat",
+      detail: "Message families and staff",
+      phoneRedundant: true,
+    },
+    {
+      href: `/teams/${team.id}/polls`,
+      title: "Polls",
+      detail: "Votes and quick decisions",
+      phoneRedundant: true,
+    },
     { href: `/team/${team.id}`, title: "Public team page", detail: "What families and fans see" },
     {
       href: `/browse-leagues?team=${team.id}`,
@@ -153,7 +167,9 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
           <Link
             key={a.href}
             href={a.href}
-            className="border-ink-100 shadow-soft hover:border-play-200 group rounded-2xl border bg-white p-5 transition"
+            className={`border-ink-100 shadow-soft hover:border-play-200 group rounded-2xl border bg-white p-5 transition ${
+              (a as { phoneRedundant?: boolean }).phoneRedundant ? "hidden sm:block" : ""
+            }`}
           >
             <p className="text-ink-950 group-hover:text-play-600 font-semibold transition-colors">
               {a.title}
