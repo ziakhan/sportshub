@@ -381,9 +381,9 @@ export function LiveView({ gameId }: { gameId: string }) {
             </p>
             <p className="text-ink-950 text-lg font-extrabold leading-tight tabular-nums">
               <FlashNum value={entry.value} />{" "}
-              <span className="text-ink-600 text-[11px] font-extrabold">{entry.unit}</span>
+              <span className="text-ink-600 text-[10px] font-extrabold">{entry.unit}</span>
             </p>
-            <p className="text-ink-600 truncate text-[13px]">{sub(entry.l)}</p>
+            <p className="text-ink-600 truncate text-[11px]">{sub(entry.l)}</p>
           </div>
         </>
       ) : (
