@@ -3,7 +3,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
-import { Card, ListRow, SectionHeader, TonePill } from "@/components/ui"
+import { Card, ListRow, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { useBrowseHome } from "@/lib/browse"
 import { useHome, coachTeamPath } from "@/lib/home"
 import { useSession } from "@/lib/session"
@@ -130,7 +130,7 @@ export default function HomeScreen() {
             {c.coachTeams.map((t) => (
               <ListRow
                 key={t.teamId}
-                icon="people-outline"
+                left={<Monogram name={t.name} size={36} />}
                 text={t.name}
                 sub={t.clubName}
                 onPress={() => router.push(coachTeamPath(t) as any)}
@@ -189,7 +189,14 @@ export default function HomeScreen() {
               {browse.clubs.map((club) => (
                 <ListRow
                   key={club.id}
-                  icon="business-outline"
+                  left={
+                    <Monogram
+                      name={club.name}
+                      logoUrl={club.logoUrl}
+                      color={club.primaryColor}
+                      size={36}
+                    />
+                  }
                   text={club.name}
                   sub={[club.city, `${club.teamCount} team${club.teamCount === 1 ? "" : "s"}`]
                     .filter(Boolean)
@@ -214,7 +221,7 @@ export default function HomeScreen() {
               {browse.leagues.map((l) => (
                 <ListRow
                   key={l.id}
-                  icon="trophy-outline"
+                  left={<Monogram name={l.name} size={36} />}
                   text={l.name}
                   sub={l.seasons
                     .map((s) => `${s.name} · ${s.teamCount} teams`)

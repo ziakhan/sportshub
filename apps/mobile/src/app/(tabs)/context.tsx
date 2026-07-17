@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View } from "react-native"
 import { router } from "expo-router"
 import { TopBar } from "@/components/top-bar"
-import { Card, ListRow, SectionHeader } from "@/components/ui"
+import { Card, ListRow, SectionHeader, Monogram } from "@/components/ui"
 import { useHome, coachTeamPath } from "@/lib/home"
 import { ui } from "@/lib/theme"
 
@@ -50,7 +50,7 @@ export default function ContextScreen() {
               {c.coachTeams.map((t) => (
                 <ListRow
                   key={t.teamId}
-                  icon="people-outline"
+                  left={<Monogram name={t.name} size={36} />}
                   text={t.name}
                   sub={t.clubName}
                   onPress={() => router.push(coachTeamPath(t) as any)}

@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, ListRow, Loading, SectionHeader, TonePill } from "@/components/ui"
+import { Card, EmptyState, ListRow, Loading, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { palette, ui } from "@/lib/theme"
 
@@ -144,7 +144,7 @@ export default function ClubProfileScreen() {
               {club.teams.map((t) => (
                 <ListRow
                   key={t.id}
-                  icon="people-outline"
+                  left={<Monogram name={t.name} size={36} />}
                   text={t.name}
                   sub={[t.ageGroup, t.gender].filter(Boolean).join(" · ")}
                 />

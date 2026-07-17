@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, ListRow, Loading, SectionHeader, TonePill } from "@/components/ui"
+import { Card, EmptyState, ListRow, Loading, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { ui } from "@/lib/theme"
 
@@ -103,7 +103,7 @@ export default function OperatorScreen() {
                 league.seasons.map((s) => (
                   <ListRow
                     key={s.id}
-                    icon="trophy-outline"
+                    left={<Monogram name={s.name} size={36} />}
                     text={s.name}
                     sub={`${s.teamCount} team${s.teamCount === 1 ? "" : "s"} · ${s.status === "REGISTRATION" ? "registration open" : "in progress"}`}
                     onPress={() => router.push(`/browse/season/${s.id}`)}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, ListRow, Loading, SectionHeader } from "@/components/ui"
+import { Card, EmptyState, ListRow, Loading, SectionHeader, Avatar } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { ui } from "@/lib/theme"
 
@@ -124,7 +124,7 @@ export default function NewDmScreen() {
               {members.families.map((m) => (
                 <ListRow
                   key={m.userId}
-                  icon="people-outline"
+                  left={<Avatar name={m.name} size={36} />}
                   text={m.name}
                   sub={m.playerNames.join(", ")}
                   onPress={m.canDm ? () => void start(m.userId, m.name) : undefined}

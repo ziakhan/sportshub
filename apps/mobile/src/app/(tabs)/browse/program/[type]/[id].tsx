@@ -10,6 +10,7 @@ import {
   PrimaryButton,
   SectionHeader,
   TonePill,
+  Monogram,
 } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useSession } from "@/lib/session"
@@ -144,7 +145,7 @@ export default function ProgramDetailScreen() {
           <Text style={styles.name}>{program.name}</Text>
           {program.clubName ? (
             <ListRow
-              icon="business-outline"
+              left={<Monogram name={program.clubName} size={36} />}
               text={program.clubName}
               onPress={
                 program.clubSlug

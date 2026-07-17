@@ -104,7 +104,7 @@ export default function BrowseHubScreen() {
               {browse.leagues.slice(0, 5).map((l) => (
                 <ListRow
                   key={l.id}
-                  icon="trophy-outline"
+                  left={<Monogram name={l.name} size={36} />}
                   text={l.name}
                   sub={l.seasons[0] ? `${l.seasons[0].name} · ${l.seasons[0].teamCount} teams` : null}
                   onPress={() =>

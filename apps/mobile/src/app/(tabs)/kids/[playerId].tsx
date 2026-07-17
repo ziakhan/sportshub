@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { EventCard } from "@/components/event-card"
-import { Avatar, Card, EmptyState, ListRow, Loading, SectionHeader } from "@/components/ui"
+import { Avatar, Card, EmptyState, ListRow, Loading, SectionHeader, Monogram } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useMyCalendar } from "@/lib/calendar"
 import { ui } from "@/lib/theme"
@@ -124,7 +124,7 @@ export default function KidDetailScreen() {
             </View>
           </View>
           {teams.map((t) => (
-            <ListRow key={t.teamId} icon="people-outline" text={t.teamName} sub={t.clubName} />
+            <ListRow key={t.teamId} left={<Monogram name={t.teamName} size={36} />} text={t.teamName} sub={t.clubName} />
           ))}
           <ListRow
             icon="document-text-outline"
