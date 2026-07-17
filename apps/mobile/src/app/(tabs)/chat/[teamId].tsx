@@ -16,6 +16,7 @@ import { router, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
 import { apiJson } from "@/lib/api"
+import { PollBubble, type ChatPollData } from "@/components/poll-bubble"
 import { emitTyping, useRealtime } from "@/lib/realtime"
 import { useSession } from "@/lib/session"
 import { palette, ui } from "@/lib/theme"
@@ -34,7 +35,7 @@ interface ChatMessage {
   editedAt?: string | null
   pinned?: boolean
   reactions?: Array<{ emoji: string; count: number; mine: boolean }>
-  poll?: { id: string; question?: string } | null
+  poll?: ChatPollData | null
   sender: { id: string; name: string; isStaff: boolean; context?: string | null }
 }
 
@@ -328,13 +329,16 @@ export default function ConversationScreen() {
                 {item.editedAt ? (
                   <Text style={[styles.editedTag, mine && { color: palette.play[200] }]}>(edited)</Text>
                 ) : null}
-                {item.poll ? (
-                  <Text
-                    style={styles.pollNote}
-                    onPress={() => router.push(`/team/${teamId}`)}
-                  >
-                    📊 Poll — tap to vote
-                  </Text>
+                {item.poll?.options ? (
+                  <PollBubble
+                    teamId={teamId}
+                    poll={item.poll}
+                    onUpdate={(p) =>
+                      setMessages((cur) =>
+                        cur.map((m) => (m.id === item.id ? { ...m, poll: p } : m))
+                      )
+                    }
+                  />
                 ) : null}
               </View>
               {(item.reactions?.length ?? 0) > 0 ? (
@@ -417,7 +421,6 @@ const styles = StyleSheet.create({
   sender: { fontSize: 12, fontWeight: "700", color: palette.play[700], marginBottom: 2 },
   body: { fontSize: 15, color: ui.text },
   bodyMine: { color: "#fff" },
-  pollNote: { fontSize: 12, color: ui.textMuted, marginTop: 4 },
   pinTag: { fontSize: 10, color: palette.gold[600], marginBottom: 2, fontWeight: "700" },
   editedTag: { fontSize: 10, color: ui.textFaint, marginTop: 2, fontStyle: "italic" },
   reactionRow: { flexDirection: "row", gap: 4, marginTop: -2, marginBottom: 4, marginHorizontal: 4 },
