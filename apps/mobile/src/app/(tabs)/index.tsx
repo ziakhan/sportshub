@@ -180,6 +180,34 @@ export default function HomeScreen() {
           <Ionicons name="chevron-forward" size={16} color="#fff" />
         </Pressable>
 
+        {browse && browse.news.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader
+              eyebrow="Around the hub"
+              title="News & recaps"
+              accent="gold"
+              action="More"
+              onAction={() => router.push("/browse/news")}
+            />
+            {browse.news.slice(0, 4).map((n) => (
+              <Card
+                key={n.id}
+                style={styles.sectionCard}
+                onPress={
+                  n.href?.startsWith("/news/")
+                    ? () => router.push(`/browse/article/${n.href!.split("/")[2]}`)
+                    : undefined
+                }
+              >
+                <Text style={styles.newsTitle}>{n.title}</Text>
+                <Text style={styles.mutedSmall} numberOfLines={2}>
+                  {n.excerpt}
+                </Text>
+              </Card>
+            ))}
+          </View>
+        ) : null}
+
         {browse && browse.programs.length > 0 ? (
           <View style={styles.section}>
             <SectionHeader
@@ -207,38 +235,6 @@ export default function HomeScreen() {
                 </Text>
               </Card>
             ))}
-          </View>
-        ) : null}
-
-        {browse && browse.clubs.length > 0 ? (
-          <View style={styles.section}>
-            <SectionHeader
-              eyebrow="Around you"
-              title="Clubs"
-              accent="play"
-              action="Browse all"
-              onAction={() => router.push("/browse/clubs")}
-            />
-            <Card style={styles.sectionCard}>
-              {browse.clubs.map((club) => (
-                <ListRow
-                  key={club.id}
-                  left={
-                    <Monogram
-                      name={club.name}
-                      logoUrl={club.logoUrl}
-                      color={club.primaryColor}
-                      size={36}
-                    />
-                  }
-                  text={club.name}
-                  sub={[club.city, `${club.teamCount} team${club.teamCount === 1 ? "" : "s"}`]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  onPress={() => router.push(`/browse/club/${club.slug}`)}
-                />
-              ))}
-            </Card>
           </View>
         ) : null}
 
@@ -272,31 +268,35 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {browse && browse.news.length > 0 ? (
+        {browse && browse.clubs.length > 0 ? (
           <View style={styles.section}>
             <SectionHeader
-              eyebrow="Around the hub"
-              title="News & recaps"
-              accent="gold"
-              action="More"
-              onAction={() => router.push("/browse/news")}
+              eyebrow="Around you"
+              title="Clubs"
+              accent="play"
+              action="Browse all"
+              onAction={() => router.push("/browse/clubs")}
             />
-            {browse.news.slice(0, 4).map((n) => (
-              <Card
-                key={n.id}
-                style={styles.sectionCard}
-                onPress={
-                  n.href?.startsWith("/news/")
-                    ? () => router.push(`/browse/article/${n.href!.split("/")[2]}`)
-                    : undefined
-                }
-              >
-                <Text style={styles.newsTitle}>{n.title}</Text>
-                <Text style={styles.mutedSmall} numberOfLines={2}>
-                  {n.excerpt}
-                </Text>
-              </Card>
-            ))}
+            <Card style={styles.sectionCard}>
+              {browse.clubs.map((club) => (
+                <ListRow
+                  key={club.id}
+                  left={
+                    <Monogram
+                      name={club.name}
+                      logoUrl={club.logoUrl}
+                      color={club.primaryColor}
+                      size={36}
+                    />
+                  }
+                  text={club.name}
+                  sub={[club.city, `${club.teamCount} team${club.teamCount === 1 ? "" : "s"}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  onPress={() => router.push(`/browse/club/${club.slug}`)}
+                />
+              ))}
+            </Card>
           </View>
         ) : null}
       </ScrollView>

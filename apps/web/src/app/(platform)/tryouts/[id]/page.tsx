@@ -93,7 +93,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="px-4 py-6 md:px-6">
           <Link
-            href="/marketplace"
+            href="/events"
             className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100"
           >
             &larr; Back to Marketplace

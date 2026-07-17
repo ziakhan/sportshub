@@ -109,7 +109,7 @@ export default async function PublicLayout({ children }: { children: React.React
               Programs
             </Link>
             <Link
-              href="/marketplace"
+              href="/events"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
             >
               Marketplace
@@ -211,7 +211,7 @@ export default async function PublicLayout({ children }: { children: React.React
               <Link href="/news" className="block transition-colors hover:text-white">
                 News
               </Link>
-              <Link href="/marketplace" className="block transition-colors hover:text-white">
+              <Link href="/events" className="block transition-colors hover:text-white">
                 Marketplace
               </Link>
             </div>

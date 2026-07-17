@@ -89,7 +89,7 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
       <div className="border-b bg-[var(--brand)]">
         <div className="container mx-auto px-4 py-6">
           <Link
-            href="/marketplace"
+            href="/events"
             className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100"
           >
             &larr; Back

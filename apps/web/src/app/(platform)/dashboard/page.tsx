@@ -50,7 +50,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link
-            href="/marketplace"
+            href="/events"
             className="bg-play-600 shadow-play-200 hover:bg-play-700 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition"
           >
             <svg

@@ -44,80 +44,6 @@ export default function BrowseHubScreen() {
           <ListRow icon="basketball-outline" text="Live scores, finals and what's coming up" onPress={() => router.push("/scores")} />
         </Card>
 
-        {browse && browse.programs.length > 0 ? (
-          <>
-            <SectionHeader
-              eyebrow="Register now"
-              title="Programs"
-              accent="hoop"
-              action="See all"
-              onAction={() => router.push("/browse/programs")}
-            />
-            <Card>
-              {browse.programs.slice(0, 4).map((p) => (
-                <ListRow
-                  key={`${p.type}:${p.id}`}
-                  icon="pricetags-outline"
-                  text={p.name}
-                  sub={`${p.clubName ? `${p.clubName} · ` : ""}${new Date(p.startDate).toLocaleDateString()}`}
-                  right={<TonePill tone="info" label={p.type.replace("-", " ")} />}
-                  onPress={() => router.push(`/browse/program/${p.type}/${p.id}`)}
-                />
-              ))}
-            </Card>
-          </>
-        ) : null}
-
-        {browse && browse.clubs.length > 0 ? (
-          <>
-            <SectionHeader
-              eyebrow="Find your fit"
-              title="Clubs"
-              accent="play"
-              action="Browse all"
-              onAction={() => router.push("/browse/clubs")}
-            />
-            <Card>
-              {browse.clubs.slice(0, 5).map((c) => (
-                <ListRow
-                  key={c.id}
-                  left={<Monogram name={c.name} logoUrl={c.logoUrl} color={c.primaryColor} size={36} />}
-                  text={c.name}
-                  sub={[c.city, `${c.teamCount} teams`].filter(Boolean).join(" · ")}
-                  onPress={() => router.push(`/browse/club/${c.slug}`)}
-                />
-              ))}
-            </Card>
-          </>
-        ) : null}
-
-        {browse && browse.leagues.length > 0 ? (
-          <>
-            <SectionHeader
-              eyebrow="Standings & schedules"
-              title="Leagues"
-              accent="court"
-              action="Browse all"
-              onAction={() => router.push("/browse/leagues")}
-            />
-            <Card>
-              {browse.leagues.slice(0, 5).map((l) => (
-                <ListRow
-                  key={l.id}
-                  left={<Monogram name={l.name} size={36} />}
-                  text={l.name}
-                  sub={l.seasons[0] ? `${l.seasons[0].name} · ${l.seasons[0].teamCount} teams` : null}
-                  onPress={() =>
-                    l.seasons[0]
-                      ? router.push(`/browse/season/${l.seasons[0].id}`)
-                      : router.push("/browse/leagues")
-                  }
-                />
-              ))}
-            </Card>
-          </>
-        ) : null}
-
         {browse && browse.news.length > 0 ? (
           <>
             <SectionHeader
@@ -157,6 +83,78 @@ export default function BrowseHubScreen() {
                 </Card>
               ))}
             </ScrollView>
+          </>
+        ) : null}        {browse && browse.programs.length > 0 ? (
+          <>
+            <SectionHeader
+              eyebrow="Register now"
+              title="Programs"
+              accent="hoop"
+              action="See all"
+              onAction={() => router.push("/browse/programs")}
+            />
+            <Card>
+              {browse.programs.slice(0, 4).map((p) => (
+                <ListRow
+                  key={`${p.type}:${p.id}`}
+                  icon="pricetags-outline"
+                  text={p.name}
+                  sub={`${p.clubName ? `${p.clubName} · ` : ""}${new Date(p.startDate).toLocaleDateString()}`}
+                  right={<TonePill tone="info" label={p.type.replace("-", " ")} />}
+                  onPress={() => router.push(`/browse/program/${p.type}/${p.id}`)}
+                />
+              ))}
+            </Card>
+          </>
+        ) : null}
+
+        {browse && browse.leagues.length > 0 ? (
+          <>
+            <SectionHeader
+              eyebrow="Standings & schedules"
+              title="Leagues"
+              accent="court"
+              action="Browse all"
+              onAction={() => router.push("/browse/leagues")}
+            />
+            <Card>
+              {browse.leagues.slice(0, 5).map((l) => (
+                <ListRow
+                  key={l.id}
+                  left={<Monogram name={l.name} size={36} />}
+                  text={l.name}
+                  sub={l.seasons[0] ? `${l.seasons[0].name} · ${l.seasons[0].teamCount} teams` : null}
+                  onPress={() =>
+                    l.seasons[0]
+                      ? router.push(`/browse/season/${l.seasons[0].id}`)
+                      : router.push("/browse/leagues")
+                  }
+                />
+              ))}
+            </Card>
+          </>
+        ) : null}
+
+        {browse && browse.clubs.length > 0 ? (
+          <>
+            <SectionHeader
+              eyebrow="Find your fit"
+              title="Clubs"
+              accent="play"
+              action="Browse all"
+              onAction={() => router.push("/browse/clubs")}
+            />
+            <Card>
+              {browse.clubs.slice(0, 5).map((c) => (
+                <ListRow
+                  key={c.id}
+                  left={<Monogram name={c.name} logoUrl={c.logoUrl} color={c.primaryColor} size={36} />}
+                  text={c.name}
+                  sub={[c.city, `${c.teamCount} teams`].filter(Boolean).join(" · ")}
+                  onPress={() => router.push(`/browse/club/${c.slug}`)}
+                />
+              ))}
+            </Card>
           </>
         ) : null}
 

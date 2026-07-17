@@ -199,7 +199,7 @@ export function ParentSection({ data }: ParentSectionProps) {
           )}
 
           <div className="mt-4">
-            <Button href="/marketplace" variant="subtle" size="sm" icon={ICONS.grid}>
+            <Button href="/events" variant="subtle" size="sm" icon={ICONS.grid}>
               Browse programs
             </Button>
           </div>

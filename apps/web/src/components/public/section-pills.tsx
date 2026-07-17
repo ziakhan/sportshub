@@ -19,6 +19,8 @@ const SECTIONS: Array<{
   off: string
   on: string
 }> = [
+  // Order = owner's consumer-first ruling (2026-07-18): scores and news
+  // lead — content consumption drives repeat visits; utility follows.
   {
     href: "/scores",
     label: "Scores",
@@ -27,17 +29,17 @@ const SECTIONS: Array<{
     on: "bg-energy text-energy-on",
   },
   {
-    href: "/events",
-    label: "Programs",
-    also: ["/tryout", "/camp", "/house-league", "/tournament"],
-    off: "bg-hoop-50 text-hoop-700",
-    on: "bg-hoop-600 text-white",
+    href: "/news",
+    label: "News",
+    off: "bg-gold-50 text-gold-600",
+    on: "bg-gold-500 text-white",
   },
   {
-    href: "/club",
-    label: "Clubs",
-    off: "bg-play-50 text-play-700",
-    on: "bg-play-600 text-white",
+    href: "/events",
+    label: "Programs",
+    also: ["/tryout", "/camp", "/house-league", "/tournament", "/marketplace"],
+    off: "bg-hoop-50 text-hoop-700",
+    on: "bg-hoop-600 text-white",
   },
   {
     href: "/leagues",
@@ -47,16 +49,10 @@ const SECTIONS: Array<{
     on: "bg-court-600 text-white",
   },
   {
-    href: "/news",
-    label: "News",
-    off: "bg-gold-50 text-gold-600",
-    on: "bg-gold-500 text-white",
-  },
-  {
-    href: "/marketplace",
-    label: "Marketplace",
-    off: "bg-ink-100/80 text-ink-700",
-    on: "bg-ink-900 text-white",
+    href: "/club",
+    label: "Clubs",
+    off: "bg-play-50 text-play-700",
+    on: "bg-play-600 text-white",
   },
 ]
 
