@@ -90,3 +90,29 @@ Empty-state icons keep their glyphs (they're illustrations, not marks).
 - Kids INDEX: already card-based; align type scale with web card.
 - Web /players: adopt any richer elements native ends up with (single pass,
   both directions).
+
+## OWNER DESIGN LAWS (2026-07-17 — govern every sweep pass)
+1. **Every entity is clickable, on all three surfaces** — team, player,
+   league, club, header, logo. A rendered entity that goes nowhere is a
+   defect. (His words: "I'm going to repeat again on mobile web, on
+   Android, on iOS.")
+2. **Phone = phone**: mobile web and native are the SAME design; desktop is
+   its wider layout. "Native extras" don't exist — a module either earns
+   all platforms or none.
+3. **No redundant navigation**: if the tab bar / site nav / a clickable
+   entity name already reaches a place, no extra pill for it. (Chat header
+   consolidated to name-link + Polls pill.)
+4. **Coach home priority**: actions, week, my teams FIRST; public
+   scores/news are not coach material. iOS's content idea is RIGHT; mobile
+   web must adopt it (web home for participants currently leads them into
+   scores+news — wrong).
+
+## Queued from the 2026-07-17 rulings
+- Web home (mobile): participant/coach band gains My teams; public
+  scores/news demoted below the personal content for signed-in
+  participants.
+- Native team screen: roster player names, header entities → clickable.
+  Needs a native player destination (no /browse/player screen exists —
+  likely /api/mobile/browse/player/[id] + screen, the game-page parity
+  pattern).
+- Re-audit every remaining screen against Laws 1–3 during the sweep.
