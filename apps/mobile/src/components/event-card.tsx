@@ -11,6 +11,7 @@ import {
   type RsvpStatus,
 } from "@/lib/calendar"
 import { palette, ui } from "@/lib/theme"
+import { useTheme } from "@/lib/theme-context"
 
 /**
  * One calendar item with inline RSVP (Going / Maybe / Not going) per family
@@ -91,8 +92,9 @@ export function EventCard({
     }
   }
 
+  const t = useTheme()
   const kindEdge =
-    item.kind === "game" ? ui.energy : item.kind === "practice" ? ui.primary : palette.gold[500]
+    item.kind === "game" ? t.energy : item.kind === "practice" ? ui.primary : palette.gold[500]
 
   // Role-gated actions (web parity): staff cancel practices/events; league
   // managers postpone/cancel games. Server re-checks — these only gate UI.

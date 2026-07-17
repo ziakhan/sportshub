@@ -4,6 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons"
 import { useHome, type NavShape } from "@/lib/home"
 import { useSession } from "@/lib/session"
 import { ui } from "@/lib/theme"
+import { useTheme } from "@/lib/theme-context"
 
 /**
  * Tab bar (N3-v2 §5.6.6 + audit v2): Home and Browse exist for EVERYONE —
@@ -43,6 +44,7 @@ function TabButton({
     ((props as Record<string, unknown>)["aria-selected"] as boolean | undefined) ??
     accessibilityState?.selected ??
     false
+  const t = useTheme()
   return (
     <Pressable
       {...props}
@@ -57,17 +59,17 @@ function TabButton({
           paddingHorizontal: 13,
           paddingVertical: 4,
           minWidth: 62,
-          backgroundColor: focused ? ui.energy : "transparent",
+          backgroundColor: focused ? t.energy : "transparent",
         }}
       >
-        <Ionicons name={name} size={20} color={focused ? ui.energyOn : ui.textMuted} />
+        <Ionicons name={name} size={20} color={focused ? t.energyOn : ui.textMuted} />
         <Text
           numberOfLines={1}
           style={{
             fontSize: 10,
             fontWeight: "700",
             marginTop: 1,
-            color: focused ? ui.energyOn : ui.textMuted,
+            color: focused ? t.energyOn : ui.textMuted,
           }}
         >
           {label}

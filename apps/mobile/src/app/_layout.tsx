@@ -5,6 +5,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native"
 import { StatusBar } from "expo-status-bar"
 import { StripeProvider } from "@stripe/stripe-react-native"
 import { SessionProvider, useSession } from "@/lib/session"
+import { ThemeProvider } from "@/lib/theme-context"
 import { useMobileConfig } from "@/lib/config"
 import { routePushResponses } from "@/lib/push"
 import { ui } from "@/lib/theme"
@@ -78,11 +79,13 @@ export default function RootLayout() {
   const { config, mustUpgrade } = useMobileConfig()
   if (mustUpgrade && config) return <ForcedUpgrade minVersion={config.minVersion} />
   return (
-    <MaybeStripe pk={config?.stripePublishableKey ?? null}>
-      <SessionProvider>
-        <RootNavigator />
-      </SessionProvider>
-    </MaybeStripe>
+    <ThemeProvider palette={config?.palette}>
+      <MaybeStripe pk={config?.stripePublishableKey ?? null}>
+        <SessionProvider>
+          <RootNavigator />
+        </SessionProvider>
+      </MaybeStripe>
+    </ThemeProvider>
   )
 }
 

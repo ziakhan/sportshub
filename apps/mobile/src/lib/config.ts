@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react"
+import { AppState } from "react-native"
 import Constants from "expo-constants"
+import type { ThemePalette } from "@youthbasketballhub/design-tokens"
 import { apiBaseUrl } from "./api"
 
 /**
  * Boot handshake (doc §14): GET /api/mobile/config → { minVersion,
- * stripePublishableKey }. Old binaries get the forced-upgrade screen;
- * the Stripe key configures StripeProvider without baking it into builds.
- * Unreachable config fails open — a network blip must not brick the app.
+ * stripePublishableKey, palette }. Old binaries get the forced-upgrade
+ * screen; the Stripe key configures StripeProvider without baking it into
+ * builds; palette reskins the app to the admin-chosen Energy Pass theme.
+ * Refetched on every foreground so palette flips (and minVersion bumps)
+ * reach long-lived app sessions. Unreachable config fails open — a network
+ * blip must not brick the app.
  */
 
 export interface MobileConfig {
   minVersion: string
   stripePublishableKey: string | null
+  palette?: ThemePalette | null
 }
 
 export function appVersion(): string {
@@ -38,7 +44,7 @@ export function useMobileConfig(): {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
+    async function refresh() {
       try {
         const res = await fetch(`${apiBaseUrl()}/api/mobile/config`)
         if (!res.ok) return
@@ -47,9 +53,14 @@ export function useMobileConfig(): {
       } catch {
         // fail open
       }
-    })()
+    }
+    void refresh()
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refresh()
+    })
     return () => {
       cancelled = true
+      sub.remove()
     }
   }, [])
 

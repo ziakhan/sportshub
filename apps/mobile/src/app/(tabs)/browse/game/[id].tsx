@@ -6,6 +6,7 @@ import { EmptyState, Loading } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
 import { palette, ui } from "@/lib/theme"
+import { useTheme } from "@/lib/theme-context"
 
 /**
  * Game page — web parity (owner 2026-07-16): broadcast-dark hero with stacked
@@ -14,8 +15,6 @@ import { palette, ui } from "@/lib/theme"
  * web page), so app and web can never disagree.
  */
 
-const STAGE = "#0b1628"
-const HIGHLIGHT = "#fbbf24"
 
 interface LeaderCell {
   jersey: string
@@ -77,6 +76,7 @@ type Tab = "game" | "stats" | "plays"
 
 export default function GameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const t = useTheme()
   const [data, setData] = useState<GameView | null>(null)
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -150,7 +150,7 @@ export default function GameScreen() {
         <Text
           style={[
             styles.bigScore,
-            wins && { color: HIGHLIGHT },
+            wins && { color: t.highlight },
             lost && { color: "rgba(255,255,255,0.55)" },
           ]}
         >
@@ -227,8 +227,8 @@ export default function GameScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {/* broadcast-dark hero (web parity) */}
-        <View style={styles.hero}>
-          <Text style={styles.heroLeague}>
+        <View style={[styles.hero, { backgroundColor: t.stage }]}>
+          <Text style={[styles.heroLeague, { color: t.highlight }]}>
             {[g.leagueName, g.seasonName].filter(Boolean).join(" · ")}
           </Text>
           <View style={styles.heroRow}>
@@ -243,8 +243,8 @@ export default function GameScreen() {
                   <Text style={styles.heroPeriod}>{g.periodLabel}</Text>
                 </>
               ) : g.final ? (
-                <View style={styles.finalPill}>
-                  <Text style={styles.finalPillText}>FINAL</Text>
+                <View style={[styles.finalPill, { backgroundColor: t.energy }]}>
+                  <Text style={[styles.finalPillText, { color: t.energyOn }]}>FINAL</Text>
                 </View>
               ) : (
                 <Text style={styles.heroWhen}>
@@ -389,7 +389,7 @@ export default function GameScreen() {
                               {r.name}
                             </Text>
                           </View>
-                          <Text style={[styles.boxCell, styles.boxPts]}>{r.pts}</Text>
+                          <Text style={[styles.boxCell, styles.boxPts, { color: t.energyInk }]}>{r.pts}</Text>
                           <Text style={styles.boxCell}>{r.reb}</Text>
                           <Text style={styles.boxCell}>{r.ast}</Text>
                           <Text style={styles.boxCell}>{r.stl}</Text>
@@ -452,8 +452,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { paddingBottom: 32 },
 
-  hero: { backgroundColor: STAGE, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 16 },
-  heroLeague: { textAlign: "center", color: HIGHLIGHT, fontSize: 12, fontWeight: "700" },
+  hero: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 16 },
+  heroLeague: { textAlign: "center", fontSize: 12, fontWeight: "700" },
   heroRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 12 },
   teamCol: { flex: 1, alignItems: "center" },
   crest: {
@@ -483,12 +483,11 @@ const styles = StyleSheet.create({
   livePillText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   heroPeriod: { color: "#fff", fontSize: 20, fontWeight: "800", marginTop: 6 },
   finalPill: {
-    backgroundColor: ui.energy,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 5,
   },
-  finalPillText: { color: ui.energyOn, fontSize: 12, fontWeight: "900", letterSpacing: 2 },
+  finalPillText: { fontSize: 12, fontWeight: "900", letterSpacing: 2 },
   heroWhen: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: "700", textAlign: "center" },
   heroVenue: { textAlign: "center", color: "rgba(255,255,255,0.5)", fontSize: 11.5, marginTop: 10 },
 
@@ -580,7 +579,7 @@ const styles = StyleSheet.create({
   boxJersey: { fontSize: 12, color: ui.textFaint, fontWeight: "700" },
   boxName: { fontSize: 14.5, fontWeight: "700", color: ui.text, flexShrink: 1 },
   boxCell: { width: 40, textAlign: "right", fontSize: 15, fontWeight: "600", color: ui.text, fontVariant: ["tabular-nums"] },
-  boxPts: { fontWeight: "900", color: ui.energyInk, fontSize: 15.5 },
+  boxPts: { fontWeight: "900", fontSize: 15.5 },
 
   playMarker: { backgroundColor: palette.ink[50], paddingVertical: 4, alignItems: "center" },
   playMarkerText: { fontSize: 10, fontWeight: "900", color: ui.textMuted, letterSpacing: 1.5 },
