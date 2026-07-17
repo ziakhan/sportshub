@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native
 import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import {
+  Avatar,
   Card,
   EmptyState,
   ListRow,
@@ -184,7 +185,12 @@ export default function TeamScreen() {
             <SectionHeader eyebrow="Players" title={`Roster (${roster.length})`} accent="court" />
             <Card>
               {roster.map((p) => (
-                <ListRow key={p.id} icon="person-outline" text={p.name} />
+                <ListRow
+                  key={p.id}
+                  left={<Avatar name={p.name} size={36} />}
+                  text={p.name}
+                  onPress={() => router.push(`/browse/player/${p.id}`)}
+                />
               ))}
             </Card>
           </>

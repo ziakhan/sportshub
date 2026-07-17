@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
-import { useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { EmptyState, Loading } from "@/components/ui"
 import { apiJson } from "@/lib/api"
@@ -67,7 +67,7 @@ interface GameView {
     short: string
     color: string | null
     total: number
-    rows: Array<{ jersey: string; name: string; starter?: boolean; onCourt?: boolean; pts: number; reb: number; ast: number; stl: number; to: number }>
+    rows: Array<{ playerId?: string; jersey: string; name: string; starter?: boolean; onCourt?: boolean; pts: number; reb: number; ast: number; stl: number; to: number }>
   }>
   plays: Array<{ key: number; marker: boolean; text: string; score: string | null; teamId: string | null }>
 }
@@ -382,13 +382,19 @@ export default function GameScreen() {
                         ) : null
                       ) : (
                         <View key={i} style={styles.boxRow}>
-                          <View style={[styles.boxPlayer, styles.boxPlayerCell]}>
+                          <Pressable
+                            style={[styles.boxPlayer, styles.boxPlayerCell]}
+                            disabled={!r.playerId}
+                            onPress={() =>
+                              r.playerId && router.push(`/browse/player/${r.playerId}`)
+                            }
+                          >
                             {r.onCourt ? <View style={styles.onCourtDot} /> : null}
                             <Text style={styles.boxJersey}>#{r.jersey}</Text>
-                            <Text style={styles.boxName} numberOfLines={1}>
+                            <Text style={[styles.boxName, r.playerId ? styles.boxNameLink : null]} numberOfLines={1}>
                               {r.name}
                             </Text>
-                          </View>
+                          </Pressable>
                           <Text style={[styles.boxCell, styles.boxPts, { color: t.energyInk }]}>{r.pts}</Text>
                           <Text style={styles.boxCell}>{r.reb}</Text>
                           <Text style={styles.boxCell}>{r.ast}</Text>
@@ -578,6 +584,7 @@ const styles = StyleSheet.create({
   benchStripText: { fontSize: 9.5, fontWeight: "900", color: ui.textMuted, letterSpacing: 1.5 },
   boxJersey: { fontSize: 12, color: ui.textFaint, fontWeight: "700" },
   boxName: { fontSize: 14.5, fontWeight: "700", color: ui.text, flexShrink: 1 },
+  boxNameLink: { textDecorationLine: "underline", textDecorationColor: ui.borderStrong },
   boxCell: { width: 40, textAlign: "right", fontSize: 15, fontWeight: "600", color: ui.text, fontVariant: ["tabular-nums"] },
   boxPts: { fontWeight: "900", fontSize: 15.5 },
 

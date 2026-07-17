@@ -189,6 +189,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         color,
         total,
         rows: teamLines(teamId).map((l) => ({
+          playerId: l.playerId,
           jersey: String(jerseyOf(l.playerId)),
           name: shortName(l.playerId),
           starter: firstLineup.get(teamId)?.has(l.playerId) ?? false,

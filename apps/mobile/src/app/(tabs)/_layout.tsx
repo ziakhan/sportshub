@@ -106,6 +106,11 @@ export default function TabsLayout() {
   const { home } = useHome()
   const shape = home?.shape
   const ctx = contextTab(shape)
+  // 2 always-on (Home, Account) + Chat + Calendar + context — Browse takes
+  // the fifth slot only when one is free.
+  const fixedTabs =
+    2 + (signedIn ? 1 : 0) + (signedIn && shape?.hasCalendar ? 1 : 0) + (signedIn && ctx ? 1 : 0)
+  const showBrowse = fixedTabs < 5
 
   return (
     <Tabs
@@ -122,11 +127,19 @@ export default function TabsLayout() {
           tabBarButton: (props) => <TabButton {...(props as object)} name="home-outline" label="Home" />,
         }}
       />
+      {/* Owner rule 2026-07-17: NEVER more than 5 tabs (6 shrank the capsules
+          and ellipsized labels). Browse folds into Home for signed-in users
+          with a full tab set — Home already carries the browse sections;
+          /browse/* stays routable from there. */}
       <Tabs.Screen
         name="browse"
         options={{
           title: "Browse",
-          tabBarButton: (props) => <TabButton {...(props as object)} name="search-outline" label="Browse" />,
+          tabBarItemStyle: showBrowse ? undefined : { display: "none" },
+          tabBarButton: (props) =>
+            showBrowse ? (
+              <TabButton {...(props as object)} name="search-outline" label="Browse" />
+            ) : null,
         }}
       />
       <Tabs.Screen
