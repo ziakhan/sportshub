@@ -104,7 +104,7 @@ export default function HomeScreen() {
             <Text style={styles.cardTitle}>This week</Text>
             {c.weekEvents.slice(0, 5).map((e) => (
               <View key={e.item.id} style={styles.eventRow}>
-                <Text style={styles.eventWhen}>{fmtWhen(e.item.startsAt)}</Text>
+                <Text style={styles.eventWhen}>{fmtWhen(e.item.at)}</Text>
                 <Text style={styles.eventTitle}>{e.item.title}</Text>
                 <View style={styles.chipRow}>
                   {e.chips.map((chip) => (

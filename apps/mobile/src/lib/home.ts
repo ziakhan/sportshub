@@ -34,8 +34,9 @@ export interface MyContexts {
       id: string
       kind: string
       title: string
-      startsAt: string
-      endsAt?: string | null
+      // server sends MyCalendarItem: the time field is `at` (JSON string)
+      at: string
+      durationMinutes?: number
       location?: string | null
     }
     chips: string[]
