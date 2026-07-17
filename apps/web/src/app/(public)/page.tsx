@@ -366,7 +366,7 @@ export default async function HomePage() {
                 </p>
               </div>
               <Link
-                href="/marketplace"
+                href="/events"
                 className="text-play-600 hover:text-play-700 hidden text-sm font-semibold transition sm:inline-flex"
               >
                 Explore all programs &rarr;

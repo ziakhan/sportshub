@@ -93,7 +93,7 @@ export default async function PublicTryoutDetailPage({
       >
         <div className="container mx-auto px-4 py-6">
           <Link
-            href="/marketplace"
+            href="/events"
             className="mb-2 inline-block text-sm text-white/80 hover:text-white"
           >
             &larr; Back to Marketplace
