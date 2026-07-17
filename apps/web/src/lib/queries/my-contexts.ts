@@ -38,12 +38,14 @@ export interface MyContexts {
     paymentsDue: number
     rsvpsNeeded: number
     unreadChats: number
+    /** Open shift offers awaiting this referee (targeted + pool broadcasts) */
+    refereeOffers: number
   }
   isParticipant: boolean
 }
 
 export async function getMyContexts(userId: string): Promise<MyContexts> {
-  const [calendar, chatTeams, roles, openOffersRaw, paymentsDue] = await Promise.all([
+  const [calendar, chatTeams, roles, openOffersRaw, paymentsDue, refereeOffers] = await Promise.all([
     getMyCalendar(userId),
     getChatTeamSummaries(userId).catch(() => [] as Array<{ unread: number }>),
     prisma.userRole.findMany({
@@ -63,6 +65,28 @@ export async function getMyContexts(userId: string): Promise<MyContexts> {
     prisma.paymentObligation.count({
       where: { status: { in: ["PENDING", "PARTIALLY_PAID"] }, payerUserId: userId },
     }),
+    // UX audit 2026-07-18: shift offers are attention items, not a buried tab
+    prisma.refereeSessionRequest
+      .count({
+        where: {
+          OR: [
+            { targetUserId: userId, status: "PENDING" },
+            {
+              targetUserId: null,
+              status: "PENDING",
+              leagueId: {
+                in: (
+                  await prisma.leagueReferee.findMany({
+                    where: { userId },
+                    select: { leagueId: true },
+                  })
+                ).map((p: any) => p.leagueId),
+              },
+            },
+          ],
+        },
+      })
+      .catch(() => 0),
   ])
 
   const roleNames = new Set(roles.map((r: any) => r.role as string))
@@ -171,6 +195,7 @@ export async function getMyContexts(userId: string): Promise<MyContexts> {
       paymentsDue: paymentsDue,
       rsvpsNeeded,
       unreadChats,
+      refereeOffers,
     },
     isParticipant:
       kidsById.size > 0 || staffLenses.length > 0 || calendar.lenses.some((l) => l.kind === "referee"),

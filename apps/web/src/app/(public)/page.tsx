@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { getHighlightPosts, getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
 import { getFeaturedSeasonId, getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getYourTeams } from "@/lib/queries/home"
+import { getNavShape } from "@/lib/queries/nav-shape"
 import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
@@ -114,12 +115,15 @@ export default async function HomePage() {
   // Owner law #4 (2026-07-17): participants get THEIR material first — one
   // compact live-scores link instead of a wall of other games, and news
   // demoted to the bottom. iOS home's content priority, adopted by web.
+  const shape = userId ? await getNavShape(userId) : null
   const participantView =
     !!userId &&
     (yourTeams.length > 0 ||
       scope.teamIds.size > 0 ||
       scope.playerIds.size > 0 ||
-      scope.leagueIds.size > 0)
+      scope.leagueIds.size > 0 ||
+      !!shape?.isRefereeing ||
+      (shape?.coachTeams.length ?? 0) > 0)
 
   return (
     <>

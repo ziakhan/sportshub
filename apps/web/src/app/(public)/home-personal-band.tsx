@@ -44,6 +44,14 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
       tone: "border-play-200 bg-play-50 text-play-800",
     })
   }
+  if (actionsDue.refereeOffers > 0) {
+    actionCards.push({
+      href: "/referee/requests",
+      title: `${actionsDue.refereeOffers} shift offer${actionsDue.refereeOffers === 1 ? "" : "s"}`,
+      detail: "Accept or decline",
+      tone: "border-gold-200 bg-gold-50 text-gold-800",
+    })
+  }
   if (actionsDue.unreadChats > 0) {
     actionCards.push({
       href: "/messages",

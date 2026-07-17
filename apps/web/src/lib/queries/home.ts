@@ -34,7 +34,7 @@ export interface YourTeamCard {
 }
 
 export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]> => {
-  const [follows, children] = await Promise.all([
+  const [follows, children, staffRoles] = await Promise.all([
     (prisma as any).follow.findMany({
       where: { userId, teamId: { not: null } },
       select: { teamId: true },
@@ -47,9 +47,16 @@ export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]
         teams: { where: { status: "ACTIVE" }, select: { teamId: true } },
       },
     }),
+    // Coached teams belong on the rail too (UX audit 2026-07-18 — native
+    // showed them, the web query didn't; same rule as nav-shape.coachTeams)
+    (prisma as any).userRole.findMany({
+      where: { userId, teamId: { not: null }, role: { in: ["Staff", "TeamManager"] } },
+      select: { teamId: true },
+    }),
   ])
 
   const teamIds = new Set<string>(follows.map((f: any) => f.teamId))
+  for (const r of staffRoles) teamIds.add(r.teamId)
   const childrenByTeam = new Map<string, Array<{ id: string; firstName: string }>>()
   for (const child of children) {
     for (const tp of child.teams) {
