@@ -81,7 +81,7 @@ export default function BrowseHubScreen() {
               {browse.clubs.slice(0, 5).map((c) => (
                 <ListRow
                   key={c.id}
-                  left={<Monogram name={c.name} logoUrl={c.logoUrl} color={c.primaryColor} size={34} />}
+                  left={<Monogram name={c.name} logoUrl={c.logoUrl} color={c.primaryColor} size={36} />}
                   text={c.name}
                   sub={[c.city, `${c.teamCount} teams`].filter(Boolean).join(" · ")}
                   onPress={() => router.push(`/browse/club/${c.slug}`)}

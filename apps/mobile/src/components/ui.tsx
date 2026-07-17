@@ -13,6 +13,7 @@ import {
 import { Image } from "expo-image"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { cardShadow, palette, tones, ui, type Tone } from "@/lib/theme"
+import { useTheme } from "@/lib/theme-context"
 
 /**
  * Shared native primitives — the web design language (cards on a #fafafa
@@ -49,22 +50,26 @@ export function Card({
 export function SectionHeader({
   eyebrow,
   title,
-  accent = "play",
+  accent = "brand",
   action,
   onAction,
 }: {
   eyebrow?: string
   title: string
-  accent?: "play" | "court" | "hoop" | "gold" | "ink"
+  accent?: "play" | "court" | "hoop" | "gold" | "ink" | "brand" | "energy"
   action?: string
   onAction?: () => void
 }) {
+  const t = useTheme()
   const accentColor = {
     play: ui.primary,
     court: tones.positive.fg,
     hoop: ui.danger,
     gold: tones.gold.fg,
     ink: ui.textMuted,
+    // Energy Pass accents — follow the admin palette live
+    brand: t.brand,
+    energy: t.energyInk,
   }[accent]
   return (
     <View style={styles.sectionHeader}>
@@ -83,30 +88,51 @@ export function SectionHeader({
   )
 }
 
-/** Tappable list row: icon (or custom left mark) · text (+sub) · chevron. */
+/**
+ * Tappable list row, Energy Pass edition: a tinted icon tile (or custom
+ * leading mark), bolder title over a muted second line, optional status
+ * pill, and a quiet chevron. Pressing tints the whole row surface instead
+ * of ghosting it — reads as a control, not a dimmed label.
+ */
 export function ListRow({
   icon,
   left,
   text,
   sub,
   right,
+  pill,
+  tone,
   onPress,
 }: {
   icon?: IoniconName
-  /** Custom leading element (logo/monogram) — wins over `icon`. */
+  /** Custom leading element (logo/monogram/avatar) — wins over `icon`. */
   left?: ReactNode
   text: string
   sub?: string | null
   right?: ReactNode
+  /** Status pill rendered before the chevron (web toneForStatus twin). */
+  pill?: { tone: Tone; label: string } | null
+  /** Icon-tile tint family — defaults to the live brand color. */
+  tone?: Tone | "brand"
   onPress?: () => void
 }) {
+  const t = useTheme()
+  const tint =
+    !tone || tone === "brand"
+      ? { fg: t.brand, bg: t.brandSoft }
+      : { fg: tones[tone].fg, bg: tones[tone].bg }
   return (
     <Pressable
-      style={({ pressed }) => [styles.listRow, pressed && onPress && { opacity: 0.7 }]}
+      style={({ pressed }) => [styles.listRow, pressed && onPress && styles.listRowPressed]}
       onPress={onPress}
       disabled={!onPress}
     >
-      {left ?? (icon ? <Ionicons name={icon} size={18} color={ui.primary} /> : null)}
+      {left ??
+        (icon ? (
+          <View style={[styles.rowTile, { backgroundColor: tint.bg }]}>
+            <Ionicons name={icon} size={17} color={tint.fg} />
+          </View>
+        ) : null)}
       <View style={{ flex: 1 }}>
         <Text style={styles.listRowText} numberOfLines={1}>
           {text}
@@ -117,8 +143,9 @@ export function ListRow({
           </Text>
         ) : null}
       </View>
+      {pill ? <TonePill tone={pill.tone} label={pill.label} /> : null}
       {right}
-      {onPress ? <Ionicons name="chevron-forward" size={16} color={ui.textFaint} /> : null}
+      {onPress ? <Ionicons name="chevron-forward" size={15} color={ui.textFaint} /> : null}
     </Pressable>
   )
 }
@@ -369,9 +396,28 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: "800", color: ui.text },
   sectionAction: { fontSize: 13, fontWeight: "700", color: ui.primary, paddingBottom: 2 },
-  listRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
-  listRowText: { fontSize: 14, color: ui.text, fontWeight: "500" },
-  listRowSub: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+    minHeight: 52,
+    // constant inset so the pressed surface can bleed past the card padding
+    // without the content shifting
+    paddingHorizontal: 6,
+    marginHorizontal: -6,
+    borderRadius: ui.radius.md,
+  },
+  listRowPressed: { backgroundColor: ui.surfaceSunken },
+  rowTile: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listRowText: { fontSize: 15, color: ui.text, fontWeight: "700" },
+  listRowSub: { fontSize: 12.5, color: ui.textMuted, marginTop: 1 },
   pill: {
     borderRadius: 999,
     borderWidth: 1,
