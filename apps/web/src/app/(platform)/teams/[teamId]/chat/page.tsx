@@ -28,14 +28,14 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
 
   return (
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <h2 className="text-ink-900 truncate text-xl font-bold">{membership.teamName}</h2>
           <p className="text-ink-500 truncate text-sm">
             {membership.clubName} • Team chat
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Link
             href={`/teams/${membership.teamId}/calendar`}
             className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
