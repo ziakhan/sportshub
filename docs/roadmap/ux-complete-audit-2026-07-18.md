@@ -15,21 +15,19 @@ Severity: 🐛 defect · 🔴 structural (wrong content for the persona) ·
 ## Bugs found by the harness itself
 - 🐛 **/events (anonymous) has 72px horizontal overflow at 390px** — the
   only screen that fails the no-sideways-scroll rule.
-- 🐛 **Offers rows concatenate text**: "Toronto Lords Fall Elite**for**
-  Miles Reyes" — missing separator between team name and "for X" (web
-  /offers list).
-- 🐛 **Referee shift offers concatenate**: "09:00–15:00**Summer 2026** ·
-  Week 5**first accept wins**" — three fields run together (web
-  /referee/requests).
+- ~~3 "text-join" bugs (offers / referee offers / player cards)~~
+  **RETRACTED**: verified against rendered pixels — spacing is correct;
+  the joins were artifacts of the audit harness's innerText extraction
+  (inline elements with margin-only separation). Screens are fine.
 
 ## Parent (persona #1)
 - ✅ **Home** — post-redesign it leads exactly right: color-coded
   attention cards (5 payments due · 4 RSVPs · 1 unread), day-grouped week
   with kid names + RSVP pills, teams rail. This is now the reference
   screen.
-- 🟡 **Calendar** — opens at the top of the month (July 11 first): a
-  parent scrolls past a week of dead events every visit. Anchor at TODAY
-  with a small "earlier this month" link up top.
+- ~~Calendar anchor~~ **RETRACTED**: the agenda auto-scrolls to today
+  (verified scrollY=1333, Jul 18 in view) — full-page capture always shows
+  the page top. TeamSnap pattern working as designed.
 - 🔴 **Payments** — headline is right ("5 open items — CA$2,418
   outstanding") but the list starts with PAID deposits. The 5 things
   needing money must sort first; paid history collapses below

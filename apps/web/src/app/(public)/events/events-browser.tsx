@@ -37,7 +37,7 @@ export function EventsBrowser({ events }: { events: EventItem[] }) {
     <>
       {/* Filters */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {([
             { key: "all", label: "All" },
             { key: "tryouts", label: "Tryouts" },

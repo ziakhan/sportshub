@@ -46,6 +46,11 @@ export default async function MyPaymentsPage() {
     },
     orderBy: [{ dueDate: "asc" }, { installmentNumber: "asc" }],
   })
+  // Owner audit 2026-07-18 (mine-beats-all): money that needs action sorts
+  // first; PAID history follows. Stable sort keeps due-date order per group.
+  installments.sort(
+    (a: any, b: any) => Number(a.status === "PAID") - Number(b.status === "PAID")
+  )
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
