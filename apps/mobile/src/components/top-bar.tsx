@@ -95,7 +95,16 @@ export function TopBar({
 }
 
 /** Branded header for pushed screens: back chevron + title (+optional right). */
-export function SubHeader({ title, right }: { title: string; right?: React.ReactNode }) {
+export function SubHeader({
+  title,
+  right,
+  onTitlePress,
+}: {
+  title: string
+  right?: React.ReactNode
+  /** Entities are clickable (owner law 2026-07-17) — tap the title to open it. */
+  onTitlePress?: () => void
+}) {
   const insets = useSafeAreaInsets()
   return (
     <View style={[styles.wrap, { paddingTop: insets.top }]}>
@@ -108,7 +117,12 @@ export function SubHeader({ title, right }: { title: string; right?: React.React
           >
             <Ionicons name="chevron-back" size={22} color={ui.primary} />
           </Pressable>
-          <Text style={styles.subTitle} numberOfLines={1}>
+          <Text
+            style={styles.subTitle}
+            numberOfLines={1}
+            onPress={onTitlePress}
+            suppressHighlighting={!onTitlePress}
+          >
             {title}
           </Text>
         </View>

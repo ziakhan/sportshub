@@ -275,31 +275,26 @@ export default function ConversationScreen() {
 
   return (
     <View style={styles.root}>
+      {/* Owner ruling 2026-07-17: the team NAME is the link to the team —
+          entities are clickable; no redundant pills (Calendar lives in the
+          tab bar). Polls rides as the single pill beside the mute bell. */}
       <SubHeader
         title={(title as string) || "Chat"}
+        onTitlePress={() => router.push(`/team/${teamId}`)}
         right={
-          <Pressable onPress={() => void toggleMute()} hitSlop={8}>
-            <Text style={{ fontSize: 16 }}>{muted ? "🔕" : "🔔"}</Text>
-          </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable
+              style={({ pressed }) => [styles.quickPill, pressed && { backgroundColor: ui.surfaceSunken }]}
+              onPress={() => router.push(`/team/${teamId}`)}
+            >
+              <Text style={styles.quickPillText}>Polls</Text>
+            </Pressable>
+            <Pressable onPress={() => void toggleMute()} hitSlop={8}>
+              <Text style={{ fontSize: 16 }}>{muted ? "🔕" : "🔔"}</Text>
+            </Pressable>
+          </View>
         }
       />
-      {/* Web chat-header parity: the same three quick links, as a strip so
-          the title keeps the full bar width (owner: web name truncation). */}
-      <View style={styles.quickRow}>
-        {[
-          ["Team Calendar", "/calendar"],
-          ["Polls", `/team/${teamId}`],
-          ["Team Home", `/team/${teamId}`],
-        ].map(([label, href]) => (
-          <Pressable
-            key={label}
-            style={({ pressed }) => [styles.quickPill, pressed && { backgroundColor: ui.surfaceSunken }]}
-            onPress={() => router.push(href as never)}
-          >
-            <Text style={styles.quickPillText}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
       <KeyboardAvoidingView
         style={styles.screen}
         // Edge-to-edge Android (SDK 57 default) no longer resizes the window for
@@ -451,15 +446,7 @@ const styles = StyleSheet.create({
   },
   reactionChipMine: { borderColor: palette.play[300], backgroundColor: palette.play[50] },
   reactionText: { fontSize: 11, color: ui.text },
-  quickRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: ui.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: ui.border,
-  },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 10 },
   quickPill: {
     borderWidth: 1,
     borderColor: ui.borderStrong,
