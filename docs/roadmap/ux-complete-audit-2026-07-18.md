@@ -145,3 +145,20 @@ filters; /marketplace 301s to it; nav pill count drops to 5
   same actionable-counts rule as the club dashboard.
 - Demo note: owner-nph is LEAGUE-side only; club surfaces audited as
   owner-lords (Sarah Grant persona).
+
+## IMPLEMENTED (owner "let's go ahead and implement it", 2026-07-18)
+- `787541a` consumer-first IA: pills Scores·News·Programs·Leagues·Clubs
+  (web + native home/browse sections); Marketplace merged into Programs
+  (/marketplace 301 → /events), links retargeted. 5 pills everywhere.
+- `ee70264` /events chip-row wraps (the one real defect); payments sort
+  open-before-PAID; 4 findings honestly retracted (capture artifacts).
+- `f68f673` coach team rail (staff-teams source in getYourTeams); referee
+  shift-offer attention card (actionsDue.refereeOffers); participantView
+  covers refs + coaches.
+- `9485fd1` league dashboard actionable tiles (Live now · Games this week ·
+  Rosters awaiting approval); Browse-programs CTA removed; team-home's
+  three tab-duplicated tiles hidden on phones.
+- All Playwright-verified live per persona. REMAINING (small): polls-page
+  header pills → name-link rule; public team-page quick pills for
+  signed-in members; then the persona Home briefing rebuild (separate,
+  owner-gated).
