@@ -116,3 +116,20 @@ Empty-state icons keep their glyphs (they're illustrations, not marks).
   likely /api/mobile/browse/player/[id] + screen, the game-page parity
   pattern).
 - Re-audit every remaining screen against Laws 1–3 during the sweep.
+
+## Nav ruling closed (2026-07-17)
+- Native tab bar capped at FIVE (owner: 6 shrank capsules + ellipsized
+  labels). Browse folds into Home for signed-in users with a full set —
+  Home carries the browse sections; anonymous keeps the Browse tab.
+- Mobile web ALREADY has the 5-tab bottom bar (Home/Chat/Calendar/context/
+  Account) — native now matches it exactly for signed-in users.
+- OPEN: anonymous mobile web has no bottom bar; anonymous native shows
+  Home/Browse/Account. Owner call whether anon web gets the bar.
+
+## Built 2026-07-17 (dependency round — 'no more missing screens')
+- Native player page: /api/mobile/browse/player/[id] (public-page
+  resolvers, privacy + Family-Pass folds) + browse/player/[id].tsx (hero,
+  team/club links, averages grid, tappable game log).
+- Law 1 wiring: team-screen roster rows + game-page box-score names
+  (playerId added to game endpoint rows) now open the player page.
+- Web home participant priority (law 4) — see commit.
