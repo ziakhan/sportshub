@@ -134,3 +134,16 @@ filters; /marketplace 301s to it; nav pill count drops to 5
    items 2–5 above are compatible stepping stones toward it.
 
 ## Status: audit complete; NOTHING implemented from this doc yet.
+
+## Desktop operator pass (owner-lords club workspace + owner-nph league manage, 1280px)
+- ✅ Overall shape is right: workspace sidebar (club-scoped) + tabbed club
+  area (Overview/Teams/Tryouts/Offers/…) — heavy but functional; deep
+  management correctly lives here, not on phones.
+- 🟡 TWO "Overview" links coexist (platform sidebar Overview vs club tab
+  Overview) — rename one (e.g. sidebar → "Home").
+- 🟡 Top bar carries Search + "Setup 80%" + two badge counters + avatar —
+  noisy; the setup chip could live on the dashboard body only.
+- 🟡 League manage: stats tiles again lean vanity (1 Seasons · 4 …) —
+  same actionable-counts rule as the club dashboard.
+- Demo note: owner-nph is LEAGUE-side only; club surfaces audited as
+  owner-lords (Sarah Grant persona).
