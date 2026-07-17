@@ -64,6 +64,7 @@ export default function AccountScreen() {
               <ListRow
                 icon="create-outline"
                 text="Edit profile"
+                sub="Name, email and password"
                 onPress={() => router.push("/account/profile")}
               />
             </Card>
@@ -73,28 +74,32 @@ export default function AccountScreen() {
               {/* Kids/offers rows only when the account has players — same
                   gating as the web account hub */}
               {home?.shape.hasKids ? (
-                <ListRow icon="people-outline" text="My kids" onPress={() => router.push("/kids")} />
+                <ListRow icon="people-outline" text="My kids" sub="Profiles, teams and stats" onPress={() => router.push("/kids")} />
               ) : null}
               {home?.shape.hasKids ? (
                 <ListRow
                   icon="document-text-outline"
                   text="Offers"
+                  sub="Team offers received"
                   onPress={() => router.push("/offers")}
                 />
               ) : null}
               <ListRow
                 icon="card-outline"
                 text="Payments & receipts"
+                sub="History, receipts and amounts due"
                 onPress={() => router.push("/account/payments")}
               />
               <ListRow
                 icon="notifications-outline"
                 text="Alerts"
+                sub="What we've sent you"
                 onPress={() => router.push("/alerts")}
               />
               <ListRow
                 icon="moon-outline"
                 text="Notification quiet hours"
+                sub="Pause pings overnight"
                 onPress={() => router.push("/account/notifications")}
               />
             </Card>
