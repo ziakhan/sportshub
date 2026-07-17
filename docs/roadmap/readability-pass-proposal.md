@@ -75,3 +75,34 @@ Contrast re-measured on the new tokens. 390px overflow check. Native
 changes reviewed on-device by owner post-OTA.
 
 ## Status: AWAITING OWNER GO. Zero implementation yet.
+
+## G. PUBLIC SCORES SURFACES (owner's actual priority — audited 2026-07-17)
+
+### /scores listing + ScoreCard (the score page)
+| Element | Now | Problem | Proposed |
+|---|---|---|---|
+| Team names on cards | text-sm (14px) | THE primary text of the surface, phone-squint size | **text-base (16px)** |
+| Loser team + score | ink-500 name / ink-400 2xl score | "dimmed loser" via failing gray (2.9:1) | keep the dim hierarchy but at **ink-600**, score ink-500 |
+| Date / venue lines | 12px ink-500/400 | small + failing gray | **13px ink-600** |
+| Day group headers | 12px ink-400 | fails contrast | **12.5px ink-600** |
+| Filter pills | 12px | small tap text | **13px**, py +0.5 |
+| Crest monograms | h-7 / 10px letters | fine (decorative) | unchanged |
+
+### Public game page (/live/[gameId]) — 23 instances ≤12px, 8 failing grays
+| Element | Now | Problem | Proposed |
+|---|---|---|---|
+| Hero scores | 6xl/7xl condensed | correct — untouched | — |
+| Team records under names | 11px white/50 on dark stage | ~4:1 at 11px on stage = illegible in gyms | **12.5px white/75** |
+| FINAL·period·clock center chips | 10px white/60 | same | **11.5px white/80** |
+| Leader stat sub-lines ("6-9 FG") | 11px ink-500 | the row's actual information | **13px ink-600** |
+| Leader unit labels (PTS/REB) | 10px ink-400 | fails | **11px ink-600** |
+| Linescore table headers | 11px ink-400 | fails | **12px ink-600** |
+| Section eyebrows (GAME LEADERS…) | 10px ink-400 | fails; these are the wayfinding | **11.5px ink-600** |
+| Quarter totals | 2xl condensed | good | — |
+
+### Native Scores tab (phone=phone)
+| Element | Now | Proposed |
+|---|---|---|
+| Score number | 18 | **22/900 tabular** (it's a scores screen) |
+| Team name | 16/600 | 16/**700** |
+| League/status/venue | 12 muted(ink500) | **13 ink-600** |
