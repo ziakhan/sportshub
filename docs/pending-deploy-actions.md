@@ -666,3 +666,16 @@ iOS TestFlight build 7, fresh Android APK. Old binaries hide the button
 (guarded require), they don't crash.
 Verify: POST {} → 400; garbage idToken → 401; button on device signs in and
 lands on the personal home.
+
+## #32 — 2026-07-16 web Sign in with Apple (no schema)
+Code + env — **BOX deployed 2026-07-16 (1939b41, via deploy.sh; owner-approved)**.
+- NextAuth AppleProvider (ES256 client-secret JWT minted from portal key
+  74SRFS3C24 at module load; apple-web-auth.ts), signIn links by verified
+  email via ensureAppleUser, Apple buttons on /sign-in + /sign-up.
+- Cookie change (prod-wide): pkce/state/callbackUrl NextAuth cookies are
+  SameSite=None on https — required for Apple's form_post callback.
+New env (BOX web.env ✓ / local .env.local ✓ / Vercel PENDING): APPLE_TEAM_ID,
+APPLE_KEY_ID=74SRFS3C24, APPLE_CLIENT_ID=com.ysportshub.web,
+APPLE_PRIVATE_KEY_B64 (.p8 in .credentials/, gitignored — NOT re-downloadable).
+Verify: /api/auth/providers includes apple; sign-in shows Apple button;
+signin/apple redirect → appleid.apple.com w/ client_id com.ysportshub.web.
