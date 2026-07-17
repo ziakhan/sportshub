@@ -143,7 +143,7 @@ export function PollBubble({
           </button>
         )
       })}
-      <p className="text-ink-400 text-[11px]">
+      <p className="text-ink-500 text-[12px]">
         {poll.voterCount} {poll.voterCount === 1 ? "vote" : "votes"}
         {poll.allowMultiple ? " · multiple choices allowed" : ""}
         {open ? " · tap to vote" : ""}

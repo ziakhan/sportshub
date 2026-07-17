@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  question: { flex: 1, fontSize: 15, fontWeight: "800", color: ui.text },
+  question: { flex: 1, fontSize: 16, fontWeight: "800", color: ui.text },
   closedPill: {
     backgroundColor: ui.borderStrong,
     borderRadius: 999,
@@ -202,12 +202,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  optionLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: ui.text },
+  optionLabel: { flex: 1, fontSize: 15, fontWeight: "600", color: ui.text },
   optionCount: {
     fontSize: 13,
     fontWeight: "800",
     color: ui.textMuted,
     fontVariant: ["tabular-nums"],
   },
-  footer: { fontSize: 11.5, color: ui.textFaint },
+  footer: { fontSize: 12.5, color: ui.textFaint },
 })

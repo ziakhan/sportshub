@@ -381,9 +381,9 @@ export function LiveView({ gameId }: { gameId: string }) {
             </p>
             <p className="text-ink-950 text-lg font-extrabold leading-tight tabular-nums">
               <FlashNum value={entry.value} />{" "}
-              <span className="text-ink-400 text-[10px] font-extrabold">{entry.unit}</span>
+              <span className="text-ink-600 text-[11px] font-extrabold">{entry.unit}</span>
             </p>
-            <p className="text-ink-500 truncate text-[11px]">{sub(entry.l)}</p>
+            <p className="text-ink-600 truncate text-[13px]">{sub(entry.l)}</p>
           </div>
         </>
       ) : (
@@ -401,7 +401,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white">
         <table className="w-full text-center text-[15px] font-bold tabular-nums">
           <thead>
-            <tr className="text-ink-400 border-ink-100 border-b text-[11px] uppercase tracking-wide">
+            <tr className="text-ink-600 border-ink-100 border-b text-[12px] uppercase tracking-wide">
               <th className="py-2 pl-4 text-left font-extrabold" />
               {displayPeriods.map((p) => (
                 <th key={p} className="px-2.5 py-2 font-extrabold sm:px-4">
@@ -458,7 +458,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           if (!h && !a) return null
           return (
             <div key={sec.label} className="px-4 py-3">
-              <p className="text-ink-400 mb-1.5 text-center text-[10px] font-extrabold uppercase tracking-widest">
+              <p className="text-ink-600 mb-1.5 text-center text-[11.5px] font-extrabold uppercase tracking-widest">
                 {sec.label}
               </p>
               <div className="flex items-center gap-3">
@@ -494,7 +494,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       <div key={label} className="px-4 py-2.5">
         <div className="flex items-baseline justify-between gap-3">
           {num(hWins, h, displayH)}
-          <span className="text-ink-500 text-[11px] font-extrabold uppercase tracking-wide">
+          <span className="text-ink-600 text-[12px] font-extrabold uppercase tracking-wide">
             {label}
           </span>
           {num(aWins, a, displayA)}
@@ -653,7 +653,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
     >
       <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
-        <span className="text-ink-400 mr-1.5 font-normal">#{jerseyOf(l.playerId)}</span>
+        <span className="text-ink-500 mr-1.5 font-normal">#{jerseyOf(l.playerId)}</span>
         <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
           {shortName(l.playerId)}
         </Link>
@@ -789,7 +789,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       .map((p) => ({ ...p, avg: data.seasonAverages[p.playerId] }))
       .sort((a, b) => (b.avg?.ppg ?? 0) - (a.avg?.ppg ?? 0))
     if (roster.length === 0) {
-      return <p className="text-ink-400 px-4 py-6 text-center text-xs">Roster not submitted yet.</p>
+      return <p className="text-ink-500 px-4 py-6 text-center text-[13px]">Roster not submitted yet.</p>
     }
     return (
       <div className="overflow-x-auto">
@@ -807,7 +807,7 @@ export function LiveView({ gameId }: { gameId: string }) {
             {roster.map((p) => (
               <tr key={p.playerId} className="border-ink-50 hover:bg-ink-50 border-t transition-colors">
                 <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
-                  <span className="text-ink-400 mr-1.5 font-normal">
+                  <span className="text-ink-500 mr-1.5 font-normal">
                     {p.jerseyNumber ? `#${p.jerseyNumber}` : ""}
                   </span>
                   <Link href={`/player/${p.playerId}`} className="hover:text-play-600 transition-colors">
@@ -841,7 +841,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           <span className="text-lg font-extrabold tabular-nums">
             <FlashNum value={homeScore} />
           </span>
-          <span className="min-w-14 text-center text-[10px] font-extrabold uppercase tracking-widest text-white/60">
+          <span className="min-w-14 text-center text-[11.5px] font-extrabold uppercase tracking-widest text-white/80">
             {live ? `Live · ${periodLabel(fold.period)}` : final ? "Final" : "vs"}
           </span>
           <span className="text-lg font-extrabold tabular-nums">
@@ -896,7 +896,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                 >
                   {shortTeam(tname)}
                 </Link>
-                {rec && <p className="text-[11px] font-semibold text-white/50">{rec.record}</p>}
+                {rec && <p className="text-[12.5px] font-semibold text-white/75">{rec.record}</p>}
                 <p
                   className={`font-condensed mt-0.5 text-6xl font-bold tabular-nums leading-none lg:text-7xl ${
                     final && score > other ? "text-highlight" : "text-white"
@@ -1084,7 +1084,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               >
                 {/* chips only on phones (the tab already says "Play-by-play") */}
                 <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2">
-                  <h3 className="text-ink-400 hidden flex-1 text-[10px] font-bold uppercase tracking-[0.14em] lg:block">
+                  <h3 className="text-ink-600 hidden flex-1 text-[11.5px] font-bold uppercase tracking-[0.14em] lg:block">
                     Play-by-play
                   </h3>
                   {(
@@ -1140,7 +1140,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                     )
                   )}
                   {visiblePlays.length === 0 && (
-                    <li className="text-ink-400 px-4 py-6 text-center text-xs">No plays yet.</li>
+                    <li className="text-ink-500 px-4 py-6 text-center text-[13px]">No plays yet.</li>
                   )}
                 </ul>
               </div>

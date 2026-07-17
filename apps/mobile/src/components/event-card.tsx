@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   when: { fontSize: 16.5, fontWeight: "800", color: ui.text, fontVariant: ["tabular-nums"] },
   title: { fontSize: 15.5, fontWeight: "800", color: ui.text, marginTop: 1 },
   cancelled: { textDecorationLine: "line-through", color: ui.textMuted },
-  meta: { fontSize: 13, color: palette.ink[600] },
+  meta: { fontSize: 14, color: palette.ink[600] },
   rsvpRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 8,
   },
-  playerName: { fontSize: 13, fontWeight: "600", color: ui.text, flexShrink: 1 },
+  playerName: { fontSize: 14, fontWeight: "600", color: ui.text, flexShrink: 1 },
   rsvpButtons: { flexDirection: "row", gap: 6 },
   rsvpButton: {
     borderWidth: 1,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   going: { backgroundColor: palette.court[600], borderColor: palette.court[600] },
   maybe: { backgroundColor: palette.gold[500], borderColor: palette.gold[500] },
   notGoing: { backgroundColor: palette.hoop[600], borderColor: palette.hoop[600] },
-  rsvpText: { fontSize: 12, fontWeight: "700", color: ui.textMuted },
+  rsvpText: { fontSize: 13, fontWeight: "700", color: ui.textMuted },
   rsvpTextOn: { color: "#fff" },
   error: { fontSize: 12, color: palette.hoop[600], marginTop: 4 },
   sheetBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sheetTitle: { fontSize: 17, fontWeight: "800", color: ui.text },
-  sheetSub: { fontSize: 13, color: ui.textMuted, marginBottom: 6 },
+  sheetSub: { fontSize: 14, color: ui.textMuted, marginBottom: 6 },
   sheetAction: {
     borderWidth: 1,
     borderColor: ui.borderStrong,

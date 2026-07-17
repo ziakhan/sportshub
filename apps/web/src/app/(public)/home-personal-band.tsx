@@ -71,7 +71,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
       <div className="container mx-auto px-4 py-6 sm:px-6">
         {actionCards.length > 0 && (
           <div className="mb-5">
-            <h2 className="text-ink-400 mb-2 text-xs font-semibold uppercase tracking-[0.16em]">
+            <h2 className="text-ink-600 mb-2 text-[12.5px] font-semibold uppercase tracking-[0.16em]">
               Needs your attention
             </h2>
             <OverflowStrip wrapperClassName="-mx-4 sm:mx-0" className="gap-3 px-4 pb-1 sm:px-0">
@@ -82,7 +82,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
                   className={`min-w-[220px] flex-1 rounded-2xl border p-4 transition hover:shadow-sm ${card.tone}`}
                 >
                   <p className="text-sm font-semibold">{card.title}</p>
-                  <p className="mt-0.5 text-xs opacity-80">{card.detail}</p>
+                  <p className="mt-0.5 text-[13px] opacity-90">{card.detail}</p>
                 </Link>
               ))}
             </OverflowStrip>
@@ -92,7 +92,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
         {weekEvents.length > 0 && (
           <div>
             <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-ink-400 text-xs font-semibold uppercase tracking-[0.16em]">
+              <h2 className="text-ink-600 text-[12.5px] font-semibold uppercase tracking-[0.16em]">
                 Your week
               </h2>
               <Link href="/calendar" className="text-play-700 text-xs font-semibold hover:underline">
@@ -118,13 +118,13 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
                         <span className="text-ink-900 block truncate text-sm font-medium">
                           {item.title}
                         </span>
-                        <span className="text-ink-500 block truncate text-xs">
+                        <span className="text-ink-600 block truncate text-[13px]">
                           {chips.join(" · ")}
                           {item.location ? ` · ${item.location}` : ""}
                         </span>
                       </span>
                       {awaitingRsvp.length > 0 && (
-                        <span className="bg-play-100 text-play-800 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                        <span className="bg-play-100 text-play-800 shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold">
                           RSVP: {awaitingRsvp.join(", ")}
                         </span>
                       )}

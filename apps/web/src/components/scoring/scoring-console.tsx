@@ -632,7 +632,7 @@ export function ScoringConsole({
               </svg>
               Correct result
             </button>
-            <p className="text-ink-400 mt-2 text-xs">
+            <p className="text-ink-600 mt-2 text-sm">
               League owner correction — the record stays official until you re-finalize.
             </p>
           </div>
@@ -647,7 +647,7 @@ export function ScoringConsole({
       <div className="flex-1 rounded-xl border border-ink-200 bg-white p-4">
         <h3 className="text-ink-900 text-sm font-semibold">
           {key === "home" ? game.homeTeam.name : game.awayTeam.name}
-          <span className="text-ink-400 ml-2 text-xs">
+          <span className="text-ink-600 ml-2 text-sm">
             {roster.length - absentees[key].size} here · {absentees[key].size} absent
           </span>
         </h3>
@@ -664,7 +664,7 @@ export function ScoringConsole({
                     return { ...prev, [key]: set }
                   })
                 }
-                className={`rounded-lg border p-2 text-left text-xs ${
+                className={`rounded-lg border p-2 text-left text-sm ${
                   absent
                     ? "border-hoop-300 bg-hoop-50 text-hoop-700 line-through"
                     : "border-court-300 bg-court-50 text-ink-800"
@@ -672,14 +672,14 @@ export function ScoringConsole({
               >
                 <span className="text-base font-bold">#{p.jerseyNumber ?? "?"}</span>
                 <span className="ml-1.5">{p.name}</span>
-                <span className="block pl-0.5 text-[9px] font-semibold uppercase">
+                <span className="block pl-0.5 text-[10.5px] font-semibold uppercase">
                   {absent ? "absent" : "present"}
                 </span>
               </button>
             )
           })}
           {roster.length === 0 && (
-            <p className="text-ink-500 col-span-3 text-xs">No roster found for this team.</p>
+            <p className="text-ink-600 col-span-3 text-sm">No roster found for this team.</p>
           )}
         </div>
       </div>
@@ -690,7 +690,7 @@ export function ScoringConsole({
           <h2 className="text-ink-950 text-lg font-bold">
             Attendance — {game.homeTeam.name} vs {game.awayTeam.name}
           </h2>
-          <p className="text-ink-500 text-xs">
+          <p className="text-ink-600 text-sm">
             Everyone starts as present — tap whoever is missing. Absent players show on the
             scoresheet and don&apos;t count a game played in their season stats.
             {absentees.home.size + absentees.away.size > 0 &&
@@ -716,7 +716,7 @@ export function ScoringConsole({
       <div className="flex-1 rounded-xl border border-ink-200 bg-white p-4">
         <h3 className="text-ink-900 text-sm font-semibold">
           {key === "home" ? game.homeTeam.name : game.awayTeam.name}
-          <span className="text-ink-400 ml-2 text-xs">
+          <span className="text-ink-600 ml-2 text-sm">
             starting five: {starters[key].length}/5
           </span>
         </h3>
@@ -737,7 +737,7 @@ export function ScoringConsole({
                     return { ...prev, [key]: next }
                   })
                 }
-                className={`rounded-lg border p-2 text-left text-xs ${
+                className={`rounded-lg border p-2 text-left text-sm ${
                   on
                     ? "border-play-400 bg-play-50 text-play-800"
                     : "border-ink-200 text-ink-700 hover:bg-ink-50"
@@ -749,7 +749,7 @@ export function ScoringConsole({
             )
           })}
           {roster.length === 0 && (
-            <p className="text-ink-500 col-span-3 text-xs">No roster found for this team.</p>
+            <p className="text-ink-600 col-span-3 text-sm">No roster found for this team.</p>
           )}
         </div>
       </div>
@@ -761,7 +761,7 @@ export function ScoringConsole({
           <h2 className="text-ink-950 text-lg font-bold">
             {game.homeTeam.name} vs {game.awayTeam.name}
           </h2>
-          <p className="text-ink-500 text-xs">
+          <p className="text-ink-600 text-sm">
             {game.leagueName ?? ""}{game.venueName ? ` · ${game.venueName}` : ""} · pick each
             starting five, then start the game
           </p>
@@ -810,7 +810,7 @@ export function ScoringConsole({
             Start game
           </button>
         </div>
-        <p className="text-ink-400 text-center text-xs">
+        <p className="text-ink-600 text-center text-sm">
           Fewer than 5 marked players? Tap the ones who are here — you can fix lineups with SUBS
           any time.
         </p>
@@ -827,8 +827,8 @@ export function ScoringConsole({
     return (
       <div className="flex-1 overflow-x-auto rounded-xl border border-ink-200 bg-white p-3">
         <h3 className="text-ink-900 mb-2 text-sm font-semibold">{label}</h3>
-        <table className="w-full text-xs">
-          <thead className="text-ink-400 text-left text-[10px] uppercase">
+        <table className="w-full text-sm">
+          <thead className="text-ink-600 text-left text-[11px] uppercase">
             <tr>
               <th className="py-1 pr-2">Player</th>
               <th className="px-1 text-right">PTS</th>
@@ -879,7 +879,7 @@ export function ScoringConsole({
 
         <div className="border-amber-300 bg-amber-50 rounded-xl border p-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-amber-800 text-xs font-semibold">
+            <p className="text-amber-800 text-[13px] font-semibold">
               Referee approval
               {config.requireRefereeApproval ? " (required by this league)" : " (optional)"}
             </p>
@@ -907,7 +907,7 @@ export function ScoringConsole({
 
           {approvalMode === "pin" && pinReferees.length > 0 ? (
             <div className="mt-2 space-y-2">
-              <p className="text-ink-600 text-xs">
+              <p className="text-ink-600 text-sm">
                 The assigned referee enters their personal PIN — verified against their account,
                 the strongest form of approval.
               </p>
@@ -1205,7 +1205,7 @@ export function ScoringConsole({
             })}
             <button
               onClick={() => setChain(null)}
-              className="text-ink-500 min-h-[44px] whitespace-nowrap px-2 text-xs hover:underline"
+              className="text-ink-600 min-h-[44px] whitespace-nowrap px-2 text-sm hover:underline"
             >
               skip
             </button>
@@ -1299,11 +1299,11 @@ export function ScoringConsole({
                 <span className="text-ink-950 text-base font-extrabold leading-tight">
                   #{jerseyOf(pid)}
                 </span>
-                <span className="text-ink-400 text-[9px]">
+                <span className="text-hoop-600 text-[11px]">
                   {"•".repeat(Math.min(line?.fouls ?? 0, FOUL_LIMIT))}
                 </span>
               </span>
-              <span className="text-ink-600 w-full truncate text-[11.5px] font-medium leading-tight">
+              <span className="text-ink-800 w-full truncate text-[15px] font-semibold leading-tight">
                 {nameOf(pid)}
               </span>
             </button>
@@ -1451,7 +1451,7 @@ export function ScoringConsole({
                     })
                   }
                 }}
-                className={`mt-0.5 rounded-lg px-3 py-1 font-mono text-lg font-bold ${
+                className={`mt-0.5 rounded-lg px-3 py-1 font-mono text-2xl font-bold ${
                   fold.clockRunning
                     ? "bg-court-50 text-court-700"
                     : "bg-ink-100 text-ink-700"
@@ -1814,7 +1814,7 @@ export function ScoringConsole({
                   <button
                     key={pid}
                     onClick={() => setSubOut(subOut === pid ? null : pid)}
-                    className={`rounded-lg border p-2 text-left text-xs ${
+                    className={`rounded-lg border p-2 text-left text-sm ${
                       subOut === pid
                         ? "border-hoop-400 bg-hoop-50"
                         : "border-ink-200 hover:bg-ink-50"
@@ -1847,7 +1847,7 @@ export function ScoringConsole({
                         setStagedSwaps((prev) => [...prev, { out: subOut, in: r.playerId }])
                         setSubOut(null)
                       }}
-                      className={`rounded-lg border p-2 text-left text-xs ${
+                      className={`rounded-lg border p-2 text-left text-sm ${
                         fouledOut
                           ? "border-ink-100 text-ink-300"
                           : subOut

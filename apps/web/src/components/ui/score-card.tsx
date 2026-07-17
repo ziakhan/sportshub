@@ -56,8 +56,8 @@ function TeamRow({ side, decided, won }: { side: Side; decided: boolean; won: bo
         </span>
         <span
           className={cn(
-            "truncate text-sm",
-            decided && won ? "text-ink-950 font-bold" : decided ? "text-ink-500 font-medium" : "text-ink-700 font-medium"
+            "truncate text-base",
+            decided && won ? "text-ink-950 font-bold" : decided ? "text-ink-600 font-medium" : "text-ink-700 font-medium"
           )}
         >
           {side.name}
@@ -73,7 +73,7 @@ function TeamRow({ side, decided, won }: { side: Side; decided: boolean; won: bo
           <span
             className={cn(
               "font-display tabular-nums",
-              decided && won ? "text-ink-950 text-2xl font-bold" : "text-ink-400 text-2xl font-semibold"
+              decided && won ? "text-ink-950 text-2xl font-bold" : "text-ink-500 text-2xl font-semibold"
             )}
           >
             {side.score}
@@ -95,7 +95,7 @@ export function ScoreCard({ status, home, away, dateLabel, venue, highlightsHref
       <div className="mb-3 flex items-center justify-between">
         <StatusBadge status={status} />
         {dateLabel && !decided && status !== "LIVE" && (
-          <span className="text-ink-500 text-xs font-medium">{dateLabel}</span>
+          <span className="text-ink-600 text-[13px] font-medium">{dateLabel}</span>
         )}
       </div>
       <div className="space-y-2">
@@ -108,14 +108,14 @@ export function ScoreCard({ status, home, away, dateLabel, venue, highlightsHref
             // min-w-0: without it this nowrap flex item's min-content is the
             // full venue string, which forces the card (and the page) wider
             // than a phone viewport — truncate alone doesn't shrink it.
-            <span className="text-ink-400 min-w-0 truncate text-xs">{venue}</span>
+            <span className="text-ink-600 min-w-0 truncate text-[13px]">{venue}</span>
           ) : (
             <span />
           )}
           {highlightsHref && (
             <Link
               href={highlightsHref}
-              className="text-play-600 hover:text-play-700 inline-flex items-center gap-1 text-xs font-semibold"
+              className="text-play-600 hover:text-play-700 inline-flex items-center gap-1 text-[13px] font-semibold"
             >
               Highlights
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

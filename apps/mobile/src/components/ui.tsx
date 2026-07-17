@@ -370,13 +370,13 @@ export function ScreenScroll({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.background },
-  screenContent: { padding: 16, paddingBottom: 32, gap: 12 },
+  screenContent: { padding: 16, paddingBottom: 32, gap: 10 },
   card: {
     backgroundColor: ui.surface,
     borderRadius: ui.radius.lg,
     borderWidth: 1,
     borderColor: ui.border,
-    padding: 14,
+    padding: 12,
     gap: 4,
     ...cardShadow,
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   eyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 1.2,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   listRowText: { fontSize: 15, color: ui.text, fontWeight: "700" },
-  listRowSub: { fontSize: 12.5, color: ui.textMuted, marginTop: 1 },
+  listRowSub: { fontSize: 13.5, color: ui.textMuted, marginTop: 1 },
   pill: {
     borderRadius: 999,
     borderWidth: 1,
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignSelf: "flex-start",
   },
-  pillText: { fontSize: 11, fontWeight: "700" },
+  pillText: { fontSize: 12, fontWeight: "700" },
   primaryButton: {
     backgroundColor: ui.primary,
     borderRadius: ui.radius.md,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   emptyTitle: { fontSize: 15, fontWeight: "700", color: ui.text, textAlign: "center" },
-  emptyBody: { fontSize: 13, color: ui.textMuted, textAlign: "center", lineHeight: 19 },
+  emptyBody: { fontSize: 14, color: ui.textMuted, textAlign: "center", lineHeight: 20 },
   avatar: {
     backgroundColor: ui.primary,
     alignItems: "center",

@@ -67,7 +67,7 @@ function DayGroups({ games, order }: { games: any[]; order: "asc" | "desc" }) {
     <div className="space-y-8">
       {days.map((day) => (
         <div key={day.date.toISOString()}>
-          <h3 className="text-ink-400 mb-3 px-1 text-xs font-bold uppercase tracking-[0.14em]">
+          <h3 className="text-ink-600 mb-3 px-1 text-[12.5px] font-bold uppercase tracking-[0.14em]">
             {isSameDay(day.date, today) ? "Today" : format(day.date, "EEEE, MMMM d")}
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -160,7 +160,7 @@ export default async function ScoresPage({
       <div className="mb-8 flex flex-wrap gap-2">
         <Link
           href="/scores"
-          className={`rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition ${
+          className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
             !seasonFilter
               ? "bg-ink-950 text-white ring-ink-950"
               : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
@@ -175,7 +175,7 @@ export default async function ScoresPage({
               key={l.seasons[0].id}
               href={`/scores?season=${l.seasons[0].id}`}
               title={`${l.name} scores`}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition ${
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
                 seasonFilter === l.seasons[0].id
                   ? "bg-ink-950 text-white ring-ink-950"
                   : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
@@ -206,7 +206,7 @@ export default async function ScoresPage({
                 <h2 className="text-ink-950 text-xl font-bold">Your games</h2>
                 <Badge tone="hoop">{myGames.length}</Badge>
               </div>
-              <p className="text-ink-400 -mt-2 mb-4 text-xs">
+              <p className="text-ink-500 -mt-2 mb-4 text-[12.5px]">
                 Games for your kids&apos; teams and teams you follow.
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

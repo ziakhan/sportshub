@@ -77,8 +77,8 @@ export default async function AccountPage() {
             >
               <TileIcon d={t.icon} />
               <span className="min-w-0">
-                <span className="text-ink-950 block text-sm font-semibold">{t.title}</span>
-                <span className="text-ink-500 mt-0.5 block text-xs">{t.detail}</span>
+                <span className="text-ink-950 block text-[15px] font-semibold">{t.title}</span>
+                <span className="text-ink-600 mt-0.5 block text-[13px]">{t.detail}</span>
               </span>
             </Link>
           ))}

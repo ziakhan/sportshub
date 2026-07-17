@@ -55,19 +55,19 @@ function TabButton({
         style={{
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 17,
-          paddingHorizontal: 13,
-          paddingVertical: 4,
-          minWidth: 62,
+          borderRadius: 19,
+          paddingHorizontal: 14,
+          paddingVertical: 5,
+          minWidth: 66,
           backgroundColor: focused ? t.energy : "transparent",
         }}
       >
-        <Ionicons name={name} size={20} color={focused ? t.energyOn : ui.textMuted} />
+        <Ionicons name={name} size={24} color={focused ? t.energyOn : ui.textMuted} />
         <Text
           numberOfLines={1}
           style={{
-            fontSize: 10,
-            fontWeight: "700",
+            fontSize: 11.5,
+            fontWeight: "800",
             marginTop: 1,
             color: focused ? t.energyOn : ui.textMuted,
           }}

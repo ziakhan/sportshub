@@ -28,8 +28,12 @@ export const ui = {
   border: colors.ink[100],
   borderStrong: colors.ink[200],
   text: colors.ink[950],
-  textMuted: colors.ink[500],
-  textFaint: colors.ink[400],
+  // Readability pass 2026-07-17: muted/faint darkened one shade each —
+  // ink500 measured 4.3–4.6:1 (borderline) and ink400 2.9–3.1:1 (fails
+  // WCAG AA) on our surfaces. Decoration that may stay light should use
+  // palette.ink[300/400] explicitly, not these semantic slots.
+  textMuted: colors.ink[600],
+  textFaint: colors.ink[500],
   primary: colors.play[600],
   primaryInk: colors.play[700],
   primarySoft: colors.play[50],
