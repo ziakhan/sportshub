@@ -61,7 +61,7 @@ colors. Log every mismatch here; fix in ONE cross-platform pass per screen.
 | Team chat body | ⏳ to sweep | Poll bubbles now shared (01b3d37). Compare: reactions row, pinned strip, sender context lines, edited tag. |
 | Entity-row icon language | ✅ fixed `23b614b` | Ten rows/eight screens: entities → real marks (logo/monogram/avatar); generic glyphs retired. Web utility-tile adoption rides the Account pass. |
 | My Kids (index + detail) | ✅ fixed (detail rebuilt to web card anatomy) | Chips hero, monogram team rows w/ jersey + club·age lines → team home. Index was already card-based. |
-| Home (signed-in band) | ⏳ to sweep | Native "This week" rows are plain text stacks; web band styles differ. Date bug fixed `8e43e18`. |
+| Home (signed-in band) | ✅ fixed (web anatomy ported) | Urgency cards color-coded + day-grouped "Your week" w/ time column, location, RSVP pills. "My teams" = deliberate native extra. Date bug fixed `8e43e18`. |
 | Team home | ⏳ to sweep | Web /teams/[id] (staff) vs /team/[id] (family) vs native /team/[id] — three variants. |
 | Calendar | ⏳ to sweep | Cards recently unified (type-color edges) — verify start–end formats + action sheets match. |
 | Scores | ⏳ to sweep | — |
