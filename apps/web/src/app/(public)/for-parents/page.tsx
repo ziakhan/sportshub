@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { SectionHeader } from "@/components/ui"
+import { DemoPlayer } from "@/components/demo/demo-player"
+import { PARENT_SCENES } from "@/components/demo/scenes-parent"
 
 export const metadata = {
   title: "For Parents & Players — One App for the Whole Season",
@@ -96,6 +98,27 @@ export default function ForParentsPage() {
                 Create your free account
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-14 sm:py-16">
+        <div className="container mx-auto px-4 sm:px-6">
+          <SectionHeader
+            eyebrow="Watch it work"
+            title="Discover, register, pay — then just follow the season"
+            accent="hoop"
+            align="center"
+            className="mb-8"
+          />
+          <div className="mx-auto max-w-3xl">
+            <DemoPlayer title="Parent journey walkthrough" scenes={PARENT_SCENES} />
+            <p className="text-ink-400 mt-3 text-center text-sm">
+              Every screen is the live design system with demo data — press play or step through.{" "}
+              <Link href="/how-it-works" className="text-play-600 font-semibold">
+                See the club and league journeys &rarr;
+              </Link>
+            </p>
           </div>
         </div>
       </section>

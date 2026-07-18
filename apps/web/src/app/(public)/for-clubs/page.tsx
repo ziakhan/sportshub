@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { SectionHeader } from "@/components/ui"
+import { DemoPlayer } from "@/components/demo/demo-player"
+import { CLUB_SCENES } from "@/components/demo/scenes-club"
 
 export const metadata = {
   title: "For Clubs — Registration, Payments & Live Scoring for Youth Basketball",
@@ -97,6 +99,27 @@ export default function ForClubsPage() {
                 See club pages live
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-14 sm:py-16">
+        <div className="container mx-auto px-4 sm:px-6">
+          <SectionHeader
+            eyebrow="Watch it work"
+            title="From claimed club to a paid, locked roster"
+            accent="play"
+            align="center"
+            className="mb-8"
+          />
+          <div className="mx-auto max-w-3xl">
+            <DemoPlayer title="Club journey walkthrough" scenes={CLUB_SCENES} />
+            <p className="text-ink-400 mt-3 text-center text-sm">
+              Every screen is the live design system with demo data — press play or step through.{" "}
+              <Link href="/how-it-works" className="text-play-600 font-semibold">
+                See the parent and league journeys &rarr;
+              </Link>
+            </p>
           </div>
         </div>
       </section>
