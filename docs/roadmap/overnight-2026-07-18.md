@@ -42,4 +42,11 @@ Commit + test per item. Morning report with verification evidence.
   email/password self-service · edit round-trips (recap/review/poll/
   announcement/chat) · notification dismiss.
 
-## Order: A → B → C (features while fresh, independent items after).
+## D. STRETCH (owner 2026-07-18, if A-C complete): Club claiming v2
+Per feature-backlog §Club claiming v2 (settled flow): claim models +
+verification via census contacts (email path first; Twilio SMS = needs
+owner creds, build the seam + email path, SMS behind env flag) +
+paper-proof upload → admin queue → claim-completion token → user-bound
+ownership + claim-time corrections + search-before-create in onboarding.
+
+## Order: A → B → C → D-stretch (features while fresh, independent items after).

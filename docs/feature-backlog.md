@@ -176,7 +176,11 @@ feature is greenlit for build.
 3. **Search-before-create**: signup/onboarding for club operators must
    push SEARCH + CLAIM before "create a new club" — never create-first
    (claim funnel from the clubs browse/search pages too).
-4. **OPEN QUESTION (owner asked)**: where does sign-up sit in the claim
-   flow — force account creation before claiming, or allow claim-start
-   anonymous (email captured in flow) with account creation at approval?
-   Discuss before building.
+4. **SETTLED (owner 2026-07-18 night)**: claim-first, account-at-end —
+   BUT ownership is USER-bound, never contact-bound. Flow: anonymous
+   claim → verify via known email/SMS code (or paper-proof→admin path) →
+   on success, notify THAT contact point ("verified — register to take
+   ownership") with a completion token → registering/signing-in via the
+   token binds the claim to the User → club CLAIMED (ClubOwner role).
+   A verified-but-unregistered claim holds the club reserved (TTL, e.g.
+   14 days) so nobody else claims it mid-flow.
