@@ -12,7 +12,7 @@ import { AuthLink } from "@/components/auth-link"
 import { ChatDock } from "@/components/chat-dock"
 import { OverflowStrip } from "@/components/overflow-strip"
 import { SectionPills } from "@/components/public/section-pills"
-import { BrandIcon, BrandWordmark } from "@/components/brand/wordmark"
+import { BrandWordmark } from "@/components/brand/wordmark"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -51,9 +51,8 @@ export default async function PublicLayout({ children }: { children: React.React
     >
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-[60px] items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <BrandIcon size={36} />
-            <BrandWordmark size="sm" variant="color" />
+          <Link href="/" className="flex items-center">
+            <BrandWordmark size="md" variant="color" />
           </Link>
 
           {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
@@ -161,9 +160,8 @@ export default async function PublicLayout({ children }: { children: React.React
       <footer className="bg-ink-950 mt-auto border-t border-white/5 py-14 text-white">
         <div className="container mx-auto grid gap-10 px-4 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div className="max-w-sm">
-            <div className="mb-4 flex items-center gap-2.5">
-              <BrandIcon size={36} />
-              <BrandWordmark size="sm" variant="reverse" />
+            <div className="mb-4 flex items-center">
+              <BrandWordmark size="md" variant="reverse" />
             </div>
             <p className="text-ink-300 text-sm leading-6">
               A modern operating system for youth basketball clubs, parents, players, and league
