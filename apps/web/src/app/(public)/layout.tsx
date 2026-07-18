@@ -50,9 +50,9 @@ export default async function PublicLayout({ children }: { children: React.React
       className={`text-ink-950 flex min-h-screen flex-col bg-[#fafafa] ${isLoggedIn ? "pb-16 lg:pb-0" : ""}`}
     >
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-[60px] items-center justify-between px-4 sm:px-6">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:h-[72px]">
           <Link href="/" className="flex items-center">
-            <BrandWordmark size="md" variant="color" />
+            <BrandWordmark size="lg" variant="color" />
           </Link>
 
           {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
@@ -61,7 +61,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <nav className="hidden items-center gap-1 lg:flex">
             <Link
               href="/scores"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
             >
               Scores
             </Link>
@@ -85,19 +85,19 @@ export default async function PublicLayout({ children }: { children: React.React
             />
             <Link
               href="/news"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
             >
               News
             </Link>
             <Link
               href="/events"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
             >
               Programs
             </Link>
             <Link
               href="/events"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
             >
               Marketplace
             </Link>
@@ -109,7 +109,7 @@ export default async function PublicLayout({ children }: { children: React.React
                 {nav.isOperator && (
                   <Link
                     href="/dashboard"
-                    className="bg-ink-950 hover:bg-ink-800 hidden items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors sm:inline-flex"
+                    className="bg-ink-950 hover:bg-ink-800 hidden items-center gap-1.5 rounded-xl px-4 py-2 text-[15px] font-semibold text-white transition-colors sm:inline-flex"
                   >
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
@@ -133,13 +133,13 @@ export default async function PublicLayout({ children }: { children: React.React
               <>
                 <AuthLink
                   to="sign-in"
-                  className="text-ink-600 hover:text-ink-950 px-3 py-1.5 text-[13px] font-medium transition-colors"
+                  className="text-ink-600 hover:text-ink-950 px-3.5 py-2 text-[15px] font-medium transition-colors"
                 >
                   Log in
                 </AuthLink>
                 <AuthLink
                   to="sign-up"
-                  className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-colors"
+                  className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-5 py-2.5 text-[15px] font-semibold text-white transition-colors"
                 >
                   Start Free
                 </AuthLink>

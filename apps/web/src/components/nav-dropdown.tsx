@@ -60,7 +60,7 @@ export function NavDropdown({
     return (
       <Link
         href={browseHref}
-        className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+        className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
       >
         {label}
       </Link>
@@ -74,7 +74,7 @@ export function NavDropdown({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={`text-ink-600 hover:bg-ink-50 hover:text-ink-950 inline-flex items-center gap-1 rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+        className={`text-ink-600 hover:bg-ink-50 hover:text-ink-950 inline-flex items-center gap-1 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors ${
           open ? "bg-ink-50 text-ink-950" : ""
         }`}
       >
@@ -97,14 +97,14 @@ export function NavDropdown({
         >
           {myEntries.length > 0 && (
             <div className="border-ink-50 border-b py-2">
-              <div className="text-hoop-600 px-4 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+              <div className="text-hoop-600 px-4 pb-1 pt-1.5 text-[11px] font-bold uppercase tracking-[0.16em]">
                 {myLabel}
               </div>
               {myEntries.map((e) => (
                 <Link
                   key={e.id}
                   href={e.href}
-                  className="text-ink-950 hover:bg-ink-50 flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-colors"
+                  className="text-ink-950 hover:bg-ink-50 flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold transition-colors"
                 >
                   <svg
                     className="h-3.5 w-3.5 shrink-0 text-amber-400"
@@ -121,14 +121,14 @@ export function NavDropdown({
           )}
           {allEntries.length > 0 && (
             <div className="py-2">
-              <div className="text-ink-400 px-4 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+              <div className="text-ink-400 px-4 pb-1 pt-1.5 text-[11px] font-bold uppercase tracking-[0.16em]">
                 {allLabel}
               </div>
               {allEntries.map((e) => (
                 <Link
                   key={e.id}
                   href={e.href}
-                  className="text-ink-700 hover:bg-ink-50 hover:text-ink-950 block truncate px-4 py-2 text-sm font-medium transition-colors"
+                  className="text-ink-700 hover:bg-ink-50 hover:text-ink-950 block truncate px-4 py-2.5 text-[15px] font-medium transition-colors"
                 >
                   {e.name}
                 </Link>
@@ -137,7 +137,7 @@ export function NavDropdown({
           )}
           <Link
             href={browseHref}
-            className="border-ink-50 text-play-600 hover:bg-play-50 block border-t px-4 py-3 text-sm font-semibold transition-colors"
+            className="border-ink-50 text-play-600 hover:bg-play-50 block border-t px-4 py-3 text-[15px] font-semibold transition-colors"
           >
             {browseLabel} &rarr;
           </Link>
