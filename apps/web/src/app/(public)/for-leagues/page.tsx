@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { SectionHeader } from "@/components/ui"
+import { DemoPlayer } from "@/components/demo/demo-player"
+import { LEAGUE_SCENES } from "@/components/demo/scenes-league"
 
 export const metadata = {
   title: "For Leagues — Scheduling, Live Scoring & Standings for Youth Basketball",
@@ -104,6 +106,27 @@ export default function ForLeaguesPage() {
                 Browse leagues
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-14 sm:py-16">
+        <div className="container mx-auto px-4 sm:px-6">
+          <SectionHeader
+            eyebrow="Watch it work"
+            title="Season, schedule, referees, standings — end to end"
+            accent="court"
+            align="center"
+            className="mb-8"
+          />
+          <div className="mx-auto max-w-3xl">
+            <DemoPlayer title="League journey walkthrough" scenes={LEAGUE_SCENES} />
+            <p className="text-ink-400 mt-3 text-center text-sm">
+              Every screen is the live design system with demo data — press play or step through.{" "}
+              <Link href="/how-it-works" className="text-play-600 font-semibold">
+                See the parent and club journeys &rarr;
+              </Link>
+            </p>
           </div>
         </div>
       </section>
