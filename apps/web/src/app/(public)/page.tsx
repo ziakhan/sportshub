@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/countries"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 
 export const metadata = {
-  title: { absolute: "Youth Basketball Hub — Clubs, Leagues, Camps & Live Scores" },
+  title: { absolute: "SportsHub One — Youth Basketball Clubs, Leagues, Camps & Live Scores" },
   description:
     "Find youth basketball clubs, leagues, camps and tryouts near you. Live scores, standings, stat leaders and game recaps.",
   alternates: { canonical: "/" },
@@ -150,7 +150,7 @@ export default async function HomePage() {
       <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
         <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
         <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
-        <div className="bg-court-200/50 absolute bottom-[8%] left-[28%] h-60 w-60 rounded-full blur-3xl" />
+        <div className="bg-hoop-200/40 absolute bottom-[8%] left-[28%] h-60 w-60 rounded-full blur-3xl" />
 
         <div className="container relative z-10 mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-4xl text-center">
@@ -180,23 +180,24 @@ export default async function HomePage() {
             <h1 className="font-display text-ink-950 mb-6 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
               Youth basketball.
               <br />
-              <span className="from-play-600 via-hoop-500 to-court-600 bg-gradient-to-r bg-clip-text text-transparent">
+              <span className="from-play-600 to-hoop-500 bg-gradient-to-r bg-clip-text text-transparent">
                 All of it. One app.
               </span>
             </h1>
 
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
-              Registration and payments, schedules and standings, live scores and stats, team chat
-              and your club&apos;s whole public face — one login for every hat you wear.{" "}
+              Run tryouts, send offers, and turn them into signed-up, paid rosters — then
+              schedules, live scores and standings all season long. Everything your club or league
+              runs on spreadsheets today, in one app.{" "}
               <span className="text-ink-950 font-semibold">Your season runs itself.</span>
             </p>
 
             <div className="mb-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/events"
+                href="/for-clubs"
                 className="bg-ink-950 shadow-ink-950/10 hover:bg-ink-800 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition sm:w-auto"
               >
-                Find a program
+                Run your club or league
                 <svg
                   className="h-4 w-4"
                   viewBox="0 0 24 24"
@@ -208,10 +209,10 @@ export default async function HomePage() {
                 </svg>
               </Link>
               <Link
-                href="/for-clubs"
+                href="/events"
                 className="border-ink-200 text-ink-700 hover:bg-ink-50 inline-flex w-full items-center justify-center rounded-2xl border bg-white px-7 py-3.5 text-[15px] font-semibold transition sm:w-auto"
               >
-                Run your club or league
+                Find a program
               </Link>
             </div>
 

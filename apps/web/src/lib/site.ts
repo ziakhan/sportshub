@@ -13,7 +13,7 @@ export function siteUrl(): string {
   ).replace(/\/$/, "")
 }
 
-export const SITE_NAME = "Youth Basketball Hub"
+export const SITE_NAME = "SportsHub One"
 
 export const SITE_DESCRIPTION =
   "Youth basketball clubs, leagues, camps, tryouts, live scores and standings — one platform for families, clubs and league operators."
