@@ -162,7 +162,7 @@ feature is greenlit for build.
   pod needs GoogleUtilities + RecaptchaInterop `modular_headers` (via
   expo-build-properties extraPods) or pod install fails on EAS.
 
-## Club claiming v2 🎯 (owner requirements, 2026-07-18 night — SAVED FOR LATER, not in overnight scope)
+## Club claiming v2 ✅ SHIPPED overnight 2026-07-18 (`2f88c78`, local commit — not deployed; SMS channel dark until owner supplies Twilio creds)
 1. **Verified claiming via known contacts + Twilio SMS**: when claiming an
    UNCLAIMED club, offer verification against the contact data we hold
    (census!): email and/or SMS code to the club's known phone (Twilio

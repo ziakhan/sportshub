@@ -47,6 +47,9 @@ const PUBLIC_PAGE_PREFIXES = [
   "/for-clubs",
   "/for-leagues",
   "/unsubscribed",
+  // Anonymous club-claim wizard + completion landing (owner 2026-07-18:
+  // claim-first, account-at-end — no session until the token is redeemed)
+  "/claim",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
@@ -91,6 +94,10 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   // Guest scorekeeper: claim + token-authenticated scoring pass-through —
   // each route validates the game-scoped token itself
   "/api/score-invites",
+  // Anonymous club claiming v2: start/verify need POST/PATCH signed-out; the
+  // code only ever goes to the club's contact ON FILE, and completion
+  // (/api/clubs/claim-complete) still requires a session to bind ownership.
+  "/api/clubs/claim-v2",
 ] as const
 
 /** Dev-only utilities — never public in production. */
