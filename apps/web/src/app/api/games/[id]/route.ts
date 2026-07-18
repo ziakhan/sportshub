@@ -6,6 +6,7 @@ import { notifyMany, type NotificationType } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
+import { advancePlayoffs } from "@/lib/playoffs/generate"
 
 export const dynamic = "force-dynamic"
 
@@ -271,6 +272,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         court: { select: { id: true, name: true } },
       },
     })
+
+    // Playoff advancement — a bracket game manually flipped to COMPLETED
+    // (scores already on the row) can seed the next round. No-ops otherwise.
+    if (data.status === "COMPLETED" && game.status !== "COMPLETED") {
+      await advancePlayoffs(params.id)
+    }
 
     // G8 notifications — compare against the pre-update row
     const becameInactive =

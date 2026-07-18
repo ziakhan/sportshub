@@ -1397,6 +1397,8 @@ model SeasonSession {
   phase              SessionPhase @default(REGULAR)
   targetGamesPerTeam Int?
 
+  // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
+  playoffPlan Json?
   days  SeasonSessionDay[]
   games Game[]
 
@@ -1409,6 +1411,7 @@ enum SessionPhase {
   REGULAR
   PLAYOFF
 }
+
 
 model SeasonSessionDay {
   id        String        @id @default(uuid())
@@ -1623,6 +1626,12 @@ model Game {
   // league's gameClockMode; true/false overrides per game — an unoperated
   // clock is worse than none, so the person at the table decides.
   clockEnabled Boolean?
+
+  // Playoffs (owner 2026-07-18): round number (1 = first round) + slot index
+  // within the round. Later-round games are created by advancePlayoffs() as
+  // winners emerge — the bracket plan lives on the session's playoffPlan.
+  playoffRound Int?
+  playoffSlot  Int?
 
   // Single active scoring device (soft lock with visible takeover)
   scoringSessionId   String?

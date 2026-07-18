@@ -14,6 +14,7 @@ import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
+import { PlayoffsTab } from "./components/playoffs-tab"
 import type { SchedSettings } from "./components/types"
 
 const STATUS_FLOW = [
@@ -44,6 +45,7 @@ const TABS = [
   { key: "referees", label: "Referees" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
+  { key: "playoffs", label: "Playoffs" },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
@@ -326,6 +328,13 @@ export default function LeagueManagePage() {
           />
         )}
         {activeTab === "standings" && <StandingsTab seasonId={seasonId} />}
+        {activeTab === "playoffs" && (
+          <PlayoffsTab
+            seasonId={seasonId}
+            divisions={divisions}
+            seasonStatus={league?.leagueStatus}
+          />
+        )}
       </div>
     </div>
   )

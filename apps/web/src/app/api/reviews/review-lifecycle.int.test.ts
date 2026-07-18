@@ -65,7 +65,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await prisma.review.deleteMany({ where: { reviewerId: parentId } })
   await (prisma as any).reviewInvite.deleteMany({ where: { seasonId } })
-  await destroyWorld(world)
+  await destroyWorld(world.ctx)
 })
 
 describe("season-conclude review invites", () => {
