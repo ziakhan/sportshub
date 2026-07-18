@@ -81,6 +81,19 @@ export function DemoPlayer({
     setProgress(0)
   }
 
+  // Keep the active step chip visible as scenes advance. Scrolls ONLY the
+  // chip strip (scrollIntoView could vertically yank the page mid-read).
+  const chipsRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const wrap = chipsRef.current
+    const el = wrap?.querySelector<HTMLElement>(`[data-chip="${i}"]`)
+    if (!wrap || !el) return
+    wrap.scrollTo({
+      left: el.offsetLeft - (wrap.clientWidth - el.offsetWidth) / 2,
+      behavior: "smooth",
+    })
+  }, [i])
+
   const scene = scenes[i]
 
   return (
@@ -91,28 +104,37 @@ export function DemoPlayer({
       aria-label={title}
       className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
     >
-      {/* step chips */}
-      <div className="border-ink-50 flex gap-1.5 overflow-x-auto border-b px-3 py-2.5 [scrollbar-width:none]">
-        {scenes.map((s, n) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => {
-              setPlaying(false)
-              goto(n)
-            }}
-            aria-current={n === i ? "step" : undefined}
-            className={`flex-none cursor-pointer whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-              n === i
-                ? "bg-ink-950 text-white"
-                : n < i
-                  ? "bg-play-50 text-play-700 hover:bg-play-100"
-                  : "bg-ink-50 text-ink-500 hover:bg-ink-100"
-            }`}
-          >
-            {n + 1}. {s.label}
-          </button>
-        ))}
+      {/* step chips — active chip auto-scrolls into view; edge fades signal
+          there are more steps than fit (owner 2026-07-18: hidden pills were
+          undiscoverable) */}
+      <div className="border-ink-50 relative border-b">
+        <div ref={chipsRef} className="flex gap-1.5 overflow-x-auto px-3 py-2.5 [scrollbar-width:none]">
+          {scenes.map((s, n) => (
+            <button
+              key={s.label}
+              type="button"
+              data-chip={n}
+              onClick={() => {
+                setPlaying(false)
+                goto(n)
+              }}
+              aria-current={n === i ? "step" : undefined}
+              className={`flex-none cursor-pointer whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                n === i
+                  ? "bg-ink-950 text-white"
+                  : n < i
+                    ? "bg-play-50 text-play-700 hover:bg-play-100"
+                    : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+              }`}
+            >
+              {n + 1}. {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex w-14 items-center justify-end bg-gradient-to-l from-white via-white/80 to-transparent pr-1" aria-hidden="true">
+          <span className="text-ink-300 text-[10px] font-black">{scenes.length}&nbsp;steps&nbsp;›</span>
+        </div>
       </div>
 
       {/* progress */}
