@@ -164,13 +164,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   // soft-deleting them would leave a ghost occupying a roster spot.
   const activeRoster = await prisma.teamPlayer.findFirst({
     where: { playerId: params.id, status: "ACTIVE" },
-    include: { team: { select: { name: true } } },
+    include: { team: { select: { id: true, name: true } } },
   })
   if (activeRoster) {
+    // teamId/teamName let the UI offer a release request in place
+    // (owner 2026-07-18: leaving a roster goes through the club's approval)
     return NextResponse.json(
       {
-        error: `Cannot remove this player while they are on the active roster of ${activeRoster.team.name}. Ask the club to release them first.`,
+        error: `Cannot remove this player while they are on the active roster of ${activeRoster.team.name}.`,
         code: "ACTIVE_ROSTER",
+        teamId: activeRoster.team.id,
+        teamName: activeRoster.team.name,
       },
       { status: 409 }
     )

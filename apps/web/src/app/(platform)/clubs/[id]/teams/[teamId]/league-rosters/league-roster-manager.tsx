@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
@@ -60,6 +60,76 @@ export function LeagueRosterManager({
   const [requestRemoves, setRequestRemoves] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  // Owner 2026-07-18: withdrawing an APPROVED team needs the league's
+  // sign-off — track our pending withdrawal requests by submissionId.
+  const [withdrawing, setWithdrawing] = useState<string | null>(null)
+  const [withdrawReason, setWithdrawReason] = useState("")
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<Record<string, string>>({})
+
+  const loadWithdrawals = async () => {
+    try {
+      const res = await fetch("/api/withdrawal-requests")
+      if (!res.ok) return
+      const data = await res.json()
+      const map: Record<string, string> = {}
+      for (const r of data.made ?? []) {
+        if (r.status === "PENDING" && r.submission?.id) map[r.submission.id] = r.id
+      }
+      setPendingWithdrawals(map)
+    } catch {
+      // non-fatal — the Withdraw button just behaves as if nothing is pending
+    }
+  }
+
+  useEffect(() => {
+    loadWithdrawals()
+  }, []) // eslint-disable-line
+
+  const requestWithdrawal = async (v: RosterVersion) => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/withdrawal-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "CLUB_FROM_LEAGUE",
+          submissionId: v.submissionId,
+          reason: withdrawReason,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't send the withdrawal request")
+      setMessage({
+        type: "success",
+        text: `Withdrawal request sent — ${v.leagueName} will review it.`,
+      })
+      setWithdrawing(null)
+      setWithdrawReason("")
+      loadWithdrawals()
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Couldn't send" })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const cancelWithdrawal = async (requestId: string) => {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/withdrawal-requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      })
+      if (res.ok) {
+        setMessage({ type: "success", text: "Withdrawal request cancelled." })
+        loadWithdrawals()
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const startEdit = (v: RosterVersion) => {
     setEditing(v.submissionId)
@@ -225,7 +295,19 @@ export function LeagueRosterManager({
                       Request change
                     </Button>
                   )}
-                  {(v.submissionStatus === "PENDING" || v.submissionStatus === "APPROVED") && (
+                  {pendingWithdrawals[v.submissionId] ? (
+                    <>
+                      <Badge tone="warning">Withdrawal requested</Badge>
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        onClick={() => cancelWithdrawal(pendingWithdrawals[v.submissionId])}
+                        disabled={busy}
+                      >
+                        Cancel request
+                      </Button>
+                    </>
+                  ) : v.submissionStatus === "PENDING" ? (
                     <Button
                       variant="secondary"
                       tone="hoop"
@@ -235,10 +317,55 @@ export function LeagueRosterManager({
                     >
                       Withdraw from league
                     </Button>
-                  )}
+                  ) : v.submissionStatus === "APPROVED" ? (
+                    <Button
+                      variant="secondary"
+                      tone="hoop"
+                      size="sm"
+                      onClick={() => {
+                        setWithdrawing(withdrawing === v.submissionId ? null : v.submissionId)
+                        setWithdrawReason("")
+                        setMessage(null)
+                      }}
+                      disabled={busy}
+                    >
+                      Request withdrawal
+                    </Button>
+                  ) : null}
                 </span>
               }
             />
+            {withdrawing === v.submissionId && (
+              <div className="border-ink-100 bg-ink-50/50 border-b px-6 py-4">
+                <p className="text-ink-700 mb-2 text-sm font-medium">
+                  Request withdrawal from {v.leagueName}
+                </p>
+                <p className="text-ink-500 mb-3 text-xs">
+                  Your team is approved for this season, so the league has to sign off. If
+                  approved, upcoming games are cancelled and opponents notified.
+                </p>
+                <textarea
+                  value={withdrawReason}
+                  onChange={(e) => setWithdrawReason(e.target.value)}
+                  placeholder="Why is the team withdrawing? (required)"
+                  rows={2}
+                  className="border-ink-200 mb-3 w-full rounded-lg border px-3 py-2 text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    tone="hoop"
+                    onClick={() => requestWithdrawal(v)}
+                    disabled={busy || withdrawReason.trim().length < 3}
+                  >
+                    Send request
+                  </Button>
+                  <Button size="sm" variant="subtle" onClick={() => setWithdrawing(null)}>
+                    Never mind
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="border-ink-100 border-b px-6 py-3">
               <div className="text-ink-500 flex flex-wrap items-center gap-2 text-xs">
                 {v.submissionStatus === "WITHDRAWN" && (

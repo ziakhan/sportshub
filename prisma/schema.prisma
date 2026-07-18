@@ -102,6 +102,8 @@ model User {
   @@index([status])
   refereeProfile RefereeProfile?
   reviewInvites ReviewInvite[] @relation("ReviewInvites")
+  withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
+  withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
 }
 
 enum UserStatus {
@@ -809,6 +811,8 @@ model TeamPlayer {
   joinedAt DateTime         @default(now())
   leftAt   DateTime?
 
+  withdrawalRequests WithdrawalRequest[]
+
   @@unique([teamId, playerId])
   @@index([teamId])
   @@index([playerId])
@@ -1286,6 +1290,8 @@ model TeamSubmission {
   blackouts SeasonTeamBlackout[]
 
   createdAt DateTime @default(now())
+
+  withdrawalRequests WithdrawalRequest[]
 
   @@unique([seasonId, teamId])
   @@index([seasonId])
@@ -2419,6 +2425,52 @@ model ReviewInvite {
   @@unique([seasonId, tenantId, userId])
   @@index([userId, expiresAt])
   @@index([tenantId])
+}
+
+// Withdrawals need the other party's sign-off (owner 2026-07-18): installment
+// commitments make unilateral exits wrong. Clubs request out of a league
+// season (league approves); parents request a child's release from a roster
+// (club approves). League-side direct withdrawal stays — running the league
+// is their right; SELF-withdrawal is what goes through here.
+enum WithdrawalType {
+  CLUB_FROM_LEAGUE
+  PLAYER_FROM_TEAM
+}
+
+enum WithdrawalRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+model WithdrawalRequest {
+  id     String                  @id @default(uuid())
+  type   WithdrawalType
+  status WithdrawalRequestStatus @default(PENDING)
+  reason String
+
+  requestedById String
+  requestedBy   User   @relation("WithdrawalRequestsMade", fields: [requestedById], references: [id])
+
+  // CLUB_FROM_LEAGUE
+  submissionId String?
+  submission   TeamSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  // PLAYER_FROM_TEAM
+  teamPlayerId String?
+  teamPlayer   TeamPlayer? @relation(fields: [teamPlayerId], references: [id], onDelete: Cascade)
+
+  decidedById  String?
+  decidedBy    User?     @relation("WithdrawalRequestsDecided", fields: [decidedById], references: [id])
+  decidedAt    DateTime?
+  decisionNote String?
+
+  createdAt DateTime @default(now())
+
+  @@index([submissionId])
+  @@index([teamPlayerId])
+  @@index([status])
 }
 
 enum ReviewStatus {

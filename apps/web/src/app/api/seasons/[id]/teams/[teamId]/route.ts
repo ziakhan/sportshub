@@ -101,6 +101,19 @@ export async function PATCH(
           { status: 403 }
         )
       }
+      // Owner 2026-07-18: once approved, the club has a commitment (team fee,
+      // schedule, opponents) — leaving needs the league's sign-off. Direct
+      // withdrawal stays only while the submission is still PENDING.
+      if (submission.status === "APPROVED") {
+        return NextResponse.json(
+          {
+            error:
+              "This team is approved for the season — withdrawing now needs the league's approval. Submit a withdrawal request instead.",
+            code: "REQUEST_REQUIRED",
+          },
+          { status: 409 }
+        )
+      }
     }
 
     // G4/H19 lock guard: once the season structure is locked, approving or
