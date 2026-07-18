@@ -2865,15 +2865,34 @@ model ClubClaim {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // v2 (owner 2026-07-18): claims start ANONYMOUS — ownership binds to a User
+  // at completion, never to a contact point. Null until the completion token
+  // is redeemed (v1 signed-in claims still set it up front).
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   status ClaimStatus @default(PENDING)
 
   // Verification
-  verificationCode   String? // 6-digit code sent to club email
+  verificationCode   String? // 6-digit code sent to the club's contact ON FILE
   verificationSentAt DateTime?
   verifiedAt         DateTime?
+  attempts           Int       @default(0) // wrong-code counter (cap enforced in code)
+
+  // v2 verification channel: EMAIL | SMS | PROOF (paper-proof -> admin review)
+  method       String?
+  contactPoint String? // the exact email/phone the code went to
+  // paper-proof path: how we reach the claimer (no account yet)
+  claimantEmail String?
+  proofNote     String? @db.Text
+
+  // Reservation + binding: a verified-but-unregistered claim holds the club
+  // (completionExpiresAt ~14d). Redeeming the token binds claim -> User.
+  completionToken     String?   @unique
+  completionExpiresAt DateTime?
+
+  // Claim-time corrections to the club's info, applied at completion
+  corrections Json?
 
   message String? @db.Text // Optional message from claimant
 
@@ -2884,7 +2903,7 @@ model ClubClaim {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([tenantId, userId]) // One claim per user per club
+  @@unique([tenantId, userId]) // one claim per user per club (NULL userId = anonymous, repeatable)
   @@index([tenantId])
   @@index([userId])
   @@index([status])
@@ -2894,8 +2913,10 @@ enum ClaimStatus {
   PENDING
   EMAIL_SENT
   EMAIL_VERIFIED
+  VERIFIED_UNBOUND
   APPROVED
   REJECTED
+  EXPIRED
 }
 
 // ============================================

@@ -421,7 +421,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
             </a>
             {club.status === "UNCLAIMED" ? (
               <Link
-                href={`/clubs/find?q=${encodeURIComponent(club.name)}`}
+                href={`/claim/${club.id}`}
                 className="brand-focus shadow-soft cursor-pointer rounded-xl bg-white px-5 py-2.5 text-sm font-semibold transition hover:bg-white/90"
                 style={{ color: "var(--brand-ink)" }}
               >

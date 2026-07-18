@@ -12,7 +12,11 @@ interface Claim {
   createdAt: string
   reviewedAt: string | null
   tenant: { id: string; name: string; city: string | null; contactEmail: string | null }
-  user: { id: string; email: string; firstName: string | null; lastName: string | null }
+  // v2: anonymous (paper-proof) claims have no user until the token is redeemed
+  user: { id: string; email: string; firstName: string | null; lastName: string | null } | null
+  claimantEmail: string | null
+  proofNote: string | null
+  corrections: Record<string, string> | null
 }
 
 export default function AdminClaimsPage() {
@@ -99,11 +103,34 @@ export default function AdminClaimsPage() {
                         <p className="text-ink-500 text-sm">{claim.tenant.city}</p>
                         <p className="text-ink-600 mt-1 text-sm">
                           Claimed by:{" "}
-                          <strong>
-                            {claim.user.firstName} {claim.user.lastName}
-                          </strong>{" "}
-                          ({claim.user.email})
+                          {claim.user ? (
+                            <>
+                              <strong>
+                                {claim.user.firstName} {claim.user.lastName}
+                              </strong>{" "}
+                              ({claim.user.email})
+                            </>
+                          ) : (
+                            <>
+                              <strong>anonymous claimer</strong>
+                              {claim.claimantEmail ? ` (${claim.claimantEmail})` : ""} — proof
+                              review
+                            </>
+                          )}
                         </p>
+                        {claim.proofNote && (
+                          <p className="text-ink-600 border-ink-100 bg-ink-50/60 mt-2 rounded-lg border p-2 text-xs">
+                            <span className="font-semibold">Proof:</span> {claim.proofNote}
+                          </p>
+                        )}
+                        {claim.corrections && Object.keys(claim.corrections).length > 0 && (
+                          <p className="text-ink-600 mt-1 text-xs">
+                            <span className="font-semibold">Proposed corrections:</span>{" "}
+                            {Object.entries(claim.corrections as Record<string, string>)
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(" · ")}
+                          </p>
+                        )}
                         {claim.message && (
                           <p className="text-ink-500 mt-1 text-xs italic">
                             &ldquo;{claim.message}&rdquo;
@@ -171,7 +198,10 @@ export default function AdminClaimsPage() {
                       <div>
                         <span className="text-ink-900 font-medium">{claim.tenant.name}</span>
                         <span className="text-ink-500 ml-2 text-sm">
-                          by {claim.user.firstName} {claim.user.lastName}
+                          by{" "}
+                          {claim.user
+                            ? `${claim.user.firstName} ${claim.user.lastName}`
+                            : (claim.claimantEmail ?? "anonymous claimer")}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
-import { CreateClubForm } from "./create-club-form"
+import { CreateClubGate } from "./create-club-gate"
 
 export default async function CreateClubPage() {
   const dbUser = await getCurrentUser()
@@ -20,7 +20,7 @@ export default async function CreateClubPage() {
         </div>
 
         <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-          <CreateClubForm />
+          <CreateClubGate />
         </div>
 
         <div className="border-play-200 bg-play-50 mt-8 rounded-2xl border p-6">
