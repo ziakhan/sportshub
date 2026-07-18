@@ -12,6 +12,7 @@ import { AuthLink } from "@/components/auth-link"
 import { ChatDock } from "@/components/chat-dock"
 import { OverflowStrip } from "@/components/overflow-strip"
 import { SectionPills } from "@/components/public/section-pills"
+import { BrandIcon, BrandWordmark } from "@/components/brand/wordmark"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -51,21 +52,8 @@ export default async function PublicLayout({ children }: { children: React.React
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-[60px] items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="bg-play-600 shadow-play-200/70 flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-sm">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10" />
-              </svg>
-            </span>
-            <span className="font-display text-ink-950 text-lg font-bold tracking-tight">
-              sportshub
-            </span>
+            <BrandIcon size={36} />
+            <BrandWordmark size="sm" variant="color" />
           </Link>
 
           {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
@@ -174,19 +162,8 @@ export default async function PublicLayout({ children }: { children: React.React
         <div className="container mx-auto grid gap-10 px-4 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div className="max-w-sm">
             <div className="mb-4 flex items-center gap-2.5">
-              <span className="bg-play-600 flex h-9 w-9 items-center justify-center rounded-xl text-white">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5 10-10M12 2c0 5.5-2 8.5-10 10M12 22c0-5.5-2-8.5-10-10" />
-                </svg>
-              </span>
-              <span className="font-display text-lg font-bold tracking-tight">sportshub</span>
+              <BrandIcon size={36} />
+              <BrandWordmark size="sm" variant="reverse" />
             </div>
             <p className="text-ink-300 text-sm leading-6">
               A modern operating system for youth basketball clubs, parents, players, and league
@@ -268,7 +245,7 @@ export default async function PublicLayout({ children }: { children: React.React
         </div>
 
         <div className="text-ink-400 container mx-auto mt-10 border-t border-white/5 px-4 pt-6 text-sm sm:px-6">
-          &copy; {new Date().getFullYear()} Youth Basketball Hub. All rights reserved.
+          &copy; {new Date().getFullYear()} SportsHub One. All rights reserved.
         </div>
       </footer>
       {userId && (

@@ -37,10 +37,22 @@ export function TopBar({
     <View style={[styles.wrap, { paddingTop: insets.top }]}>
       <View style={styles.bar}>
         <Pressable style={styles.brand} onPress={() => router.navigate("/")} hitSlop={6}>
+          {/* N3 icon + A1 wordmark (brand picks 2026-07-18; ONE is spelled out
+              everywhere the name is read — the numeral lives only in icons) */}
           <View style={styles.logoTile}>
-            <Ionicons name="basketball-outline" size={18} color="#fff" />
+            <Text style={styles.logoS}>S</Text>
+            <View style={styles.logoBox}>
+              <Text style={styles.logoBoxText}>1</Text>
+            </View>
           </View>
-          <Text style={styles.wordmark}>sportshub</Text>
+          <View style={styles.wordmarkRow}>
+            <Text style={styles.wordmark}>
+              Sports<Text style={styles.wordmarkHub}>Hub</Text>
+            </Text>
+            <View style={styles.oneBox}>
+              <Text style={styles.oneBoxText}>ONE</Text>
+            </View>
+          </View>
         </Pressable>
 
         <View style={styles.actions}>
@@ -153,7 +165,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 11,
-    backgroundColor: ui.primary,
+    backgroundColor: "#16233f",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: palette.play[200],
@@ -162,12 +174,36 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
+  logoS: { color: "#fff", fontSize: 17, fontWeight: "800", marginTop: 1 },
+  logoBox: {
+    position: "absolute",
+    top: 3,
+    right: 3,
+    width: 10,
+    height: 10,
+    borderRadius: 2.5,
+    backgroundColor: palette.hoop[500],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoBoxText: { color: "#fff", fontSize: 6.5, fontWeight: "800" },
+  wordmarkRow: { flexDirection: "row", alignItems: "flex-start" },
   wordmark: {
     fontSize: 18,
     fontWeight: "800",
     letterSpacing: -0.4,
     color: ui.text,
   },
+  wordmarkHub: { color: ui.primary },
+  oneBox: {
+    backgroundColor: palette.hoop[500],
+    borderRadius: 3,
+    paddingHorizontal: 3.5,
+    paddingVertical: 2,
+    marginLeft: 4,
+    marginTop: 1,
+  },
+  oneBoxText: { color: "#fff", fontSize: 7.5, fontWeight: "800", letterSpacing: 0.8, lineHeight: 8 },
   actions: { flexDirection: "row", alignItems: "center", gap: 12 },
   unreadDot: {
     position: "absolute",
