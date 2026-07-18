@@ -1,9 +1,18 @@
 ---
 updated: 2026-07-18
-tags: [theme/infra, type/runbook, status/in-progress]
+tags: [theme/infra, type/runbook, status/done]
 ---
 
 # Dual domains: ysportshub.com + sportshubone.com (both first-class)
+
+> **✅ EXECUTED 2026-07-18 evening.** Steps 1–4 done (owner: DNS + Google +
+> Apple consoles; box script ran with owner approval). Step 5 verified by
+> Claude: TLS live, www→apex 301, homepage 200 on both, providers endpoint
+> returns per-host callbacks for credentials/magic/google/apple on
+> sportshubone.com, old domain untouched. Homepage marketing wall (f5533c0)
+> deployed same evening, live on both domains. REMAINING: owner click-tests
+> Google + Apple sign-in on sportshubone.com; owner registering
+> sportshubone.ca.
 
 Owner bought **sportshubone.com** (2026-07-18) and ruled: **both domains fully
 functional standalone, right now** — each serves the whole site with working
