@@ -161,3 +161,22 @@ feature is greenlit for build.
   the native module. Gotcha fixed en route: GoogleSignIn's AppCheckCore Swift
   pod needs GoogleUtilities + RecaptchaInterop `modular_headers` (via
   expo-build-properties extraPods) or pod install fails on EAS.
+
+## Club claiming v2 🎯 (owner requirements, 2026-07-18 night — SAVED FOR LATER, not in overnight scope)
+1. **Verified claiming via known contacts + Twilio SMS**: when claiming an
+   UNCLAIMED club, offer verification against the contact data we hold
+   (census!): email and/or SMS code to the club's known phone (Twilio
+   integration needed). One contact on file → that's the only option; both →
+   claimer chooses. NO contact on file → claim still possible via
+   paper-proof document upload + claimer email → ADMIN reviews.
+2. **Claim-time corrections**: claimer may propose changes to the club's
+   info as part of the claim; admin approval applies all fields at once and
+   grants the claimer full edit rights over their club thereafter
+   (everything editable).
+3. **Search-before-create**: signup/onboarding for club operators must
+   push SEARCH + CLAIM before "create a new club" — never create-first
+   (claim funnel from the clubs browse/search pages too).
+4. **OPEN QUESTION (owner asked)**: where does sign-up sit in the claim
+   flow — force account creation before claiming, or allow claim-start
+   anonymous (email captured in flow) with account creation at approval?
+   Discuss before building.
