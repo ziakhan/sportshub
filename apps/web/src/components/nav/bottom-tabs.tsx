@@ -22,6 +22,11 @@ const icon = {
       <path d="M5 10v10h14V10" />
     </svg>
   ),
+  scores: (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 12h4l3-8 4 16 3-8h4" />
+    </svg>
+  ),
   chat: (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -110,16 +115,61 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
                   label — sits in one filled energy capsule; follows the admin
                   palette automatically. */}
               <span
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3.5 py-1 text-[10px] font-bold transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3.5 py-1 text-[11.5px] font-bold transition-colors ${
                   active
                     ? "bg-energy text-energy-on"
-                    : "text-ink-500 hover:text-ink-800"
+                    : "text-ink-600 hover:text-ink-900"
                 }`}
               >
                 <span className="relative">
                   {t.icon}
                   {t.badge ? <UnreadDot count={t.badge} /> : null}
                 </span>
+                {t.label}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
+
+/**
+ * Anonymous bottom bar (owner 2026-07-18, phone=phone): signed-out mobile
+ * web gets navigation too — Home · Scores (consumer-first) · Sign in.
+ * Same capsule language as the signed-in bar.
+ */
+export function AnonymousBottomTabs() {
+  const pathname = usePathname() ?? "/"
+  const tabs = [
+    { href: "/", label: "Home", icon: icon.home, exact: true },
+    { href: "/scores", label: "Scores", icon: icon.scores, exact: false },
+    { href: "/sign-in", label: "Sign in", icon: icon.account, exact: false },
+  ]
+  return (
+    <nav
+      aria-label="Primary"
+      className="border-ink-100 fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur-lg lg:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">
+        {tabs.map((t) => {
+          const active = t.exact ? pathname === t.href : pathname.startsWith(t.href)
+          return (
+            <Link
+              key={t.href}
+              href={t.href}
+              aria-current={active ? "page" : undefined}
+              className="relative flex min-w-[56px] flex-col items-center justify-center px-1 py-2"
+            >
+              <span
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-2xl px-3.5 py-1 text-[11.5px] font-bold transition-colors ${
+                  active ? "bg-energy text-energy-on" : "text-ink-600 hover:text-ink-900"
+                }`}
+              >
+                {t.icon}
                 {t.label}
               </span>
             </Link>
