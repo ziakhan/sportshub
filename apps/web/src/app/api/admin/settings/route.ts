@@ -26,6 +26,9 @@ const updateSettingsSchema = z.object({
   seoIndexingEnabled: z.boolean().optional(),
   // Energy Pass palette (design-tokens PALETTES)
   themePalette: z.enum(["hardwood", "fastbreak", "primetime"]).optional(),
+  // Review invites (owner 2026-07-18): platform default; clubs may hold overrides
+  reviewInvitePolicy: z.enum(["AUTO", "OFF"]).optional(),
+  reviewWindowDays: z.number().int().min(7).max(90).optional(),
 })
 
 function serializeSettings(settings: any) {
@@ -39,6 +42,8 @@ function serializeSettings(settings: any) {
     payPlatformFeeFlat: Number(settings.payPlatformFeeFlat),
     seoIndexingEnabled: settings.seoIndexingEnabled,
     themePalette: settings.themePalette,
+    reviewInvitePolicy: settings.reviewInvitePolicy,
+    reviewWindowDays: settings.reviewWindowDays,
   }
 }
 

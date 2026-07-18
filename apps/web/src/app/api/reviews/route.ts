@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { hasLiveReviewInvite } from "@/lib/reviews/invites"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 
@@ -126,6 +127,18 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
+    // Window gate (owner 2026-07-18): club reviews open only in the
+    // post-season invite window — season concludes → invite → 30 days.
+    if (data.tenantId && !(await hasLiveReviewInvite(sessionInfo.userId, data.tenantId))) {
+      return NextResponse.json(
+        {
+          error:
+            "Reviews open when a season you participated in concludes — watch for the invitation.",
+          code: "REVIEW_WINDOW_CLOSED",
+        },
+        { status: 403 }
+      )
+    }
     if (data.leagueId && !(await hasLeagueRelationship(sessionInfo.userId, data.leagueId))) {
       return NextResponse.json(
         {
@@ -158,6 +171,7 @@ export async function POST(request: NextRequest) {
         rating: data.rating,
         title: data.title || null,
         content: data.content || null,
+        status: "PENDING",
       },
     })
 

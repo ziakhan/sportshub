@@ -19,7 +19,7 @@ const STATUSES = ["FLAGGED", "REMOVED", "PUBLISHED"] as const
 export const GET = withAuth<NextRequest>(async (request, _context, session) => {
   requirePlatformAdmin(session)
 
-  const raw = request.nextUrl.searchParams.get("status") || "FLAGGED"
+  const raw = request.nextUrl.searchParams.get("status") || "PENDING"
   if (!STATUSES.includes(raw as (typeof STATUSES)[number])) {
     return apiError(400, "Invalid status filter", "VALIDATION")
   }
@@ -50,7 +50,7 @@ export const GET = withAuth<NextRequest>(async (request, _context, session) => {
 
 const moderateSchema = z.object({
   id: z.string(),
-  action: z.enum(["restore", "remove"]),
+  action: z.enum(["approve", "restore", "remove"]),
   notes: z.string().max(500).optional(),
 })
 
@@ -71,7 +71,7 @@ export const PATCH = withAuth<NextRequest>(async (request, _context, session) =>
   const updated = await prisma.review.update({
     where: { id: review.id },
     data: {
-      status: data.action === "restore" ? "PUBLISHED" : "REMOVED",
+      status: data.action === "remove" ? "REMOVED" : "PUBLISHED",
       moderatedAt: new Date(),
       // Record the moderator's note when given; otherwise keep the flag reason
       // so the history stays legible.

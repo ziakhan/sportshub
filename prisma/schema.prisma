@@ -101,6 +101,7 @@ model User {
   @@index([email])
   @@index([status])
   refereeProfile RefereeProfile?
+  reviewInvites ReviewInvite[] @relation("ReviewInvites")
 }
 
 enum UserStatus {
@@ -236,6 +237,7 @@ enum Role {
 model Tenant {
   id           String  @id @default(uuid())
   slug         String  @unique
+  reviewInviteOverride String? // null = inherit platform reviewInvitePolicy
   name         String
   description  String? @db.Text
   phoneNumber  String?
@@ -299,6 +301,7 @@ model Tenant {
   // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
   // imported clubs (perf audit 2026-07-06)
   @@index([status])
+  reviewInvites ReviewInvite[] @relation("ReviewInvites")
 }
 
 enum TenantPlan {
@@ -1221,6 +1224,7 @@ model Season {
   @@index([leagueId])
   @@index([status])
   @@unique([leagueId, label])
+  reviewInvites ReviewInvite[]
 }
 
 enum SeasonStatus {
@@ -2390,7 +2394,26 @@ model Review {
   @@index([status])
 }
 
+model ReviewInvite {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id])
+  tenantId String
+  tenant   Tenant @relation("ReviewInvites", fields: [tenantId], references: [id])
+  userId   String
+  user     User   @relation("ReviewInvites", fields: [userId], references: [id])
+
+  sentAt    DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@unique([seasonId, tenantId, userId])
+  @@index([userId, expiresAt])
+  @@index([tenantId])
+}
+
 enum ReviewStatus {
+  PENDING
   PUBLISHED
   FLAGGED
   REMOVED
@@ -2744,6 +2767,9 @@ model PlatformSettings {
   // Unknown values fail open to hardwood. Future custom palettes will add a
   // JSON override column beside this.
   themePalette String @default("hardwood")
+  // Review invites (owner 2026-07-18): platform default, clubs may override
+  reviewInvitePolicy String @default("AUTO") // AUTO | OFF
+  reviewWindowDays   Int    @default(30)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

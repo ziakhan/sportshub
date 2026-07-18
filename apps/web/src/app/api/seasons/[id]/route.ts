@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicSeason } from "@/lib/queries/season"
 import { notifyMany } from "@/lib/notifications"
+import { sendSeasonReviewInvites } from "@/lib/reviews/invites"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
@@ -322,6 +323,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: update,
       include: { league: { select: { id: true, name: true, description: true, ownerId: true } } },
     })
+
+    // Season concluded → review invites to every participating family
+    // (owner 2026-07-18: platform guarantees the ask; policy + per-club
+    // override checked inside). Best-effort, after the update committed.
+    if (body.status === "COMPLETED" && season.status !== "COMPLETED") {
+      sendSeasonReviewInvites(params.id).catch((err) =>
+        console.error("review invites failed:", err)
+      )
+    }
 
     // Season just opened for registration → tell the league's returning clubs.
     // Before this, opening a season notified no one; clubs found out by word of
