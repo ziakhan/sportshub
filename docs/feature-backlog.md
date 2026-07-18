@@ -184,3 +184,16 @@ feature is greenlit for build.
    token binds the claim to the User → club CLAIMED (ClubOwner role).
    A verified-but-unregistered claim holds the club reserved (TTL, e.g.
    14 days) so nobody else claims it mid-flow.
+
+## Phone-number login (SMS OTP via Twilio) 🎯 (owner-committed 2026-07-18, PLAN ONLY — not overnight)
+- Phone as a first-class login: enter number → SMS code → signed in. Same
+  pattern as magic sign-in (LoginToken infra is the template: hashed
+  single-use codes, 15-min TTL, attempt caps, anti-enumeration).
+- Scope: User.phone (E.164, verified, unique) + verify-on-add flow ·
+  "sms" credentials provider beside magic · native + web sign-in screens
+  gain "Continue with phone" · rate limiting per number+IP.
+- Shares ONE Twilio seam with club-claim SMS verification (build the seam
+  once; both features light up when owner supplies Twilio creds).
+- Design cares: number recycling (re-verify on long inactivity), account
+  recovery when phone lost (email fallback), COPPA (13+ self-accounts
+  only), international format normalization.
