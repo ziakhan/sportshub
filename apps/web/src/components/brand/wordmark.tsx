@@ -11,7 +11,8 @@
 const SIZES = {
   sm: { text: "text-lg", box: "text-[8px] px-1 py-[2px]" },
   md: { text: "text-2xl", box: "text-[9px] px-1.5 py-[2.5px]" },
-  lg: { text: "text-4xl", box: "text-[11px] px-2 py-[3px]" },
+  lg: { text: "text-3xl", box: "text-[10px] px-1.5 py-[3px]" },
+  xl: { text: "text-4xl", box: "text-[11px] px-2 py-[3px]" },
 } as const
 
 export function BrandWordmark({
