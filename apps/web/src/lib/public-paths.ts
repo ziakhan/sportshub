@@ -46,6 +46,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/scores",
   "/for-clubs",
   "/for-leagues",
+  "/for-parents",
   "/unsubscribed",
   // Anonymous club-claim wizard + completion landing (owner 2026-07-18:
   // claim-first, account-at-end — no session until the token is redeemed)
