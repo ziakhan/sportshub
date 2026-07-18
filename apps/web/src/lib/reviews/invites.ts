@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notifyMany } from "@/lib/notifications"
 import { sendEmail } from "@/lib/email"
+import { siteUrl } from "@/lib/site"
 
 /**
  * Season-conclude review invites (owner 2026-07-18): when a season hits
@@ -103,8 +104,8 @@ export async function sendSeasonReviewInvites(seasonId: string): Promise<{
       sendEmail({
         to: u.email,
         subject: `How was ${season.label} with ${tenant.name}?`,
-        html: `<p>Hi ${u.firstName ?? "there"},</p><p>${season.label} with <b>${tenant.name}</b> has wrapped up. Families like yours are how other parents find credible programs — would you leave a quick review?</p><p><a href="https://ysportshub.com${reviewLink}">Review ${tenant.name}</a> (open for ${windowDays} days)</p>`,
-        text: `${season.label} with ${tenant.name} has wrapped. Review them (open ${windowDays} days): https://ysportshub.com${reviewLink}`,
+        html: `<p>Hi ${u.firstName ?? "there"},</p><p>${season.label} with <b>${tenant.name}</b> has wrapped up. Families like yours are how other parents find credible programs — would you leave a quick review?</p><p><a href="${siteUrl()}${reviewLink}">Review ${tenant.name}</a> (open for ${windowDays} days)</p>`,
+        text: `${season.label} with ${tenant.name} has wrapped. Review them (open ${windowDays} days): ${siteUrl()}${reviewLink}`,
       }).catch(() => {})
     }
     invited += userIds.length
