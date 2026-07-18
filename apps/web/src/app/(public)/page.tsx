@@ -171,20 +171,27 @@ export default async function HomePage() {
               <span className="text-ink-600 text-xs font-medium">{stats.totalTeams} teams</span>
             </div>
 
+            <div className="mb-4">
+              <span className="text-hoop-500 text-xs font-semibold uppercase tracking-[0.2em]">
+                The first complete platform for youth basketball
+              </span>
+            </div>
+
             <h1 className="font-display text-ink-950 mb-6 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
-              Youth basketball,
+              Youth basketball.
               <br />
               <span className="from-play-600 via-hoop-500 to-court-600 bg-gradient-to-r bg-clip-text text-transparent">
-                organized beautifully
+                All of it. One app.
               </span>
             </h1>
 
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
-              The modern platform where clubs manage teams, parents find tryouts, and the basketball
-              community stays connected without spreadsheets and scattered messages.
+              Registration and payments, schedules and standings, live scores and stats, team chat
+              and your club&apos;s whole public face — one login for every hat you wear.{" "}
+              <span className="text-ink-950 font-semibold">Your season runs itself.</span>
             </p>
 
-            <div className="mb-14 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mb-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/events"
                 className="bg-ink-950 shadow-ink-950/10 hover:bg-ink-800 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition sm:w-auto"
@@ -208,6 +215,11 @@ export default async function HomePage() {
               </Link>
             </div>
 
+            <p className="text-ink-400 mb-12 text-[13px] font-medium">
+              One account — parent, coach, scorekeeper, club owner, league commissioner. Same app,
+              every seat in the gym.
+            </p>
+
             <ClubSearch />
           </div>
         </div>
@@ -219,6 +231,108 @@ export default async function HomePage() {
       )}
 
       <HighlightsRow highlights={highlights} />
+
+      {marketing && (
+        <>
+          <section className="bg-[#fafafa] py-16 sm:py-20">
+            <div className="container mx-auto px-4 text-center sm:px-6">
+              <div className="mb-4 inline-flex items-center gap-3">
+                <span className="bg-hoop-400 h-px w-10" />
+                <span className="text-hoop-500 text-xs font-semibold uppercase tracking-[0.2em]">
+                  Sound familiar?
+                </span>
+                <span className="bg-hoop-400 h-px w-10" />
+              </div>
+              <h2 className="text-ink-950 mx-auto mb-8 max-w-2xl text-3xl font-bold sm:text-4xl">
+                Still running the season on five apps and a spreadsheet?
+              </h2>
+              <div className="mx-auto mb-8 flex max-w-2xl flex-wrap items-center justify-center gap-2.5">
+                {[
+                  "Registration spreadsheet",
+                  "Email chains",
+                  "WhatsApp groups",
+                  "E-transfer chasing",
+                  "Paper gamesheets",
+                  "A separate scoring app",
+                  "A website builder",
+                ].map((item) => (
+                  <span
+                    key={item}
+                    className="border-ink-200 text-ink-500 inline-flex items-center gap-1.5 rounded-full border bg-white px-4 py-1.5 text-[13px] font-medium"
+                  >
+                    <span className="font-bold text-red-500" aria-hidden="true">
+                      ✗
+                    </span>
+                    <span className="line-through decoration-red-400 decoration-2">{item}</span>
+                  </span>
+                ))}
+                <span className="bg-ink-950 inline-flex items-center rounded-full px-5 py-2 text-sm font-bold text-white">
+                  One app ✓
+                </span>
+              </div>
+              <p className="text-ink-500 mx-auto max-w-2xl text-base leading-7 sm:text-lg">
+                Every tool you&apos;re duct-taping together, rebuilt as one thing that talks to
+                itself. When a game moves, the schedule, the standings, the team chat and every
+                parent&apos;s phone{" "}
+                <span className="text-ink-950 font-semibold">already know</span>. Nobody forwards
+                anything.
+              </p>
+            </div>
+          </section>
+
+          <section className="bg-white py-16 sm:py-20">
+            <div className="container mx-auto px-4 sm:px-6">
+              <div className="mb-10 text-center">
+                <div className="mb-4 inline-flex items-center gap-3">
+                  <span className="bg-play-400 h-px w-10" />
+                  <span className="text-play-500 text-xs font-semibold uppercase tracking-[0.2em]">
+                    Name names
+                  </span>
+                  <span className="bg-play-400 h-px w-10" />
+                </div>
+                <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+                  One app replaces the pile
+                </h2>
+              </div>
+              <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2">
+                {[
+                  { cat: "Team comms & RSVPs", repl: "TeamSnap, Spond, the WhatsApp group" },
+                  {
+                    cat: "Live scoring, box scores & stats",
+                    repl: "GameChanger, paper gamesheets",
+                  },
+                  {
+                    cat: "Registration, payments & club sites",
+                    repl: "SportsEngine, Jersey Watch, the spreadsheet",
+                  },
+                  {
+                    cat: "League ops — schedules, standings, playoffs, refs",
+                    repl: "RAMP, email chains",
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.cat}
+                    className="border-ink-100 shadow-soft rounded-3xl border bg-white p-6"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="bg-hoop-500 h-2.5 w-2.5 flex-none rounded" />
+                      <span className="text-ink-950 text-[15px] font-bold">{row.cat}</span>
+                    </div>
+                    <p className="text-ink-500 mt-2 text-sm">
+                      replaces <span className="text-ink-700 font-semibold">{row.repl}</span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-ink-700 mx-auto mt-9 max-w-xl text-center text-lg font-semibold">
+                They each do a piece.{" "}
+                <span className="text-hoop-500">Nobody does the whole thing.</span> That&apos;s the
+                app you actually wanted.
+              </p>
+            </div>
+          </section>
+        </>
+      )}
 
       {marketing && (
       <section className="bg-white py-16 sm:py-20">
@@ -716,16 +830,44 @@ export default async function HomePage() {
               <div className="mb-4 inline-flex items-center gap-3">
                 <span className="bg-hoop-400 h-px w-10" />
                 <span className="text-hoop-300 text-xs font-semibold uppercase tracking-[0.2em]">
-                  Platform snapshot
+                  The receipts
                 </span>
               </div>
               <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-                Built to replace the patchwork behind club operations
+                &ldquo;Complete&rdquo; isn&apos;t a slogan here. It&apos;s a checklist.
               </h2>
               <p className="text-ink-300 max-w-2xl text-base leading-7 sm:text-lg">
-                Real teams, real tryouts, and real public pages. The design shift is not just
-                cosmetic; it makes the product feel credible the moment someone lands on it.
+                Registration to final buzzer — every job the season throws at you, already built,
+                already talking to each other.
               </p>
+              <div className="mt-6 flex max-w-2xl flex-wrap gap-2">
+                {[
+                  "Registration",
+                  "Payments & installments",
+                  "Tryouts & offers",
+                  "Team chat & DMs",
+                  "Schedules + calendar sync",
+                  "RSVPs",
+                  "Live scoring",
+                  "Box scores & leaders",
+                  "AI game recaps",
+                  "Standings & playoff brackets",
+                  "Referee assignment",
+                  "Club & league pages",
+                  "iOS + Android apps",
+                  "Guest scorekeeper links",
+                ].map((capability) => (
+                  <span
+                    key={capability}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[13px] font-medium text-white/85"
+                  >
+                    <span className="text-hoop-300 font-bold" aria-hidden="true">
+                      ✓
+                    </span>
+                    {capability}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
@@ -756,11 +898,11 @@ export default async function HomePage() {
                 Start building with it
               </div>
               <h2 className="mb-4 text-3xl font-bold sm:text-5xl">
-                Bring your club online with a platform that looks as organized as it works.
+                Set up takes an evening, not an offseason.
               </h2>
               <p className="text-play-100 mb-8 max-w-2xl text-base leading-7 sm:text-lg">
-                Create a free account, publish your programs, and give families a public-facing
-                experience that feels intentional from the first click.
+                Create your club, publish a program, and give families one app instead of five.
+                Import your rosters and this season already runs itself.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -776,6 +918,15 @@ export default async function HomePage() {
                   Explore club profiles
                 </Link>
               </div>
+              <p className="text-play-100 mt-6 text-sm">
+                Just looking for a place to play?{" "}
+                <Link
+                  href="/events"
+                  className="font-semibold text-white underline underline-offset-4"
+                >
+                  Find tryouts near you
+                </Link>
+              </p>
             </div>
           </div>
         </div>
