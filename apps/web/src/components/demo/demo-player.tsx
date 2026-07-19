@@ -207,7 +207,27 @@ export function DemoPlayer({
       <style>{`
         .demo-scene-enter { animation: demoSceneIn 320ms ease; }
         @keyframes demoSceneIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-        @media (prefers-reduced-motion: reduce) { .demo-scene-enter { animation: none; } }
+
+        /* rows arriving one by one */
+        .demo-cascade > * { opacity: 0; animation: demoRowIn 0.4s ease forwards; }
+        ${Array.from({ length: 14 }, (_, n) => `.demo-cascade > *:nth-child(${n + 1}) { animation-delay: ${0.15 + n * 0.13}s; }`).join("\n        ")}
+        @keyframes demoRowIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+        /* the button press beat */
+        .demo-pulse { animation: demoPulse 1.8s ease-in-out infinite; }
+        @keyframes demoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(242,78,30,0.35); } 50% { box-shadow: 0 0 0 7px rgba(242,78,30,0); } }
+        .demo-press { animation: demoPressGlow 1.8s ease-in-out infinite, demoPress 0.45s ease 0.7s 1; }
+        @keyframes demoPress { 0% { transform: none; } 40% { transform: scale(0.92); } 100% { transform: none; } }
+        @keyframes demoPressGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(242,78,30,0.35); } 50% { box-shadow: 0 0 0 7px rgba(242,78,30,0); } }
+
+        /* payoffs that land after the press (ticks, "sent" chips) */
+        .demo-late { opacity: 0; animation: demoTickIn 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
+        @keyframes demoTickIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+        @media (prefers-reduced-motion: reduce) {
+          .demo-scene-enter, .demo-cascade > *, .demo-late { animation: none; opacity: 1; }
+          .demo-pulse, .demo-press { animation: none; }
+        }
       `}</style>
     </div>
   )

@@ -1,28 +1,38 @@
 /**
- * Tiny mock-UI kit for the walkthrough scenes — deliberately simplified
- * shorthand of the real product surfaces (cards, rows, chips, fake inputs)
- * so every scene reads instantly at marketing-page size. Demo data only.
+ * Mock-UI kit for the walkthrough scenes: simplified shorthand of the real
+ * product surfaces, sized to stay readable on a phone. Demo data only.
+ *
+ * Choreography classes (keyframes live in DemoPlayer's stylesheet, which
+ * wraps every scene): demo-cascade staggers children in; demo-press plays a
+ * button press; demo-late / demo-later reveal payoff elements (ticks, "sent"
+ * chips) after the press lands. All of it collapses to final state under
+ * prefers-reduced-motion.
  */
 
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 export function Screen({ title, children, badge }: { title: string; children: ReactNode; badge?: string }) {
   return (
     <div className="border-ink-100 mx-auto w-full max-w-lg overflow-hidden rounded-2xl border bg-white shadow-xl">
-      <div className="border-ink-50 flex items-center justify-between border-b px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="bg-hoop-500 h-2.5 w-2.5 rounded-full" aria-hidden="true" />
-          <span className="text-ink-950 text-[13px] font-bold">{title}</span>
+      <div className="border-ink-50 flex items-center justify-between gap-2 border-b px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="bg-hoop-500 h-2.5 w-2.5 flex-none rounded-full" aria-hidden="true" />
+          <span className="text-ink-950 truncate text-[14px] font-bold">{title}</span>
         </div>
         {badge ? (
-          <span className="bg-play-50 text-play-700 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+          <span className="bg-play-50 text-play-700 flex-none rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">
             {badge}
           </span>
         ) : null}
       </div>
-      <div className="p-4">{children}</div>
+      <div className="p-3.5 sm:p-4">{children}</div>
     </div>
   )
+}
+
+/** Staggers its children in, one after another. */
+export function Cascade({ children, className = "space-y-2" }: { children: ReactNode; className?: string }) {
+  return <div className={`demo-cascade ${className}`}>{children}</div>
 }
 
 export function Row({ children, tone = "plain" }: { children: ReactNode; tone?: "plain" | "active" | "done" }) {
@@ -32,10 +42,19 @@ export function Row({ children, tone = "plain" }: { children: ReactNode; tone?: 
       : tone === "done"
         ? "border-emerald-200 bg-emerald-50/60"
         : "border-ink-100 bg-white"
-  return <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 ${cls}`}>{children}</div>
+  return <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${cls}`}>{children}</div>
 }
 
-export function Chip({ children, tone = "ink" }: { children: ReactNode; tone?: "ink" | "green" | "orange" | "blue" | "gold" | "red" }) {
+export function Chip({
+  children,
+  tone = "ink",
+  late,
+}: {
+  children: ReactNode
+  tone?: "ink" | "green" | "orange" | "blue" | "gold" | "red"
+  /** Pop in after the scene's button press (0 = with press, 1 = first beat after, …) */
+  late?: number
+}) {
   const map = {
     ink: "bg-ink-100 text-ink-600",
     green: "bg-emerald-100 text-emerald-700",
@@ -44,17 +63,25 @@ export function Chip({ children, tone = "ink" }: { children: ReactNode; tone?: "
     gold: "bg-amber-100 text-amber-800",
     red: "bg-red-50 text-red-600",
   } as const
-  return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10.5px] font-bold ${map[tone]}`}>{children}</span>
+  const style: CSSProperties | undefined =
+    late !== undefined ? { animationDelay: `${1.1 + late * 0.14}s` } : undefined
+  return (
+    <span
+      className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold ${map[tone]} ${late !== undefined ? "demo-late" : ""}`}
+      style={style}
+    >
+      {children}
+    </span>
+  )
 }
 
-/** A fake filled-in form field. */
 export function Field({ label, value, active }: { label: string; value: ReactNode; active?: boolean }) {
   return (
     <div>
-      <div className="text-ink-400 mb-0.5 text-[10px] font-bold uppercase tracking-wider">{label}</div>
+      <div className="text-ink-400 mb-0.5 text-[10.5px] font-bold uppercase tracking-wider">{label}</div>
       <div
-        className={`rounded-lg border px-2.5 py-1.5 text-[12.5px] font-semibold ${
-          active ? "border-play-400 bg-play-50/50 text-ink-950 ring-2 ring-play-100" : "border-ink-100 text-ink-700 bg-white"
+        className={`rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold ${
+          active ? "border-play-400 bg-play-50/50 text-ink-950 ring-play-100 ring-2" : "border-ink-100 text-ink-700 bg-white"
         }`}
       >
         {value}
@@ -63,20 +90,15 @@ export function Field({ label, value, active }: { label: string; value: ReactNod
   )
 }
 
-/** The "this is what you click" button — pulses gently to draw the eye. */
-export function ActionBtn({ children, secondary }: { children: ReactNode; secondary?: boolean }) {
+/** The button the scene "presses": pulses, then plays a press at ~0.7s. */
+export function ActionBtn({ children, secondary, press }: { children: ReactNode; secondary?: boolean; press?: boolean }) {
   return (
     <span
-      className={`demo-pulse inline-flex cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-[13px] font-bold ${
+      className={`inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold ${
         secondary ? "border-ink-200 text-ink-700 border bg-white" : "bg-ink-950 text-white shadow-lg"
-      }`}
+      } ${press ? "demo-press" : "demo-pulse"}`}
     >
       {children}
-      <style>{`
-        .demo-pulse { animation: demoPulse 1.8s ease-in-out infinite; }
-        @keyframes demoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(242,78,30,0.35); } 50% { box-shadow: 0 0 0 7px rgba(242,78,30,0); } }
-        @media (prefers-reduced-motion: reduce) { .demo-pulse { animation: none; } }
-      `}</style>
     </span>
   )
 }
@@ -94,5 +116,31 @@ export function Avatar({ n, name }: { n: number; name: string }) {
         .join("")
         .slice(0, 2)}
     </span>
+  )
+}
+
+/** Compact name row used by the dense lists (10+ players). */
+export function PlayerRow({
+  n,
+  name,
+  sub,
+  right,
+  tone,
+}: {
+  n: number
+  name: string
+  sub?: string
+  right?: ReactNode
+  tone?: "plain" | "active" | "done"
+}) {
+  return (
+    <Row tone={tone}>
+      <Avatar n={n} name={name} />
+      <div className="min-w-0 flex-1">
+        <div className="text-ink-950 truncate text-[13px] font-bold">{name}</div>
+        {sub ? <div className="text-ink-500 text-[11px]">{sub}</div> : null}
+      </div>
+      {right}
+    </Row>
   )
 }

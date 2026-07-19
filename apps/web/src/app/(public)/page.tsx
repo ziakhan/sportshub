@@ -15,7 +15,7 @@ import { formatCurrency } from "@/lib/countries"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 
 export const metadata = {
-  title: { absolute: "SportsHub One — Youth Basketball Clubs, Leagues, Camps & Live Scores" },
+  title: { absolute: "SportsHub One | Youth Basketball Clubs, Leagues, Camps & Live Scores" },
   description:
     "Find youth basketball clubs, leagues, camps and tryouts near you. Live scores, standings, stat leaders and game recaps.",
   alternates: { canonical: "/" },
@@ -186,7 +186,7 @@ export default async function HomePage() {
             </h1>
 
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
-              Run tryouts, send offers, and turn them into signed-up, paid rosters — then
+              Run tryouts, send offers, and turn them into signed-up, paid rosters. Then
               schedules, live scores and standings all season long. Everything your club or league
               runs on spreadsheets today, in one app.{" "}
               <span className="text-ink-950 font-semibold">Your season runs itself.</span>
@@ -220,8 +220,8 @@ export default async function HomePage() {
             </p>
 
             <p className="text-ink-400 mb-12 text-[13px] font-medium">
-              One account — parent, coach, scorekeeper, club owner, league commissioner. Same app,
-              every seat in the gym.
+              One account works for parents, coaches, scorekeepers, club owners and league
+              commissioners. Same app, every seat in the gym.
             </p>
 
             <ClubSearch />
@@ -310,7 +310,7 @@ export default async function HomePage() {
                     repl: "SportsEngine, Jersey Watch, the spreadsheet",
                   },
                   {
-                    cat: "League ops — schedules, standings, playoffs, refs",
+                    cat: "League ops: schedules, standings, playoffs, refs",
                     repl: "RAMP, email chains",
                   },
                 ].map((row) => (
@@ -405,7 +405,7 @@ export default async function HomePage() {
               </span>
               <h3 className="text-ink-950 mb-2 text-xl font-bold">Run your club end-to-end</h3>
               <p className="text-ink-500 mb-6 flex-1 text-sm leading-6">
-                Organize teams, run tryouts, send offers, and give families a polished public page —
+                Organize teams, run tryouts, send offers, and give families a polished public page,
                 all from one dashboard.
               </p>
               <span className="text-play-600 group-hover:text-play-700 inline-flex items-center gap-1 text-sm font-semibold transition">
@@ -645,7 +645,7 @@ export default async function HomePage() {
               Everything you need to run your program
             </h2>
             <p className="text-ink-500 mx-auto max-w-xl">
-              From tryout management to live scoring — built specifically for youth basketball clubs
+              From tryout management to live scoring, built for youth basketball clubs
               and leagues.
             </p>
           </div>
@@ -669,7 +669,7 @@ export default async function HomePage() {
                   Tryout Management
                 </h3>
                 <p className="text-ink-500 mb-6 max-w-sm leading-relaxed">
-                  Publish tryouts, collect signups, evaluate players, and send offers — all from
+                  Publish tryouts, collect signups, evaluate players, and send offers, all from
                   one dashboard.
                 </p>
                 <div className="border-ink-100 max-w-sm rounded-2xl border bg-white p-4 shadow-sm">
@@ -841,8 +841,8 @@ export default async function HomePage() {
                 &ldquo;Complete&rdquo; isn&apos;t a slogan here. It&apos;s a checklist.
               </h2>
               <p className="text-ink-300 max-w-2xl text-base leading-7 sm:text-lg">
-                Registration to final buzzer — every job the season throws at you, already built,
-                already talking to each other.
+                Registration to final buzzer. Every job the season throws at you, already built
+                and already talking to each other.
               </p>
               <div className="mt-6 flex max-w-2xl flex-wrap gap-2">
                 {[

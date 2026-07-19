@@ -16,4 +16,4 @@ export function siteUrl(): string {
 export const SITE_NAME = "SportsHub One"
 
 export const SITE_DESCRIPTION =
-  "Youth basketball clubs, leagues, camps, tryouts, live scores and standings — one platform for families, clubs and league operators."
+  "Youth basketball clubs, leagues, camps, tryouts, live scores and standings. One platform for families, clubs and league operators."

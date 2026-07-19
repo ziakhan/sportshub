@@ -1,24 +1,25 @@
 import type { DemoScene } from "./demo-player"
-import { ActionBtn, Avatar, Chip, Field, Row, Screen } from "./mock-ui"
+import { DW } from "./demo-world"
+import { ActionBtn, Avatar, Cascade, Chip, Field, PlayerRow, Row, Screen } from "./mock-ui"
 
 /**
- * Club journey: claim → teams → staff → tryout setup → publish → signups →
- * attendance → offer template → send → acceptances → final roster.
+ * Club journey: claim, teams, staff, tryout setup, publish, signups,
+ * attendance, offer template, send, acceptances, final roster.
  */
 export const CLUB_SCENES: DemoScene[] = [
   {
     label: "Claim your club",
-    caption: "Your club probably already has a page here — claim it, or start one fresh in minutes.",
+    caption: "Your club probably already has a page here. Claim it, or start one fresh in minutes.",
     screen: (
       <Screen title="Find your club" badge="190+ clubs listed">
-        <div className="space-y-2">
+        <Cascade>
           <Row tone="active">
             <div className="min-w-0 flex-1">
-              <div className="text-ink-950 text-[13px] font-bold">Ridgeview Rockets Basketball</div>
+              <div className="text-ink-950 text-[13px] font-bold">{DW.club} Basketball</div>
               <div className="text-ink-500 text-[11.5px]">Mississauga, ON · 6 teams on record</div>
             </div>
             <Chip tone="gold">Unclaimed</Chip>
-            <ActionBtn>Claim this club</ActionBtn>
+            <ActionBtn press>Claim this club</ActionBtn>
           </Row>
           <Row>
             <div className="min-w-0 flex-1">
@@ -26,16 +27,21 @@ export const CLUB_SCENES: DemoScene[] = [
             </div>
             <Chip tone="blue">Create a new club</Chip>
           </Row>
-        </div>
+          <div className="text-right">
+            <Chip tone="green" late={1}>
+              ✓ Claim started · verify and it&apos;s yours
+            </Chip>
+          </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Create teams",
-    caption: "Spin up your age groups — rep, house league, camps — each team gets its own home.",
+    caption: "Set up your age groups. Rep, house league, camps. Each team gets its own home.",
     screen: (
-      <Screen title="Teams — Ridgeview Rockets" badge="3 teams">
-        <div className="space-y-2">
+      <Screen title={`Teams · ${DW.club}`} badge="4 teams">
+        <Cascade>
           <Row tone="done">
             <div className="min-w-0 flex-1 text-[13px] font-bold">U11 Boys Rep</div>
             <Chip tone="green">Created</Chip>
@@ -44,224 +50,225 @@ export const CLUB_SCENES: DemoScene[] = [
             <div className="min-w-0 flex-1 text-[13px] font-bold">U13 Boys Rep</div>
             <Chip tone="green">Created</Chip>
           </Row>
+          <Row tone="done">
+            <div className="min-w-0 flex-1 text-[13px] font-bold">U13 Girls Rep AA</div>
+            <Chip tone="green">Created</Chip>
+          </Row>
           <Row tone="active">
             <div className="min-w-0 flex-1">
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Age group" value="U13 Girls" active />
-                <Field label="Level" value="Rep — AA" />
+                <Field label="Age group" value="U15 Boys" active />
+                <Field label="Level" value="House league" />
               </div>
             </div>
-            <ActionBtn>Add team</ActionBtn>
+            <ActionBtn press>Add team</ActionBtn>
           </Row>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Assign staff",
-    caption: "Head coach, assistant, team manager — assign people you have, invite the ones you don't by email.",
+    caption: "Head coach, assistant, team manager. Assign the people you have and invite the rest by email.",
     screen: (
-      <Screen title="Staff — U13 Boys Rep" badge="Roles">
-        <div className="space-y-2">
+      <Screen title={`Staff · ${DW.team}`} badge="Roles">
+        <Cascade>
           <Row>
-            <Avatar n={0} name="Dana Whitfield" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Dana Whitfield</div>
+            <Avatar n={0} name={DW.headCoach} />
+            <div className="min-w-0 flex-1 text-[13px] font-bold">{DW.headCoach}</div>
             <Chip tone="blue">Head Coach</Chip>
           </Row>
           <Row>
-            <Avatar n={1} name="Alex Romero" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Alex Romero</div>
+            <Avatar n={1} name={DW.assistantCoach} />
+            <div className="min-w-0 flex-1 text-[13px] font-bold">{DW.assistantCoach}</div>
             <Chip tone="blue">Assistant Coach</Chip>
           </Row>
           <Row>
-            <Avatar n={2} name="Priya Nair" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Priya Nair</div>
+            <Avatar n={2} name={DW.teamManager} />
+            <div className="min-w-0 flex-1 text-[13px] font-bold">{DW.teamManager}</div>
             <Chip tone="blue">Team Manager</Chip>
           </Row>
           <Row tone="active">
             <div className="min-w-0 flex-1">
-              <Field label="Invite by email" value="coach.marcus@gmail.com" active />
+              <Field label="Invite by email" value={DW.invitedCoach} active />
             </div>
-            <Chip tone="gold">Invite pending</Chip>
+            <Chip tone="gold" late={1}>
+              Invite sent ✓
+            </Chip>
           </Row>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Create a tryout",
-    caption: "Dates, venue, capacity, fee — the tryout is a real event with real bookkeeping, not a Google Form.",
+    caption: "Dates, venue, capacity, fee. A real event with real bookkeeping, not a Google Form.",
     screen: (
-      <Screen title="New tryout — U13 Boys Rep" badge="Draft">
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Title" value="U13 Boys Rep Tryout" />
-          <Field label="Fee" value="$25" />
-          <Field label="Session 1" value="Sun Oct 5 · 6–8 PM" active />
-          <Field label="Session 2" value="Tue Oct 7 · 6–8 PM" active />
-          <Field label="Venue" value="Maplewood CC — Gym A" />
+      <Screen title={`New tryout · ${DW.team}`} badge="Draft">
+        <Cascade className="grid grid-cols-2 gap-2 space-y-0">
+          <Field label="Title" value={`${DW.team} Tryout`} />
+          <Field label="Fee" value={DW.tryoutFee} />
+          <Field label="Session 1" value="Sun Oct 5 · 6 to 8 PM" active />
+          <Field label="Session 2" value="Tue Oct 7 · 6 to 8 PM" active />
+          <Field label="Venue" value={`${DW.venue} · ${DW.gym}`} />
           <Field label="Capacity" value="40 players" />
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Publish it",
-    caption: "One click and it's live on your public club page — shareable link, findable by every family nearby.",
+    caption: "One click and it goes live on your public club page, findable by every family nearby.",
     screen: (
-      <Screen title="U13 Boys Rep Tryout" badge="Ready">
+      <Screen title={`${DW.team} Tryout`} badge="Ready">
         <Row tone="active">
           <div className="min-w-0 flex-1">
             <div className="text-ink-950 text-[13px] font-bold">Preview looks good?</div>
             <div className="text-ink-500 text-[11.5px]">ridgeview-rockets · /tryout/u13-boys-rep</div>
           </div>
-          <ActionBtn>Publish tryout</ActionBtn>
+          <ActionBtn press>Publish tryout</ActionBtn>
         </Row>
         <div className="mt-2 flex gap-1.5">
-          <Chip tone="green">✓ Live on your club page</Chip>
-          <Chip tone="blue">Link copied</Chip>
+          <Chip tone="green" late={1}>
+            ✓ Live on your club page
+          </Chip>
+          <Chip tone="blue" late={2}>
+            Share link copied
+          </Chip>
         </div>
       </Screen>
     ),
   },
   {
     label: "Watch signups",
-    caption: "Registrations and payments roll in live — you always know exactly who's coming.",
+    caption: "Registrations and payments roll in live. You always know who's coming.",
     screen: (
-      <Screen title="Signups — U13 Boys Rep Tryout" badge="28 / 40">
-        <div className="space-y-2">
-          {[
-            ["Jordan Lee", "2013", 0],
-            ["Marcus Okafor", "2013", 1],
-            ["Theo Brandt", "2014", 2],
-          ].map(([n, y, i]) => (
-            <Row key={n as string}>
-              <Avatar n={i as number} name={n as string} />
-              <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-bold">{n}</div>
-                <div className="text-ink-500 text-[11px]">Born {y}</div>
-              </div>
-              <Chip tone="green">Paid ✓</Chip>
-            </Row>
+      <Screen title={`Signups · ${DW.team} Tryout`} badge="28 / 40">
+        <Cascade>
+          {DW.players.slice(0, 6).map((name, i) => (
+            <PlayerRow
+              key={name}
+              n={i}
+              name={name}
+              sub={`Born ${i % 2 === 0 ? "2013" : "2014"}`}
+              right={<Chip tone="green">Paid ✓</Chip>}
+            />
           ))}
-          <div className="text-ink-400 pt-1 text-center text-[11px] font-semibold">+ 25 more · 12 spots left</div>
-        </div>
+          <div className="text-ink-400 pt-1 text-center text-[11px] font-semibold">
+            + 22 more · 12 spots left
+          </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Take attendance",
-    caption: "On tryout night, check players in from your phone — evaluators see who's actually on the floor.",
+    caption: "On tryout night, check players in from your phone. Evaluators see who is on the floor.",
     screen: (
-      <Screen title="Attendance — Session 1 · Oct 5" badge="24 / 28 in">
-        <div className="space-y-2">
-          <Row tone="done">
-            <Avatar n={0} name="Jordan Lee" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Jordan Lee</div>
-            <Chip tone="green">Present ✓</Chip>
-          </Row>
-          <Row tone="done">
-            <Avatar n={1} name="Marcus Okafor" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Marcus Okafor</div>
-            <Chip tone="green">Present ✓</Chip>
-          </Row>
+      <Screen title="Attendance · Session 1 · Oct 5" badge="26 / 28 in">
+        <Cascade>
+          {DW.players.slice(0, 5).map((name, i) => (
+            <PlayerRow key={name} n={i} name={name} tone="done" right={<Chip tone="green">Present ✓</Chip>} />
+          ))}
           <Row tone="active">
-            <Avatar n={2} name="Theo Brandt" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Theo Brandt</div>
+            <Avatar n={5} name={DW.players[5]} />
+            <div className="min-w-0 flex-1 text-[13px] font-bold">{DW.players[5]}</div>
             <div className="flex gap-1">
               <Chip tone="green">Here</Chip>
               <Chip tone="red">No-show</Chip>
             </div>
           </Row>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Build the offer",
-    caption: "Offer templates carry everything: uniform, season dates, fee, deposit, installment plan — practices can come later.",
+    caption: "One template carries it all: uniform, season dates, fee, deposit, installment plan. Practice times can come later.",
     screen: (
-      <Screen title="Offer template — U13 Rep" badge="Template">
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Season" value="Nov 1 – Apr 30" />
+      <Screen title="Offer template · U13 Rep" badge="Template">
+        <Cascade className="grid grid-cols-2 gap-2 space-y-0">
+          <Field label="Season" value="Nov 1 to Apr 30" />
           <Field label="Uniform" value="Included" active />
-          <Field label="Season fee" value="$2,400" />
-          <Field label="Deposit" value="$500 on accept" active />
-          <Field label="Installments" value="4 × $475 monthly" active />
-          <Field label="Practices" value="Tue / Thu — finalized later" />
-        </div>
+          <Field label="Season fee" value={DW.seasonFee} />
+          <Field label="Deposit" value={`${DW.deposit} on accept`} active />
+          <Field label="Installments" value={`${DW.installments} monthly`} active />
+          <Field label="Practices" value="Tue and Thu, finalized later" />
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Send offers",
-    caption: "Pick your players and send — every family gets the same clean offer, no BCC email chains.",
+    caption: "Pick your players and press send. Every family gets the same clean offer at the same moment.",
     screen: (
-      <Screen title="Send offers — U13 Boys Rep" badge="15 selected">
-        <div className="space-y-2">
-          <Row tone="done">
-            <Avatar n={0} name="Jordan Lee" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Jordan Lee</div>
-            <Chip tone="blue">Selected ✓</Chip>
-          </Row>
-          <Row tone="done">
-            <Avatar n={1} name="Marcus Okafor" />
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Marcus Okafor</div>
-            <Chip tone="blue">Selected ✓</Chip>
-          </Row>
+      <Screen title={`Send offers · ${DW.team}`} badge="12 selected">
+        <Cascade>
+          {DW.players.slice(0, 5).map((name, i) => (
+            <PlayerRow
+              key={name}
+              n={i}
+              name={name}
+              right={
+                <Chip tone="green" late={i}>
+                  Offer sent ✓
+                </Chip>
+              }
+            />
+          ))}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-ink-400 text-[11px] font-semibold">+ 13 more selected</span>
-            <ActionBtn>Send 15 offers</ActionBtn>
+            <span className="text-ink-400 text-[11px] font-semibold">+ 7 more selected</span>
+            <ActionBtn press>Send 12 offers</ActionBtn>
           </div>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Track acceptances",
-    caption: "Accepted means deposit paid — your roster fills itself with committed, paid-up families.",
+    caption: "Accepted means the deposit is paid. The roster fills itself with committed families.",
     screen: (
-      <Screen title="Offers — U13 Boys Rep" badge="Live status">
-        <div className="space-y-2">
+      <Screen title={`Offers · ${DW.team}`} badge="Live status">
+        <Cascade>
           <Row tone="done">
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Accepted &amp; deposit paid</div>
-            <div className="text-lg font-black tabular-nums text-emerald-600">11</div>
+            <div className="min-w-0 flex-1 text-[13px] font-bold">Accepted, deposit paid</div>
+            <div className="text-lg font-black tabular-nums text-emerald-600">9</div>
           </Row>
           <Row>
             <div className="min-w-0 flex-1 text-[13px] font-bold">Awaiting response</div>
-            <div className="text-ink-500 text-lg font-black tabular-nums">3</div>
+            <div className="text-ink-500 text-lg font-black tabular-nums">2</div>
           </Row>
           <Row>
             <div className="min-w-0 flex-1 text-[13px] font-bold">Declined</div>
             <div className="text-lg font-black tabular-nums text-red-500">1</div>
           </Row>
           <div className="pt-1 text-center">
-            <Chip tone="gold">Reminder nudge scheduled for pending offers</Chip>
+            <Chip tone="gold">Reminder scheduled for the 2 pending offers</Chip>
           </div>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },
   {
     label: "Finalize the roster",
-    caption: "Jerseys assigned, roster locked — and submitted to your league in one click. No re-typing anyone's name.",
+    caption: "Jerseys assigned, roster locked, and one click sends it to your league. Nobody retypes a name.",
     screen: (
-      <Screen title="Roster — U13 Boys Rep" badge="12 players">
-        <div className="space-y-2">
-          <Row>
-            <span className="text-ink-400 w-7 text-center text-[12px] font-black tabular-nums">4</span>
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Jordan Lee</div>
-            <Chip tone="green">Deposit ✓</Chip>
-          </Row>
-          <Row>
-            <span className="text-ink-400 w-7 text-center text-[12px] font-black tabular-nums">7</span>
-            <div className="min-w-0 flex-1 text-[13px] font-bold">Marcus Okafor</div>
-            <Chip tone="green">Deposit ✓</Chip>
-          </Row>
+      <Screen title={`Roster · ${DW.team}`} badge="12 players">
+        <Cascade>
+          {DW.players.slice(0, 5).map((name, i) => (
+            <Row key={name}>
+              <span className="text-ink-400 w-7 text-center text-[12px] font-black tabular-nums">
+                {[4, 7, 11, 23, 30][i]}
+              </span>
+              <div className="min-w-0 flex-1 text-[13px] font-bold">{name}</div>
+              <Chip tone="green">Deposit ✓</Chip>
+            </Row>
+          ))}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-ink-400 text-[11px] font-semibold">+ 10 more · all paid</span>
-            <ActionBtn>Submit roster to league</ActionBtn>
+            <span className="text-ink-400 text-[11px] font-semibold">+ 7 more, all paid</span>
+            <ActionBtn press>Submit roster to league</ActionBtn>
           </div>
-        </div>
+        </Cascade>
       </Screen>
     ),
   },

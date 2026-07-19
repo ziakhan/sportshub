@@ -4,16 +4,16 @@ import { DemoPlayer } from "@/components/demo/demo-player"
 import { LEAGUE_SCENES } from "@/components/demo/scenes-league"
 
 export const metadata = {
-  title: "For Leagues — Scheduling, Live Scoring & Standings for Youth Basketball",
+  title: "For Leagues | Scheduling, Live Scoring & Standings for Youth Basketball",
   alternates: { canonical: "/for-leagues" },
   description:
-    "Registration, rosters, scheduling, live scoring, standings and stat leaders — a complete operating system for youth basketball leagues.",
+    "Registration, rosters, scheduling, live scoring, standings and stat leaders. A complete operating system for youth basketball leagues.",
 }
 
 const FEATURES = [
   {
     title: "Team registration & rosters",
-    body: "Clubs register and pay online, submit rosters once, and rosters freeze on finalization — a clean paper trail with zero chasing.",
+    body: "Clubs register and pay online, submit rosters once, and rosters freeze on finalization. A clean paper trail with zero chasing.",
     tone: "bg-play-600 shadow-play-200",
     icon: (
       <>
@@ -25,7 +25,7 @@ const FEATURES = [
   },
   {
     title: "Scheduling that solves itself",
-    body: "Divisions, sessions, venues, courts and blackouts in — a full season schedule out, with a capacity planner that shows what fits.",
+    body: "Divisions, sessions, venues, courts and blackouts go in. A full season schedule comes out, with a capacity planner that shows what fits.",
     tone: "bg-sky-500 shadow-sky-200",
     icon: (
       <>
@@ -55,7 +55,7 @@ const FEATURES = [
   },
   {
     title: "Automatic game recaps",
-    body: "Every scored game becomes a newspaper-style recap on your league's public pages — content your families share, written for you.",
+    body: "Every scored game becomes a newspaper-style recap on your league's public pages. Content your families share, written for you.",
     tone: "bg-violet-500 shadow-violet-200",
     icon: (
       <>
@@ -66,7 +66,7 @@ const FEATURES = [
   },
   {
     title: "League fees, handled",
-    body: "Collect team fees online or record offline payments — every obligation tracked, every payment reported the same way.",
+    body: "Collect team fees online or record offline payments. Every obligation tracked, every payment reported the same way.",
     tone: "bg-court-600 shadow-court-200",
     icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
   },
@@ -89,7 +89,7 @@ export default function ForLeaguesPage() {
             </h1>
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8">
               Registration, rosters, scheduling, live scoring, standings, stat leaders and
-              automatic recaps — everything a league needs to run competitive play, with a public
+              automatic recaps. Everything a league needs to run competitive play, with a public
               face families check every week.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -114,7 +114,7 @@ export default function ForLeaguesPage() {
         <div className="container mx-auto px-4 sm:px-6">
           <SectionHeader
             eyebrow="Watch it work"
-            title="Season, schedule, referees, standings — end to end"
+            title="Season, schedule, referees, standings. End to end"
             accent="court"
             align="center"
             className="mb-8"
@@ -122,7 +122,7 @@ export default function ForLeaguesPage() {
           <div className="mx-auto max-w-3xl">
             <DemoPlayer title="League journey walkthrough" scenes={LEAGUE_SCENES} />
             <p className="text-ink-400 mt-3 text-center text-sm">
-              Every screen is the live design system with demo data — press play or step through.{" "}
+              Every screen here is the real design system with demo data. Press play or step through.{" "}
               <Link href="/how-it-works" className="text-play-600 font-semibold">
                 See the parent and club journeys &rarr;
               </Link>
@@ -164,7 +164,7 @@ export default function ForLeaguesPage() {
                 Give your clubs a league worth bragging about.
               </h2>
               <p className="mb-8 max-w-2xl leading-7 text-white/80">
-                Set up divisions, open registration, and let the platform handle the rest — while
+                Set up divisions, open registration, and let the platform handle the rest, while
                 every game feeds public standings, leaders and recaps your community follows.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
