@@ -213,11 +213,6 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <p className="mb-6 text-sm font-semibold">
-              <Link href="/how-it-works" className="text-play-600 hover:text-play-700 transition-colors">
-                Or watch how the whole season works &rarr;
-              </Link>
-            </p>
 
             <p className="text-ink-400 mb-12 text-[13px] font-medium">
               One account works for parents, coaches, scorekeepers, club owners and league

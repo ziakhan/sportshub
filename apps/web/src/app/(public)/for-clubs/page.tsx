@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { DemoPlayer } from "@/components/demo/demo-player"
-import { CLUB_CLIPS } from "@/components/demo/clips"
+import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
   title: "For Clubs | Registration, Payments & Live Scoring for Youth Basketball",
@@ -9,54 +8,58 @@ export const metadata = {
     "Tryouts, rosters, offers, payments, live scoring and a public presence families love. One platform for your whole club.",
 }
 
-const SECTIONS = [
+const FEATURES = [
   {
-    id: "setup",
-    title: "Claim your club, build your teams",
-    body: "Your club probably already has a page here waiting to be claimed. Take it over, create your age groups, and give every coach and team manager their proper role.",
-    scenes: CLUB_CLIPS.setup,
+    title: "Tryouts & offers",
+    body: "Publish tryouts, collect signups and payments, evaluate players, and send offer packages families accept online.",
+    tone: "bg-hoop-500 shadow-hoop-200",
+    icon: <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 2h6v4H9z" />,
   },
   {
-    id: "tryouts",
-    title: "Tryouts without the clipboard",
-    body: "Publish a tryout with dates, gym and capacity. Watch paid signups roll in, then check players in from your phone on tryout night.",
-    scenes: CLUB_CLIPS.tryouts,
+    title: "Payments built in",
+    body: "Online payments, cash and e-transfer bookkeeping, installments, refunds. Every dollar tracked against what's owed.",
+    tone: "bg-court-600 shadow-court-200",
+    icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
   },
   {
-    id: "offers",
-    title: "Offers that fill rosters",
-    body: "Build one offer template with uniform, fees and installment plan. Send it to everyone at once and watch acceptances come back with deposits already paid.",
-    scenes: CLUB_CLIPS.offers,
+    title: "Live scoring & stats",
+    body: "Score games courtside from any phone. Box scores, play-by-play, official scoresheets, and season stats, all automatic.",
+    tone: "bg-play-600 shadow-play-200",
+    icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
   },
   {
-    id: "payments",
-    title: "Every dollar accounted for",
-    body: "The ledger knows who paid, who owes and when the next installment runs. Cards get charged on schedule and reminders go out on their own.",
-    scenes: CLUB_CLIPS.payments,
+    title: "A public face families love",
+    body: "Club and team pages, game recaps written automatically, stat leaders, and news. Parents come back between games.",
+    tone: "bg-gold-500 shadow-gold-200",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </>
+    ),
   },
   {
-    id: "scoring",
-    title: "Game night, handled",
-    body: "Hand the table a one-time scoring link. Every press updates the live game page that parents are watching, and the box score publishes itself at the buzzer.",
-    scenes: CLUB_CLIPS.scoring,
+    title: "Rosters & communication",
+    body: "Age-group teams, staff assignments, jersey numbers, announcements and notifications. No more spreadsheet chaos.",
+    tone: "bg-sky-500 shadow-sky-200",
+    icon: (
+      <>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
   },
   {
-    id: "comms",
-    title: "One place to talk",
-    body: "Pinned announcements, polls that count themselves, recurring practices on every family calendar. The group chat can go back to carpool.",
-    scenes: CLUB_CLIPS.comms,
-  },
-  {
-    id: "public",
-    title: "A public face that recruits for you",
-    body: "Your club page carries programs, news recaps written after every game, and verified reviews from real families. New parents find you on Google.",
-    scenes: CLUB_CLIPS.publicFace,
-  },
-  {
-    id: "league",
-    title: "League play without retyping",
-    body: "Submit your finalized roster to the league in one click, fee included. The schedule lands back on every calendar and the standings update themselves.",
-    scenes: CLUB_CLIPS.league,
+    title: "League play, connected",
+    body: "Register teams into leagues, submit rosters once, and get schedules, standings and results without re-entering anything.",
+    tone: "bg-violet-500 shadow-violet-200",
+    icon: (
+      <>
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16" />
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      </>
+    ),
   },
 ]
 
@@ -94,28 +97,34 @@ export default function ForClubsPage() {
                 See club pages live
               </Link>
             </div>
-            <p className="text-ink-400 mt-6 text-sm">
-              Each section below is a hands-on walkthrough. Click the glowing button on a screen to do that step, at your own pace.
-            </p>
           </div>
         </div>
       </section>
 
-      {SECTIONS.map((s, idx) => (
-        <section key={s.id} id={s.id} className={`scroll-mt-24 py-14 sm:py-16 ${idx % 2 ? "bg-[#fafafa]" : "bg-white"}`}>
-          <div className="container mx-auto px-4 sm:px-6">
-            <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-              <div className={idx % 2 ? "lg:order-2" : ""}>
-                <h2 className="text-ink-950 mb-3 text-2xl font-bold sm:text-3xl">{s.title}</h2>
-                <p className="text-ink-500 text-[15px] leading-7">{s.body}</p>
+      <section className="bg-white py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <SectionHeader
+            eyebrow="The whole season"
+            title="From first tryout to final buzzer"
+            accent="play"
+            align="center"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="card-lift border-ink-100 shadow-soft rounded-[24px] border bg-white p-6">
+                <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg ${f.tone}`}>
+                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {f.icon}
+                  </svg>
+                </span>
+                <h3 className="text-ink-950 mb-1.5 text-lg font-bold">{f.title}</h3>
+                <p className="text-ink-500 text-sm leading-6">{f.body}</p>
               </div>
-              <div>
-                <DemoPlayer title={`${s.title} walkthrough`} scenes={s.scenes} />
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
-      ))}
+        </div>
+      </section>
 
       <section className="bg-[#fafafa] py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
@@ -136,10 +145,10 @@ export default function ForClubsPage() {
                   Create your account
                 </Link>
                 <Link
-                  href="/how-it-works"
+                  href="/for-leagues"
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
-                  Watch the whole season play out &rarr;
+                  Running a league instead? &rarr;
                 </Link>
               </div>
             </div>

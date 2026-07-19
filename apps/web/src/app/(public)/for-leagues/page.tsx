@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { DemoPlayer } from "@/components/demo/demo-player"
-import { LEAGUE_CLIPS } from "@/components/demo/clips"
+import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
   title: "For Leagues | Scheduling, Live Scoring & Standings for Youth Basketball",
@@ -9,42 +8,65 @@ export const metadata = {
     "Registration, rosters, scheduling, live scoring, standings and stat leaders. A complete operating system for youth basketball leagues.",
 }
 
-const SECTIONS = [
+const FEATURES = [
   {
-    id: "registration",
-    title: "Registration without the chasing",
-    body: "Publish your season with the fee and format. Clubs submit finalized rosters in one click, payment attached, and rosters freeze when you say so.",
-    scenes: LEAGUE_CLIPS.registration,
+    title: "Team registration & rosters",
+    body: "Clubs register and pay online, submit rosters once, and rosters freeze on finalization. A clean paper trail with zero chasing.",
+    tone: "bg-play-600 shadow-play-200",
+    icon: (
+      <>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </>
+    ),
   },
   {
-    id: "scheduling",
-    title: "A schedule that solves itself",
-    body: "Game days, gyms and blackout dates go in. A fair round robin comes out, inside your real court time. Move a game and everyone finds out at once.",
-    scenes: LEAGUE_CLIPS.scheduling,
+    title: "Scheduling that solves itself",
+    body: "Divisions, sessions, venues, courts and blackouts go in. A full season schedule comes out, with a capacity planner that shows what fits.",
+    tone: "bg-sky-500 shadow-sky-200",
+    icon: (
+      <>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </>
+    ),
   },
   {
-    id: "scoring",
-    title: "Live scoring at every table",
-    body: "Scorekeepers run games from a phone, guests can score with a one-time link, and referees confirm and sign off in their own view.",
-    scenes: LEAGUE_CLIPS.scoring,
+    title: "Live scoring & official scoresheets",
+    body: "Scorekeepers run games from a phone. Referee sign-off, server-generated PDF scoresheets, and box scores families watch live.",
+    tone: "bg-hoop-500 shadow-hoop-200",
+    icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
   },
   {
-    id: "standings",
-    title: "Standings, leaders, playoffs",
-    body: "Every final feeds the table and the stat leaders the moment it lands. When the season ends, the bracket seeds itself from the standings.",
-    scenes: LEAGUE_CLIPS.standings,
+    title: "Standings & stat leaders",
+    body: "Standings with your tiebreaker rules, plus points, rebounds and assists leaders published automatically after every game.",
+    tone: "bg-gold-500 shadow-gold-200",
+    icon: (
+      <>
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16" />
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      </>
+    ),
   },
   {
-    id: "recaps",
-    title: "A league families read about",
-    body: "Every scored game becomes a written recap on your public pages within minutes. Box scores, leaders and news your community shares.",
-    scenes: LEAGUE_CLIPS.recaps,
+    title: "Automatic game recaps",
+    body: "Every scored game becomes a newspaper-style recap on your league's public pages. Content your families share, written for you.",
+    tone: "bg-violet-500 shadow-violet-200",
+    icon: (
+      <>
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V6" />
+        <path d="M12 6h6M12 10h6M12 14h6M12 18h6" />
+      </>
+    ),
   },
   {
-    id: "fees",
-    title: "Fees, tracked like everything else",
-    body: "Collect team fees online or record offline payments. Every obligation is visible and every payment reports the same way.",
-    scenes: LEAGUE_CLIPS.fees,
+    title: "League fees, handled",
+    body: "Collect team fees online or record offline payments. Every obligation tracked, every payment reported the same way.",
+    tone: "bg-court-600 shadow-court-200",
+    icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
   },
 ]
 
@@ -82,28 +104,34 @@ export default function ForLeaguesPage() {
                 Browse leagues
               </Link>
             </div>
-            <p className="text-ink-400 mt-6 text-sm">
-              Each section below is a hands-on walkthrough. Click the glowing button on a screen to do that step, at your own pace.
-            </p>
           </div>
         </div>
       </section>
 
-      {SECTIONS.map((s, idx) => (
-        <section key={s.id} id={s.id} className={`scroll-mt-24 py-14 sm:py-16 ${idx % 2 ? "bg-[#fafafa]" : "bg-white"}`}>
-          <div className="container mx-auto px-4 sm:px-6">
-            <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-              <div className={idx % 2 ? "lg:order-2" : ""}>
-                <h2 className="text-ink-950 mb-3 text-2xl font-bold sm:text-3xl">{s.title}</h2>
-                <p className="text-ink-500 text-[15px] leading-7">{s.body}</p>
+      <section className="bg-white py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <SectionHeader
+            eyebrow="The whole operation"
+            title="From registration night to the championship"
+            accent="court"
+            align="center"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="card-lift border-ink-100 shadow-soft rounded-[24px] border bg-white p-6">
+                <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg ${f.tone}`}>
+                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {f.icon}
+                  </svg>
+                </span>
+                <h3 className="text-ink-950 mb-1.5 text-lg font-bold">{f.title}</h3>
+                <p className="text-ink-500 text-sm leading-6">{f.body}</p>
               </div>
-              <div>
-                <DemoPlayer title={`${s.title} walkthrough`} scenes={s.scenes} />
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
-      ))}
+        </div>
+      </section>
 
       <section className="bg-[#fafafa] py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">
@@ -124,10 +152,10 @@ export default function ForLeaguesPage() {
                   Create your account
                 </Link>
                 <Link
-                  href="/how-it-works"
+                  href="/for-clubs"
                   className="inline-flex items-center justify-center rounded-2xl border border-white/20 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
-                  Watch the whole season play out &rarr;
+                  Running a club instead? &rarr;
                 </Link>
               </div>
             </div>
