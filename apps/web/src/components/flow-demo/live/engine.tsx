@@ -53,10 +53,13 @@ const PERSONA_TONES: Record<string, string> = {
 export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScene[] }) {
   const [index, setIndex] = useState(0)
   const [, setTick] = useState(0)
+  const [started, setStarted] = useState(false)
   const [autoplay, setAutoplay] = useState(false)
   const [paused, setPaused] = useState(false)
   const [holding, setHolding] = useState<string | null>(null)
   const [confirmText, setConfirmText] = useState<string | null>(null)
+  const [intro, setIntro] = useState(false)
+  const [holdHint, setHoldHint] = useState<{ x: number; y: number } | null>(null)
   const [entering, setEntering] = useState(true)
   const [done, setDone] = useState(false)
   const [ready, setReady] = useState(false)
@@ -69,6 +72,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
   const pausedRef = useRef(false)
   const autoRef = useRef(false)
   const holdResolveRef = useRef<(() => void) | null>(null)
+  const introResolveRef = useRef<(() => void) | null>(null)
 
   pausedRef.current = paused
   autoRef.current = autoplay
@@ -163,18 +167,34 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
 
   /* Run the current scene's script. */
   useEffect(() => {
-    if (!scene || done) return
+    if (!scene || done || !started) return
     const run = ++runRef.current
     stateRef.current = {}
     setTick((t) => t + 1)
     setHolding(null)
     setReady(false)
     setConfirmText(null)
+    setHoldHint(null)
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
     if (zoomRef.current) zoomRef.current.style.transform = "none"
 
     const exec = async () => {
-      await sleep(650, run)
+      // Read-first: bring the new screen fully into view, then hold the
+      // caption up big until the viewer has had time to read it (a click
+      // dismisses it early). Only then does the screen start acting.
+      stageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      setIntro(true)
+      const readMs = Math.min(7000, Math.max(3000, 1400 + scene.caption.length * 34))
+      await Promise.race([
+        sleep(readMs, run).catch(() => {}),
+        new Promise<void>((resolve) => {
+          introResolveRef.current = resolve
+        }),
+      ])
+      introResolveRef.current = null
+      if (runRef.current !== run) return
+      setIntro(false)
+      await sleep(500, run)
       for (const step of scene.script) {
         if (runRef.current !== run) return
         if ("cursor" in step) await moveCursor(step.cursor, run)
@@ -241,14 +261,23 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       holds.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, done, scene?.id])
+  }, [index, done, started, scene?.id])
 
-  /* While holding, glow the target and resolve on a real user click. */
+  /* While holding, glow the target, pin a "Click to continue" tag to it,
+     and resolve on a real user click. */
   useEffect(() => {
     if (!holding) return
     const target = el(holding)
     if (!target) return
     target.classList.add("live-hold-glow")
+    const hint = setTimeout(() => {
+      if (autoRef.current) return
+      const stage = stageRef.current
+      if (!stage) return
+      const r = target.getBoundingClientRect()
+      const s = stage.getBoundingClientRect()
+      setHoldHint({ x: r.left - s.left + r.width / 2, y: r.top - s.top })
+    }, 600)
     const onClick = (e: Event) => {
       e.preventDefault()
       e.stopPropagation()
@@ -259,6 +288,8 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     }
     target.addEventListener("click", onClick, true)
     return () => {
+      clearTimeout(hint)
+      setHoldHint(null)
       target.classList.remove("live-hold-glow")
       target.removeEventListener("click", onClick, true)
     }
@@ -316,34 +347,58 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     )
   }
 
+  const dismissIntro = () => {
+    introResolveRef.current?.()
+    introResolveRef.current = null
+  }
+
   return (
     <div className="select-none" data-demo-player data-live-scene={scene.id} data-live-ready={ready || undefined}>
-      {/* HUD */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex flex-1 flex-wrap items-center gap-1.5">
-          {acts.map((a, ai) => {
-            const first = scenes.findIndex((s) => s.act === a.id)
-            const active = a.id === scene.act
-            return (
-              <button
-                key={a.id}
-                onClick={() => jumpTo(first)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-                  active
-                    ? "bg-ink-900 text-white"
-                    : ai < actIndex
-                      ? "bg-ink-100 text-ink-600 hover:bg-ink-200"
-                      : "text-ink-400 hover:bg-ink-100 hover:text-ink-600 bg-white"
-                )}
-              >
-                {ai + 1}. {a.title}
-              </button>
-            )
-          })}
+      {/* Acts */}
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        {acts.map((a, ai) => {
+          const first = scenes.findIndex((s) => s.act === a.id)
+          const active = a.id === scene.act
+          return (
+            <button
+              key={a.id}
+              onClick={() => jumpTo(first)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+                active
+                  ? "bg-ink-900 text-white"
+                  : ai < actIndex
+                    ? "bg-ink-100 text-ink-600 hover:bg-ink-200"
+                    : "text-ink-400 hover:bg-ink-100 hover:text-ink-600 bg-white"
+              )}
+            >
+              {ai + 1}. {a.title}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Sticky "who's acting, what's happening" bar — never scrolls away */}
+      <div className="border-ink-100 sticky top-[76px] z-30 mb-4 rounded-2xl border bg-white/95 px-4 py-3 shadow-[0_14px_34px_-22px_rgba(15,23,42,0.4)] backdrop-blur">
+        <div className="bg-ink-100 mb-2.5 h-1 overflow-hidden rounded-full">
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{ width: `${((index + 1) / total) * 100}%`, backgroundColor: "var(--brand)" }}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-ink-400 text-xs font-semibold tabular-nums">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ring-1 ring-inset",
+              PERSONA_TONES[scene.persona]
+            )}
+          >
+            {scene.personaLabel}
+          </span>
+          <p className="text-ink-900 min-w-[240px] flex-1 text-base font-semibold leading-snug">
+            {scene.caption}
+          </p>
+          <span className="text-ink-400 shrink-0 text-xs font-semibold tabular-nums">
             Step {index + 1} of {total}
           </span>
           <button
@@ -352,7 +407,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
               setPaused(false)
             }}
             className={cn(
-              "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+              "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
               autoplay
                 ? "border-court-200 bg-court-50 text-court-700"
                 : "border-ink-200 text-ink-600 hover:bg-ink-50 bg-white"
@@ -374,32 +429,12 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           </button>
         </div>
       </div>
-      <div className="bg-ink-100 mb-5 h-1 overflow-hidden rounded-full">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${((index + 1) / total) * 100}%`, backgroundColor: "var(--brand)" }}
-        />
-      </div>
-
-      {/* Caption */}
-      <div className="mb-4 flex flex-wrap items-start gap-x-3 gap-y-2">
-        <span
-          className={cn(
-            "mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
-            PERSONA_TONES[scene.persona]
-          )}
-        >
-          {scene.personaLabel}
-        </span>
-        <p className="text-ink-700 min-w-[240px] flex-1 text-sm font-medium leading-relaxed">
-          {scene.caption}
-        </p>
-      </div>
 
       {/* Stage */}
       <div
         ref={stageRef}
-        onClick={() => autoplay && setPaused((p) => !p)}
+        onClick={() => started && autoplay && setPaused((p) => !p)}
+        style={{ scrollMarginTop: 165 }}
         className={cn(
           "relative overflow-hidden rounded-2xl transition-all duration-200",
           entering ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
@@ -419,6 +454,78 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           )}
         </div>
         <div ref={cursorRef} className="live-cursor" style={{ opacity: 0, left: 40, top: 40 }} />
+
+        {/* Start gate: read what this is and pick a mode before anything moves */}
+        {!started && (
+          <div className="bg-ink-950/55 absolute inset-0 z-40 flex items-center justify-center p-6">
+            <div className="demo-confirm-pop w-full max-w-lg rounded-3xl bg-white p-7 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)]">
+              <h3 className="text-ink-950 text-2xl font-bold">Watch a season run itself</h3>
+              <p className="text-ink-600 mx-auto mt-3 max-w-md text-sm leading-relaxed">
+                Every step works the same way: first you read what is about to happen, then the
+                screen acts it out for real, then it waits for you on a glowing button.
+              </p>
+              <div className="mt-6 grid gap-2.5">
+                <button
+                  data-live-id="startManual"
+                  onClick={() => setStarted(true)}
+                  className="brand-focus rounded-xl px-5 py-3 text-base font-semibold text-[color:var(--brand-on)]"
+                  style={{ backgroundColor: "var(--brand)" }}
+                >
+                  I&apos;ll click through at my own pace
+                </button>
+                <button
+                  onClick={() => {
+                    setAutoplay(true)
+                    setStarted(true)
+                  }}
+                  className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border bg-white px-5 py-3 text-base font-semibold"
+                >
+                  ▶ Autoplay it for me
+                </button>
+              </div>
+              <p className="text-ink-400 mt-4 text-xs">
+                The glowing button is always the next step. Switch modes any time, top right.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Read-first card: the step explains itself before the screen moves */}
+        {started && intro && (
+          <div className="bg-ink-950/25 absolute inset-0 z-30 cursor-pointer p-4 sm:p-6" onClick={dismissIntro}>
+            <div className="demo-confirm-pop border-ink-100 mx-auto w-full max-w-2xl rounded-2xl border bg-white px-6 py-5 shadow-[0_30px_70px_-28px_rgba(15,23,42,0.5)]">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ring-1 ring-inset",
+                  PERSONA_TONES[scene.persona]
+                )}
+              >
+                {scene.personaLabel}
+              </span>
+              <p className="text-ink-950 mt-2.5 text-lg font-semibold leading-snug">{scene.caption}</p>
+              <p className="text-ink-400 mt-2.5 text-xs font-medium">
+                {autoplay
+                  ? "Playing in a moment. Click to start now."
+                  : "The screen acts this out, then the glowing button continues. Click to start now."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Pinned tag on the button that continues the demo */}
+        {holdHint && !autoplay && (
+          <div
+            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-full pb-2.5"
+            style={{ left: holdHint.x, top: holdHint.y }}
+          >
+            <div className="demo-confirm-pop">
+              <div className="bg-ink-950 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-[0_10px_24px_-8px_rgba(15,23,42,0.6)]">
+                Click to continue
+              </div>
+              <div className="bg-ink-950 mx-auto -mt-1 h-2 w-2 rotate-45" />
+            </div>
+          </div>
+        )}
         {confirmText && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-start justify-center pt-16">
             <div className="demo-confirm-pop border-court-200 flex items-center gap-3 rounded-2xl border bg-white px-5 py-3.5 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.4)]">
@@ -457,7 +564,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
         <p className="text-ink-400 text-xs font-medium">
           {autoplay
             ? "Playing on its own. Click the demo to pause."
-            : "Watch each step play out, then click the glowing button to continue."}
+            : "Read the step, watch it happen, then click the glowing button to continue."}
         </p>
       </div>
     </div>
