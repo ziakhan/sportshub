@@ -1,34 +1,27 @@
-import Link from "next/link"
+import { HowItWorksDemo } from "@/components/flow-demo/flows"
 
 export const metadata = {
-  title: "How It Works | SportsHub One",
+  title: "How It Works | A Whole Season, Step by Step | SportsHub One",
   alternates: { canonical: "/how-it-works" },
   description:
-    "A guided walkthrough of the whole season is being rebuilt. In the meantime, see what clubs, leagues and families get.",
+    "Walk a whole season the way it actually runs: league setup, club tryouts, offers and payments, roster submission, live scoring, recaps, and playoffs.",
 }
 
 export default function HowItWorksPage() {
   return (
-    <section className="mesh-surface bg-[#fafafa] py-24">
-      <div className="container mx-auto px-4 text-center sm:px-6">
-        <h1 className="font-display text-ink-950 mb-4 text-4xl font-extrabold">
-          The guided walkthrough is getting a rebuild.
-        </h1>
-        <p className="text-ink-500 mx-auto mb-8 max-w-xl text-lg leading-8">
-          A better one is on the way. Until then, here is what the platform does for each side of
-          the gym.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link href="/for-clubs" className="bg-ink-950 rounded-2xl px-6 py-3 text-sm font-semibold text-white">
-            For clubs
-          </Link>
-          <Link href="/for-leagues" className="bg-ink-950 rounded-2xl px-6 py-3 text-sm font-semibold text-white">
-            For leagues
-          </Link>
-          <Link href="/for-parents" className="border-ink-200 text-ink-700 rounded-2xl border bg-white px-6 py-3 text-sm font-semibold">
-            For parents
-          </Link>
+    <section className="bg-[#fafafa] py-10 sm:py-14">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="mx-auto mb-8 max-w-2xl text-center">
+          <h1 className="font-display text-ink-950 text-4xl font-extrabold">
+            A whole season, step by step
+          </h1>
+          <p className="text-ink-500 mt-3 text-lg leading-8">
+            This is the real product, screen by screen, from the league opening registration to
+            the championship recap. Go through the steps at your own pace: read as long as you
+            want, then click the glowing button to continue, exactly like using the app.
+          </p>
         </div>
+        <HowItWorksDemo />
       </div>
     </section>
   )
