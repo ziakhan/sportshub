@@ -52,7 +52,14 @@ export default async function PublicLayout({ children }: { children: React.React
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:h-[72px]">
           <Link href="/" className="flex items-center">
-            <BrandWordmark size="lg" variant="color" />
+            {/* Full-size lockup needs the desktop bar; phones get the md cut
+                so the logo, Log in and Start Free stop crowding 390px. */}
+            <span className="lg:hidden">
+              <BrandWordmark size="md" variant="color" />
+            </span>
+            <span className="hidden lg:inline-flex">
+              <BrandWordmark size="lg" variant="color" />
+            </span>
           </Link>
 
           {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
@@ -133,13 +140,13 @@ export default async function PublicLayout({ children }: { children: React.React
               <>
                 <AuthLink
                   to="sign-in"
-                  className="text-ink-600 hover:text-ink-950 px-3.5 py-2 text-[15px] font-medium transition-colors"
+                  className="text-ink-600 hover:text-ink-950 px-2.5 py-1.5 text-sm font-medium transition-colors lg:px-3.5 lg:py-2 lg:text-[15px]"
                 >
                   Log in
                 </AuthLink>
                 <AuthLink
                   to="sign-up"
-                  className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-5 py-2.5 text-[15px] font-semibold text-white transition-colors"
+                  className="bg-ink-950 hover:bg-ink-800 inline-flex items-center rounded-xl px-3.5 py-2 text-sm font-semibold text-white transition-colors lg:px-5 lg:py-2.5 lg:text-[15px]"
                 >
                   Start Free
                 </AuthLink>

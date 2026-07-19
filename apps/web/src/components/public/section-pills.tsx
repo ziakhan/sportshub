@@ -72,7 +72,7 @@ export function SectionPills() {
             key={s.href}
             href={s.href}
             aria-current={active ? "page" : undefined}
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-colors ${
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-[18px] py-1.5 text-[12.5px] font-bold transition-colors ${
               active ? s.on : s.off
             }`}
           >
