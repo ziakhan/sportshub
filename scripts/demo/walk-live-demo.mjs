@@ -24,6 +24,13 @@ await page.goto("http://localhost:3000/demo", { waitUntil: "networkidle", timeou
 const player = page.locator("[data-demo-player]")
 await player.waitFor({ timeout: 30000 })
 
+// Pass the start gate (manual mode) and grab it for the record first.
+const startGate = page.locator('[data-live-id="startManual"]')
+if (await startGate.count()) {
+  await player.screenshot({ path: `${out}/00-start-gate.jpg`, type: "jpeg", quality: 55 })
+  await startGate.click()
+}
+
 let shot = 0
 let lastScene = ""
 let holdsInScene = 0
