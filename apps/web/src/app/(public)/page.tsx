@@ -192,6 +192,25 @@ export default async function HomePage() {
               <span className="text-ink-950 font-semibold">Your season runs itself.</span>
             </p>
 
+            <div className="mb-5 flex flex-col items-center gap-2.5">
+              <Link
+                href="/demo"
+                className="from-play-600 to-hoop-500 shadow-play-600/25 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-105 sm:w-auto"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Watch the demo
+              </Link>
+              <p className="text-ink-400 text-[13px] font-medium">
+                A whole season, played out click by click on the real product. Parents:{" "}
+                <Link href="/demo/parents" className="text-play-700 font-semibold hover:underline">
+                  watch your side
+                </Link>
+                .
+              </p>
+            </div>
+
             <div className="mb-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/for-clubs"
