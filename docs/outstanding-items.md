@@ -392,6 +392,20 @@ need a settings surface); venue picker on slots (free-text location v1);
 league-level view of club practice load.
 
 ## 7. Owner asks parked 2026-07-06 (do NOT lose these)
+- **OAUTH BRANDING PASS (owner, parked 2026-07-18)** — once logo + Terms of
+  Service + Privacy Policy pages are finalized, circle back and complete:
+  ① Google Auth Platform → Branding: app logo, app name ("SportsHub One"),
+  homepage/privacy/ToS links. ⚠️ Uploading a logo triggers Google's brand
+  verification review (days–weeks; sign-in keeps working meanwhile — logo
+  simply doesn't show until approved). UX effect: consent/account-chooser
+  shows logo + clean app name + policy links instead of the bare
+  "continue to <domain>" — richer, more trustworthy sheet; not required for
+  SSO to function (we only use basic openid/email/profile scopes, so no
+  mandatory verification). ② Apple: display name on the App ID /
+  Services ID if we rebrand. ③ Same ToS/Privacy URLs feed App Store
+  listing + Google Play listing + app-store review requirements — one
+  content task, four consumers. Prereq: ToS + Privacy pages don't exist
+  yet (nothing at /terms or /privacy) — needs legal-ish copy pass first.
 - **PAYMENTS v2 — FULL SPEC WRITTEN (2026-07-07), owner-committed, NOT built**:
   docs/payments-plan-v2.md. Club configures payment terms at OFFER time
   (full-pay OR deposit + N installments w/ per-installment due dates; default

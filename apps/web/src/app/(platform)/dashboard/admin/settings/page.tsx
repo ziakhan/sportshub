@@ -18,6 +18,9 @@ export default function AdminSettingsPage() {
   const [savingPalette, setSavingPalette] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [reviewPolicy, setReviewPolicy] = useState<"AUTO" | "OFF">("AUTO")
+  const [reviewDays, setReviewDays] = useState(30)
+  const [savingReviews, setSavingReviews] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
@@ -28,6 +31,8 @@ export default function AdminSettingsPage() {
         setEnabledCodes(data.enabledCountries || ["US"])
         setSeoIndexing(!!data.seoIndexingEnabled)
         setPalette(data.themePalette || "hardwood")
+        setReviewPolicy(data.reviewInvitePolicy === "OFF" ? "OFF" : "AUTO")
+        setReviewDays(data.reviewWindowDays || 30)
       })
       .catch(() => setMessage({ type: "error", text: "Failed to load settings" }))
       .finally(() => setLoading(false))
@@ -167,6 +172,68 @@ export default function AdminSettingsPage() {
             }`}
           >
             {savingSeo ? "Saving..." : seoIndexing ? "Turn OFF" : "Turn ON"}
+          </button>
+        </div>
+      </div>
+
+      {/* Review invitations (owner 2026-07-18) */}
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
+        <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">Season-end review invitations</h3>
+        <p className="text-ink-500 mb-4 text-sm">
+          When a season concludes, every participating family is invited to review their club.
+          Platform default below; individual clubs can hold admin-granted overrides.
+        </p>
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="radio"
+              checked={reviewPolicy === "AUTO"}
+              onChange={() => setReviewPolicy("AUTO")}
+            />
+            Automatic on season conclude
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="radio"
+              checked={reviewPolicy === "OFF"}
+              onChange={() => setReviewPolicy("OFF")}
+            />
+            Off
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            Window
+            <input
+              type="number"
+              min={7}
+              max={90}
+              value={reviewDays}
+              onChange={(e) => setReviewDays(parseInt(e.target.value) || 30)}
+              className="border-ink-200 w-20 rounded-lg border px-2 py-1"
+            />
+            days
+          </label>
+          <button
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            disabled={savingReviews}
+            onClick={async () => {
+              setSavingReviews(true)
+              setMessage(null)
+              try {
+                const res = await fetch("/api/admin/settings", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ reviewInvitePolicy: reviewPolicy, reviewWindowDays: reviewDays }),
+                })
+                if (!res.ok) throw new Error()
+                setMessage({ type: "success", text: "Review invitation settings saved" })
+              } catch {
+                setMessage({ type: "error", text: "Failed to save review settings" })
+              } finally {
+                setSavingReviews(false)
+              }
+            }}
+          >
+            {savingReviews ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

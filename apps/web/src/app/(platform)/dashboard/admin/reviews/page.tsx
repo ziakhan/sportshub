@@ -22,11 +22,13 @@ interface AdminReview {
 }
 
 const TABS = [
+  { key: "PENDING", label: "Awaiting approval" },
   { key: "FLAGGED", label: "Flagged" },
   { key: "REMOVED", label: "Removed" },
 ] as const
 
 const STATUS_TONES: Record<string, BadgeTone> = {
+  PENDING: "play",
   FLAGGED: "warning",
   REMOVED: "danger",
   PUBLISHED: "success",
@@ -45,7 +47,7 @@ function targetLabel(review: AdminReview): { label: string; href: string | null 
 }
 
 export default function AdminReviewsPage() {
-  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("FLAGGED")
+  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("PENDING")
   const [reviews, setReviews] = useState<AdminReview[]>([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
@@ -65,7 +67,7 @@ export default function AdminReviewsPage() {
     fetchReviews()
   }, [fetchReviews])
 
-  const moderate = async (id: string, action: "restore" | "remove", note?: string) => {
+  const moderate = async (id: string, action: "approve" | "restore" | "remove", note?: string) => {
     setActionId(id)
     try {
       const res = await fetch("/api/admin/reviews", {
@@ -115,7 +117,7 @@ export default function AdminReviewsPage() {
       ) : reviews.length === 0 ? (
         <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-12 text-center">
           <h3 className="font-display text-ink-950 mb-2 text-lg font-semibold">
-            {tab === "FLAGGED" ? "No flagged reviews" : "No removed reviews"}
+            {tab === "PENDING" ? "No reviews awaiting approval" : tab === "FLAGGED" ? "No flagged reviews" : "No removed reviews"}
           </h3>
           <p className="text-ink-600">
             {tab === "FLAGGED"
@@ -191,9 +193,11 @@ export default function AdminReviewsPage() {
                         variant="primary"
                         tone="court"
                         disabled={actionId === review.id}
-                        onClick={() => moderate(review.id, "restore")}
+                        onClick={() =>
+                          moderate(review.id, review.status === "PENDING" ? "approve" : "restore")
+                        }
                       >
-                        Restore
+                        {review.status === "PENDING" ? "Approve" : "Restore"}
                       </Button>
                       {review.status !== "REMOVED" &&
                         (notesId === review.id ? (

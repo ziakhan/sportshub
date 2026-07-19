@@ -44,7 +44,68 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
     const body = await request.json()
     const data = reviewSchema.parse(body)
 
+    // v2 paper-proof claims have no user yet (owner 2026-07-18: anonymous
+    // claim, account-at-end). Approving one issues the completion token to
+    // the claimer's email — ownership binds when they register/sign in.
+    if (data.action === "approve" && !claim.userId) {
+      if (!claim.claimantEmail) {
+        return apiError(409, "This claim has no claimer email to notify", "NO_CLAIMANT")
+      }
+      const { issueCompletionToken } = await import("@/lib/claims/claim-v2")
+      const { token } = await issueCompletionToken(claim.id)
+      await prisma.clubClaim.update({
+        where: { id: claim.id },
+        data: {
+          reviewedById: session.realUserId,
+          reviewNote: data.note || "Proof approved by admin",
+          reviewedAt: new Date(),
+        },
+      })
+      const link = `${appBaseUrl()}/claim/complete?token=${token}`
+      try {
+        await sendEmail({
+          to: claim.claimantEmail,
+          subject: `Your claim for ${claim.tenant.name} was approved — take ownership`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Proof accepted</h2>
+              <p>An admin reviewed your proof for <strong>${escapeHtml(claim.tenant.name)}</strong> and approved the claim.</p>
+              <p>Create an account or sign in and the club binds to your account:</p>
+              <p><a href="${link}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Take ownership of ${escapeHtml(claim.tenant.name)}</a></p>
+              <p>This link reserves the club for 14 days.</p>
+              ${transactionalFooter()}
+            </div>
+          `,
+          text: `Your claim for ${claim.tenant.name} was approved. Take ownership (reserved 14 days): ${link}`,
+        })
+      } catch (emailError) {
+        console.error("Failed to send proof-approved email:", emailError)
+      }
+      await audit(prisma, {
+        actorId: session.realUserId,
+        actorRole: "PlatformAdmin",
+        action: "CLAIM_APPROVE",
+        resource: "ClubClaim",
+        resourceId: claim.id,
+        tenantId: claim.tenantId,
+        changes: { status: "VERIFIED_UNBOUND", method: "PROOF" },
+        metadata: { note: data.note || null },
+        request,
+      })
+      return NextResponse.json({
+        success: true,
+        status: "VERIFIED_UNBOUND",
+        message: "Proof approved — the claimer was emailed a link to take ownership.",
+      })
+    }
+
     if (data.action === "approve") {
+      // narrowed: the unbound (userId null) case returned above
+      const boundUserId = claim.userId
+      const boundUser = claim.user
+      if (!boundUserId || !boundUser) {
+        return apiError(409, "Claim has no bound user", "NO_USER")
+      }
       await prisma.$transaction(async (tx: any) => {
         await tx.clubClaim.update({
           where: { id: params.id },
@@ -63,12 +124,12 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
 
         // Create ClubOwner role (skip if already exists)
         const existing = await tx.userRole.findFirst({
-          where: { userId: claim.userId, role: "ClubOwner", tenantId: claim.tenantId },
+          where: { userId: boundUserId, role: "ClubOwner", tenantId: claim.tenantId },
         })
         if (!existing) {
           await tx.userRole.create({
             data: {
-              userId: claim.userId,
+              userId: boundUserId,
               role: "ClubOwner",
               tenantId: claim.tenantId,
             },
@@ -82,14 +143,14 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
           resource: "ClubClaim",
           resourceId: claim.id,
           tenantId: claim.tenantId,
-          changes: { status: "APPROVED", grantedRole: "ClubOwner", grantedTo: claim.userId },
+          changes: { status: "APPROVED", grantedRole: "ClubOwner", grantedTo: boundUserId },
           metadata: { note: data.note || null },
           request,
         })
 
         // Notify the user
         await notify(tx, {
-          userId: claim.userId,
+          userId: boundUserId,
           type: "claim_approved",
           title: "Club Claim Approved",
           message: `Your claim for "${claim.tenant.name}" has been approved. You are now the owner!`,
@@ -104,12 +165,12 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
       try {
         const clubLink = `${appBaseUrl()}/clubs/${claim.tenantId}`
         await sendEmail({
-          to: claim.user.email,
+          to: boundUser.email,
           subject: `Your claim for ${claim.tenant.name} was approved`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>Claim approved</h2>
-              <p>Hi ${escapeHtml(claim.user.firstName || "there")},</p>
+              <p>Hi ${escapeHtml(boundUser.firstName || "there")},</p>
               <p>Your claim for <strong>${escapeHtml(claim.tenant.name)}</strong> has been approved — you now manage ${escapeHtml(claim.tenant.name)} on SportsHub.</p>
               <p>
                 <a href="${clubLink}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
@@ -146,16 +207,37 @@ export const PATCH = withAuth<NextRequest, { params: { id: string } }>(
           request,
         })
 
-        await notify(tx, {
-          userId: claim.userId,
-          type: "claim_rejected",
-          title: "Club Claim Rejected",
-          message: `Your claim for "${claim.tenant.name}" was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
-          link: `/clubs/find`,
-          referenceId: claim.id,
-          referenceType: "ClubClaim",
-        })
+        // Anonymous (paper-proof) claims have no account to bell — email below.
+        if (claim.userId) {
+          await notify(tx, {
+            userId: claim.userId,
+            type: "claim_rejected",
+            title: "Club Claim Rejected",
+            message: `Your claim for "${claim.tenant.name}" was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
+            link: `/clubs/find`,
+            referenceId: claim.id,
+            referenceType: "ClubClaim",
+          })
+        }
       })
+      if (!claim.userId && claim.claimantEmail) {
+        try {
+          await sendEmail({
+            to: claim.claimantEmail,
+            subject: `Your claim for ${claim.tenant.name} was not approved`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <p>An admin reviewed your proof for <strong>${escapeHtml(claim.tenant.name)}</strong> and could not approve the claim.${data.note ? ` Reason: ${escapeHtml(data.note)}` : ""}</p>
+                <p>If you believe this is a mistake, reply with additional documentation.</p>
+                ${transactionalFooter()}
+              </div>
+            `,
+            text: `Your claim for ${claim.tenant.name} was not approved.${data.note ? ` Reason: ${data.note}` : ""}`,
+          })
+        } catch (emailError) {
+          console.error("Failed to send proof-rejected email:", emailError)
+        }
+      }
     }
 
     return NextResponse.json({

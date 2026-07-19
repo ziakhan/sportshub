@@ -11,6 +11,8 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { NewsCard } from "@/components/ui/news-card"
+import { ScoreCard } from "@/components/ui/score-card"
 import { StandingsTable } from "@/components/ui/standings-table"
 import { cn } from "@/components/ui/cn"
 import { Advance } from "../advance"
@@ -424,22 +426,12 @@ export function SceneScores() {
         </div>
         <p className="text-ink-400 mb-2 text-xs">Games for your kids&apos; teams and teams you follow.</p>
         <Advance block>
-          <Card size="sm">
-            <div className="flex items-center justify-between">
-              <Badge tone="neutral">Final</Badge>
-              <span className="text-ink-400 text-xs">Today</span>
-            </div>
-            <div className="mt-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-ink-950 text-sm font-bold">{GAME.home}</span>
-                <span className="text-ink-950 text-lg font-bold tabular-nums">{GAME.finalHome}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-ink-500 text-sm font-semibold">{GAME.away}</span>
-                <span className="text-ink-500 text-lg font-bold tabular-nums">{GAME.finalAway}</span>
-              </div>
-            </div>
-          </Card>
+          <ScoreCard
+            status="FINAL"
+            home={{ name: GAME.home, color: "#16a34a", score: GAME.finalHome }}
+            away={{ name: GAME.away, color: "#7c3aed", score: GAME.finalAway }}
+            venue="Haber Recreation Centre · Court 1"
+          />
         </Advance>
       </div>
       <div className="mt-5">
@@ -449,35 +441,57 @@ export function SceneScores() {
             2
           </Badge>
         </div>
-        <Card size="sm">
-          <div className="flex items-center justify-between">
-            <Badge tone="live" dot>
-              Live
-            </Badge>
-            <span className="text-ink-400 text-xs">Q3</span>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-ink-950 text-sm font-bold">Royal Crown Grade 10</span>
-              <span className="text-ink-950 text-lg font-bold tabular-nums">41</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-ink-950 text-sm font-bold">North York Lions Grade 10</span>
-              <span className="text-ink-950 text-lg font-bold tabular-nums">38</span>
-            </div>
-          </div>
-        </Card>
+        <ScoreCard
+          status="LIVE"
+          home={{ name: "Royal Crown Grade 10", color: "#9333ea", score: 41 }}
+          away={{ name: "North York Lions Grade 10", color: "#b45309", score: 38 }}
+          venue="Pan Am Sports Centre · Court 2"
+        />
       </div>
       <div className="mt-5">
         <h2 className="text-ink-900 mb-2 text-sm font-bold">Upcoming</h2>
-        <Card size="sm">
-          <div className="flex items-center justify-between">
-            <Badge tone="play">Upcoming</Badge>
-            <span className="text-ink-400 text-xs">4:00 PM</span>
-          </div>
-          <p className="text-ink-950 mt-2 text-sm font-bold">West United Prep Grade 10</p>
-          <p className="text-ink-500 text-sm font-semibold">Oakville Panthers Grade 10</p>
-        </Card>
+        <ScoreCard
+          status="SCHEDULED"
+          home={{ name: "West United Prep Grade 10", color: "#0891b2" }}
+          away={{ name: "Oakville Panthers Grade 10", color: "#be123c" }}
+          dateLabel="Sat · 4:00 PM"
+          venue="Humber Athletic Centre · Court 1"
+        />
+      </div>
+    </PhonePage>
+  )
+}
+
+/* Step 29a — Browse the news (phone) */
+export function SceneNewsBrowse() {
+  return (
+    <PhonePage>
+      <p className="text-ink-400 text-[11px] font-bold uppercase tracking-[0.14em]">Around the hub</p>
+      <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase">News &amp; Game Recaps</h1>
+      <p className="text-ink-500 mt-1 text-sm">
+        Every scored game gets a story, plus announcements from clubs and leagues.
+      </p>
+      <div className="mt-4 space-y-4">
+        <Advance block>
+          <NewsCard
+            title={RECAP.title}
+            excerpt={RECAP.body[0]}
+            dateLabel="Jun 20, 2026"
+            author={LEAGUE.name}
+          />
+        </Advance>
+        <NewsCard
+          title="Royal Crown edge the Lions in a Q4 comeback"
+          excerpt="Royal Crown Grade 10 outscored North York Lions Grade 10 by nine in the fourth to win 58-54 at Pan Am Sports Centre on Saturday."
+          dateLabel="Jun 20, 2026"
+          author={LEAGUE.name}
+        />
+        <NewsCard
+          title="Summer skills camp registration opens Monday"
+          excerpt="Six weeks of morning sessions at City Above Elite, grades 8 to 11. Spots go quickly, so set a reminder."
+          dateLabel="Jun 18, 2026"
+          author="City Above Elite"
+        />
       </div>
     </PhonePage>
   )
@@ -711,6 +725,7 @@ function RecapArticle({
           <span className="text-ink-400 text-xs">{date}</span>
         </div>
         <h1 className="text-ink-950 mt-2 text-lg font-bold leading-snug">{title}</h1>
+        <div className="from-play-100 to-hoop-100 mt-3 aspect-[16/9] w-full rounded-xl bg-gradient-to-br" />
         <div className="text-ink-700 mt-3 space-y-3 text-sm leading-relaxed">
           {body.map((p) => (
             <p key={p.slice(0, 20)}>{p}</p>

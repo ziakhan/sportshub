@@ -161,3 +161,39 @@ feature is greenlit for build.
   the native module. Gotcha fixed en route: GoogleSignIn's AppCheckCore Swift
   pod needs GoogleUtilities + RecaptchaInterop `modular_headers` (via
   expo-build-properties extraPods) or pod install fails on EAS.
+
+## Club claiming v2 ✅ SHIPPED overnight 2026-07-18 (`2f88c78`, local commit — not deployed; SMS channel dark until owner supplies Twilio creds)
+1. **Verified claiming via known contacts + Twilio SMS**: when claiming an
+   UNCLAIMED club, offer verification against the contact data we hold
+   (census!): email and/or SMS code to the club's known phone (Twilio
+   integration needed). One contact on file → that's the only option; both →
+   claimer chooses. NO contact on file → claim still possible via
+   paper-proof document upload + claimer email → ADMIN reviews.
+2. **Claim-time corrections**: claimer may propose changes to the club's
+   info as part of the claim; admin approval applies all fields at once and
+   grants the claimer full edit rights over their club thereafter
+   (everything editable).
+3. **Search-before-create**: signup/onboarding for club operators must
+   push SEARCH + CLAIM before "create a new club" — never create-first
+   (claim funnel from the clubs browse/search pages too).
+4. **SETTLED (owner 2026-07-18 night)**: claim-first, account-at-end —
+   BUT ownership is USER-bound, never contact-bound. Flow: anonymous
+   claim → verify via known email/SMS code (or paper-proof→admin path) →
+   on success, notify THAT contact point ("verified — register to take
+   ownership") with a completion token → registering/signing-in via the
+   token binds the claim to the User → club CLAIMED (ClubOwner role).
+   A verified-but-unregistered claim holds the club reserved (TTL, e.g.
+   14 days) so nobody else claims it mid-flow.
+
+## Phone-number login (SMS OTP via Twilio) 🎯 (owner-committed 2026-07-18, PLAN ONLY — not overnight)
+- Phone as a first-class login: enter number → SMS code → signed in. Same
+  pattern as magic sign-in (LoginToken infra is the template: hashed
+  single-use codes, 15-min TTL, attempt caps, anti-enumeration).
+- Scope: User.phone (E.164, verified, unique) + verify-on-add flow ·
+  "sms" credentials provider beside magic · native + web sign-in screens
+  gain "Continue with phone" · rate limiting per number+IP.
+- Shares ONE Twilio seam with club-claim SMS verification (build the seam
+  once; both features light up when owner supplies Twilio creds).
+- Design cares: number recycling (re-verify on long inactivity), account
+  recovery when phone lost (email fallback), COPPA (13+ self-accounts
+  only), international format normalization.

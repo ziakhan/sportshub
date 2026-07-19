@@ -17,6 +17,8 @@ export type AuditAction =
   | "CLAIM_APPROVE"
   | "CLAIM_REJECT"
   | "CLAIM_VERIFY_CODE"
+  // v2 (owner 2026-07-18): anonymous claim binds to a User at token redemption
+  | "CLAIM_COMPLETE"
   | "ROLE_GRANT"
   | "ROLE_REVOKE"
   | "ROLE_SWITCH"

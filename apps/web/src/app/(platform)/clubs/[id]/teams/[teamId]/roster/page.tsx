@@ -4,6 +4,7 @@ import { Badge, PanelHeader } from "@/components/ui"
 import { FinalizeButton } from "./finalize-button"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
+import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
 
 interface RosterPlayer {
   id: string
@@ -162,6 +163,9 @@ export default async function TeamRosterPage({
           <FinalizeButton teamId={team.id} teamName={team.name} />
         )}
       </div>
+
+      {/* Families asking for a release — the club signs off (owner 2026-07-18) */}
+      <WithdrawalRequestsPanel teamId={team.id} />
 
       <RosterManager
         teamId={team.id}

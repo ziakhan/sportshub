@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
 import { panelClass } from "./types"
 import { RosterRequestsPanel } from "./roster-requests-panel"
+import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
 
 export function TeamsTab({
   seasonId,
@@ -79,6 +80,9 @@ export function TeamsTab({
 
   return (
     <div className="grid gap-6">
+      {/* Clubs asking out of the season — the league signs off */}
+      <WithdrawalRequestsPanel seasonId={seasonId} onDecided={refresh} />
+
       {/* Roster policy + change-request queue */}
       <RosterRequestsPanel
         seasonId={seasonId}

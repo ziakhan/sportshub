@@ -8,6 +8,7 @@ import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
 import { sendEmail, appBaseUrl } from "@/lib/email"
 import { upsertGameRecap } from "@/lib/content/recap-service"
+import { advancePlayoffs } from "@/lib/playoffs/generate"
 import { notifyMany } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
 import { publishRealtime, rooms as rt } from "@/lib/realtime/publish"
@@ -216,6 +217,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         })
       }
     })
+
+    // Playoff advancement — if this was a bracket game, the next round's
+    // games materialize now that the winner is known. Never blocks the whistle.
+    const advanced = await advancePlayoffs(params.id)
+    if (advanced.created > 0) {
+      console.log(`Playoffs: ${advanced.created} next-round game(s) created from ${params.id}`)
+    }
 
     // Auto-publish the AI game recap (plan §6.1 — owner decision: auto-publish
     // on finalize; re-finalize regenerates in place). Best-effort: a recap

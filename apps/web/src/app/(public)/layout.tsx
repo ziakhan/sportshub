@@ -5,7 +5,7 @@ import { getPublicNav } from "@/lib/queries/nav"
 import { NavDropdown } from "@/components/nav-dropdown"
 import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { AccountMenu } from "@/components/nav/account-menu"
-import { BottomTabs } from "@/components/nav/bottom-tabs"
+import { AnonymousBottomTabs, BottomTabs } from "@/components/nav/bottom-tabs"
 import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape, operatorTabLabel, EMPTY_NAV_SHAPE } from "@/lib/queries/nav-shape"
 import { AuthLink } from "@/components/auth-link"
@@ -47,7 +47,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <main
-      className={`text-ink-950 flex min-h-screen flex-col bg-[#fafafa] ${isLoggedIn ? "pb-16 lg:pb-0" : ""}`}
+      className="text-ink-950 flex min-h-screen flex-col bg-[#fafafa] pb-16 lg:pb-0"
     >
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:h-[72px]">
@@ -251,7 +251,7 @@ export default async function PublicLayout({ children }: { children: React.React
           <ChatDock userId={userId} />
         </div>
       )}
-      {isLoggedIn && <BottomTabs shape={shape} />}
+      {isLoggedIn ? <BottomTabs shape={shape} /> : <AnonymousBottomTabs />}
     </main>
   )
 }

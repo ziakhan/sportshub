@@ -101,6 +101,9 @@ model User {
   @@index([email])
   @@index([status])
   refereeProfile RefereeProfile?
+  reviewInvites ReviewInvite[] @relation("ReviewInvites")
+  withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
+  withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
 }
 
 enum UserStatus {
@@ -236,6 +239,7 @@ enum Role {
 model Tenant {
   id           String  @id @default(uuid())
   slug         String  @unique
+  reviewInviteOverride String? // null = inherit platform reviewInvitePolicy
   name         String
   description  String? @db.Text
   phoneNumber  String?
@@ -299,6 +303,7 @@ model Tenant {
   // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
   // imported clubs (perf audit 2026-07-06)
   @@index([status])
+  reviewInvites ReviewInvite[] @relation("ReviewInvites")
 }
 
 enum TenantPlan {
@@ -806,6 +811,8 @@ model TeamPlayer {
   joinedAt DateTime         @default(now())
   leftAt   DateTime?
 
+  withdrawalRequests WithdrawalRequest[]
+
   @@unique([teamId, playerId])
   @@index([teamId])
   @@index([playerId])
@@ -1221,6 +1228,7 @@ model Season {
   @@index([leagueId])
   @@index([status])
   @@unique([leagueId, label])
+  reviewInvites ReviewInvite[]
 }
 
 enum SeasonStatus {
@@ -1282,6 +1290,8 @@ model TeamSubmission {
   blackouts SeasonTeamBlackout[]
 
   createdAt DateTime @default(now())
+
+  withdrawalRequests WithdrawalRequest[]
 
   @@unique([seasonId, teamId])
   @@index([seasonId])
@@ -1393,6 +1403,8 @@ model SeasonSession {
   phase              SessionPhase @default(REGULAR)
   targetGamesPerTeam Int?
 
+  // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
+  playoffPlan Json?
   days  SeasonSessionDay[]
   games Game[]
 
@@ -1405,6 +1417,7 @@ enum SessionPhase {
   REGULAR
   PLAYOFF
 }
+
 
 model SeasonSessionDay {
   id        String        @id @default(uuid())
@@ -1619,6 +1632,12 @@ model Game {
   // league's gameClockMode; true/false overrides per game — an unoperated
   // clock is worse than none, so the person at the table decides.
   clockEnabled Boolean?
+
+  // Playoffs (owner 2026-07-18): round number (1 = first round) + slot index
+  // within the round. Later-round games are created by advancePlayoffs() as
+  // winners emerge — the bracket plan lives on the session's playoffPlan.
+  playoffRound Int?
+  playoffSlot  Int?
 
   // Single active scoring device (soft lock with visible takeover)
   scoringSessionId   String?
@@ -2390,7 +2409,72 @@ model Review {
   @@index([status])
 }
 
+model ReviewInvite {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id])
+  tenantId String
+  tenant   Tenant @relation("ReviewInvites", fields: [tenantId], references: [id])
+  userId   String
+  user     User   @relation("ReviewInvites", fields: [userId], references: [id])
+
+  sentAt    DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@unique([seasonId, tenantId, userId])
+  @@index([userId, expiresAt])
+  @@index([tenantId])
+}
+
+// Withdrawals need the other party's sign-off (owner 2026-07-18): installment
+// commitments make unilateral exits wrong. Clubs request out of a league
+// season (league approves); parents request a child's release from a roster
+// (club approves). League-side direct withdrawal stays — running the league
+// is their right; SELF-withdrawal is what goes through here.
+enum WithdrawalType {
+  CLUB_FROM_LEAGUE
+  PLAYER_FROM_TEAM
+}
+
+enum WithdrawalRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+model WithdrawalRequest {
+  id     String                  @id @default(uuid())
+  type   WithdrawalType
+  status WithdrawalRequestStatus @default(PENDING)
+  reason String
+
+  requestedById String
+  requestedBy   User   @relation("WithdrawalRequestsMade", fields: [requestedById], references: [id])
+
+  // CLUB_FROM_LEAGUE
+  submissionId String?
+  submission   TeamSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  // PLAYER_FROM_TEAM
+  teamPlayerId String?
+  teamPlayer   TeamPlayer? @relation(fields: [teamPlayerId], references: [id], onDelete: Cascade)
+
+  decidedById  String?
+  decidedBy    User?     @relation("WithdrawalRequestsDecided", fields: [decidedById], references: [id])
+  decidedAt    DateTime?
+  decisionNote String?
+
+  createdAt DateTime @default(now())
+
+  @@index([submissionId])
+  @@index([teamPlayerId])
+  @@index([status])
+}
+
 enum ReviewStatus {
+  PENDING
   PUBLISHED
   FLAGGED
   REMOVED
@@ -2744,6 +2828,9 @@ model PlatformSettings {
   // Unknown values fail open to hardwood. Future custom palettes will add a
   // JSON override column beside this.
   themePalette String @default("hardwood")
+  // Review invites (owner 2026-07-18): platform default, clubs may override
+  reviewInvitePolicy String @default("AUTO") // AUTO | OFF
+  reviewWindowDays   Int    @default(30)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2778,15 +2865,34 @@ model ClubClaim {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // v2 (owner 2026-07-18): claims start ANONYMOUS — ownership binds to a User
+  // at completion, never to a contact point. Null until the completion token
+  // is redeemed (v1 signed-in claims still set it up front).
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   status ClaimStatus @default(PENDING)
 
   // Verification
-  verificationCode   String? // 6-digit code sent to club email
+  verificationCode   String? // 6-digit code sent to the club's contact ON FILE
   verificationSentAt DateTime?
   verifiedAt         DateTime?
+  attempts           Int       @default(0) // wrong-code counter (cap enforced in code)
+
+  // v2 verification channel: EMAIL | SMS | PROOF (paper-proof -> admin review)
+  method       String?
+  contactPoint String? // the exact email/phone the code went to
+  // paper-proof path: how we reach the claimer (no account yet)
+  claimantEmail String?
+  proofNote     String? @db.Text
+
+  // Reservation + binding: a verified-but-unregistered claim holds the club
+  // (completionExpiresAt ~14d). Redeeming the token binds claim -> User.
+  completionToken     String?   @unique
+  completionExpiresAt DateTime?
+
+  // Claim-time corrections to the club's info, applied at completion
+  corrections Json?
 
   message String? @db.Text // Optional message from claimant
 
@@ -2797,7 +2903,7 @@ model ClubClaim {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([tenantId, userId]) // One claim per user per club
+  @@unique([tenantId, userId]) // one claim per user per club (NULL userId = anonymous, repeatable)
   @@index([tenantId])
   @@index([userId])
   @@index([status])
@@ -2807,8 +2913,10 @@ enum ClaimStatus {
   PENDING
   EMAIL_SENT
   EMAIL_VERIFIED
+  VERIFIED_UNBOUND
   APPROVED
   REJECTED
+  EXPIRED
 }
 
 // ============================================

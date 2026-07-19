@@ -24,6 +24,12 @@ export type NotificationType =
   | "offer_accepted"
   | "offer_declined"
   | "offer_rescinded"
+  // Reviews (owner 2026-07-18: post-season invite lifecycle)
+  | "review_invite"
+  | "review_invite_heads_up"
+  // Withdrawals (owner 2026-07-18: self-withdrawal needs the other party's sign-off)
+  | "withdrawal_request"
+  | "withdrawal_decision"
   | "jersey_assigned"
   // Staff invitations & requests
   | "staff_invite"
