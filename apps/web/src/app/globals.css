@@ -278,3 +278,111 @@
     animation: none;
   }
 }
+
+/* ── Live demo (animated end-to-end walkthrough) ───────────────────────── */
+.live-cursor {
+  position: absolute;
+  z-index: 40;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 9999px;
+  background: rgb(79 70 229 / 0.85);
+  box-shadow:
+    0 0 0 4px rgb(79 70 229 / 0.25),
+    0 6px 18px -4px rgb(15 23 42 / 0.5);
+  pointer-events: none;
+  transition:
+    left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.12s ease-out,
+    opacity 0.3s;
+}
+.live-cursor.down {
+  transform: scale(0.7);
+}
+.live-ripple {
+  position: absolute;
+  z-index: 39;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 9999px;
+  border: 2px solid rgb(79 70 229 / 0.7);
+  pointer-events: none;
+  animation: live-ripple 0.5s ease-out forwards;
+}
+@keyframes live-ripple {
+  from {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.live-pop {
+  animation: live-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes live-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.live-row-in {
+  animation: live-row-in 0.35s ease-out both;
+}
+@keyframes live-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.live-caret::after {
+  content: "";
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: rgb(24 24 27);
+  animation: live-caret 0.9s steps(2) infinite;
+}
+@keyframes live-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.live-hold-glow {
+  position: relative;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 3px rgb(79 70 229 / 0.5),
+    0 0 24px 4px rgb(79 70 229 / 0.4);
+  animation: demo-advance-pulse 1.6s ease-in-out infinite;
+}
+.live-zoom {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-cursor,
+  .live-zoom {
+    transition: none;
+  }
+  .live-pop,
+  .live-row-in,
+  .live-ripple {
+    animation: none;
+  }
+}
