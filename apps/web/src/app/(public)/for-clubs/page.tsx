@@ -138,7 +138,7 @@ export default function ForClubsPage() {
               Actual screens from a working club on the platform. No mockups.
             </p>
           </div>
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10">
             <BrowserShot src="/shots/club-dashboard.png" alt="Club dashboard" caption="Your club dashboard: teams, tryouts, plans, setup at a glance" />
             <BrowserShot src="/shots/club-tryouts.png" alt="Tryouts management" caption="Tryouts: publish, track paid signups, run attendance" />
             <BrowserShot src="/shots/club-payments.png" alt="Payments ledger" caption="Payments: who paid, who owes, installments on schedule" />
