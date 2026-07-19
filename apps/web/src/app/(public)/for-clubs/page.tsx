@@ -141,7 +141,6 @@ export default function ForClubsPage() {
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10">
             <BrowserShot src="/shots/club-dashboard.png" alt="Club dashboard" caption="The club dashboard. Teams, tryouts, payments and setup, all in one place the moment you sign in." />
             <BrowserShot src="/shots/club-tryouts.png" alt="Tryouts management" caption="Tryout management. Publish a tryout, watch paid signups arrive, and run check-in on the night." />
-            <BrowserShot src="/shots/club-payments.png" alt="Payments ledger" caption="The payments view. Every fee, every installment and every family's balance, tracked without a spreadsheet." />
             <BrowserShot src="/shots/club-chat.png" alt="Team chat" caption="Team messaging built in. Announcements reach every family and stay findable later." />
             <BrowserShot src="/shots/coach-team-home.png" alt="Coach team home" caption="The coach's team home. Roster, schedule and chat for their team, nothing else in the way." />
             <BrowserShot src="/shots/public-club-page.png" alt="Public club page" caption="Your public club page. Programs, news and reviews that families find when they search your club's name." />
