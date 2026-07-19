@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { DemoAdvanceContext } from "./demo-advance-context"
 
 export type DemoRole = "CLUB" | "PARENT" | "COACH" | "LEAGUE" | "SCOREKEEPER" | "EVERYONE"
 
@@ -20,6 +21,8 @@ export interface DemoScene {
   screen: ReactNode
   /** Whose hands are on the keyboard (shown as a chip; enables the role filter) */
   role?: DemoRole
+  /** Autoplay dwell for this scene in ms (denser screens hold longer) */
+  hold?: number
 }
 
 const ROLE_TONES: Record<DemoRole, string> = {
@@ -38,17 +41,14 @@ const SCENE_MS = 8000
 export function DemoPlayer({
   scenes: allScenes,
   title,
-  autoPlay = true,
 }: {
   scenes: DemoScene[]
   /** Accessible name for the player region */
   title: string
-  autoPlay?: boolean
 }) {
   const [i, setI] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
-  const started = useRef(false)
 
   // Role filter (ONE SEASON): shows pills when scenes carry roles.
   const [roleFilter, setRoleFilter] = useState<DemoRole | null>(null)
@@ -57,34 +57,15 @@ export function DemoPlayer({
     ? allScenes.filter((s) => !s.role || s.role === roleFilter || s.role === "EVERYONE")
     : allScenes
 
-  // Autoplay only once the player scrolls into view, and never for
-  // reduced-motion users — they drive it with the controls instead.
+  // Click-driven by default (owner 2026-07-19): the visitor reads at their
+  // own pace and the scene's glowing button does the transition. Autoplay
+  // is opt-in via the Watch button, with a per-scene dwell.
   const rootRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (!autoPlay || started.current) return
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const el = rootRef.current
-    if (!el || !("IntersectionObserver" in window)) {
-      setPlaying(true)
-      return
-    }
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          started.current = true
-          setPlaying(true)
-          obs.disconnect()
-        }
-      },
-      { threshold: 0.35 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [autoPlay])
 
   useEffect(() => {
     if (!playing) return
-    const step = (TICK_MS / SCENE_MS) * 100
+    const hold = scenes[Math.min(i, scenes.length - 1)]?.hold ?? SCENE_MS
+    const step = (TICK_MS / hold) * 100
     const t = setInterval(() => {
       setProgress((p) => {
         if (p + step >= 100) {
@@ -95,11 +76,18 @@ export function DemoPlayer({
       })
     }, TICK_MS)
     return () => clearInterval(t)
-  }, [playing, scenes.length])
+  }, [playing, i, scenes])
 
   const goto = (n: number) => {
     setI(((n % scenes.length) + scenes.length) % scenes.length)
     setProgress(0)
+  }
+
+  // A scene button click behaves like the real app: press, then the next
+  // screen. Any manual click also takes over from autoplay.
+  const advance = () => {
+    setPlaying(false)
+    goto(i + 1)
   }
 
   // Keep the active step chip visible as scenes advance. Scrolls ONLY the
@@ -125,6 +113,12 @@ export function DemoPlayer({
       aria-label={title}
       className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
     >
+      {/* how to use it — nobody should have to guess */}
+      <div className="border-ink-50 bg-play-50/50 text-ink-600 border-b px-4 py-2 text-[12.5px] font-medium">
+        Go at your own pace. <span className="text-ink-950 font-bold">Click the glowing button</span>{" "}
+        on each screen to do that step, or use <span className="text-ink-950 font-bold">Next step</span>{" "}
+        below. Prefer to sit back? Press <span className="text-ink-950 font-bold">Watch</span>.
+      </div>
       {/* role filter (only when scenes carry roles, i.e. the ONE SEASON tour) */}
       {roles.length > 1 && (
         <div className="border-ink-50 flex flex-wrap items-center gap-1.5 border-b px-3 py-2.5">
@@ -207,30 +201,18 @@ export function DemoPlayer({
       </div>
 
       {/* stage */}
-      {/* tap the stage itself to pause and play (owner: the buttons felt clunky) */}
+      {/* the stage: buttons inside the scene advance it; a tap pauses autoplay */}
       <div
-        role="button"
-        tabIndex={0}
-        aria-label={playing ? "Pause walkthrough" : "Play walkthrough"}
-        onClick={() => setPlaying(!playing)}
-        onKeyDown={(e) => {
-          if (e.key === " " || e.key === "Enter") {
-            e.preventDefault()
-            setPlaying(!playing)
-          }
+        onClick={() => {
+          if (playing) setPlaying(false)
         }}
-        className="bg-ink-50/60 relative flex min-h-[430px] cursor-pointer items-center justify-center overflow-hidden px-2 py-7 sm:px-8"
+        className={`bg-ink-50/60 relative flex min-h-[430px] items-center justify-center overflow-hidden px-2 py-7 sm:px-8 ${playing ? "demo-auto cursor-pointer" : ""}`}
       >
-        <div key={`${roleFilter ?? "all"}-${i}`} className="demo-scene-enter w-full max-w-2xl">
-          {scene.screen}
-        </div>
-        {!playing && started.current ? (
-          <span className="bg-ink-950/70 pointer-events-none absolute flex h-14 w-14 items-center justify-center rounded-full text-white backdrop-blur-sm">
-            <svg className="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 4l14 8-14 8z" />
-            </svg>
-          </span>
-        ) : null}
+        <DemoAdvanceContext.Provider value={advance}>
+          <div key={`${roleFilter ?? "all"}-${i}`} className="demo-scene-enter w-full max-w-2xl">
+            {scene.screen}
+          </div>
+        </DemoAdvanceContext.Provider>
       </div>
 
       {/* controls + caption */}
@@ -238,17 +220,22 @@ export function DemoPlayer({
         <button
           type="button"
           onClick={() => setPlaying(!playing)}
-          aria-label={playing ? "Pause walkthrough" : "Play walkthrough"}
-          className="bg-ink-950 hover:bg-ink-800 flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full text-white transition-colors"
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 flex h-10 flex-none cursor-pointer items-center justify-center gap-1.5 rounded-full border px-3.5 text-[12.5px] font-bold transition-colors"
         >
           {playing ? (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7 4h4v16H7zM13 4h4v16h-4z" />
-            </svg>
+            <>
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 4h4v16H7zM13 4h4v16h-4z" />
+              </svg>
+              Pause
+            </>
           ) : (
-            <svg className="ml-0.5 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 4l14 8-14 8z" />
-            </svg>
+            <>
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 4l14 8-14 8z" />
+              </svg>
+              Watch
+            </>
           )}
         </button>
         <p aria-live="polite" className="text-ink-600 min-w-0 flex-1 text-sm font-medium leading-snug">
@@ -262,6 +249,16 @@ export function DemoPlayer({
         <span className="text-ink-300 flex-none text-xs font-bold tabular-nums">
           {i + 1}/{scenes.length}
         </span>
+        <button
+          type="button"
+          onClick={advance}
+          className="bg-ink-950 hover:bg-ink-800 flex h-10 flex-none cursor-pointer items-center gap-1 rounded-full px-4 text-[12.5px] font-bold text-white transition-colors"
+        >
+          Next step
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
       </div>
 
       <style>{`
@@ -273,12 +270,13 @@ export function DemoPlayer({
         ${Array.from({ length: 14 }, (_, n) => `.demo-cascade > *:nth-child(${n + 1}) { animation-delay: ${0.15 + n * 0.13}s; }`).join("\n        ")}
         @keyframes demoRowIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
-        /* the button press beat */
-        .demo-pulse { animation: demoPulse 1.8s ease-in-out infinite; }
+        /* the glowing button: pulses while waiting for the visitor's click;
+           presses on its own only during autoplay (.demo-auto) */
+        .demo-pulse, .demo-press { animation: demoPulse 1.8s ease-in-out infinite; }
         @keyframes demoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(242,78,30,0.35); } 50% { box-shadow: 0 0 0 7px rgba(242,78,30,0); } }
-        .demo-press { animation: demoPressGlow 1.8s ease-in-out infinite, demoPress 0.45s ease 0.7s 1; }
+        .demo-auto .demo-press { animation: demoPulse 1.8s ease-in-out infinite, demoPress 0.45s ease 0.7s 1; }
         @keyframes demoPress { 0% { transform: none; } 40% { transform: scale(0.92); } 100% { transform: none; } }
-        @keyframes demoPressGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(242,78,30,0.35); } 50% { box-shadow: 0 0 0 7px rgba(242,78,30,0); } }
+        .demo-pressed-now { animation: demoPress 0.32s ease both; }
 
         /* payoffs that land after the press (ticks, "sent" chips) */
         .demo-late { opacity: 0; animation: demoTickIn 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }

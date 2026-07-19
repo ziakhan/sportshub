@@ -9,7 +9,10 @@
  * prefers-reduced-motion.
  */
 
-import type { CSSProperties, ReactNode } from "react"
+"use client"
+
+import { useState, type CSSProperties, type ReactNode } from "react"
+import { useDemoAdvance } from "./demo-advance-context"
 
 export function Screen({ title, children, badge }: { title: string; children: ReactNode; badge?: string }) {
   return (
@@ -90,16 +93,30 @@ export function Field({ label, value, active }: { label: string; value: ReactNod
   )
 }
 
-/** The button the scene "presses": pulses, then plays a press at ~0.7s. */
+/**
+ * The scene's real button. Clicking it plays the press and advances the
+ * walkthrough to the screen that click would produce in the product
+ * (owner 2026-07-19: clicks drive the flow, not a timer). During autoplay
+ * the press animates on its own (demo-auto scoping in the player styles).
+ */
 export function ActionBtn({ children, secondary, press }: { children: ReactNode; secondary?: boolean; press?: boolean }) {
+  const advance = useDemoAdvance()
+  const [pressed, setPressed] = useState(false)
   return (
-    <span
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        if (!advance || secondary) return
+        setPressed(true)
+        setTimeout(advance, 320)
+      }}
       className={`inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold ${
         secondary ? "border-ink-200 text-ink-700 border bg-white" : "bg-ink-950 text-white shadow-lg"
-      } ${press ? "demo-press" : "demo-pulse"}`}
+      } ${press ? "demo-press" : "demo-pulse"} ${pressed ? "demo-pressed-now" : ""}`}
     >
       {children}
-    </span>
+    </button>
   )
 }
 
