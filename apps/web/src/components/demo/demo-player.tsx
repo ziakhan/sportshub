@@ -32,7 +32,8 @@ const ROLE_TONES: Record<DemoRole, string> = {
 }
 
 const TICK_MS = 50
-const SCENE_MS = 4500
+// Owner 2026-07-19: scenes ran too fast. Long enough to read the payoff.
+const SCENE_MS = 8000
 
 export function DemoPlayer({
   scenes: allScenes,
@@ -206,10 +207,30 @@ export function DemoPlayer({
       </div>
 
       {/* stage */}
-      <div className="bg-ink-50/60 flex min-h-[430px] items-center justify-center overflow-hidden px-3 py-7 sm:px-8">
+      {/* tap the stage itself to pause and play (owner: the buttons felt clunky) */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={playing ? "Pause walkthrough" : "Play walkthrough"}
+        onClick={() => setPlaying(!playing)}
+        onKeyDown={(e) => {
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault()
+            setPlaying(!playing)
+          }
+        }}
+        className="bg-ink-50/60 relative flex min-h-[430px] cursor-pointer items-center justify-center overflow-hidden px-2 py-7 sm:px-8"
+      >
         <div key={`${roleFilter ?? "all"}-${i}`} className="demo-scene-enter w-full max-w-2xl">
           {scene.screen}
         </div>
+        {!playing && started.current ? (
+          <span className="bg-ink-950/70 pointer-events-none absolute flex h-14 w-14 items-center justify-center rounded-full text-white backdrop-blur-sm">
+            <svg className="ml-1 h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 4l14 8-14 8z" />
+            </svg>
+          </span>
+        ) : null}
       </div>
 
       {/* controls + caption */}
@@ -229,32 +250,6 @@ export function DemoPlayer({
               <path d="M6 4l14 8-14 8z" />
             </svg>
           )}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setPlaying(false)
-            goto(i - 1)
-          }}
-          aria-label="Previous step"
-          className="border-ink-200 text-ink-600 hover:bg-ink-50 flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full border transition-colors"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setPlaying(false)
-            goto(i + 1)
-          }}
-          aria-label="Next step"
-          className="border-ink-200 text-ink-600 hover:bg-ink-50 flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full border transition-colors"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
         </button>
         <p aria-live="polite" className="text-ink-600 min-w-0 flex-1 text-sm font-medium leading-snug">
           {scene.role ? (

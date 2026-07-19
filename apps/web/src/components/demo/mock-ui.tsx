@@ -42,7 +42,7 @@ export function Row({ children, tone = "plain" }: { children: ReactNode; tone?: 
       : tone === "done"
         ? "border-emerald-200 bg-emerald-50/60"
         : "border-ink-100 bg-white"
-  return <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${cls}`}>{children}</div>
+  return <div className={`flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border px-3 py-2 ${cls}`}>{children}</div>
 }
 
 export function Chip({
