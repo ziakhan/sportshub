@@ -48,7 +48,6 @@ const PUBLIC_PAGE_PREFIXES = [
   "/for-leagues",
   "/for-parents",
   "/how-it-works",
-  "/demo",
   "/unsubscribed",
 ] as const
 
