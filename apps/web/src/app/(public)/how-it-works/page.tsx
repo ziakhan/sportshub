@@ -31,7 +31,7 @@ export default function HowItWorksPage() {
               seat.
             </p>
             <p className="text-ink-400 text-sm">
-              These are not videos. Every screen is the real design system running demo data.
+              These are not videos. Click the glowing button on each screen to do that step yourself, at your own pace.
             </p>
           </div>
         </div>

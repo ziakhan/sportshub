@@ -83,7 +83,7 @@ export default function ForParentsPage() {
               </Link>
             </div>
             <p className="text-ink-400 mt-6 text-sm">
-              Each section below plays a short walkthrough. Real screens, demo data.
+              Each section below is a hands-on walkthrough. Click the glowing button on a screen to do that step, at your own pace.
             </p>
           </div>
         </div>
