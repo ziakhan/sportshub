@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { BrowserShot } from "@/components/marketing/shots"
 import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
@@ -122,6 +123,28 @@ export default function ForClubsPage() {
                 <p className="text-ink-500 text-sm leading-6">{f.body}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      <section className="bg-[#fafafa] py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+              This is the real product
+            </h2>
+            <p className="text-ink-500 mx-auto max-w-xl text-base leading-7">
+              Actual screens from a working club on the platform. No mockups.
+            </p>
+          </div>
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">
+            <BrowserShot src="/shots/club-dashboard.png" alt="Club dashboard" caption="Your club dashboard: teams, tryouts, plans, setup at a glance" />
+            <BrowserShot src="/shots/club-tryouts.png" alt="Tryouts management" caption="Tryouts: publish, track paid signups, run attendance" />
+            <BrowserShot src="/shots/club-payments.png" alt="Payments ledger" caption="Payments: who paid, who owes, installments on schedule" />
+            <BrowserShot src="/shots/club-chat.png" alt="Team chat" caption="Team chat: announcements, DMs, no group-chat chaos" />
+            <BrowserShot src="/shots/coach-team-home.png" alt="Coach team home" caption="The coach's team home: roster, schedule, everything in one place" />
+            <BrowserShot src="/shots/public-club-page.png" alt="Public club page" caption="Your public page: programs, news and reviews families find on Google" />
           </div>
         </div>
       </section>
