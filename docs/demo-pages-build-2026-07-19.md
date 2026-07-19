@@ -172,3 +172,13 @@ Local only, not deployed.
 - Verified: full 45-step walk headless, zero page errors; new/changed scenes
   eyeballed (gate, intro merge, sticky color bar, logo, scoresheet, changes,
   bells, calendar strikethrough, mid-typing zoom cap).
+
+## DEPLOYED (2026-07-19, owner-approved "push it to prod" in session)
+Cherry-picked the five demo commits onto the box lineage (no schema changes,
+clean picks) and deployed: box master d3027da → 21d5db1, deploy.sh green
+(build 1m43s, services restarted, health checks OK). Live-verified: /demo,
+/how-it-works, /for-clubs, /for-leagues, /for-parents all 200 on
+ysportshub.com (+ sportshubone.com /demo), start gate + read-first card
+eyeballed live, zero page errors. Homepage does NOT link /demo yet; owner is
+deciding placement (recommendation delivered: demo CTA on homepage + on
+for-clubs and for-leagues with act deep-links; parent cut later).
