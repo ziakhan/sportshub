@@ -26,10 +26,10 @@ function LeagueRostersShell({ children }: { children: React.ReactNode }) {
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
-            {TEAM.name} — League Rosters
+            {TEAM.name} · League Rosters
           </h1>
           <p className="text-ink-500 mt-1 text-sm">
-            Each league only sees the version you submitted to it — your club roster of 13 stays
+            Each league only sees the version you submitted to it. Your club roster of 13 stays
             yours.
           </p>
         </div>
@@ -84,7 +84,7 @@ export function SceneRosterVersion() {
 /* Step 22b — The club pays the team fee */
 export function SceneTeamFeeDue() {
   return (
-    <OperatorPage title="My Payments" subtitle={`1 open item — ${fmt(LEAGUE.teamFee)} outstanding.`}>
+    <OperatorPage title="My Payments" subtitle={`1 open item, ${fmt(LEAGUE.teamFee)} outstanding.`}>
       <Card className="overflow-hidden p-0">
         <table className="w-full">
           <thead className="border-ink-100 border-b">
@@ -104,7 +104,7 @@ export function SceneTeamFeeDue() {
               </Td>
               <Td>
                 <span className="font-semibold">
-                  {LEAGUE.season} — {TEAM.name}
+                  {LEAGUE.season} · {TEAM.name}
                 </span>
                 <span className="bg-ink-50 text-ink-500 ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
                   Team fee
@@ -125,7 +125,7 @@ export function SceneTeamFeeDue() {
         </table>
       </Card>
       <p className="text-ink-400 mt-4 text-xs">
-        Need a refund or a correction? Contact the club or league directly — they manage payments
+        Need a refund or a correction? Contact the club or league directly. They manage payments
         on their side.
       </p>
     </OperatorPage>
@@ -252,12 +252,12 @@ export function SceneRosterChangeRequest() {
               />
             </Field>
             <p className="text-ink-400 mt-2 text-xs">
-              Nothing changes until the league approves — approval applies these adds/removes to
+              Nothing changes until the league approves. Approval applies these adds/removes to
               the locked roster.
             </p>
           </div>
           <div className="mt-4 flex gap-3">
-            <Advance confirm="Request sent — the league will review it.">
+            <Advance confirm="Request sent. The league will review it.">
               <Button>Send request (+1)</Button>
             </Advance>
             <Button variant="subtle">Cancel</Button>
@@ -330,7 +330,7 @@ export function SceneLeaguePayments() {
                   <span className="font-semibold">{r.from}</span>
                 </Td>
                 <Td>
-                  {LEAGUE.season} — {r.team}
+                  {LEAGUE.season} · {r.team}
                   <span className="bg-ink-50 text-ink-500 ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
                     Team fee
                   </span>
@@ -373,7 +373,7 @@ export function SceneRecordPayment() {
       <Card className="w-full max-w-md">
         <h3 className="text-ink-950 text-lg font-bold">Record a payment</h3>
         <p className="text-ink-500 mt-0.5 text-sm">
-          {LEAGUE.season} — West United Prep Grade 10 — {fmt(LEAGUE.teamFee)} remaining
+          {LEAGUE.season} · West United Prep Grade 10 · {fmt(LEAGUE.teamFee)} remaining
         </p>
         <div className="mt-4 space-y-3">
           <Field label="Amount received">
@@ -424,7 +424,7 @@ export function SceneTeamsTab() {
               <div className="flex-1">
                 <TxtInput placeholder="Note back to the club (optional)" />
               </div>
-              <Advance confirm="Approved — changes applied to the roster.">
+              <Advance confirm="Approved. Changes applied to the roster.">
                 <Button size="sm" tone="court">
                   Approve
                 </Button>
@@ -555,7 +555,7 @@ export function SceneCapacityPlanner() {
         <p className="text-ink-700 mb-1 text-sm font-bold">Capacity planner</p>
         <p className="text-ink-400 mb-3 text-xs">
           What each session can hold vs what your divisions need. Untick a division to leave it
-          out of a session — the preview and commit follow this plan.
+          out of a session. The preview and commit follow this plan.
         </p>
         <div className="space-y-2.5">
           {SESSIONS.map((s) => (

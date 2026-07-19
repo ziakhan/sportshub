@@ -253,14 +253,14 @@ const payFee: LiveScene = {
           <Badge tone="play">Payments</Badge>
           <h1 className="text-ink-950 mt-2 text-xl font-bold">My Payments</h1>
           <p className="text-ink-500 mt-1 text-sm">
-            {g("paid") ? "You're all settled up." : `1 open item — ${fmt(TRYOUT.fee)} outstanding.`}
+            {g("paid") ? "You're all settled up." : `1 open item, ${fmt(TRYOUT.fee)} outstanding.`}
           </p>
           <Card size="sm" className="mt-4">
             <div className="border-ink-100 rounded-xl border p-3.5">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="text-ink-900 text-sm font-bold">
-                    {TRYOUT.title} — {KID.name}
+                    {TRYOUT.title} · {KID.name}
                   </p>
                   <p className="text-ink-500 mt-0.5 text-xs">
                     To <span className="text-play-700 font-semibold">{CLUB.name}</span>

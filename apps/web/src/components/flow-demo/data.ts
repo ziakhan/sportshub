@@ -138,7 +138,7 @@ export const G10_TEAMS = [
 
 /** Standings late in the regular season. Wins and losses balance. */
 export const STANDINGS = [
-  { team: "Burlington Force Grade 10", w: 8, l: 1, pct: ".889", gb: "–", strk: "W5" },
+  { team: "Burlington Force Grade 10", w: 8, l: 1, pct: ".889", gb: "-", strk: "W5" },
   { team: "Royal Crown Grade 10", w: 7, l: 2, pct: ".778", gb: "1", strk: "W2" },
   { team: "North Toronto Huskies Grade 10", w: 6, l: 3, pct: ".667", gb: "2", strk: "L1" },
   { team: "West United Prep Grade 10", w: 5, l: 4, pct: ".556", gb: "3", strk: "W1" },
@@ -189,7 +189,7 @@ export const AWAY_LEADERS = "Noah S. 18 PTS · Lucas K. 12 PTS · Ibrahim H. 9 P
 export const PLAYOFFS = {
   qualifying: 4,
   formatLabel: "Bracket of 4",
-  formatDesc: "Straight knockout — 4 teams, seeded from standings.",
+  formatDesc: "Straight knockout: 4 teams, seeded from standings.",
   altLabel: "Bracket of 4 + 3rd-place game",
   altDesc: "Knockout plus a bronze game between the semifinal losers.",
   firstRound: "2026-07-04",

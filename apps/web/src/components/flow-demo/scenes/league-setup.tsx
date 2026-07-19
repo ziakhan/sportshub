@@ -313,13 +313,13 @@ export function SceneReferees() {
       <div className="space-y-5">
         <Panel title="Book a referee for a session day">
           <p className="text-ink-500 mb-4 text-sm">
-            Pick a day and shift, then target a referee you know — or broadcast to your whole
+            Pick a day and shift, then target a referee you know, or broadcast to your whole
             pool and let the first taker have it. Accepting auto-assigns them to every game in
             the window.
           </p>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Session day">
-              <SelectBox value="Week 1 — Sat, May 30" placeholder="Choose day…" />
+              <SelectBox value="Week 1 · Sat, May 30" placeholder="Choose day…" />
             </Field>
             <Field label="Shift">
               <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ export function SceneReferees() {
             </Field>
           </div>
           <div className="mt-3 flex gap-2">
-            {["Full day (9–6)", "Morning 6h (9–3)", "Afternoon (12–6)"].map((p, i) => (
+            {["Full day (9-6)", "Morning 6h (9-3)", "Afternoon (12-6)"].map((p, i) => (
               <span
                 key={p}
                 className={cn(
@@ -346,7 +346,7 @@ export function SceneReferees() {
               <SelectBox value="📢 All league referees (first accept wins)" />
             </Field>
             <TxtInput placeholder="Message (optional)" />
-            <Advance confirm="Offer broadcast to 4 referees — first to accept gets the day.">
+            <Advance confirm="Offer broadcast to 4 referees. First to accept gets the day.">
               <Button>Send offer</Button>
             </Advance>
           </div>
@@ -448,7 +448,7 @@ export function SceneScheduling() {
             </Field>
           </div>
           <div className="border-ink-100 mt-5 border-t pt-4">
-            <p className="text-ink-700 mb-3 text-sm font-bold">Playoffs (optional — can be set later)</p>
+            <p className="text-ink-700 mb-3 text-sm font-bold">Playoffs (optional, can be set later)</p>
             <div className="grid grid-cols-3 gap-4">
               <Field label="Playoff format">
                 <SelectBox value="Single Elimination" />
@@ -519,7 +519,7 @@ export function SceneOpenRegistration() {
           statusTone="neutral"
           lifecycle="Open Registration"
           lifecycleHighlight
-          lifecycleConfirm="NPH Summer League — Summer 2026 is open for team registration"
+          lifecycleConfirm="NPH Summer League Summer 2026 is open for team registration"
         />
       }
     >

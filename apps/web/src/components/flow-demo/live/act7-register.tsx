@@ -143,7 +143,7 @@ const registerTeam: LiveScene = {
                 <Button block>Submit Team</Button>
               </Hold>
               <p className="text-ink-400 text-xs">
-                Only the selected players are submitted — the league sees this version, not your
+                Only the selected players are submitted. The league sees this version, not your
                 full club roster.
               </p>
             </div>

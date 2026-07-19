@@ -144,7 +144,7 @@ const checkIn: LiveScene = {
         </p>
         <div className="mx-auto max-w-2xl">
           <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
-            {TRYOUT.title} — Check-in
+            {TRYOUT.title} · Check-in
           </h1>
           <p className="text-ink-500 mb-4 mt-1 text-sm">
             {TRYOUT.dateShort} • {TRYOUT.location} • {TEAM.name}
@@ -231,7 +231,7 @@ const bulkOffer: LiveScene = {
   render: (g) => (
     <div className="bg-ink-900/40 px-10 py-8">
       <Card className="live-pop mx-auto max-w-3xl">
-        <h3 className="text-ink-950 text-lg font-bold">Send Offers — {TEAM.name}</h3>
+        <h3 className="text-ink-950 text-lg font-bold">Send Offers · {TEAM.name}</h3>
         <p className="text-ink-500 mt-0.5 text-sm">
           Compose the packages once; everyone you tick gets the same offer.
         </p>
@@ -263,7 +263,7 @@ const bulkOffer: LiveScene = {
           ))}
         </div>
         <p className="text-ink-400 mt-3 text-xs">
-          The family picks ONE of these when they accept — sizes are only asked for what their
+          The family picks ONE of these when they accept. Sizes are only asked for what their
           chosen package includes.
         </p>
         <div className="mt-5 flex justify-end gap-3">

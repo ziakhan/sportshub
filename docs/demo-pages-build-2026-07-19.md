@@ -136,3 +136,39 @@ referee requests, scoresheet, calendar, notifications).
 Verified: all 37 scenes walked headlessly, zero page errors, every scene
 eyeballed at start + hold; two zoom-clipping defects found by eye and fixed.
 Local only, not deployed.
+
+## Addition 4 (same day): owner punch list round 2
+
+- Em-dash purge is now TOTAL in the demo (his ruling overrides product-verbatim):
+  zero em/en dashes in any demo display string, product-derived or authored;
+  reworded to read human. Product's own em-dash purge remains on the polish
+  backlog.
+- Scoresheet rebuilt as a real scorebook: both full rosters, foul boxes, marks
+  for all four quarters, REB/AST/PTS, TOTALS rows, team extras lines, a DNP row
+  (Theo Martinez) and an Absent row (Xavier Reid, matching the attendance
+  scene), wider layout.
+- Read-first cards: longer content-scaled dwell (4.2-9.5s), no repeated hint
+  line; on dismiss the card shrinks and slides up INTO the pinned bar (the
+  pinned copy is hidden while the card is up, never two at once).
+- Repeated bottom instruction line removed (autoplay pause hint only).
+- Camera zoom now width-capped: a zoom can never push form columns off either
+  edge while typing (verified mid-typing on the season form).
+- Color pass on the demo chrome: persona-colored accent bar + wash on the
+  sticky bar and intro cards, fiery play-hoop-gold gradient progress bar,
+  green checkmarked completed act pills, hoop-orange "Click to continue" tag,
+  navy-gradient start gate with gradient strip, gradient done-screen medal.
+  Product screens themselves stay product-plain.
+- Phone-frame logo fixed: now the real BrandWordmark component (the raw SVG
+  had the ONE box detached).
+- New scenes (act 9, now 45 steps total): league reschedules a game via the
+  real Find alternates / Move here flow and cancels another; families get the
+  REAL "Game Rescheduled" / "Game Cancelled" bells (templates from
+  api/games/[id]/route.ts); the calendar shows the moved game at its new time
+  and the cancelled game struck through with the Cancelled pill, still visible.
+- Product gap flagged for owner: game cancellation has NO reason field in the
+  product (plain confirm); the notification says "cancelled by the league"
+  with no reason. If he wants a reason captured + included in the bell/email,
+  that's a product change.
+- Verified: full 45-step walk headless, zero page errors; new/changed scenes
+  eyeballed (gate, intro merge, sticky color bar, logo, scoresheet, changes,
+  bells, calendar strikethrough, mid-typing zoom cap).

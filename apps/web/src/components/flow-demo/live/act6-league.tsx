@@ -345,7 +345,7 @@ const openRegistration: LiveScene = {
     { hold: "openBtn" },
     { set: { open: true } },
     { wait: 400 },
-    { confirm: "NPH Summer League — Summer 2026 is open for team registration" },
+    { confirm: "NPH Summer League Summer 2026 is open for team registration" },
   ],
   render: (g) => (
     <SeasonShell

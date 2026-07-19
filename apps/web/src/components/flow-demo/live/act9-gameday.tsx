@@ -72,7 +72,7 @@ const checklist: LiveScene = {
         <div className="mt-4">
           <p className="text-ink-900 text-sm font-bold">Run the game clock?</p>
           <p className="text-ink-400 mt-0.5 text-xs">
-            Only choose Yes if you&apos;ll operate start/stop during play — otherwise minutes count
+            Only choose Yes if you&apos;ll operate start/stop during play, otherwise minutes count
             wrongly. Most games just use the arena clock.
           </p>
           <div className="mt-2.5 flex gap-2">
@@ -83,7 +83,7 @@ const checklist: LiveScene = {
                 g("clock") ? "border-play-400 bg-play-50 text-play-800" : "border-ink-200 text-ink-700"
               )}
             >
-              Yes — I&apos;ll run it
+              Yes, I&apos;ll run it
             </span>
             <span className="border-ink-200 text-ink-700 rounded-xl border px-4 py-2 text-sm font-semibold">
               No clock
@@ -120,10 +120,10 @@ const attendance: LiveScene = {
   render: (g) => (
     <div className="bg-ink-50 min-h-[560px] px-10 py-8">
       <h2 className="text-ink-950 text-center text-xl font-bold">
-        Attendance — {GAME.home} vs {GAME.away}
+        Attendance · {GAME.home} vs {GAME.away}
       </h2>
       <p className="text-ink-500 mx-auto mt-1 max-w-2xl text-center text-sm">
-        Everyone starts as present — tap whoever is missing. Absent players show on the scoresheet
+        Everyone starts as present. Tap whoever is missing. Absent players show on the scoresheet
         and don&apos;t count a game played in their season stats.
       </p>
       <div className="mx-auto mt-5 grid max-w-3xl grid-cols-2 gap-4">
@@ -249,7 +249,7 @@ const lineups: LiveScene = {
           </Hold>
         </div>
         <p className="text-ink-400 mt-3 text-center text-xs">
-          Fewer than 5 marked players? Tap the ones who are here — you can fix lineups with SUBS
+          Fewer than 5 marked players? Tap the ones who are here. You can fix lineups with SUBS
           any time.
         </p>
       </div>
@@ -410,7 +410,7 @@ function Console({
           <Card size="sm" className="live-pop w-full max-w-sm">
             <p className="text-ink-950 text-sm font-bold">Who got the rebound?</p>
             <p className="text-ink-500 mt-0.5 text-xs">
-              Missed shot by #10 — tap whoever grabbed the ball. Their team keeps it (offensive) or
+              Missed shot by #10. Tap whoever grabbed the ball. Their team keeps it (offensive) or
               takes it over (defensive).
             </p>
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -442,7 +442,7 @@ function Console({
                 </div>
               </div>
             </div>
-            <p className="text-ink-400 mt-3 text-center text-xs font-semibold">Skip — no rebound recorded</p>
+            <p className="text-ink-400 mt-3 text-center text-xs font-semibold">Skip, no rebound recorded</p>
           </Card>
         </div>
       )}
@@ -549,7 +549,7 @@ const liveScore: LiveScene = {
   script: [
     { wait: 700 },
     { hold: "plus2" },
-    { set: { plus2on: true, strip: "2PT — now tap the player" } },
+    { set: { plus2on: true, strip: "2PT. Now tap the player" } },
     { wait: 700 },
     { press: "tile23" },
     { set: { hl23: true, strip: "Assist by?", assist: true } },
@@ -557,7 +557,7 @@ const liveScore: LiveScene = {
     { press: "assist7" },
     { set: { as7: true } },
     { wait: 300 },
-    { set: { scored: true, assist: false, plus2on: false, hl23: false, strip: "Tap an action, then a player — either order works" } },
+    { set: { scored: true, assist: false, plus2on: false, hl23: false, strip: "Tap an action, then a player. Either order works" } },
     { wait: 1400 },
     { confirm: "On every phone. No refresh." },
   ],
@@ -570,7 +570,7 @@ const liveScore: LiveScene = {
           awayScore={52}
           clock={g("scored") ? "5:04" : "5:12"}
           ticker={g("scored") ? ["2PT #23", "AST #7", "3PT #23"] : ["3PT #23", "2PT #10", "FT #7"]}
-          strip={(g("strip") as string) ?? "Tap an action, then a player — either order works"}
+          strip={(g("strip") as string) ?? "Tap an action, then a player. Either order works"}
           assistChips={!!g("assist")}
         />
       }
@@ -601,7 +601,7 @@ const liveRebound: LiveScene = {
   script: [
     { wait: 700 },
     { press: "miss2" },
-    { set: { miss2on: true, strip: "2PT miss — now tap the player" } },
+    { set: { miss2on: true, strip: "2PT miss. Now tap the player" } },
     { wait: 600 },
     { press: "atile10" },
     { set: { al10: true, rebound: true } },
@@ -609,7 +609,7 @@ const liveRebound: LiveScene = {
     { press: "reb11" },
     { set: { reb: true } },
     { wait: 400 },
-    { set: { rebounded: true, rebound: false, miss2on: false, al10: false, strip: "Tap an action, then a player — either order works" } },
+    { set: { rebounded: true, rebound: false, miss2on: false, al10: false, strip: "Tap an action, then a player. Either order works" } },
     { wait: 1200 },
     { set: { final: true } },
     { wait: 600 },
@@ -624,7 +624,7 @@ const liveRebound: LiveScene = {
           awayScore={g("final") ? 58 : 52}
           clock={g("final") ? "0:00" : "4:41"}
           ticker={g("rebounded") ? ["2✗ #10", "REB #11", "2PT #23"] : ["2PT #23", "AST #7", "3PT #23"]}
-          strip={(g("strip") as string) ?? "Tap an action, then a player — either order works"}
+          strip={(g("strip") as string) ?? "Tap an action, then a player. Either order works"}
           reboundOverlay={!!g("rebound")}
           endHold
         />
@@ -639,7 +639,7 @@ const liveRebound: LiveScene = {
             plays={
               g("rebounded")
                 ? [
-                    "#10 Noah S. misses a 2-pointer — defensive rebound #11 Malik O.",
+                    "#10 Noah S. misses a 2-pointer, defensive rebound #11 Malik O.",
                     "#23 Jayden T. scores 2, assisted by #7 Marcus C.",
                     ...PLAYS_0,
                   ]

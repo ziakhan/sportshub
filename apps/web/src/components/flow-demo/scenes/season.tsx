@@ -130,7 +130,7 @@ function ConsoleScreen({
         </div>
         <div>
           <p className="text-ink-500 mb-2 rounded-lg bg-white px-3 py-2 text-center text-xs font-semibold">
-            Tap an action, then a player — either order works
+            Tap an action, then a player. Either order works
           </p>
           <div className="grid grid-cols-3 gap-2">
             <ActionBtn label="+2" highlight={plus2Advances} />
@@ -268,7 +268,7 @@ const PLAYS_BEFORE = [
   "#10 Noah S. scores 2",
   "#23 Jayden T. scores 3, assisted by #4 Ethan P.",
   "Sub: #21 in, #30 out",
-  "#3 Lucas K. misses a 3-pointer — defensive rebound #11 Malik O.",
+  "#3 Lucas K. misses a 3-pointer, defensive rebound #11 Malik O.",
 ]
 
 /* Step 27 — live scoring, side by side */
@@ -329,7 +329,7 @@ export function SceneReviewFinalize() {
   return (
     <div className="px-10 py-10">
       <h2 className="text-ink-950 text-center text-2xl font-bold">
-        Review: {GAME.home} {GAME.finalHome} — {GAME.finalAway} {GAME.away}
+        Review: {GAME.home} {GAME.finalHome}-{GAME.finalAway} {GAME.away}
       </h2>
       <div className="mx-auto mt-6 grid max-w-4xl grid-cols-2 gap-5">
         {[GAME.home, GAME.away].map((team, side) => (
@@ -380,7 +380,7 @@ export function SceneReviewFinalize() {
           </div>
         </div>
         <p className="text-ink-500 mt-2 text-sm">
-          The assigned referee enters their personal PIN — verified against their account, the
+          The assigned referee enters their personal PIN, verified against their account, the
           strongest form of approval.
         </p>
         <div className="mt-3 flex items-center gap-3">
@@ -409,7 +409,7 @@ export function SceneScores() {
       <p className="text-ink-400 text-[11px] font-bold uppercase tracking-[0.14em]">Around the hub</p>
       <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase">Scores</h1>
       <p className="text-ink-500 mt-1 text-sm">
-        Live games, this week&apos;s finals and what&apos;s coming up — across every league.
+        Live games, this week&apos;s finals and what&apos;s coming up, across every league.
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className="bg-ink-900 rounded-full px-3 py-1 text-xs font-semibold text-white">All leagues</span>
@@ -875,7 +875,7 @@ export function ScenePolls() {
             ))}
           </div>
           <p className="text-ink-400 mt-2 text-[11px]">
-            You&apos;ve voted — pick different options to change your answer.
+            You&apos;ve voted. Pick different options to change your answer.
           </p>
           <div className="mt-3">
             <Advance block>
@@ -898,7 +898,7 @@ export function ScenePlayoffWizard() {
       <SeasonTabs active="Playoffs" />
       <Panel title="Generate playoffs">
         <p className="text-ink-500 mb-4 text-sm">
-          Pick a division and how many teams qualify — you&apos;ll only be offered formats that work
+          Pick a division and how many teams qualify. You&apos;ll only be offered formats that work
           for that number. Seeds come from the current standings.
         </p>
         <div className="grid grid-cols-3 gap-4">

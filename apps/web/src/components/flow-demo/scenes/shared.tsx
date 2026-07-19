@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { BrandWordmark } from "@/components/brand/wordmark"
 import { Card } from "@/components/ui/card"
 import { PanelHeader } from "@/components/ui/panel-header"
 import { cn } from "@/components/ui/cn"
@@ -260,12 +261,11 @@ export function SuccessPanel({
 
 /* ── Phone chrome ──────────────────────────────────────────────────────── */
 
-/** Mobile web header inside the phone frame: brand wordmark + menu. */
+/** Mobile web header inside the phone frame: the real brand lockup + menu. */
 export function MobileHeader() {
   return (
     <div className="border-ink-100 flex items-center justify-between border-b bg-white px-4 py-3">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/brand/wordmark-one-color.svg" alt="SportsHub One" className="h-[22px] w-auto" />
+      <BrandWordmark size="sm" />
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-700 h-6 w-6">
         <path d="M4 7h16M4 12h16M4 17h16" />
       </svg>

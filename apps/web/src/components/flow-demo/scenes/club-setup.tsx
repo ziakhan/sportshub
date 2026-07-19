@@ -25,7 +25,7 @@ export function SceneClubSearch() {
       <Card>
         <h3 className="text-ink-900 text-lg font-bold">Is your club already listed?</h3>
         <p className="text-ink-500 mt-1 text-sm">
-          We&apos;ve mapped over a thousand Canadian clubs. If yours is here, claim it — you keep its
+          We&apos;ve mapped over a thousand Canadian clubs. If yours is here, claim it and you keep its
           league connections and public page instead of starting from zero.
         </p>
         <div className="mt-4">
@@ -53,7 +53,7 @@ export function SceneClubSearch() {
         </div>
         <div className="mt-4">
           <Button variant="subtle" block>
-            My club isn&apos;t listed — create a new one
+            My club isn&apos;t listed. Create a new one
           </Button>
         </div>
       </Card>
@@ -93,7 +93,7 @@ export function SceneClaimOptions() {
   return (
     <ClaimShell>
       <p className="text-ink-600 text-sm">
-        To prove you run this club, we send a code to the contact info already on file — no
+        To prove you run this club, we send a code to the contact info already on file. No
         account needed yet.
       </p>
       <div className="mt-4 space-y-2.5">
@@ -104,7 +104,7 @@ export function SceneClaimOptions() {
           Text a code to (9••) •••-••41
         </div>
         <div className="border-ink-200 w-full rounded-xl border px-4 py-3">
-          <p className="text-sm font-semibold">I can&apos;t access those — submit proof instead</p>
+          <p className="text-sm font-semibold">I can&apos;t access those. Submit proof instead</p>
           <p className="text-ink-400 mt-0.5 text-xs">
             Describe your proof (website admin, registration papers, social account) and an admin
             will review it.
@@ -147,7 +147,7 @@ export function SceneClaimVerified() {
       <Badge tone="success">Verified</Badge>
       <p className="text-ink-600 mt-3 text-sm">
         {CLUB.name} is reserved for you for 14 days. Create an account (any email works) or sign
-        in — the club binds to <em>your account</em>, not the inbox that got the code.
+        in. The club binds to <em>your account</em>, not the inbox that got the code.
       </p>
       <div className="mt-5">
         <Advance block confirm="Club claimed">
@@ -165,7 +165,7 @@ export function SceneClaimComplete() {
     <ClaimShell>
       <Badge tone="success">Club claimed</Badge>
       <p className="text-ink-600 mt-3 text-sm">
-        You&apos;re the owner — everything about the club is now yours to edit.
+        You&apos;re the owner. Everything about the club is now yours to edit.
       </p>
       <div className="mt-5">
         <Advance block>
@@ -234,7 +234,7 @@ export function SceneCreateTeam() {
         <Card>
           <h3 className="text-ink-900 mb-1 text-base font-bold">Practice Days</h3>
           <p className="text-ink-500 mb-4 text-xs">
-            Optional — leave empty if practice days are TBD. Families are only notified when you
+            Optional. Leave empty if practice days are TBD. Families are only notified when you
             announce the schedule (from the team calendar, closer to the season).
           </p>
           <div className="space-y-3">

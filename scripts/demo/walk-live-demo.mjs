@@ -54,6 +54,9 @@ while (Date.now() - t0 < 30 * 60_000) {
       type: "jpeg",
       quality: 55,
     })
+    // Skip the read-first card (also exercises the merge-into-bar path)
+    const introCard = page.locator("[data-live-intro]")
+    if (await introCard.count()) await introCard.click({ force: true }).catch(() => {})
   }
   // Wait for a hold (ready) or a scene change
   const outcome = await page

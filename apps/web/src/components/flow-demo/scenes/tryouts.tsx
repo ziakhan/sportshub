@@ -382,7 +382,7 @@ export function ScenePayTryoutFee() {
     <PhonePage>
       <Badge tone="play">Payments</Badge>
       <h1 className="text-ink-950 mt-2 text-xl font-bold">My Payments</h1>
-      <p className="text-ink-500 mt-1 text-sm">1 open item — {fmt(TRYOUT.fee)} outstanding.</p>
+      <p className="text-ink-500 mt-1 text-sm">1 open item, {fmt(TRYOUT.fee)} outstanding.</p>
       <Card size="sm" className="mt-4">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {["All", "Open", "Paid"].map((p, i) => (
@@ -401,7 +401,7 @@ export function ScenePayTryoutFee() {
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="text-ink-900 text-sm font-bold">
-                {TRYOUT.title} — {KID.name}
+                {TRYOUT.title} · {KID.name}
               </p>
               <p className="text-ink-500 mt-0.5 text-xs">
                 To <span className="text-play-700 font-semibold">{CLUB.name}</span>
@@ -465,7 +465,7 @@ export function SceneCheckIn() {
     <OperatorPage
       narrow
       back="Back to Signups"
-      title={`${TRYOUT.title} — Check-in`}
+      title={`${TRYOUT.title} · Check-in`}
       subtitle={`${TRYOUT.dateShort} • ${TRYOUT.location} • ${TEAM.name}`}
     >
       <Card size="sm" className="mb-4">
