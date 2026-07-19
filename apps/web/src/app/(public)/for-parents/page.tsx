@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { SectionHeader } from "@/components/ui"
 import { DemoPlayer } from "@/components/demo/demo-player"
-import { PARENT_SCENES } from "@/components/demo/scenes-parent"
+import { PARENT_CLIPS } from "@/components/demo/clips"
 
 export const metadata = {
   title: "For Parents & Players | One App for the Whole Season",
@@ -10,57 +9,42 @@ export const metadata = {
     "Find programs, register and pay in minutes, RSVP from one calendar, follow games live, and track your kid's season. One login for every kid and every team.",
 }
 
-const FEATURES = [
+const SECTIONS = [
   {
+    id: "find",
     title: "Find the right program",
-    body: "Tryouts, camps, and house leagues near you with real details: dates, fees, age groups. Not a screenshot in a Facebook group.",
-    tone: "bg-hoop-500 shadow-hoop-200",
-    icon: (
-      <>
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </>
-    ),
+    body: "Tryouts, camps and house leagues near you, with real dates, fees and age groups on the page. Not a screenshot in a Facebook group.",
+    scenes: PARENT_CLIPS.find,
   },
   {
-    title: "Register & pay in minutes",
-    body: "Sign up online, pay by card or installments, keep every receipt. No e-transfer to a number you got in a group chat.",
-    tone: "bg-court-600 shadow-court-200",
-    icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
+    id: "pay",
+    title: "Register and pay in minutes",
+    body: "Sign up online, pay by card, keep every receipt. When the offer comes, accept it and pay the deposit in the same flow.",
+    scenes: PARENT_CLIPS.pay,
   },
   {
-    title: "One calendar that's always right",
-    body: "Practices, games, and events with RSVP buttons, synced to your phone's calendar. When something moves, it moves everywhere.",
-    tone: "bg-play-600 shadow-play-200",
-    icon: (
-      <>
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-      </>
-    ),
+    id: "calendar",
+    title: "One calendar that never lies",
+    body: "Practices and games with RSVP buttons, synced to your phone. When a game moves, your calendar and the team chat already know.",
+    scenes: PARENT_CLIPS.calendar,
   },
   {
-    title: "Follow the game live",
-    body: "Stuck at work or driving the other kid? Live scores, play-by-play, and the full box score the moment the buzzer sounds.",
-    tone: "bg-gold-500 shadow-gold-200",
-    icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
+    id: "live",
+    title: "Follow the game from anywhere",
+    body: "Stuck at work or driving the other kid? Live score and play by play in your pocket, full box score at the buzzer.",
+    scenes: PARENT_CLIPS.live,
   },
   {
+    id: "stats",
     title: "Their season, on the record",
-    body: "Game logs, season stats, and recaps that mention your kid by name. Players 13+ get their own login and player page.",
-    tone: "bg-sky-500 shadow-sky-200",
-    icon: (
-      <>
-        <path d="M3 3v18h18" />
-        <path d="m7 15 4-4 3 3 5-6" />
-      </>
-    ),
+    body: "Game logs and season stats build up all year, and the recaps mention your kid by name. Two kids? One login covers both.",
+    scenes: PARENT_CLIPS.stats,
   },
   {
+    id: "chat",
     title: "Chat without the chaos",
-    body: "Team announcements you can actually find later, DMs with coaches, mute when you need it. The group chat goes back to carpool.",
-    tone: "bg-violet-500 shadow-violet-200",
-    icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+    body: "Pinned announcements you can find later, polls that count themselves, and mute when you need a quiet night.",
+    scenes: PARENT_CLIPS.chat,
   },
 ]
 
@@ -98,55 +82,28 @@ export default function ForParentsPage() {
                 Create your free account
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-14 sm:py-16">
-        <div className="container mx-auto px-4 sm:px-6">
-          <SectionHeader
-            eyebrow="Watch it work"
-            title="Discover, register, pay. Then just follow the season"
-            accent="hoop"
-            align="center"
-            className="mb-8"
-          />
-          <div className="mx-auto max-w-3xl">
-            <DemoPlayer title="Parent journey walkthrough" scenes={PARENT_SCENES} />
-            <p className="text-ink-400 mt-3 text-center text-sm">
-              Every screen here is the real design system with demo data. Press play or step through.{" "}
-              <Link href="/how-it-works" className="text-play-600 font-semibold">
-                See the club and league journeys &rarr;
-              </Link>
+            <p className="text-ink-400 mt-6 text-sm">
+              Each section below plays a short walkthrough. Real screens, demo data.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-16 sm:py-20">
-        <div className="container mx-auto px-4 sm:px-6">
-          <SectionHeader
-            eyebrow="From signup to final buzzer"
-            title="Everything a sports parent juggles, in one app"
-            accent="hoop"
-            align="center"
-            className="mb-12"
-          />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div key={f.title} className="card-lift border-ink-100 shadow-soft rounded-[24px] border bg-white p-6">
-                <span className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl shadow-lg ${f.tone}`}>
-                  <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    {f.icon}
-                  </svg>
-                </span>
-                <h3 className="text-ink-950 mb-1.5 text-lg font-bold">{f.title}</h3>
-                <p className="text-ink-500 text-sm leading-6">{f.body}</p>
+      {SECTIONS.map((s, idx) => (
+        <section key={s.id} id={s.id} className={`scroll-mt-24 py-14 sm:py-16 ${idx % 2 ? "bg-[#fafafa]" : "bg-white"}`}>
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+              <div className={idx % 2 ? "lg:order-2" : ""}>
+                <h2 className="text-ink-950 mb-3 text-2xl font-bold sm:text-3xl">{s.title}</h2>
+                <p className="text-ink-500 text-[15px] leading-7">{s.body}</p>
               </div>
-            ))}
+              <div>
+                <DemoPlayer title={`${s.title} walkthrough`} scenes={s.scenes} />
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
       <section className="bg-[#fafafa] py-16 sm:py-20">
         <div className="container mx-auto px-4 sm:px-6">

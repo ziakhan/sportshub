@@ -10,19 +10,32 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 
+export type DemoRole = "CLUB" | "PARENT" | "COACH" | "LEAGUE" | "SCOREKEEPER" | "EVERYONE"
+
 export interface DemoScene {
   /** Short chip label, e.g. "Post tryout" */
   label: string
   /** One-sentence narration under the frame */
   caption: string
   screen: ReactNode
+  /** Whose hands are on the keyboard (shown as a chip; enables the role filter) */
+  role?: DemoRole
+}
+
+const ROLE_TONES: Record<DemoRole, string> = {
+  CLUB: "bg-play-50 text-play-700",
+  PARENT: "bg-hoop-50 text-hoop-700",
+  COACH: "bg-violet-50 text-violet-700",
+  LEAGUE: "bg-ink-100 text-ink-700",
+  SCOREKEEPER: "bg-amber-100 text-amber-800",
+  EVERYONE: "bg-emerald-50 text-emerald-700",
 }
 
 const TICK_MS = 50
 const SCENE_MS = 4500
 
 export function DemoPlayer({
-  scenes,
+  scenes: allScenes,
   title,
   autoPlay = true,
 }: {
@@ -35,6 +48,13 @@ export function DemoPlayer({
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const started = useRef(false)
+
+  // Role filter (ONE SEASON): shows pills when scenes carry roles.
+  const [roleFilter, setRoleFilter] = useState<DemoRole | null>(null)
+  const roles = Array.from(new Set(allScenes.map((s) => s.role).filter(Boolean))) as DemoRole[]
+  const scenes = roleFilter
+    ? allScenes.filter((s) => !s.role || s.role === roleFilter || s.role === "EVERYONE")
+    : allScenes
 
   // Autoplay only once the player scrolls into view, and never for
   // reduced-motion users — they drive it with the controls instead.
@@ -104,6 +124,46 @@ export function DemoPlayer({
       aria-label={title}
       className="border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white"
     >
+      {/* role filter (only when scenes carry roles, i.e. the ONE SEASON tour) */}
+      {roles.length > 1 && (
+        <div className="border-ink-50 flex flex-wrap items-center gap-1.5 border-b px-3 py-2.5">
+          <span className="text-ink-400 mr-1 text-[11px] font-bold uppercase tracking-wider">Show</span>
+          <button
+            type="button"
+            onClick={() => {
+              setRoleFilter(null)
+              setPlaying(false)
+              setI(0)
+              setProgress(0)
+            }}
+            aria-pressed={roleFilter === null}
+            className={`cursor-pointer rounded-full px-3 py-1 text-[11.5px] font-bold transition-colors ${
+              roleFilter === null ? "bg-ink-950 text-white" : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+            }`}
+          >
+            The whole season
+          </button>
+          {roles.map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => {
+                setRoleFilter(r)
+                setPlaying(false)
+                setI(0)
+                setProgress(0)
+              }}
+              aria-pressed={roleFilter === r}
+              className={`cursor-pointer rounded-full px-3 py-1 text-[11.5px] font-bold transition-colors ${
+                roleFilter === r ? "bg-ink-950 text-white" : ROLE_TONES[r] + " hover:opacity-80"
+              }`}
+            >
+              {r.charAt(0) + r.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* step chips — active chip auto-scrolls into view; edge fades signal
           there are more steps than fit (owner 2026-07-18: hidden pills were
           undiscoverable) */}
@@ -146,8 +206,8 @@ export function DemoPlayer({
       </div>
 
       {/* stage */}
-      <div className="bg-ink-50/60 flex min-h-[430px] items-center justify-center overflow-hidden px-4 py-8 sm:px-8">
-        <div key={i} className="demo-scene-enter w-full max-w-xl">
+      <div className="bg-ink-50/60 flex min-h-[430px] items-center justify-center overflow-hidden px-3 py-7 sm:px-8">
+        <div key={`${roleFilter ?? "all"}-${i}`} className="demo-scene-enter w-full max-w-2xl">
           {scene.screen}
         </div>
       </div>
@@ -197,6 +257,11 @@ export function DemoPlayer({
           </svg>
         </button>
         <p aria-live="polite" className="text-ink-600 min-w-0 flex-1 text-sm font-medium leading-snug">
+          {scene.role ? (
+            <span className={`mr-1.5 inline-block rounded-full px-2 py-0.5 align-middle text-[10px] font-black uppercase tracking-wide ${ROLE_TONES[scene.role]}`}>
+              {scene.role}
+            </span>
+          ) : null}
           {scene.caption}
         </p>
         <span className="text-ink-300 flex-none text-xs font-bold tabular-nums">
@@ -223,6 +288,11 @@ export function DemoPlayer({
         /* payoffs that land after the press (ticks, "sent" chips) */
         .demo-late { opacity: 0; animation: demoTickIn 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
         @keyframes demoTickIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+        /* value flips (score changing after a console press) */
+        .demo-swap-old { animation: demoHide 0.2s ease 1.25s forwards; }
+        .demo-swap-new { opacity: 0; animation: demoTickIn 0.3s cubic-bezier(0.2, 1.4, 0.4, 1) 1.35s forwards; color: #059669; }
+        @keyframes demoHide { to { opacity: 0; visibility: hidden; } }
 
         @media (prefers-reduced-motion: reduce) {
           .demo-scene-enter, .demo-cascade > *, .demo-late { animation: none; opacity: 1; }

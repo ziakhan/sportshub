@@ -144,3 +144,80 @@ export function PlayerRow({
     </Row>
   )
 }
+
+/** Phone frame for family-side scenes. Mirrors the app shell: navy bar, brand tile. */
+export function Phone({ title, children, badge }: { title: string; children: ReactNode; badge?: string }) {
+  return (
+    <div className="border-ink-200 mx-auto w-full max-w-[310px] overflow-hidden rounded-[26px] border bg-white shadow-xl">
+      <div className="flex items-center justify-between bg-[#0b1628] px-4 pb-2 pt-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-5 w-5 items-center justify-center rounded-md bg-[#1e2d4d] text-[9px] font-black text-white">
+            S
+            <span className="bg-hoop-500 absolute -right-0.5 -top-0.5 flex h-2 w-2 items-center justify-center rounded-[2px] text-[5px]">1</span>
+          </span>
+          <span className="text-[11px] font-bold text-white">SportsHub</span>
+        </div>
+        <span className="text-[10px] font-semibold text-white/60">9:41</span>
+      </div>
+      <div className="border-ink-50 flex items-center justify-between border-b px-3 py-2">
+        <span className="text-ink-950 truncate text-[13px] font-bold">{title}</span>
+        {badge ? (
+          <span className="bg-play-50 text-play-700 flex-none rounded-full px-2 py-0.5 text-[10px] font-bold">{badge}</span>
+        ) : null}
+      </div>
+      <div className="p-3">{children}</div>
+    </div>
+  )
+}
+
+/** Side-by-side stage: two screens, one moment. Stacks on phones. */
+export function Split({
+  left,
+  right,
+  leftLabel,
+  rightLabel,
+}: {
+  left: ReactNode
+  right: ReactNode
+  leftLabel: string
+  rightLabel: string
+}) {
+  return (
+    <div className="grid w-full items-start gap-4 sm:grid-cols-2">
+      <div>
+        <div className="text-ink-400 mb-1.5 text-center text-[10.5px] font-black uppercase tracking-[0.14em]">{leftLabel}</div>
+        {left}
+      </div>
+      <div>
+        <div className="text-ink-400 mb-1.5 text-center text-[10.5px] font-black uppercase tracking-[0.14em]">{rightLabel}</div>
+        {right}
+      </div>
+    </div>
+  )
+}
+
+/** Value that flips after the press beat: shows `from`, then swaps to `to`. */
+export function Swap({ from, to, className = "" }: { from: ReactNode; to: ReactNode; className?: string }) {
+  return (
+    <span className={`relative inline-grid ${className}`}>
+      <span className="demo-swap-old [grid-area:1/1]">{from}</span>
+      <span className="demo-swap-new [grid-area:1/1]">{to}</span>
+    </span>
+  )
+}
+
+/** Chat bubble for team-comms scenes. */
+export function Bubble({ who, children, mine, pinned }: { who?: string; children: ReactNode; mine?: boolean; pinned?: boolean }) {
+  return (
+    <div className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[85%] rounded-2xl px-3 py-2 text-[12.5px] leading-snug ${
+          mine ? "bg-play-600 text-white" : "bg-ink-50 text-ink-950"
+        }`}
+      >
+        {who ? <div className={`text-[10.5px] font-bold ${mine ? "text-play-100" : "text-play-700"}`}>{who}{pinned ? " · 📌 pinned" : ""}</div> : null}
+        {children}
+      </div>
+    </div>
+  )
+}
