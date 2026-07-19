@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { PhoneShot } from "@/components/marketing/shots"
 import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
@@ -121,6 +122,27 @@ export default function ForParentsPage() {
                 <p className="text-ink-500 text-sm leading-6">{f.body}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      <section className="bg-[#fafafa] py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+              This is the real app on a real phone
+            </h2>
+            <p className="text-ink-500 mx-auto max-w-xl text-base leading-7">
+              Actual screens from a parent&apos;s account, captured at true phone size.
+            </p>
+          </div>
+          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+            <PhoneShot src="/shots/phone-home.png" alt="Home" caption="Your home: your kids, your games" />
+            <PhoneShot src="/shots/phone-game.png" alt="Live game" caption="Follow the game live" />
+            <PhoneShot src="/shots/phone-calendar.png" alt="Calendar" caption="One calendar, RSVP built in" />
+            <PhoneShot src="/shots/phone-chat.png" alt="Chat" caption="Team chat without the chaos" />
+            <PhoneShot src="/shots/phone-kids.png" alt="My kids" caption="Every kid, one login" />
           </div>
         </div>
       </section>

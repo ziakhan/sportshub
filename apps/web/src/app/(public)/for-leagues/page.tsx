@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { BrowserShot } from "@/components/marketing/shots"
 import { SectionHeader } from "@/components/ui"
 
 export const metadata = {
@@ -129,6 +130,27 @@ export default function ForLeaguesPage() {
                 <p className="text-ink-500 text-sm leading-6">{f.body}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      <section className="bg-[#fafafa] py-16 sm:py-20">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="mb-10 text-center">
+            <h2 className="text-ink-950 mb-3 text-3xl font-bold sm:text-4xl">
+              This is the real product
+            </h2>
+            <p className="text-ink-500 mx-auto max-w-xl text-base leading-7">
+              Actual screens from a league running on the platform, including a live game being
+              scored in real time.
+            </p>
+          </div>
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">
+            <BrowserShot src="/shots/game-page.png" alt="Live game page" caption="A live game: score, linescore and leaders updating as the table scores" />
+            <BrowserShot src="/shots/public-scores.png" alt="Scores hub" caption="The scores hub your families check every weekend" />
+            <BrowserShot src="/shots/public-news.png" alt="League news with auto recaps" caption="News and recaps, written automatically after every scored game" />
+            <BrowserShot src="/shots/public-leagues.png" alt="League pages" caption="Public league pages: standings, schedules, teams" />
           </div>
         </div>
       </section>
