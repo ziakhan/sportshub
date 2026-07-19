@@ -4,10 +4,10 @@ import { DemoPlayer } from "@/components/demo/demo-player"
 import { CLUB_SCENES } from "@/components/demo/scenes-club"
 
 export const metadata = {
-  title: "For Clubs — Registration, Payments & Live Scoring for Youth Basketball",
+  title: "For Clubs | Registration, Payments & Live Scoring for Youth Basketball",
   alternates: { canonical: "/for-clubs" },
   description:
-    "Tryouts, rosters, offers, payments, live scoring and a public presence families love — one platform for your whole club.",
+    "Tryouts, rosters, offers, payments, live scoring and a public presence families love. One platform for your whole club.",
 }
 
 const FEATURES = [
@@ -19,19 +19,19 @@ const FEATURES = [
   },
   {
     title: "Payments built in",
-    body: "Online payments, cash and e-transfer bookkeeping, installments, refunds — every dollar tracked against what's owed.",
+    body: "Online payments, cash and e-transfer bookkeeping, installments, refunds. Every dollar tracked against what's owed.",
     tone: "bg-court-600 shadow-court-200",
     icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
   },
   {
     title: "Live scoring & stats",
-    body: "Score games courtside from any phone. Box scores, play-by-play, official scoresheets, and season stats — automatic.",
+    body: "Score games courtside from any phone. Box scores, play-by-play, official scoresheets, and season stats, all automatic.",
     tone: "bg-play-600 shadow-play-200",
     icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
   },
   {
     title: "A public face families love",
-    body: "Club and team pages, game recaps written automatically, stat leaders, and news — parents come back between games.",
+    body: "Club and team pages, game recaps written automatically, stat leaders, and news. Parents come back between games.",
     tone: "bg-gold-500 shadow-gold-200",
     icon: (
       <>
@@ -42,7 +42,7 @@ const FEATURES = [
   },
   {
     title: "Rosters & communication",
-    body: "Age-group teams, staff assignments, jersey numbers, announcements and notifications — no more spreadsheet chaos.",
+    body: "Age-group teams, staff assignments, jersey numbers, announcements and notifications. No more spreadsheet chaos.",
     tone: "bg-sky-500 shadow-sky-200",
     icon: (
       <>
@@ -82,7 +82,7 @@ export default function ForClubsPage() {
             </h1>
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8">
               Tryouts, rosters, offers, payments, live scoring, and a public presence that keeps
-              families engaged all season — without the spreadsheets, e-transfer chasing, and five
+              families engaged all season, without the spreadsheets, e-transfer chasing, and five
               different apps.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -115,7 +115,7 @@ export default function ForClubsPage() {
           <div className="mx-auto max-w-3xl">
             <DemoPlayer title="Club journey walkthrough" scenes={CLUB_SCENES} />
             <p className="text-ink-400 mt-3 text-center text-sm">
-              Every screen is the live design system with demo data — press play or step through.{" "}
+              Every screen here is the real design system with demo data. Press play or step through.{" "}
               <Link href="/how-it-works" className="text-play-600 font-semibold">
                 See the parent and league journeys &rarr;
               </Link>
@@ -154,7 +154,7 @@ export default function ForClubsPage() {
           <div className="from-play-600 via-play-700 to-ink-950 rounded-[34px] bg-gradient-to-br px-8 py-12 text-white sm:px-12">
             <div className="max-w-3xl">
               <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-                Claim your club or start fresh — free.
+                Claim your club or start fresh. Free.
               </h2>
               <p className="text-play-100 mb-8 max-w-2xl leading-7">
                 Nearly 200 Ontario clubs already have a page waiting to be claimed. Create your

@@ -4,16 +4,16 @@ import { DemoPlayer } from "@/components/demo/demo-player"
 import { PARENT_SCENES } from "@/components/demo/scenes-parent"
 
 export const metadata = {
-  title: "For Parents & Players — One App for the Whole Season",
+  title: "For Parents & Players | One App for the Whole Season",
   alternates: { canonical: "/for-parents" },
   description:
-    "Find programs, register and pay in minutes, RSVP from one calendar, follow games live, and track your kid's season — one login for every kid and every team.",
+    "Find programs, register and pay in minutes, RSVP from one calendar, follow games live, and track your kid's season. One login for every kid and every team.",
 }
 
 const FEATURES = [
   {
     title: "Find the right program",
-    body: "Tryouts, camps, and house leagues near you with real details — dates, fees, age groups — not a screenshot in a Facebook group.",
+    body: "Tryouts, camps, and house leagues near you with real details: dates, fees, age groups. Not a screenshot in a Facebook group.",
     tone: "bg-hoop-500 shadow-hoop-200",
     icon: (
       <>
@@ -24,13 +24,13 @@ const FEATURES = [
   },
   {
     title: "Register & pay in minutes",
-    body: "Sign up online, pay by card or installments, keep every receipt — no e-transfer to a number you got in a group chat.",
+    body: "Sign up online, pay by card or installments, keep every receipt. No e-transfer to a number you got in a group chat.",
     tone: "bg-court-600 shadow-court-200",
     icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
   },
   {
     title: "One calendar that's always right",
-    body: "Practices, games, and events with RSVP buttons — synced to your phone's calendar. When something moves, it moves everywhere.",
+    body: "Practices, games, and events with RSVP buttons, synced to your phone's calendar. When something moves, it moves everywhere.",
     tone: "bg-play-600 shadow-play-200",
     icon: (
       <>
@@ -58,7 +58,7 @@ const FEATURES = [
   },
   {
     title: "Chat without the chaos",
-    body: "Team announcements you can actually find later, DMs with coaches, mute when you need it — the group chat goes back to carpool.",
+    body: "Team announcements you can actually find later, DMs with coaches, mute when you need it. The group chat goes back to carpool.",
     tone: "bg-violet-500 shadow-violet-200",
     icon: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
   },
@@ -82,7 +82,7 @@ export default function ForParentsPage() {
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8">
               Find a program, register and pay in minutes, RSVP from one calendar, and follow the
               game live when you can&apos;t be in the gym. One login for every kid, every team,
-              every season — free for families.
+              every season. Free for families.
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
@@ -106,7 +106,7 @@ export default function ForParentsPage() {
         <div className="container mx-auto px-4 sm:px-6">
           <SectionHeader
             eyebrow="Watch it work"
-            title="Discover, register, pay — then just follow the season"
+            title="Discover, register, pay. Then just follow the season"
             accent="hoop"
             align="center"
             className="mb-8"
@@ -114,7 +114,7 @@ export default function ForParentsPage() {
           <div className="mx-auto max-w-3xl">
             <DemoPlayer title="Parent journey walkthrough" scenes={PARENT_SCENES} />
             <p className="text-ink-400 mt-3 text-center text-sm">
-              Every screen is the live design system with demo data — press play or step through.{" "}
+              Every screen here is the real design system with demo data. Press play or step through.{" "}
               <Link href="/how-it-works" className="text-play-600 font-semibold">
                 See the club and league journeys &rarr;
               </Link>

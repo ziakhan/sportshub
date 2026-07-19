@@ -6,10 +6,10 @@ import { CLUB_SCENES } from "@/components/demo/scenes-club"
 import { LEAGUE_SCENES } from "@/components/demo/scenes-league"
 
 export const metadata = {
-  title: "How It Works — From First Tryout to the Championship",
+  title: "How It Works | From First Tryout to the Championship",
   alternates: { canonical: "/how-it-works" },
   description:
-    "Watch the whole platform work: families find and pay for tryouts, clubs run offers and rosters, leagues schedule and score a full season — step by step.",
+    "Watch the whole platform work: families find and pay for tryouts, clubs run offers and rosters, leagues schedule and score a full season, step by step.",
 }
 
 export default function HowItWorksPage() {
@@ -28,7 +28,7 @@ export default function HowItWorksPage() {
               </span>
             </h1>
             <p className="text-ink-500 mx-auto mb-8 max-w-2xl text-lg leading-8">
-              These aren&apos;t videos — every screen below is the real design system with demo
+              These are not videos. Every screen below is the real design system running demo
               data. Press play, pause anywhere, or jump to any step.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -50,7 +50,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto px-4 sm:px-6">
           <SectionHeader
             eyebrow="For parents & players"
-            title="Discover, register, pay — then just follow the season"
+            title="Discover, register, pay. Then just follow the season"
             accent="hoop"
             align="center"
             className="mb-8"
@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
         <div className="container mx-auto px-4 sm:px-6">
           <SectionHeader
             eyebrow="For leagues"
-            title="Season, schedule, referees, standings — end to end"
+            title="Season, schedule, referees, standings. End to end"
             accent="court"
             align="center"
             className="mb-8"
@@ -97,7 +97,7 @@ export default function HowItWorksPage() {
             <div className="max-w-3xl">
               <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Now run it for real.</h2>
               <p className="text-play-100 mb-8 max-w-2xl leading-7">
-                Everything you just watched is live today — claim your club, publish a tryout, or
+                Everything you just watched is live today. Claim your club, publish a tryout, or
                 open your league&apos;s next season.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row">
