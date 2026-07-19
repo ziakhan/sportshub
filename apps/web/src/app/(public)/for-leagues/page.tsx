@@ -146,7 +146,7 @@ export default function ForLeaguesPage() {
               scored in real time.
             </p>
           </div>
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10">
             <BrowserShot src="/shots/game-page.png" alt="Live game page" caption="A live game: score, linescore and leaders updating as the table scores" />
             <BrowserShot src="/shots/public-scores.png" alt="Scores hub" caption="The scores hub your families check every weekend" />
             <BrowserShot src="/shots/public-news.png" alt="League news with auto recaps" caption="News and recaps, written automatically after every scored game" />

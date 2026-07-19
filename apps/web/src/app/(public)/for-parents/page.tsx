@@ -137,7 +137,7 @@ export default function ForParentsPage() {
               Actual screens from a parent&apos;s account, captured at true phone size.
             </p>
           </div>
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <PhoneShot src="/shots/phone-home.png" alt="Home" caption="Your home: your kids, your games" />
             <PhoneShot src="/shots/phone-game.png" alt="Live game" caption="Follow the game live" />
             <PhoneShot src="/shots/phone-calendar.png" alt="Calendar" caption="One calendar, RSVP built in" />
