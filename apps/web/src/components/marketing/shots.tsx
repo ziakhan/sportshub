@@ -19,7 +19,7 @@ export function BrowserShot({ src, alt, caption }: { src: string; alt: string; c
         </div>
         <Image src={src} alt={alt} width={1440} height={900} className="h-auto w-full" />
       </a>
-      <figcaption className="text-ink-500 mt-2 text-center text-[13px] font-medium">{caption} · tap to zoom</figcaption>
+      <figcaption className="text-ink-500 mt-2 text-center text-[13px] font-medium">{caption} Tap to zoom.</figcaption>
     </figure>
   )
 }

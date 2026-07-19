@@ -147,10 +147,10 @@ export default function ForLeaguesPage() {
             </p>
           </div>
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-10">
-            <BrowserShot src="/shots/game-page.png" alt="Live game page" caption="A live game: score, linescore and leaders updating as the table scores" />
-            <BrowserShot src="/shots/public-scores.png" alt="Scores hub" caption="The scores hub your families check every weekend" />
-            <BrowserShot src="/shots/public-news.png" alt="League news with auto recaps" caption="News and recaps, written automatically after every scored game" />
-            <BrowserShot src="/shots/public-leagues.png" alt="League pages" caption="Public league pages: standings, schedules, teams" />
+            <BrowserShot src="/shots/game-page.png" alt="Live game page" caption="A real game page. Score, quarter-by-quarter linescore and leaders, updating live while the table scores." />
+            <BrowserShot src="/shots/public-scores.png" alt="Scores hub" caption="The league scores hub. Families check this every weekend instead of asking anyone for results." />
+            <BrowserShot src="/shots/public-news.png" alt="League news with auto recaps" caption="League news. Recaps are written automatically, minutes after each game is scored." />
+            <BrowserShot src="/shots/public-leagues.png" alt="League pages" caption="Public league pages. Standings, schedules and teams, always current on their own." />
           </div>
         </div>
       </section>
