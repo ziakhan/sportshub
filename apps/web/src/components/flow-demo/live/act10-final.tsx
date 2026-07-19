@@ -17,7 +17,7 @@ import type { LiveScene } from "./engine"
 import { typeIn } from "./helpers"
 
 const TABLE = "Scorer's table"
-const FINAL_TITLE = `${GAME.home} ${GAME.finalHome} — ${GAME.finalAway} ${GAME.away}`
+const FINAL_TITLE = `${GAME.home} ${GAME.finalHome}-${GAME.finalAway} ${GAME.away}`
 
 const Hold = ({ id, children, block }: { id: string; children: React.ReactNode; block?: boolean }) => (
   <span data-live-id={id} className={cn("rounded-xl", block ? "block" : "inline-block")}>
@@ -102,7 +102,7 @@ const review: LiveScene = {
         {!!g("pin") && (
           <div className="live-row-in">
             <p className="text-ink-500 mt-2 text-sm">
-              The assigned referee enters their personal PIN — verified against their account, the
+              The assigned referee enters their personal PIN, verified against their account, the
               strongest form of approval.
             </p>
             <div className="mt-3 flex items-center gap-3">
@@ -133,13 +133,136 @@ const review: LiveScene = {
 }
 
 /* F2 — The official scoresheet, one page, print-ready */
-const SHEET_ROWS: [number, string, string, string, string, number, number, number][] = [
-  [23, "Jayden Thompson", "☒☒☐☐☐", "2 3 ●", "2 2 3 ●●", 6, 3, 21],
-  [7, "Marcus Chen", "☒☐☐☐☐", "2 ●●", "2 2", 2, 5, 11],
-  [11, "Malik Osei", "☒☒☒☐☐", "2 2", "2 ●", 8, 1, 9],
-  [4, "Ethan Patel", "☒☒☐☐☐", "2", "2 ●●", 1, 2, 6],
-  [15, "Owen Campbell", "☒☒☒☒☐", "2 ●", "2", 4, 0, 5],
+type SheetRow = [number, string, number, string, string, string, string, number, number, number]
+// jersey, name, fouls, Q1..Q4 marks, REB, AST, PTS
+const HOME_SHEET: SheetRow[] = [
+  [23, "Jayden Thompson", 2, "3 2", "2 2 ●●", "2 3", "3 2", 6, 3, 21],
+  [7, "Marcus Chen", 1, "2 ●", "2", "2 ●●", "2", 2, 5, 11],
+  [11, "Malik Osei", 3, "2", "2 ●", "2", "2", 8, 1, 9],
+  [4, "Ethan Patel", 2, "2", "", "2", "2", 1, 2, 6],
+  [15, "Owen Campbell", 4, "2", "3", "", "", 4, 0, 5],
+  [21, "Isaiah Grant", 1, "", "", "2", "2", 5, 0, 4],
+  [9, "Andre Baptiste", 0, "", "", "", "3", 1, 1, 3],
+  [33, "Kai Nguyen", 1, "2", "", "", "", 2, 0, 2],
+  [12, "Darius Brown", 0, "", "", "", "●", 0, 1, 1],
+  [5, "Amir Khan", 1, "", "", "", "", 1, 0, 0],
+  [30, "Cole Anderson", 2, "", "miss2", "", "", 2, 0, 0],
 ]
+const AWAY_SHEET: SheetRow[] = [
+  [10, "Noah Sinclair", 3, "3 2", "2 3", "2 2", "2 2", 5, 2, 18],
+  [3, "Lucas Kim", 2, "2 2", "3", "2 ●", "2", 3, 4, 12],
+  [24, "Ibrahim Hassan", 1, "2", "3", "●", "3", 7, 1, 9],
+  [8, "Felix Wong", 2, "2", "2", "2", "2", 2, 2, 8],
+  [14, "Santiago Silva", 4, "2", "2", "", "2", 4, 0, 6],
+  [5, "Theo Boateng", 1, "", "", "3", "", 2, 1, 3],
+  [30, "Aiden Mensah", 2, "", "●", "", "●", 1, 1, 2],
+  [21, "Josiah Clarke", 1, "", "", "", "", 0, 0, 0],
+  [17, "Zion Walker", 0, "", "", "", "", 0, 0, 0],
+]
+
+function foulBoxes(n: number) {
+  return "☒".repeat(n) + "☐".repeat(5 - n)
+}
+
+function Mark({ m }: { m: string }) {
+  if (m === "miss2")
+    return (
+      <span className="text-ink-400">
+        <span className="line-through">2</span>
+      </span>
+    )
+  if (!m) return <span className="text-ink-300">·</span>
+  return <span className="font-semibold">{m}</span>
+}
+
+function SheetTable({
+  team,
+  rows,
+  dnp,
+  absent,
+  totals,
+  extras,
+}: {
+  team: string
+  rows: SheetRow[]
+  dnp?: [number, string]
+  absent?: [number, string]
+  totals: [number, string, string, string, string, number, number, number]
+  extras: string
+}) {
+  return (
+    <table className="mt-4 w-full text-[11px] leading-tight">
+      <thead>
+        <tr className="border-b-2 border-black text-left">
+          <th className="w-7 py-1 pr-1 font-bold">#</th>
+          <th className="py-1 pr-2 font-bold">{team}</th>
+          <th className="w-16 px-1.5 py-1 font-bold">Fouls</th>
+          <th className="px-1.5 py-1 font-bold">Q1</th>
+          <th className="px-1.5 py-1 font-bold">Q2</th>
+          <th className="px-1.5 py-1 font-bold">Q3</th>
+          <th className="px-1.5 py-1 font-bold">Q4</th>
+          <th className="w-9 px-1.5 py-1 text-center font-bold">REB</th>
+          <th className="w-9 px-1.5 py-1 text-center font-bold">AST</th>
+          <th className="w-9 px-1.5 py-1 text-center font-bold">PTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(([j, n, f, q1, q2, q3, q4, reb, ast, pts]) => (
+          <tr key={j} className="border-ink-200 border-b">
+            <td className="py-[3px] pr-1 font-bold tabular-nums">{j}</td>
+            <td className="py-[3px] pr-2">{n}</td>
+            <td className="px-1.5 py-[3px] tracking-tight">{foulBoxes(f)}</td>
+            <td className="px-1.5 py-[3px]"><Mark m={q1} /></td>
+            <td className="px-1.5 py-[3px]"><Mark m={q2} /></td>
+            <td className="px-1.5 py-[3px]"><Mark m={q3} /></td>
+            <td className="px-1.5 py-[3px]"><Mark m={q4} /></td>
+            <td className="px-1.5 py-[3px] text-center tabular-nums">{reb}</td>
+            <td className="px-1.5 py-[3px] text-center tabular-nums">{ast}</td>
+            <td className="px-1.5 py-[3px] text-center font-bold tabular-nums">{pts}</td>
+          </tr>
+        ))}
+        {dnp && (
+          <tr className="border-ink-200 border-b">
+            <td className="py-[3px] pr-1 font-bold tabular-nums">{dnp[0]}</td>
+            <td className="py-[3px] pr-2">{dnp[1]}</td>
+            <td colSpan={8} className="text-ink-400 px-1.5 py-[3px]">
+              DNP, did not play
+            </td>
+          </tr>
+        )}
+        {absent && (
+          <tr className="border-ink-200 text-ink-400 border-b">
+            <td className="py-[3px] pr-1 font-bold tabular-nums">{absent[0]}</td>
+            <td className="py-[3px] pr-2">{absent[1]}</td>
+            <td colSpan={8} className="px-1.5 py-[3px]">
+              Absent
+            </td>
+          </tr>
+        )}
+        <tr className="border-t-2 border-black">
+          <td colSpan={2} className="py-1 pr-2 text-[10px] font-bold uppercase">
+            Totals
+          </td>
+          <td className="px-1.5 py-1 font-bold tabular-nums">{totals[0]}</td>
+          <td className="px-1.5 py-1 font-bold tabular-nums">{totals[1]}</td>
+          <td className="px-1.5 py-1 font-bold tabular-nums">{totals[2]}</td>
+          <td className="px-1.5 py-1 font-bold tabular-nums">{totals[3]}</td>
+          <td className="px-1.5 py-1 font-bold tabular-nums">{totals[4]}</td>
+          <td className="px-1.5 py-1 text-center font-bold tabular-nums">{totals[5]}</td>
+          <td className="px-1.5 py-1 text-center font-bold tabular-nums">{totals[6]}</td>
+          <td className="px-1.5 py-1 text-center font-bold tabular-nums">{totals[7]}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={10} className="text-ink-600 py-1 text-[10px]">
+            {extras}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  )
+}
 
 const scoresheet: LiveScene = {
   id: "l-scoresheet",
@@ -149,18 +272,20 @@ const scoresheet: LiveScene = {
   frame: "desktop",
   url: "/scoresheet/g10-w1-force-huskies",
   caption:
-    "The official scoresheet: one page, landscape, every mark in game order, the referee's PIN-verified sign-off stamped on it. Download it as a PDF or print it.",
+    "The official scoresheet: both full rosters, every mark quarter by quarter, fouls, DNPs and absences, and the referee's PIN-verified sign-off. Download it as a PDF or print it.",
   script: [
     { wait: 700 },
-    { zoom: "sigRow", scale: 1.35 },
+    { zoom: "homeTable", scale: 1.15 },
+    { wait: 1600 },
+    { zoom: "sigRow", scale: 1.3 },
     { wait: 1400 },
     { zoom: null },
     { hold: "pdfBtn" },
     { confirm: "PDF downloaded" },
   ],
   render: () => (
-    <div className="bg-ink-50 min-h-[560px] px-10 py-8">
-      <div className="mx-auto max-w-3xl border-2 border-black bg-white p-5">
+    <div className="bg-ink-50 min-h-[560px] px-8 py-8">
+      <div className="mx-auto max-w-5xl border-2 border-black bg-white p-6">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-ink-950 text-lg font-bold uppercase">Official Scoresheet</p>
@@ -173,7 +298,7 @@ const scoresheet: LiveScene = {
             <p className="text-ink-600">Pan Am Sports Centre · Court 1</p>
           </div>
         </div>
-        <div className="mt-4 flex items-center justify-center gap-6">
+        <div className="mt-4 flex items-center justify-center gap-8">
           <div className="text-center">
             <p className="text-ink-900 text-sm font-bold">{GAME.home.slice(0, 12)}</p>
             <p className="text-ink-950 text-4xl font-bold tabular-nums">{GAME.finalHome}</p>
@@ -182,7 +307,7 @@ const scoresheet: LiveScene = {
             <thead>
               <tr>
                 {["", "Q1", "Q2", "Q3", "Q4", "F"].map((h) => (
-                  <th key={h} className="border border-black px-2 py-1 font-bold">
+                  <th key={h} className="border border-black px-2.5 py-1 font-bold">
                     {h}
                   </th>
                 ))}
@@ -190,17 +315,17 @@ const scoresheet: LiveScene = {
             </thead>
             <tbody>
               <tr>
-                <td className="border border-black px-2 py-1 font-bold">{GAME.homeShort}</td>
+                <td className="border border-black px-2.5 py-1 font-bold">{GAME.homeShort}</td>
                 {[...GAME.lines.home, GAME.finalHome].map((n, i) => (
-                  <td key={i} className="border border-black px-2 py-1 tabular-nums">
+                  <td key={i} className="border border-black px-2.5 py-1 tabular-nums">
                     {n}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="border border-black px-2 py-1 font-bold">{GAME.awayShort}</td>
+                <td className="border border-black px-2.5 py-1 font-bold">{GAME.awayShort}</td>
                 {[...GAME.lines.away, GAME.finalAway].map((n, i) => (
-                  <td key={i} className="border border-black px-2 py-1 tabular-nums">
+                  <td key={i} className="border border-black px-2.5 py-1 tabular-nums">
                     {n}
                   </td>
                 ))}
@@ -212,59 +337,35 @@ const scoresheet: LiveScene = {
             <p className="text-ink-950 text-4xl font-bold tabular-nums">{GAME.finalAway}</p>
           </div>
         </div>
-        <table className="mt-4 w-full text-xs">
-          <thead>
-            <tr className="border-b border-black text-left">
-              <th className="py-1 pr-2 font-bold" colSpan={2}>
-                {GAME.home}
-              </th>
-              <th className="px-2 py-1 font-bold">Fouls</th>
-              <th className="px-2 py-1 font-bold">Q1</th>
-              <th className="px-2 py-1 font-bold">Q4</th>
-              <th className="px-2 py-1 text-center font-bold">REB</th>
-              <th className="px-2 py-1 text-center font-bold">AST</th>
-              <th className="px-2 py-1 text-center font-bold">PTS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SHEET_ROWS.map(([j, n, f, q1, q4, reb, ast, pts]) => (
-              <tr key={j} className="border-ink-200 border-b">
-                <td className="py-1 pr-1 font-bold tabular-nums">{j}</td>
-                <td className="py-1 pr-2">{n}</td>
-                <td className="px-2 py-1">{f}</td>
-                <td className="px-2 py-1 font-semibold">{q1}</td>
-                <td className="px-2 py-1 font-semibold">{q4}</td>
-                <td className="px-2 py-1 text-center tabular-nums">{reb}</td>
-                <td className="px-2 py-1 text-center tabular-nums">{ast}</td>
-                <td className="px-2 py-1 text-center font-bold tabular-nums">{pts}</td>
-              </tr>
-            ))}
-            <tr>
-              <td colSpan={2} className="py-1 pr-2 text-[10px] font-bold uppercase">
-                Totals (+ 7 bench)
-              </td>
-              <td className="px-2 py-1">14</td>
-              <td className="px-2 py-1 font-semibold">16</td>
-              <td className="px-2 py-1 font-semibold">17</td>
-              <td className="px-2 py-1 text-center font-bold">31</td>
-              <td className="px-2 py-1 text-center font-bold">14</td>
-              <td className="px-2 py-1 text-center font-bold">62</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="text-ink-500 mt-2 text-[10px]">
+        <div data-live-id="homeTable">
+          <SheetTable
+            team={GAME.home}
+            rows={HOME_SHEET}
+            dnp={[26, "Theo Martinez"]}
+            absent={[18, "Xavier Reid"]}
+            totals={[17, "16", "14", "15", "17", 32, 13, 62]}
+            extras="Team: 4 STL · 1 BLK · 7 TO"
+          />
+        </div>
+        <SheetTable
+          team={GAME.away}
+          rows={AWAY_SHEET}
+          totals={[16, "15", "16", "13", "14", 24, 11, 58]}
+          extras="Team: 3 STL · 2 BLK · 9 TO"
+        />
+        <p className="text-ink-500 mt-3 text-[10px]">
           Scoring marks per quarter, in game order: <strong>2</strong>/<strong>3</strong> = made
           field goal · <span className="line-through">2</span> = missed (where tracked) · ● made
           free throw · ○ missed free throw. Fouls: ☒ personal · Ⓣ technical.
         </p>
-        <div data-live-id="sigRow" className="mt-4 grid grid-cols-2 gap-6 text-xs">
+        <div data-live-id="sigRow" className="mt-5 grid grid-cols-2 gap-8 text-xs">
           <div className="border-t border-black pt-1">
-            Referee: Mike Ferreira <strong>✓ PIN-verified</strong> — signed 5/30/2026, 3:41 PM
+            Referee: Mike Ferreira <strong>✓ PIN-verified</strong>, signed 5/30/2026, 3:41 PM
           </div>
-          <div className="border-t border-black pt-1">Scorekeeper — finalized 5/30/2026, 3:41 PM</div>
+          <div className="border-t border-black pt-1">Scorekeeper, finalized 5/30/2026, 3:41 PM</div>
         </div>
       </div>
-      <div className="mx-auto mt-4 flex max-w-3xl justify-center gap-3">
+      <div className="mx-auto mt-4 flex max-w-5xl justify-center gap-3">
         <Hold id="pdfBtn">
           <Button size="sm">Download PDF (landscape)</Button>
         </Hold>

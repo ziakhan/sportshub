@@ -56,8 +56,8 @@ const offerLands: LiveScene = {
             <p className="text-ink-400 mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em]">
               Your package choices:
             </p>
-            <p className="text-ink-700 text-xs">New Player — {fmt(3000)} · Uniform</p>
-            <p className="text-ink-700 mt-1 text-xs">Returning Player — {fmt(2700)} · Uniform</p>
+            <p className="text-ink-700 text-xs">New Player · {fmt(3000)} · Uniform</p>
+            <p className="text-ink-700 mt-1 text-xs">Returning Player · {fmt(2700)} · Uniform</p>
           </div>
           <p className="text-ink-600 mt-3 text-xs italic">&quot;{OFFER.message}&quot;</p>
           <p className="text-ink-400 mt-2 text-xs">
@@ -120,10 +120,10 @@ const acceptOffer: LiveScene = {
                 id="pkgNew"
                 boxed
                 on={!!g("pkg")}
-                label={<span className="font-bold">New Player — {fmt(3000)}</span>}
+                label={<span className="font-bold">New Player · {fmt(3000)}</span>}
                 sub="Includes Uniform"
               />
-              <LiveRadio boxed label={<span className="font-bold">Returning Player — {fmt(2700)}</span>} sub="Includes Uniform" />
+              <LiveRadio boxed label={<span className="font-bold">Returning Player · {fmt(2700)}</span>} sub="Includes Uniform" />
             </div>
           </Field>
           <Field label="Uniform Size" required>
@@ -149,13 +149,13 @@ const acceptOffer: LiveScene = {
             </div>
           </Field>
           <div className="space-y-2">
-            <LiveRadio label={<span>Pay in full — <strong>{fmt(3000)}</strong> now</span>} />
+            <LiveRadio label={<span>Pay in full: <strong>{fmt(3000)}</strong> now</span>} />
             <LiveRadio
               id="planRadio"
               on={!!g("plan")}
               label={
                 <span>
-                  Payment plan — <strong>{fmt(750)}</strong> deposit now, then{" "}
+                  Payment plan: <strong>{fmt(750)}</strong> deposit now, then{" "}
                   {OFFER.installmentDates.map((d) => `${fmt(750)} on ${d}`).join(", ")}
                 </span>
               }

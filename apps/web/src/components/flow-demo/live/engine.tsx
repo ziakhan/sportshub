@@ -48,6 +48,14 @@ const PERSONA_TONES: Record<string, string> = {
   referee: "bg-gold-50 text-gold-600 ring-gold-100",
 }
 
+/** Persona-colored accents so the chrome carries who's acting, not just gray. */
+const PERSONA_ACCENT: Record<string, { bar: string; wash: string }> = {
+  league: { bar: "bg-play-500", wash: "from-play-50/80" },
+  club: { bar: "bg-court-500", wash: "from-court-50/80" },
+  parent: { bar: "bg-hoop-500", wash: "from-hoop-50/80" },
+  referee: { bar: "bg-gold-500", wash: "from-gold-50/80" },
+}
+
 /* ── The player ────────────────────────────────────────────────────────── */
 
 export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScene[] }) {
@@ -73,6 +81,9 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
   const autoRef = useRef(false)
   const holdResolveRef = useRef<(() => void) | null>(null)
   const introResolveRef = useRef<(() => void) | null>(null)
+  const introCardRef = useRef<HTMLDivElement>(null)
+  const stickyCapRef = useRef<HTMLParagraphElement>(null)
+  const zoomScaleRef = useRef(1)
 
   pausedRef.current = paused
   autoRef.current = autoplay
@@ -151,18 +162,25 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     if (!wrap || !stage) return
     if (!id) {
       wrap.style.transform = "none"
+      zoomScaleRef.current = 1
       return
     }
     const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
     if (!target) return
     const r = target.getBoundingClientRect()
     const w = wrap.getBoundingClientRect()
+    // Never zoom a target wider than the stage can show: cap the scale so
+    // no column gets clipped off either edge while it is being filled in.
+    const unscaledW = r.width / zoomScaleRef.current
+    const maxScale = Math.max(1, ((w.width / zoomScaleRef.current) / unscaledW) * 0.97)
+    const z = Math.min(scale, maxScale)
+    zoomScaleRef.current = z
     const tx = w.left + w.width / 2 - (r.left + r.width / 2)
     const ty = w.top + w.height / 2 - (r.top + r.height / 2)
     const originX = r.left - w.left + r.width / 2
     const originY = r.top - w.top + r.height / 2
     wrap.style.transformOrigin = `${originX}px ${originY}px`
-    wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`
+    wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
   }, [])
 
   /* Run the current scene's script. */
@@ -184,7 +202,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       // dismisses it early). Only then does the screen start acting.
       stageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
       setIntro(true)
-      const readMs = Math.min(7000, Math.max(3000, 1400 + scene.caption.length * 34))
+      const readMs = Math.min(9500, Math.max(4200, 1800 + scene.caption.length * 46))
       await Promise.race([
         sleep(readMs, run).catch(() => {}),
         new Promise<void>((resolve) => {
@@ -193,8 +211,27 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       ])
       introResolveRef.current = null
       if (runRef.current !== run) return
+      // The card doesn't vanish: it slides up and shrinks into the pinned
+      // bar, so the viewer sees it's the same text and can keep reading.
+      const card = introCardRef.current
+      const tgt = stickyCapRef.current
+      if (card && tgt) {
+        const c = card.getBoundingClientRect()
+        const t = tgt.getBoundingClientRect()
+        card.style.transition = "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease"
+        card.style.transformOrigin = "top left"
+        card.style.transform = `translate(${t.left - c.left}px, ${t.top - c.top}px) scale(${Math.min(0.92, t.width / c.width)})`
+        card.style.opacity = "0"
+        const back = card.parentElement
+        if (back) {
+          back.style.transition = "background-color 0.55s ease"
+          back.style.backgroundColor = "transparent"
+        }
+        await sleep(560, run)
+      }
+      if (runRef.current !== run) return
       setIntro(false)
-      await sleep(500, run)
+      await sleep(350, run)
       for (const step of scene.script) {
         if (runRef.current !== run) return
         if ("cursor" in step) await moveCursor(step.cursor, run)
@@ -318,7 +355,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
   if (done) {
     return (
       <div className="mx-auto max-w-2xl py-16 text-center" data-demo-player data-live-scene="done">
-        <div className="bg-court-100 text-court-700 live-pop mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full">
+        <div className="from-hoop-500 to-gold-500 live-pop mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-[0_16px_40px_-12px_rgba(226,54,18,0.5)]">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-8 w-8">
             <path d="M5 13l4 4L19 7" />
           </svg>
@@ -366,24 +403,32 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
               className={cn(
                 "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
                 active
-                  ? "bg-ink-900 text-white"
+                  ? "text-[color:var(--brand-on)]"
                   : ai < actIndex
-                    ? "bg-ink-100 text-ink-600 hover:bg-ink-200"
+                    ? "bg-court-50 text-court-700 hover:bg-court-100"
                     : "text-ink-400 hover:bg-ink-100 hover:text-ink-600 bg-white"
               )}
+              style={active ? { backgroundColor: "var(--brand)" } : undefined}
             >
-              {ai + 1}. {a.title}
+              {ai < actIndex ? "✓ " : `${ai + 1}. `}
+              {a.title}
             </button>
           )
         })}
       </div>
 
       {/* Sticky "who's acting, what's happening" bar — never scrolls away */}
-      <div className="border-ink-100 sticky top-[76px] z-30 mb-4 rounded-2xl border bg-white/95 px-4 py-3 shadow-[0_14px_34px_-22px_rgba(15,23,42,0.4)] backdrop-blur">
-        <div className="bg-ink-100 mb-2.5 h-1 overflow-hidden rounded-full">
+      <div
+        className={cn(
+          "border-ink-100 sticky top-[76px] z-30 mb-4 overflow-hidden rounded-2xl border bg-gradient-to-r to-white/95 px-4 py-3 shadow-[0_14px_34px_-22px_rgba(15,23,42,0.4)] backdrop-blur",
+          PERSONA_ACCENT[scene.persona].wash
+        )}
+      >
+        <span className={cn("absolute inset-y-0 left-0 w-1.5", PERSONA_ACCENT[scene.persona].bar)} />
+        <div className="bg-ink-100 mb-2.5 h-1.5 overflow-hidden rounded-full">
           <div
-            className="h-full rounded-full transition-all duration-300"
-            style={{ width: `${((index + 1) / total) * 100}%`, backgroundColor: "var(--brand)" }}
+            className="from-play-600 via-hoop-500 to-gold-500 h-full rounded-full bg-gradient-to-r transition-all duration-300"
+            style={{ width: `${((index + 1) / total) * 100}%` }}
           />
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -395,7 +440,13 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           >
             {scene.personaLabel}
           </span>
-          <p className="text-ink-900 min-w-[240px] flex-1 text-base font-semibold leading-snug">
+          <p
+            ref={stickyCapRef}
+            className={cn(
+              "text-ink-900 min-w-[240px] flex-1 text-base font-semibold leading-snug transition-opacity duration-500",
+              intro ? "opacity-0" : "opacity-100"
+            )}
+          >
             {scene.caption}
           </p>
           <span className="text-ink-400 shrink-0 text-xs font-semibold tabular-nums">
@@ -457,8 +508,9 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
 
         {/* Start gate: read what this is and pick a mode before anything moves */}
         {!started && (
-          <div className="bg-ink-950/55 absolute inset-0 z-40 flex items-center justify-center p-6">
-            <div className="demo-confirm-pop w-full max-w-lg rounded-3xl bg-white p-7 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)]">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-[#1e2d4d]/90 to-[#0b1628]/90 p-6">
+            <div className="demo-confirm-pop relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-7 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)]">
+              <span className="from-play-600 via-hoop-500 to-gold-500 absolute inset-x-0 top-0 h-2 bg-gradient-to-r" />
               <h3 className="text-ink-950 text-2xl font-bold">Watch a season run itself</h3>
               <p className="text-ink-600 mx-auto mt-3 max-w-md text-sm leading-relaxed">
                 Every step works the same way: first you read what is about to happen, then the
@@ -490,10 +542,15 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           </div>
         )}
 
-        {/* Read-first card: the step explains itself before the screen moves */}
+        {/* Read-first card: the step explains itself before the screen moves,
+            then shrinks up into the pinned bar (never two at once) */}
         {started && intro && (
-          <div className="bg-ink-950/25 absolute inset-0 z-30 cursor-pointer p-4 sm:p-6" onClick={dismissIntro}>
-            <div className="demo-confirm-pop border-ink-100 mx-auto w-full max-w-2xl rounded-2xl border bg-white px-6 py-5 shadow-[0_30px_70px_-28px_rgba(15,23,42,0.5)]">
+          <div data-live-intro className="bg-ink-950/25 absolute inset-0 z-30 cursor-pointer p-4 sm:p-6" onClick={dismissIntro}>
+            <div
+              ref={introCardRef}
+              className="demo-confirm-pop border-ink-100 relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border bg-white px-6 py-6 shadow-[0_30px_70px_-28px_rgba(15,23,42,0.5)]"
+            >
+              <span className={cn("absolute inset-x-0 top-0 h-1.5", PERSONA_ACCENT[scene.persona].bar)} />
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] ring-1 ring-inset",
@@ -502,12 +559,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
               >
                 {scene.personaLabel}
               </span>
-              <p className="text-ink-950 mt-2.5 text-lg font-semibold leading-snug">{scene.caption}</p>
-              <p className="text-ink-400 mt-2.5 text-xs font-medium">
-                {autoplay
-                  ? "Playing in a moment. Click to start now."
-                  : "The screen acts this out, then the glowing button continues. Click to start now."}
-              </p>
+              <p className="text-ink-950 mt-3 text-xl font-semibold leading-snug">{scene.caption}</p>
             </div>
           </div>
         )}
@@ -519,10 +571,10 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
             style={{ left: holdHint.x, top: holdHint.y }}
           >
             <div className="demo-confirm-pop">
-              <div className="bg-ink-950 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-[0_10px_24px_-8px_rgba(15,23,42,0.6)]">
+              <div className="bg-hoop-500 rounded-full px-3.5 py-1.5 text-xs font-bold text-white shadow-[0_10px_24px_-8px_rgba(226,54,18,0.55)]">
                 Click to continue
               </div>
-              <div className="bg-ink-950 mx-auto -mt-1 h-2 w-2 rotate-45" />
+              <div className="bg-hoop-500 mx-auto -mt-1 h-2 w-2 rotate-45" />
             </div>
           </div>
         )}
@@ -561,11 +613,9 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           </svg>
           Back
         </button>
-        <p className="text-ink-400 text-xs font-medium">
-          {autoplay
-            ? "Playing on its own. Click the demo to pause."
-            : "Read the step, watch it happen, then click the glowing button to continue."}
-        </p>
+        {autoplay && (
+          <p className="text-ink-400 text-xs font-medium">Playing on its own. Click the demo to pause.</p>
+        )}
       </div>
     </div>
   )

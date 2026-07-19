@@ -169,7 +169,7 @@ export function SceneBulkOffer() {
   return (
     <div className="bg-ink-900/40 px-10 py-8">
       <Card className="mx-auto max-w-3xl">
-        <h3 className="text-ink-950 text-lg font-bold">Send Offers — {TEAM.name}</h3>
+        <h3 className="text-ink-950 text-lg font-bold">Send Offers · {TEAM.name}</h3>
         <p className="text-ink-500 mt-0.5 text-sm">
           Compose the packages once; everyone you tick gets the same offer.
         </p>
@@ -186,11 +186,11 @@ export function SceneBulkOffer() {
           <PackageCard n={2} name="Returning Player" fee={2700} deposit={675} monthly={675} />
         </div>
         <p className="text-ink-400 mt-3 text-xs">
-          The family picks ONE of these when they accept — sizes are only asked for what their
+          The family picks ONE of these when they accept. Sizes are only asked for what their
           chosen package includes.
         </p>
         <div className="mt-4 grid grid-cols-[2fr_1fr] gap-3">
-          <TxtInput value="Congrats! We would love to have you on the Force this summer." placeholder="Congrats — we'd love to have you!" />
+          <TxtInput value="Congrats! We would love to have you on the Force this summer." placeholder="Congrats, we'd love to have you!" />
           <SelectBox value="7 days" />
         </div>
         <div className="mt-5 flex justify-end gap-3">
@@ -226,8 +226,8 @@ export function SceneParentOffer() {
           <p className="text-ink-400 mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em]">
             Your package choices:
           </p>
-          <p className="text-ink-700 text-xs">New Player — {fmt(3000)} · Uniform</p>
-          <p className="text-ink-700 mt-1 text-xs">Returning Player — {fmt(2700)} · Uniform</p>
+          <p className="text-ink-700 text-xs">New Player · {fmt(3000)} · Uniform</p>
+          <p className="text-ink-700 mt-1 text-xs">Returning Player · {fmt(2700)} · Uniform</p>
         </div>
         <p className="text-ink-600 mt-3 text-xs italic">&quot;{OFFER.message}&quot;</p>
         <p className="text-ink-400 mt-2 text-xs">
@@ -260,10 +260,10 @@ export function SceneAcceptOffer() {
           <Field label="Choose your package" required>
             <div className="space-y-2">
               <div className="border-play-300 bg-play-50/50 rounded-xl border p-3">
-                <RadioRow checked label={<span className="font-bold">New Player — {fmt(3000)}</span>} sub="Includes Uniform" />
+                <RadioRow checked label={<span className="font-bold">New Player · {fmt(3000)}</span>} sub="Includes Uniform" />
               </div>
               <div className="border-ink-200 rounded-xl border p-3">
-                <RadioRow label={<span className="font-bold">Returning Player — {fmt(2700)}</span>} sub="Includes Uniform" />
+                <RadioRow label={<span className="font-bold">Returning Player · {fmt(2700)}</span>} sub="Includes Uniform" />
               </div>
             </div>
           </Field>
@@ -283,12 +283,12 @@ export function SceneAcceptOffer() {
             </div>
           </Field>
           <div className="space-y-2">
-            <RadioRow label={<span>Pay in full — <strong>{fmt(3000)}</strong> now</span>} />
+            <RadioRow label={<span>Pay in full: <strong>{fmt(3000)}</strong> now</span>} />
             <RadioRow
               checked
               label={
                 <span>
-                  Payment plan — <strong>{fmt(750)}</strong> deposit now, then{" "}
+                  Payment plan: <strong>{fmt(750)}</strong> deposit now, then{" "}
                   {OFFER.installmentDates.map((d) => `${fmt(750)} on ${d}`).join(", ")}
                 </span>
               }
