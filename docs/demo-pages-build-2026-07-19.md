@@ -224,3 +224,25 @@ for-clubs and for-leagues with act deep-links; parent cut later).
   slices that carry the recap.
 - Verified: 64-step walk clean, zero page errors; scores/news-browse/recap and
   the new hero eyeballed; lint/tsc clean. LOCAL, awaiting push word.
+
+## Deploy record: full-lineage push (2026-07-19)
+
+- Owner ended cherry-picking: "I personally don't care. You can deploy
+  everything to prod." Full wip branch merged into the box lineage as
+  `9a2e0a6` (merge of box `502ec8c` + wip `8465304`; 4 conflicts, all
+  cherry-pick duplicates, resolved to the wip side; merged tree byte-identical
+  to wip). Local wip fast-forwarded to `9a2e0a6`, so box and local histories
+  are now converged.
+- Schema push to the box DB required `--accept-data-loss` for the unique
+  `completionToken` constraint on ClubClaim; table verified EMPTY (0 rows)
+  before accepting. New live tables/fields: ReviewInvite, playoff fields,
+  WithdrawalRequest, ClubClaim v2.
+- This shipped the previously-held overnight work to prod: season reviews,
+  playoff generation, withdrawal approvals, club claiming v2 (live at
+  /claim/[tenantId] -- the demo's Act 1 now matches prod), lib/sms.ts Twilio
+  seam (dark until creds).
+- Live-verified: box HEAD `9a2e0a6`, web+sidecar active, all demo pages 200
+  (/, /demo, /demo/parents, /how-it-works, /for-*), hero ONE pill markup in
+  prod HTML, homepage + demo gate screenshots eyeballed.
+- Still NOT touched by this push: Vercel (origin master, needs env vars) and
+  Neon (schema backlog #24-30 plus these new models). Both are separate calls.
