@@ -2,15 +2,24 @@
 
 /**
  * Parent-cut game day: no scoring console, just the public game page the way
- * a family actually watches it. The box score is built to the real
- * /live/[gameId] structure (linescore, game leaders, full stat columns,
- * starters/bench, team totals) and updates itself cell by cell with the same
- * green flash the product uses. Mirrors docs/demo-inventory/season.md.
+ * a family actually watches it. The page is mirrored from /live/[gameId]
+ * through the shared game-page.tsx pieces (score hero, Game/Stats/Plays tabs,
+ * linescore, two-sided leaders, team-stats bars, box score), and updates
+ * itself cell by cell with the product's green flash.
  */
 
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/components/ui/cn"
-import { GAME, KID, LEAGUE } from "../data"
+import { GAME, KID } from "../data"
+import {
+  BoxRow,
+  BoxScoreCard,
+  GameHero,
+  GameTabs,
+  LeadersCard,
+  LinescoreCard,
+  SectionH3,
+  TeamStatsCard,
+} from "../scenes/game-page"
 import type { LiveScene } from "./engine"
 
 const MARIA = "Maria (parent)"
@@ -21,41 +30,22 @@ const Hold = ({ id, children, block }: { id: string; children: React.ReactNode; 
   </span>
 )
 
-/* Base box rows: state just before the closing run. `d` marks on-floor. */
-interface Row {
-  j: number
-  n: string
-  min: number
-  pts: number
-  reb: number
-  ast: number
-  stl: number
-  blk: number
-  to: number
-  pf: number
-  floor?: boolean
-}
-const HOME_BASE: Row[] = [
-  { j: 23, n: "Jayden T.", min: 26, pts: 18, reb: 6, ast: 3, stl: 1, blk: 0, to: 2, pf: 2, floor: true },
-  { j: 7, n: "Marcus C.", min: 24, pts: 11, reb: 2, ast: 4, stl: 0, blk: 0, to: 1, pf: 1, floor: true },
-  { j: 11, n: "Malik O.", min: 23, pts: 9, reb: 7, ast: 1, stl: 0, blk: 1, to: 1, pf: 3, floor: true },
-  { j: 4, n: "Ethan P.", min: 21, pts: 6, reb: 1, ast: 2, stl: 2, blk: 0, to: 0, pf: 2, floor: true },
-  { j: 15, n: "Owen C.", min: 19, pts: 5, reb: 4, ast: 0, stl: 0, blk: 0, to: 1, pf: 4, floor: true },
-  { j: 21, n: "Isaiah G.", min: 13, pts: 4, reb: 5, ast: 0, stl: 0, blk: 0, to: 0, pf: 1 },
-  { j: 9, n: "Andre B.", min: 11, pts: 3, reb: 1, ast: 1, stl: 1, blk: 0, to: 1, pf: 0 },
-  { j: 33, n: "Kai N.", min: 10, pts: 2, reb: 2, ast: 0, stl: 0, blk: 0, to: 0, pf: 1 },
-  { j: 12, n: "Darius B.", min: 9, pts: 1, reb: 0, ast: 1, stl: 0, blk: 0, to: 0, pf: 0 },
-  { j: 5, n: "Amir K.", min: 7, pts: 0, reb: 1, ast: 0, stl: 0, blk: 0, to: 1, pf: 1 },
-  { j: 30, n: "Cole A.", min: 6, pts: 0, reb: 2, ast: 0, stl: 0, blk: 0, to: 0, pf: 2 },
+/* Box rows just before the closing run; Jayden/Marcus/Malik move during it. */
+const STARTERS: BoxRow[] = [
+  { jersey: 23, name: "Jayden T.", pts: 18, reb: 6, ast: 3, stl: 1, to: 2, floor: true, top: true },
+  { jersey: 7, name: "Marcus C.", pts: 11, reb: 2, ast: 4, stl: 0, to: 1, floor: true },
+  { jersey: 11, name: "Malik O.", pts: 9, reb: 7, ast: 1, stl: 0, to: 1, floor: true },
+  { jersey: 4, name: "Ethan P.", pts: 6, reb: 1, ast: 2, stl: 2, to: 0, floor: true },
+  { jersey: 15, name: "Owen C.", pts: 5, reb: 4, ast: 0, stl: 0, to: 1, floor: true },
 ]
-
-function Flash({ on, children, bold }: { on?: boolean; children: React.ReactNode; bold?: boolean }) {
-  return (
-    <span key={String(children)} className={cn("tabular-nums", on && "score-flash", bold && "font-bold")}>
-      {children}
-    </span>
-  )
-}
+const BENCH: BoxRow[] = [
+  { jersey: 21, name: "Isaiah G.", pts: 4, reb: 5, ast: 0, stl: 0, to: 0 },
+  { jersey: 9, name: "Andre B.", pts: 3, reb: 1, ast: 1, stl: 1, to: 1 },
+  { jersey: 33, name: "Kai N.", pts: 2, reb: 2, ast: 0, stl: 0, to: 0 },
+  { jersey: 12, name: "Darius B.", pts: 1, reb: 0, ast: 1, stl: 0, to: 0 },
+  { jersey: 5, name: "Amir K.", pts: 0, reb: 1, ast: 0, stl: 0, to: 1 },
+  { jersey: 30, name: "Cole A.", pts: 0, reb: 2, ast: 0, stl: 0, to: 0 },
+]
 
 /* The one parent game-day scene: the page scores itself */
 const parentBoxScore: LiveScene = {
@@ -65,277 +55,172 @@ const parentBoxScore: LiveScene = {
   personaLabel: MARIA,
   frame: "phone",
   caption:
-    "Game day, from the stands or from work. The box score keeps itself current: watch Jayden's three, the assist, and the rebound land in the numbers the second they happen.",
+    "Game day, from the stands or from work. This is the live game page every family gets: score up top, leaders and team stats below, and every number keeps itself current. Watch Jayden's three, the Huskies' answer, and Malik's rebound land the second they happen.",
   script: [
-    { wait: 1200 },
-    // Jayden hits a three, Marcus assists: PTS, AST, totals and linescore flash
+    { wait: 1600 },
+    // Jayden hits a three, Marcus assists: hero, linescore and leaders flash
     { set: { three: true } },
-    { wait: 2200 },
+    { wait: 2600 },
     // Huskies answer inside
     { set: { answer: true } },
-    { wait: 2000 },
+    { wait: 2400 },
+    // Over to the Stats tab for the full box score
+    { press: "tabStats" },
+    { set: { tab: "box" } },
+    { wait: 1000 },
     // Malik rips the defensive board off a Huskies miss
     { set: { board: true } },
-    { wait: 1800 },
+    { wait: 2200 },
     { set: { final: true } },
-    { wait: 800 },
-    { hold: "leadersCard" },
+    { wait: 900 },
+    { hold: "boxCard" },
   ],
   render: (g) => {
     const three = !!g("three")
     const answer = !!g("answer")
     const board = !!g("board")
     const fin = !!g("final")
+    const tab = g("tab") === "box" ? ("box" as const) : ("game" as const)
     const homeScore = three ? 62 : 59
     const awayScore = answer ? 58 : 56
-    const jayden = { pts: three ? 21 : 18, ast: 3 }
+    const jaydenPts = three ? 21 : 18
     const marcusAst = three ? 5 : 4
     const malikReb = board ? 8 : 7
-    const q4Home = three ? 17 : 14
-    const q4Away = answer ? 14 : 12
-    const totals = {
-      pts: homeScore,
-      reb: 31 + (board ? 1 : 0),
-      ast: 12 + (three ? 1 : 0),
-      stl: 4,
-      blk: 1,
-      to: 7,
-      pf: 17,
-    }
+    const starters = STARTERS.map((p) =>
+      p.jersey === 23
+        ? { ...p, pts: jaydenPts, flashPts: three, floor: !fin }
+        : p.jersey === 7
+          ? { ...p, ast: marcusAst, flashAst: three, floor: !fin }
+          : p.jersey === 11
+            ? { ...p, reb: malikReb, flashReb: board, floor: !fin }
+            : { ...p, floor: !fin }
+    )
     return (
-      <div className="min-h-full bg-white">
-        <div
-          className="px-4 py-4 text-white"
-          style={{ background: "linear-gradient(120deg, #14532d 0%, #0b0b0f 55%, #4c1d95 100%)" }}
-        >
-          <p className="text-center text-[10px] font-semibold text-white/70">
-            {LEAGUE.name} · {LEAGUE.season}
-          </p>
-          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-            <div className="text-center">
-              <p className="text-xs font-bold">{GAME.homeShort}</p>
-              <p key={homeScore} className={cn("text-3xl font-bold tabular-nums", three && "score-flash")}>
-                {homeScore}
-              </p>
+      <div className="min-h-full bg-white pb-6">
+        <GameHero
+          homeScore={homeScore}
+          awayScore={awayScore}
+          state={fin ? "final" : "live"}
+          clock={three ? "0:41" : "1:58"}
+          flashHome={three}
+          flashAway={answer && !fin}
+        />
+        <div className="px-3">
+          <GameTabs active={tab} statsHoldId="tabStats" />
+          {tab === "game" ? (
+            <div className="mt-3">
+              <LinescoreCard
+                rows={[
+                  {
+                    color: GAME.homeColor,
+                    short: GAME.homeShort,
+                    quarters: [16, 14, 15, three ? 17 : 14],
+                    total: homeScore,
+                    flashQ4: three,
+                    flashTotal: three,
+                  },
+                  {
+                    color: GAME.awayColor,
+                    short: GAME.awayShort,
+                    quarters: [15, 16, 13, answer ? 14 : 12],
+                    total: awayScore,
+                    flashQ4: answer,
+                    flashTotal: answer,
+                  },
+                ]}
+              />
+              <SectionH3>Game leaders</SectionH3>
+              <LeadersCard
+                sections={[
+                  {
+                    label: "Points",
+                    home: {
+                      jersey: 23,
+                      name: KID.short,
+                      value: jaydenPts,
+                      unit: "PTS",
+                      sub: "6 REB · 3 AST",
+                      flash: three,
+                    },
+                    away: { jersey: 10, name: "Noah S.", value: answer ? 18 : 16, unit: "PTS", sub: "5 REB · 2 AST", flash: answer },
+                  },
+                  {
+                    label: "Rebounds",
+                    home: {
+                      jersey: 11,
+                      name: "Malik O.",
+                      value: malikReb,
+                      unit: "REB",
+                      sub: board ? "6 DReb · 2 OReb" : "5 DReb · 2 OReb",
+                      flash: board,
+                    },
+                    away: { jersey: 8, name: "Ibrahim H.", value: 7, unit: "REB", sub: "5 DReb · 2 OReb" },
+                  },
+                  {
+                    label: "Assists",
+                    home: {
+                      jersey: 7,
+                      name: "Marcus C.",
+                      value: marcusAst,
+                      unit: "AST",
+                      sub: "11 PTS · 1 TO",
+                      flash: three,
+                    },
+                    away: { jersey: 3, name: "Lucas K.", value: 4, unit: "AST", sub: "12 PTS · 2 TO" },
+                  },
+                  {
+                    label: "Defense",
+                    home: { jersey: 4, name: "Ethan P.", value: 2, unit: "STL", sub: "2 STL · 0 BLK" },
+                    away: { jersey: 6, name: "Felix W.", value: 2, unit: "STL", sub: "2 STL · 0 BLK" },
+                  },
+                ]}
+              />
+              <SectionH3>Team stats</SectionH3>
+              <TeamStatsCard
+                rows={[
+                  {
+                    label: "Field goals",
+                    home: three ? 24 / 51 : 23 / 50,
+                    away: answer ? 22 / 54 : 21 / 53,
+                    displayHome: three ? "24-51 · 47%" : "23-50 · 46%",
+                    displayAway: answer ? "22-54 · 41%" : "21-53 · 40%",
+                    flashHome: three,
+                    flashAway: answer,
+                  },
+                  {
+                    label: "3-pointers",
+                    home: three ? 5 / 14 : 4 / 13,
+                    away: 4 / 16,
+                    displayHome: three ? "5-14 · 36%" : "4-13 · 31%",
+                    displayAway: "4-16 · 25%",
+                    flashHome: three,
+                  },
+                  { label: "Free throws", home: 9 / 12, away: 10 / 15, displayHome: "9-12 · 75%", displayAway: "10-15 · 67%" },
+                  { label: "Rebounds", home: board ? 32 : 31, away: 29 },
+                  { label: "Assists", home: three ? 13 : 12, away: 11, flashHome: three },
+                  { label: "Steals", home: 4, away: 5 },
+                  { label: "Blocks", home: 1, away: 2 },
+                  { label: "Turnovers", home: 7, away: 9 },
+                  { label: "Fouls", home: 17, away: 14 },
+                ]}
+              />
             </div>
-            <div className="text-center">
-              {fin ? (
-                <span className="inline-flex rounded-full bg-white/15 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide">
-                  Final
-                </span>
-              ) : (
-                <>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-                    Live
-                  </span>
-                  <p className="mt-0.5 text-[10px] font-bold">Q4</p>
-                  <p className="text-[10px] tabular-nums text-white/70">{three ? "0:41" : "1:58"}</p>
-                </>
-              )}
-            </div>
-            <div className="text-center">
-              <p className="text-xs font-bold">{GAME.awayShort}</p>
-              <p key={awayScore} className={cn("text-3xl font-bold tabular-nums", answer && !fin && "score-flash")}>
-                {awayScore}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="border-ink-100 flex border-b text-center text-xs font-bold">
-          {["Game", "Stats", "Plays"].map((t, i) => (
-            <span key={t} className={cn("flex-1 py-2", i === 1 ? "text-ink-950 border-ink-900 border-b-2" : "text-ink-400")}>
-              {t}
-            </span>
-          ))}
-        </div>
-        <div className="space-y-3 px-3 py-3">
-          {/* Linescore */}
-          <div className="border-ink-100 overflow-hidden rounded-xl border">
-            <table className="w-full text-center text-[11px]">
-              <thead className="border-ink-100 border-b">
-                <tr>
-                  <th className="text-ink-500 px-2 py-1.5 text-left font-extrabold" />
-                  {[1, 2, 3, 4].map((q) => (
-                    <th key={q} className="text-ink-500 px-2 py-1.5 font-extrabold">
-                      {q}
-                    </th>
-                  ))}
-                  <th className="text-ink-500 px-2 py-1.5 font-extrabold">Tot</th>
-                </tr>
-              </thead>
-              <tbody className="divide-ink-50 divide-y">
-                <tr>
-                  <td className="text-ink-900 px-2 py-1.5 text-left font-bold">{GAME.homeShort}</td>
-                  <td className="px-2 py-1.5">16</td>
-                  <td className="px-2 py-1.5">14</td>
-                  <td className="px-2 py-1.5">15</td>
-                  <td className="px-2 py-1.5">
-                    <Flash on={three}>{q4Home}</Flash>
-                  </td>
-                  <td className="px-2 py-1.5 font-bold">
-                    <Flash on={three} bold>
-                      {homeScore}
-                    </Flash>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="text-ink-900 px-2 py-1.5 text-left font-bold">{GAME.awayShort}</td>
-                  <td className="px-2 py-1.5">15</td>
-                  <td className="px-2 py-1.5">16</td>
-                  <td className="px-2 py-1.5">13</td>
-                  <td className="px-2 py-1.5">
-                    <Flash on={answer && !fin}>{q4Away}</Flash>
-                  </td>
-                  <td className="px-2 py-1.5 font-bold">
-                    <Flash on={answer && !fin} bold>
-                      {awayScore}
-                    </Flash>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {/* Game leaders */}
-          <Hold id="leadersCard" block>
-            <div className="border-ink-100 rounded-xl border p-3">
-              <p className="text-ink-900 mb-2 text-xs font-bold">Game leaders</p>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  ["Points", `#23 ${KID.short}`, jayden.pts, "PTS", `${malikReb === 8 ? 6 : 6} REB · 3 AST`, three],
-                  ["Rebounds", "#11 Malik O.", malikReb, "REB", "9 PTS · 1 AST", board],
-                  ["Assists", "#7 Marcus C.", marcusAst, "AST", "11 PTS · 2 REB", three],
-                  ["Defense", "#4 Ethan P.", 2, "STL", "6 PTS · 2 AST", false],
-                ].map(([cat, who, n, unit, sub, flash]) => (
-                  <div key={String(cat)} className="bg-ink-50 rounded-lg p-2.5">
-                    <p className="text-ink-400 text-[9px] font-bold uppercase tracking-[0.12em]">{String(cat)}</p>
-                    <p className="text-ink-900 mt-0.5 text-[11px] font-bold">{String(who)}</p>
-                    <p className="text-ink-950 text-lg font-bold">
-                      <Flash on={!!flash} bold>
-                        {n as number}
-                      </Flash>{" "}
-                      <span className="text-ink-400 text-[9px] font-semibold">{String(unit)}</span>
-                    </p>
-                    <p className="text-ink-400 text-[9px]">{String(sub)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Hold>
-          {/* Full box score */}
-          <div className="border-ink-100 overflow-hidden rounded-xl border">
-            <div className="border-ink-100 flex border-b text-center text-[11px] font-bold">
-              <span className="text-ink-950 border-ink-900 flex-1 border-b-2 py-1.5">{GAME.homeShort}</span>
-              <span className="text-ink-400 flex-1 py-1.5">{GAME.awayShort}</span>
-            </div>
-            <table className="w-full text-[10.5px]">
-              <thead className="border-ink-100 border-b">
-                <tr>
-                  {["Player", "Min", "Pts", "Reb", "Ast", "Stl", "Blk", "TO", "PF"].map((h, i) => (
-                    <th
-                      key={h}
-                      className={cn(
-                        "text-ink-500 px-1 py-1.5 font-extrabold uppercase tracking-tight",
-                        i === 0 ? "pl-2 text-left" : "text-center"
-                      )}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-ink-50 divide-y">
-                <tr>
-                  <td colSpan={9} className="text-ink-400 bg-ink-50/60 px-2 py-0.5 text-[9px] font-bold uppercase">
-                    Starters
-                  </td>
-                </tr>
-                {HOME_BASE.slice(0, 5).map((p) => {
-                  const pts = p.j === 23 ? jayden.pts : p.pts
-                  const ast = p.j === 7 ? marcusAst : p.ast
-                  const reb = p.j === 11 ? malikReb : p.reb
-                  return (
-                    <tr key={p.j}>
-                      <td className="text-ink-900 py-1 pl-2 pr-1 font-semibold">
-                        #{p.j} {p.n}
-                        {p.j === 23 && (
-                          <span className="bg-gold-50 text-gold-600 ml-1 rounded px-0.5 text-[8px] font-bold">TOP</span>
-                        )}
-                        {p.floor && !fin && <span className="text-court-500"> ●</span>}
-                      </td>
-                      <td className="px-1 py-1 text-center tabular-nums">{p.min + (three ? 2 : 0)}</td>
-                      <td className="px-1 py-1 text-center font-bold">
-                        <Flash on={p.j === 23 && three} bold>
-                          {pts}
-                        </Flash>
-                      </td>
-                      <td className="px-1 py-1 text-center">
-                        <Flash on={p.j === 11 && board}>{reb}</Flash>
-                      </td>
-                      <td className="px-1 py-1 text-center">
-                        <Flash on={p.j === 7 && three}>{ast}</Flash>
-                      </td>
-                      <td className="px-1 py-1 text-center tabular-nums">{p.stl}</td>
-                      <td className="px-1 py-1 text-center tabular-nums">{p.blk}</td>
-                      <td className="px-1 py-1 text-center tabular-nums">{p.to}</td>
-                      <td className={cn("px-1 py-1 text-center tabular-nums", p.pf >= 4 && "text-hoop-600 font-bold")}>
-                        {p.pf}
-                      </td>
-                    </tr>
-                  )
-                })}
-                <tr>
-                  <td colSpan={9} className="text-ink-400 bg-ink-50/60 px-2 py-0.5 text-[9px] font-bold uppercase">
-                    Bench
-                  </td>
-                </tr>
-                {HOME_BASE.slice(5).map((p) => (
-                  <tr key={p.j}>
-                    <td className="text-ink-900 py-1 pl-2 pr-1 font-semibold">
-                      #{p.j} {p.n}
-                    </td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.min}</td>
-                    <td className="px-1 py-1 text-center font-bold tabular-nums">{p.pts}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.reb}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.ast}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.stl}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.blk}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.to}</td>
-                    <td className="px-1 py-1 text-center tabular-nums">{p.pf}</td>
-                  </tr>
-                ))}
-                <tr className="bg-ink-50/60">
-                  <td className="text-ink-900 py-1 pl-2 pr-1 font-bold">Team</td>
-                  <td className="px-1 py-1 text-center" />
-                  <td className="px-1 py-1 text-center font-bold">
-                    <Flash on={three} bold>
-                      {totals.pts}
-                    </Flash>
-                  </td>
-                  <td className="px-1 py-1 text-center font-bold">
-                    <Flash on={board} bold>
-                      {totals.reb}
-                    </Flash>
-                  </td>
-                  <td className="px-1 py-1 text-center font-bold">
-                    <Flash on={three} bold>
-                      {totals.ast}
-                    </Flash>
-                  </td>
-                  <td className="px-1 py-1 text-center font-bold tabular-nums">{totals.stl}</td>
-                  <td className="px-1 py-1 text-center font-bold tabular-nums">{totals.blk}</td>
-                  <td className="px-1 py-1 text-center font-bold tabular-nums">{totals.to}</td>
-                  <td className="px-1 py-1 text-center font-bold tabular-nums">{totals.pf}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {fin && (
-            <div className="live-row-in border-court-200 bg-court-50/50 rounded-xl border p-3">
-              <p className="text-ink-900 text-xs font-bold">Final Score</p>
-              <p className="text-ink-600 text-[11px]">
-                Final: {GAME.home} {GAME.finalHome}-{GAME.finalAway} {GAME.away}
-              </p>
+          ) : (
+            <div className="mt-3">
+              <Hold id="boxCard" block>
+                <BoxScoreCard
+                  starters={starters}
+                  bench={BENCH}
+                  live={!fin}
+                  totals={{
+                    pts: homeScore,
+                    reb: 31 + (board ? 1 : 0),
+                    ast: 12 + (three ? 1 : 0),
+                    stl: 4,
+                    to: 7,
+                  }}
+                />
+              </Hold>
             </div>
           )}
         </div>

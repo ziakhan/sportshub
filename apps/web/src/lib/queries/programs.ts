@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
+import { getClubRatings } from "@/lib/queries/club-ratings"
 
 /**
  * Public programs aggregation — tryouts, house leagues, camps and
@@ -27,6 +28,9 @@ export interface EventItem {
   status?: string
   feeUnit?: string
   href: string
+  /** Published-review average for the hosting club, when it has any. */
+  clubRating?: number
+  clubReviewCount?: number
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -74,6 +78,17 @@ export async function getAllPrograms(): Promise<EventItem[]> {
     }),
   ])
 
+  // One groupBy covers every club on the page (parents pick programs by the
+  // club's reviews as much as by date and fee).
+  const ratings = await getClubRatings([
+    ...new Set(
+      [...tryouts, ...houseLeagues, ...camps]
+        .map((x) => x.tenantId)
+        .filter(Boolean) as string[]
+    ),
+  ])
+  const ratingOf = (tenantId: string | null) => (tenantId ? ratings.get(tenantId) : undefined)
+
   const items: EventItem[] = []
 
   for (const t of tryouts) {
@@ -92,6 +107,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       primaryColor: t.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${t._count.signups}${t.maxParticipants ? `/${t.maxParticipants}` : ""} signed up`,
       href: `/tryout/${t.id}`,
+      clubRating: ratingOf(t.tenantId)?.average,
+      clubReviewCount: ratingOf(t.tenantId)?.count,
     })
   }
 
@@ -113,6 +130,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       spotsInfo: `${l._count.signups}${l.maxParticipants ? `/${l.maxParticipants}` : ""} registered`,
       extra: `${l.daysOfWeek} ${l.startTime}-${l.endTime}`,
       href: `/house-league/${l.id}`,
+      clubRating: ratingOf(l.tenantId)?.average,
+      clubReviewCount: ratingOf(l.tenantId)?.count,
     })
   }
 
@@ -134,6 +153,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       spotsInfo: `${c._count.signups}${c.maxParticipants ? `/${c.maxParticipants}` : ""} registered`,
       extra: `${TYPE_LABELS[c.campType] || c.campType} • ${c.numberOfWeeks} week${c.numberOfWeeks !== 1 ? "s" : ""}`,
       href: `/camp/${c.id}`,
+      clubRating: ratingOf(c.tenantId)?.average,
+      clubReviewCount: ratingOf(c.tenantId)?.count,
     })
   }
 

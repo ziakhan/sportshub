@@ -246,3 +246,28 @@ for-clubs and for-leagues with act deep-links; parent cut later).
   prod HTML, homepage + demo gate screenshots eyeballed.
 - Still NOT touched by this push: Vercel (origin master, needs env vars) and
   Neon (schema backlog #24-30 plus these new models). Both are separate calls.
+
+## Addition 7: game-page fidelity, real news covers, rated tryout browse
+
+- The parent game-day scene and the walkthrough's live/box-score scenes now
+  render through shared building blocks transcribed class-for-class from the
+  real /live/[gameId] page (scenes/game-page.tsx): broadcast-dark hero with
+  team-color washes, crests and records, Game/Stats/Plays pills, linescore
+  with color chips, two-sided game leaders with jersey squares, team-stats
+  comparison bars, and the box score with starters/bench, TOP badge and team
+  totals. The parent scene presses the Stats tab mid-script and the winner
+  reads in the highlight color at the final.
+- News scenes stopped faking covers: the browse cards and both recap articles
+  now render buildMatchupCover() output, the same generated SVG matchup art
+  the recap service publishes.
+- The parent journey opens on a real tryouts-near-me browse: taps the Tryouts
+  filter and sees three clubs' tryouts with their review star ratings before
+  choosing the Force. PRODUCT CHANGE to match: /events cards now show each
+  club's published-review rating via the shared getClubRatings groupBy
+  (lib/queries/programs.ts + events-browser.tsx) so demo and product agree.
+- Homepage persona cards got explicit walkthrough chips ("See how it works" /
+  "See your side of it").
+- Verified: tsc + lint clean, /demo/parents 12-step and /how-it-works 64-step
+  walks with zero page errors, every changed screen eyeballed (box fits at
+  phone width after dropping the untracked-minutes column, which the real
+  page also omits when minutes are not tracked).

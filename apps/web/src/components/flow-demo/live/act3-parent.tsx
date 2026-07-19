@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/components/ui/cn"
+import { StarRating } from "@/components/ui/star-rating"
 import { CLUB, KID, TRYOUT, fmt } from "../data"
 import { Field, PhonePage } from "../scenes/shared"
 import { LiveCheck, LiveInput, LiveSelect } from "./anim"
@@ -24,7 +25,74 @@ const Hold = ({ id, children, block }: { id: string; children: React.ReactNode; 
   </span>
 )
 
-/* 11 — Browse and search the marketplace */
+/* One program card, mirrored from the real /events browse (events-browser.tsx). */
+function ProgramCard({
+  color,
+  type,
+  spots,
+  name,
+  club,
+  rating,
+  reviews,
+  lines,
+  fee,
+  holdId,
+  rowIn,
+}: {
+  color: string
+  type: "Tryout" | "Camp" | "House League"
+  spots: string
+  name: string
+  club: string
+  rating?: number
+  reviews?: number
+  lines: string[]
+  fee: string
+  holdId?: string
+  rowIn?: boolean
+}) {
+  const badge =
+    type === "Tryout"
+      ? "bg-hoop-50 text-hoop-600"
+      : type === "Camp"
+        ? "bg-violet-100 text-violet-700"
+        : "bg-court-50 text-court-700"
+  const card = (
+    <div className={cn("card-lift border-ink-100 shadow-soft overflow-hidden rounded-[28px] border bg-white", rowIn && "live-row-in")}>
+      <div className="h-2" style={{ backgroundColor: color }} />
+      <div className="p-5">
+        <div className="mb-2 flex items-start justify-between">
+          <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", badge)}>{type}</span>
+          <span className="text-ink-400 text-xs">{spots}</span>
+        </div>
+        <h3 className="text-ink-950 mb-1 font-semibold">{name}</h3>
+        <p className="text-ink-500 text-sm">{club}</p>
+        {rating != null && (
+          <div className="mb-2 mt-0.5">
+            <StarRating rating={rating} count={reviews} />
+          </div>
+        )}
+        <div className="text-ink-500 space-y-1 text-xs">
+          {lines.map((l) => (
+            <div key={l}>{l}</div>
+          ))}
+        </div>
+        <div className="border-ink-100 mt-3 flex items-center justify-between border-t pt-3">
+          <span className={cn("text-lg font-bold", fee === "FREE" ? "text-court-600" : "text-hoop-600")}>{fee}</span>
+        </div>
+      </div>
+    </div>
+  )
+  return holdId ? (
+    <Hold id={holdId} block>
+      {card}
+    </Hold>
+  ) : (
+    card
+  )
+}
+
+/* 11 — Browse the marketplace: tryouts near her, clubs rated by other parents */
 const browse: LiveScene = {
   id: "l-browse",
   act: "parent",
@@ -32,34 +100,29 @@ const browse: LiveScene = {
   personaLabel: MARIA,
   frame: "phone",
   caption:
-    "Maria browses the programs marketplace, filters to tryouts and searches. The Force tryout comes right up.",
+    "Maria opens the programs marketplace and taps Tryouts. Every tryout running near her is here: the club, its rating from other parents, the date, the gym and the fee. The Force tryout is the one.",
   script: [
-    { wait: 500 },
+    { wait: 900 },
     { press: "pillTryouts" },
     { set: { pill: true } },
-    { wait: 450 },
-    ...typeIn("search", "q", "burlington", 18),
-    { set: { filtered: true } },
-    { wait: 600 },
+    { wait: 2600 },
     { hold: "tryoutCard" },
   ],
   render: (g) => (
     <PhonePage>
-      <h1 className="text-ink-950 text-xl font-bold">Find Programs &amp; Tryouts</h1>
-      <p className="text-ink-500 mt-1 text-sm">
+      <h1 className="text-ink-950 text-3xl font-bold">Find Programs &amp; Tryouts</h1>
+      <p className="text-ink-600 mt-2">
         Browse tryouts, house leagues, camps, and tournaments to find the right fit for your
         player.
       </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {["All", "Tryouts", "House Leagues", "Camps", "Tournaments"].map((p, i) => (
           <span
             key={p}
             data-live-id={i === 1 ? "pillTryouts" : undefined}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
-              (g("pill") ? i === 1 : i === 0)
-                ? "bg-play-600 text-white"
-                : "bg-white text-ink-600 border-ink-200 border"
+              "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+              (g("pill") ? i === 1 : i === 0) ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700"
             )}
           >
             {p}
@@ -67,55 +130,58 @@ const browse: LiveScene = {
         ))}
       </div>
       <div className="mt-3">
-        <LiveInput id="search" value={g("q") as string} caret={!!g("q:caret")} placeholder="Search by name, club, or location..." />
+        <LiveInput id="search" value={g("q") as string} caret={false} placeholder="Search by name, club, or location..." />
       </div>
       <div className="mt-4 space-y-3">
-        <Hold id="tryoutCard" block>
-          <Card size="sm" className={cn("overflow-hidden p-0", !!g("filtered") && "live-row-in")}>
-            <div className="h-[3px]" style={{ backgroundColor: CLUB.color }} />
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <Badge tone="play">Tryout</Badge>
-                <span className="text-ink-400 text-xs">12/40 signed up</span>
-              </div>
-              <p className="text-ink-900 mt-2 text-sm font-bold">{TRYOUT.title}</p>
-              <p className="text-ink-500 text-xs">{CLUB.name}</p>
-              <p className="text-ink-500 mt-1.5 text-xs">{TRYOUT.dateShort}</p>
-              <p className="text-ink-500 text-xs">Haber Recreation Centre, Burlington</p>
-              <p className="text-ink-500 text-xs">U16 • Boys</p>
-              <p className="text-ink-900 mt-2 text-sm font-bold">{fmt(TRYOUT.fee)}</p>
-            </div>
-          </Card>
-        </Hold>
-        {!g("filtered") && (
-          <>
-            <Card size="sm" className="overflow-hidden p-0">
-              <div className="h-[3px]" style={{ backgroundColor: "#9333ea" }} />
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <Badge tone="neutral">Tryout</Badge>
-                  <span className="text-ink-400 text-xs">18/40 signed up</span>
-                </div>
-                <p className="text-ink-900 mt-2 text-sm font-bold">Grade 9 Boys Spring Tryout</p>
-                <p className="text-ink-500 text-xs">Royal Crown</p>
-                <p className="text-ink-500 mt-1.5 text-xs">Apr 11, 2026 · Scarborough</p>
-                <p className="text-court-600 mt-2 text-sm font-bold">FREE</p>
-              </div>
-            </Card>
-            <Card size="sm" className="overflow-hidden p-0">
-              <div className="h-[3px]" style={{ backgroundColor: "#0f766e" }} />
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <Badge tone="neutral">Camp</Badge>
-                  <span className="text-ink-400 text-xs">31 registered</span>
-                </div>
-                <p className="text-ink-900 mt-2 text-sm font-bold">Summer Skills Camp</p>
-                <p className="text-ink-500 text-xs">City Above Elite</p>
-                <p className="text-ink-500 mt-1.5 text-xs">Jul 6, 2026 · Summer • 6 weeks</p>
-                <p className="text-ink-900 mt-2 text-sm font-bold">$180.00</p>
-              </div>
-            </Card>
-          </>
+        <ProgramCard
+          color={CLUB.color}
+          type="Tryout"
+          spots="12/40 signed up"
+          name={TRYOUT.title}
+          club={CLUB.name}
+          rating={4.8}
+          reviews={26}
+          lines={[TRYOUT.dateShort, "Haber Recreation Centre, Burlington", "U16 • Boys"]}
+          fee={fmt(TRYOUT.fee)}
+          holdId="tryoutCard"
+          rowIn={!!g("pill")}
+        />
+        <ProgramCard
+          color="#9333ea"
+          type="Tryout"
+          spots="18/40 signed up"
+          name="Grade 9 Boys Spring Tryout"
+          club="Royal Crown"
+          rating={4.6}
+          reviews={19}
+          lines={["Apr 11, 2026", "Scarborough", "U16 • Boys"]}
+          fee="FREE"
+          rowIn={!!g("pill")}
+        />
+        <ProgramCard
+          color="#be123c"
+          type="Tryout"
+          spots="9/36 signed up"
+          name="Grade 10 Boys Summer Tryout"
+          club="Oakville Panthers"
+          rating={4.2}
+          reviews={11}
+          lines={["Apr 14, 2026", "Oakville Sixteen Mile Complex", "U16 • Boys"]}
+          fee="$20.00"
+          rowIn={!!g("pill")}
+        />
+        {!g("pill") && (
+          <ProgramCard
+            color="#0f766e"
+            type="Camp"
+            spots="31 registered"
+            name="Summer Skills Camp"
+            club="City Above Elite"
+            rating={4.5}
+            reviews={14}
+            lines={["Jul 6, 2026", "Summer • 6 weeks"]}
+            fee="$180.00"
+          />
         )}
       </div>
     </PhonePage>

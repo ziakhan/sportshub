@@ -2,13 +2,15 @@
  * Walks the animated live demo (/demo): waits for each scene's animations to
  * reach a hold point, screenshots it, presses the glowing control, repeats.
  * Also captures an early-state shot when each new scene starts.
- *   node scripts/demo/walk-live-demo.mjs <outDir> [--mobile]
+ *   node scripts/demo/walk-live-demo.mjs <outDir> [--mobile] [--route /demo/parents]
  */
 import { chromium } from "playwright"
 import fs from "node:fs"
 
 const [, , out = "/tmp/live-shots", ...rest] = process.argv
 const mobile = rest.includes("--mobile")
+const routeIdx = rest.indexOf("--route")
+const route = routeIdx >= 0 ? rest[routeIdx + 1] : "/demo"
 fs.mkdirSync(out, { recursive: true })
 
 const browser = await chromium.launch()
@@ -20,7 +22,7 @@ const errors = []
 page.on("pageerror", (e) => errors.push("PAGEERROR " + e.message))
 page.on("console", (m) => m.type() === "error" && errors.push("CONSOLE " + m.text()))
 
-await page.goto("http://localhost:3000/demo", { waitUntil: "networkidle", timeout: 90000 })
+await page.goto(`http://localhost:3000${route}`, { waitUntil: "networkidle", timeout: 90000 })
 const player = page.locator("[data-demo-player]")
 await player.waitFor({ timeout: 30000 })
 

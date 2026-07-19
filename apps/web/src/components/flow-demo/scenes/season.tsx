@@ -15,9 +15,11 @@ import { NewsCard } from "@/components/ui/news-card"
 import { ScoreCard } from "@/components/ui/score-card"
 import { StandingsTable } from "@/components/ui/standings-table"
 import { cn } from "@/components/ui/cn"
+import { buildMatchupCover } from "@/lib/content/matchup-cover"
 import { Advance } from "../advance"
 import { DuoFrame } from "../frames"
 import { BOX, CHAMP_RECAP, CHAT, GAME, KID, LEAGUE, PLAYOFFS, POLL_PAGE, RECAP, STANDINGS, TEAM } from "../data"
+import { BoxScoreCard, GameHero, GameTabs, LeadersCard, LinescoreCard, SectionH3, TeamStatsCard } from "./game-page"
 import { OperatorPage, Panel, PhonePage, SelectBox, Td, Th, TxtInput } from "./shared"
 import { SeasonHeader, SeasonTabs } from "./league-setup"
 
@@ -159,62 +161,6 @@ function ConsoleScreen({
 
 /* ── The public live page (right half of the duo) ──────────────────────── */
 
-function LiveHero({
-  homeScore,
-  awayScore,
-  state,
-  clock,
-  flash,
-}: {
-  homeScore: number
-  awayScore: number
-  state: "live" | "final"
-  clock?: string
-  flash?: boolean
-}) {
-  return (
-    <div
-      className="px-4 py-5 text-white"
-      style={{ background: "linear-gradient(120deg, #14532d 0%, #0b0b0f 55%, #4c1d95 100%)" }}
-    >
-      <p className="text-center text-[11px] font-semibold text-white/70">
-        {LEAGUE.name} · {LEAGUE.season}
-      </p>
-      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <div className="text-center">
-          <p className="text-xs font-bold">{GAME.homeShort}</p>
-          <p className="text-[10px] text-white/60">8-1</p>
-          <p className={cn("mt-1 text-4xl font-bold tabular-nums", flash && "score-flash")}>{homeScore}</p>
-        </div>
-        <div className="text-center">
-          {state === "live" ? (
-            <>
-              <span className="bg-live-500/20 text-live-300 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-red-300">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-                Live
-              </span>
-              <p className="mt-1 text-xs font-bold">Q4</p>
-              <p className="text-[11px] tabular-nums text-white/70">{clock}</p>
-            </>
-          ) : (
-            <span className="inline-flex rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">
-              Final
-            </span>
-          )}
-        </div>
-        <div className="text-center">
-          <p className="text-xs font-bold">{GAME.awayShort}</p>
-          <p className="text-[10px] text-white/60">6-3</p>
-          <p className={cn("mt-1 text-4xl font-bold tabular-nums", state === "final" && "text-white/60")}>
-            {awayScore}
-          </p>
-        </div>
-      </div>
-      <p className="mt-2 text-center text-[10px] text-white/60">{GAME.venue}</p>
-    </div>
-  )
-}
-
 function LiveScreen({
   homeScore,
   awayScore,
@@ -224,53 +170,61 @@ function LiveScreen({
 }: {
   homeScore: number
   awayScore: number
-  plays: string[]
+  plays: Array<{ text: string; team: "h" | "a"; score?: string }>
   flash?: boolean
   clock: string
 }) {
   return (
     <div className="min-h-full bg-white">
-      <LiveHero homeScore={homeScore} awayScore={awayScore} state="live" clock={clock} flash={flash} />
-      <div className="border-ink-100 flex border-b text-center text-sm font-bold">
-        {["Game", "Stats", "Plays"].map((t, i) => (
-          <span key={t} className={cn("flex-1 py-2.5", i === 2 ? "text-ink-950 border-ink-900 border-b-2" : "text-ink-400")}>
-            {t}
-          </span>
-        ))}
+      <GameHero homeScore={homeScore} awayScore={awayScore} state="live" clock={clock} flashHome={flash} />
+      <div className="px-3">
+        <GameTabs active="plays" />
       </div>
-      <div className="px-4 py-3">
-        <div className="mb-2 flex gap-1.5">
-          {["All", "Scoring", "Q4"].map((c, i) => (
+      <div className="border-ink-100 mx-3 mt-3 overflow-hidden rounded-2xl border bg-white">
+        <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2">
+          {["All", "Scoring", "Q1", "Q2", "Q3", "Q4"].map((c, i) => (
             <span
               key={c}
               className={cn(
-                "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                i === 0 ? "bg-ink-900 text-white" : "bg-ink-50 text-ink-500"
+                "whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold",
+                i === 0 ? "bg-ink-950 text-white" : "text-ink-500 border-ink-200 border bg-white"
               )}
             >
               {c}
             </span>
           ))}
         </div>
-        <div className="divide-ink-50 divide-y">
+        <ul>
           {plays.map((p, i) => (
-            <p key={p} className={cn("text-ink-700 py-2 text-xs", i === 0 && flash && "score-flash")}>
-              {p}
-            </p>
+            <li
+              key={p.text}
+              className={cn(
+                "border-ink-50 flex items-center gap-2.5 border-b px-4 py-1.5 text-xs",
+                p.score ? "text-ink-950 font-semibold" : "text-ink-600",
+                i === 0 && flash && "score-flash"
+              )}
+            >
+              <span
+                className="w-1 self-stretch rounded-full"
+                style={{ backgroundColor: p.team === "h" ? GAME.homeColor : GAME.awayColor }}
+              />
+              <span className="min-w-0 flex-1">{p.text}</span>
+              {p.score && <span className="text-ink-900 shrink-0 text-[11px] font-bold tabular-nums">{p.score}</span>}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   )
 }
 
-const PLAYS_BEFORE = [
-  "#7 Marcus C. makes a free throw",
-  "Foul on #14 Santiago S.",
-  "#10 Noah S. scores 2",
-  "#23 Jayden T. scores 3, assisted by #4 Ethan P.",
-  "Sub: #21 in, #30 out",
-  "#3 Lucas K. misses a 3-pointer, defensive rebound #11 Malik O.",
+const PLAYS_BEFORE: Array<{ text: string; team: "h" | "a"; score?: string }> = [
+  { text: "#7 Marcus C. makes a free throw", team: "h", score: "58–54" },
+  { text: "Foul on #14 Santiago S.", team: "a" },
+  { text: "#10 Noah S. scores 2", team: "a", score: "57–54" },
+  { text: "#23 Jayden T. scores 3, assisted by #4 Ethan P.", team: "h", score: "57–52" },
+  { text: "Sub: #21 in, #30 out", team: "h" },
+  { text: "#3 Lucas K. misses a 3-pointer, defensive rebound #11 Malik O.", team: "a" },
 ]
 
 /* Step 27 — live scoring, side by side */
@@ -319,7 +273,10 @@ export function SceneLiveDuoAfter() {
           awayScore={GAME.liveAway}
           clock="5:04"
           flash
-          plays={["#23 Jayden T. scores 2, assisted by #7 Marcus C.", ...PLAYS_BEFORE]}
+          plays={[
+            { text: "#23 Jayden T. scores 2, assisted by #7 Marcus C.", team: "h", score: "60–54" },
+            ...PLAYS_BEFORE,
+          ]}
         />
       }
     />
@@ -462,6 +419,35 @@ export function SceneScores() {
   )
 }
 
+/* Real generated matchup covers, exactly what the recap service ships. */
+const RECAP_COVER = buildMatchupCover({
+  homeName: GAME.home,
+  awayName: GAME.away,
+  homeColor: GAME.homeColor,
+  awayColor: GAME.awayColor,
+  homeScore: GAME.finalHome,
+  awayScore: GAME.finalAway,
+  label: `${LEAGUE.name} · ${LEAGUE.season}`,
+})
+const CROWN_LIONS_COVER = buildMatchupCover({
+  homeName: "Royal Crown Grade 10",
+  awayName: "North York Lions Grade 10",
+  homeColor: "#9333ea",
+  awayColor: "#b45309",
+  homeScore: 58,
+  awayScore: 54,
+  label: `${LEAGUE.name} · ${LEAGUE.season}`,
+})
+const CHAMP_COVER = buildMatchupCover({
+  homeName: PLAYOFFS.final.home,
+  awayName: PLAYOFFS.final.away,
+  homeColor: GAME.homeColor,
+  awayColor: "#9333ea",
+  homeScore: PLAYOFFS.final.hs,
+  awayScore: PLAYOFFS.final.as,
+  label: `${LEAGUE.name} · Grade 10 Boys Final`,
+})
+
 /* Step 29a — Browse the news (phone) */
 export function SceneNewsBrowse() {
   return (
@@ -476,6 +462,7 @@ export function SceneNewsBrowse() {
           <NewsCard
             title={RECAP.title}
             excerpt={RECAP.body[0]}
+            coverUrl={RECAP_COVER}
             dateLabel="Jun 20, 2026"
             author={LEAGUE.name}
           />
@@ -483,6 +470,7 @@ export function SceneNewsBrowse() {
         <NewsCard
           title="Royal Crown edge the Lions in a Q4 comeback"
           excerpt="Royal Crown Grade 10 outscored North York Lions Grade 10 by nine in the fourth to win 58-54 at Pan Am Sports Centre on Saturday."
+          coverUrl={CROWN_LIONS_COVER}
           dateLabel="Jun 20, 2026"
           author={LEAGUE.name}
         />
@@ -500,143 +488,119 @@ export function SceneNewsBrowse() {
 /* Step 28b — Final box score (phone) */
 export function SceneBoxScore() {
   return (
-    <div className="min-h-full bg-white">
+    <div className="min-h-full bg-white pb-6">
       <Advance block>
         <div>
-          <LiveHero homeScore={GAME.finalHome} awayScore={GAME.finalAway} state="final" />
+          <GameHero homeScore={GAME.finalHome} awayScore={GAME.finalAway} state="final" />
         </div>
       </Advance>
-      <div className="px-4 py-4">
-        <Card size="sm" className="overflow-hidden p-0">
-          <table className="w-full text-center">
-            <thead className="border-ink-100 border-b">
-              <tr>
-                <Th> </Th>
-                {[1, 2, 3, 4].map((q) => (
-                  <Th key={q} center>
-                    {q}
-                  </Th>
-                ))}
-                <Th center>Tot</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-ink-50 divide-y">
-              {[
-                [GAME.homeShort, ...GAME.lines.home, GAME.finalHome],
-                [GAME.awayShort, ...GAME.lines.away, GAME.finalAway],
-              ].map((row) => (
-                <tr key={String(row[0])}>
-                  {row.map((c, i) => (
-                    <Td key={i} center className={cn(i === 0 && "text-left font-bold", i === 5 && "font-bold")}>
-                      {c}
-                    </Td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-        <Card size="sm" className="mt-3">
-          <p className="text-ink-900 mb-3 text-sm font-bold">Game leaders</p>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              ["Points", `#23 ${KID.short}`, "21", "PTS", "6 REB · 3 AST"],
-              ["Rebounds", "#11 Malik O.", "8", "REB", "9 PTS · 1 AST"],
-              ["Assists", "#7 Marcus C.", "5", "AST", "11 PTS · 2 REB"],
-              ["Defense", "#4 Ethan P.", "2", "STL", "6 PTS · 2 AST"],
-            ].map(([cat, who, n, unit, sub]) => (
-              <div key={cat} className="bg-ink-50 rounded-xl p-3">
-                <p className="text-ink-400 text-[10px] font-bold uppercase tracking-[0.12em]">{cat}</p>
-                <p className="text-ink-900 mt-1 text-xs font-bold">{who}</p>
-                <p className="text-ink-950 text-xl font-bold">
-                  {n} <span className="text-ink-400 text-[10px] font-semibold">{unit}</span>
-                </p>
-                <p className="text-ink-400 text-[10px]">{sub}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card size="sm" className="mt-3 overflow-hidden p-0">
-          <div className="border-ink-100 flex border-b text-center text-xs font-bold">
-            <span className="text-ink-950 border-ink-900 flex-1 border-b-2 py-2">{GAME.home}</span>
-            <span className="text-ink-400 flex-1 py-2">{GAME.away}</span>
-          </div>
-          <table className="w-full">
-            <thead className="border-ink-100 border-b">
-              <tr>
-                <Th>Player</Th>
-                <Th center>Min</Th>
-                <Th center>Pts</Th>
-                <Th center>Reb</Th>
-                <Th center>Ast</Th>
-                <Th center>TO</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-ink-50 divide-y">
-              <tr>
-                <td colSpan={6} className="text-ink-400 bg-ink-50/60 px-3 py-1 text-[10px] font-bold uppercase">
-                  Starters
-                </td>
-              </tr>
-              {BOX.slice(0, 5).map((p) => (
-                <tr key={p.jersey}>
-                  <Td>
-                    <span className="font-semibold">
-                      #{p.jersey} {p.name}
-                    </span>{" "}
-                    {p.top && (
-                      <span className="bg-gold-50 text-gold-600 rounded px-1 py-0.5 text-[9px] font-bold">TOP</span>
-                    )}
-                  </Td>
-                  <Td center>{p.min}</Td>
-                  <Td center className="font-bold">
-                    {p.pts}
-                  </Td>
-                  <Td center>{p.reb}</Td>
-                  <Td center>{p.ast}</Td>
-                  <Td center>{p.to}</Td>
-                </tr>
-              ))}
-              <tr>
-                <td colSpan={6} className="text-ink-400 bg-ink-50/60 px-3 py-1 text-[10px] font-bold uppercase">
-                  Bench
-                </td>
-              </tr>
-              {BOX.slice(5, 9).map((p) => (
-                <tr key={p.jersey}>
-                  <Td>
-                    <span className="font-semibold">
-                      #{p.jersey} {p.name}
-                    </span>
-                  </Td>
-                  <Td center>{p.min}</Td>
-                  <Td center className="font-bold">
-                    {p.pts}
-                  </Td>
-                  <Td center>{p.reb}</Td>
-                  <Td center>{p.ast}</Td>
-                  <Td center>{p.to}</Td>
-                </tr>
-              ))}
-              <tr className="bg-ink-50/60">
-                <Td className="font-bold">Team</Td>
-                <Td center />
-                <Td center className="font-bold">
-                  {GAME.finalHome}
-                </Td>
-                <Td center className="font-bold">
-                  {BOX.reduce((a, p) => a + p.reb, 0)}
-                </Td>
-                <Td center className="font-bold">
-                  {BOX.reduce((a, p) => a + p.ast, 0)}
-                </Td>
-                <Td center className="font-bold">
-                  {BOX.reduce((a, p) => a + p.to, 0)}
-                </Td>
-              </tr>
-            </tbody>
-          </table>
-        </Card>
+      <div className="px-3">
+        <GameTabs active="game" />
+        <div className="mt-3">
+          <LinescoreCard
+            rows={[
+              {
+                color: GAME.homeColor,
+                short: GAME.homeShort,
+                quarters: GAME.lines.home,
+                total: GAME.finalHome,
+              },
+              {
+                color: GAME.awayColor,
+                short: GAME.awayShort,
+                quarters: GAME.lines.away,
+                total: GAME.finalAway,
+              },
+            ]}
+          />
+          <SectionH3>Game leaders</SectionH3>
+          <LeadersCard
+            sections={[
+              {
+                label: "Points",
+                home: { jersey: 23, name: KID.short, value: 21, unit: "PTS", sub: "6 REB · 3 AST" },
+                away: { jersey: 10, name: "Noah S.", value: 18, unit: "PTS", sub: "5 REB · 2 AST" },
+              },
+              {
+                label: "Rebounds",
+                home: { jersey: 11, name: "Malik O.", value: 8, unit: "REB", sub: "6 DReb · 2 OReb" },
+                away: { jersey: 8, name: "Ibrahim H.", value: 7, unit: "REB", sub: "5 DReb · 2 OReb" },
+              },
+              {
+                label: "Assists",
+                home: { jersey: 7, name: "Marcus C.", value: 5, unit: "AST", sub: "11 PTS · 1 TO" },
+                away: { jersey: 3, name: "Lucas K.", value: 4, unit: "AST", sub: "12 PTS · 2 TO" },
+              },
+              {
+                label: "Defense",
+                home: { jersey: 4, name: "Ethan P.", value: 2, unit: "STL", sub: "2 STL · 0 BLK" },
+                away: { jersey: 6, name: "Felix W.", value: 2, unit: "STL", sub: "2 STL · 0 BLK" },
+              },
+            ]}
+          />
+          <SectionH3>Team stats</SectionH3>
+          <TeamStatsCard
+            rows={[
+              {
+                label: "Field goals",
+                home: 24 / 51,
+                away: 22 / 54,
+                displayHome: "24-51 · 47%",
+                displayAway: "22-54 · 41%",
+              },
+              {
+                label: "3-pointers",
+                home: 5 / 14,
+                away: 4 / 16,
+                displayHome: "5-14 · 36%",
+                displayAway: "4-16 · 25%",
+              },
+              {
+                label: "Free throws",
+                home: 9 / 12,
+                away: 10 / 15,
+                displayHome: "9-12 · 75%",
+                displayAway: "10-15 · 67%",
+              },
+              { label: "Rebounds", home: 32, away: 29 },
+              { label: "Assists", home: 13, away: 11 },
+              { label: "Steals", home: 4, away: 5 },
+              { label: "Blocks", home: 1, away: 2 },
+              { label: "Turnovers", home: 7, away: 9 },
+              { label: "Fouls", home: 17, away: 14 },
+            ]}
+          />
+          <SectionH3>Box score</SectionH3>
+          <BoxScoreCard
+            starters={BOX.slice(0, 5).map((p) => ({
+              jersey: p.jersey,
+              name: p.name,
+              pts: p.pts,
+              reb: p.reb,
+              ast: p.ast,
+              stl: p.stl,
+              to: p.to,
+              top: !!p.top,
+            }))}
+            bench={BOX.slice(5).map((p) => ({
+              jersey: p.jersey,
+              name: p.name,
+              pts: p.pts,
+              reb: p.reb,
+              ast: p.ast,
+              stl: p.stl,
+              to: p.to,
+            }))}
+            live={false}
+            totals={{
+              pts: GAME.finalHome,
+              reb: BOX.reduce((a, p) => a + p.reb, 0),
+              ast: BOX.reduce((a, p) => a + p.ast, 0),
+              stl: BOX.reduce((a, p) => a + p.stl, 0),
+              to: BOX.reduce((a, p) => a + p.to, 0),
+            }}
+          />
+        </div>
       </div>
     </div>
   )
@@ -706,12 +670,14 @@ function RecapArticle({
   title,
   date,
   body,
+  cover,
   advanceOnPill,
   confirmText,
 }: {
   title: string
   date: string
   body: string[]
+  cover: string
   advanceOnPill: string
   confirmText?: string
 }) {
@@ -725,7 +691,10 @@ function RecapArticle({
           <span className="text-ink-400 text-xs">{date}</span>
         </div>
         <h1 className="text-ink-950 mt-2 text-lg font-bold leading-snug">{title}</h1>
-        <div className="from-play-100 to-hoop-100 mt-3 aspect-[16/9] w-full rounded-xl bg-gradient-to-br" />
+        <div className="mt-3 overflow-hidden rounded-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={cover} alt="" className="aspect-[16/9] w-full object-cover" />
+        </div>
         <div className="text-ink-700 mt-3 space-y-3 text-sm leading-relaxed">
           {body.map((p) => (
             <p key={p.slice(0, 20)}>{p}</p>
@@ -755,7 +724,7 @@ function RecapArticle({
 }
 
 export function SceneRecap() {
-  return <RecapArticle title={RECAP.title} date={RECAP.date} body={RECAP.body} advanceOnPill={TEAM.name} />
+  return <RecapArticle title={RECAP.title} date={RECAP.date} body={RECAP.body} cover={RECAP_COVER} advanceOnPill={TEAM.name} />
 }
 
 /* Step 30a — Team chat (phone) */
@@ -1040,6 +1009,7 @@ export function SceneChampRecap() {
       title={CHAMP_RECAP.title}
       date={CHAMP_RECAP.date}
       body={CHAMP_RECAP.body}
+      cover={CHAMP_COVER}
       advanceOnPill="Box score & play-by-play →"
       confirmText="Champions crowned"
     />

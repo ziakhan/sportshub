@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
-import { Badge } from "@/components/ui"
+import { Badge, StarRating } from "@/components/ui"
 import type { EventItem } from "./page"
 
 type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "tournaments"
@@ -98,7 +98,16 @@ export function EventsBrowser({ events }: { events: EventItem[] }) {
                   </div>
 
                   <h3 className="font-semibold text-ink-950 mb-1">{event.name}</h3>
-                  {event.clubName && <p className="text-sm text-ink-500 mb-2">{event.clubName}</p>}
+                  {event.clubName && (
+                    <p className={`text-sm text-ink-500 ${event.clubRating != null ? "mb-0.5" : "mb-2"}`}>
+                      {event.clubName}
+                    </p>
+                  )}
+                  {event.clubRating != null && (
+                    <div className="mb-2">
+                      <StarRating rating={event.clubRating} count={event.clubReviewCount} />
+                    </div>
+                  )}
 
                   <div className="space-y-1 text-xs text-ink-500">
                     <div>
