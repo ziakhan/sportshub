@@ -143,3 +143,52 @@ he rules. Until then: Ridgeview Rockets / North Star Storm / Lakeside Lords
 ## Status
 Plan awaiting owner OK (he reviews, then passes execute in order). Chip
 overflow fix + edge fades already shipped (`93b73ad`).
+
+---
+
+# v3 — owner review round 1 (2026-07-19): the realism pivot
+
+Owner punch list (verbatim intent, banked before fixing):
+
+1. **Functional realism is the #1 problem.** Screens must match what the
+   product actually does. Look and feel may stay stylized, but fields,
+   steps and behavior must be true. Never invent details. Caught examples:
+   "Born 2013 or 2014" is wrong (Canadian age groups = single calendar
+   year); offer accept is missing jersey + tracksuit sizes (real product
+   collects them).
+2. **Missing side-by-side:** club sends the offer on one screen, family
+   accepts on the other, with the template fields and sizes. Build it.
+3. **Mobile display:** scenes overflow, owner had to zoom out. Must fit a
+   phone width with no zooming.
+4. **Player controls:** tap the video itself to play/pause; drop the skip
+   arrows (chips already jump); scenes run too fast, make them longer.
+5. **Frames:** admin/operator actions belong on a PC-style screen, nearly
+   full screen (minus top menus), showing much more of the real UI. Parent
+   and family views belong inside an iPhone frame.
+6. **The end-to-end flow is the deliverable.** In order, chaptered or not.
+   The stylized clips are "marketing stuff maybe, later" (owner will ask
+   separately). Missing steps must be filled so full functionality is
+   visible.
+
+## v3 approach — real captures, ordered flow
+
+Functional realism at near-full-screen means capturing the REAL product,
+not drawing more mocks: Playwright drives the actual app against the
+seeded demo world (scripts/seed-nph-demo.ts personas), captures each step
+of the season flow as a screenshot (admin flows at desktop width ~1140,
+family flows at iPhone width 390), saved under apps/web/public/demo/flow/.
+The DemoPlayer keeps chips/captions/roles; scenes become framed captures
+(PC chrome for admin, iPhone chrome for family). Where a state is hard to
+stage (mid-live game), stage it via the demo seeds/APIs first. Simplify by
+OMITTING regions (crop menus), never by inventing UI. Mocks stay only
+where a scene is conceptual (none currently planned).
+
+Capture list = the ONE SEASON order (claim → teams → staff → tryout form →
+publish → public tryout page [phone] → register+pay [phone] → signups →
+attendance → offer template → send → SIDE-BY-SIDE accept w/ sizes [phone] →
+roster → league season → sessions → refs → publish → club submit → schedule
+→ practices → chat/announcement [phone] → poll → postpone → guest link →
+console + live page side-by-side → box score → recap/news → standings →
+playoffs wizard → kid stats [phone] → reviews).
+
+Status: player fixes shipping now; capture pipeline next.
