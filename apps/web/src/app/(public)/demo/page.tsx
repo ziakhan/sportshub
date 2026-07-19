@@ -1,10 +1,10 @@
 import { LiveDemo } from "@/components/flow-demo/live"
 
 export const metadata = {
-  title: "Watch It Run | From Club Signup to a Finalized Team | SportsHub One",
+  title: "Watch It Run | Signup to Final Whistle | SportsHub One",
   alternates: { canonical: "/demo" },
   description:
-    "Watch the real product run end to end: a club claims its page and builds a team, the coach posts a tryout, a parent signs up and pays, offers go out, the family accepts, the roster finalizes.",
+    "Watch the real product run end to end: a club builds its team through tryouts and offers, the league opens a season and schedules every game, a referee takes the day, and game night is scored live to every phone, down to the signed scoresheet.",
 }
 
 export default function DemoPage() {

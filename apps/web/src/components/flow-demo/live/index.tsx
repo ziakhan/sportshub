@@ -6,6 +6,11 @@ import { ACT2 } from "./act2-tryout"
 import { ACT3 } from "./act3-parent"
 import { ACT4 } from "./act4-signups"
 import { ACT5, ACT6 } from "./act5-accept"
+import { ACT_LEAGUE } from "./act6-league"
+import { ACT_REGISTER_LEAGUE } from "./act7-register"
+import { ACT_SCHEDULE } from "./act8-schedule"
+import { ACT_GAMEDAY } from "./act9-gameday"
+import { ACT_FINAL } from "./act10-final"
 
 const ACTS: LiveAct[] = [
   { id: "club", title: "The club signs up" },
@@ -14,8 +19,30 @@ const ACTS: LiveAct[] = [
   { id: "signups", title: "Check-in & offers" },
   { id: "accept", title: "The family accepts" },
   { id: "finalize", title: "The team is set" },
+  { id: "league", title: "The league opens" },
+  { id: "register", title: "Teams enter" },
+  { id: "schedule", title: "Schedule & refs" },
+  { id: "gameday", title: "Game day, live" },
+  { id: "final", title: "Final & the sheet" },
 ]
 
 export function LiveDemo() {
-  return <LivePlayer acts={ACTS} scenes={[...ACT1, ...ACT2, ...ACT3, ...ACT4, ...ACT5, ...ACT6]} />
+  return (
+    <LivePlayer
+      acts={ACTS}
+      scenes={[
+        ...ACT1,
+        ...ACT2,
+        ...ACT3,
+        ...ACT4,
+        ...ACT5,
+        ...ACT6,
+        ...ACT_LEAGUE,
+        ...ACT_REGISTER_LEAGUE,
+        ...ACT_SCHEDULE,
+        ...ACT_GAMEDAY,
+        ...ACT_FINAL,
+      ]}
+    />
+  )
 }

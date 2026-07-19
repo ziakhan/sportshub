@@ -292,10 +292,10 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
             <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-ink-900 text-2xl font-bold">The team is in. That is how it runs.</h2>
+        <h2 className="text-ink-900 text-2xl font-bold">From first signup to the final whistle.</h2>
         <p className="text-ink-500 mx-auto mt-3 max-w-md text-sm leading-relaxed">
-          Claim to finalized roster, every click you just watched is the real product doing real
-          work.
+          Club, league, parents, referee, scorer&apos;s table: every click you just watched is the
+          real product doing real work.
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           <a
