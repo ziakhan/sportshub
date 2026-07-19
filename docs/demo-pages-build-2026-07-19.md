@@ -96,3 +96,43 @@ interactive end-to-end demo of the club-to-team journey. Built at `/demo`
   zero page errors, every scene screenshotted at animation-start and hold and
   reviewed by eye; autoplay tested hands-free; lint/tsc clean. Local only, not
   deployed.
+
+## Addition 3 (same day): the league arc in the live demo
+
+Owner follow-up: extend /demo with the whole league story. Five new acts,
+16 new scenes (37 total, 11 acts):
+
+- **The league opens**: create league → create season (dates, May 15
+  registration deadline, $3,990 team fee, 10 guaranteed games) → sessions with
+  dates/times → venues → Open Registration (real notification headline).
+- **Teams enter**: the Force registers via /browse-leagues (team + division
+  pickers, the 12/12 league-roster-version checklist, "Submit Team") →
+  submissions land on the league's Teams tab like tryout signups, Approve →
+  deadline passes, preflight green, Finalize Season.
+- **Schedule & refs**: preview → commit (real "Season Schedule Published"
+  bell) → referee day-offer broadcast (real copy) → persona switch to Mike
+  Ferreira's /referee/requests inbox, Accept → real toast "You're booked —
+  assigned to 6 games that day." → Maria's notifications (verbatim
+  schedule-published bell) → My Calendar with RSVP Going + the real "Add to
+  phone" Apple/Google subscribe panel.
+- **Game day, live**: game-day checklist (clock choice) → attendance roll-call
+  (tap absent) → starting fives → live duo in the real rows-layout console:
+  +2 → player → "Assist by?" chain, score flashes on the public page instantly;
+  then a missed 2 → rebound picker → play-by-play writes itself. No refresh,
+  stressed in captions.
+- **Final & the sheet**: referee PIN sign-off (Mike, PIN-verified) → Mark
+  final → the one-page official scoresheet (marks legend, signature row,
+  Download PDF) → distribution scene showing the REAL finalize templates: the
+  scoresheet email to both clubs' managers + the league office, and the
+  "Final Score" bell to every family.
+
+Fidelity notes verified in source before building: schedule commit really
+bells+emails the whole team circle (lib copy quoted verbatim); game finalize
+really emails the scoresheet link to managers/league and bells families
+("no family email" is a deliberate volume decision in the route). New verbatim
+inventory: docs/demo-inventory/league-entry-live.md (browse-leagues register,
+referee requests, scoresheet, calendar, notifications).
+
+Verified: all 37 scenes walked headlessly, zero page errors, every scene
+eyeballed at start + hold; two zoom-clipping defects found by eye and fixed.
+Local only, not deployed.

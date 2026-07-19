@@ -1,0 +1,335 @@
+"use client"
+
+/**
+ * Act 9 — Schedule out, referees booked, everyone told: the league commits
+ * the schedule, broadcasts a day offer to its referee pool, Mike accepts and
+ * gets the whole day, and every family and staff member gets the bell, the
+ * email, and the games on their calendar. Mirrors the season Referees tab,
+ * /referee/requests, /notifications and /calendar.
+ */
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { cn } from "@/components/ui/cn"
+import { LEAGUE, REFS, TEAM } from "../data"
+import { Field, Panel, PhonePage } from "../scenes/shared"
+import { LiveInput, LiveSelect } from "./anim"
+import type { LiveScene } from "./engine"
+import { pick } from "./helpers"
+import { LeagueHold as Hold, SeasonShell } from "./act6-league"
+import { SCENE_COMMIT } from "./act7-register"
+
+/* S2 — Broadcast a day offer to the referee pool */
+const refOffer: LiveScene = {
+  id: "l-ref-offer",
+  act: "schedule",
+  persona: "league",
+  personaLabel: "League office",
+  frame: "desktop",
+  url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
+  caption:
+    "Referees are booked by the day, not per game. One offer covers the whole slate; broadcast it and the first taker gets it.",
+  script: [
+    { zoom: "bookPanel", scale: 1.18 },
+    ...pick("daySel", "day", 0, "Week 1 — Sat, May 30"),
+    ...pick("toSel", "to", 0, "📢 All league referees (first accept wins)"),
+    { zoom: null },
+    { hold: "sendBtn" },
+    { confirm: "Offer broadcast to 4 referees — first to accept gets the day." },
+  ],
+  render: (g) => (
+    <SeasonShell active="Referees" status="Finalized" statusTone="hoop">
+      <div className="space-y-5">
+        <div data-live-id="bookPanel">
+          <Panel title="Book a referee for a session day">
+            <p className="text-ink-500 mb-4 text-sm">
+              Pick a day and shift, then target a referee you know — or broadcast to your whole
+              pool and let the first taker have it. Accepting auto-assigns them to every game in
+              the window.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Session day">
+                <LiveSelect
+                  id="daySel"
+                  value={g("day") as string}
+                  placeholder="Choose day…"
+                  open={!!g("day:open")}
+                  options={["Week 1 — Sat, May 30", "Week 1 — Sun, May 31", "Week 2 — Sat, Jun 6"]}
+                  highlight={g("day:hi") as number}
+                />
+              </Field>
+              <Field label="Shift">
+                <div className="flex items-center gap-2">
+                  <LiveInput value="09:00" />
+                  <LiveInput value="18:00" />
+                </div>
+              </Field>
+            </div>
+            <div className="mt-4 grid grid-cols-[1fr_1fr_auto] items-end gap-3">
+              <Field label="Send to">
+                <LiveSelect
+                  id="toSel"
+                  value={g("to") as string}
+                  placeholder="Choose…"
+                  open={!!g("to:open")}
+                  options={["📢 All league referees (first accept wins)", "Mike Ferreira", "Sarah Whitlock"]}
+                  highlight={g("to:hi") as number}
+                />
+              </Field>
+              <LiveInput placeholder="Message (optional)" />
+              <Hold id="sendBtn">
+                <Button>Send offer</Button>
+              </Hold>
+            </div>
+          </Panel>
+        </div>
+        <Panel title="League referee pool" action={<Badge tone="neutral">4 referees</Badge>}>
+          <div className="divide-ink-100 divide-y">
+            {REFS.map((r, i) => (
+              <div key={r.name} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-ink-900 text-sm font-bold">{r.name}</p>
+                  <p className="text-ink-500 text-xs">
+                    {r.cert} · {r.games} games
+                  </p>
+                </div>
+                <Badge tone={i === 3 ? "neutral" : "court"}>{i === 3 ? "no availability set" : "available"}</Badge>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </SeasonShell>
+  ),
+}
+
+/* S3 — Mike the referee logs in and takes the day */
+const refAccept: LiveScene = {
+  id: "l-ref-accept",
+  act: "schedule",
+  persona: "referee",
+  personaLabel: "Mike (referee)",
+  frame: "desktop",
+  url: "/referee/requests",
+  caption:
+    "Mike Ferreira logs in to his shift inbox. First accept wins the whole day, and accepting assigns him every game in the window.",
+  script: [
+    { wait: 500 },
+    { set: { offer: true } },
+    { wait: 900 },
+    { hold: "acceptBtn" },
+    { set: { accepted: true } },
+    { wait: 400 },
+    { confirm: "You're booked — assigned to 6 games that day." },
+  ],
+  render: (g) => (
+    <div className="px-10 py-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase tracking-wide">
+              Shifts &amp; availability
+            </h1>
+            <p className="text-ink-500 mt-1 text-sm">
+              Leagues book you by the day — keep your availability current and answer offers here.
+            </p>
+          </div>
+          <span className="text-play-700 text-sm font-semibold">My profile &rarr;</span>
+        </div>
+        <Card>
+          <p className="text-ink-900 mb-3 text-sm font-bold">{g("accepted") ? "Offers" : "Offers (1)"}</p>
+          {!g("accepted") && !!g("offer") && (
+            <div className="border-ink-100 live-row-in flex items-center justify-between rounded-xl border p-4">
+              <div>
+                <p className="text-ink-900 text-sm font-bold">
+                  {LEAGUE.name} · Sat, May 30 · 09:00–18:00
+                </p>
+                <p className="text-ink-500 text-xs">{LEAGUE.season} · Week 1</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="bg-hoop-100 text-hoop-700 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                  first accept wins
+                </span>
+                <Hold id="acceptBtn">
+                  <Button size="sm" tone="court">
+                    Accept
+                  </Button>
+                </Hold>
+                <Button size="sm" variant="subtle">
+                  Decline
+                </Button>
+              </div>
+            </div>
+          )}
+          {!!g("accepted") && (
+            <p className="text-ink-400 live-row-in text-sm">No open offers right now.</p>
+          )}
+          <p className="text-ink-400 mt-5 text-xs font-bold uppercase tracking-[0.14em]">Your booked shifts</p>
+          {g("accepted") ? (
+            <div className="live-row-in mt-2 flex items-center gap-2">
+              <span className="bg-court-100 text-court-700 live-pop rounded-full px-2 py-0.5 text-[10px] font-bold">
+                booked
+              </span>
+              <span className="text-ink-800 text-sm font-semibold">
+                {LEAGUE.name} · Sat, May 30 · 09:00–18:00
+              </span>
+            </div>
+          ) : (
+            <p className="text-ink-400 mt-2 text-sm">No upcoming availability declared.</p>
+          )}
+        </Card>
+      </div>
+    </div>
+  ),
+}
+
+/* N1 — The bell: schedule published, everyone in the team circle gets it */
+const notifBell: LiveScene = {
+  id: "l-notify",
+  act: "schedule",
+  persona: "parent",
+  personaLabel: "Maria (parent)",
+  frame: "phone",
+  caption:
+    "The commit fans out: head coach, assistant, team manager, every parent and player gets the bell and the email. Maria taps hers.",
+  script: [
+    { wait: 500 },
+    { set: { row: true } },
+    { wait: 1100 },
+    { hold: "notifRow" },
+  ],
+  render: (g) => (
+    <PhonePage>
+      <Badge tone="play">Inbox</Badge>
+      <h1 className="text-ink-950 mt-2 text-xl font-bold">Notifications (1 unread)</h1>
+      <div className="mt-3 flex gap-2">
+        <span className="text-play-700 text-xs font-semibold">Mark all as read</span>
+      </div>
+      {!!g("row") && (
+        <div data-live-id="notifRow" className="live-row-in bg-play-50/40 border-play-100 mt-3 rounded-xl border p-3.5">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-ink-950 text-sm font-bold">Game schedule published</p>
+            <span className="bg-play-600 mt-1 h-2 w-2 shrink-0 rounded-full" />
+          </div>
+          <p className="text-ink-600 mt-1 text-xs">
+            {TEAM.name}: 10 games scheduled in {LEAGUE.name} {LEAGUE.season}. See them on your
+            team calendar.
+          </p>
+          <p className="text-ink-400 mt-1.5 text-[11px]">May 16, 9:02 AM</p>
+        </div>
+      )}
+      <div className="border-ink-100 mt-3 rounded-xl border bg-white p-3.5">
+        <p className="text-ink-900 text-sm font-semibold">Final Score</p>
+        <p className="text-ink-500 mt-1 text-xs">Final: Toronto Lords Grade 9 55 — 51 Royal Crown Grade 9</p>
+        <p className="text-ink-400 mt-1.5 text-[11px]">May 3, 4:41 PM</p>
+      </div>
+    </PhonePage>
+  ),
+}
+
+/* N2 — The games land on the calendar, straight to the phone */
+const calendarScene: LiveScene = {
+  id: "l-calendar",
+  act: "schedule",
+  persona: "parent",
+  personaLabel: "Maria (parent)",
+  frame: "phone",
+  caption:
+    "Every game is on the calendar with RSVP built in, and one tap subscribes the phone's own calendar. Moves and cancellations update by themselves.",
+  script: [
+    { wait: 600 },
+    { press: "goingBtn" },
+    { set: { going: true } },
+    { wait: 600 },
+    { press: "addPhone" },
+    { set: { panel: true } },
+    { wait: 900 },
+    { hold: "appleBtn" },
+  ],
+  render: (g) => (
+    <PhonePage>
+      <h1 className="text-ink-950 text-xl font-bold">My Calendar</h1>
+      <p className="text-ink-500 mt-1 text-sm">
+        Every game, practice and event across all your teams — answer Going or Can&apos;t go right
+        here.
+      </p>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex gap-1.5">
+          <span className="bg-ink-900 rounded-full px-3 py-1 text-xs font-semibold text-white">Agenda</span>
+        </div>
+        <span data-live-id="addPhone" className="border-ink-200 text-ink-700 inline-block rounded-full border bg-white px-3 py-1 text-xs font-semibold">
+          📅 Add to phone
+        </span>
+      </div>
+      {!!g("panel") && (
+        <Card size="sm" className="live-pop mt-3">
+          <p className="text-ink-900 text-sm font-bold">Opening Apple Calendar…</p>
+          <p className="text-ink-500 mt-1 text-xs">
+            Confirm the subscription there and every practice, game and event stays in sync.
+            Didn&apos;t open? Use the buttons below.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Hold id="appleBtn">
+              <Button size="sm">iPhone / Apple Calendar</Button>
+            </Hold>
+            <Button size="sm" variant="subtle">
+              Google Calendar (Android)
+            </Button>
+            <Button size="sm" variant="subtle">
+              Copy feed URL
+            </Button>
+          </div>
+        </Card>
+      )}
+      <p className="text-ink-400 mt-4 text-[11px] font-bold uppercase tracking-[0.14em]">May 2026</p>
+      <Card size="sm" className="mt-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-ink-900 text-sm font-bold">vs North Toronto Huskies Grade 10</p>
+            <p className="text-ink-500 text-xs">Sat May 30 · 9:00 – 10:30 AM · Pan Am Sports Centre</p>
+          </div>
+          <span className="text-ink-400 text-[10px] font-bold">GAME</span>
+        </div>
+        <div className="mt-2.5 flex gap-1.5">
+          <span
+            data-live-id="goingBtn"
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+              g("going") ? "bg-court-600 text-white" : "border-ink-200 text-ink-600 border bg-white"
+            )}
+          >
+            ✓ Going
+          </span>
+          <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-3 py-1 text-xs font-semibold">
+            ? Maybe
+          </span>
+          <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-3 py-1 text-xs font-semibold">
+            ✕ Can&apos;t go
+          </span>
+        </div>
+        <p className="text-ink-400 mt-2 text-[11px]">Jayden Thompson</p>
+      </Card>
+      <Card size="sm" className="mt-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-ink-900 text-sm font-bold">vs Royal Crown Grade 10</p>
+            <p className="text-ink-500 text-xs">Sat May 30 · 12:00 – 1:30 PM · Pan Am Sports Centre</p>
+          </div>
+          <span className="text-ink-400 text-[10px] font-bold">GAME</span>
+        </div>
+      </Card>
+      <Card size="sm" className="mt-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-ink-900 text-sm font-bold">Practice</p>
+            <p className="text-ink-500 text-xs">Tue Jun 2 · 6:30 – 8:00 PM · Haber Recreation Centre</p>
+          </div>
+          <span className="text-ink-400 text-[10px] font-bold">PRACTICE</span>
+        </div>
+      </Card>
+    </PhonePage>
+  ),
+}
+
+export const ACT_SCHEDULE: LiveScene[] = [SCENE_COMMIT, refOffer, refAccept, notifBell, calendarScene]

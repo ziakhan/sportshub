@@ -29,7 +29,7 @@ let lastScene = ""
 let holdsInScene = 0
 const t0 = Date.now()
 
-while (Date.now() - t0 < 8 * 60_000) {
+while (Date.now() - t0 < 30 * 60_000) {
   const scene = await player.getAttribute("data-live-scene").catch(() => null)
   if (!scene) break
   if (scene === "done") {
