@@ -29,9 +29,12 @@ async function mintCookies(email) {
 }
 
 const PERSONAS = [
+  ["owner-nph@sportshub.demo", ["/dashboard", "/manage", "/calendar", "/messages"]],
+  ["owner-lords@sportshub.demo", ["/dashboard", "/teams", "/calendar"]],
+  ["ref-mike@sportshub.demo", ["/", "/referee", "/calendar"]],
+  ["admin@sportshub.demo", ["/dashboard", "/manage"]],
   ["parent@sportshub.demo", ["/", "/calendar", "/messages", "/players", "/offers", "/payments", "/account", "/notifications"]],
-  ["owner-force@sportshub.demo", ["/dashboard", "/tryouts", "/payments", "/messages", "/teams", "/manage", "/calendar"]],
-  ["admin@sportshub.demo", ["/dashboard"]],
+  ["owner-force@sportshub.demo", ["/dashboard", "/payments", "/messages", "/teams", "/calendar"]],
 ]
 const browser = await chromium.launch()
 let anyBad = false
@@ -48,7 +51,7 @@ for (const [email, urls] of PERSONAS) {
   const bad = []
   while (queue.length) {
     const { u, d } = queue.shift()
-    if (seen.has(u) || seen.size > 120) continue
+    if (seen.has(u) || seen.size > 200) continue
     seen.add(u)
     const res = await page.goto(BASE + u, { waitUntil: "domcontentloaded", timeout: 25000 }).catch(() => null)
     const status = res ? res.status() : "ERR"
@@ -58,7 +61,7 @@ for (const [email, urls] of PERSONAS) {
       soft = /This page could not be found|Application error|Something went wrong/.test(txt)
     }
     if (status !== 200 || soft) { bad.push(`${soft ? "SOFT-ERR" : status}  ${u}`); }
-    if (status === 200 && !soft && d < 2) {
+    if (status === 200 && !soft && d < 3) {
       const links = await page.$$eval('a[href^="/"]', (as) => as.map((a) => a.getAttribute("href")))
       for (let l of new Set(links)) {
         if (!l) continue
