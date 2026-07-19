@@ -136,7 +136,7 @@ export function DemoPlayer({
               roleFilter === null ? "bg-ink-950 text-white" : "bg-ink-50 text-ink-500 hover:bg-ink-100"
             }`}
           >
-            The whole season
+            Everyone
           </button>
           {roles.map((r) => (
             <button

@@ -8,11 +8,12 @@ import { PARENT_SCENES } from "./scenes-parent"
 import { CLUB_SCENES } from "./scenes-club"
 import { LEAGUE_SCENES } from "./scenes-league"
 import * as F from "./scenes-features"
+import { OFFER_FLOW, OFFER_ARRIVES, OFFER_PACKAGE, OFFER_SIZES, OFFER_PAID } from "./scenes-offer-flow"
 
 /* ---- clubs page ---- */
 export const CLUB_CLIPS: Record<string, DemoScene[]> = {
   tryouts: [CLUB_SCENES[3], CLUB_SCENES[4], CLUB_SCENES[5], CLUB_SCENES[6]],
-  offers: [CLUB_SCENES[7], CLUB_SCENES[8], CLUB_SCENES[9], CLUB_SCENES[10]],
+  offers: OFFER_FLOW,
   payments: [F.LEDGER, F.AUTOCHARGE],
   scoring: [F.GUEST_SCOREKEEPER, F.SPLIT_LIVE, F.BOX_SCORE],
   publicFace: [F.CLUB_PAGE_PUBLIC, F.RECAP_NEWS, F.REVIEWS],
@@ -24,7 +25,7 @@ export const CLUB_CLIPS: Record<string, DemoScene[]> = {
 /* ---- parents page ---- */
 export const PARENT_CLIPS: Record<string, DemoScene[]> = {
   find: [PARENT_SCENES[0], PARENT_SCENES[1]],
-  pay: [PARENT_SCENES[2], PARENT_SCENES[3], PARENT_SCENES[5]],
+  pay: [PARENT_SCENES[2], PARENT_SCENES[3], OFFER_ARRIVES, OFFER_PACKAGE, OFFER_SIZES, OFFER_PAID],
   calendar: [PARENT_SCENES[4], F.POSTPONE],
   live: [F.PHONE_LIVE, F.BOX_SCORE],
   stats: [F.KID_STATS, F.MY_KIDS],

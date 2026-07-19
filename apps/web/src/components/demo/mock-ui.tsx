@@ -238,3 +238,63 @@ export function Bubble({ who, children, mine, pinned }: { who?: string; children
     </div>
   )
 }
+
+/**
+ * PC-style frame for operator scenes: browser chrome, app bar with the
+ * signed-in persona, and a slim workspace rail so it reads like the real
+ * admin surface (owner: admin actions belong on a PC screen, fuller view).
+ */
+export function PCFrame({
+  url,
+  who,
+  nav,
+  active,
+  children,
+}: {
+  url: string
+  /** Signed-in persona, e.g. "Dana Whitfield · Ridgeview Rockets" */
+  who: string
+  nav: string[]
+  active: string
+  children: ReactNode
+}) {
+  return (
+    <div className="border-ink-200 mx-auto w-full overflow-hidden rounded-2xl border bg-white shadow-xl">
+      <div className="border-ink-100 flex items-center gap-2 border-b bg-[#f2f3f8] px-3 py-2">
+        <span className="flex gap-1.5" aria-hidden="true">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#fc5753]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#fdbc40]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[#33c748]" />
+        </span>
+        <span className="border-ink-200 text-ink-500 mx-auto w-full max-w-[280px] truncate rounded-md border bg-white px-2.5 py-0.5 text-center text-[10.5px] font-medium">
+          {url}
+        </span>
+      </div>
+      <div className="border-ink-100 flex items-center justify-between border-b px-3 py-1.5">
+        <span className="flex items-center gap-1.5">
+          <span className="relative flex h-5 w-5 items-center justify-center rounded-md bg-[#1e2d4d] text-[9px] font-black text-white">
+            S
+            <span className="bg-hoop-500 absolute -right-0.5 -top-0.5 flex h-2 w-2 items-center justify-center rounded-[2px] text-[5px]">1</span>
+          </span>
+          <span className="text-ink-950 text-[11px] font-bold">SportsHub</span>
+        </span>
+        <span className="bg-play-50 text-play-700 truncate rounded-full px-2 py-0.5 text-[10px] font-bold">{who}</span>
+      </div>
+      <div className="flex">
+        <div className="border-ink-100 hidden w-[128px] flex-none border-r bg-[#fafbfd] px-2 py-3 sm:block">
+          {nav.map((item) => (
+            <div
+              key={item}
+              className={`mb-0.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ${
+                item === active ? "bg-play-50 text-play-700" : "text-ink-500"
+              }`}
+            >
+              {item}
+            </div>
+          ))}
+        </div>
+        <div className="min-w-0 flex-1 p-3 sm:p-4">{children}</div>
+      </div>
+    </div>
+  )
+}
