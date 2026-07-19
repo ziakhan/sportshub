@@ -38,13 +38,25 @@ const TICK_MS = 50
 // Owner 2026-07-19: scenes ran too fast. Long enough to read the payoff.
 const SCENE_MS = 8000
 
+export interface DemoChapter {
+  title: string
+  /** Index of the chapter's first scene in the flat scenes array */
+  start: number
+}
+
 export function DemoPlayer({
   scenes: allScenes,
   title,
+  chapters,
+  wide,
 }: {
   scenes: DemoScene[]
   /** Accessible name for the player region */
   title: string
+  /** Ordered chapter markers for long end-to-end flows */
+  chapters?: DemoChapter[]
+  /** Bigger stage for near-full desktop screens */
+  wide?: boolean
 }) {
   const [i, setI] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -119,6 +131,32 @@ export function DemoPlayer({
         on each screen to do that step, or use <span className="text-ink-950 font-bold">Next step</span>{" "}
         below. Prefer to sit back? Press <span className="text-ink-950 font-bold">Watch</span>.
       </div>
+      {/* chapter rail for the end-to-end flow */}
+      {chapters && chapters.length > 1 && !roleFilter && (
+        <div className="border-ink-50 flex gap-1.5 overflow-x-auto border-b px-3 py-2.5 [scrollbar-width:none]">
+          {chapters.map((c, ci) => {
+            const end = ci + 1 < chapters.length ? chapters[ci + 1].start : scenes.length
+            const current = i >= c.start && i < end
+            return (
+              <button
+                key={c.title}
+                type="button"
+                onClick={() => {
+                  setPlaying(false)
+                  goto(c.start)
+                }}
+                aria-current={current ? "true" : undefined}
+                className={`flex-none cursor-pointer whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-colors ${
+                  current ? "bg-hoop-500 text-white" : i >= end ? "bg-play-50 text-play-700" : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+                }`}
+              >
+                {ci + 1}. {c.title}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {/* role filter (only when scenes carry roles, i.e. the ONE SEASON tour) */}
       {roles.length > 1 && (
         <div className="border-ink-50 flex flex-wrap items-center gap-1.5 border-b px-3 py-2.5">
@@ -209,7 +247,7 @@ export function DemoPlayer({
         className={`bg-ink-50/60 relative flex min-h-[430px] items-center justify-center overflow-hidden px-2 py-7 sm:px-8 ${playing ? "demo-auto cursor-pointer" : ""}`}
       >
         <DemoAdvanceContext.Provider value={advance}>
-          <div key={`${roleFilter ?? "all"}-${i}`} className="demo-scene-enter w-full max-w-2xl">
+          <div key={`${roleFilter ?? "all"}-${i}`} className={`demo-scene-enter w-full ${wide ? "max-w-4xl" : "max-w-2xl"}`}>
             {scene.screen}
           </div>
         </DemoAdvanceContext.Provider>
