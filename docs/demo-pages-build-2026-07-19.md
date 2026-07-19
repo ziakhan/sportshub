@@ -71,3 +71,28 @@ drawn from the real product:
 Committed locally on `wip/2026-07-09-design-demos-elevation`. NOT deployed:
 production push needs the owner's explicit go (standing rule). Note the live-site
 check in the brief can only happen after that deploy.
+
+## Addition (same day): the animated end-to-end demo at /demo
+
+Owner follow-up: keep the walkthrough pages as they are, and add a fully
+interactive end-to-end demo of the club-to-team journey. Built at `/demo`
+(added to lib/public-paths.ts):
+
+- Six acts, 21 scenes: club claims its page → creates the team and assigns
+  staff (head coach, assistant, team manager by email) → hands off to the head
+  coach → coach creates the tryout with full details and publishes it → parent
+  browses, searches, signs up and pays → club watches signups, runs check-in,
+  bulk-sends offers → parent accepts (package, uniform size, jersey numbers,
+  payment plan) → club sees acceptances land and finalizes the roster.
+- Every scene acts itself out in real time: a pointer moves and clicks with
+  ripples, dropdowns open and pick, fields type with a caret, checkmarks pop,
+  the camera zooms in on what is being touched and back out, confirmations
+  appear. Each scene then holds on the glowing decisive button for the user;
+  autoplay presses it on its own. Click the demo to pause.
+- Engine: `flow-demo/live/engine.tsx` (timeline runner, virtual cursor, camera,
+  holds) + `anim.tsx` primitives + `act1..act5` scene files. Same verbatim
+  strings and story data as the walkthrough pages.
+- Verified: full run walked headlessly (`scripts/demo/walk-live-demo.mjs`),
+  zero page errors, every scene screenshotted at animation-start and hold and
+  reviewed by eye; autoplay tested hands-free; lint/tsc clean. Local only, not
+  deployed.
