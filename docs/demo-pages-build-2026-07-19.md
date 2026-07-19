@@ -205,3 +205,22 @@ for-clubs and for-leagues with act deep-links; parent cut later).
   the glowing control. Verified at 390px.
 - Verified: parent cut walked end to end headlessly, zero page errors; new
   scenes + homepage + mobile eyeballed; lint/tsc clean.
+
+## Addition 6: hero ONE pill, persona descriptions, real scores/news fidelity
+
+- Homepage headline now mirrors the logo lockup: "All of it." in play blue,
+  "One" as the brand's orange ONE box (hoop-500 pill, uppercase), "app." in
+  ink. Gradient text removed.
+- The three persona buttons became descriptive cards: title + one line on
+  what's inside + arrow (clubs: tryouts/offers/payments/rosters; leagues:
+  registration/scheduling/referees/live scores/standings; parents: sign up,
+  pay, follow every game live).
+- Walkthrough fidelity: SceneScores now renders the product's REAL ScoreCard
+  component (monogram crests, winner arrow, dimmed loser, venue footer, real
+  status badges); new SceneNewsBrowse uses the REAL NewsCard component
+  (gradient cover placeholder, date + author, clamped excerpt) and clicks
+  through to the recap; the recap article gained its cover block matching
+  /news/[slug]. /how-it-works is now 64 steps; news-browse inserted into all
+  slices that carry the recap.
+- Verified: 64-step walk clean, zero page errors; scores/news-browse/recap and
+  the new hero eyeballed; lint/tsc clean. LOCAL, awaiting push word.

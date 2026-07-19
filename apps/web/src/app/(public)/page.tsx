@@ -180,9 +180,14 @@ export default async function HomePage() {
             <h1 className="font-display text-ink-950 mb-6 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
               Youth basketball.
               <br />
-              <span className="from-play-600 to-hoop-500 bg-gradient-to-r bg-clip-text text-transparent">
-                All of it. One app.
-              </span>
+              <span className="text-play-600">All of it.</span>{" "}
+              <span
+                aria-label="One"
+                className="bg-hoop-500 relative -top-[0.08em] inline-block rounded-[0.16em] px-[0.24em] py-[0.02em] align-middle text-[0.62em] uppercase leading-[1.15] tracking-[0.08em] text-white"
+              >
+                One
+              </span>{" "}
+              app.
             </h1>
 
             <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
@@ -211,25 +216,44 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mb-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/for-clubs"
-                className="bg-ink-950 shadow-ink-950/10 hover:bg-ink-800 inline-flex w-full items-center justify-center rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition sm:w-auto"
-              >
-                For clubs
-              </Link>
-              <Link
-                href="/for-leagues"
-                className="bg-ink-950 shadow-ink-950/10 hover:bg-ink-800 inline-flex w-full items-center justify-center rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white shadow-lg transition sm:w-auto"
-              >
-                For leagues
-              </Link>
-              <Link
-                href="/for-parents"
-                className="border-ink-200 text-ink-700 hover:bg-ink-50 inline-flex w-full items-center justify-center rounded-2xl border bg-white px-7 py-3.5 text-[15px] font-semibold transition sm:w-auto"
-              >
-                For parents &amp; players
-              </Link>
+            <div className="mx-auto mb-5 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
+              {[
+                {
+                  href: "/for-clubs",
+                  title: "For clubs",
+                  body: "Run tryouts, send offers, collect payments and build your rosters.",
+                },
+                {
+                  href: "/for-leagues",
+                  title: "For leagues",
+                  body: "Registration, scheduling, referees, live scores and standings.",
+                },
+                {
+                  href: "/for-parents",
+                  title: "For parents & players",
+                  body: "Sign up and pay in minutes, then follow every game live.",
+                },
+              ].map((c) => (
+                <Link
+                  key={c.href}
+                  href={c.href}
+                  className="border-ink-100 card-lift shadow-soft group rounded-2xl border bg-white p-5 transition"
+                >
+                  <span className="text-ink-950 flex items-center justify-between text-[15px] font-bold">
+                    {c.title}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className="text-play-600 h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                  <span className="text-ink-500 mt-1.5 block text-[13px] leading-5">{c.body}</span>
+                </Link>
+              ))}
             </div>
 
 
