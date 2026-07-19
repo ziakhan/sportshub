@@ -182,3 +182,26 @@ ysportshub.com (+ sportshubone.com /demo), start gate + read-first card
 eyeballed live, zero page errors. Homepage does NOT link /demo yet; owner is
 deciding placement (recommendation delivered: demo CTA on homepage + on
 for-clubs and for-leagues with act deep-links; parent cut later).
+
+## Addition 5: parent cut + homepage signposting + mobile pass
+
+- /demo/parents: the parent edition of the live demo, 12 steps, 4 acts (Find
+  the tryout / The offer / Your calendar / Game day). No league office, no
+  scoring console. Reuses the parent scenes + calendar/RSVP/add-to-phone +
+  reschedule/cancel alerts + calendar strikethrough, plus two new scenes: a
+  live team-chat scene (message arrives, Maria votes in the poll) and a
+  game-day scene that is JUST the public game page with the box score built to
+  the real /live/[gameId] structure (Stats tab, linescore, Game leaders, full
+  MIN/PTS/REB/AST/STL/BLK/TO/PF columns, Starters/Bench, TOP badge, red PF
+  warning, Team totals) updating itself with the product's green flash: the
+  three, the assist, the rebound, then Final.
+- Homepage: gradient "Watch the demo" CTA above the three persona buttons with
+  the line "A whole season, played out click by click on the real product.
+  Parents: watch your side." → /demo and /demo/parents. Audience pages got
+  matching CTAs (for-clubs + for-leagues → /demo; for-parents → /demo/parents).
+- Mobile: sticky bar offset responsive (58px phone / 76px desktop), a
+  phone-only tip on the start gate ("plays best on a desktop screen, works
+  here too"), desktop scenes run in the frames' pan mode with auto-scroll to
+  the glowing control. Verified at 390px.
+- Verified: parent cut walked end to end headlessly, zero page errors; new
+  scenes + homepage + mobile eyeballed; lint/tsc clean.

@@ -25,6 +25,10 @@ export default function ForParentsPage() {
             dinner gets planned. Every screen here is the real product. Click the glowing button
             to move through it.
           </p>
+          <a href="/demo/parents" className="from-play-600 to-hoop-500 shadow-play-600/25 mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-105">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current"><path d="M8 5v14l11-7z" /></svg>
+            Watch your season run
+          </a>
         </div>
         <ParentDemo />
         <p className="text-ink-400 mt-10 text-center text-sm">

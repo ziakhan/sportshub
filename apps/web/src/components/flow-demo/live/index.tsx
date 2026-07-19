@@ -11,6 +11,7 @@ import { ACT_REGISTER_LEAGUE } from "./act7-register"
 import { ACT_SCHEDULE } from "./act8-schedule"
 import { ACT_GAMEDAY } from "./act9-gameday"
 import { ACT_FINAL } from "./act10-final"
+import { ACT_PARENT_GAMEDAY } from "./act-parentday"
 
 const ACTS: LiveAct[] = [
   { id: "club", title: "The club signs up" },
@@ -43,6 +44,26 @@ export function LiveDemo() {
         ...ACT_GAMEDAY,
         ...ACT_FINAL,
       ]}
+    />
+  )
+}
+
+/* The parent cut: her whole season, no league office, no scoring console. */
+const PARENT_ACTS: LiveAct[] = [
+  { id: "parent", title: "Find the tryout" },
+  { id: "accept", title: "The offer" },
+  { id: "schedule", title: "Your calendar" },
+  { id: "pgame", title: "Game day" },
+]
+
+export function ParentLiveDemo() {
+  const calendarScenes = ACT_SCHEDULE.filter((s) =>
+    ["l-notify", "l-calendar", "l-change-alerts", "l-calendar-changes"].includes(s.id)
+  )
+  return (
+    <LivePlayer
+      acts={PARENT_ACTS}
+      scenes={[...ACT3, ...ACT5, ...calendarScenes, ...ACT_PARENT_GAMEDAY]}
     />
   )
 }

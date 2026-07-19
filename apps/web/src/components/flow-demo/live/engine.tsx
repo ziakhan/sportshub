@@ -420,7 +420,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       {/* Sticky "who's acting, what's happening" bar — never scrolls away */}
       <div
         className={cn(
-          "border-ink-100 sticky top-[76px] z-30 mb-4 overflow-hidden rounded-2xl border bg-gradient-to-r to-white/95 px-4 py-3 shadow-[0_14px_34px_-22px_rgba(15,23,42,0.4)] backdrop-blur",
+          "border-ink-100 sticky top-[58px] z-30 mb-4 overflow-hidden rounded-2xl border bg-gradient-to-r to-white/95 px-4 py-3 shadow-[0_14px_34px_-22px_rgba(15,23,42,0.4)] backdrop-blur md:top-[76px]",
           PERSONA_ACCENT[scene.persona].wash
         )}
       >
@@ -537,6 +537,9 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
               </div>
               <p className="text-ink-400 mt-4 text-xs">
                 The glowing button is always the next step. Switch modes any time, top right.
+              </p>
+              <p className="text-ink-500 bg-ink-50 mt-3 rounded-lg px-3 py-2 text-xs font-medium sm:hidden">
+                Tip: this plays best on a desktop screen. It works right here too, just smaller.
               </p>
             </div>
           </div>

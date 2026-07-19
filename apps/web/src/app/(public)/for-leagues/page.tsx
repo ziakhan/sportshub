@@ -23,6 +23,10 @@ export default function ForLeaguesPage() {
             rules, games scored live to every phone, and playoffs through to the trophy. Go at
             your own pace and click the glowing button to continue.
           </p>
+          <a href="/demo" className="from-play-600 to-hoop-500 shadow-play-600/25 mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-105">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current"><path d="M8 5v14l11-7z" /></svg>
+            Watch the full demo
+          </a>
         </div>
         <LeagueDemo />
         <p className="text-ink-400 mt-10 text-center text-sm">
