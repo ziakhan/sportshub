@@ -61,7 +61,7 @@ export const PARENT_SCENES: DemoScene[] = [
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">
             <Chip tone="green">28 / 40 registered</Chip>
-            <Chip tone="blue">Born 2013 or 2014</Chip>
+            <Chip tone="blue">Born 2013</Chip>
           </div>
           <ActionBtn>Register</ActionBtn>
         </div>

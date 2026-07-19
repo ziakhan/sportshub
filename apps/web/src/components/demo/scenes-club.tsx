@@ -150,7 +150,7 @@ export const CLUB_SCENES: DemoScene[] = [
               key={name}
               n={i}
               name={name}
-              sub={`Born ${i % 2 === 0 ? "2013" : "2014"}`}
+              sub="Born 2013"
               right={<Chip tone="green">Paid ✓</Chip>}
             />
           ))}

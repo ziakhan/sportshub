@@ -8,6 +8,7 @@ import { PARENT_SCENES } from "./scenes-parent"
 import { CLUB_SCENES } from "./scenes-club"
 import { LEAGUE_SCENES } from "./scenes-league"
 import * as F from "./scenes-features"
+import { OFFER_FLOW } from "./scenes-offer-flow"
 
 const as = (scene: DemoScene, role: DemoScene["role"]): DemoScene => ({ ...scene, role })
 
@@ -21,8 +22,7 @@ export const SEASON_SCENES: DemoScene[] = [
   as(CLUB_SCENES[6], "COACH"),
   // Team building
   as(CLUB_SCENES[7], "CLUB"),
-  as(CLUB_SCENES[8], "CLUB"),
-  as(PARENT_SCENES[5], "PARENT"),
+  ...OFFER_FLOW,
   as(CLUB_SCENES[10], "CLUB"),
   // League entry
   as(LEAGUE_SCENES[0], "LEAGUE"),
