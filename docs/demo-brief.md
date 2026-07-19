@@ -42,6 +42,18 @@ steps at your own pace, click the highlighted button to continue"). It can
 be broken into chapters, but the end-to-end flow has to go in order,
 switching personas as the real season does.
 
+## Playback rules
+Manual control is the default, not autoplay. Nothing moves on a timer:
+each screen sits until the user clicks, so they can read for two seconds
+or two minutes depending on what is on it. The click on the highlighted
+button is what transitions to the next screen; separate skip buttons are
+not needed. Autoplay exists only as an option for someone who wants to sit
+back, and when it runs, the time each screen stays up depends on how much
+detail is on that screen: a simple two-field screen can be short, a dense
+screen holds longer. Nothing should ever feel too fast to read. Pausing
+and playing is done by clicking on the demo itself, not hunting for a
+small control button.
+
 ## The flow, in order, from signing up for trials to trophies
 
 League setup first:
