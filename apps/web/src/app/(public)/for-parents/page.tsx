@@ -39,7 +39,7 @@ const FEATURES = [
     ),
   },
   {
-    title: "Follow the game live",
+    title: "The live game, followed from anywhere. The score and plays update on their own.",
     body: "Stuck at work or driving the other kid? Live scores, play-by-play, and the full box score the moment the buzzer sounds.",
     tone: "bg-gold-500 shadow-gold-200",
     icon: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />,
@@ -138,11 +138,11 @@ export default function ForParentsPage() {
             </p>
           </div>
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <PhoneShot src="/shots/phone-home.png" alt="Home" caption="Your home: your kids, your games" />
-            <PhoneShot src="/shots/phone-game.png" alt="Live game" caption="Follow the game live" />
-            <PhoneShot src="/shots/phone-calendar.png" alt="Calendar" caption="One calendar, RSVP built in" />
-            <PhoneShot src="/shots/phone-chat.png" alt="Chat" caption="Team chat without the chaos" />
-            <PhoneShot src="/shots/phone-kids.png" alt="My kids" caption="Every kid, one login" />
+            <PhoneShot src="/shots/phone-home.png" alt="Home" caption="Home on your phone. Your kids, their next games and anything that needs your attention." />
+            <PhoneShot src="/shots/phone-game.png" alt="Live game" caption="The live game, followed from anywhere. The score and plays update on their own." />
+            <PhoneShot src="/shots/phone-calendar.png" alt="Calendar" caption="One calendar for practices and games. RSVP right on the event, synced to your phone." />
+            <PhoneShot src="/shots/phone-chat.png" alt="Chat" caption="Team chat in the app. Pinned announcements, direct messages, and mute when you need quiet." />
+            <PhoneShot src="/shots/phone-kids.png" alt="My kids" caption="All your kids under one login. Each with their own schedule, team and stats." />
           </div>
         </div>
       </section>
