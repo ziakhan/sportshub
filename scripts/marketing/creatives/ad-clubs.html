@@ -1,0 +1,211 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  /* 9:16 spot aimed at CLUB operators. The full hook is on screen at frame 1;
+     every scene opens with its complete headline, then the artifact moves. */
+  body.story .stage { width: 1080px; height: 1920px; transform: none; padding: 0 !important; }
+
+  .sc {
+    position: absolute; inset: 0; opacity: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 52px; padding: 270px 72px 340px; text-align: center;
+  }
+  .sc.light { background: #fafafa; color: var(--ink-950); }
+  .sc.dark { background: linear-gradient(135deg, var(--stage), var(--stage-2)); color: #fff; }
+  .sc h1 { font-size: 96px; line-height: 1.12; }
+  .sc .cap { font-family: var(--display); font-size: 42px; font-weight: 700; }
+  .sc.light .cap { color: var(--ink-950); }
+  .sc.dark .cap { color: #fff; }
+  .sc .cap em { font-style: normal; color: var(--hoop-500); }
+  .sc.dark .cap em { color: #f9a178; }
+
+  @keyframes scIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(44px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+  @keyframes stamp { from { opacity: 0; transform: scale(2.2) rotate(-5deg); } 70% { opacity: 1; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+  @keyframes numOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-40%); } }
+  @keyframes numIn { from { opacity: 0; transform: translateY(45%); } to { opacity: 1; transform: none; } }
+  @keyframes glow { 0% { color: #86efac; text-shadow: 0 0 36px rgba(74, 222, 128, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
+  @keyframes cellglow { 0% { color: var(--court-600); text-shadow: 0 0 18px rgba(74, 222, 128, 0.8); } 100% { text-shadow: none; } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ---- scene 1: THE HOOK — full text at frame 1 (0 - 3.4s) ---- */
+  .c1 { opacity: 1; animation: scOut 0.4s ease-in 3s forwards; }
+  .c1 h1 { font-size: 116px; }
+  .c1 h1 em { font-style: normal; color: #f9a178; }
+  .c1 .answer {
+    font-family: var(--display); font-size: 62px; font-weight: 800; color: #fff;
+    background: var(--hoop-500); border-radius: 999px; padding: 24px 56px;
+    box-shadow: 0 30px 60px -20px rgba(242, 78, 30, 0.6);
+    animation: stamp 0.45s cubic-bezier(0.3, 1.5, 0.4, 1) 0.85s both;
+  }
+
+  /* ---- scene 2: tryouts to rosters (3.4 - 9.6s) ---- */
+  .c2 { animation: scIn 0.4s ease-out 3.4s both, scOut 0.4s ease-in 9.2s forwards; }
+  .c2 .tcard {
+    position: relative; width: 860px; text-align: left; background: #fff; border: 2px solid var(--ink-100);
+    border-radius: 40px; padding: 48px 52px; box-shadow: 0 44px 88px -40px rgba(24, 24, 27, 0.28);
+    animation: pop 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 4.1s both;
+  }
+  .c2 .tname { font-family: var(--display); font-size: 42px; font-weight: 700; color: var(--ink-950); }
+  .c2 .trow { display: flex; align-items: baseline; gap: 22px; margin-top: 32px; font-size: 34px; color: var(--ink-500); }
+  .c2 .signups { font-family: var(--display); font-weight: 800; color: var(--ink-950); font-size: 64px; position: relative; display: inline-block; min-width: 96px; height: 1.2em; vertical-align: top; }
+  .c2 .signups span { position: absolute; left: 0; top: 0; }
+  .c2 .signups .n1 { animation: numOut 0.3s ease-in 5.4s both; }
+  .c2 .signups .n2 { opacity: 0; animation: numIn 0.3s ease-out 5.45s both, numOut 0.3s ease-in 6.2s forwards; }
+  .c2 .signups .n3 { opacity: 0; animation: numIn 0.35s ease-out 6.25s both, cellglow 1.2s ease-out 6.25s both; }
+  .c2 .offers {
+    position: absolute; right: 46px; bottom: -36px;
+    background: var(--court-600); color: #fff; border-radius: 999px; padding: 22px 42px;
+    font-family: var(--display); font-size: 34px; font-weight: 800;
+    box-shadow: 0 24px 48px -16px rgba(22, 163, 74, 0.6);
+    animation: stamp 0.5s cubic-bezier(0.3, 1.5, 0.4, 1) 7.1s both;
+  }
+  .c2 .cap { animation: rise 0.5s ease-out 8s both; }
+
+  /* ---- scene 3: name names (9.6 - 15.4s) ---- */
+  .c3 { animation: scIn 0.4s ease-out 9.6s both, scOut 0.4s ease-in 15s forwards; }
+  .c3 .rows { display: flex; flex-direction: column; gap: 22px; width: 900px; flex-shrink: 0; }
+  .c3 .row {
+    display: flex; align-items: center; gap: 32px;
+    background: rgba(255, 255, 255, 0.06); border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 30px; padding: 28px 40px; text-align: left;
+    animation: pop 0.4s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+  }
+  .c3 .r1 { animation-delay: 10.3s; } .c3 .r2 { animation-delay: 10.7s; } .c3 .r3 { animation-delay: 11.1s; }
+  .c3 .tile { width: 78px; height: 78px; border-radius: 24px; }
+  .c3 .tile svg { width: 38px; height: 38px; }
+  .c3 .them { flex: 1; font-size: 35px; font-weight: 600; color: rgba(255, 255, 255, 0.55); text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.8); text-decoration-thickness: 4px; white-space: nowrap; }
+  .c3 .us { font-family: var(--display); font-size: 33px; font-weight: 700; color: #fff; text-align: right; }
+  .c3 .cap { animation: rise 0.5s ease-out 12.4s both; }
+
+  /* ---- scene 4: parents watch live (15.4 - 21.2s) ---- */
+  .c4 { animation: scIn 0.4s ease-out 15.4s both, scOut 0.4s ease-in 20.8s forwards; }
+  .c4 .scorecard {
+    width: 860px; border-radius: 44px; overflow: hidden; text-align: left;
+    box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.7); flex-shrink: 0;
+    animation: pop 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 16s both;
+  }
+  .c4 .hero {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 52px 44px 48px;
+    background:
+      radial-gradient(90% 140% at 0% 0%, rgba(22, 163, 74, 0.28) 0%, transparent 55%),
+      radial-gradient(90% 140% at 100% 0%, rgba(91, 33, 182, 0.3) 0%, transparent 55%),
+      linear-gradient(135deg, var(--stage), var(--stage-2));
+    color: #fff; text-align: center;
+  }
+  .c4 .crest { width: 110px; height: 110px; border-radius: 30px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 44px; color: #fff; }
+  .c4 .tname { font-family: var(--display); font-weight: 800; font-size: 31px; }
+  .c4 .score { font-family: var(--condensed); font-weight: 700; font-size: 128px; line-height: 1; margin-top: 8px; position: relative; height: 128px; }
+  .c4 .score span { position: absolute; left: 0; right: 0; }
+  .c4 .score .old { animation: numOut 0.35s ease-in 17.4s both; }
+  .c4 .score .new { animation: numIn 0.4s ease-out 17.45s both, glow 1.4s ease-out 17.45s both; }
+  .c4 .livepill { background: var(--live-500); border-radius: 999px; padding: 12px 30px; font-family: var(--display); font-weight: 800; font-size: 26px; text-transform: uppercase; letter-spacing: 0.14em; display: inline-flex; align-items: center; gap: 10px; }
+  .c4 .livepill i { width: 12px; height: 12px; background: #fff; border-radius: 50%; display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+  .c4 .period { font-family: var(--condensed); font-weight: 700; font-size: 44px; margin-top: 12px; }
+  .c4 .clock { color: var(--gold-300); font-weight: 800; font-size: 34px; }
+  .c4 .cap { animation: rise 0.5s ease-out 19s both; }
+
+  /* ---- scene 5: proof + CTA (21.2 - 26s) ---- */
+  .c5 { animation: scIn 0.4s ease-out 21.2s both; }
+  .c5 h1 { font-size: 88px; }
+  .c5 h1 em { font-style: normal; color: #f9a178; }
+  .c5 .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 920px; }
+  .c5 .chip { font-size: 31px; padding: 16px 32px; animation: pop 0.3s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+  .c5 .k1 { animation-delay: 21.9s; } .c5 .k2 { animation-delay: 22.05s; } .c5 .k3 { animation-delay: 22.2s; }
+  .c5 .k4 { animation-delay: 22.35s; } .c5 .k5 { animation-delay: 22.5s; } .c5 .k6 { animation-delay: 22.65s; }
+  .c5 .brand { display: flex; flex-direction: column; align-items: center; gap: 14px; animation: rise 0.5s ease-out 23.4s both; }
+  .c5 .brand .setup { font-family: var(--display); font-size: 42px; font-weight: 700; color: #fff; }
+  .c5 .brand .wm { font-size: 62px; }
+  .c5 .brand .domain { font-size: 30px; font-weight: 600; color: rgba(255, 255, 255, 0.55); }
+</style>
+</head>
+<body>
+<div class="stage dark">
+
+  <div class="sc dark c1">
+    <h1>Still chasing e&#8209;transfers at <em>midnight</em>?</h1>
+    <span class="answer">Your club deserves one app.</span>
+  </div>
+
+  <div class="sc light c2">
+    <h1>Tryouts become signed, paid rosters.</h1>
+    <div class="tcard">
+      <div class="tname">Spring 2026 Grade 10 Boys Tryout</div>
+      <div class="trow">
+        <span class="signups"><span class="n1">9</span><span class="n2">14</span><span class="n3">21</span></span>
+        <span>signed up &middot; fees collected online</span>
+      </div>
+      <span class="offers">12 offers accepted &#10003;</span>
+    </div>
+    <p class="cap">Offers, payments, uniform sizes. <em>Handled.</em></p>
+  </div>
+
+  <div class="sc dark c3">
+    <h1>One app replaces the pile.</h1>
+    <div class="rows">
+      <div class="row r1"><span class="tile" style="background:#4f46e5"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span><span class="them">TeamSnap + Spond</span><span class="us">Team chat &amp; RSVPs</span></div>
+      <div class="row r2"><span class="tile" style="background:#f24e1e"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span><span class="them">GameChanger</span><span class="us">Live scoring &amp; stats</span></div>
+      <div class="row r3"><span class="tile" style="background:#16a34a"><svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="them">SportsEngine + the sheet</span><span class="us">Registration &amp; payments</span></div>
+    </div>
+    <p class="cap">They each do a piece. <em>Nobody does the whole thing.</em></p>
+  </div>
+
+  <div class="sc dark c4">
+    <h1>Parents watch every game live.</h1>
+    <div class="scorecard">
+      <div class="hero">
+        <div>
+          <div class="crest" style="background:#16a34a">BF</div>
+          <div class="tname">BF &middot; G10</div>
+          <div class="score"><span class="old">59</span><span class="new">62</span></div>
+        </div>
+        <div>
+          <span class="livepill"><i></i>Live</span>
+          <div class="period">Q4</div>
+          <div class="clock">0:41</div>
+        </div>
+        <div>
+          <div class="crest" style="background:#5b21b6">NT</div>
+          <div class="tname">NT &middot; G10</div>
+          <div class="score" style="height:128px"><span>58</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">No refresh. <em>They&apos;ll love you for it.</em></p>
+  </div>
+
+  <div class="sc dark c5">
+    <h1>&ldquo;Complete&rdquo; isn&apos;t a slogan. <em>It&apos;s a checklist.</em></h1>
+    <div class="chips">
+      <span class="chip k1"><span class="ck">&#10003;</span>Registration</span>
+      <span class="chip k2"><span class="ck">&#10003;</span>Payments</span>
+      <span class="chip k3"><span class="ck">&#10003;</span>Tryouts &amp; offers</span>
+      <span class="chip k4"><span class="ck">&#10003;</span>Team chat</span>
+      <span class="chip k5"><span class="ck">&#10003;</span>Live scoring</span>
+      <span class="chip k6"><span class="ck">&#10003;</span>Club page</span>
+    </div>
+    <div class="brand">
+      <span class="setup">Set up takes an evening.</span>
+      <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+      <span class="domain">sportshubone.com</span>
+    </div>
+  </div>
+
+</div>
+<script>
+  const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);
+  window.__duration = 26000;
+  window.__formats = ["story"];
+  window.__seek = (t) => {
+    document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
+  };
+</script>
+</body>
+</html>
