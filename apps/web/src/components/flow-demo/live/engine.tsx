@@ -159,6 +159,62 @@ export function LivePlayer({
      must ride along or the action happens off screen. */
   const isNarrow = () => typeof window !== "undefined" && window.innerWidth < 700
 
+  /** Phone camera: frame the PANEL being worked in, not just the field. The
+      zoom is chosen so the panel fits flush to the viewport edges (zooming
+      out further when the panel is wide), so the screen's own page gutters
+      never show up as dead space at the sides. */
+  const zoomToWork = useCallback(
+    (targetId: string) => {
+      const wrap = zoomRef.current
+      const stage = stageRef.current
+      if (!wrap || !stage) return
+      const target = stage.querySelector<HTMLElement>(`[data-live-id="${targetId}"]`)
+      if (!target) return
+      const zCur = zoomScaleRef.current
+      const w = wrap.getBoundingClientRect()
+      const W = wrap.offsetWidth
+      const H = wrap.offsetHeight
+      const local = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect()
+        return { l: (r.left - w.left) / zCur, t: (r.top - w.top) / zCur, w: r.width / zCur, h: r.height / zCur }
+      }
+      // Climb to the widest ancestor that still reads as a working panel
+      // (anything wider is the page itself with its empty gutters).
+      let panel: HTMLElement = target
+      let node = target.parentElement
+      while (node && node !== wrap && node !== stage) {
+        const lw = node.getBoundingClientRect().width / zCur
+        if (lw <= 0.88 * W) panel = node
+        else break
+        node = node.parentElement
+      }
+      const pb = local(panel)
+      const rb = local(target)
+      const z = Math.min(2.3, Math.max(1.1, (W / Math.max(1, pb.w)) * 0.97))
+      const pR = pb.l + pb.w
+      const pB = pb.t + pb.h
+      let tx: number
+      if (z * pb.w >= W) {
+        tx = Math.min(-z * pb.l, Math.max(W - z * pR, W / 2 - z * (rb.l + rb.w / 2)))
+      } else {
+        tx = W / 2 - z * (pb.l + pR) / 2
+      }
+      let ty: number
+      if (z * pb.h >= H) {
+        ty = Math.min(-z * pb.t, Math.max(H - z * pB, H / 2 - z * (rb.t + rb.h / 2)))
+      } else {
+        ty = H / 2 - z * (pb.t + pB) / 2
+      }
+      // Never show past the screen itself either.
+      tx = Math.min(0, Math.max(W * (1 - z), tx))
+      ty = Math.min(0, Math.max(H * (1 - z), ty))
+      zoomScaleRef.current = z
+      wrap.style.transformOrigin = "0 0"
+      wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
+    },
+    []
+  )
+
   /** Pan/scroll the target into view (centered on phones) and wait for the
       smooth scroll to actually settle before anyone measures coordinates. */
   const settleOn = useCallback(
@@ -190,7 +246,7 @@ export function LivePlayer({
       // area being worked on so typing and toggles are readable, then the
       // hold pulls back out to the full screen.
       if (isNarrow()) {
-        setZoom(id, 2.1)
+        zoomToWork(id)
         await sleep(1120, run)
       }
       await settleOn(target, run)
@@ -201,7 +257,7 @@ export function LivePlayer({
       cur.style.top = `${r.top - s.top + r.height / 2}px`
       await sleep(620, run)
     },
-    [settleOn, setZoom, sleep]
+    [settleOn, zoomToWork, sleep]
   )
 
   const ripple = useCallback(() => {
