@@ -10,6 +10,10 @@ tags: [theme/compliance, type/plan, status/planned]
 
 # 🛡️ Vulnerable-sector background-check tracking
 
+> **OWNER ENDORSED 2026-07-20** — queued during the LeagueApps teardown (their NCSI/Yardstik
+> automation is a real gap for us). Canadian-native flow: upload/verify/expiry-track
+> provincial vulnerable-sector checks; no FCRA-style API exists here.
+
 **Tier 0 · effort M · from layer2.** Mandated by Ontario associations for anyone working with minors; coaches are assigned today with zero screening gate.
 
 ## Problem
