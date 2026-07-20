@@ -180,12 +180,12 @@ export function LivePlayer({
       targets keep their surroundings. */
   const lastCamRef = useRef<{ ctx: HTMLElement; side: "left" | "right"; z: number } | null>(null)
   const zoomToWork = useCallback(
-    (targetId: string) => {
+    (targetId: string): boolean => {
       const wrap = zoomRef.current
       const stage = stageRef.current
-      if (!wrap || !stage) return
+      if (!wrap || !stage) return false
       const target = stage.querySelector<HTMLElement>(`[data-live-id="${targetId}"]`)
-      if (!target) return
+      if (!target) return false
       const zCur = liveScale(wrap)
       const w = wrap.getBoundingClientRect()
       const W = wrap.offsetWidth
@@ -202,23 +202,40 @@ export function LivePlayer({
         else break
         node = node.parentElement
       }
+      // Lazy camera: same working context and the target already in view
+      // means NO move at all. In-between micro-actions stay rock still.
+      const sR = stage.getBoundingClientRect()
+      const tR = target.getBoundingClientRect()
+      const visible =
+        tR.top >= sR.top + 6 && tR.bottom <= sR.bottom - 6 && tR.left >= sR.left + 6 && tR.right <= sR.right - 6
+      if (lastCamRef.current && lastCamRef.current.ctx === ctxEl && zCur > 1 && visible) {
+        return false
+      }
       const cb = local(ctxEl)
       const rb = local(target)
       const z = Math.min(2.3, Math.max(2, (W / Math.max(1, cb.w)) * 0.96))
       const pad = 12
-      // Which half of the context is being worked? Anchor that side.
       const side: "left" | "right" =
         rb.l + rb.w / 2 > cb.l + cb.w * 0.55 && z * cb.w > W ? "right" : "left"
-      let tx = side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
-      tx = Math.min(0, Math.max(W * (1 - z), tx))
+      // Same context, same side: keep the horizontal frame, glide vertically
+      // only as far as the target needs.
+      const sameCtx = lastCamRef.current?.ctx === ctxEl && lastCamRef.current?.side === side && zCur > 1
+      let tx: number
+      if (sameCtx) {
+        const m = /translate\((-?[\d.]+)px,/.exec(wrap.style.transform)
+        tx = m ? parseFloat(m[1]) : side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
+      } else {
+        tx = side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
+        tx = Math.min(0, Math.max(W * (1 - z), tx))
+      }
       let ty = -z * (cb.t - pad)
-      // Keep the target row on screen: shift down only as much as needed.
       ty = Math.min(ty, H - 30 - z * (rb.t + rb.h))
       ty = Math.min(0, Math.max(H * (1 - z), ty))
       zoomScaleRef.current = z
       lastCamRef.current = { ctx: ctxEl, side, z }
       wrap.style.transformOrigin = "0 0"
       wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
+      return true
     },
     []
   )
@@ -228,6 +245,11 @@ export function LivePlayer({
   const settleOn = useCallback(
     async (target: HTMLElement, run: number) => {
       const center = isNarrow()
+      // Already comfortably on screen? Don't nudge the page at all.
+      const r0 = target.getBoundingClientRect()
+      const vh = window.innerHeight
+      const vw = window.innerWidth
+      if (r0.top >= 160 && r0.bottom <= vh - 24 && r0.left >= 0 && r0.right <= vw) return
       target.scrollIntoView({
         block: center ? "center" : "nearest",
         inline: center ? "center" : "nearest",
@@ -252,13 +274,13 @@ export function LivePlayer({
       if (!target || !stage || !cur) return
       await settleOn(target, run)
       if (cameraOnRef.current) {
-        zoomToWork(id)
-        await sleep(1120, run)
+        const moved = zoomToWork(id)
+        if (moved) await sleep(1120, run)
         // Instant micro-snap (no transition): measure where the anchored
         // corner actually landed and correct the residual invisibly.
         const wrap = zoomRef.current
         const cam = lastCamRef.current
-        if (wrap && cam) {
+        if (moved && wrap && cam) {
           const sR = stage.getBoundingClientRect()
           const cR = cam.ctx.getBoundingClientRect()
           const padV = 12 * cam.z
@@ -327,6 +349,7 @@ export function LivePlayer({
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
     if (zoomRef.current) zoomRef.current.style.transform = "none"
     zoomScaleRef.current = 1
+    lastCamRef.current = null
     // The phone camera only makes sense over big desktop screens. A phone
     // frame on a phone IS the phone: no zooming, no panning.
     cameraOnRef.current = isNarrow() && scene.frame === "desktop"
