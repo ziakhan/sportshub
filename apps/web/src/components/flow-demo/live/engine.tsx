@@ -179,6 +179,10 @@ export function LivePlayer({
       unless the target itself needs the room. Zoom stays readable; small
       targets keep their surroundings. */
   const lastCamRef = useRef<{ ctx: HTMLElement; side: "left" | "right"; z: number } | null>(null)
+  /** Fixed per scene at the first zoom: the transform-origin sits ON the
+      anchored corner, so the zoom GROWS AROUND the pinned corner instead of
+      sweeping content through it. One clean push-in, no intermediate hiding. */
+  const camOriginRef = useRef<{ x: number; y: number } | null>(null)
   const zoomToWork = useCallback(
     (targetId: string): boolean => {
       const wrap = zoomRef.current
@@ -190,9 +194,17 @@ export function LivePlayer({
       const w = wrap.getBoundingClientRect()
       const W = wrap.offsetWidth
       const H = wrap.offsetHeight
+      const O = camOriginRef.current
+      // Layout-space recovery. Rect differences already carry the origin
+      // shift on both sides, so they cancel: divide by scale and done.
       const local = (el: HTMLElement) => {
         const r = el.getBoundingClientRect()
-        return { l: (r.left - w.left) / zCur, t: (r.top - w.top) / zCur, w: r.width / zCur, h: r.height / zCur }
+        return {
+          l: (r.left - w.left) / zCur,
+          t: (r.top - w.top) / zCur,
+          w: r.width / zCur,
+          h: r.height / zCur,
+        }
       }
       let ctxEl: HTMLElement = target
       let node = target.parentElement
@@ -202,8 +214,7 @@ export function LivePlayer({
         else break
         node = node.parentElement
       }
-      // Lazy camera: same working context and the target already in view
-      // means NO move at all. In-between micro-actions stay rock still.
+      // Lazy: same context, target on screen -> hold still.
       const sR = stage.getBoundingClientRect()
       const tR = target.getBoundingClientRect()
       const visible =
@@ -217,23 +228,29 @@ export function LivePlayer({
       const pad = 12
       const side: "left" | "right" =
         rb.l + rb.w / 2 > cb.l + cb.w * 0.55 && z * cb.w > W ? "right" : "left"
-      // Same context, same side: keep the horizontal frame, glide vertically
-      // only as far as the target needs.
-      const sameCtx = lastCamRef.current?.ctx === ctxEl && lastCamRef.current?.side === side && zCur > 1
-      let tx: number
-      if (sameCtx) {
-        const m = /translate\((-?[\d.]+)px,/.exec(wrap.style.transform)
-        tx = m ? parseFloat(m[1]) : side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
-      } else {
-        tx = side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
-        tx = Math.min(0, Math.max(W * (1 - z), tx))
-      }
-      let ty = -z * (cb.t - pad)
-      ty = Math.min(ty, H - 30 - z * (rb.t + rb.h))
-      ty = Math.min(0, Math.max(H * (1 - z), ty))
+      // Anchored corner of the context, in layout space.
+      const corner = { x: side === "left" ? cb.l : cb.l + cb.w, y: cb.t }
+      // Where that corner should sit in the viewport.
+      const qx = side === "left" ? pad : W - pad
+      let qy = pad
+      // The origin is set once per scene, on the first zoom, at the corner:
+      // the growth then happens around the pinned point.
+      const origin = O ?? corner
+      if (!O) camOriginRef.current = origin
+      // Solve translate so the corner lands on target: v = O + z(p - O) + t.
+      let tx = qx - origin.x - z * (corner.x - origin.x)
+      // Corner at the pad, unless the working row needs the screen space:
+      // then shift up only as far as that row requires.
+      let ty = Math.min(
+        qy - origin.y - z * (corner.y - origin.y),
+        H - 30 - (origin.y + z * (rb.t + rb.h - origin.y))
+      )
+      // Screen always fills the viewport.
+      tx = Math.min(origin.x * (z - 1), Math.max((1 - z) * (W - origin.x), tx))
+      ty = Math.min(origin.y * (z - 1), Math.max((1 - z) * (H - origin.y), ty))
       zoomScaleRef.current = z
       lastCamRef.current = { ctx: ctxEl, side, z }
-      wrap.style.transformOrigin = "0 0"
+      wrap.style.transformOrigin = `${origin.x}px ${origin.y}px`
       wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
       return true
     },
@@ -283,9 +300,8 @@ export function LivePlayer({
         if (moved && wrap && cam) {
           const sR = stage.getBoundingClientRect()
           const cR = cam.ctx.getBoundingClientRect()
-          const padV = 12 * cam.z
           const err =
-            cam.side === "left" ? cR.left - (sR.left + padV) : cR.right - (sR.right - padV)
+            cam.side === "left" ? cR.left - (sR.left + 12) : cR.right - (sR.right - 12)
           const wR = wrap.getBoundingClientRect()
           const bounded = Math.max(wR.left - sR.left, Math.min(wR.right - sR.right, err))
           const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(wrap.style.transform)
@@ -350,6 +366,7 @@ export function LivePlayer({
     if (zoomRef.current) zoomRef.current.style.transform = "none"
     zoomScaleRef.current = 1
     lastCamRef.current = null
+    camOriginRef.current = null
     // The phone camera only makes sense over big desktop screens. A phone
     // frame on a phone IS the phone: no zooming, no panning.
     cameraOnRef.current = isNarrow() && scene.frame === "desktop"
