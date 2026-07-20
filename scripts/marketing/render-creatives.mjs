@@ -27,8 +27,13 @@ const files = fs
   .filter((f) => !only || only.some((o) => f.startsWith(o)))
 
 const FORMATS = [
-  { key: "square", w: 1080, h: 1080, hash: "" },
+  // portrait 4:5 is the biggest canvas Instagram/Facebook feeds allow — the
+  // default pick for feed posts and feed ads. Story 9:16 fills Reels/TikTok
+  // with content scaled up and kept inside platform UI safe zones. Square
+  // stays for carousels and placements that require 1:1.
+  { key: "portrait", w: 1080, h: 1350, hash: "#portrait" },
   { key: "story", w: 1080, h: 1920, hash: "#story" },
+  { key: "square", w: 1080, h: 1080, hash: "" },
 ]
 
 const browser = await chromium.launch()

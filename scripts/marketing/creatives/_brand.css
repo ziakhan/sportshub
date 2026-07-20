@@ -202,3 +202,27 @@ h1 {
   box-shadow: 0 14px 28px -12px rgba(24, 24, 27, 0.45);
 }
 .tile svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- format engines ----------
+   square   1080x1080  design 1:1   (carousels, anywhere square is required)
+   portrait 1080x1350  4:5 feed     design 960x1200, scaled 1.125 -> content 12.5% bigger
+   story    1080x1920  9:16 reels   design 864x1536, scaled 1.25  -> content 25% bigger,
+            padded for platform UI safe zones (top ~137px, bottom ~375px real). */
+.stage > * { max-width: 100%; }
+body.portrait .stage {
+  width: 960px;
+  height: 1200px;
+  padding: 70px 60px 200px !important;
+  transform: scale(1.125);
+  transform-origin: top left;
+}
+body.portrait .footer-brand { bottom: 46px; }
+body.story .stage {
+  width: 864px;
+  height: 1536px;
+  padding: 110px 44px 300px !important;
+  transform: scale(1.25);
+  transform-origin: top left;
+}
+body.story .footer-brand { bottom: 220px; }
+body.story .footer-brand .wm { font-size: 50px; }

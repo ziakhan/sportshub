@@ -38,7 +38,6 @@
   .brow .j { color: var(--ink-500); margin-right: 10px; }
   .brow.top { background: rgba(22, 163, 74, 0.08); }
   .hl { background: var(--court-100); border-radius: 8px; padding: 2px 10px; color: var(--court-600); }
-  body.story .stage { gap: 64px; }
 </style>
 </head>
 <body>
@@ -75,6 +74,6 @@
     <span class="domain">sportshubone.com</span>
   </div>
 </div>
-<script>if (location.hash.includes("story")) document.body.classList.add("story");</script>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
 </body>
 </html>

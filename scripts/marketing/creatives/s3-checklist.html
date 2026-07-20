@@ -11,8 +11,6 @@
   h1 em { font-style: normal; color: #f9a178; }
   .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; max-width: 920px; }
   .sub { font-size: 32px; color: rgba(255, 255, 255, 0.6); font-weight: 500; }
-  body.story .stage { gap: 70px; }
-  body.story h1 { font-size: 100px; }
 </style>
 </head>
 <body>
@@ -40,6 +38,6 @@
     <span class="domain">sportshubone.com</span>
   </div>
 </div>
-<script>if (location.hash.includes("story")) document.body.classList.add("story");</script>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
 </body>
 </html>

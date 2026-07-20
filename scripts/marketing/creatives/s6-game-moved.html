@@ -25,8 +25,6 @@
   .crow.dead .when, .crow.dead .what { color: var(--ink-300); text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.7); text-decoration-thickness: 3px; }
   .crow.new { background: var(--court-100); }
   .crow.new .badge { background: var(--court-600); color: #fff; font-size: 20px; font-weight: 700; border-radius: 999px; padding: 6px 16px; }
-  body.story .stage { gap: 66px; }
-  body.story h1 { font-size: 104px; }
 </style>
 </head>
 <body>
@@ -45,6 +43,6 @@
     <span class="domain">sportshubone.com</span>
   </div>
 </div>
-<script>if (location.hash.includes("story")) document.body.classList.add("story");</script>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
 </body>
 </html>

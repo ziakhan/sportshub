@@ -24,8 +24,6 @@
   @keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
   @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
   @keyframes slam { from { opacity: 0; transform: translateY(-0.08em) scale(3) rotate(-6deg); } 70% { opacity: 1; transform: translateY(-0.08em) scale(0.92); } to { opacity: 1; transform: translateY(-0.08em) scale(1); } }
-  body.story h1 { font-size: 136px; }
-  body.story .stage { gap: 84px; }
 </style>
 </head>
 <body>
@@ -42,7 +40,7 @@
   </div>
 </div>
 <script>
-  if (location.hash.includes("story")) document.body.classList.add("story");
+  const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);
   window.__duration = 6500;
   window.__seek = (t) => {
     document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
