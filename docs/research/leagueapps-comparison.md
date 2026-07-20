@@ -58,6 +58,44 @@ Organizations can pass an optional $1–5 "processing fee" to parents. Offline p
   reported 14-day app outage with noncommittal responses.
 - The ~5.9% per-registration take is the structural resentment point.
 
+## Deep dive: the three areas where they beat us (researched 2026-07-20)
+
+**Reporting depth.** Not just stat tiles — a real analytics product ("LeagueApps
+Analytics"): customizable dashboards; org-level registrations report searchable/filterable
+across *all* of an operator's sites; Program Comparisons (program-over-program /
+season-over-season); Transaction Summary per program; Program Transactions with
+program + subprogram financial breakdowns; Discount Code Redemptions across site, program
+and team level; attendance, member-info, and payment-plan reports. Accounting-grade
+reconciliation: every payment, credit, and refund tracked for dispute handling; donations
+and e-commerce trends. Exports to CSV/Excel/PDF including **scheduled exports with saved
+filters**. Plus a Gateway Payments Dashboard for their in-house payment gateway. Our side
+today: club dashboard tiles + capacity planner; no report builder, no exports, no
+scheduled reports, no cross-program finance views. A multi-program club's treasurer lives
+in exactly these screens.
+
+**Integration ecosystem.** "Integration Center" = push/pull member data with no double
+entry across accounting, background checks, college recruiting, hotel booking (US travel
+tournaments), digital marketing, and player evaluations. Named partners we verified:
+Yardstik (screening), NCSI (owned outright), Ankored (real-time compliance status shown
+inside LeagueApps). Competitive meaning: they sit as the hub of an operator's back office,
+which raises switching costs. Our side: zero integrations live (Twilio seam dark).
+Mitigation: hotel booking / college recruiting are US-travel-circuit concerns; our
+beachhead (small Canadian clubs) mostly doesn't buy on this.
+
+**In-product background checks.** Two prongs: they **acquired NCSI** (National Center for
+Safety Initiatives — screening + safety services now in-house), and the **Yardstik
+integration automates the whole loop**: every newly registered staff member for connected
+programs is auto-sent to Yardstik on sync and enters an FCRA-compliant screening
+invitation flow; results and statuses sync back into LeagueApps Reporting where admins
+view and act; one LeagueApps site maps to one Yardstik sub-account with chosen packages.
+Concretely: a club screening 40 coaches gets register → auto-invite → status dashboard.
+Our side: nothing yet ([[staff-background-checks]] roadmap). Canadian angle: our
+equivalent is provincial vulnerable-sector checks (different rails, no FCRA), so parity
+here means a Canadian-native flow, not copying Yardstik.
+
+(Fourth gap, minor for our market: a dedicated facilities-management product — court/field
+rental scheduling for facility businesses. We don't target facility operators yet.)
+
 ## Demo talking points vs "we already use LeagueApps / looked at it"
 
 1. **"What do you pay per registration?"** Their model skims up to ~5.9% of every signup
