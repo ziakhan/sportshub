@@ -281,7 +281,7 @@ const createTeam: LiveScene = {
   frame: "desktop",
   url: "/clubs/burlington-force/teams/create",
   caption:
-    "One form builds the team: details, then the staff bench. Head coach and assistant assigned from club staff, the team manager invited by email.",
+    "One form builds the team: head coach and assistant from club staff, the manager invited by email.",
   script: [
     { zoom: "detailsCard", scale: 1.22 },
     ...typeIn("teamName", "name", TEAM.name),

@@ -339,7 +339,7 @@ const openRegistration: LiveScene = {
   frame: "desktop",
   url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
   caption:
-    "Fees set, sessions dated, gyms booked. Opening registration notifies every club that has played this league before. Referees can wait until the schedule exists.",
+    "Fees set, sessions dated, gyms booked. Opening registration notifies every returning club. Referees come later.",
   script: [
     { wait: 600 },
     { hold: "openBtn" },

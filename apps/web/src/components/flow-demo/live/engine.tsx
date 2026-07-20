@@ -173,11 +173,12 @@ export function LivePlayer({
   const isNarrow = () => typeof window !== "undefined" && window.innerWidth < 700
 
   /** Phone camera: one smooth move per beat. Finds the working context
-      (the biggest ancestor that is not the whole page), anchors its TOP-LEFT
-      corner to the viewport with a small pad -- the top is never cut, no
-      margin is wasted -- and only shifts down the minimum needed to keep the
-      target itself in view. Zoom stays in a readable band; small targets get
-      their surroundings, never a lone button filling the screen. */
+      (the biggest ancestor that is not the whole page) and pins its top
+      corner: the LEFT corner when the target sits in the left half, the
+      RIGHT corner when it sits in the right half. The top is never cut
+      unless the target itself needs the room. Zoom stays readable; small
+      targets keep their surroundings. */
+  const lastCamRef = useRef<{ ctx: HTMLElement; side: "left" | "right"; z: number } | null>(null)
   const zoomToWork = useCallback(
     (targetId: string) => {
       const wrap = zoomRef.current
@@ -205,13 +206,17 @@ export function LivePlayer({
       const rb = local(target)
       const z = Math.min(2.3, Math.max(2, (W / Math.max(1, cb.w)) * 0.96))
       const pad = 12
-      let tx = -z * (cb.l - pad)
+      // Which half of the context is being worked? Anchor that side.
+      const side: "left" | "right" =
+        rb.l + rb.w / 2 > cb.l + cb.w * 0.55 && z * cb.w > W ? "right" : "left"
+      let tx = side === "left" ? -z * (cb.l - pad) : W - pad - z * (cb.l + cb.w)
       tx = Math.min(0, Math.max(W * (1 - z), tx))
       let ty = -z * (cb.t - pad)
       // Keep the target row on screen: shift down only as much as needed.
       ty = Math.min(ty, H - 30 - z * (rb.t + rb.h))
       ty = Math.min(0, Math.max(H * (1 - z), ty))
       zoomScaleRef.current = z
+      lastCamRef.current = { ctx: ctxEl, side, z }
       wrap.style.transformOrigin = "0 0"
       wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
     },
@@ -249,6 +254,27 @@ export function LivePlayer({
       if (cameraOnRef.current) {
         zoomToWork(id)
         await sleep(1120, run)
+        // Instant micro-snap (no transition): measure where the anchored
+        // corner actually landed and correct the residual invisibly.
+        const wrap = zoomRef.current
+        const cam = lastCamRef.current
+        if (wrap && cam) {
+          const sR = stage.getBoundingClientRect()
+          const cR = cam.ctx.getBoundingClientRect()
+          const padV = 12 * cam.z
+          const err =
+            cam.side === "left" ? cR.left - (sR.left + padV) : cR.right - (sR.right - padV)
+          const wR = wrap.getBoundingClientRect()
+          const bounded = Math.max(wR.left - sR.left, Math.min(wR.right - sR.right, err))
+          const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(wrap.style.transform)
+          if (m && Math.abs(bounded) > 3) {
+            const prev = wrap.style.transition
+            wrap.style.transition = "none"
+            wrap.style.transform = `translate(${parseFloat(m[1]) - bounded}px, ${m[2]}px) scale(${cam.z})`
+            void wrap.offsetWidth
+            wrap.style.transition = prev
+          }
+        }
       }
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
@@ -313,7 +339,9 @@ export function LivePlayer({
       await sleep(80, run).catch(() => {})
       const scrollTarget = isNarrow() ? mobileIntroRef.current ?? stageRef.current : stageRef.current
       scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" })
-      const readMs = Math.min(9500, Math.max(4200, 1800 + scene.caption.length * 46))
+      const readMs = isNarrow()
+        ? Math.min(6500, Math.max(3000, 1100 + scene.caption.length * 34))
+        : Math.min(9500, Math.max(4200, 1800 + scene.caption.length * 46))
       await Promise.race([
         sleep(readMs, run).catch(() => {}),
         new Promise<void>((resolve) => {
@@ -631,7 +659,7 @@ export function LivePlayer({
           onClick={dismissIntro}
           className="mb-3 scroll-mt-[150px] sm:hidden"
         >
-          <div className="demo-confirm-pop border-ink-100 relative overflow-hidden rounded-2xl border bg-white px-4 py-4 shadow-[0_24px_60px_-26px_rgba(15,23,42,0.45)]">
+          <div className="demo-confirm-pop border-ink-100 relative overflow-hidden rounded-2xl border bg-white px-4 pb-3 pt-4 shadow-[0_24px_60px_-26px_rgba(15,23,42,0.45)]">
             <span className={cn("absolute inset-x-0 top-0 h-1.5", PERSONA_ACCENT[scene.persona].bar)} />
             <span
               className={cn(
@@ -642,7 +670,16 @@ export function LivePlayer({
               {scene.personaLabel}
             </span>
             <p className="text-ink-950 mt-2.5 text-[15px] font-semibold leading-snug">{scene.caption}</p>
-            <p className="text-ink-400 mt-2.5 text-[11px] font-medium">Tap when you&apos;re ready, or it continues on its own.</p>
+            <div className="mt-3 flex items-center gap-2.5">
+              <div className="bg-ink-100 h-1 flex-1 overflow-hidden rounded-full">
+                <div
+                  key={scene.id}
+                  className="live-intro-progress bg-hoop-500 h-full rounded-full"
+                  style={{ animationDuration: `${Math.min(6500, Math.max(3000, 1100 + scene.caption.length * 34))}ms` }}
+                />
+              </div>
+              <span className="text-hoop-600 shrink-0 text-[11px] font-bold">Tap to start now</span>
+            </div>
           </div>
         </div>
       )}

@@ -292,7 +292,7 @@ const finalize: LiveScene = {
   frame: "desktop",
   url: "/clubs/burlington-force/teams/g10/roster",
   caption:
-    "Everyone who accepted is on the roster. Finalizing assigns jersey numbers from their preferences and expires anything still pending.",
+    "Everyone who accepted is on the roster. Finalizing assigns jerseys from preferences and expires the rest.",
   script: [
     { wait: 500 },
     { hold: "finalizeBtn" },

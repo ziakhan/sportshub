@@ -55,7 +55,7 @@ const parentBoxScore: LiveScene = {
   personaLabel: MARIA,
   frame: "phone",
   caption:
-    "Game day, from the stands or from work. This is the live game page every family gets: score up top, leaders and team stats below, and every number keeps itself current. Watch Jayden's three, the Huskies' answer, and Malik's rebound land the second they happen.",
+    "Game day. The live page every family gets: score, leaders, box score. Watch Jayden's three and Malik's board land the second they happen.",
   script: [
     { wait: 1600 },
     // Jayden hits a three, Marcus assists: hero, linescore and leaders flash
@@ -237,7 +237,7 @@ const liveChat: LiveScene = {
   personaLabel: MARIA,
   frame: "phone",
   caption:
-    "Team chat lives next to the calendar: pinned notes from the coach, and quick polls the whole team answers in a tap. Maria votes on the team dinner.",
+    "Team chat: pinned coach notes and one-tap polls. Maria votes on the team dinner.",
   script: [
     { wait: 800 },
     { set: { msg2: true } },

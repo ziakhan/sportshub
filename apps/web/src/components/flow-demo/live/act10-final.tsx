@@ -34,7 +34,7 @@ const review: LiveScene = {
   frame: "desktop",
   url: "/games/g10-w1-force-huskies/score",
   caption:
-    "The horn sounds and the console flips to review. This league requires referee approval: Mike signs off with his PIN, the strongest form, or a signature works too.",
+    "The horn sounds; the console flips to review. This league requires referee sign-off: Mike enters his PIN.",
   script: [
     { wait: 500 },
     { press: "pinToggle" },
@@ -272,7 +272,7 @@ const scoresheet: LiveScene = {
   frame: "desktop",
   url: "/scoresheet/g10-w1-force-huskies",
   caption:
-    "The official scoresheet: both full rosters, every mark quarter by quarter, fouls, DNPs and absences, and the referee's PIN-verified sign-off. Download it as a PDF or print it.",
+    "The official scoresheet: both rosters, every quarter, fouls, DNPs, the referee's verified sign-off. PDF or print.",
   script: [
     { wait: 700 },
     { zoom: "homeTable", scale: 1.15 },
@@ -388,7 +388,7 @@ const distribution: LiveScene = {
   personaLabel: "Everyone",
   frame: "plain",
   caption:
-    "The moment it's final, it ships itself: both clubs' front offices and the league get the scoresheet by email, and every parent and player gets the final score in the app.",
+    "Final means final: the scoresheet emails itself to both clubs and the league; every family gets the score in the app.",
   script: [
     { wait: 500 },
     { set: { mail: true } },

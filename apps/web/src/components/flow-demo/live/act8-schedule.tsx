@@ -236,7 +236,7 @@ const calendarScene: LiveScene = {
   personaLabel: "Maria (parent)",
   frame: "phone",
   caption:
-    "Every game is on the calendar with RSVP built in, and one tap subscribes the phone's own calendar. Moves and cancellations update by themselves.",
+    "Every game lands on the calendar with RSVP built in; one tap subscribes the phone. Changes update themselves.",
   script: [
     { wait: 600 },
     { press: "goingBtn" },
@@ -341,7 +341,7 @@ const gameChanges: LiveScene = {
   frame: "desktop",
   url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
   caption:
-    "Mid-season reality: a gym conflict hits the Week 2 game. The scheduler suggests open slots, the league moves it, and a Week 3 game gets cancelled. Everyone affected is notified.",
+    "Mid-season reality: a gym conflict. The league moves one game, cancels another; everyone affected hears instantly.",
   script: [
     { wait: 500 },
     { press: "findAlt" },
@@ -522,7 +522,7 @@ const calendarChanges: LiveScene = {
   personaLabel: "Maria (parent)",
   frame: "phone",
   caption:
-    "The calendar keeps the record straight: the moved game sits at its new time, and the cancelled one stays visible, struck out, so nobody drives to a dead gym.",
+    "The calendar keeps it straight: the moved game at its new time, the cancelled one struck out. Nobody drives to a dead gym.",
   script: [
     { wait: 700 },
     { set: { struck: true } },

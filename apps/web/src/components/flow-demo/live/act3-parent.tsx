@@ -100,7 +100,7 @@ const browse: LiveScene = {
   personaLabel: MARIA,
   frame: "phone",
   caption:
-    "Maria opens the programs marketplace and taps Tryouts. Every tryout running near her is here: the club, its rating from other parents, the date, the gym and the fee. The Force tryout is the one.",
+    "Maria taps Tryouts: every tryout near her, with each club's parent rating, date, gym and fee. The Force is the one.",
   script: [
     { wait: 900 },
     { press: "pillTryouts" },

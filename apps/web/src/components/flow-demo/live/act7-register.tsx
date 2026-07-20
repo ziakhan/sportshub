@@ -34,7 +34,7 @@ const registerTeam: LiveScene = {
   frame: "desktop",
   url: "/browse-leagues/summer-2026",
   caption:
-    "Back at the club: the roster is set, so the owner registers the team before the May 15 deadline, picking exactly which players the league sees.",
+    "Back at the club: the owner registers the team before May 15, picking exactly which players the league sees.",
   script: [
     { zoom: "regPanel", scale: 1.2 },
     ...pick("teamSel", "team", 0, `${TEAM.name} (U16 Male)`),

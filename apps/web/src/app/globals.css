@@ -322,6 +322,20 @@
 }
 
 /* ── Live demo (animated end-to-end walkthrough) ───────────────────────── */
+.live-intro-progress {
+  animation-name: live-intro-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+@keyframes live-intro-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 .live-cursor {
   position: absolute;
   z-index: 40;

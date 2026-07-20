@@ -109,7 +109,7 @@ const attendance: LiveScene = {
   frame: "desktop",
   url: "/games/g10-w1-force-huskies/score",
   caption:
-    "Everyone starts as present; the scorekeeper taps whoever is missing. Absences show on the scoresheet and don't count a game played.",
+    "Everyone starts present; the scorekeeper taps who is missing. Absences hit the scoresheet.",
   script: [
     { wait: 600 },
     { press: "abs18" },
@@ -545,7 +545,7 @@ const liveScore: LiveScene = {
   personaLabel: TABLE,
   frame: "plain",
   caption:
-    "Fourth quarter. Tap +2 at the table and watch the right side: the basket lands on every phone in the gym the moment it happens. Nobody refreshes anything.",
+    "Fourth quarter. Tap +2 at the table; the basket lands on every phone the moment it happens. No refreshing.",
   script: [
     { wait: 700 },
     { hold: "plus2" },
@@ -597,7 +597,7 @@ const liveRebound: LiveScene = {
   personaLabel: TABLE,
   frame: "plain",
   caption:
-    "Misses and rebounds too: a missed 2 by the Huskies, board to Malik, and the play-by-play writes itself on every screen. Then the horn.",
+    "Misses and boards too: Huskies miss, Malik rebounds, the play-by-play writes itself. Then the horn.",
   script: [
     { wait: 700 },
     { press: "miss2" },
