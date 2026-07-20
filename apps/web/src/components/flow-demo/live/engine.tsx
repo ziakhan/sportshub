@@ -123,6 +123,18 @@ export function LivePlayer({
   /* Camera. Fixed top-left origin: visual = translate + scale * local, so
      sequential zooms stay exact and the window can be CLAMPED to the screen
      edges: never a hidden left column with dead space on the right. */
+  /** The camera's actual current scale, read from the computed matrix, so
+      measurements stay correct even mid-transition. */
+  const liveScale = (wrap: HTMLElement) => {
+    const tr = getComputedStyle(wrap).transform
+    if (!tr || tr === "none") return 1
+    try {
+      return new DOMMatrix(tr).a || 1
+    } catch {
+      return 1
+    }
+  }
+
   const setZoom = useCallback((id: string | null, scale = 1.35) => {
     const wrap = zoomRef.current
     const stage = stageRef.current
@@ -135,7 +147,7 @@ export function LivePlayer({
     }
     const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
     if (!target) return
-    const zCur = zoomScaleRef.current
+    const zCur = liveScale(wrap)
     const r = target.getBoundingClientRect()
     const w = wrap.getBoundingClientRect()
     // Untransformed (layout-space) geometry, recovered from the visual rects
@@ -170,7 +182,7 @@ export function LivePlayer({
       if (!wrap || !stage) return
       const target = stage.querySelector<HTMLElement>(`[data-live-id="${targetId}"]`)
       if (!target) return
-      const zCur = zoomScaleRef.current
+      const zCur = liveScale(wrap)
       const w = wrap.getBoundingClientRect()
       const W = wrap.offsetWidth
       const H = wrap.offsetHeight
@@ -190,15 +202,16 @@ export function LivePlayer({
       }
       const pb = local(panel)
       const rb = local(target)
-      const z = Math.min(2.3, Math.max(1.1, (W / Math.max(1, pb.w)) * 0.97))
-      const pR = pb.l + pb.w
+      // Readability floor: never zoom out past 2x just to fit a wide panel.
+      // Wide panels instead get flush-edge alignment (left field -> flush
+      // left, right field -> flush right); narrow panels zoom to fill.
+      const z = Math.min(2.3, Math.max(2, (W / Math.max(1, pb.w)) * 0.97))
       const pB = pb.t + pb.h
-      let tx: number
-      if (z * pb.w >= W) {
-        tx = Math.min(-z * pb.l, Math.max(W - z * pR, W / 2 - z * (rb.l + rb.w / 2)))
-      } else {
-        tx = W / 2 - z * (pb.l + pR) / 2
-      }
+      // Horizontal: lead from the working element's left edge with a fixed
+      // margin (reading order), clamped only by the screen edges. Left-column
+      // fields show their labels; right-column fields fill toward the right
+      // edge; no dead space either side.
+      let tx = -z * (rb.l - 34)
       let ty: number
       if (z * pb.h >= H) {
         ty = Math.min(-z * pb.t, Math.max(H - z * pB, H / 2 - z * (rb.t + rb.h / 2)))
@@ -250,6 +263,30 @@ export function LivePlayer({
         await sleep(1120, run)
       }
       await settleOn(target, run)
+      // Closed loop: whatever the transform math believed, measure where the
+      // target actually landed and nudge the camera so its left edge sits a
+      // fixed margin from the screen edge, clamped so the screen still fills
+      // the viewport. Robust against any model drift.
+      if (isNarrow() && zoomScaleRef.current > 1) {
+        const wrap = zoomRef.current
+        if (wrap) {
+          const sR = stage.getBoundingClientRect()
+          const wR = wrap.getBoundingClientRect()
+          const rR = target.getBoundingClientRect()
+          let err = rR.left - (sR.left + 22)
+          err = Math.max(wR.left - sR.left, Math.min(wR.right - sR.right, err))
+          if (Math.abs(err) > 6) {
+            const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(wrap.style.transform)
+            if (m) {
+              const prevTransition = wrap.style.transition
+              wrap.style.transition = "transform 0.45s cubic-bezier(0.3, 0.9, 0.35, 1)"
+              wrap.style.transform = `translate(${parseFloat(m[1]) - err}px, ${m[2]}px) scale(${zoomScaleRef.current})`
+              await sleep(500, run)
+              wrap.style.transition = prevTransition
+            }
+          }
+        }
+      }
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
       cur.style.opacity = "1"
@@ -300,6 +337,7 @@ export function LivePlayer({
     setHoldHint(null)
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
     if (zoomRef.current) zoomRef.current.style.transform = "none"
+    zoomScaleRef.current = 1
 
     const exec = async () => {
       // Read-first: bring the new screen fully into view, then hold the
@@ -376,8 +414,11 @@ export function LivePlayer({
           mutate({ [key + ":caret"]: false })
         } else if ("zoom" in step) {
           if (!step.zoom && cursorRef.current) cursorRef.current.style.opacity = "0"
-          setZoom(step.zoom, step.scale)
-          await sleep(750, run)
+          // Phones: scripted zooms use the same left-lead framing as the
+          // auto camera, so labels never get center-cropped.
+          if (step.zoom && isNarrow()) zoomToWork(step.zoom)
+          else setZoom(step.zoom, step.scale)
+          await sleep(1150, run)
         } else if ("confirm" in step) {
           setConfirmText(step.confirm)
           await sleep(1250, run)
