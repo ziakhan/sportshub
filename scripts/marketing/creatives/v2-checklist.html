@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  .stage { gap: 54px; padding: 90px 90px 250px; }
+  h1 { font-size: 86px; max-width: 900px; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both; }
+  h1 em { font-style: normal; color: #f9a178; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; max-width: 920px; }
+  .chip { animation: pop 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+  .sub { font-size: 32px; color: rgba(255, 255, 255, 0.6); font-weight: 500; animation: rise 0.6s ease-out 5.6s both; }
+  .footer-brand { animation: fadein 0.6s ease-out 0.4s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  body.story .stage { gap: 70px; }
+  body.story h1 { font-size: 100px; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <div class="eyebrow" style="animation: fadein 0.5s ease-out 0.1s both">The receipts</div>
+  <h1>&ldquo;Complete&rdquo; isn&apos;t a slogan. <em>It&apos;s a checklist.</em></h1>
+  <div class="chips">
+    <span class="chip" style="animation-delay:1.30s"><span class="ck">&#10003;</span>Registration</span>
+    <span class="chip" style="animation-delay:1.58s"><span class="ck">&#10003;</span>Payments &amp; installments</span>
+    <span class="chip" style="animation-delay:1.86s"><span class="ck">&#10003;</span>Tryouts &amp; offers</span>
+    <span class="chip" style="animation-delay:2.14s"><span class="ck">&#10003;</span>Team chat &amp; DMs</span>
+    <span class="chip" style="animation-delay:2.42s"><span class="ck">&#10003;</span>Schedules + calendar sync</span>
+    <span class="chip" style="animation-delay:2.70s"><span class="ck">&#10003;</span>RSVPs</span>
+    <span class="chip" style="animation-delay:2.98s"><span class="ck">&#10003;</span>Live scoring</span>
+    <span class="chip" style="animation-delay:3.26s"><span class="ck">&#10003;</span>Box scores &amp; leaders</span>
+    <span class="chip" style="animation-delay:3.54s"><span class="ck">&#10003;</span>AI game recaps</span>
+    <span class="chip" style="animation-delay:3.82s"><span class="ck">&#10003;</span>Standings &amp; playoffs</span>
+    <span class="chip" style="animation-delay:4.10s"><span class="ck">&#10003;</span>Referee assignment</span>
+    <span class="chip" style="animation-delay:4.38s"><span class="ck">&#10003;</span>Club &amp; league pages</span>
+    <span class="chip" style="animation-delay:4.66s"><span class="ck">&#10003;</span>iOS + Android apps</span>
+  </div>
+  <p class="sub">Registration to final buzzer, already built.</p>
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>
+  if (location.hash.includes("story")) document.body.classList.add("story");
+  window.__duration = 7500;
+  window.__seek = (t) => {
+    document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
+  };
+</script>
+</body>
+</html>

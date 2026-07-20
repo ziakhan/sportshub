@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  .stage { gap: 60px; padding: 90px 90px 250px; }
+  h1 { font-size: 118px; line-height: 1.05; }
+  h1 .all { color: var(--play-600); }
+  h1 .onebox {
+    display: inline-block; background: var(--hoop-500); color: #ffffff;
+    font-size: 0.62em; text-transform: uppercase; letter-spacing: 0.08em;
+    line-height: 1.15; padding: 0.02em 0.24em; border-radius: 0.16em;
+    transform: translateY(-0.08em); vertical-align: middle;
+  }
+  .tag { font-family: var(--display); font-size: 46px; font-weight: 700; color: var(--ink-950); }
+  .tag em { font-style: normal; color: var(--hoop-500); }
+  body.story h1 { font-size: 132px; }
+  body.story .stage { gap: 80px; }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <h1>Youth basketball.<br /><span class="all">All of it.</span> <span class="onebox">One</span> app.</h1>
+  <p class="tag">Your season <em>runs itself</em>.</p>
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>if (location.hash.includes("story")) document.body.classList.add("story");</script>
+</body>
+</html>

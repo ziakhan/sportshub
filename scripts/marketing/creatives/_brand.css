@@ -1,0 +1,184 @@
+/* SportsHub One ad-creative tokens — mirrors apps/web tailwind palette.
+   Every creative stages inside .stage (1080x1080; body.story -> 1080x1920). */
+
+:root {
+  --ink-950: #18181b;
+  --ink-700: #4d4d5a;
+  --ink-500: #747486;
+  --ink-300: #b8b8c3;
+  --ink-200: #d9d9df;
+  --ink-100: #eeeef1;
+  --ink-50: #f7f7f8;
+  --hoop-500: #f24e1e;
+  --hoop-600: #e33612;
+  --hoop-100: #fee5d6;
+  --hoop-50: #fef3ee;
+  --play-600: #4f46e5;
+  --play-300: #a5b4fc;
+  --play-100: #e0e7ff;
+  --court-600: #16a34a;
+  --court-100: #dcfce7;
+  --live-500: #ef4444;
+  --gold-500: #f59e0b;
+  --gold-300: #fcd34d;
+  --stage: #0b1628;
+  --stage-2: #1e2d4d;
+  --display: "Outfit", sans-serif;
+  --body: "Work Sans", sans-serif;
+  --condensed: "Barlow Condensed", sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #ffffff; }
+body { font-family: var(--body); color: var(--ink-950); }
+
+.stage {
+  position: relative;
+  width: 1080px;
+  height: 1080px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+body.story .stage { height: 1920px; }
+
+.stage.light { background: #fafafa; }
+.stage.dark {
+  background: linear-gradient(135deg, var(--stage), var(--stage-2));
+  color: #ffffff;
+}
+
+/* soft radial brand washes for light stages */
+.stage.light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 8% 0%, rgba(79, 70, 229, 0.08) 0%, transparent 60%),
+    radial-gradient(60% 50% at 95% 100%, rgba(242, 78, 30, 0.09) 0%, transparent 60%);
+}
+.stage > * { position: relative; }
+
+/* ---------- wordmark ---------- */
+.wm {
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: flex-start;
+}
+.wm .s { color: var(--ink-950); }
+.wm .h { color: var(--play-600); }
+.stage.dark .wm .s { color: #ffffff; }
+.stage.dark .wm .h { color: var(--play-300); }
+.wm .one {
+  background: var(--hoop-500);
+  color: #ffffff;
+  font-size: 0.3em;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  padding: 0.28em 0.42em;
+  border-radius: 0.28em;
+  margin-left: 0.28em;
+  transform: translateY(-0.15em);
+}
+
+/* ---------- shared atoms ---------- */
+.eyebrow {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--hoop-500);
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+}
+.eyebrow::before, .eyebrow::after {
+  content: "";
+  height: 2px;
+  width: 56px;
+  background: var(--hoop-500);
+  opacity: 0.6;
+}
+.stage.dark .eyebrow { color: #f9a178; }
+.stage.dark .eyebrow::before, .stage.dark .eyebrow::after { background: #f9a178; }
+
+h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.06;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid var(--ink-200);
+  background: #ffffff;
+  color: var(--ink-500);
+  border-radius: 999px;
+  padding: 16px 30px;
+  font-size: 30px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pill .x { color: var(--live-500); font-weight: 700; }
+.pill .t { text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.75); text-decoration-thickness: 3px; }
+
+.pill-one {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--hoop-500);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 20px 42px;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 24px 48px -18px rgba(242, 78, 30, 0.55);
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 14px 26px;
+  font-size: 27px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip .ck { color: #f9a178; font-weight: 700; }
+
+.footer-brand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.footer-brand .wm { font-size: 56px; }
+.footer-brand .domain {
+  font-family: var(--body);
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--ink-500);
+  letter-spacing: 0.04em;
+}
+.stage.dark .footer-brand .domain { color: rgba(255, 255, 255, 0.55); }

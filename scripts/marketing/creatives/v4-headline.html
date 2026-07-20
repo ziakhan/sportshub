@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  .stage { gap: 64px; padding: 90px 90px 250px; }
+  h1 { font-size: 122px; line-height: 1.06; }
+  h1 .l1 { display: block; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both; }
+  h1 .l2 { display: block; color: var(--play-600); animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.25s both; }
+  h1 .l3 { display: block; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 2.2s both; }
+  .onebox {
+    display: inline-block; background: var(--hoop-500); color: #ffffff;
+    font-size: 0.62em; text-transform: uppercase; letter-spacing: 0.08em;
+    line-height: 1.15; padding: 0.02em 0.24em; border-radius: 0.16em;
+    transform: translateY(-0.08em); vertical-align: middle;
+    animation: slam 0.55s cubic-bezier(0.3, 1.5, 0.4, 1) 2.7s both;
+  }
+  .tag { font-family: var(--display); font-size: 48px; font-weight: 700; animation: rise 0.6s ease-out 3.8s both; }
+  .tag em { font-style: normal; color: var(--hoop-500); }
+  .footer-brand { animation: fadein 0.7s ease-out 4.6s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slam { from { opacity: 0; transform: translateY(-0.08em) scale(3) rotate(-6deg); } 70% { opacity: 1; transform: translateY(-0.08em) scale(0.92); } to { opacity: 1; transform: translateY(-0.08em) scale(1); } }
+  body.story h1 { font-size: 136px; }
+  body.story .stage { gap: 84px; }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <h1>
+    <span class="l1">Youth basketball.</span>
+    <span class="l2">All of it.</span>
+    <span class="l3"><span class="onebox">One</span> app.</span>
+  </h1>
+  <p class="tag">Your season <em>runs itself</em>.</p>
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>
+  if (location.hash.includes("story")) document.body.classList.add("story");
+  window.__duration = 6500;
+  window.__seek = (t) => {
+    document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
+  };
+</script>
+</body>
+</html>

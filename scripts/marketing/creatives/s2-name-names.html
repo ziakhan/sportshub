@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  .stage { gap: 38px; padding: 80px 80px 240px; }
+  h1 { font-size: 84px; }
+  .rows { display: flex; flex-direction: column; gap: 16px; width: 820px; flex-shrink: 0; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 26px;
+    background: rgba(255, 255, 255, 0.06); border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px; padding: 21px 34px; text-align: left;
+  }
+  .row .them { font-size: 28px; font-weight: 600; color: rgba(255, 255, 255, 0.55); text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.8); text-decoration-thickness: 3px; white-space: nowrap; }
+  .row .us { font-family: var(--display); font-size: 27px; font-weight: 700; color: #ffffff; text-align: right; }
+  .punch { font-family: var(--display); font-size: 36px; font-weight: 700; color: rgba(255, 255, 255, 0.92); max-width: 840px; }
+  .punch em { font-style: normal; color: #f9a178; }
+  body.story .stage { gap: 64px; }
+  body.story h1 { font-size: 104px; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <div class="eyebrow">Name names</div>
+  <h1>One app replaces the pile</h1>
+  <div class="rows">
+    <div class="row"><span class="them">TeamSnap + Spond</span><span class="us">Team chat &amp; RSVPs</span></div>
+    <div class="row"><span class="them">GameChanger</span><span class="us">Live scoring &amp; box scores</span></div>
+    <div class="row"><span class="them">SportsEngine</span><span class="us">Registration &amp; payments</span></div>
+    <div class="row"><span class="them">RAMP + email chains</span><span class="us">Schedules, standings, refs</span></div>
+    <div class="row"><span class="them">The spreadsheet</span><span class="us">Gone.</span></div>
+  </div>
+  <p class="punch">They each do a piece. <em>Nobody does the whole thing.</em></p>
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>if (location.hash.includes("story")) document.body.classList.add("story");</script>
+</body>
+</html>
