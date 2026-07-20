@@ -74,3 +74,6 @@ Thumbs.db
 .claude/**/*.pyc
 demo-clips/
 .credentials/
+
+# unlisted share bundles uploaded straight to the box (not in git)
+apps/web/public/x/

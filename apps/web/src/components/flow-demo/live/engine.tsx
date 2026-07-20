@@ -58,7 +58,16 @@ const PERSONA_ACCENT: Record<string, { bar: string; wash: string }> = {
 
 /* ── The player ────────────────────────────────────────────────────────── */
 
-export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScene[] }) {
+export function LivePlayer({
+  acts,
+  scenes,
+  durationLabel,
+}: {
+  acts: LiveAct[]
+  scenes: LiveScene[]
+  /** Measured autoplay runtime, shown on the start gate (e.g. "about 13 minutes"). */
+  durationLabel?: string
+}) {
   const [index, setIndex] = useState(0)
   const [, setTick] = useState(0)
   const [started, setStarted] = useState(false)
@@ -605,6 +614,12 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
                 Every step works the same way: first you read what is about to happen, then the
                 screen acts it out for real, then it waits for you on a glowing button.
               </p>
+              {durationLabel && (
+                <p className="text-ink-500 mx-auto mt-2 max-w-md text-xs font-medium">
+                  On autoplay the whole thing runs {durationLabel}. Clicking through, you set the
+                  pace, and you can jump between acts any time.
+                </p>
+              )}
               <div className="border-gold-300 bg-gold-50 mt-4 flex items-start gap-2.5 rounded-xl border p-3 text-left sm:hidden">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-600 mt-0.5 h-4 w-4 shrink-0">
                   <rect x="2" y="4" width="20" height="14" rx="2" />

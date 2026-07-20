@@ -1,4 +1,5 @@
 import { ParentLiveDemo } from "@/components/flow-demo/live"
+import { MobileDesktopNotice } from "@/components/flow-demo/mobile-notice"
 
 export const metadata = {
   title: "Watch the Parent Side | Tryout to Game Day | SportsHub One",
@@ -25,6 +26,7 @@ export default function ParentDemoPage() {
           </p>
         </div>
         <div className="mx-auto max-w-5xl">
+          <MobileDesktopNotice />
           <ParentLiveDemo />
         </div>
       </div>

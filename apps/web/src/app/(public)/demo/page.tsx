@@ -1,4 +1,5 @@
 import { LiveDemo } from "@/components/flow-demo/live"
+import { MobileDesktopNotice } from "@/components/flow-demo/mobile-notice"
 
 export const metadata = {
   title: "Watch It Run | Signup to Final Whistle | SportsHub One",
@@ -22,6 +23,7 @@ export default function DemoPage() {
           </p>
         </div>
         <div className="mx-auto max-w-5xl">
+          <MobileDesktopNotice />
           <LiveDemo />
         </div>
       </div>

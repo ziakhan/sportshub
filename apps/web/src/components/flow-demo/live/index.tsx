@@ -44,6 +44,7 @@ export function LiveDemo() {
         ...ACT_GAMEDAY,
         ...ACT_FINAL,
       ]}
+      durationLabel="about 13 minutes"
     />
   )
 }
@@ -64,6 +65,7 @@ export function ParentLiveDemo() {
     <LivePlayer
       acts={PARENT_ACTS}
       scenes={[...ACT3, ...ACT5, ...calendarScenes, ...ACT_PARENT_GAMEDAY]}
+      durationLabel="about 3 and a half minutes"
     />
   )
 }
