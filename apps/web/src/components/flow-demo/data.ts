@@ -260,18 +260,20 @@ export const CHAT = {
   typing: "Wei Chen is typing…",
 }
 
+/** Same dinner poll the chat scene votes in, seen from the Polls page right
+ *  after Maria's vote lands (13 -> 14, Boston Pizza 8 -> 9). */
 export const POLL_PAGE = {
-  title: "Tournament plans for August",
-  desc: "Help us plan the summer. Answers close Friday.",
+  title: "Team dinner for June 28",
+  desc: "Closing out the season together after the last session. Answers close Thursday.",
   by: "David Okafor",
   created: "Jun 21",
-  voters: 11,
-  question: "Which tournaments should we enter?",
-  multiple: true,
+  voters: 14,
+  question: "Team dinner spot for June 28?",
+  multiple: false,
   options: [
-    { label: "Toronto Classic (Aug 8 weekend)", count: 8, mine: true },
-    { label: "Hamilton Showdown (Aug 15 weekend)", count: 6, mine: true },
-    { label: "Ottawa Invitational (Aug 22 weekend)", count: 3 },
+    { label: "Boston Pizza on Fairview", count: 9, mine: true },
+    { label: "The Works Burlington", count: 4 },
+    { label: "Potluck at the gym", count: 1 },
   ],
 }
 

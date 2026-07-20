@@ -147,14 +147,14 @@ export default async function HomePage() {
         <ScoreboardStrip games={scoreboard} />
       )}
       {marketing && (
-      <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-24 pt-20 sm:pt-28">
+      <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-10 pt-8 sm:pb-16 sm:pt-16">
         <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
         <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
         <div className="bg-hoop-200/40 absolute bottom-[8%] left-[28%] h-60 w-60 rounded-full blur-3xl" />
 
         <div className="container relative z-10 mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="border-ink-200 mb-8 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border bg-white px-4 py-1.5 shadow-sm">
+            <div className="border-ink-200 mb-5 inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border bg-white px-4 py-1.5 shadow-sm">
               <span className="flex items-center gap-1.5">
                 <span className="bg-court-500 h-1.5 w-1.5 rounded-full motion-safe:animate-pulse" />
                 <span className="text-ink-700 text-xs font-semibold">
@@ -171,13 +171,13 @@ export default async function HomePage() {
               <span className="text-ink-600 text-xs font-medium">{stats.totalTeams} teams</span>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <span className="text-hoop-500 text-xs font-semibold uppercase tracking-[0.2em]">
                 The first complete platform for youth basketball
               </span>
             </div>
 
-            <h1 className="font-display text-ink-950 mb-6 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
+            <h1 className="font-display text-ink-950 mb-4 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
               Youth basketball.
               <br />
               <span className="text-play-600">All of it.</span>{" "}
@@ -190,14 +190,14 @@ export default async function HomePage() {
               app.
             </h1>
 
-            <p className="text-ink-500 mx-auto mb-10 max-w-2xl text-lg leading-8 sm:text-xl">
+            <p className="text-ink-500 mx-auto mb-6 max-w-2xl text-base leading-7 sm:mb-8 sm:text-xl sm:leading-8">
               Run tryouts, send offers, and turn them into signed-up, paid rosters. Then
               schedules, live scores and standings all season long. Everything your club or league
               runs on spreadsheets today, in one app.{" "}
               <span className="text-ink-950 font-semibold">Your season runs itself.</span>
             </p>
 
-            <div className="mb-5 flex flex-col items-center gap-2.5">
+            <div className="mb-4 flex flex-col items-center gap-2.5">
               <Link
                 href="/demo"
                 className="from-play-600 to-hoop-500 shadow-play-600/25 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-105 sm:w-auto"
@@ -216,7 +216,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mx-auto mb-5 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
+            <div className="mx-auto mb-4 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
               {[
                 {
                   href: "/for-clubs",
@@ -261,7 +261,7 @@ export default async function HomePage() {
             </div>
 
 
-            <p className="text-ink-400 mb-12 text-[13px] font-medium">
+            <p className="text-ink-400 mb-6 text-[13px] font-medium sm:mb-8">
               One account works for parents, coaches, scorekeepers, club owners and league
               commissioners. Same app, every seat in the gym.
             </p>
@@ -288,8 +288,16 @@ export default async function HomePage() {
               </span>
               <span className="bg-hoop-400 h-px w-10" />
             </div>
-            <h2 className="text-ink-950 mx-auto mb-8 max-w-2xl text-3xl font-bold sm:text-4xl">
-              Still running the season on five apps and a spreadsheet?
+            <h2 className="font-display text-ink-950 mx-auto mb-8 max-w-2xl text-3xl font-extrabold sm:text-4xl">
+              Still running the season on{" "}
+              <span className="bg-gold-100 decoration-hoop-400 rounded-md px-1.5 underline decoration-wavy decoration-2 underline-offset-4">
+                five apps
+              </span>{" "}
+              and{" "}
+              <span className="bg-gold-100 decoration-hoop-400 rounded-md px-1.5 underline decoration-wavy decoration-2 underline-offset-4">
+                a spreadsheet
+              </span>
+              ?
             </h2>
             <div className="mx-auto mb-8 flex max-w-2xl flex-wrap items-center justify-center gap-2.5">
               {[
@@ -318,44 +326,79 @@ export default async function HomePage() {
             <p className="text-ink-500 mx-auto max-w-2xl text-base leading-7 sm:text-lg">
               Every tool you&apos;re duct-taping together, rebuilt as one thing that talks to
               itself. When a game moves, the schedule, the standings, the team chat and every
-              parent&apos;s phone{" "}
-              <span className="text-ink-950 font-semibold">already know</span>. Nobody forwards
-              anything.
+              parent&apos;s phone <span className="text-play-700 font-bold">already know</span>.{" "}
+              <span className="text-ink-950 font-bold">Nobody forwards anything.</span>
             </p>
             <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-4 text-left sm:grid-cols-2">
               {[
-                { cat: "Team comms & RSVPs", repl: "TeamSnap, Spond, the WhatsApp group" },
+                {
+                  cat: "Team chat & RSVPs",
+                  repl: "TeamSnap, Spond, the WhatsApp group",
+                  tile: "bg-play-600 shadow-play-200",
+                  icon: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />,
+                },
                 {
                   cat: "Live scoring, box scores & stats",
                   repl: "GameChanger, paper gamesheets",
+                  tile: "bg-hoop-500 shadow-hoop-200",
+                  icon: <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />,
                 },
                 {
                   cat: "Registration, payments & club sites",
                   repl: "SportsEngine, Jersey Watch, the spreadsheet",
+                  tile: "bg-court-600 shadow-court-200",
+                  icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
                 },
                 {
                   cat: "League ops: schedules, standings, playoffs, refs",
                   repl: "RAMP, email chains",
+                  tile: "bg-gold-500 shadow-gold-100",
+                  icon: (
+                    <>
+                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                      <path d="M4 22h16" />
+                      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                    </>
+                  ),
                 },
               ].map((row) => (
                 <div
                   key={row.cat}
-                  className="border-ink-100 shadow-soft rounded-3xl border bg-white p-6"
+                  className="border-ink-100 shadow-soft flex items-start gap-4 rounded-3xl border bg-white p-6"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="bg-hoop-500 h-2.5 w-2.5 flex-none rounded" />
+                  <span
+                    className={`${row.tile} flex h-11 w-11 flex-none items-center justify-center rounded-2xl shadow-lg`}
+                  >
+                    <svg
+                      className="h-5 w-5 text-white"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {row.icon}
+                    </svg>
+                  </span>
+                  <div>
                     <span className="text-ink-950 text-[15px] font-bold">{row.cat}</span>
+                    <p className="text-ink-500 mt-1.5 text-sm">
+                      replaces{" "}
+                      <span className="text-ink-600 font-semibold line-through decoration-red-400 decoration-2">
+                        {row.repl}
+                      </span>
+                    </p>
                   </div>
-                  <p className="text-ink-500 mt-2 text-sm">
-                    replaces <span className="text-ink-700 font-semibold">{row.repl}</span>
-                  </p>
                 </div>
               ))}
             </div>
-            <p className="text-ink-700 mx-auto mt-9 max-w-xl text-center text-lg font-semibold">
-              They each do a piece.{" "}
-              <span className="text-hoop-500">Nobody does the whole thing.</span> That&apos;s the
-              app you actually wanted.
+            <p className="font-display text-ink-950 mx-auto mt-10 max-w-2xl text-center text-2xl font-extrabold sm:text-[28px]">
+              They each do a piece. <span className="text-hoop-500">Nobody does the whole thing.</span>
+              <span className="text-ink-500 mt-1 block text-lg font-semibold sm:text-xl">
+                That&apos;s the app you actually wanted.
+              </span>
             </p>
           </div>
         </section>

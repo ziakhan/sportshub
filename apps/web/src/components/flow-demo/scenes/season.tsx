@@ -839,7 +839,9 @@ export function ScenePolls() {
         <p className="text-ink-600 mt-1.5 text-xs">{POLL_PAGE.desc}</p>
         <div className="border-ink-100 mt-3 border-t pt-3">
           <p className="text-ink-900 text-xs font-bold">{POLL_PAGE.question}</p>
-          <p className="text-ink-400 mt-0.5 text-[10px]">Pick any · {POLL_PAGE.voters} voted</p>
+          <p className="text-ink-400 mt-0.5 text-[10px]">
+            {POLL_PAGE.multiple ? "Pick any" : "Pick one"} · {POLL_PAGE.voters} voted
+          </p>
           <div className="mt-2 space-y-1.5">
             {POLL_PAGE.options.map((o) => (
               <div key={o.label} className="border-ink-100 relative overflow-hidden rounded-lg border px-2.5 py-2">
