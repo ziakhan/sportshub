@@ -120,30 +120,38 @@ export function LivePlayer({
     }
   }, [])
 
+  /* Camera. Fixed top-left origin: visual = translate + scale * local, so
+     sequential zooms stay exact and the window can be CLAMPED to the screen
+     edges: never a hidden left column with dead space on the right. */
   const setZoom = useCallback((id: string | null, scale = 1.35) => {
     const wrap = zoomRef.current
     const stage = stageRef.current
     if (!wrap || !stage) return
     if (!id) {
+      wrap.style.transformOrigin = "0 0"
       wrap.style.transform = "none"
       zoomScaleRef.current = 1
       return
     }
     const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
     if (!target) return
+    const zCur = zoomScaleRef.current
     const r = target.getBoundingClientRect()
     const w = wrap.getBoundingClientRect()
-    // Never zoom a target wider than the stage can show: cap the scale so
-    // no column gets clipped off either edge while it is being filled in.
-    const unscaledW = r.width / zoomScaleRef.current
-    const maxScale = Math.max(1, ((w.width / zoomScaleRef.current) / unscaledW) * 0.97)
-    const z = Math.min(scale, maxScale)
+    // Untransformed (layout-space) geometry, recovered from the visual rects
+    const W = wrap.offsetWidth
+    const H = wrap.offsetHeight
+    const lx = (r.left - w.left) / zCur + r.width / (2 * zCur)
+    const ly = (r.top - w.top) / zCur + r.height / (2 * zCur)
+    // Cap: the target (plus a margin) must fit the viewport width
+    const targetW = r.width / zCur
+    const z = Math.min(scale, Math.max(1, (W / targetW) * 0.97))
     zoomScaleRef.current = z
-    const tx = w.left + w.width / 2 - (r.left + r.width / 2)
-    const ty = w.top + w.height / 2 - (r.top + r.height / 2)
-    const originX = r.left - w.left + r.width / 2
-    const originY = r.top - w.top + r.height / 2
-    wrap.style.transformOrigin = `${originX}px ${originY}px`
+    // Center the target, then clamp so the scaled screen always fills the
+    // viewport: no gap on any side, no edge pushed out unnecessarily.
+    const tx = Math.min(0, Math.max(W * (1 - z), W / 2 - z * lx))
+    const ty = Math.min(0, Math.max(H * (1 - z), H / 2 - z * ly))
+    wrap.style.transformOrigin = "0 0"
     wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
   }, [])
 
