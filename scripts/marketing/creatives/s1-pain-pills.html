@@ -6,11 +6,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="_brand.css" />
 <style>
-  .stage { gap: 52px; padding: 90px 90px 250px; }
-  h1 { font-size: 88px; max-width: 880px; }
+  .stage { gap: 42px; padding: 70px 90px 235px; }
+  h1 { font-size: 74px; max-width: 900px; line-height: 1.2; }
   .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 900px; }
-  .sub { font-size: 33px; line-height: 1.5; color: var(--ink-500); max-width: 820px; }
-  .sub b { color: var(--ink-950); }
+  .sub { font-family: var(--display); font-size: 36px; line-height: 1.4; font-weight: 700; color: var(--ink-950); max-width: 860px; }
+  .sub .whole { color: var(--hoop-500); }
+  .sub .small { font-family: var(--body); font-size: 27px; font-weight: 600; color: var(--ink-500); }
   body.story h1 { font-size: 104px; }
   body.story .stage { gap: 72px; }
 </style>
@@ -18,7 +19,7 @@
 <body>
 <div class="stage light">
   <div class="eyebrow">Sound familiar?</div>
-  <h1>Still running the season on five apps and a spreadsheet?</h1>
+  <h1>Still running the season on <span class="mark">five apps</span> and <span class="mark">a spreadsheet</span>?</h1>
   <div class="pills">
     <span class="pill"><span class="x">&#10007;</span><span class="t">Registration spreadsheet</span></span>
     <span class="pill"><span class="x">&#10007;</span><span class="t">Email chains</span></span>
@@ -28,7 +29,7 @@
     <span class="pill"><span class="x">&#10007;</span><span class="t">A separate scoring app</span></span>
     <span class="pill-one">One app &#10003;</span>
   </div>
-  <p class="sub">Registration, payments, schedules, live scores, team chat. One thing that talks to itself, so <b>nobody forwards anything</b>.</p>
+  <p class="sub">They each do a piece. <b class="whole">Nobody does the whole thing.</b><br /><span class="small">That&apos;s the app you actually wanted.</span></p>
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
     <span class="domain">sportshubone.com</span>

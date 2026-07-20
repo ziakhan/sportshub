@@ -182,3 +182,23 @@ h1 {
   letter-spacing: 0.04em;
 }
 .stage.dark .footer-brand .domain { color: rgba(255, 255, 255, 0.55); }
+
+/* new-homepage design language (2026-07-19 color pass) */
+.mark {
+  background: #fef3c7;
+  border-radius: 12px;
+  padding: 0 14px;
+  text-decoration: underline wavy #f9a178 3px;
+  text-underline-offset: 10px;
+}
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  flex: none;
+  box-shadow: 0 14px 28px -12px rgba(24, 24, 27, 0.45);
+}
+.tile svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="_brand.css" />
 <style>
   .stage { gap: 56px; padding: 90px 90px 250px; }
-  h1 { font-size: 92px; max-width: 880px; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both; }
+  h1 { font-size: 84px; max-width: 920px; line-height: 1.18; animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both; }
   .pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 900px; }
   .pill { position: relative; animation: pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
   .pill .t { text-decoration: none; }
@@ -27,6 +27,7 @@
   .pill-one { animation: stamp 0.55s cubic-bezier(0.3, 1.5, 0.4, 1) 5.2s both; }
   .punch { font-family: var(--display); font-size: 42px; font-weight: 700; color: var(--ink-950); animation: rise 0.6s ease-out 6.3s both; }
   .punch em { font-style: normal; color: var(--hoop-500); }
+  .punch .small { font-family: var(--body); font-size: 29px; font-weight: 600; color: var(--ink-500); }
   .footer-brand { animation: fadein 0.6s ease-out 0.4s both; }
   @keyframes rise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: none; } }
   @keyframes pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
@@ -39,7 +40,7 @@
 </head>
 <body>
 <div class="stage light">
-  <h1>Still running the season on five apps and a spreadsheet?</h1>
+  <h1>Still running the season on <span class="mark">five apps</span> and <span class="mark">a spreadsheet</span>?</h1>
   <div class="pills">
     <span class="pill p1"><span class="x">&#10007;</span><span class="t">Registration spreadsheet</span><span class="slash"></span></span>
     <span class="pill p2"><span class="x">&#10007;</span><span class="t">Email chains</span><span class="slash"></span></span>
@@ -49,7 +50,7 @@
     <span class="pill p6"><span class="x">&#10007;</span><span class="t">A separate scoring app</span><span class="slash"></span></span>
     <span class="pill-one">One app &#10003;</span>
   </div>
-  <p class="punch">They each do a piece. <em>Nobody does the whole thing.</em></p>
+  <p class="punch">They each do a piece. <em>Nobody does the whole thing.</em><br /><span class="small">That&apos;s the app you actually wanted.</span></p>
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
     <span class="domain">sportshubone.com</span>
