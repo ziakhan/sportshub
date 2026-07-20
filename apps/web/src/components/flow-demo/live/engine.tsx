@@ -82,6 +82,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
   const holdResolveRef = useRef<(() => void) | null>(null)
   const introResolveRef = useRef<(() => void) | null>(null)
   const introCardRef = useRef<HTMLDivElement>(null)
+  const mobileIntroRef = useRef<HTMLDivElement>(null)
   const stickyCapRef = useRef<HTMLParagraphElement>(null)
   const zoomScaleRef = useRef(1)
 
@@ -231,8 +232,10 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       // Read-first: bring the new screen fully into view, then hold the
       // caption up big until the viewer has had time to read it (a click
       // dismisses it early). Only then does the screen start acting.
-      stageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
       setIntro(true)
+      await sleep(80, run).catch(() => {})
+      const scrollTarget = isNarrow() ? mobileIntroRef.current ?? stageRef.current : stageRef.current
+      scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" })
       const readMs = Math.min(9500, Math.max(4200, 1800 + scene.caption.length * 46))
       await Promise.race([
         sleep(readMs, run).catch(() => {}),
@@ -242,23 +245,41 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       ])
       introResolveRef.current = null
       if (runRef.current !== run) return
-      // The card doesn't vanish: it slides up and shrinks into the pinned
-      // bar, so the viewer sees it's the same text and can keep reading.
-      const card = introCardRef.current
-      const tgt = stickyCapRef.current
-      if (card && tgt) {
-        const c = card.getBoundingClientRect()
-        const t = tgt.getBoundingClientRect()
-        card.style.transition = "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease"
-        card.style.transformOrigin = "top left"
-        card.style.transform = `translate(${t.left - c.left}px, ${t.top - c.top}px) scale(${Math.min(0.92, t.width / c.width)})`
-        card.style.opacity = "0"
-        const back = card.parentElement
-        if (back) {
-          back.style.transition = "background-color 0.55s ease"
-          back.style.backgroundColor = "transparent"
+      // Phones: the card sits in normal flow above the screen; it collapses
+      // away once read (the slim status strip never repeats the text).
+      if (isNarrow()) {
+        const card = mobileIntroRef.current
+        if (card) {
+          card.style.maxHeight = `${card.scrollHeight}px`
+          card.style.overflow = "hidden"
+          void card.offsetHeight
+          card.style.transition =
+            "opacity 0.32s ease, transform 0.32s ease, max-height 0.42s ease, margin-bottom 0.42s ease"
+          card.style.opacity = "0"
+          card.style.transform = "translateY(-10px)"
+          card.style.maxHeight = "0px"
+          card.style.marginBottom = "0px"
+          await sleep(430, run)
         }
-        await sleep(560, run)
+      } else {
+        // The card doesn't vanish: it slides up and shrinks into the pinned
+        // bar, so the viewer sees it's the same text and can keep reading.
+        const card = introCardRef.current
+        const tgt = stickyCapRef.current
+        if (card && tgt) {
+          const c = card.getBoundingClientRect()
+          const t = tgt.getBoundingClientRect()
+          card.style.transition = "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease"
+          card.style.transformOrigin = "top left"
+          card.style.transform = `translate(${t.left - c.left}px, ${t.top - c.top}px) scale(${Math.min(0.92, t.width / c.width)})`
+          card.style.opacity = "0"
+          const back = card.parentElement
+          if (back) {
+            back.style.transition = "background-color 0.55s ease"
+            back.style.backgroundColor = "transparent"
+          }
+          await sleep(560, run)
+        }
       }
       if (runRef.current !== run) return
       setIntro(false)
@@ -482,12 +503,13 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           <p
             ref={stickyCapRef}
             className={cn(
-              "text-ink-900 min-w-[240px] flex-1 text-base font-semibold leading-snug transition-opacity duration-500",
+              "text-ink-900 hidden min-w-[240px] flex-1 text-base font-semibold leading-snug transition-opacity duration-500 sm:block",
               intro ? "opacity-0" : "opacity-100"
             )}
           >
             {scene.caption}
           </p>
+          <span className="flex-1 sm:hidden" />
           <span className="text-ink-400 shrink-0 text-xs font-semibold tabular-nums">
             Step {index + 1} of {total}
           </span>
@@ -519,6 +541,31 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           </button>
         </div>
       </div>
+
+      {/* Phones: the read-first card sits in normal flow above the screen,
+          never clipped by the stage and never hidden under the status strip */}
+      {started && intro && (
+        <div
+          ref={mobileIntroRef}
+          data-live-intro
+          onClick={dismissIntro}
+          className="mb-3 scroll-mt-[150px] sm:hidden"
+        >
+          <div className="demo-confirm-pop border-ink-100 relative overflow-hidden rounded-2xl border bg-white px-4 py-4 shadow-[0_24px_60px_-26px_rgba(15,23,42,0.45)]">
+            <span className={cn("absolute inset-x-0 top-0 h-1.5", PERSONA_ACCENT[scene.persona].bar)} />
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] ring-1 ring-inset",
+                PERSONA_TONES[scene.persona]
+              )}
+            >
+              {scene.personaLabel}
+            </span>
+            <p className="text-ink-950 mt-2.5 text-[15px] font-semibold leading-snug">{scene.caption}</p>
+            <p className="text-ink-400 mt-2.5 text-[11px] font-medium">Tap when you&apos;re ready, or it continues on its own.</p>
+          </div>
+        </div>
+      )}
 
       {/* Stage */}
       <div
@@ -597,7 +644,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
         {/* Read-first card: the step explains itself before the screen moves,
             then shrinks up into the pinned bar (never two at once) */}
         {started && intro && (
-          <div data-live-intro className="bg-ink-950/25 absolute inset-0 z-30 cursor-pointer p-4 sm:p-6" onClick={dismissIntro}>
+          <div data-live-intro className="bg-ink-950/25 absolute inset-0 z-30 hidden cursor-pointer p-4 sm:block sm:p-6" onClick={dismissIntro}>
             <div
               ref={introCardRef}
               className="demo-confirm-pop border-ink-100 relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border bg-white px-6 py-6 shadow-[0_30px_70px_-28px_rgba(15,23,42,0.5)]"
@@ -631,7 +678,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           </div>
         )}
         {confirmText && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-start justify-center pt-16">
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-start justify-center pt-4 sm:pt-16">
             <div className="demo-confirm-pop border-court-200 flex items-center gap-3 rounded-2xl border bg-white px-5 py-3.5 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.4)]">
               <span className="bg-court-500 flex h-8 w-8 items-center justify-center rounded-full text-white">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-4 w-4">
