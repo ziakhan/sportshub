@@ -71,13 +71,55 @@ fixed HLS playback URL per channel, live whenever ingest is hot. Nice-to-have: L
 channel-state API, cloud recording with time-addressable archive (enables phase-3 VOD).
 Standard HLS latency (10–30s) is fine for this audience — don't pay for WebRTC latency.
 
-## Camera hardware: XbotGo (the "X" one)
+## Camera hardware (researched 2026-07-20)
 
-**XbotGo Chameleon** (~$500–700, no subscription for core features): phone on an AI gimbal,
-on-device auto-tracking (pan+zoom), basketball first-class among 8+ supported sports, and
-**full custom RTMP output** from the app — save each of our channels as a preset ("Camera A",
-"Camera B"). One phone + one Chameleon = a rig. Trial with one rig before buying more.
-Sources: xbotgo.com product pages, Amazon listing B0DG2DYQD8.
+**How the XbotGo Chameleon works — yes, it needs a phone.** The Chameleon is a motorized
+gimbal with its own dual tracking cameras + AI chip; your phone clamps into it (case off,
+lenses aligned) and **the phone's camera is what records and streams**. The Chameleon's AI
+watches the game and physically pans/tilts the phone. Phone requirement: Snapdragon 888+ /
+Apple A12+ (i.e. iPhone XS or newer, recent Android flagships — used ones are ~$200–300).
+The XbotGo app streams to **any custom RTMP URL**, no subscription for core features.
+A phone-based rig has a hidden advantage: built-in LTE/5G upload when gym Wi-Fi is bad —
+uplink (~5 Mbps up per camera) is usually the real constraint in venues.
+
+Rig options, cheapest first:
+1. **Trial rig (~$150–250/court): used phone + tall tripod + Larix Broadcaster (free RTMP
+   app).** Fixed ultrawide shot from elevated midcourt covers a basketball court fine — no
+   panning, perfectly watchable. Zero-risk way to prove demand before buying trackers.
+2. **Recommended (~$700–800/court one-time, $0/mo): XbotGo Chameleon (~$500) + used
+   flagship phone.** Sports-aware AI pan/zoom (basketball first-class among 8+ sports),
+   custom RTMP out, no subscription.
+3. **No-phone standalone ($499): OBSBOT Tail Air** — 4K PTZ camera with native RTMP/RTSP.
+   But its AI is generic human-tracking, not sport/ball-aware — weaker framing for
+   basketball than XbotGo. Only pick if the no-phone property really matters.
+4. **Avoid at our scale — walled gardens with forever-subscriptions:** Veo Cam 3 ($1,533 +
+   $109/mo + Veo Live add-on $12/mo per camera), Pixellot Air NXT (hardware + mandatory
+   Pixellot subscription), Hudl Focus (sales-quoted, streams into Hudl TV). All want the
+   stream living on *their* platform — they fight our fixed-RTMP architecture and cost
+   more per court per year than our whole stack. (7 courts on Veo ≈ $10.7k hardware +
+   ~$850/mo forever vs ~$5.5k one-time on XbotGo rigs.)
+
+## Infrastructure cost menu (researched 2026-07-20)
+
+Working math: ~3.5 Mbps stream ≈ 1.6 GB/hour per viewer. A typical game = 90 min × ~30
+concurrent viewers ≈ **45 viewer-hours ≈ 72 GB ≈ 2,700 delivered minutes**.
+
+| Option | Fixed cost | Per game (~30 viewers) | Notes |
+|---|---|---|---|
+| **A. Self-host origin + Bunny CDN** ⭐ | ~$10/mo VPS | ~$0.70 | MediaMTX (free, one binary) on a small VPS remuxes RTMP→HLS with near-zero CPU (no transcode — pass through the camera's 1080p). Bunny CDN pull zone in front at $0.01/GB (NA/EU). We mint our own stream keys → unlimited fixed channels, URLs never change, no vendor lock. Recording = MediaMTX writes segments to disk → Bunny storage ($0.01/GB) for phase-3 VOD. |
+| **B. Cloudflare Stream Live** | $0 idle | ~$2.70 delivery + $0.45/mo storage per recorded game | Zero-ops managed. Ingest free, **ABR transcoding free**, unlimited live inputs, $1 per 1,000 delivered minutes, $5 per 1,000 stored minutes/mo. 3–4× option A but includes multi-quality + automatic recordings. |
+| **C. Castr (flat-rate)** | $50–200/mo | $0 | Akamai CDN, embed player, paywall built in. Stream-count limits per tier — needs a sales question for 7–8 channels. Wins only if viewership grows a lot. |
+| **D. AWS IVS** | — | Basic input $0.20/hr/channel + delivery | Most expensive fit for this pattern (per-channel-hour input + premium delivery). Skip. |
+
+Monthly picture at ~60 streamed games/mo: **A ≈ $50–80** · B ≈ $170–200 · C = flat tier.
+At 10 viewers/game, A is ~$25/mo all-in. Option A is also the only one where the "fixed
+endpoints forever" property is fully ours (we own the origin URLs).
+
+**Recommended cheapest stack:** XbotGo rigs → MediaMTX on a dedicated cheap VPS (NOT the
+prod box — isolation) → Bunny CDN pull zone → hls.js/expo-video players. Single 1080p
+rendition to start (no ABR); if LTE viewers struggle, either drop cameras to 2.5 Mbps or
+move to option B, which adds ABR for free. Migration between A↔B is trivial by design —
+channels are just URL pairs in `StreamChannel` rows.
 
 ## Schema (add to pending Neon runbook batch when shipped)
 
@@ -183,8 +225,12 @@ members) + a consent line in season registration. Related: [[player-profile-priv
 
 ## Open decisions for the owner
 
-1. **Vendor pick** — hand them: N channels, RTMP in, fixed HLS out, recording optional.
+1. **Infra pick** — recommended: option A (self-host MediaMTX + Bunny CDN, ~$50–80/mo at
+   60 games); option B (Cloudflare Stream) if zero-ops is worth 3–4×. The owner's existing
+   third parties work too — the channel model is vendor-agnostic either way.
 2. **Viewer gating default** — public vs signed-in vs members (minors on camera).
-3. **Rig count to start** — recommend 2–3 XbotGo rigs + matching channels; grow on demand.
-4. **Recording from day 1?** — costs more, makes phase-3 VOD retroactive.
+3. **Rig count to start** — recommend 1 trial rig (used phone + tripod) or 2–3 XbotGo
+   rigs + matching channels; grow on demand.
+4. **Recording from day 1?** — near-free on option A (disk + Bunny storage); makes
+   phase-3 VOD retroactive.
 5. Go-ahead to build Phase 1.
