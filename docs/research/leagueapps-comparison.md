@@ -45,7 +45,7 @@ Organizations can pass an optional $1–5 "processing fee" to parents. Offline p
 | Integrations | Integration Center: accounting, background checks (NCSI owned, Yardstik), recruiting, hotels, marketing, evaluations | None yet (Twilio seam dark, no marketplace) | **They win** |
 | Safety/compliance | NCSI background checks in-product | Roadmap ([[staff-background-checks]]) | **They win** (US-centric though) |
 | Referees | Not a product | Referee booking + assignment + PIN scoring | **We win** |
-| Tryouts/evaluations | Via third-party integration | Native tryouts + rated evaluations + browse | **We win** |
+| Tryouts/evaluations | Player evaluations via third-party integration partners | Native tryout registration, check-in, notes, bulk offers + public tryout browse w/ club ratings. **Scoring rubric NOT built** ([[tryout-evaluations]] = planned, tier 1) | Mixed: our tryout *pipeline* is native and strong; player *scoring* is manual today — do NOT claim evaluations in demos |
 | Market | US-focused | Canada-first (single birth-year, e-transfer pain, CAD) | Different battlegrounds |
 
 ## Review-sourced weaknesses (G2/Capterra/SoftwareAdvice/Trustpilot)
