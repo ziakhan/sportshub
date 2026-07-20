@@ -94,6 +94,7 @@ export function LivePlayer({
   const mobileIntroRef = useRef<HTMLDivElement>(null)
   const stickyCapRef = useRef<HTMLParagraphElement>(null)
   const zoomScaleRef = useRef(1)
+  const cameraOnRef = useRef(false)
 
   pausedRef.current = paused
   autoRef.current = autoplay
@@ -171,10 +172,12 @@ export function LivePlayer({
      must ride along or the action happens off screen. */
   const isNarrow = () => typeof window !== "undefined" && window.innerWidth < 700
 
-  /** Phone camera: frame the PANEL being worked in, not just the field. The
-      zoom is chosen so the panel fits flush to the viewport edges (zooming
-      out further when the panel is wide), so the screen's own page gutters
-      never show up as dead space at the sides. */
+  /** Phone camera: one smooth move per beat. Finds the working context
+      (the biggest ancestor that is not the whole page), anchors its TOP-LEFT
+      corner to the viewport with a small pad -- the top is never cut, no
+      margin is wasted -- and only shifts down the minimum needed to keep the
+      target itself in view. Zoom stays in a readable band; small targets get
+      their surroundings, never a lone button filling the screen. */
   const zoomToWork = useCallback(
     (targetId: string) => {
       const wrap = zoomRef.current
@@ -190,36 +193,23 @@ export function LivePlayer({
         const r = el.getBoundingClientRect()
         return { l: (r.left - w.left) / zCur, t: (r.top - w.top) / zCur, w: r.width / zCur, h: r.height / zCur }
       }
-      // Climb to the widest ancestor that still reads as a working panel
-      // (anything wider is the page itself with its empty gutters).
-      let panel: HTMLElement = target
+      let ctxEl: HTMLElement = target
       let node = target.parentElement
       while (node && node !== wrap && node !== stage) {
         const lw = node.getBoundingClientRect().width / zCur
-        if (lw <= 0.88 * W) panel = node
+        if (lw <= 0.92 * W) ctxEl = node
         else break
         node = node.parentElement
       }
-      const pb = local(panel)
+      const cb = local(ctxEl)
       const rb = local(target)
-      // Readability floor: never zoom out past 2x just to fit a wide panel.
-      // Wide panels instead get flush-edge alignment (left field -> flush
-      // left, right field -> flush right); narrow panels zoom to fill.
-      const z = Math.min(2.3, Math.max(2, (W / Math.max(1, pb.w)) * 0.97))
-      const pB = pb.t + pb.h
-      // Horizontal: lead from the working element's left edge with a fixed
-      // margin (reading order), clamped only by the screen edges. Left-column
-      // fields show their labels; right-column fields fill toward the right
-      // edge; no dead space either side.
-      let tx = -z * (rb.l - 34)
-      let ty: number
-      if (z * pb.h >= H) {
-        ty = Math.min(-z * pb.t, Math.max(H - z * pB, H / 2 - z * (rb.t + rb.h / 2)))
-      } else {
-        ty = H / 2 - z * (pb.t + pB) / 2
-      }
-      // Never show past the screen itself either.
+      const z = Math.min(2.3, Math.max(2, (W / Math.max(1, cb.w)) * 0.96))
+      const pad = 12
+      let tx = -z * (cb.l - pad)
       tx = Math.min(0, Math.max(W * (1 - z), tx))
+      let ty = -z * (cb.t - pad)
+      // Keep the target row on screen: shift down only as much as needed.
+      ty = Math.min(ty, H - 30 - z * (rb.t + rb.h))
       ty = Math.min(0, Math.max(H * (1 - z), ty))
       zoomScaleRef.current = z
       wrap.style.transformOrigin = "0 0"
@@ -255,37 +245,10 @@ export function LivePlayer({
       const stage = stageRef.current
       const cur = cursorRef.current
       if (!target || !stage || !cur) return
-      // Phones show the whole screen zoomed out; the camera dives into the
-      // area being worked on so typing and toggles are readable, then the
-      // hold pulls back out to the full screen.
-      if (isNarrow()) {
+      await settleOn(target, run)
+      if (cameraOnRef.current) {
         zoomToWork(id)
         await sleep(1120, run)
-      }
-      await settleOn(target, run)
-      // Closed loop: whatever the transform math believed, measure where the
-      // target actually landed and nudge the camera so its left edge sits a
-      // fixed margin from the screen edge, clamped so the screen still fills
-      // the viewport. Robust against any model drift.
-      if (isNarrow() && zoomScaleRef.current > 1) {
-        const wrap = zoomRef.current
-        if (wrap) {
-          const sR = stage.getBoundingClientRect()
-          const wR = wrap.getBoundingClientRect()
-          const rR = target.getBoundingClientRect()
-          let err = rR.left - (sR.left + 22)
-          err = Math.max(wR.left - sR.left, Math.min(wR.right - sR.right, err))
-          if (Math.abs(err) > 6) {
-            const m = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(wrap.style.transform)
-            if (m) {
-              const prevTransition = wrap.style.transition
-              wrap.style.transition = "transform 0.45s cubic-bezier(0.3, 0.9, 0.35, 1)"
-              wrap.style.transform = `translate(${parseFloat(m[1]) - err}px, ${m[2]}px) scale(${zoomScaleRef.current})`
-              await sleep(500, run)
-              wrap.style.transition = prevTransition
-            }
-          }
-        }
       }
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
@@ -338,6 +301,9 @@ export function LivePlayer({
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
     if (zoomRef.current) zoomRef.current.style.transform = "none"
     zoomScaleRef.current = 1
+    // The phone camera only makes sense over big desktop screens. A phone
+    // frame on a phone IS the phone: no zooming, no panning.
+    cameraOnRef.current = isNarrow() && scene.frame === "desktop"
 
     const exec = async () => {
       // Read-first: bring the new screen fully into view, then hold the
@@ -416,7 +382,7 @@ export function LivePlayer({
           if (!step.zoom && cursorRef.current) cursorRef.current.style.opacity = "0"
           // Phones: scripted zooms use the same left-lead framing as the
           // auto camera, so labels never get center-cropped.
-          if (step.zoom && isNarrow()) zoomToWork(step.zoom)
+          if (step.zoom && cameraOnRef.current) zoomToWork(step.zoom)
           else setZoom(step.zoom, step.scale)
           await sleep(1150, run)
         } else if ("confirm" in step) {
@@ -426,7 +392,7 @@ export function LivePlayer({
         } else if ("hold" in step) {
           // Pull the camera back out so the whole finished screen reads
           // before the viewer taps onward (the glow marks the button).
-          if (isNarrow() && zoomScaleRef.current > 1) {
+          if (cameraOnRef.current && zoomScaleRef.current > 1) {
             if (cursorRef.current) cursorRef.current.style.opacity = "0"
             setZoom(null)
             await sleep(1120, run)
