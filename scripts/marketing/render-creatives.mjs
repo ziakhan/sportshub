@@ -40,8 +40,11 @@ const browser = await chromium.launch()
 
 for (const file of files) {
   const name = file.replace(".html", "")
-  const animated = name.startsWith("v")
-  for (const fmt of FORMATS) {
+  // ad-*.html are full 9:16 spots authored at 1080x1920 — story format only.
+  const isAd = name.startsWith("ad-")
+  const animated = name.startsWith("v") || isAd
+  const formats = isAd ? FORMATS.filter((f) => f.key === "story") : FORMATS
+  for (const fmt of formats) {
     const page = await browser.newPage({ viewport: { width: fmt.w, height: fmt.h }, deviceScaleFactor: 1 })
     await page.goto(`file://${path.join(srcDir, file)}${fmt.hash}`, { waitUntil: "networkidle" })
     await page.evaluate(() => document.fonts.ready)

@@ -1,0 +1,281 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<style>
+  /* Real 9:16 spot: authored at full 1080x1920, content kept inside the
+     platform-UI safe band (roughly y 250-1650). Five scenes crossfade. */
+  body.story .stage { width: 1080px; height: 1920px; transform: none; padding: 0 !important; }
+
+  .sc {
+    position: absolute; inset: 0; opacity: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 48px; padding: 270px 72px 340px; text-align: center;
+  }
+  .sc.light { background: #fafafa; color: var(--ink-950); }
+  .sc.dark { background: linear-gradient(135deg, var(--stage), var(--stage-2)); color: #fff; }
+  .sc h1 { font-size: 96px; line-height: 1.1; }
+  .sc .cap { font-family: var(--display); font-size: 44px; font-weight: 700; }
+  .sc.light .cap { color: var(--ink-950); }
+  .sc.dark .cap { color: #fff; }
+  .sc .cap em { font-style: normal; color: var(--hoop-500); }
+  .sc.dark .cap em { color: #f9a178; }
+
+  @keyframes scIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(44px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: scale(1); } }
+  @keyframes stamp { from { opacity: 0; transform: scale(2.2) rotate(-5deg); } 70% { opacity: 1; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-120%); } to { opacity: 1; transform: none; } }
+  @keyframes sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes dim { to { color: var(--ink-300); } }
+  @keyframes grow { from { opacity: 0; transform: translateY(-24px) scaleY(0.6); } to { opacity: 1; transform: none; } }
+  @keyframes numOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-40%); } }
+  @keyframes numIn { from { opacity: 0; transform: translateY(45%); } to { opacity: 1; transform: none; } }
+  @keyframes glow { 0% { color: #86efac; text-shadow: 0 0 36px rgba(74, 222, 128, 0.9); } 100% { color: #ffffff; text-shadow: none; } }
+  @keyframes cellglow { 0% { color: var(--court-600); text-shadow: 0 0 18px rgba(74, 222, 128, 0.8); } 100% { text-shadow: none; } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  @keyframes ring { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(18deg); } 45% { transform: rotate(-14deg); } 70% { transform: rotate(8deg); } }
+
+  /* ---- scene 1: the hook (0 - 3.8s) ---- */
+  .s1 { animation: scIn 0.01s linear 0s both, scOut 0.45s ease-in 3.5s forwards; }
+  .s1 .toast {
+    display: flex; align-items: center; gap: 20px; background: var(--ink-950); color: #fff;
+    border-radius: 28px; padding: 30px 42px; font-size: 34px; font-weight: 600; white-space: nowrap;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.5);
+    animation: drop 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) 0.35s both;
+  }
+  .s1 .toast b { color: var(--gold-300); }
+  .s1 .toast svg { animation: ring 0.8s ease-in-out 0.95s both; }
+  .s1 h1 { animation: rise 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 1.35s both; }
+  .s1 h1 em { font-style: normal; color: var(--play-600); }
+  .s1 .cap { animation: rise 0.6s ease-out 2.3s both; }
+
+  /* ---- scene 2: find & sign up (3.8 - 10s) ---- */
+  .s2 { animation: scIn 0.45s ease-out 3.8s both, scOut 0.45s ease-in 9.55s forwards; }
+  .s2 h1 { animation: rise 0.6s ease-out 4.1s both; }
+  .s2 .pcard {
+    width: 800px; text-align: left; background: #fff; border: 2px solid var(--ink-100);
+    border-radius: 40px; overflow: hidden; box-shadow: 0 44px 88px -40px rgba(24, 24, 27, 0.3);
+    animation: pop 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) 4.9s both;
+  }
+  .s2 .bar { height: 12px; background: #16a34a; }
+  .s2 .inner { padding: 44px 48px; }
+  .s2 .type { display: inline-block; background: var(--hoop-50); color: var(--hoop-600); border-radius: 999px; padding: 8px 24px; font-size: 26px; font-weight: 600; }
+  .s2 .name { font-family: var(--display); font-size: 40px; font-weight: 700; color: var(--ink-950); margin-top: 22px; }
+  .s2 .club { font-size: 30px; color: var(--ink-500); margin-top: 8px; }
+  .s2 .stars { margin-top: 8px; font-size: 32px; color: var(--gold-500); letter-spacing: 2px; }
+  .s2 .stars b { color: var(--ink-700); font-size: 28px; letter-spacing: 0; }
+  .s2 .meta { font-size: 27px; color: var(--ink-500); margin-top: 18px; line-height: 1.6; }
+  .s2 .paid {
+    position: absolute; right: 46px; bottom: 42px;
+    background: var(--court-600); color: #fff; border-radius: 999px; padding: 18px 34px;
+    font-family: var(--display); font-size: 30px; font-weight: 800;
+    box-shadow: 0 20px 44px -16px rgba(22, 163, 74, 0.6);
+    animation: stamp 0.5s cubic-bezier(0.3, 1.5, 0.4, 1) 7s both;
+  }
+  .s2 .pcard { position: relative; }
+  .s2 .cap { animation: rise 0.6s ease-out 7.8s both; }
+
+  /* ---- scene 3: the calendar keeps itself right (10 - 16.6s) ---- */
+  .s3 { animation: scIn 0.45s ease-out 10s both, scOut 0.45s ease-in 16.15s forwards; }
+  .s3 h1 { animation: rise 0.6s ease-out 10.3s both; }
+  .s3 .cal {
+    width: 860px; background: #fff; border: 2px solid var(--ink-100); border-radius: 40px;
+    box-shadow: 0 44px 88px -40px rgba(24, 24, 27, 0.25); text-align: left; overflow: hidden;
+    animation: pop 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) 10.9s both;
+  }
+  .s3 .toast2 {
+    display: flex; align-items: center; gap: 18px; background: var(--ink-950); color: #fff;
+    padding: 26px 36px; font-size: 29px; font-weight: 600; white-space: nowrap;
+    animation: drop 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 13.9s both;
+  }
+  .s3 .toast2 b { color: var(--gold-300); }
+  .s3 .crow { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 30px 40px; border-top: 2px solid var(--ink-100); font-size: 30px; white-space: nowrap; }
+  .s3 .crow .when { font-weight: 700; color: var(--ink-950); }
+  .s3 .crow .what { color: var(--ink-500); }
+  .s3 .r1 { animation: rise 0.4s ease-out 11.5s both; }
+  .s3 .r2 { animation: rise 0.4s ease-out 11.8s both; position: relative; }
+  .s3 .r3 { animation: rise 0.4s ease-out 12.1s both; }
+  .s3 .r2 .when, .s3 .r2 .what { animation: dim 0.4s ease-out 13s both; }
+  .s3 .r2 .slash {
+    position: absolute; left: 40px; right: 40px; top: 50%; height: 5px; border-radius: 3px;
+    background: rgba(239, 68, 68, 0.7); transform: scaleX(0); transform-origin: left center;
+    animation: sweep 0.45s ease-out 12.8s both;
+  }
+  .s3 .rnew { background: var(--court-100); animation: grow 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) 13.3s both; }
+  .s3 .rnew .badge { background: var(--court-600); color: #fff; font-size: 23px; font-weight: 700; border-radius: 999px; padding: 8px 20px; animation: pop 0.4s cubic-bezier(0.3, 1.5, 0.4, 1) 13.8s both; }
+  .s3 .cap { animation: rise 0.6s ease-out 14.7s both; }
+
+  /* ---- scene 4: watch it live (16.6 - 23s) ---- */
+  .s4 { animation: scIn 0.45s ease-out 16.6s both, scOut 0.45s ease-in 22.55s forwards; }
+  .s4 h1 { animation: rise 0.6s ease-out 16.9s both; }
+  .s4 .scorecard {
+    width: 860px; border-radius: 44px; overflow: hidden; text-align: left;
+    box-shadow: 0 50px 100px -30px rgba(0, 0, 0, 0.7); flex-shrink: 0;
+    animation: pop 0.55s cubic-bezier(0.3, 1.3, 0.5, 1) 17.4s both;
+  }
+  .s4 .hero {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 48px 44px 42px;
+    background:
+      radial-gradient(90% 140% at 0% 0%, rgba(22, 163, 74, 0.28) 0%, transparent 55%),
+      radial-gradient(90% 140% at 100% 0%, rgba(91, 33, 182, 0.3) 0%, transparent 55%),
+      linear-gradient(135deg, var(--stage), var(--stage-2));
+    color: #fff; text-align: center;
+  }
+  .s4 .crest { width: 104px; height: 104px; border-radius: 28px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 800; font-size: 40px; color: #fff; }
+  .s4 .tname { font-family: var(--display); font-weight: 800; font-size: 30px; }
+  .s4 .score { font-family: var(--condensed); font-weight: 700; font-size: 118px; line-height: 1; margin-top: 6px; position: relative; height: 118px; }
+  .s4 .score span { position: absolute; left: 0; right: 0; }
+  .s4 .score .old { animation: numOut 0.35s ease-in both; }
+  .s4 .score .new { animation: numIn 0.4s ease-out both, glow 1.4s ease-out both; }
+  .s4 .home .old { animation-delay: 18.9s; }
+  .s4 .home .new { animation-delay: 18.95s, 18.95s; }
+  .s4 .away .old { animation-delay: 20.7s; }
+  .s4 .away .new { animation-delay: 20.75s, 20.75s; }
+  .s4 .livepill { background: var(--live-500); border-radius: 999px; padding: 10px 28px; font-family: var(--display); font-weight: 800; font-size: 25px; text-transform: uppercase; letter-spacing: 0.14em; display: inline-flex; align-items: center; gap: 10px; }
+  .s4 .livepill i { width: 11px; height: 11px; background: #fff; border-radius: 50%; display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+  .s4 .period { font-family: var(--condensed); font-weight: 700; font-size: 42px; margin-top: 10px; }
+  .s4 .clock { color: var(--gold-300); font-weight: 800; font-size: 32px; }
+  .s4 .box { background: #ffffff; padding: 12px 0 8px; }
+  .s4 .brow { display: grid; grid-template-columns: 1fr 120px 110px 110px; padding: 18px 42px; font-size: 32px; align-items: center; color: var(--ink-950); border-top: 2px solid var(--ink-100); }
+  .s4 .brow.head { color: var(--ink-500); font-size: 23px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-top: 0; }
+  .s4 .brow .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .s4 .brow .pts { font-weight: 800; color: var(--hoop-600); }
+  .s4 .brow .j { color: var(--ink-500); margin-right: 12px; }
+  .s4 .brow.top { background: rgba(22, 163, 74, 0.08); }
+  .s4 .swap { position: relative; display: inline-block; min-width: 64px; height: 1.25em; vertical-align: top; }
+  .s4 .swap span { position: absolute; right: 0; top: 0; }
+  .s4 .swap .old { animation: numOut 0.35s ease-in 19.05s both; }
+  .s4 .swap .new { animation: numIn 0.4s ease-out 19.1s both, cellglow 1.4s ease-out 19.1s both; }
+  .s4 .playchip {
+    position: absolute; top: 300px; left: 50%; width: max-content;
+    background: #ffffff; color: var(--ink-950); border-radius: 999px; padding: 18px 38px;
+    font-size: 31px; font-weight: 600; box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
+    animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 18.4s both, chipOut 0.4s ease-in 20.4s forwards;
+  }
+  .s4 .playchip b { color: var(--court-600); }
+  @keyframes chipIn { from { opacity: 0; transform: translate(-50%, -30px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  @keyframes chipOut { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -24px); } }
+  .s4 .cap { animation: rise 0.6s ease-out 21s both; }
+
+  /* ---- scene 5: outro (23 - 26s) ---- */
+  .s5 { animation: scIn 0.45s ease-out 23s both; }
+  .s5 h1 { font-size: 112px; line-height: 1.08; }
+  .s5 h1 .l1 { display: block; animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 23.3s both; }
+  .s5 h1 .l2 { display: block; color: var(--play-600); animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 23.7s both; }
+  .s5 h1 .l3 { display: block; animation: rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 24.1s both; }
+  .s5 .onebox {
+    display: inline-block; background: var(--hoop-500); color: #ffffff;
+    font-size: 0.62em; text-transform: uppercase; letter-spacing: 0.08em;
+    line-height: 1.15; padding: 0.02em 0.24em; border-radius: 0.16em;
+    transform: translateY(-0.08em); vertical-align: middle;
+    animation: stamp 0.5s cubic-bezier(0.3, 1.5, 0.4, 1) 24.5s both;
+  }
+  .s5 .tag { font-family: var(--display); font-size: 46px; font-weight: 700; color: var(--ink-950); animation: rise 0.55s ease-out 25s both; }
+  .s5 .tag em { font-style: normal; color: var(--hoop-500); }
+  .s5 .brand { display: flex; flex-direction: column; align-items: center; gap: 12px; animation: rise 0.55s ease-out 25.4s both; }
+  .s5 .brand .wm { font-size: 64px; }
+  .s5 .brand .domain { font-size: 30px; font-weight: 600; color: var(--ink-500); }
+</style>
+</head>
+<body>
+<div class="stage light">
+
+  <div class="sc dark s1">
+    <div class="toast">
+      <svg viewBox="0 0 24 24" width="38" height="38" fill="#fcd34d"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm8-6v-1l-2-2v-4a6 6 0 0 0-5-5.91V2.5a1 1 0 1 0-2 0v.59A6 6 0 0 0 6 9v4l-2 2v1Z"/></svg>
+      <span><b>Game Rescheduled</b> &middot; Sat 4:00 PM</span>
+    </div>
+    <h1>And every parent <em style="color:#f9a178">already knew</em>.</h1>
+    <p class="cap">This is what one app feels like.</p>
+  </div>
+
+  <div class="sc light s2">
+    <h1>Find the tryout.</h1>
+    <div class="pcard">
+      <div class="bar"></div>
+      <div class="inner">
+        <span class="type">Tryout</span>
+        <div class="name">Spring 2026 Grade 10 Boys Tryout</div>
+        <div class="club">Burlington Force</div>
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733; <b>4.8 (26)</b></div>
+        <div class="meta">Apr 7, 2026 &middot; Haber Recreation Centre<br />U16 &middot; Boys &middot; $25.00</div>
+      </div>
+      <span class="paid">Signed up &middot; Paid &#10003;</span>
+    </div>
+    <p class="cap">Sign up and pay in <em>two minutes</em>.</p>
+  </div>
+
+  <div class="sc light s3">
+    <h1>The season lands on your calendar.</h1>
+    <div class="cal">
+      <div class="toast2">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="#fcd34d"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm8-6v-1l-2-2v-4a6 6 0 0 0-5-5.91V2.5a1 1 0 1 0-2 0v.59A6 6 0 0 0 6 9v4l-2 2v1Z"/></svg>
+        <span><b>Game Rescheduled</b> &middot; vs Huskies, Sat 4:00 PM</span>
+      </div>
+      <div class="crow r1"><span class="when">Tue &middot; 6:30 PM</span><span class="what">Practice &middot; Court 2</span></div>
+      <div class="crow r2"><span class="when">Sat &middot; 2:00 PM</span><span class="what">vs Huskies &middot; Haber Rec</span><span class="slash"></span></div>
+      <div class="crow rnew"><span class="when">Sat &middot; 4:00 PM</span><span class="what">vs Huskies &middot; Haber Rec</span><span class="badge">Updated</span></div>
+      <div class="crow r3"><span class="when">Sun &middot; 1:00 PM</span><span class="what">vs Royal Crown &middot; Pan Am</span></div>
+    </div>
+    <p class="cap">Game moves? <em>It updates itself.</em></p>
+  </div>
+
+  <div class="sc dark s4">
+    <div class="playchip">#23 Jayden T. hits a three, <b>assist Marcus C.</b></div>
+    <h1>Can&apos;t make the gym?</h1>
+    <div class="scorecard">
+      <div class="hero">
+        <div>
+          <div class="crest" style="background:#16a34a">BF</div>
+          <div class="tname">BF &middot; G10</div>
+          <div class="score home"><span class="old">59</span><span class="new">62</span></div>
+        </div>
+        <div>
+          <span class="livepill"><i></i>Live</span>
+          <div class="period">Q4</div>
+          <div class="clock">0:41</div>
+        </div>
+        <div>
+          <div class="crest" style="background:#5b21b6">NT</div>
+          <div class="tname">NT &middot; G10</div>
+          <div class="score away"><span class="old">56</span><span class="new">58</span></div>
+        </div>
+      </div>
+      <div class="box">
+        <div class="brow head"><span>Player</span><span class="num">Pts</span><span class="num">Reb</span><span class="num">Ast</span></div>
+        <div class="brow top"><span><span class="j">#23</span><b>Jayden T.</b></span><span class="num pts"><span class="swap"><span class="old">18</span><span class="new">21</span></span></span><span class="num">6</span><span class="num">3</span></div>
+        <div class="brow"><span><span class="j">#7</span>Marcus C.</span><span class="num pts">11</span><span class="num">2</span><span class="num">5</span></div>
+      </div>
+    </div>
+    <p class="cap">Watch every basket land. <em>Live.</em></p>
+  </div>
+
+  <div class="sc light s5">
+    <h1>
+      <span class="l1">Youth basketball.</span>
+      <span class="l2">All of it.</span>
+      <span class="l3"><span class="onebox">One</span> app.</span>
+    </h1>
+    <p class="tag">Your season <em>runs itself</em>.</p>
+    <div class="brand">
+      <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+      <span class="domain">sportshubone.com</span>
+    </div>
+  </div>
+
+</div>
+<script>
+  const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);
+  window.__duration = 26000;
+  window.__formats = ["story"];
+  window.__seek = (t) => {
+    document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
+  };
+</script>
+</body>
+</html>

@@ -13,3 +13,8 @@ story 1080x1920 for Reels/Stories/TikTok with UI-safe-zone padding, square
 
 Needs ffmpeg on PATH and playwright (symlinked from scripts/demo). Use
 `--only v3,s1` to re-render specific creatives after editing.
+
+`ad-*.html` are full 9:16 spots (five crossfading scenes, ~26-28s) authored at
+1080x1920 with platform safe zones baked in; they render story-format only.
+ad-families targets parents/players, ad-operators targets clubs+leagues.
+Platforms add music at upload time; the spots are built sound-off legible.
