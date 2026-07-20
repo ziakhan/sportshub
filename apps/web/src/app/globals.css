@@ -273,8 +273,50 @@
     transform: translateY(0) scale(1);
   }
 }
+/* status toast that drops from the top of the stage on advance */
+.demo-toast {
+  animation: demo-toast-drop 0.45s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+}
+@keyframes demo-toast-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-130%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* scene hand-off: incoming frame rises in */
+.demo-scene-enter {
+  animation: demo-scene-enter 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes demo-scene-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* the always-on "press this" affordance chip */
+.demo-next-chip {
+  animation: demo-next-nudge 1.6s ease-in-out infinite;
+}
+@keyframes demo-next-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .demo-advance::after {
+  .demo-advance::after,
+  .demo-next-chip {
     animation: none;
   }
 }

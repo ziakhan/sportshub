@@ -113,7 +113,7 @@ export function SceneClaimOptions() {
       </div>
       <p className="text-play-700 mt-3 text-xs font-semibold">Our info looks wrong? Propose corrections</p>
       <div className="mt-5">
-        <Advance block>
+        <Advance confirm="Verification code sent" block>
           <Button block>Send the code</Button>
         </Advance>
       </div>
@@ -132,7 +132,7 @@ export function SceneClaimCode() {
         <TxtInput value="4 8 2 9 1 3" mono />
       </div>
       <div className="mt-5">
-        <Advance block>
+        <Advance confirm="Code verified" block>
           <Button block>Verify</Button>
         </Advance>
       </div>
@@ -294,7 +294,7 @@ export function SceneCreateTeam() {
         </Card>
         <div className="flex gap-3">
           <Button variant="subtle">Cancel</Button>
-          <Advance block className="flex-1">
+          <Advance confirm="Team created" block className="flex-1">
             <Button block>Create Team</Button>
           </Advance>
         </div>

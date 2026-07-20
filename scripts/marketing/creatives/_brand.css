@@ -121,7 +121,7 @@ h1 {
   gap: 10px;
   border: 2px solid var(--ink-200);
   background: #ffffff;
-  color: var(--ink-500);
+  color: var(--ink-700);
   border-radius: 999px;
   padding: 16px 30px;
   font-size: 30px;
@@ -129,7 +129,7 @@ h1 {
   white-space: nowrap;
 }
 .pill .x { color: var(--live-500); font-weight: 700; }
-.pill .t { text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.75); text-decoration-thickness: 3px; }
+.pill .t { text-decoration: line-through; text-decoration-color: rgba(239, 68, 68, 0.55); text-decoration-thickness: 2px; }
 
 .pill-one {
   display: inline-flex;

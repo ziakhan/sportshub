@@ -110,14 +110,38 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     }
   }, [])
 
+  /* Phones show desktop screens through a horizontal pan window; the camera
+     must ride along or the action happens off screen. */
+  const isNarrow = () => typeof window !== "undefined" && window.innerWidth < 700
+
+  /** Pan/scroll the target into view (centered on phones) and wait for the
+      smooth scroll to actually settle before anyone measures coordinates. */
+  const settleOn = useCallback(
+    async (target: HTMLElement, run: number) => {
+      const center = isNarrow()
+      target.scrollIntoView({
+        block: center ? "center" : "nearest",
+        inline: center ? "center" : "nearest",
+        behavior: "smooth",
+      })
+      let last = target.getBoundingClientRect()
+      for (let i = 0; i < 24; i++) {
+        await sleep(60, run)
+        const now = target.getBoundingClientRect()
+        if (Math.abs(now.left - last.left) < 1 && Math.abs(now.top - last.top) < 1) return
+        last = now
+      }
+    },
+    [sleep]
+  )
+
   const moveCursor = useCallback(
     async (id: string, run: number) => {
       const target = el(id)
       const stage = stageRef.current
       const cur = cursorRef.current
       if (!target || !stage || !cur) return
-      target.scrollIntoView({ block: "nearest", behavior: "smooth" })
-      await sleep(120, run)
+      await settleOn(target, run)
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
       cur.style.opacity = "1"
@@ -125,7 +149,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       cur.style.top = `${r.top - s.top + r.height / 2}px`
       await sleep(620, run)
     },
-    [sleep]
+    [settleOn, sleep]
   )
 
   const ripple = useCallback(() => {
@@ -260,7 +284,8 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
         } else if ("hold" in step) {
           setHolding(step.hold)
           setReady(true)
-          el(step.hold)?.scrollIntoView({ block: "nearest", behavior: "smooth" })
+          const target = el(step.hold)
+          if (target) await settleOn(target, run).catch(() => {})
           if (autoRef.current) {
             await sleep(1500, run)
             if (runRef.current !== run) return
@@ -314,7 +339,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
       setHoldHint({ x: r.left - s.left + r.width / 2, y: r.top - s.top })
-    }, 600)
+    }, 950)
     const onClick = (e: Event) => {
       e.preventDefault()
       e.stopPropagation()
@@ -516,6 +541,16 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
                 Every step works the same way: first you read what is about to happen, then the
                 screen acts it out for real, then it waits for you on a glowing button.
               </p>
+              <div className="border-gold-300 bg-gold-50 mt-4 flex items-start gap-2.5 rounded-xl border p-3 text-left sm:hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-600 mt-0.5 h-4 w-4 shrink-0">
+                  <rect x="2" y="4" width="20" height="14" rx="2" />
+                  <path d="M8 22h8M12 18v4" />
+                </svg>
+                <span className="text-ink-800 text-xs font-medium leading-relaxed">
+                  <b>This demo shines on a desktop screen.</b> On your phone it still works: the
+                  camera pans across the big operator screens as things happen.
+                </span>
+              </div>
               <div className="mt-6 grid gap-2.5">
                 <button
                   data-live-id="startManual"
@@ -537,9 +572,6 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
               </div>
               <p className="text-ink-400 mt-4 text-xs">
                 The glowing button is always the next step. Switch modes any time, top right.
-              </p>
-              <p className="text-ink-500 bg-ink-50 mt-3 rounded-lg px-3 py-2 text-xs font-medium sm:hidden">
-                Tip: this plays best on a desktop screen. It works right here too, just smaller.
               </p>
             </div>
           </div>

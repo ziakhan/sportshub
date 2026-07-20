@@ -343,7 +343,7 @@ export function SceneLeaguePayments() {
                 <Td right className="whitespace-nowrap">
                   {r.status === "Owed" &&
                     (i === 6 ? (
-                      <Advance>
+                      <Advance confirm="Payment recorded">
                         <Button size="sm" variant="subtle">
                           Record payment
                         </Button>

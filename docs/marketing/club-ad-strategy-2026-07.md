@@ -63,3 +63,31 @@ Meta Business account.)
   4:5 for feed.
 - No line-by-line intro builds: the full hook is on frame 1 (scroll-past rule).
 - No paid league campaigns; no TikTok B2B targeting for clubs.
+
+## Hook library and rationale (owner: preserve this)
+
+Rules that produced these, learned 2026-07-20:
+- The complete hook is on screen at **frame 1**. No line-by-line intro builds,
+  ever — scrollers decide in under two seconds.
+- Players are the scroll audience; parents mostly are not. Kids do not buy,
+  they evangelize: every player spot ends with a pass-it-on instruction.
+- Scenes open with their full headline, then the artifact animates under it.
+
+**Players (13-24, TikTok + IG Reels):**
+- SHIPPED: "Dropped 21 last night?" / "Prove it." — bragging-rights receipt.
+  The product's answer: real box score, name in the news recap, family
+  watching live. Close: "Show your parents."
+- Variant to test: "Your grandma saw your three land. Live." (humor/family)
+- Variant to test: "Every game. A real box score." (straight utility)
+
+**Clubs (28-55, Instagram + Facebook):**
+- SHIPPED: "Still chasing e-transfers at midnight?" / "Your club deserves
+  one app." — the most visceral admin pain.
+- Variant to test: "Still running the season on five different apps and a
+  spreadsheet?" (the homepage hook)
+- Variant to test (retargeting only, pixel required): "Your club is already
+  on SportsHub One. Claim your page."
+
+Regeneration: creatives live in scripts/marketing/creatives/, one command
+re-renders (see scripts/marketing/README.md). Each new hook variant is a
+10-minute edit of the scene-1 block in ad-players.html / ad-clubs.html.

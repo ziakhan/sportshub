@@ -82,7 +82,7 @@ export function SceneCreateTryout() {
       </Card>
       <div className="mt-4 flex gap-3">
         <Button variant="subtle">Cancel</Button>
-        <Advance block className="flex-1">
+        <Advance confirm="Tryout created" block className="flex-1">
           <Button block>Create Tryout</Button>
         </Advance>
       </div>
@@ -348,7 +348,7 @@ export function SceneTryoutSignup() {
               soon. Your signup will be marked as pending until payment is completed.
             </div>
             <CheckRow checked label="Email me about future programs from this club" />
-            <Advance block>
+            <Advance confirm="Signup registered" block>
               <Button block>Sign Up ({fmt(TRYOUT.fee)})</Button>
             </Advance>
           </div>

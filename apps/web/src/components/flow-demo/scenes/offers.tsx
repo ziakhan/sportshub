@@ -64,7 +64,7 @@ export function SceneOfferTemplates() {
             </Field>
             <div className="flex gap-3">
               <Button variant="subtle">Cancel</Button>
-              <Advance block className="flex-1">
+              <Advance confirm="Template saved" block className="flex-1">
                 <Button block>Create Template</Button>
               </Advance>
             </div>

@@ -291,7 +291,7 @@ export default async function HomePage() {
             <h2 className="font-display text-ink-950 mx-auto mb-8 max-w-2xl text-3xl font-extrabold sm:text-4xl">
               Still running the season on{" "}
               <span className="bg-gold-100 decoration-hoop-400 rounded-md px-1.5 underline decoration-wavy decoration-2 underline-offset-4">
-                five apps
+                five different apps
               </span>{" "}
               and{" "}
               <span className="bg-gold-100 decoration-hoop-400 rounded-md px-1.5 underline decoration-wavy decoration-2 underline-offset-4">
@@ -311,12 +311,12 @@ export default async function HomePage() {
               ].map((item) => (
                 <span
                   key={item}
-                  className="border-ink-200 text-ink-500 inline-flex items-center gap-1.5 rounded-full border bg-white px-4 py-1.5 text-[13px] font-medium"
+                  className="border-ink-200 text-ink-600 inline-flex items-center gap-1.5 rounded-full border bg-white px-4 py-1.5 text-sm font-medium"
                 >
                   <span className="font-bold text-red-500" aria-hidden="true">
                     ✗
                   </span>
-                  <span className="line-through decoration-red-400 decoration-2">{item}</span>
+                  <span className="line-through decoration-red-400/60 decoration-1">{item}</span>
                 </span>
               ))}
               <span className="bg-hoop-500 shadow-hoop-200 inline-flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-extrabold uppercase tracking-[0.06em] text-white shadow-lg">
@@ -386,7 +386,7 @@ export default async function HomePage() {
                     <span className="text-ink-950 text-[15px] font-bold">{row.cat}</span>
                     <p className="text-ink-500 mt-1.5 text-sm">
                       replaces{" "}
-                      <span className="text-ink-600 font-semibold line-through decoration-red-400 decoration-2">
+                      <span className="text-ink-700 font-semibold line-through decoration-red-400/60 decoration-1">
                         {row.repl}
                       </span>
                     </p>

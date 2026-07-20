@@ -182,7 +182,7 @@ export function SceneCreateSeason() {
           You&apos;ll configure divisions, venues, sessions, and scheduling on the next screen.
         </p>
         <div className="mt-4">
-          <Advance>
+          <Advance confirm="Season created">
             <Button>Create Season</Button>
           </Advance>
         </div>
@@ -221,7 +221,7 @@ export function SceneDivisions() {
           <TxtInput placeholder="Max teams (optional)" />
         </div>
         <div className="mt-3">
-          <Advance block>
+          <Advance confirm="Division added" block>
             <Button block>Add Division</Button>
           </Advance>
         </div>
@@ -263,7 +263,7 @@ export function SceneSessions() {
             <span className="text-ink-400">×</span>
           </div>
           <p className="text-play-700 text-xs font-semibold">+ Add another day</p>
-          <Advance block>
+          <Advance confirm="Session added" block>
             <Button block>Add Session</Button>
           </Advance>
         </div>
@@ -297,7 +297,7 @@ export function SceneVenues() {
           <div className="flex-1">
             <SelectBox value="Paramount Fine Foods Centre · 5500 Rose Cherry Pl, Mississauga" />
           </div>
-          <Advance>
+          <Advance confirm="Venue added to the league">
             <Button>Add to League</Button>
           </Advance>
         </div>
@@ -406,7 +406,7 @@ export function SceneScheduling() {
         <Panel
           title="Scheduling Settings"
           action={
-            <Advance>
+            <Advance confirm="Settings saved">
               <Button size="sm">Save Settings</Button>
             </Advance>
           }

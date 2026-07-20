@@ -28,6 +28,7 @@ export function DemoPlayer({ flow }: { flow: FlowDef }) {
   const [done, setDone] = useState(false)
 
   const stageRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<(() => void) | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const busyRef = useRef(false)
@@ -49,6 +50,12 @@ export function DemoPlayer({ flow }: { flow: FlowDef }) {
       setTimeout(() => {
         setIndex(next)
         setEntering(true)
+        // The reader scrolled down to press the control; the next step must
+        // greet them at the top, not wherever the last screen left them.
+        const root = rootRef.current
+        if (root && root.getBoundingClientRect().top < -8) {
+          root.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
       }, 180)
     },
     [total]
@@ -61,7 +68,7 @@ export function DemoPlayer({ flow }: { flow: FlowDef }) {
       if (timerRef.current) clearTimeout(timerRef.current)
       if (confirm) {
         setConfirmText(confirm)
-        setTimeout(() => goTo(index + 1), 1150)
+        setTimeout(() => goTo(index + 1), 1400)
       } else {
         goTo(index + 1)
       }
@@ -153,7 +160,7 @@ export function DemoPlayer({ flow }: { flow: FlowDef }) {
 
   return (
     <AdvanceContext.Provider value={api}>
-      <div className="select-none" data-demo-player data-demo-scene={scene.id}>
+      <div ref={rootRef} className="select-none scroll-mt-28" data-demo-player data-demo-scene={scene.id}>
         {/* Header: chapters, progress, autoplay */}
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <div className="flex flex-1 flex-wrap items-center gap-1.5">
@@ -233,29 +240,36 @@ export function DemoPlayer({ flow }: { flow: FlowDef }) {
           <p className="text-ink-700 min-w-[240px] flex-1 text-sm font-medium leading-relaxed">
             {scene.caption}
           </p>
+          {!autoplay && (
+            <span className="demo-next-chip bg-hoop-500 shadow-hoop-200 mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-md">
+              Click the glowing button
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3">
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+            </span>
+          )}
         </div>
 
         {/* Stage */}
         <div
           ref={stageRef}
           onClick={onStageClick}
-          className={cn(
-            "relative transition-all duration-200",
-            entering ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-          )}
+          className={cn("relative transition-opacity duration-150", entering ? "opacity-100" : "opacity-0")}
         >
-          <SceneShell scene={scene} />
+          <div key={scene.id} className="demo-scene-enter">
+            <SceneShell scene={scene} />
+          </div>
 
-          {/* Confirmation overlay */}
+          {/* Status toast: drops from the top like a real notification */}
           {confirmText && (
-            <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-center pt-16">
-              <div className="demo-confirm-pop border-court-200 flex items-center gap-3 rounded-2xl border bg-white px-5 py-3.5 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.4)]">
-                <span className="bg-court-500 flex h-8 w-8 items-center justify-center rounded-full text-white">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-4.5 w-4.5">
+            <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex justify-center">
+              <div className="demo-toast bg-ink-950 flex items-center gap-3 rounded-2xl px-5 py-3.5 text-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.6)]">
+                <span className="bg-court-500 flex h-7 w-7 items-center justify-center rounded-full text-white">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-4 w-4">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
-                <span className="text-ink-900 text-sm font-semibold">{confirmText}</span>
+                <span className="text-sm font-semibold">{confirmText}</span>
               </div>
             </div>
           )}
