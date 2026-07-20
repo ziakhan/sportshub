@@ -527,7 +527,10 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
         style={{ scrollMarginTop: 165 }}
         className={cn(
           "relative overflow-hidden rounded-2xl transition-all duration-200",
-          entering ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+          entering ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+          // The fitted screen is short on phones; the start gate needs the
+          // stage to be tall enough to show its whole card.
+          !started && "min-h-[640px] sm:min-h-0"
         )}
       >
         <div ref={zoomRef} className="live-zoom">
@@ -547,8 +550,8 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
 
         {/* Start gate: read what this is and pick a mode before anything moves */}
         {!started && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-gradient-to-br from-[#1e2d4d]/90 to-[#0b1628]/90 p-6">
-            <div className="demo-confirm-pop relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-7 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)]">
+          <div className="absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-gradient-to-br from-[#1e2d4d]/90 to-[#0b1628]/90 p-4 sm:p-6">
+            <div className="demo-confirm-pop relative my-auto w-full max-w-lg overflow-hidden rounded-3xl bg-white p-5 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] sm:p-7">
               <span className="from-play-600 via-hoop-500 to-gold-500 absolute inset-x-0 top-0 h-2 bg-gradient-to-r" />
               <h3 className="text-ink-950 text-2xl font-bold">Watch a season run itself</h3>
               <p className="text-ink-600 mx-auto mt-3 max-w-md text-sm leading-relaxed">
