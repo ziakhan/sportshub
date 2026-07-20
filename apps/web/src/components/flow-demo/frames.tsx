@@ -19,12 +19,16 @@ function ScaledSurface({
   logicalWidth,
   minFit = 0.55,
   panScale = 0.78,
+  fitAlways = false,
   children,
   sceneKey,
 }: {
   logicalWidth: number
   minFit?: number
   panScale?: number
+  /** Never switch to the pan keyhole: scale the whole screen to fit, however
+      small. The live engine uses this on phones and zooms its own camera. */
+  fitAlways?: boolean
   children: ReactNode
   sceneKey: string
 }) {
@@ -41,7 +45,7 @@ function ScaledSurface({
     const update = () => {
       const w = outer.clientWidth
       const fit = w / logicalWidth
-      const usePan = fit < minFit
+      const usePan = !fitAlways && fit < minFit
       const s = usePan ? panScale : Math.min(1, fit)
       setPan(usePan)
       setScale(s)
@@ -52,7 +56,7 @@ function ScaledSurface({
     ro.observe(outer)
     ro.observe(inner)
     return () => ro.disconnect()
-  }, [logicalWidth, minFit, panScale])
+  }, [logicalWidth, minFit, panScale, fitAlways])
 
   // In pan mode, bring the highlighted control into view for each new scene.
   useEffect(() => {
@@ -97,10 +101,12 @@ export function DesktopFrame({
   url,
   children,
   sceneKey,
+  fitAlways,
 }: {
   url: string
   children: ReactNode
   sceneKey: string
+  fitAlways?: boolean
 }) {
   return (
     <div className="border-ink-200 mx-auto w-full max-w-[1162px] overflow-hidden rounded-2xl border bg-white shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -118,7 +124,7 @@ export function DesktopFrame({
           <span className="truncate">sportshubone.com{url}</span>
         </div>
       </div>
-      <ScaledSurface logicalWidth={DESKTOP_W} sceneKey={sceneKey}>
+      <ScaledSurface logicalWidth={DESKTOP_W} sceneKey={sceneKey} fitAlways={fitAlways}>
         <div className="bg-ink-50/60 min-h-[560px]" style={{ width: DESKTOP_W }}>
           {children}
         </div>

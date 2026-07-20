@@ -110,6 +110,33 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     }
   }, [])
 
+  const setZoom = useCallback((id: string | null, scale = 1.35) => {
+    const wrap = zoomRef.current
+    const stage = stageRef.current
+    if (!wrap || !stage) return
+    if (!id) {
+      wrap.style.transform = "none"
+      zoomScaleRef.current = 1
+      return
+    }
+    const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
+    if (!target) return
+    const r = target.getBoundingClientRect()
+    const w = wrap.getBoundingClientRect()
+    // Never zoom a target wider than the stage can show: cap the scale so
+    // no column gets clipped off either edge while it is being filled in.
+    const unscaledW = r.width / zoomScaleRef.current
+    const maxScale = Math.max(1, ((w.width / zoomScaleRef.current) / unscaledW) * 0.97)
+    const z = Math.min(scale, maxScale)
+    zoomScaleRef.current = z
+    const tx = w.left + w.width / 2 - (r.left + r.width / 2)
+    const ty = w.top + w.height / 2 - (r.top + r.height / 2)
+    const originX = r.left - w.left + r.width / 2
+    const originY = r.top - w.top + r.height / 2
+    wrap.style.transformOrigin = `${originX}px ${originY}px`
+    wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
+  }, [])
+
   /* Phones show desktop screens through a horizontal pan window; the camera
      must ride along or the action happens off screen. */
   const isNarrow = () => typeof window !== "undefined" && window.innerWidth < 700
@@ -141,6 +168,13 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       const stage = stageRef.current
       const cur = cursorRef.current
       if (!target || !stage || !cur) return
+      // Phones show the whole screen zoomed out; the camera dives into the
+      // area being worked on so typing and toggles are readable, then the
+      // hold pulls back out to the full screen.
+      if (isNarrow()) {
+        setZoom(id, 2.1)
+        await sleep(1120, run)
+      }
       await settleOn(target, run)
       const r = target.getBoundingClientRect()
       const s = stage.getBoundingClientRect()
@@ -149,7 +183,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
       cur.style.top = `${r.top - s.top + r.height / 2}px`
       await sleep(620, run)
     },
-    [settleOn, sleep]
+    [settleOn, setZoom, sleep]
   )
 
   const ripple = useCallback(() => {
@@ -179,33 +213,6 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
     },
     [moveCursor, ripple, sleep]
   )
-
-  const setZoom = useCallback((id: string | null, scale = 1.35) => {
-    const wrap = zoomRef.current
-    const stage = stageRef.current
-    if (!wrap || !stage) return
-    if (!id) {
-      wrap.style.transform = "none"
-      zoomScaleRef.current = 1
-      return
-    }
-    const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
-    if (!target) return
-    const r = target.getBoundingClientRect()
-    const w = wrap.getBoundingClientRect()
-    // Never zoom a target wider than the stage can show: cap the scale so
-    // no column gets clipped off either edge while it is being filled in.
-    const unscaledW = r.width / zoomScaleRef.current
-    const maxScale = Math.max(1, ((w.width / zoomScaleRef.current) / unscaledW) * 0.97)
-    const z = Math.min(scale, maxScale)
-    zoomScaleRef.current = z
-    const tx = w.left + w.width / 2 - (r.left + r.width / 2)
-    const ty = w.top + w.height / 2 - (r.top + r.height / 2)
-    const originX = r.left - w.left + r.width / 2
-    const originY = r.top - w.top + r.height / 2
-    wrap.style.transformOrigin = `${originX}px ${originY}px`
-    wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
-  }, [])
 
   /* Run the current scene's script. */
   useEffect(() => {
@@ -282,6 +289,13 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           await sleep(1250, run)
           setConfirmText(null)
         } else if ("hold" in step) {
+          // Pull the camera back out so the whole finished screen reads
+          // before the viewer taps onward (the glow marks the button).
+          if (isNarrow() && zoomScaleRef.current > 1) {
+            if (cursorRef.current) cursorRef.current.style.opacity = "0"
+            setZoom(null)
+            await sleep(1120, run)
+          }
           setHolding(step.hold)
           setReady(true)
           const target = el(step.hold)
@@ -524,7 +538,7 @@ export function LivePlayer({ acts, scenes }: { acts: LiveAct[]; scenes: LiveScen
           ) : scene.frame === "plain" ? (
             <div className="py-2">{scene.render(g)}</div>
           ) : (
-            <DesktopFrame url={scene.url ?? "/"} sceneKey={scene.id}>
+            <DesktopFrame url={scene.url ?? "/"} sceneKey={scene.id} fitAlways>
               {scene.render(g)}
             </DesktopFrame>
           )}
