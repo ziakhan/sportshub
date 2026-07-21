@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
+import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 
 const createTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -404,6 +405,13 @@ function CreateTryoutForm() {
               </p>
             </div>
           </section>
+
+          <VenueConflictNotice
+            venueId={venueId}
+            startAt={watch("scheduledAt")}
+            durationMinutes={Number(watch("duration")) || undefined}
+            tenantId={clubId}
+          />
 
           <div className="flex gap-3 pt-2">
             <Button variant="subtle" href={`/clubs/${clubId}/tryouts`}>

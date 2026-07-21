@@ -8,6 +8,7 @@ import { authOptions } from "@/lib/auth"
 import { Badge, Card } from "@/components/ui"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
+import { VenueLink } from "@/components/venues/venue-link"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -15,6 +16,7 @@ async function getTryout(id: string) {
     include: {
       tenant: { include: { branding: true } },
       team: { select: { name: true, ageGroup: true, gender: true } },
+      venue: { select: { id: true, name: true } },
       _count: {
         select: { signups: { where: { status: { not: "CANCELLED" } } } },
       },
@@ -134,7 +136,9 @@ export default async function PublicTryoutDetailPage({
                 </div>
                 <div className="rounded-2xl bg-ink-50 p-4">
                   <div className="mb-1 text-sm font-medium text-ink-500">Location</div>
-                  <div className="text-ink-950">{tryout.location}</div>
+                  <div className="text-ink-950">
+                    <VenueLink venueId={tryout.venueId} name={tryout.venue?.name ?? tryout.location} />
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-ink-50 p-4">
                   <div className="mb-1 text-sm font-medium text-ink-500">Age Group &amp; Gender</div>

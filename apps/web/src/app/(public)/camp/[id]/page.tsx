@@ -10,6 +10,7 @@ import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
+import { VenueLink } from "@/components/venues/venue-link"
 import { CampSignupForm } from "./camp-signup-form"
 
 export const dynamic = "force-dynamic"
@@ -137,7 +138,9 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                 </div>
                 <div className={infoTile}>
                   <div className={infoLabel}>Location</div>
-                  <div className="text-ink-950">{camp.location}</div>
+                  <div className="text-ink-950">
+                    <VenueLink venueId={camp.venueId} name={camp.venue?.name ?? camp.location} />
+                  </div>
                 </div>
                 <div className={infoTile}>
                   <div className={infoLabel}>Spots</div>

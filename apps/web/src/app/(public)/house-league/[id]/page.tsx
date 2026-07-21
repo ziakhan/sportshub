@@ -10,6 +10,7 @@ import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { AnimatedNumber, Badge, Button, Card, PanelHeader } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
+import { VenueLink } from "@/components/venues/venue-link"
 import { HouseLeagueSignupForm } from "./house-league-signup-form"
 
 export const dynamic = "force-dynamic"
@@ -139,7 +140,9 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                 </div>
                 <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Location</div>
-                  <div className="text-ink-950">{league.location}</div>
+                  <div className="text-ink-950">
+                    <VenueLink venueId={league.venueId} name={league.venue?.name ?? league.location} />
+                  </div>
                 </div>
                 <div className="rounded-2xl bg-[var(--brand-softer)] p-4">
                   <div className="text-sm font-medium text-ink-500 mb-1">Spots</div>

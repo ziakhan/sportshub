@@ -6,6 +6,7 @@ import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/li
 import { monogram } from "@/lib/content/matchup-cover"
 import { useRealtime } from "@/lib/realtime/use-realtime"
 import { FlashNum } from "@/components/scoring/flash-num"
+import { VenueLink } from "@/components/venues/venue-link"
 
 /**
  * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
@@ -53,6 +54,7 @@ interface LivePayload {
     homeRecord: TeamRecord | null
     awayRecord: TeamRecord | null
     venueName: string | null
+    venueId: string | null
     leagueName: string | null
     clockMode?: "SIMPLE" | "OFF"
     seasonName: string | null
@@ -948,7 +950,7 @@ export function LiveView({ gameId }: { gameId: string }) {
 
           {game.venueName && (
             <p className="mt-2.5 text-center text-xs font-medium text-white/50">
-              {game.venueName}
+              <VenueLink venueId={game.venueId} name={game.venueName} className="hover:text-white/80 hover:underline" />
             </p>
           )}
         </div>

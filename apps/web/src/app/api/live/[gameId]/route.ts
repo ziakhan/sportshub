@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         awayTeam: {
           select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
         },
-        venue: { select: { name: true } },
+        venue: { select: { id: true, name: true } },
         clockEnabled: true,
         season: {
           select: {
@@ -198,6 +198,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         homeRecord: records[game.homeTeamId] ?? null,
         awayRecord: records[game.awayTeamId] ?? null,
         venueName: game.venue?.name ?? null,
+        venueId: game.venue?.id ?? null,
         leagueName: game.season?.league?.name ?? null,
         // League-level clock switch (ClockMode SIMPLE|OFF) — the public page
         // shows a ticking clock only when the league runs one (owner
