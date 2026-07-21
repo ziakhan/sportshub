@@ -92,6 +92,47 @@ the SHARED venue hours, changing them for everyone else using that venue.
   edits hours there today, it's mutating the shared venue. That path must move
   to per-entity availability.
 
+### 2b-i. Three-layer hours model (owner + my recommendation 2026-07-21)
+1. **Venue real hours** (`VenueHours`, global) = when the building is open.
+   The venue's own truth; shared/display; venue-operator owned (future).
+2. **Entity reservation** = "League A has Venue X Sat 9–5 this season." A
+   PRIVATE claim (mirrors a real permit/contract). Feeds only that entity's
+   scheduling **capacity** math. **Not visible to other orgs** (owner ruling).
+   Lives per-entity (SeasonVenue / club equivalent), never on the global venue.
+3. **Actual bookings** = specific games/practices/camps/events placed in slots.
+   This layer is where CONFLICTS live.
+
+### 2b-ii. Caching (my take)
+- Venue IDENTITY (name/address/placeId/lat-lng) + real hours are stable →
+  cache aggressively; dedup by `placeId` (already done) so we NEVER re-hit
+  Google for a known venue (cost + rate limits). Revalidate only on edit.
+- Reservations + bookings are dynamic → compute live, do not cache long.
+
+### 2b-iii. Conflicts / overbooking — STAGED (my recommendation, owner deciding)
+The hard question: do we detect double-booking at a shared venue?
+- **Intra-entity: YES, now.** A club must not book its own two teams into the
+  same gym+court+time; a league must not schedule two games on one court at
+  once. High value, safe, and the season scheduler already models
+  court/slot/date (SeasonSessionDayVenueCourt) — extend that to practices/camps
+  within the same club. Do this in the batch.
+- **Cross-entity (League A's game vs Club B's practice at the same venue):
+  advisory ONLY until a venue-operator owns the master calendar.** Why not a
+  hard block now: (a) venues are shared with off-platform users (school permits,
+  birthday parties) we can't see, so "no conflict" would be false confidence;
+  (b) a hard cross-org block would leak the other org's private booking, which
+  contradicts the "reservations are private" ruling. So cross-entity =
+  soft/advisory or nothing until 2c.
+- **When venue-operator role exists (2c):** the operator owns the venue's
+  master availability calendar and grants time blocks to entities → THEN
+  cross-entity overbooking is real + enforceable, and "these hours become
+  theirs" (exclusive) is finally guaranteeable. Framing note: until then, a
+  booking is a slot CLAIM we check against claims we know about, not exclusive
+  ownership we can promise.
+
+**Owner decisions needed:** (1) confirm intra-entity conflict detection in this
+batch; (2) cross-entity = nothing / advisory-warning / defer to venue-operator
+phase.
+
 ### 2c. Future (NOT now): venue-operator role
 Plan to onboard venues as venue operators later. At that point they edit the
 venue's real universal hours + info. Until then, the global venue hours are
