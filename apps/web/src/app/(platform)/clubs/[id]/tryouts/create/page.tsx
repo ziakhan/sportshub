@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 
 const createTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -75,6 +75,8 @@ function CreateTryoutForm() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateTryoutFormData>({
     resolver: zodResolver(createTryoutSchema),
@@ -302,11 +304,12 @@ function CreateTryoutForm() {
                 <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
                   Date & Time <span className="text-red-500">*</span>
                 </label>
-                <input
-                  {...register("scheduledAt")}
-                  type="datetime-local"
+                <DateTimePicker
                   id="scheduledAt"
-                  className={inputCls}
+                  mode="datetime"
+                  value={watch("scheduledAt") || ""}
+                  onChange={(v) => setValue("scheduledAt", v, { shouldValidate: true })}
+                  placeholder="Pick a date & time"
                 />
                 {errors.scheduledAt && (
                   <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
