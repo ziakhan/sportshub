@@ -237,3 +237,48 @@ consent (or a parallel SMS-consent), transactional-SMS exempt like email.
   the policy copy before relying on it. These are a good-faith starting point.
 - Not linked from the (platform) operator footer/chrome — only the public
   footer. Add there too if the owner wants it visible while logged in.
+
+---
+
+## 5. Trainer role (owner 2026-07-21 — DISCUSS + backlog, NOT today)
+**Ask:** a Trainer persona (skills trainer, strength & conditioning coach) who
+can ONLY post/create programs — no teams/rosters/leagues/club admin. Program
+kinds they want: mini-camps, daily/weekly camps (capacity), one-time "training
+sessions", small-group training (2–4 ppl: description + price + capacity),
+group workouts at fixed/recurring times, and 1-on-1 sessions bookable against
+the trainer's available slots (a calendar people book into). Open Q from owner:
+preset program types from a dropdown vs. let trainers name their own programs.
+
+**My assessment — very doable, mostly REUSE. Recommend modeling as a solo operator.**
+- A Trainer ≈ a **one-person club that only runs programs** (no teams). Cleanest
+  model: a lightweight operator/tenant of type "Trainer", scoped to
+  program-creation surfaces only. Reuses tenant + `PaymentConfig`/obligations/
+  Stripe + the public marketplace (their programs list alongside club programs)
+  + a public trainer page. Independent trainers get their own space; a club
+  could also host a trainer later.
+- **Camps**: reuse the existing Camp model as-is (daily/weekly, capacity, fees,
+  multi-week). Zero new work for "trainers can run camps".
+- **Group training / workouts** = a lighter program type: a scheduled session
+  (single OR recurring) with capacity + price. Recurring reuses the Practice/
+  iCal pattern; capacity+fee reuse camp/signup+obligation.
+- **1-on-1 bookable slots** = the novel part, but there is a STRONG existing
+  pattern: the **referee availability + booking system** (RefereeAvailability
+  slots → booked for games). A trainer sets availability slots; a parent books
+  one → creates an obligation → payment. Same shape. Ties to the batch's venue
+  + branded-calendar work (item 1/2).
+- **Preset vs custom naming — recommend HYBRID:** preset program TYPES in a
+  dropdown (Camp · Group Training · 1-on-1 Session · Clinic · Strength &
+  Conditioning) that drive the right form fields + marketplace filtering, but
+  let the trainer freely NAME the specific program ("Elite Guard Skills — Small
+  Group"). Presets give structure + discovery; custom names give personality.
+
+**Phasing (so it's not one huge build):**
+- P1 (small, mostly reuse): Trainer operator type + onboarding; create Camps
+  (existing) + a simple recurring/one-time "Training Session" (capacity+price).
+  Delivers group workouts + mini-camps.
+- P2 (medium): 1-on-1 availability slots + parent booking + payment (reuse
+  referee-availability pattern + branded calendar).
+- P3: trainer public page + marketplace discovery + reviews.
+
+**Decision:** NOT today (owner said scratch-if-complicated). Parked here to
+evaluate. Depends on / pairs well with items 1 (branded calendar) + 2 (venues).
