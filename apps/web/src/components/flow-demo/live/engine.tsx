@@ -144,6 +144,7 @@ export function LivePlayer({
     if (!id) {
       wrap.style.transformOrigin = "0 0"
       wrap.style.transform = "none"
+      wrap.style.setProperty("--camz", "1")
       zoomScaleRef.current = 1
       return
     }
@@ -161,6 +162,7 @@ export function LivePlayer({
     const targetW = r.width / zCur
     const z = Math.min(scale, Math.max(1, (W / targetW) * 0.97))
     zoomScaleRef.current = z
+    wrap.style.setProperty("--camz", String(z))
     // Center the target, then clamp so the scaled screen always fills the
     // viewport: no gap on any side, no edge pushed out unnecessarily.
     const tx = Math.min(0, Math.max(W * (1 - z), W / 2 - z * lx))
@@ -251,6 +253,7 @@ export function LivePlayer({
       ty = Math.min(origin.y * (z - 1), Math.max((1 - z) * (H - origin.y), ty))
       zoomScaleRef.current = z
       lastCamRef.current = { ctx: ctxEl, side, z }
+      wrap.style.setProperty("--camz", String(z))
       wrap.style.transformOrigin = `${origin.x}px ${origin.y}px`
       wrap.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`
       return true
@@ -290,13 +293,15 @@ export function LivePlayer({
     const id = lastCursorIdRef.current
     const cur = cursorRef.current
     const stage = stageRef.current
-    if (!id || !cur || !stage || cur.style.opacity !== "1") return
+    const wrapEl = zoomRef.current
+    if (!id || !cur || !stage || !wrapEl || cur.style.opacity !== "1") return
     const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
     if (!target) return
+    const z = liveScale(wrapEl)
     const r = target.getBoundingClientRect()
-    const s = stage.getBoundingClientRect()
-    cur.style.left = `${r.left - s.left + r.width / 2}px`
-    cur.style.top = `${r.top - s.top + r.height / 2}px`
+    const wr = wrapEl.getBoundingClientRect()
+    cur.style.left = `${(r.left - wr.left + r.width / 2) / z}px`
+    cur.style.top = `${(r.top - wr.top + r.height / 2) / z}px`
   }, [])
 
   const moveCursor = useCallback(
@@ -330,11 +335,14 @@ export function LivePlayer({
           }
         }
       }
+      const wrapEl = zoomRef.current
+      if (!wrapEl) return
+      const z = liveScale(wrapEl)
       const r = target.getBoundingClientRect()
-      const s = stage.getBoundingClientRect()
+      const wr = wrapEl.getBoundingClientRect()
       cur.style.opacity = "1"
-      cur.style.left = `${r.left - s.left + r.width / 2}px`
-      cur.style.top = `${r.top - s.top + r.height / 2}px`
+      cur.style.left = `${(r.left - wr.left + r.width / 2) / z}px`
+      cur.style.top = `${(r.top - wr.top + r.height / 2) / z}px`
       lastCursorIdRef.current = id
       await sleep(620, run)
     },
@@ -342,14 +350,14 @@ export function LivePlayer({
   )
 
   const ripple = useCallback(() => {
-    const stage = stageRef.current
+    const wrapEl = zoomRef.current
     const cur = cursorRef.current
-    if (!stage || !cur) return
+    if (!wrapEl || !cur) return
     const dot = document.createElement("div")
     dot.className = "live-ripple"
     dot.style.left = cur.style.left
     dot.style.top = cur.style.top
-    stage.appendChild(dot)
+    wrapEl.appendChild(dot)
     setTimeout(() => dot.remove(), 550)
   }, [])
 
@@ -381,7 +389,10 @@ export function LivePlayer({
     setHoldHint(null)
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
     lastCursorIdRef.current = null
-    if (zoomRef.current) zoomRef.current.style.transform = "none"
+    if (zoomRef.current) {
+      zoomRef.current.style.transform = "none"
+      zoomRef.current.style.setProperty("--camz", "1")
+    }
     zoomScaleRef.current = 1
     lastCamRef.current = null
     camOriginRef.current = null
@@ -782,7 +793,7 @@ export function LivePlayer({
           !started && "min-h-[640px] sm:min-h-0"
         )}
       >
-        <div ref={zoomRef} className="live-zoom">
+        <div ref={zoomRef} className="live-zoom relative">
           {scene.frame === "phone" ? (
             <div className="py-2">
               <PhoneFrame sceneKey={scene.id}>{scene.render(g)}</PhoneFrame>
@@ -794,8 +805,10 @@ export function LivePlayer({
               {scene.render(g)}
             </DesktopFrame>
           )}
+          {/* Inside the transformed layer: the camera carries the dot with
+              the content on every device; no measurement chasing. */}
+          <div ref={cursorRef} className="live-cursor" style={{ opacity: 0, left: 40, top: 40 }} />
         </div>
-        <div ref={cursorRef} className="live-cursor" style={{ opacity: 0, left: 40, top: 40 }} />
 
         {/* Start gate: read what this is and pick a mode before anything moves */}
         {!started && (

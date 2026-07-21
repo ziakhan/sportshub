@@ -351,11 +351,13 @@
   transition:
     left 0.55s cubic-bezier(0.22, 1, 0.36, 1),
     top 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.12s ease-out,
+    transform 0.25s ease-out,
     opacity 0.3s;
+  /* Constant visual size: counter-scale against the camera zoom. */
+  transform: scale(calc(1 / var(--camz, 1)));
 }
 .live-cursor.down {
-  transform: scale(0.7);
+  transform: scale(calc(0.7 / var(--camz, 1)));
 }
 .live-ripple {
   position: absolute;
