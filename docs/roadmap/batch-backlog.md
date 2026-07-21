@@ -115,13 +115,15 @@ The hard question: do we detect double-booking at a shared venue?
   once. High value, safe, and the season scheduler already models
   court/slot/date (SeasonSessionDayVenueCourt) — extend that to practices/camps
   within the same club. Do this in the batch.
-- **Cross-entity (League A's game vs Club B's practice at the same venue):
-  advisory ONLY until a venue-operator owns the master calendar.** Why not a
-  hard block now: (a) venues are shared with off-platform users (school permits,
-  birthday parties) we can't see, so "no conflict" would be false confidence;
-  (b) a hard cross-org block would leak the other org's private booking, which
-  contradicts the "reservations are private" ruling. So cross-entity =
-  soft/advisory or nothing until 2c.
+- **Cross-entity: DECIDED (owner 2026-07-21) = SOFT, NON-BLOCKING warning.**
+  At scheduling time, if the venue+time overlaps another booking we know about,
+  show an advisory like *"This venue may already be booked at this time —
+  please confirm before scheduling."* Never blocks the save. **Privacy:** the
+  warning is GENERIC — it does NOT reveal whose booking it is or their hours
+  (reservations stay private). It just flags a possible clash so the scheduler
+  double-checks with the venue. Still not authoritative (off-platform bookings
+  are invisible); it's a helpful nudge, not a guarantee. Becomes a real
+  enforceable check once the venue-operator role owns the master calendar (2c).
 - **When venue-operator role exists (2c):** the operator owns the venue's
   master availability calendar and grants time blocks to entities → THEN
   cross-entity overbooking is real + enforceable, and "these hours become
@@ -129,9 +131,10 @@ The hard question: do we detect double-booking at a shared venue?
   booking is a slot CLAIM we check against claims we know about, not exclusive
   ownership we can promise.
 
-**Owner decisions needed:** (1) confirm intra-entity conflict detection in this
-batch; (2) cross-entity = nothing / advisory-warning / defer to venue-operator
-phase.
+**Decisions:** (1) intra-entity conflict detection — in this batch (recommend,
+owner not explicit but implied). (2) cross-entity — ✅ DECIDED: soft
+non-blocking "venue may be booked, please confirm" warning, generic (no org
+leak).
 
 ### 2c. Future (NOT now): venue-operator role
 Plan to onboard venues as venue operators later. At that point they edit the
