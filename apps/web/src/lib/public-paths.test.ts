@@ -25,6 +25,14 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/api/leagues", "HEAD")).toBe(true)
   })
 
+  it("lets cron routes reach their own CRON_SECRET check (GET only)", () => {
+    // Middleware must NOT 401 these — the route self-authenticates.
+    expect(isPublicPath("/api/cron/waiver-reminders", "GET")).toBe(true)
+    expect(isPublicPath("/api/cron/payment-reminders", "GET")).toBe(true)
+    // Still not a POST target.
+    expect(isPublicPath("/api/cron/waiver-reminders", "POST")).toBe(false)
+  })
+
   it("blocks anonymous MUTATIONS under public API namespaces", () => {
     expect(isPublicPath("/api/seasons/abc/schedule/commit", "POST")).toBe(false)
     expect(isPublicPath("/api/seasons/abc/submit", "POST")).toBe(false)

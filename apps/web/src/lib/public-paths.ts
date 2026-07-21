@@ -90,6 +90,11 @@ const PUBLIC_API_READ_PREFIXES = [
   // Personal iCal feed (GET only) — the unguessable token IS the auth
   // (phones fetch it without a session); the route 404s unknown tokens.
   "/api/calendar",
+  // Scheduled jobs (GET only) — each route self-authenticates with
+  // CRON_SECRET (Bearer / x-cron-secret) via isAuthorizedCron. Without this
+  // the middleware 401'd every cron call before that check ran, so no
+  // /api/cron job could ever fire (Vercel or box). Fixed 2026-07-21.
+  "/api/cron",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;
