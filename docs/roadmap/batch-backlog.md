@@ -59,8 +59,41 @@ CREATION is already operator-gated (canManageVenues, locked 2026-07-20).
 (create+edit), tournaments (create+edit), team calendar events, practices,
 team-events — anywhere a location/venue is entered.
 
-**Open decision (medium — schema):** store the picked venue as (a) name/address
-**text** into existing `location` (zero schema change), or (b) a proper
-**`venueId` FK** on Tryout/Camp/HouseLeague/Practice/TeamEvent — consistent
-with `Game.venueId`, enables venue links/maps/dedup. **Recommend (b) venueId FK**
-with `location` text kept as denormalized fallback. Confirm before building.
+**DECIDED (owner 2026-07-21): `venueId` FK.** Add `venueId` on Tryout / Camp /
+HouseLeague / Practice / TeamEvent (consistent with `Game.venueId`); keep the
+`location` text as a denormalized fallback for legacy rows.
+
+### 2a. Every venue clickable → venue detail page + map (owner add)
+Venues become clickable everywhere they appear. A venue detail page shows
+name, address, **a map** (pin from the Google placeId/lat-lng), and the
+venue's info + hours. Directory/menu page listing venues too. Viewable by
+operators (and likely public-safe).
+
+### 2b. ⭐ KEY ARCHITECTURAL RULING (owner 2026-07-21): scheduling hours are PER-ENTITY, not the shared venue's
+The problem the owner caught: `VenueHours` is **global** (one open/close per
+venue per weekday, shared by every league/club). `SeasonVenue` has NO hours of
+its own. So a league setting "available hours for scheduling" today would edit
+the SHARED venue hours, changing them for everyone else using that venue.
+
+**Ruling:**
+- The global `Venue` + `VenueHours` = the venue's **real** operating hours =
+  the venue's own truth. For now NOBODY edits these as a scheduling side
+  effect. (Later: a **venue-operator role** owns/edits them — future, see 2c.)
+- When a league (or club) assigns a venue for a session/date, the availability
+  windows they set are **scoped to THAT entity** (that season / league /
+  club / booking) and are NOT written back to the global venue.
+- So: add per-entity availability hours. Likely a new field/model on
+  `SeasonVenue` (per-season availability windows) and/or on
+  `SeasonSessionDayVenue` (per specific date), and a club equivalent for club
+  scheduling. The global `VenueHours` becomes display/default only, never the
+  scheduling source of truth for a specific org's booking.
+- ⚠️ VERIFY DURING BUILD: `components/venue-editor.tsx` + league
+  `venues-tab.tsx` — do they currently write global `VenueHours`? If a league
+  edits hours there today, it's mutating the shared venue. That path must move
+  to per-entity availability.
+
+### 2c. Future (NOT now): venue-operator role
+Plan to onboard venues as venue operators later. At that point they edit the
+venue's real universal hours + info. Until then, the global venue hours are
+essentially read-only reference; all scheduling uses per-entity availability
+(2b). Capture only — do not build the operator role in this batch.
