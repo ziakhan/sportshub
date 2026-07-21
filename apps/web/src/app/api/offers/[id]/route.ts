@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/respond-to-offer"
 import { resolveChargeContext } from "@/lib/payments/installments"
+import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
 
 export const dynamic = "force-dynamic"
 
@@ -188,6 +189,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         data: { status: "EXPIRED" },
       })
       return NextResponse.json({ error: "This offer has expired" }, { status: 400 })
+    }
+
+    // Owner ruling 2026-07-20 (waivers-esign): team-membership waivers are
+    // signed WITH the offer. Outstanding required club waivers block accept
+    // before any state is written — the client opens the signing gate,
+    // collects signatures via /api/waivers/sign-inline, and retries.
+    if (data.action === "accept") {
+      const outstandingWaivers = await getOutstandingRequiredWaivers({
+        tenantId: offer.team.tenantId,
+        playerId: offer.player.id,
+      })
+      if (outstandingWaivers.length > 0) {
+        return NextResponse.json(waiversRequiredResponse(outstandingWaivers), { status: 409 })
+      }
     }
 
     // Multi-option offer: the family's chosen package overwrites the

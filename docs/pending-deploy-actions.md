@@ -698,3 +698,14 @@ Neon backlog #24-30 batch goes — this rides along as #33).
 Verify post-push: league manage → Waivers → add both ON templates; approve a
 team with a rostered player; Mailpit/OCI shows the waiver email; sign via the
 link; season Signing status flips to ✓.
+
+## #33b — 2026-07-20 waivers in-flow signing (code only, rides #33 schema)
+Owner ruling: waivers sign at transaction moments — with the OFFER (team
+membership) and WITH the registration (camps / house leagues / tryouts).
+- Offer accept + camp/HL/tryout signup APIs 409 `WAIVERS_REQUIRED` when the
+  club has required active waivers unsigned for the player; shared
+  WaiverSignGate modal signs via POST /api/waivers/sign-inline (session-auth,
+  parent-child verified) and the flow retries.
+Verify post-push: add a required club waiver → register for that club's camp
+→ signing modal appears → after signing, registration completes; same on an
+offer accept.

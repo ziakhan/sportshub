@@ -291,6 +291,8 @@ export default function OffersPage() {
                       {respondingTo === offer.id && (
                         <OfferResponseForm
                           offerId={offer.id}
+                          playerId={offer.player.id}
+                          playerName={`${offer.player.firstName} ${offer.player.lastName}`}
                           includesUniform={offer.includesUniform}
                           includesShoes={offer.includesShoes}
                           includesTracksuit={offer.includesTracksuit}

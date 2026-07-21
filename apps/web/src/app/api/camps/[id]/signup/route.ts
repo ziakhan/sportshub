@@ -7,6 +7,7 @@ import { notifyMany, notifySafe } from "@/lib/notifications"
 import { ensureObligation } from "@/lib/payments/obligations"
 import { sendEmail, appBaseUrl, escapeHtml, formatMoney, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent, grantExpressConsent } from "@/lib/comms/consent"
+import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
 
 export const dynamic = "force-dynamic"
 
@@ -67,6 +68,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
     if (existing && existing.status !== "CANCELLED") {
       return NextResponse.json({ error: "This player is already registered" }, { status: 409 })
+    }
+
+    // Owner ruling 2026-07-20 (waivers-esign): required club waivers are
+    // signed WITH the registration — the client opens the signing gate on
+    // this 409 and retries.
+    const outstandingWaivers = await getOutstandingRequiredWaivers({
+      tenantId: camp.tenantId,
+      playerId: player.id,
+    })
+    if (outstandingWaivers.length > 0) {
+      return NextResponse.json(waiversRequiredResponse(outstandingWaivers), { status: 409 })
     }
 
     // Calculate fee

@@ -4,12 +4,18 @@ import {
   buildWorld,
   destroyWorld,
   createClub,
+  createParentWithChildren,
+  createTryout,
+  createOffer,
   submitTeamToSeason,
   type BuiltWorld,
 } from "@youthbasketballhub/test-worlds"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { mintWaiverSignRequest } from "@/lib/waivers/tokens"
 import { POST as signPOST } from "./sign/route"
+import { POST as signInlinePOST } from "./sign-inline/route"
+import { POST as tryoutSignupPOST } from "../tryouts/[id]/signup/route"
+import { PATCH as offerPATCH } from "../offers/[id]/route"
 import { GET as waiversGET, POST as waiversPOST } from "../leagues/[id]/waivers/route"
 import { PATCH as waiverPATCH } from "../leagues/[id]/waivers/[waiverId]/route"
 import { PATCH as submissionPATCH } from "../seasons/[id]/teams/[teamId]/route"
@@ -242,6 +248,122 @@ describe("tokenized signing", () => {
       (new Date(signature.validUntil).getTime() - Date.now()) / (24 * 60 * 60 * 1000)
     expect(days).toBeGreaterThan(300)
     expect(days).toBeLessThanOrEqual(366)
+  })
+})
+
+describe("in-flow signing (owner ruling: sign WITH the offer / registration)", () => {
+  let clubTenantId: string
+  let clubWaiverId: string
+  let parentId: string
+  let childId: string
+  let tryoutId: string
+  let offerId: string
+
+  beforeAll(async () => {
+    const club = await createClub(world.ctx, { teams: [{}] })
+    clubTenantId = club.tenantId
+    const family = await createParentWithChildren(world.ctx, { children: [{ age: 12 }] })
+    parentId = family.parent.id
+    childId = family.players[0].id
+    const clubWaiver = await (prisma as any).waiverDocument.create({
+      data: {
+        tenantId: clubTenantId,
+        title: "Club Participation Agreement",
+        body: "Full participation agreement text for in-flow signing tests.",
+        type: "CUSTOM",
+        required: true,
+      },
+    })
+    clubWaiverId = clubWaiver.id
+    const tryout = await createTryout(world.ctx, { tenantId: clubTenantId, fee: 0 })
+    tryoutId = tryout.id
+    const offer = await createOffer(world.ctx, {
+      teamId: club.teams[0].id,
+      playerId: childId,
+      seasonFee: 0,
+    })
+    offerId = offer.id
+  })
+
+  it("offer accept and tryout signup both block with WAIVERS_REQUIRED", async () => {
+    actAs(parentId)
+    const acceptRes = await offerPATCH(
+      jsonRequest(`/api/offers/${offerId}`, { action: "accept", jerseyPref1: 7 }, "PATCH"),
+      { params: { id: offerId } }
+    )
+    expect(acceptRes.status).toBe(409)
+    const acceptBody = await acceptRes.json()
+    expect(acceptBody.code).toBe("WAIVERS_REQUIRED")
+    expect(acceptBody.waivers.map((w: any) => w.id)).toEqual([clubWaiverId])
+
+    const signupRes = await tryoutSignupPOST(
+      jsonRequest(`/api/tryouts/${tryoutId}/signup`, { playerId: childId }),
+      { params: { id: tryoutId } }
+    )
+    expect(signupRes.status).toBe(409)
+    expect((await signupRes.json()).code).toBe("WAIVERS_REQUIRED")
+  })
+
+  it("sign-inline rejects a non-parent and accepts the parent (idempotently)", async () => {
+    actAs(leagueOwnerId) // not this child's parent
+    const forbidden = await signInlinePOST(
+      jsonRequest("/api/waivers/sign-inline", {
+        waiverId: clubWaiverId,
+        playerId: childId,
+        signerName: "Not The Parent",
+        signatureData: PNG,
+      })
+    )
+    expect(forbidden.status).toBe(403)
+
+    actAs(parentId)
+    const ok = await signInlinePOST(
+      jsonRequest("/api/waivers/sign-inline", {
+        waiverId: clubWaiverId,
+        playerId: childId,
+        signerName: "Riley Parent",
+        signatureData: PNG,
+      })
+    )
+    expect(ok.status).toBe(200)
+
+    const again = await signInlinePOST(
+      jsonRequest("/api/waivers/sign-inline", {
+        waiverId: clubWaiverId,
+        playerId: childId,
+        signerName: "Riley Parent",
+        signatureData: PNG,
+      })
+    )
+    expect(again.status).toBe(200)
+    expect((await again.json()).alreadySigned).toBe(true)
+    const count = await (prisma as any).waiverSignature.count({
+      where: { waiverId: clubWaiverId, playerId: childId },
+    })
+    expect(count).toBe(1)
+    const signature = await (prisma as any).waiverSignature.findFirst({
+      where: { waiverId: clubWaiverId, playerId: childId },
+    })
+    expect(signature.signerUserId).toBe(parentId)
+  })
+
+  it("after signing, tryout signup and offer accept both succeed", async () => {
+    actAs(parentId)
+    const signupRes = await tryoutSignupPOST(
+      jsonRequest(`/api/tryouts/${tryoutId}/signup`, { playerId: childId }),
+      { params: { id: tryoutId } }
+    )
+    expect(signupRes.status).toBe(201)
+
+    const acceptRes = await offerPATCH(
+      jsonRequest(`/api/offers/${offerId}`, { action: "accept", jerseyPref1: 7 }, "PATCH"),
+      { params: { id: offerId } }
+    )
+    expect(acceptRes.status).toBe(200)
+    const teamPlayer = await (prisma as any).teamPlayer.findFirst({
+      where: { playerId: childId },
+    })
+    expect(teamPlayer?.status).toBe("ACTIVE")
   })
 })
 

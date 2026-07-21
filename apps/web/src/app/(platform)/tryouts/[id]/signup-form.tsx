@@ -8,6 +8,7 @@ import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { tryoutSignupSchema, type TryoutSignupFormData } from "@/lib/validations/tryout-signup"
 import { Button, PanelHeader } from "@/components/ui"
+import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 
 interface Player {
   id: string
@@ -51,6 +52,10 @@ export function SignupForm({
     playerName: string
     status: string
   } | null>(null)
+  // Required club waivers surfaced by the API (409 WAIVERS_REQUIRED) — signed
+  // in a blocking modal, then the signup retries with the same form data.
+  const [waiverGate, setWaiverGate] = useState<GateWaiver[] | null>(null)
+  const [pendingData, setPendingData] = useState<TryoutSignupFormData | null>(null)
 
   const {
     register,
@@ -79,7 +84,12 @@ export function SignupForm({
       })
 
       if (!res.ok) {
-        const errorData = await res.json()
+        const errorData = await res.json().catch(() => ({}))
+        if (errorData.code === "WAIVERS_REQUIRED" && Array.isArray(errorData.waivers)) {
+          setPendingData(data)
+          setWaiverGate(errorData.waivers)
+          return
+        }
         throw new Error(errorData.error || "Failed to sign up")
       }
 
@@ -195,6 +205,21 @@ export function SignupForm({
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {waiverGate && pendingData ? (
+          <WaiverSignGate
+            waivers={waiverGate}
+            playerId={pendingData.playerId}
+            playerName={(() => {
+              const p = players.find((pl) => pl.id === pendingData.playerId)
+              return p ? `${p.firstName} ${p.lastName}` : undefined
+            })()}
+            onComplete={() => {
+              setWaiverGate(null)
+              void onSubmit(pendingData)
+            }}
+            onCancel={() => setWaiverGate(null)}
+          />
+        ) : null}
         <div>
           <label htmlFor="playerId" className={labelClass}>
             Select Player <span className="text-red-500">*</span>

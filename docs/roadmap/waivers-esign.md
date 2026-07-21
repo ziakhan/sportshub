@@ -10,16 +10,25 @@ tags: [theme/compliance, type/plan, status/shipped-phase-1]
 
 # ✍️ Liability waivers + e-signature
 
-> **✅ PHASE 1 SHIPPED 2026-07-20 (local, unpushed — runbook #33).** Schema
-> (WaiverDocument/SignRequest/Signature), ON template library (ack+indemnity,
-> Rowan's concussion code w/ annual renewal, media consent), league+club CRUD
-> APIs & management UI, **approval → auto-email flow live**, public tokenized
-> signing page w/ SignaturePad, season Signing-status grid w/ re-send,
-> version-bump re-signing. Int tests 9/9 (seed 1134), full suite 318/318.
-> **Phase B open**: attach club waivers as blocking registration step
-> (registration-forms dependency) · signed-copy PDF render · club-side
-> signature viewer · eligibility gate on unsigned players · club dashboard
-> nav link to /clubs/[id]/waivers (page live, reachable by URL).
+> **✅ PHASE 1 + IN-FLOW SIGNING SHIPPED 2026-07-20 (local, unpushed — runbook
+> #33).** Schema (WaiverDocument/SignRequest/Signature), ON template library
+> (ack+indemnity, Rowan's concussion code w/ annual renewal, media consent),
+> league+club CRUD APIs & management UI, **approval → auto-email flow live**,
+> public tokenized signing page w/ SignaturePad, season Signing-status grid
+> w/ re-send, version-bump re-signing.
+>
+> **OWNER RULING (same day): signatures are collected at TRANSACTION MOMENTS —
+> "to be on a team the waiver should be sent with the offer"; camps/house
+> leagues "signed with the registration while they register"; no separate
+> signing moment.** Implemented: offer accept + camp/HL/tryout signup APIs
+> return 409 WAIVERS_REQUIRED with outstanding docs; shared WaiverSignGate
+> modal (SignaturePad) collects signatures via session-authenticated
+> POST /api/waivers/sign-inline (parent-child checked), then the flow retries
+> (offer retry reuses an already-paid deposit intent). Server enforces
+> independently of the client. Int tests 12/12 (seed 1134), suite 321/321.
+> **Still open (owner's call)**: signed-copy PDF render · club-side signature
+> viewer · eligibility gate on unsigned league players · club dashboard nav
+> link to /clubs/[id]/waivers (page live, reachable by URL).
 
 > **OWNER SPEC 2026-07-20** (researched same day): waivers are issued by **both leagues
 > and clubs**. League flow he wants: once a team's roster is submitted to the league and

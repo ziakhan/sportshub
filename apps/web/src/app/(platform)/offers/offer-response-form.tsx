@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { formatCurrency } from "@/lib/countries"
+import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
@@ -62,6 +63,8 @@ const money = (n: number, c?: string) => formatCurrency(n, c)
 
 export function OfferResponseForm({
   offerId,
+  playerId,
+  playerName,
   includesUniform: offerIncludesUniform,
   includesShoes: offerIncludesShoes,
   includesTracksuit: offerIncludesTracksuit,
@@ -71,6 +74,8 @@ export function OfferResponseForm({
   onCancel,
 }: {
   offerId: string
+  playerId: string
+  playerName?: string
   includesUniform: boolean
   includesShoes: boolean
   includesTracksuit: boolean
@@ -95,6 +100,13 @@ export function OfferResponseForm({
   const [selectedCardId, setSelectedCardId] = useState<string>("")
   const [useNewCard, setUseNewCard] = useState(false)
   const [cardStep, setCardStep] = useState<{ clientSecret: string } | null>(null)
+
+  // Owner ruling 2026-07-20: team-membership waivers are signed WITH the
+  // offer. The accept API answers 409 WAIVERS_REQUIRED; the gate collects
+  // signatures and the accept retries (reusing any already-paid intent).
+  const [waiverGate, setWaiverGate] = useState<
+    { waivers: GateWaiver[]; intentId: string | null } | null
+  >(null)
 
   const labelClass = "block text-sm font-medium text-ink-800"
   const inputClass =
@@ -160,7 +172,14 @@ export function OfferResponseForm({
         jerseyPref3: jerseyPref3 ? parseInt(jerseyPref3) : undefined,
       }),
     })
-    if (!res.ok) throw new Error((await res.json()).error || "Failed to accept offer")
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}))
+      if (e.code === "WAIVERS_REQUIRED" && Array.isArray(e.waivers)) {
+        setWaiverGate({ waivers: e.waivers, intentId: depositPaymentIntentId })
+        return
+      }
+      throw new Error(e.error || "Failed to accept offer")
+    }
     onDone()
   }
 
@@ -215,6 +234,24 @@ export function OfferResponseForm({
 
   return (
     <div className="border-court-200 bg-court-50 mt-4 rounded-2xl border p-4">
+      {waiverGate ? (
+        <WaiverSignGate
+          waivers={waiverGate.waivers}
+          playerId={playerId}
+          playerName={playerName}
+          onComplete={() => {
+            const intentId = waiverGate.intentId
+            setWaiverGate(null)
+            setIsSubmitting(true)
+            doAccept(intentId)
+              .catch((err) =>
+                setError(err instanceof Error ? err.message : "An error occurred")
+              )
+              .finally(() => setIsSubmitting(false))
+          }}
+          onCancel={() => setWaiverGate(null)}
+        />
+      ) : null}
       <h4 className="text-ink-900 mb-3 font-semibold">Accept Offer</h4>
       {error && (
         <div className="border-hoop-200 text-hoop-700 mb-3 rounded-md border bg-red-50 p-3 text-sm">{error}</div>

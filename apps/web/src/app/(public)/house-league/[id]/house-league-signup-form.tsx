@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { Button } from "@/components/ui"
+import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 
 interface Player {
   id: string
@@ -42,6 +43,9 @@ export function HouseLeagueSignupForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<{ playerName: string } | null>(null)
+  // Required club waivers surfaced by the API (409 WAIVERS_REQUIRED) — signed
+  // in a blocking modal, then the registration retries.
+  const [waiverGate, setWaiverGate] = useState<GateWaiver[] | null>(null)
 
   const availablePlayers = useMemo(
     () => players.filter((p) => !existingPlayerIds.includes(p.id)),
@@ -52,13 +56,8 @@ export function HouseLeagueSignupForm({
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-[color:var(--brand)] focus:outline-none focus:ring-2 focus:ring-[color:var(--brand-line)]"
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function submitSignup() {
     setError(null)
-    if (!playerId) {
-      setError("Select a player.")
-      return
-    }
     setIsSubmitting(true)
     try {
       const res = await fetch(`/api/house-leagues/${houseLeagueId}/signup`, {
@@ -68,6 +67,10 @@ export function HouseLeagueSignupForm({
       })
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))
+        if (e.code === "WAIVERS_REQUIRED" && Array.isArray(e.waivers)) {
+          setWaiverGate(e.waivers)
+          return
+        }
         throw new Error(e.error || "Failed to register")
       }
       await res.json()
@@ -78,6 +81,16 @@ export function HouseLeagueSignupForm({
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    if (!playerId) {
+      setError("Select a player.")
+      return
+    }
+    await submitSignup()
   }
 
   if (success) {
@@ -139,8 +152,22 @@ export function HouseLeagueSignupForm({
     )
   }
 
+  const gatePlayer = players.find((p) => p.id === playerId)
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      {waiverGate && playerId ? (
+        <WaiverSignGate
+          waivers={waiverGate}
+          playerId={playerId}
+          playerName={gatePlayer ? `${gatePlayer.firstName} ${gatePlayer.lastName}` : undefined}
+          onComplete={() => {
+            setWaiverGate(null)
+            void submitSignup()
+          }}
+          onCancel={() => setWaiverGate(null)}
+        />
+      ) : null}
       {error && (
         <div className="border-hoop-200 bg-hoop-50 text-hoop-700 rounded-xl border p-3 text-sm">
           {error}
