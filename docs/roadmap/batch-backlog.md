@@ -266,6 +266,13 @@ preset program types from a dropdown vs. let trainers name their own programs.
   slots → booked for games). A trainer sets availability slots; a parent books
   one → creates an obligation → payment. Same shape. Ties to the batch's venue
   + branded-calendar work (item 1/2).
+  - **Refinement (owner 2026-07-21):** the 1-on-1 offering is ONE generic
+    program per trainer, literally titled "One-on-One Training" (parents book
+    INTO it by picking a slot — NOT a separate program per slot). The trainer
+    sets a **slot duration** (default **60 min**, configurable — 30/45/90/…),
+    and the system generates bookable slots of that length inside the trainer's
+    availability windows. Owner: "the rest is all wired" — this is the last
+    open detail on the 1-on-1 flow.
 - **Preset vs custom naming — recommend HYBRID:** preset program TYPES in a
   dropdown (Camp · Group Training · 1-on-1 Session · Clinic · Strength &
   Conditioning) that drive the right form fields + marketplace filtering, but
