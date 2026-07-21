@@ -479,7 +479,7 @@ async function seed() {
   const passwordHash = await bcrypt.hash(PASSWORD, 10)
   const mkUser = (email: string, firstName: string, lastName: string, extra: any = {}) =>
     p.user.create({
-      data: { email, passwordHash, firstName, lastName, onboardedAt: new Date(), city: "Toronto", state: "ON", ...extra },
+      data: { email, passwordHash, firstName, lastName, phoneNumber: "416-555-0142", onboardedAt: new Date(), city: "Toronto", state: "ON", ...extra },
       select: { id: true },
     })
 

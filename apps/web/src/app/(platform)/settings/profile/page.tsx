@@ -297,6 +297,9 @@ export default function ProfileEditPage() {
               className={inputClass}
               placeholder="(555) 123-4567"
             />
+            <p className="mt-1 text-xs text-ink-400">
+              So your club or league can reach you about games, schedules, and payments.
+            </p>
             {errors.phoneNumber && (
               <p className="mt-1 text-sm text-red-600">{errors.phoneNumber.message}</p>
             )}
