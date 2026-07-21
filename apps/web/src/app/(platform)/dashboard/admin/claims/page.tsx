@@ -16,6 +16,7 @@ interface Claim {
   user: { id: string; email: string; firstName: string | null; lastName: string | null } | null
   claimantEmail: string | null
   proofNote: string | null
+  proofDocumentUrl: string | null
   corrections: Record<string, string> | null
 }
 
@@ -122,6 +123,22 @@ export default function AdminClaimsPage() {
                           <p className="text-ink-600 border-ink-100 bg-ink-50/60 mt-2 rounded-lg border p-2 text-xs">
                             <span className="font-semibold">Proof:</span> {claim.proofNote}
                           </p>
+                        )}
+                        {claim.proofDocumentUrl && (
+                          <a
+                            href={claim.proofDocumentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-block"
+                            title="Open the submitted document full size"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={claim.proofDocumentUrl}
+                              alt="Submitted proof document"
+                              className="border-ink-200 max-h-40 rounded-lg border object-contain"
+                            />
+                          </a>
                         )}
                         {claim.corrections && Object.keys(claim.corrections).length > 0 && (
                           <p className="text-ink-600 mt-1 text-xs">

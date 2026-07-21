@@ -55,6 +55,12 @@ const startSchema = z.discriminatedUnion("channel", [
     channel: z.literal("proof"),
     claimantEmail: z.string().email(),
     proofNote: z.string().trim().min(10).max(2000),
+    // Optional supporting doc — webp/jpeg/png data URL, capped (~1.5MB base64).
+    proofDocumentUrl: z
+      .string()
+      .regex(/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$/)
+      .max(2_000_000)
+      .optional(),
     corrections: correctionsSchema,
     message: z.string().max(500).optional(),
   }),

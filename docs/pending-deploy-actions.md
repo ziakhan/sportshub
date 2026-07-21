@@ -757,3 +757,11 @@ teams.
 - Verified prod: ysportshub.com + sportshubone.com 200; /api/health 200;
   /waivers/sign/<token> 200 (renders invalid-link state); services active.
 - Neon (Vercel DB) NOT touched — dormant; still behind on schema.
+
+## #34 — 2026-07-21 club-claim proof document upload (SCHEMA, local)
+Owner: the paper-proof claim path (no contact on file) can now include a
+supporting DOCUMENT (CRA letter, incorporation, insurance cert, photo) that the
+admin sees during review. `ClubClaim.proofDocumentUrl` (webp data URL, like
+avatars); wizard proof step gets an ImageUploadField; admin claims page shows
+the image. Additive column — plain `prisma db push` (local done; box+Neon on
+next deploy). Verified int 347/347.

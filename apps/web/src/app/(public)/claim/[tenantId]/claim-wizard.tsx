@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Badge, Button } from "@/components/ui"
+import { ImageUploadField } from "@/components/club-page/image-upload-field"
 
 /**
  * Anonymous claim wizard (owner 2026-07-18 settled flow):
@@ -25,6 +26,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
   const [completionToken, setCompletionToken] = useState("")
   const [claimantEmail, setClaimantEmail] = useState("")
   const [proofNote, setProofNote] = useState("")
+  const [proofDocumentUrl, setProofDocumentUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
 
@@ -58,6 +60,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
       if (channel === "proof") {
         body.claimantEmail = claimantEmail
         body.proofNote = proofNote
+        if (proofDocumentUrl) body.proofDocumentUrl = proofDocumentUrl
       } else if (claimantEmail) {
         body.claimantEmail = claimantEmail
       }
@@ -200,6 +203,13 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
                 placeholder="What can you show that proves you run this club?"
                 rows={3}
                 className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
+              />
+              <ImageUploadField
+                label="Supporting document (optional)"
+                value={proofDocumentUrl}
+                onChange={setProofDocumentUrl}
+                aspect="wide"
+                hint="Optional: a photo of a letter, registration, insurance certificate, or business document that shows you run this club. Speeds up the review."
               />
             </div>
           )}

@@ -99,6 +99,7 @@ export async function startClaim(input: {
   channel: ClaimChannel
   claimantEmail?: string
   proofNote?: string
+  proofDocumentUrl?: string
   corrections?: ClaimCorrections
   message?: string
 }): Promise<
@@ -139,6 +140,7 @@ export async function startClaim(input: {
         status: "PENDING",
         claimantEmail: input.claimantEmail,
         proofNote: input.proofNote,
+        proofDocumentUrl: input.proofDocumentUrl ?? null,
         corrections: input.corrections ?? undefined,
         message: input.message ?? null,
       },

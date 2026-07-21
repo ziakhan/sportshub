@@ -186,4 +186,19 @@ describe("paper-proof path", () => {
     expect(expired.ok).toBe(false)
     if (!expired.ok) expect(expired.code).toBe("EXPIRED")
   })
+
+  it("stores an optional supporting document with the proof claim", async () => {
+    const doc = "data:image/webp;base64,UklGRhoAAABXRUJQ"
+    const res = await startClaim({
+      tenantId: bareTenantId,
+      channel: "proof",
+      claimantEmail: `doc@${RUN}.example.com`,
+      proofNote: "Attached the club's insurance certificate as proof.",
+      proofDocumentUrl: doc,
+    })
+    expect(res.ok).toBe(true)
+    if (!res.ok) return
+    const row = await (prisma as any).clubClaim.findUnique({ where: { id: res.claimId } })
+    expect(row.proofDocumentUrl).toBe(doc)
+  })
 })

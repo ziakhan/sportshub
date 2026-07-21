@@ -2891,6 +2891,9 @@ model ClubClaim {
   // paper-proof path: how we reach the claimer (no account yet)
   claimantEmail String?
   proofNote     String? @db.Text
+  // Optional supporting document for the proof path (CRA letter, incorporation,
+  // insurance cert, photo) — webp data URL, shown to the admin reviewer.
+  proofDocumentUrl String? @db.Text
 
   // Reservation + binding: a verified-but-unregistered claim holds the club
   // (completionExpiresAt ~14d). Redeeming the token binds claim -> User.
