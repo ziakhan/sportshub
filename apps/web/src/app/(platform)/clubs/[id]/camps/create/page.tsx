@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { DateTimePicker } from "@/components/ui"
+import { VenueSelector } from "@/components/venue-selector"
 
 export default function CreateCampPage() {
   const params = useParams()
@@ -24,6 +25,8 @@ export default function CreateCampPage() {
   const [dailyStartTime, setDailyStartTime] = useState("09:00")
   const [dailyEndTime, setDailyEndTime] = useState("16:00")
   const [location, setLocation] = useState("")
+  const [venueId, setVenueId] = useState("")
+  const [venueName, setVenueName] = useState("")
   const [numberOfWeeks, setNumberOfWeeks] = useState("1")
   const [weeklyFee, setWeeklyFee] = useState("0")
   const [fullCampFee, setFullCampFee] = useState("")
@@ -55,6 +58,7 @@ export default function CreateCampPage() {
           dailyStartTime,
           dailyEndTime,
           location,
+          venueId: venueId || undefined,
           numberOfWeeks: parseInt(numberOfWeeks),
           weeklyFee: parseFloat(weeklyFee),
           fullCampFee: fullCampFee ? parseFloat(fullCampFee) : undefined,
@@ -185,10 +189,14 @@ export default function CreateCampPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ink-700">Location *</label>
-              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} required
-                placeholder="Gym name or address"
-                className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium text-ink-700">Venue *</label>
+              <VenueSelector
+                value={venueId}
+                venueName={venueName}
+                onSelect={(v) => { setVenueId(v.id); setVenueName(v.name); setLocation(`${v.name}, ${v.address}`) }}
+                onClear={() => { setVenueId(""); setVenueName(""); setLocation("") }}
+              />
+              <p className="mt-1 text-xs text-ink-400">Search an existing venue or add one from Google Maps.</p>
             </div>
           </div>
 

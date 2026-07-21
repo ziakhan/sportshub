@@ -14,6 +14,7 @@ const updateTryoutSchema = z.object({
   ageGroup: z.string().optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   location: z.string().min(3).optional(),
+  venueId: z.string().uuid().nullable().optional(),
   scheduledAt: z.string().datetime().optional(),
   duration: z.number().nullable().optional(),
   fee: z.number().min(0).optional(),
@@ -39,6 +40,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           },
         },
         team: {
+          select: { id: true, name: true },
+        },
+        venue: {
           select: { id: true, name: true },
         },
         _count: {
@@ -169,6 +173,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (validatedData.ageGroup !== undefined) data.ageGroup = validatedData.ageGroup
     if (validatedData.gender !== undefined) data.gender = validatedData.gender
     if (validatedData.location !== undefined) data.location = validatedData.location
+    if (validatedData.venueId !== undefined) data.venueId = validatedData.venueId || null
     if (validatedData.scheduledAt !== undefined)
       data.scheduledAt = new Date(validatedData.scheduledAt)
     if (validatedData.duration !== undefined) data.duration = validatedData.duration

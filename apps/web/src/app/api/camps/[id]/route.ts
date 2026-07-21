@@ -89,6 +89,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     if (body.weeklyFee !== undefined) updateData.weeklyFee = body.weeklyFee
     if (body.fullCampFee !== undefined) updateData.fullCampFee = body.fullCampFee
+    if (body.venueId !== undefined) updateData.venueId = body.venueId || null
     if (body.startDate) updateData.startDate = new Date(body.startDate)
     if (body.endDate) updateData.endDate = new Date(body.endDate)
 

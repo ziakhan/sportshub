@@ -19,6 +19,9 @@ export const getPublicCamp = cache(async (id: string): Promise<any | null> => {
           branding: { select: { primaryColor: true } },
         },
       },
+      venue: {
+        select: { id: true, name: true },
+      },
       _count: { select: { signups: true } },
     },
   })

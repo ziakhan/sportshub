@@ -97,6 +97,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (body[field] !== undefined) updateData[field] = body[field]
     }
     if (body.fee !== undefined) updateData.fee = body.fee
+    if (body.venueId !== undefined) updateData.venueId = body.venueId || null
     if (body.startDate) updateData.startDate = new Date(body.startDate)
     if (body.endDate) updateData.endDate = new Date(body.endDate)
 

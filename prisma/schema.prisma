@@ -628,7 +628,9 @@ model TeamEvent {
 
   title           String
   description     String?  @db.Text
-  location        String?
+  location        String? // Denormalized venue label / free-text fallback for legacy rows
+  venueId         String?
+  venue           Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
   startAt         DateTime
   durationMinutes Int      @default(60)
 
@@ -645,6 +647,7 @@ model TeamEvent {
 
   @@index([startAt])
   @@index([createdById])
+  @@index([venueId])
 }
 
 model TeamEventTeam {
@@ -882,7 +885,9 @@ model Tryout {
   ageGroup    String
   gender      Gender?
 
-  location    String
+  location    String // Denormalized venue label / free-text fallback for legacy rows
+  venueId     String?
+  venue       Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
   scheduledAt DateTime
   duration    Int? // minutes
 
@@ -902,6 +907,7 @@ model Tryout {
   @@index([teamId])
   @@index([scheduledAt])
   @@index([isPublished, isPublic])
+  @@index([venueId])
 }
 
 model TryoutSignup {
@@ -1820,6 +1826,10 @@ model Venue {
   courtList        Court[]
   venueHours       VenueHours[]
   tournamentVenues TournamentVenue[]
+  tryouts          Tryout[]
+  camps            Camp[]
+  houseLeagues     HouseLeague[]
+  teamEvents       TeamEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2659,7 +2669,9 @@ model HouseLeague {
   daysOfWeek String // "Saturday" or "Monday,Wednesday"
   startTime  String // "10:00"
   endTime    String // "12:00"
-  location   String
+  location   String // Denormalized venue label / free-text fallback for legacy rows
+  venueId    String?
+  venue      Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
 
   // Pricing
   fee Decimal @db.Decimal(10, 2)
@@ -2683,6 +2695,7 @@ model HouseLeague {
 
   @@index([tenantId])
   @@index([isPublished])
+  @@index([venueId])
   @@index([startDate])
 }
 
@@ -2739,7 +2752,9 @@ model Camp {
   endDate        DateTime
   dailyStartTime String // "09:00"
   dailyEndTime   String // "16:00"
-  location       String
+  location       String // Denormalized venue label / free-text fallback for legacy rows
+  venueId        String?
+  venue          Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
 
   // Multi-week pricing
   numberOfWeeks Int      @default(1)
@@ -2765,6 +2780,7 @@ model Camp {
   @@index([campType])
   @@index([isPublished])
   @@index([startDate])
+  @@index([venueId])
 }
 
 enum CampType {

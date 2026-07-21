@@ -58,6 +58,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/claim",
   // Tokenized waiver signing (emailed link, no session — waivers-esign 2026-07-20)
   "/waivers",
+  // Public venue directory + detail pages (name, address, map, hours — 2026-07-21)
+  "/venues",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */

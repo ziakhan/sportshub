@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
+import { VenueSelector } from "@/components/venue-selector"
 
 const createTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -51,6 +52,8 @@ function CreateTryoutForm() {
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState(preselectedTeamId)
   const [loadingTeams, setLoadingTeams] = useState(true)
+  const [venueId, setVenueId] = useState("")
+  const [venueName, setVenueName] = useState("")
 
   const selectedTeam = teams.find((t) => t.id === selectedTeamId)
 
@@ -101,6 +104,7 @@ function CreateTryoutForm() {
         description: data.description || undefined,
         ageGroup: selectedTeam?.ageGroup,
         location: data.location,
+        venueId: venueId || undefined,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
@@ -280,17 +284,30 @@ function CreateTryoutForm() {
 
               <div>
                 <label htmlFor="location" className="block text-sm font-medium text-ink-700">
-                  Location <span className="text-red-500">*</span>
+                  Venue <span className="text-red-500">*</span>
                 </label>
-                <input
-                  {...register("location")}
-                  type="text"
-                  id="location"
-                  className={inputCls}
-                  placeholder="Main Gym, 123 Court Ave"
-                />
+                <div className="mt-1">
+                  <VenueSelector
+                    value={venueId}
+                    venueName={venueName}
+                    onSelect={(v) => {
+                      setVenueId(v.id)
+                      setVenueName(v.name)
+                      setValue("location", `${v.name}, ${v.address}`, { shouldValidate: true })
+                    }}
+                    onClear={() => {
+                      setVenueId("")
+                      setVenueName("")
+                      setValue("location", "", { shouldValidate: true })
+                    }}
+                  />
+                </div>
+                <input type="hidden" {...register("location")} />
+                <p className="mt-1 text-xs text-ink-400">
+                  Search an existing venue or add one from Google Maps.
+                </p>
                 {errors.location && (
-                  <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
+                  <p className="mt-1 text-sm text-red-600">Please choose a venue.</p>
                 )}
               </div>
             </div>

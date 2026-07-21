@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Badge, Button, Card, DateTimePicker, PanelHeader } from "@/components/ui"
+import { VenueSelector } from "@/components/venue-selector"
 
 const editTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -56,6 +57,8 @@ export default function EditTryoutPage() {
   const [saved, setSaved] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeamId, setSelectedTeamId] = useState("")
+  const [venueId, setVenueId] = useState("")
+  const [venueName, setVenueName] = useState("")
 
   const selectedTeam = teams.find((t) => t.id === selectedTeamId)
 
@@ -90,6 +93,8 @@ export default function EditTryoutPage() {
           isPublic: tryout.isPublic,
         })
         setSelectedTeamId(tryout.teamId || "")
+        setVenueId(tryout.venueId || "")
+        setVenueName(tryout.venue?.name || "")
         if (teamsRes.ok) {
           const teamsData = await teamsRes.json()
           setTeams(teamsData.teams || [])
@@ -119,6 +124,7 @@ export default function EditTryoutPage() {
         description: data.description || null,
         ageGroup: selectedTeam?.ageGroup,
         location: data.location,
+        venueId: venueId || undefined,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
@@ -253,14 +259,25 @@ export default function EditTryoutPage() {
 
               <div>
                 <label htmlFor="location" className="block text-sm font-medium text-ink-700">
-                  Location <span className="text-red-500">*</span>
+                  Venue <span className="text-red-500">*</span>
                 </label>
-                <input
-                  {...register("location")}
-                  type="text"
-                  id="location"
-                  className={inputCls}
-                />
+                <div className="mt-1">
+                  <VenueSelector
+                    value={venueId}
+                    venueName={venueName}
+                    onSelect={(v) => {
+                      setVenueId(v.id)
+                      setVenueName(v.name)
+                      setValue("location", `${v.name}, ${v.address}`, { shouldValidate: true })
+                    }}
+                    onClear={() => {
+                      setVenueId("")
+                      setVenueName("")
+                      setValue("location", "", { shouldValidate: true })
+                    }}
+                  />
+                </div>
+                <input type="hidden" {...register("location")} />
                 {errors.location && (
                   <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
                 )}

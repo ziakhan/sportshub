@@ -9,6 +9,7 @@ import { z } from "zod"
 import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
+import { VenueSelector } from "@/components/venue-selector"
 
 const AGE_GROUPS = [
   "U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18",
@@ -75,6 +76,8 @@ export default function EditCampPage() {
   const [includesSnacks, setIncludesSnacks] = useState(false)
   const [includesJersey, setIncludesJersey] = useState(false)
   const [includesBall, setIncludesBall] = useState(false)
+  const [venueId, setVenueId] = useState("")
+  const [venueName, setVenueName] = useState("")
 
   const {
     register,
@@ -98,6 +101,8 @@ export default function EditCampPage() {
         setIncludesSnacks(!!data.includesSnacks)
         setIncludesJersey(!!data.includesJersey)
         setIncludesBall(!!data.includesBall)
+        setVenueId(data.venueId || "")
+        setVenueName(data.venue?.name || "")
         reset({
           name: data.name,
           campType: data.campType,
@@ -156,6 +161,7 @@ export default function EditCampPage() {
         dailyStartTime: data.dailyStartTime,
         dailyEndTime: data.dailyEndTime,
         location: data.location,
+        venueId: venueId || undefined,
         numberOfWeeks: data.numberOfWeeks,
         maxParticipants: data.maxParticipants ? parseInt(data.maxParticipants, 10) : null,
         includesLunch,
@@ -441,15 +447,25 @@ export default function EditCampPage() {
 
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-ink-700">
-                    Location <span className="text-red-500">*</span>
+                    Venue <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    {...register("location")}
-                    type="text"
-                    id="location"
-                    placeholder="Gym name or address"
-                    className={inputCls}
-                  />
+                  <div className="mt-1">
+                    <VenueSelector
+                      value={venueId}
+                      venueName={venueName}
+                      onSelect={(v) => {
+                        setVenueId(v.id)
+                        setVenueName(v.name)
+                        setValue("location", `${v.name}, ${v.address}`, { shouldValidate: true })
+                      }}
+                      onClear={() => {
+                        setVenueId("")
+                        setVenueName("")
+                        setValue("location", "", { shouldValidate: true })
+                      }}
+                    />
+                  </div>
+                  <input type="hidden" {...register("location")} />
                   {errors.location && (
                     <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
                   )}

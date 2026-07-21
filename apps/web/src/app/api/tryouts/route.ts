@@ -14,6 +14,7 @@ const createTryoutSchema = z.object({
   ageGroup: z.string(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   location: z.string().min(3),
+  venueId: z.string().uuid().nullable().optional(),
   scheduledAt: z.string().datetime(),
   duration: z.number().optional(),
   fee: z.number().min(0),
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
     if (validatedData.duration) createData.duration = validatedData.duration
     if (validatedData.maxParticipants) createData.maxParticipants = validatedData.maxParticipants
     if (validatedData.teamId) createData.teamId = validatedData.teamId
+    if (validatedData.venueId) createData.venueId = validatedData.venueId
 
     const tryout = await prisma.tryout.create({
       data: createData as any,
