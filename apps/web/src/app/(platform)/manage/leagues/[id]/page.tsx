@@ -6,7 +6,15 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { LeagueScoringSettings } from "@/components/scoring/league-scoring-settings"
 import { brandStyle } from "@/lib/club-page/brand"
-import { StatTile, AnimatedNumber, Button, PanelHeader, Badge, type BadgeTone } from "@/components/ui"
+import {
+  StatTile,
+  AnimatedNumber,
+  Button,
+  PanelHeader,
+  Badge,
+  DateTimePicker,
+  type BadgeTone,
+} from "@/components/ui"
 
 interface Season {
   id: string
@@ -360,29 +368,18 @@ function LeagueDashboard() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className={labelClass}>Start Date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className={inputClass}
-                />
+                <DateTimePicker mode="date" value={startDate} onChange={setStartDate} />
               </div>
               <div>
                 <label className={labelClass}>End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={inputClass}
-                />
+                <DateTimePicker mode="date" value={endDate} onChange={setEndDate} />
               </div>
               <div>
                 <label className={labelClass}>Registration Deadline</label>
-                <input
-                  type="date"
+                <DateTimePicker
+                  mode="date"
                   value={registrationDeadline}
-                  onChange={(e) => setRegistrationDeadline(e.target.value)}
-                  className={inputClass}
+                  onChange={setRegistrationDeadline}
                 />
               </div>
             </div>

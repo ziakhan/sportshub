@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui"
+import { Button, DateTimePicker } from "@/components/ui"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 
 function calcAge(dobStr: string | undefined): number | null {
@@ -31,6 +31,7 @@ function AddPlayerForm() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<AddPlayerFormData>({
     resolver: zodResolver(addPlayerSchema),
@@ -175,11 +176,13 @@ function AddPlayerForm() {
               <label htmlFor="dateOfBirth" className={labelClass}>
                 Date of Birth <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("dateOfBirth")}
-                type="date"
+              <DateTimePicker
                 id="dateOfBirth"
-                className={inputClass}
+                mode="date"
+                value={watch("dateOfBirth") || ""}
+                onChange={(v) => setValue("dateOfBirth", v, { shouldValidate: true })}
+                placeholder="Select date of birth"
+                yearRange={[new Date().getFullYear() - 25, new Date().getFullYear()]}
               />
               {errors.dateOfBirth && (
                 <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>

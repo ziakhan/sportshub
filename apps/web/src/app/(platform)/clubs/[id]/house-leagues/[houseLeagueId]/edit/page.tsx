@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 
@@ -74,6 +74,8 @@ export default function EditHouseLeaguePage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EditHouseLeagueFormData>({
     resolver: zodResolver(editHouseLeagueSchema),
@@ -380,7 +382,13 @@ export default function EditHouseLeaguePage() {
                     <label htmlFor="startDate" className="block text-sm font-medium text-ink-700">
                       Start Date <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("startDate")} type="date" id="startDate" className={inputCls} />
+                    <DateTimePicker
+                      id="startDate"
+                      mode="date"
+                      value={watch("startDate") || ""}
+                      onChange={(v) => setValue("startDate", v, { shouldValidate: true })}
+                      placeholder="Pick a start date"
+                    />
                     {errors.startDate && (
                       <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>
                     )}
@@ -389,7 +397,13 @@ export default function EditHouseLeaguePage() {
                     <label htmlFor="endDate" className="block text-sm font-medium text-ink-700">
                       End Date <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("endDate")} type="date" id="endDate" className={inputCls} />
+                    <DateTimePicker
+                      id="endDate"
+                      mode="date"
+                      value={watch("endDate") || ""}
+                      onChange={(v) => setValue("endDate", v, { shouldValidate: true })}
+                      placeholder="Pick an end date"
+                    />
                     {errors.endDate && (
                       <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>
                     )}
@@ -423,13 +437,25 @@ export default function EditHouseLeaguePage() {
                     <label htmlFor="startTime" className="block text-sm font-medium text-ink-700">
                       Start Time <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("startTime")} type="time" id="startTime" className={inputCls} />
+                    <DateTimePicker
+                      id="startTime"
+                      mode="time"
+                      value={watch("startTime") || ""}
+                      onChange={(v) => setValue("startTime", v, { shouldValidate: true })}
+                      placeholder="Start time"
+                    />
                   </div>
                   <div>
                     <label htmlFor="endTime" className="block text-sm font-medium text-ink-700">
                       End Time <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("endTime")} type="time" id="endTime" className={inputCls} />
+                    <DateTimePicker
+                      id="endTime"
+                      mode="time"
+                      value={watch("endTime") || ""}
+                      onChange={(v) => setValue("endTime", v, { shouldValidate: true })}
+                      placeholder="End time"
+                    />
                   </div>
                 </div>
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { DateTimePicker } from "@/components/ui"
 
 interface InboxRequest {
   id: string
@@ -198,15 +199,15 @@ export default function RefereeRequestsPage() {
         <div className="mb-3 flex flex-wrap items-end gap-2">
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="border-ink-200 rounded-xl border px-2 py-1.5 text-sm" />
+            <DateTimePicker mode="date" value={date} onChange={setDate} className="w-40" />
           </div>
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">From</label>
-            <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="border-ink-200 rounded-xl border px-2 py-1.5 text-sm" />
+            <DateTimePicker mode="time" value={start} onChange={setStart} className="w-28" />
           </div>
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">To</label>
-            <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="border-ink-200 rounded-xl border px-2 py-1.5 text-sm" />
+            <DateTimePicker mode="time" value={end} onChange={setEnd} className="w-28" />
           </div>
           <button
             onClick={addSlot}

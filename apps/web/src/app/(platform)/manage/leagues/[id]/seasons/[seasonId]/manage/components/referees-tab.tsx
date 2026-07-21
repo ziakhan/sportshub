@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus, type BadgeTone } from "@/components/ui"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker, type BadgeTone } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 
 interface PoolReferee {
@@ -201,9 +201,9 @@ export function RefereesTab({
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">Shift</label>
             <div className="flex items-center gap-1">
-              <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className={inputClass} />
+              <DateTimePicker mode="time" value={start} onChange={setStart} className="w-28" />
               <span className="text-ink-400 text-xs">–</span>
-              <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className={inputClass} />
+              <DateTimePicker mode="time" value={end} onChange={setEnd} className="w-28" />
             </div>
           </div>
           <div className="flex gap-1">

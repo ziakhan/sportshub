@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { DateTimePicker } from "@/components/ui"
 
 interface Court {
   id: string
@@ -176,26 +177,28 @@ export function VenueEditor({ venueId, venueName, courts, hours, onChange }: Ven
             return (
               <div key={h.dayOfWeek} className="flex items-center gap-2 text-xs">
                 <span className="text-ink-700 w-8">{DAY_LABELS[h.dayOfWeek]}</span>
-                <input
-                  type="time"
+                <DateTimePicker
+                  mode="time"
                   value={h.openTime ?? ""}
-                  onChange={(e) => {
+                  onChange={(v) => {
                     const next = [...hoursState]
-                    next[h.dayOfWeek] = { ...h, openTime: e.target.value || null }
+                    next[h.dayOfWeek] = { ...h, openTime: v || null }
                     setHoursState(next)
                   }}
-                  className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+                  className="w-24"
+                  placeholder="Open"
                 />
                 <span className="text-ink-400">–</span>
-                <input
-                  type="time"
+                <DateTimePicker
+                  mode="time"
                   value={h.closeTime ?? ""}
-                  onChange={(e) => {
+                  onChange={(v) => {
                     const next = [...hoursState]
-                    next[h.dayOfWeek] = { ...h, closeTime: e.target.value || null }
+                    next[h.dayOfWeek] = { ...h, closeTime: v || null }
                     setHoursState(next)
                   }}
-                  className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+                  className="w-24"
+                  placeholder="Close"
                 />
                 {closed && <span className="text-ink-400">(closed)</span>}
                 <button

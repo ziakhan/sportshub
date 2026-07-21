@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 
@@ -81,6 +81,7 @@ export default function EditCampPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<EditCampFormData>({
     resolver: zodResolver(editCampSchema),
@@ -361,7 +362,13 @@ export default function EditCampPage() {
                     <label htmlFor="startDate" className="block text-sm font-medium text-ink-700">
                       Start Date <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("startDate")} type="date" id="startDate" className={inputCls} />
+                    <DateTimePicker
+                      id="startDate"
+                      mode="date"
+                      value={watch("startDate") || ""}
+                      onChange={(v) => setValue("startDate", v, { shouldValidate: true })}
+                      placeholder="Pick a start date"
+                    />
                     {errors.startDate && (
                       <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>
                     )}
@@ -370,7 +377,13 @@ export default function EditCampPage() {
                     <label htmlFor="endDate" className="block text-sm font-medium text-ink-700">
                       End Date <span className="text-red-500">*</span>
                     </label>
-                    <input {...register("endDate")} type="date" id="endDate" className={inputCls} />
+                    <DateTimePicker
+                      id="endDate"
+                      mode="date"
+                      value={watch("endDate") || ""}
+                      onChange={(v) => setValue("endDate", v, { shouldValidate: true })}
+                      placeholder="Pick an end date"
+                    />
                     {errors.endDate && (
                       <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>
                     )}
@@ -385,22 +398,24 @@ export default function EditCampPage() {
                     >
                       Daily Start <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      {...register("dailyStartTime")}
-                      type="time"
+                    <DateTimePicker
                       id="dailyStartTime"
-                      className={inputCls}
+                      mode="time"
+                      value={watch("dailyStartTime") || ""}
+                      onChange={(v) => setValue("dailyStartTime", v, { shouldValidate: true })}
+                      placeholder="Start time"
                     />
                   </div>
                   <div>
                     <label htmlFor="dailyEndTime" className="block text-sm font-medium text-ink-700">
                       Daily End <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      {...register("dailyEndTime")}
-                      type="time"
+                    <DateTimePicker
                       id="dailyEndTime"
-                      className={inputCls}
+                      mode="time"
+                      value={watch("dailyEndTime") || ""}
+                      onChange={(v) => setValue("dailyEndTime", v, { shouldValidate: true })}
+                      placeholder="End time"
                     />
                   </div>
                   <div>

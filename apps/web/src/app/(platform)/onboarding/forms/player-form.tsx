@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { playerOnboardingSchema, type PlayerOnboardingData } from "@/lib/validations/onboarding"
 import { CountryStateSelector } from "@/components/country-state-selector"
+import { DateTimePicker } from "@/components/ui"
 
 interface PlayerFormProps {
   onSubmit: (data: PlayerOnboardingData) => void
@@ -44,7 +45,14 @@ export function PlayerForm({ onSubmit, onBack, isSubmitting }: PlayerFormProps) 
         <label htmlFor="dateOfBirth" className={labelClass}>
           Date of Birth <span className="text-red-500">*</span>
         </label>
-        <input {...register("dateOfBirth")} type="date" id="dateOfBirth" className={inputClass} />
+        <DateTimePicker
+          id="dateOfBirth"
+          mode="date"
+          value={watch("dateOfBirth") || ""}
+          onChange={(v) => setValue("dateOfBirth", v, { shouldValidate: true })}
+          placeholder="Select your date of birth"
+          yearRange={[new Date().getFullYear() - 25, new Date().getFullYear()]}
+        />
         {errors.dateOfBirth && (
           <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>
         )}

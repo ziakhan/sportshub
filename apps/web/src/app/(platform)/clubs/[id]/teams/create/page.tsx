@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { DateTimePicker } from "@/components/ui"
 
 const createTeamSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -501,15 +502,15 @@ export default function CreateTeamPage() {
                       )
                     )}
                   </select>
-                  <input
-                    type="time"
+                  <DateTimePicker
+                    mode="time"
                     value={slot.startTime}
-                    onChange={(e) =>
+                    onChange={(v) =>
                       setPracticeSlots((cur) =>
-                        cur.map((s, j) => (j === i ? { ...s, startTime: e.target.value } : s))
+                        cur.map((s, j) => (j === i ? { ...s, startTime: v } : s))
                       )
                     }
-                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
+                    className="w-28"
                   />
                   <select
                     value={slot.durationMinutes}

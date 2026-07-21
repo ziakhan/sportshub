@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import { DateTimePicker } from "@/components/ui"
 
 export default function CreateCampPage() {
   const params = useParams()
@@ -159,26 +160,22 @@ export default function CreateCampPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Start Date *</label>
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                <DateTimePicker mode="date" value={startDate} onChange={setStartDate} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">End Date *</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                <DateTimePicker mode="date" value={endDate} onChange={setEndDate} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Daily Start *</label>
-                <input type="time" value={dailyStartTime} onChange={(e) => setDailyStartTime(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                <DateTimePicker mode="time" value={dailyStartTime} onChange={setDailyStartTime} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Daily End *</label>
-                <input type="time" value={dailyEndTime} onChange={(e) => setDailyEndTime(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                <DateTimePicker mode="time" value={dailyEndTime} onChange={setDailyEndTime} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Number of Weeks *</label>

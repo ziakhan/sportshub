@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
-import { Button, PanelHeader } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
 import { panelClass } from "./types"
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -161,24 +161,24 @@ export function SessionsTab({
           />
           {sessionDays.map((day, idx) => (
             <div key={idx} className="flex items-center gap-1">
-              <input
-                type="date"
+              <DateTimePicker
+                mode="date"
                 value={day.date}
-                onChange={(e) => updateSessionDay(idx, "date", e.target.value)}
-                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 flex-1 rounded-xl border px-2 py-1 text-xs focus:outline-none focus:ring-2"
+                onChange={(v) => updateSessionDay(idx, "date", v)}
+                className="w-40"
               />
-              <input
-                type="time"
+              <DateTimePicker
+                mode="time"
                 value={day.startTime}
-                onChange={(e) => updateSessionDay(idx, "startTime", e.target.value)}
-                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-20 rounded-xl border px-1 py-1 text-xs focus:outline-none focus:ring-2"
+                onChange={(v) => updateSessionDay(idx, "startTime", v)}
+                className="w-28"
               />
               <span className="text-ink-400 text-xs">-</span>
-              <input
-                type="time"
+              <DateTimePicker
+                mode="time"
                 value={day.endTime}
-                onChange={(e) => updateSessionDay(idx, "endTime", e.target.value)}
-                className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-20 rounded-xl border px-1 py-1 text-xs focus:outline-none focus:ring-2"
+                onChange={(v) => updateSessionDay(idx, "endTime", v)}
+                className="w-28"
               />
               {sessionDays.length > 1 && (
                 <button

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
-import { Button, Badge, PanelHeader, toneForStatus } from "@/components/ui"
+import { Button, Badge, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { panelClass } from "./types"
 
 /**
@@ -235,12 +235,7 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
                 <span className="text-ink-700 mb-1 block text-xs font-semibold">
                   First round date
                 </span>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
-                />
+                <DateTimePicker mode="date" value={startDate} onChange={setStartDate} />
               </label>
             </div>
 

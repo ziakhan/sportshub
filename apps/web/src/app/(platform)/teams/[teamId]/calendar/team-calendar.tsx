@@ -7,6 +7,7 @@ import { AddToPhone } from "@/components/calendar/add-to-phone"
 import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
+import { DateTimePicker } from "@/components/ui"
 
 /**
  * Live agenda: practices + games grouped by week, polling for updates every
@@ -419,18 +420,18 @@ export function TeamCalendar({
                     </option>
                   ))}
                 </select>
-                <input
-                  type="time"
-                  defaultValue={slot.startTime}
-                  disabled={busy}
-                  onBlur={(e) => {
-                    if (e.target.value && e.target.value !== slot.startTime) {
+                <DateTimePicker
+                  mode="time"
+                  value={slot.startTime}
+                  onChange={(v) => {
+                    if (busy) return
+                    if (v && v !== slot.startTime) {
                       saveSlots(
-                        slots.map((s, j) => (j === i ? { ...s, startTime: e.target.value } : s))
+                        slots.map((s, j) => (j === i ? { ...s, startTime: v } : s))
                       )
                     }
                   }}
-                  className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
+                  className="w-28"
                 />
                 <select
                   value={slot.durationMinutes}
@@ -678,11 +679,11 @@ export function TeamCalendar({
                         <div className="flex shrink-0 items-center gap-1.5">
                           {movingId === entry.practice.id ? (
                             <>
-                              <input
-                                type="datetime-local"
+                              <DateTimePicker
+                                mode="datetime"
                                 value={moveValue}
-                                onChange={(e) => setMoveValue(e.target.value)}
-                                className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+                                onChange={setMoveValue}
+                                className="w-52"
                               />
                               <button
                                 onClick={() =>
@@ -995,11 +996,10 @@ function AddEventForm({
         </div>
         <div>
           <label className="text-ink-700 mb-1 block text-xs font-semibold">When</label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
+            mode="datetime"
             value={startAt}
-            onChange={(e) => setStartAt(e.target.value)}
-            className={inputClass}
+            onChange={setStartAt}
           />
         </div>
         <div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 
 interface CapacityUnit {
@@ -637,12 +637,7 @@ function ManualGameAdd({
                 </option>
               ))}
           </select>
-          <input
-            type="datetime-local"
-            value={when}
-            onChange={(e) => setWhen(e.target.value)}
-            className={inputClass}
-          />
+          <DateTimePicker mode="datetime" value={when} onChange={setWhen} className="w-40" />
           <Button size="sm" onClick={create} disabled={busy || !homeTeamId || !awayTeamId || !when}>
             {busy ? "Adding…" : "Add game"}
           </Button>

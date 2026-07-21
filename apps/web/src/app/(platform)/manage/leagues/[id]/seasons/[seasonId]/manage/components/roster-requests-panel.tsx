@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 
 interface RosterRequest {
@@ -154,11 +154,11 @@ export function RosterRequestsPanel({
         {policyDraft === "OPEN_UNTIL_DEADLINE" && (
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">Change deadline</label>
-            <input
-              type="date"
+            <DateTimePicker
+              mode="date"
               value={deadlineDraft}
-              onChange={(e) => setDeadlineDraft(e.target.value)}
-              className={inputClass}
+              onChange={setDeadlineDraft}
+              className="w-40"
             />
           </div>
         )}

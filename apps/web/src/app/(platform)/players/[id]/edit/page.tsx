@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
+import { DateTimePicker } from "@/components/ui"
 import RemovePlayerButton from "../../remove-player-button"
 import { ClaimHandleCard } from "@/components/players/claim-handle-card"
 
@@ -32,6 +33,8 @@ export default function EditPlayerPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AddPlayerFormData>({
     resolver: zodResolver(addPlayerSchema),
@@ -158,11 +161,13 @@ export default function EditPlayerPage() {
               <label htmlFor="dateOfBirth" className={labelClass}>
                 Date of Birth <span className="text-red-500">*</span>
               </label>
-              <input
-                {...register("dateOfBirth")}
-                type="date"
+              <DateTimePicker
                 id="dateOfBirth"
-                className={inputClass}
+                mode="date"
+                value={watch("dateOfBirth") || ""}
+                onChange={(v) => setValue("dateOfBirth", v, { shouldValidate: true })}
+                placeholder="Select date of birth"
+                yearRange={[new Date().getFullYear() - 25, new Date().getFullYear()]}
               />
               {errors.dateOfBirth && (
                 <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth.message}</p>

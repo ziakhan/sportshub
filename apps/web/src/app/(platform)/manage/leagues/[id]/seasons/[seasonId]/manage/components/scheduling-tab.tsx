@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button, PanelHeader } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass, type SchedSettings } from "./types"
 
 // Mutations previously ignored res.ok — a 403/500 looked like success and
@@ -462,22 +462,22 @@ export function SchedulingTab({
               Default venue hours
             </label>
             <div className="flex items-center gap-1">
-              <input
-                type="time"
+              <DateTimePicker
+                mode="time"
                 value={schedSettings.defaultVenueOpenTime}
-                onChange={(e) =>
-                  setSchedSettings((s) => ({ ...s, defaultVenueOpenTime: e.target.value }))
+                onChange={(v) =>
+                  setSchedSettings((s) => ({ ...s, defaultVenueOpenTime: v }))
                 }
-                className={inputClass + " flex-1"}
+                className="w-28"
               />
               <span className="text-ink-400 text-xs">–</span>
-              <input
-                type="time"
+              <DateTimePicker
+                mode="time"
                 value={schedSettings.defaultVenueCloseTime}
-                onChange={(e) =>
-                  setSchedSettings((s) => ({ ...s, defaultVenueCloseTime: e.target.value }))
+                onChange={(v) =>
+                  setSchedSettings((s) => ({ ...s, defaultVenueCloseTime: v }))
                 }
-                className={inputClass + " flex-1"}
+                className="w-28"
               />
             </div>
             <p className="text-ink-400 mt-0.5 text-[10px]">

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DateTimePicker } from "@/components/ui"
 
 /**
  * Offer composer — builds the package options for one offer
@@ -307,17 +308,18 @@ export function OfferComposer({
                       className={`${inputClass} w-24`}
                       placeholder="Amount"
                     />
-                    <input
-                      type="date"
+                    <DateTimePicker
+                      mode="date"
                       value={term.dueDate}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         patch(i, {
                           installmentTerms: pkg.installmentTerms.map((t, j) =>
-                            j === ti ? { ...t, dueDate: e.target.value } : t
+                            j === ti ? { ...t, dueDate: v } : t
                           ),
                         })
                       }
-                      className={`${inputClass} w-36`}
+                      className="w-40"
+                      placeholder="Due date"
                     />
                     <button
                       type="button"
