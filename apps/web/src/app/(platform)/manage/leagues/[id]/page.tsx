@@ -262,6 +262,9 @@ function LeagueDashboard() {
             <Button href={`/manage/leagues/${leagueId}/payments`} variant="subtle" icon={BTN_ICONS.card}>
               Payments
             </Button>
+            <Button href={`/manage/leagues/${leagueId}/accounting`} variant="subtle" icon={BTN_ICONS.card}>
+              Accounting
+            </Button>
             <Button href={`/manage/leagues/${leagueId}/messages`} variant="subtle" icon={BTN_ICONS.mail}>
               Messages
             </Button>
