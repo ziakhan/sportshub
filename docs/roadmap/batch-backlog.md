@@ -184,3 +184,22 @@ So this WAS consciously deferred pending Twilio creds — owner remembers right.
 
 **Blocking dependency:** owner provides Twilio credentials. Until then, the
 whole texting/verify track stays deferred; only 3a (data gap) is actionable now.
+
+### 3c. Consent model — how it works today + 2 gaps (reviewed 2026-07-21)
+Model = CASL email consent, 3 scopes (PLATFORM / TENANT=club / LEAGUE) × 2
+statuses (IMPLIED = business relationship, ~2yr rolling window; EXPRESS =
+checkbox, no expiry). Triggered by ACTIONS (never login): registration/offer-
+accept → IMPLIED for that club; signup checkbox → EXPRESS PLATFORM; registration
+checkbox → EXPRESS club; prefs page → any scope. Enforced ONLY on MARKETING
+email, per-recipient at send time (`hasMarketingConsent` in
+`api/comms/messages`). Transactional email (receipts, reminders, game changes)
+is exempt. Withdraw = unsubscribe link / prefs page.
+**GAP 1 — LEAGUE-scope consent for individuals isn't triggered.** Registrations
+create TENANT (club) implied consent, not LEAGUE — leagues relate to clubs (team
+registration), not directly to parents. So a league has no consent basis to
+email families directly except EXPRESS opt-in. Decide how leagues reach families
+(via the club? explicit opt-in?).
+**GAP 2 — consent is EMAIL-only.** When SMS goes live (item 3b), texting
+Canadians needs its own CASL/CRTC consent + enforcement in the SMS send path
+(the current model/enforcement is wired to email only). Add an SMS channel to
+consent (or a parallel SMS-consent), transactional-SMS exempt like email.
