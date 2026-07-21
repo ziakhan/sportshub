@@ -116,11 +116,11 @@ export async function getSignRequestByToken(
       player: { select: { id: true, firstName: true, lastName: true, deletedAt: true } },
     },
   })
-  if (!row || row.consumedAt || row.expiresAt < new Date()) return null
+  if (!row || row.expiresAt < new Date()) return null
   if (!row.waiver.active || row.player.deletedAt) return null
 
-  // Signed since this link was minted (e.g. via a re-sent link, or the other
-  // guardian) — the page shows "already signed" instead of the pad.
+  // Signed since this link was minted (via this link, a re-sent one, or the
+  // other guardian) — the page shows "already signed" instead of the pad.
   const existing = await (prisma as any).waiverSignature.findFirst({
     where: {
       waiverId: row.waiver.id,
@@ -130,6 +130,11 @@ export async function getSignRequestByToken(
     },
     select: { id: true },
   })
+
+  // A consumed token stays resolvable ONLY to say "already signed" (parents
+  // re-open the same email link after signing). Consumed with no signature on
+  // file is a dead token.
+  if (row.consumedAt && !existing) return null
 
   return {
     request: {

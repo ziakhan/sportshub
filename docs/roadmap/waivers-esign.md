@@ -1,14 +1,25 @@
 ---
 updated: 2026-07-20
-status: planned
+status: shipped-phase-1
 tier: 0
 area: compliance
 effort: M
 source: layer2
-tags: [theme/compliance, type/plan, status/planned]
+tags: [theme/compliance, type/plan, status/shipped-phase-1]
 ---
 
 # ✍️ Liability waivers + e-signature
+
+> **✅ PHASE 1 SHIPPED 2026-07-20 (local, unpushed — runbook #33).** Schema
+> (WaiverDocument/SignRequest/Signature), ON template library (ack+indemnity,
+> Rowan's concussion code w/ annual renewal, media consent), league+club CRUD
+> APIs & management UI, **approval → auto-email flow live**, public tokenized
+> signing page w/ SignaturePad, season Signing-status grid w/ re-send,
+> version-bump re-signing. Int tests 9/9 (seed 1134), full suite 318/318.
+> **Phase B open**: attach club waivers as blocking registration step
+> (registration-forms dependency) · signed-copy PDF render · club-side
+> signature viewer · eligibility gate on unsigned players · club dashboard
+> nav link to /clubs/[id]/waivers (page live, reachable by URL).
 
 > **OWNER SPEC 2026-07-20** (researched same day): waivers are issued by **both leagues
 > and clubs**. League flow he wants: once a team's roster is submitted to the league and

@@ -679,3 +679,22 @@ APPLE_KEY_ID=74SRFS3C24, APPLE_CLIENT_ID=com.ysportshub.web,
 APPLE_PRIVATE_KEY_B64 (.p8 in .credentials/, gitignored — NOT re-downloadable).
 Verify: /api/auth/providers includes apple; sign-in shows Apple button;
 signin/apple redirect → appleid.apple.com w/ client_id com.ysportshub.web.
+
+## #33 — 2026-07-20 waivers + e-signature phase 1 (SCHEMA)
+Code + schema — **LOCAL ONLY, not deployed** (owner build go-ahead 2026-07-20;
+per-push approval still required).
+- Schema: `WaiverType` enum + `WaiverDocument` / `WaiverSignRequest` /
+  `WaiverSignature` models + back-relations on League, Tenant, Player, Season,
+  User. Additive only — plain `prisma db push`, no data loss risk.
+- League flow: team-submission APPROVED → auto-emails every roster parent a
+  tokenized signing link per required league waiver (30-day tokens, hashed at
+  rest). Public signing page /waivers/sign/[token] (allowlisted in
+  public-paths.ts along with POST /api/waivers/sign).
+- Operator UI: /manage/leagues/[id]/waivers (Ontario template library),
+  season Signing status page w/ re-send, /clubs/[id]/waivers.
+- Tests: int suite 318/318 (+9 waivers, seed 1134).
+Deploy: box `deploy.sh` + `prisma db push` on box DB (+ Neon whenever the
+Neon backlog #24-30 batch goes — this rides along as #33).
+Verify post-push: league manage → Waivers → add both ON templates; approve a
+team with a rostered player; Mailpit/OCI shows the waiver email; sign via the
+link; season Signing status flips to ✓.
