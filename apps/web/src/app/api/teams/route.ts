@@ -6,6 +6,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
+import { isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -338,24 +339,23 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Verify user has access to this tenant (or is PlatformAdmin)
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        roles: {
-          where: {
-            OR: [{ tenantId }, { role: "PlatformAdmin" }],
-          },
-        },
-      },
-    })
-
-    if (!user || user.roles.length === 0) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Security fix 2026-07-20: this list is scoped by role. Club admins see
+    // every team; a coach sees ONLY their own team(s). Previously it returned
+    // the whole club to any Staff — a read-side of the coach-scope leak.
+    const admin = await isClubAdmin(userId, tenantId)
+    let teamFilter: any
+    if (admin) {
+      teamFilter = { tenantId }
+    } else {
+      const myTeamIds = await coachedTeamIds(userId, tenantId)
+      if (myTeamIds.length === 0) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
+      teamFilter = { tenantId, id: { in: myTeamIds } }
     }
 
     const teams = await prisma.team.findMany({
-      where: { tenantId },
+      where: teamFilter,
       include: {
         _count: {
           select: {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
+import { isClubAdmin, canActOnTeam, coachedTeamIds } from "@/lib/authz/team-scope"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
@@ -204,22 +204,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (tenantId) {
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId,
-          OR: [
-            { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-            { role: "PlatformAdmin" },
-          ],
-        },
-      })
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      // Security fix 2026-07-20: admins see the club's invitations; a coach
+      // sees ONLY their own team's (was any tenant Staff → invitee emails +
+      // messages + fees for every team).
+      const admin = await isClubAdmin(userId, tenantId)
+      let inviteWhere: any
+      if (admin) {
+        inviteWhere = { tenantId }
+      } else {
+        const myTeamIds = await coachedTeamIds(userId, tenantId)
+        if (myTeamIds.length === 0) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+        inviteWhere = { tenantId, teamId: { in: myTeamIds } }
       }
 
       await expirePending({ tenantId })
       const invitations = await prisma.playerInvitation.findMany({
-        where: { tenantId },
+        where: inviteWhere,
         include: {
           team: { select: { id: true, name: true, ageGroup: true, gender: true } },
           invitedUser: { select: { id: true, firstName: true, lastName: true, email: true } },

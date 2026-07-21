@@ -61,9 +61,54 @@ cleanup migration could delete them. NOT done yet (owner call).
   redirects to her team; all-teams/tryouts/offers/payments/staff/settings and a
   sibling team all blocked; own team reachable. ALL PASS.
 
+## Tryout correction (owner clarified 2026-07-20)
+Coaches CAN create tryouts **for their own team** (the initial fix over-blocked
+to admin-only). Now: `POST /api/tryouts` allows admin (any/club-wide) or a
+coach naming a team they coach (`canActOnTeam`); edit + publish are team-scoped
+so a coach runs their own team's tryout end to end (delete stays admin-only).
+The tryouts area is re-opened to coaches in the layout gate but every surface
+is scoped — list + create-dropdown + `GET /api/tryouts?tenantId` +
+`GET /api/teams?tenantId` all filtered to `coachedTeamIds`; `[tryoutId]` pages
+guarded by their own layout.
+
+## Fable security audit follow-up (2026-07-20) — FIXED
+A Fable subagent (which fanned out to helper agents — noted for cost) swept
+~90 API routes for the same bug class. Fixed:
+- **CRITICAL** `lib/teams/roster-access.ts` — `canManageTeamRoster` matched a
+  `teamId: null` staff-pool row, so any staff-pool member / legacy-row coach
+  could add/release/re-jersey **any** team's roster. Removed the null branch.
+- **HIGH** `api/obligations` GET `?tenantId` — coach read every family's owed
+  amounts + payer identity + payment history. Now admin-only.
+- **HIGH** `api/tournaments` POST — unscoped LeagueOwner/Manager branch + an
+  attacker-controlled `tenantId` let a throwaway-league owner spoof a
+  tournament as any club. Attributing to a club now requires that club's admin.
+- **MED read-leaks** now scoped to coached teams: `api/offers` GET (list +
+  `?teamId` + `?tenantId`), `api/offers/[id]` GET, `api/player-invitations`
+  GET `?tenantId`, `api/mobile/operator` (admin-only club summary),
+  `api/tryouts/[id]` GET (draft visibility was ANY tenant role incl. Player).
+- **LOW** `api/venues` POST — any signed-in user could inject global venue
+  records; now `canManageVenues` (operator) like its sibling routes.
+Audit CLEARED as correctly scoped: program staff, referee scoring assignment,
+parent/player IDOR, impersonation, chat/polls/practices/events, comms,
+payment-methods, RSVP, reviews, calendar, league/season/tournament approval
+routes (all derive scope from the resource).
+
+## ⚠️ OPEN — NEEDS OWNER RULING: game scoring by "either competing club"
+`lib/scoring/authz.ts` `canScoreGame` lets any Staff of EITHER competing
+club's tenant run/finalize scoring + assign referees (writes final score,
+standings, PlayerStats). The code comment says this is owner-confirmed
+by-design, but it's the pre-fix tenant-wide pattern and contradicts team
+scoping. **Question for owner:** should scoring be limited to staff of the
+two teams actually playing (canActOnTeam on home/away), or stay any-staff-of-
+either-club? Left UNCHANGED pending your call.
+
 ## Open (owner's call)
-- Migration to delete legacy unscoped `teamId: null` Staff rows.
-- Coach request→approve flow for tryouts (owner floated it; today coaches just
-  can't create — an admin does).
-- Audit other role families (LeagueManager, program staff) for the same
-  tenantId-only pattern.
+- The scoring ruling above.
+- Migration to delete legacy unscoped `teamId: null` Staff rows (now inert
+  everywhere — all checks are team-scoped or admin).
+- Coach request→approve flow for tryouts (you floated it; today a coach
+  creates their own team's tryout directly, which you also asked for).
+- LeagueManager under-permissioning: several season routes (playoffs, schedule
+  commit/delete, divisions, sessions) check only `league.ownerId`, so a
+  legitimate LeagueManager gets 403. Functional gap, not a leak — separate
+  ticket.

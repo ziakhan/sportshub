@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { getSessionUserId, canManageVenues } from "@/lib/auth-helpers"
 
 export const dynamic = "force-dynamic"
 
@@ -27,9 +28,16 @@ const createVenueSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    // Security fix 2026-07-20: venues land in the GLOBAL shared directory, so
+    // creation is limited to operators (club/league admins or platform admin),
+    // matching every sibling venue-mutation route (canManageVenues). Was: any
+    // signed-in user could inject venue records.
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    if (!(await canManageVenues(sessionInfo))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const body = await request.json()

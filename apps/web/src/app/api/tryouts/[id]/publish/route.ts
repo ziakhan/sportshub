@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -26,22 +27,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Verify permissions (ClubOwner, ClubManager, or PlatformAdmin)
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        roles: {
-          where: {
-            OR: [
-              { tenantId: tryout.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
-              { role: "PlatformAdmin" },
-            ],
-          },
-        },
-      },
-    })
-
-    if (!user || user.roles.length === 0) {
+    // Security fix 2026-07-20: admins publish any tryout; a coach publishes
+    // their OWN team's tryout (so they can run it end to end). Club-wide
+    // tryouts with no team stay admin-only.
+    const allowed = tryout.teamId
+      ? await canActOnTeam(userId, tryout.tenantId, tryout.teamId)
+      : await isClubAdmin(userId, tryout.tenantId)
+    if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

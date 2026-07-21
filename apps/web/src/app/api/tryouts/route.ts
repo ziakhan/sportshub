@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { isClubAdmin } from "@/lib/authz/team-scope"
+import { isClubAdmin, canActOnTeam, coachedTeamIds } from "@/lib/authz/team-scope"
 import { z } from "zod"
 
 export const dynamic = "force-dynamic"
@@ -38,14 +38,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTryoutSchema.parse(body)
 
-    // Owner ruling 2026-07-20: tryout creation is CLUB-ADMIN ONLY. Fees +
-    // registration payments hang off a tryout, so it's owner/manager work,
-    // not a coach action (superseding the 2026-07-07 coach-can-post call).
+    // Owner ruling 2026-07-20: a coach may create tryouts FOR THEIR OWN TEAM
+    // only. Club admins create anything (any team, or a club-wide tryout with
+    // no team); a coach MUST name a team they hold a team-scoped role for.
     if (!(await isClubAdmin(userId, validatedData.tenantId))) {
-      return NextResponse.json(
-        { error: "Only club owners or managers can create tryouts" },
-        { status: 403 }
-      )
+      if (!validatedData.teamId) {
+        return NextResponse.json(
+          { error: "Coaches can only create a tryout for their own team — pick the team" },
+          { status: 403 }
+        )
+      }
+      if (!(await canActOnTeam(userId, validatedData.tenantId, validatedData.teamId))) {
+        return NextResponse.json(
+          { error: "You can only create a tryout for your own team" },
+          { status: 403 }
+        )
+      }
     }
 
     const createData: Record<string, unknown> = {
@@ -121,28 +129,28 @@ export async function GET(request: NextRequest) {
     }
 
     if (tenantId) {
-      // Tenant-specific tryouts (includes drafts) — club staff only
+      // Tenant-specific tryouts (includes drafts). Security fix 2026-07-20:
+      // scoped by role — club admins see every tryout; a coach sees ONLY
+      // their own team's tryouts (was: whole club to any Staff).
       const sessionInfo = await getSessionUserId()
       if (!sessionInfo) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
 
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId: sessionInfo.userId,
-          OR: [
-            { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
-            { role: "PlatformAdmin" },
-          ],
-        },
-        select: { id: true },
-      })
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      const admin = await isClubAdmin(sessionInfo.userId, tenantId)
+      let tryoutFilter: any
+      if (admin) {
+        tryoutFilter = { tenantId }
+      } else {
+        const myTeamIds = await coachedTeamIds(sessionInfo.userId, tenantId)
+        if (myTeamIds.length === 0) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+        tryoutFilter = { tenantId, teamId: { in: myTeamIds } }
       }
 
       const tryouts = await prisma.tryout.findMany({
-        where: { tenantId },
+        where: tryoutFilter,
         include: {
           team: {
             select: { id: true, name: true },

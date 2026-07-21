@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { canActOnTeam, actorRoleAtTenant } from "@/lib/authz/team-scope"
+import { canActOnTeam, actorRoleAtTenant, isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
 import { z } from "zod"
 import {
   createOfferForPlayer,
@@ -244,17 +244,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Team not found" }, { status: 404 })
       }
 
-      // Verify club permission
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId,
-          OR: [
-            { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-            { role: "PlatformAdmin" },
-          ],
-        },
-      })
-      if (!hasAccess) {
+      // Security fix 2026-07-20: a coach may read only their own team's
+      // offers (was any tenant Staff → any team's recruiting pipeline).
+      if (!(await canActOnTeam(userId, team.tenantId, teamId))) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
 
@@ -284,22 +276,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (tenantId) {
-      // Club-side: get all offers for a tenant (across all teams)
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId,
-          OR: [
-            { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-            { role: "PlatformAdmin" },
-          ],
-        },
-      })
-      if (!hasAccess) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      // Club-side: offers across teams. Security fix 2026-07-20: admins see
+      // the whole club; a coach sees ONLY their own team's offers.
+      const admin = await isClubAdmin(userId, tenantId)
+      let offerWhere: any
+      if (admin) {
+        offerWhere = { team: { tenantId } }
+      } else {
+        const myTeamIds = await coachedTeamIds(userId, tenantId)
+        if (myTeamIds.length === 0) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        }
+        offerWhere = { team: { tenantId }, teamId: { in: myTeamIds } }
       }
 
       const offers = await prisma.offer.findMany({
-        where: { team: { tenantId } },
+        where: offerWhere,
         include: {
           team: { select: { id: true, name: true } },
           player: {

@@ -1,8 +1,11 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import type { ReactNode } from "react"
 import { AnimatedNumber, Badge, Button } from "@/components/ui"
+import { getCurrentUser } from "@/lib/auth-helpers"
+import { isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
 import { PublishButton } from "./publish-button"
 import { TryoutsFilter } from "./tryouts-filter"
 
@@ -20,9 +23,12 @@ interface TryoutListItem {
   isPast: boolean
 }
 
-async function getTryouts(tenantId: string): Promise<TryoutListItem[]> {
+async function getTryouts(
+  tenantId: string,
+  teamScope: string[] | null
+): Promise<TryoutListItem[]> {
   const tryouts: any[] = await prisma.tryout.findMany({
-    where: { tenantId },
+    where: teamScope ? { tenantId, teamId: { in: teamScope } } : { tenantId },
     select: {
       id: true,
       title: true,
@@ -55,9 +61,12 @@ async function getTryouts(tenantId: string): Promise<TryoutListItem[]> {
   })
 }
 
-async function getClubTeams(tenantId: string): Promise<{ id: string; name: string }[]> {
+async function getClubTeams(
+  tenantId: string,
+  teamScope: string[] | null
+): Promise<{ id: string; name: string }[]> {
   return (await prisma.team.findMany({
-    where: { tenantId },
+    where: teamScope ? { tenantId, id: { in: teamScope } } : { tenantId },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   })) as any
@@ -70,7 +79,18 @@ export default async function ClubTryoutsPage({
   params: { id: string }
   searchParams: { status?: string; team?: string; q?: string }
 }) {
-  const [tryouts, teams] = await Promise.all([getTryouts(params.id), getClubTeams(params.id)])
+  // Security fix 2026-07-20: a coach sees ONLY their own team's tryouts;
+  // club admins see all. teamScope=null means "all" (admin).
+  const user = await getCurrentUser()
+  if (!user) redirect("/sign-in")
+  const admin = await isClubAdmin(user.id, params.id)
+  const teamScope = admin ? null : await coachedTeamIds(user.id, params.id)
+  if (teamScope && teamScope.length === 0) redirect("/teams")
+
+  const [tryouts, teams] = await Promise.all([
+    getTryouts(params.id, teamScope),
+    getClubTeams(params.id, teamScope),
+  ])
 
   const statusFilter = searchParams.status
   const teamFilter = searchParams.team

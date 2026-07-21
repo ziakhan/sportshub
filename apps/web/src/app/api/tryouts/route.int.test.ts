@@ -66,10 +66,10 @@ afterAll(async () => {
   if (world) await destroyWorld(world.ctx)
 })
 
-// Security ruling 2026-07-20: tryout creation is CLUB-ADMIN ONLY (fees +
-// registration payments hang off it). Superseded the 2026-07-07 call that let
-// coaches/team managers post — that was part of the coach-overreach the owner
-// reported.
+// Security model 2026-07-20: a coach/team-manager may post a tryout FOR THEIR
+// OWN TEAM (createTryout sets teamId = their team); the server enforces
+// canActOnTeam. Club admins post for any team. A no-role parent never can.
+// Cross-team + team-less-by-coach rejection is covered in authz/coach-scope.
 describe("POST /api/tryouts — creation authz (integration)", () => {
   it("club owner can post a tryout", async () => {
     actAs(ownerId)
@@ -77,16 +77,16 @@ describe("POST /api/tryouts — creation authz (integration)", () => {
     expect(res.status).toBe(201)
   })
 
-  it("team manager can NOT post a tryout", async () => {
+  it("team manager can post a tryout for their own team", async () => {
     actAs(teamManagerId)
     const res = await createTryout({ title: "TM-posted tryout" })
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(201)
   })
 
-  it("coach (Staff) can NOT post a tryout", async () => {
+  it("coach (Staff) can post a tryout for their own team", async () => {
     actAs(coachId)
     const res = await createTryout({ title: "Coach-posted tryout" })
-    expect(res.status).toBe(403)
+    expect(res.status).toBe(201)
   })
 
   it("a parent with no club role cannot", async () => {

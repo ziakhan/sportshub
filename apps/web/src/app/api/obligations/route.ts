@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { merchantAccess } from "@/lib/payments/authz"
+import { isClubAdmin } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -24,16 +25,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
 
     if (tenantId) {
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId,
-          OR: [
-            { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-            { role: "PlatformAdmin" },
-          ],
-        },
-      })
-      if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      // Security fix 2026-07-20: club money is admin-only. This returns EVERY
+      // family's amounts owed, payer identities, and payment history across
+      // all teams — Staff (coaches) previously read the whole club here.
+      if (!(await isClubAdmin(userId, tenantId))) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      }
 
       const obligations = await prisma.paymentObligation.findMany({
         where: { payeeTenantId: tenantId, ...(status ? { status: status as any } : {}) },

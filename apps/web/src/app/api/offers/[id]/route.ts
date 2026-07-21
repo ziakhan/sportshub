@@ -5,6 +5,7 @@ import { z } from "zod"
 import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/respond-to-offer"
 import { resolveChargeContext } from "@/lib/payments/installments"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
+import { canActOnTeam } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -101,17 +102,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Offer not found" }, { status: 404 })
     }
 
-    // Verify access: must be the parent of the player OR club staff
+    // Verify access: the player's parent, OR club staff scoped to the offer's
+    // team (security fix 2026-07-20 — was any tenant Staff, exposing every
+    // team's offers to a one-team coach).
     const isParent = offer.player.parentId === sessionInfo.userId
-    const isClubStaff = await prisma.userRole.findFirst({
-      where: {
-        userId: sessionInfo.userId,
-        OR: [
-          { tenantId: offer.team.tenant.id, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-          { role: "PlatformAdmin" },
-        ],
-      },
-    })
+    const isClubStaff =
+      !isParent && (await canActOnTeam(sessionInfo.userId, offer.team.tenant.id, offer.teamId))
 
     if (!isParent && !isClubStaff) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })

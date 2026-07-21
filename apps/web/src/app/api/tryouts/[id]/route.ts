@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -54,19 +55,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Allow club staff or PlatformAdmin to see unpublished tryouts
+    // Draft (unpublished) tryouts are visible only to those who may manage
+    // them (security fix 2026-07-20 — was ANY tenant role, incl. a Player):
+    // club admins, or staff of the tryout's own team.
     const session = await getServerSession(authOptions)
     if (!tryout.isPublished) {
       if (!session?.user?.id) {
         return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
       }
-      const hasAccess = await prisma.userRole.findFirst({
-        where: {
-          userId: session.user.id,
-          OR: [{ tenantId: tryout.tenantId }, { role: "PlatformAdmin" }],
-        },
-      })
-      if (!hasAccess) {
+      const canSee =
+        (await isClubAdmin(session.user.id, tryout.tenantId)) ||
+        (tryout.teamId
+          ? await canActOnTeam(session.user.id, tryout.tenantId, tryout.teamId)
+          : false)
+      if (!canSee) {
         return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
       }
     }
@@ -126,30 +128,40 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const tryout = await prisma.tryout.findUnique({
       where: { id: params.id },
-      select: { id: true, tenantId: true, title: true, isPublished: true },
+      select: { id: true, tenantId: true, teamId: true, title: true, isPublished: true },
     })
 
     if (!tryout) {
       return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
     }
 
-    // Verify ClubOwner, ClubManager, or PlatformAdmin
-    const userRole = await prisma.userRole.findFirst({
-      where: {
-        userId: session.user.id,
-        OR: [
-          { tenantId: tryout.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
-          { role: "PlatformAdmin" },
-        ],
-      },
-    })
-
-    if (!userRole) {
+    // Security fix 2026-07-20: admins edit any tryout; a coach edits their OWN
+    // team's tryout (club-wide, team-less tryouts stay admin-only).
+    const admin = await isClubAdmin(session.user.id, tryout.tenantId)
+    const allowed = admin
+      ? true
+      : tryout.teamId
+        ? await canActOnTeam(session.user.id, tryout.tenantId, tryout.teamId)
+        : false
+    if (!allowed) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const body = await request.json()
     const validatedData = updateTryoutSchema.parse(body)
+
+    // A coach may not reassign the tryout to a team they don't coach.
+    if (
+      !admin &&
+      validatedData.teamId !== undefined &&
+      validatedData.teamId !== tryout.teamId &&
+      !(validatedData.teamId && (await canActOnTeam(session.user.id, tryout.tenantId, validatedData.teamId)))
+    ) {
+      return NextResponse.json(
+        { error: "You can only assign a tryout to your own team" },
+        { status: 403 }
+      )
+    }
 
     const data: Record<string, unknown> = {}
     if (validatedData.title !== undefined) data.title = validatedData.title

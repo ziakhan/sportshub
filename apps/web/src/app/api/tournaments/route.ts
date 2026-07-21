@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
+import { isClubAdmin } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -39,22 +40,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createTournamentSchema.parse(body)
 
-    // Club roles must be scoped to the HOSTING tenant (previously any club's
-    // owner could create under an arbitrary tenantId); league operators and
-    // platform admins pass unscoped. Coaches (Staff) never create tournaments.
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [
-          ...(data.tenantId
-            ? [{ tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager"] } }]
-            : []),
-          { role: "LeagueOwner" },
-          { role: "LeagueManager" },
-          { role: "PlatformAdmin" },
-        ],
-      } as any,
-    })
+    // Security fix 2026-07-20: a tournament attributed to a club (tenantId)
+    // may ONLY be created by that club's admin (or platform admin). The old
+    // check let any LeagueOwner/LeagueManager pass the unscoped branch while
+    // writing an arbitrary `tenantId`, so a throwaway-league owner could spoof
+    // a tournament as any real club. A club-less tournament (league/personal)
+    // still needs a league operator or platform admin.
+    let hasAccess: boolean
+    if (data.tenantId) {
+      hasAccess = await isClubAdmin(userId, data.tenantId)
+    } else {
+      const role = await prisma.userRole.findFirst({
+        where: {
+          userId,
+          role: { in: ["LeagueOwner", "LeagueManager", "PlatformAdmin"] as any },
+        },
+        select: { id: true },
+      })
+      hasAccess = !!role
+    }
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }

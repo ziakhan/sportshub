@@ -16,8 +16,16 @@ export async function GET() {
     const session = await getSessionUserId()
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    // Security fix 2026-07-20: the operator summary is CLUB-WIDE (every team's
+    // offers/games/tryouts), so only club admins see it — a coach's tenant-
+    // scoped Staff row must NOT unlock the whole club here. Coaches use the
+    // native team screens instead.
     const roles = await prisma.userRole.findMany({
-      where: { userId: session.userId, tenantId: { not: null } },
+      where: {
+        userId: session.userId,
+        tenantId: { not: null },
+        role: { in: ["ClubOwner", "ClubManager"] },
+      },
       select: { tenantId: true, role: true },
     })
     const tenantIds = Array.from(new Set(roles.map((r) => r.tenantId as string)))

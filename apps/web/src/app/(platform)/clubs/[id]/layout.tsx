@@ -74,12 +74,16 @@ export default async function ClubLayout({
     const allowedTeamPrefixes = myTeams.map(
       (t) => `/clubs/${params.id}/teams/${t.id}`
     )
-    const onOwnTeamPage = allowedTeamPrefixes.some(
+    // Coaches also manage their OWN team's tryouts. Every page under
+    // /clubs/[id]/tryouts is role-scoped internally (list + create dropdown
+    // filtered to coached teams; [tryoutId] guarded by its own layout).
+    const coachAreaPrefixes = [`/clubs/${params.id}/tryouts`]
+    const onAllowed = [...allowedTeamPrefixes, ...coachAreaPrefixes].some(
       (p) => pathname === p || pathname.startsWith(`${p}/`)
     )
     // Public club page preview stays open; everything else club-wide is off.
     const onPublicPreview = pathname === `/clubs/${params.id}/public`
-    if (!onOwnTeamPage && !onPublicPreview) {
+    if (!onAllowed && !onPublicPreview) {
       if (myTeams.length === 1) {
         redirect(`/clubs/${params.id}/teams/${myTeams[0].id}/dashboard`)
       }
@@ -112,10 +116,14 @@ export default async function ClubLayout({
         { label: "Messages", href: `/clubs/${params.id}/messages` },
         { label: "Settings", href: `/clubs/${params.id}/settings` },
       ]
-    : myTeams.map((t) => ({
-        label: t.name,
-        href: `/clubs/${params.id}/teams/${t.id}/dashboard`,
-      }))
+    : [
+        ...myTeams.map((t) => ({
+          label: t.name,
+          href: `/clubs/${params.id}/teams/${t.id}/dashboard`,
+        })),
+        // Coaches manage their own team's tryouts (scoped list + create)
+        { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
+      ]
 
   return (
     <div className="font-barlow" style={brandStyle(primaryColor)}>
