@@ -141,3 +141,46 @@ Plan to onboard venues as venue operators later. At that point they edit the
 venue's real universal hours + info. Until then, the global venue hours are
 essentially read-only reference; all scheduling uses per-entity availability
 (2b). Capture only — do not build the operator role in this batch.
+
+---
+
+## 3. Phone numbers: data gap + texting strategy (owner 2026-07-21, mostly DEFER)
+
+### 3a. Bug — "phone shows mandatory but empty" = DATA GAP (confirmed)
+- `User.phoneNumber` is `String?` (optional in schema) and **signup collects
+  only email+password** (`api/auth/signup` — no phone). Only ONBOARDING forms
+  (staff-form, parent-form) + `settings/profile` require it (red `*` + zod
+  `min(7)`).
+- So: seed/demo accounts (Lisa Reid etc.) and anyone who signed up but didn't
+  finish onboarding have `phoneNumber = null`, yet the profile form marks it
+  required → the owner sees a required field that's empty.
+- **Fix (small, do in batch):** (a) backfill demo/seed phones so demo looks
+  right; (b) real accounts going forward already get it enforced at onboarding;
+  (c) profile page should PROMPT to complete a missing phone (a "finish your
+  profile" nudge) rather than just showing a bare required-but-empty field.
+  Do NOT make the schema column required (would break legacy null rows).
+
+### 3b. Texting / phone-verification / phone-signup — my recommendation
+Infra already exists: **`lib/sms.ts` = Twilio seam, DARK** ("stays dark until
+the owner [provides creds]"; built for club-claim verify + future phone login).
+So this WAS consciously deferred pending Twilio creds — owner remembers right.
+
+- **Keep EMAIL as the primary account identifier + login.** Free, reliable,
+  already wired (magic login, OCI transactional email, CASL unsubscribe).
+  **DEFER / likely skip phone-based signup or phone-only login** — adds per-SMS
+  cost + OTP friction for little gain.
+- **Make phone a first-class CONTACT channel for texting** (what the owner
+  actually wants). We already collect it at onboarding. Unlock = **Twilio creds
+  (owner-side)** → activate the dark `lib/sms.ts` seam → SMS becomes a
+  notification channel (like push) for TIME-SENSITIVE items: game
+  cancelled/rescheduled, waiver "sign before the game", payment due.
+- **OTP phone verification: lightweight, and only ONCE SMS is live** — verify
+  the number the first time we're about to text it (send a code, confirm), so
+  we never text a stale/wrong number. Not before SMS exists.
+- **⚠️ Canada consent (CASL / CRTC):** texting Canadians needs consent.
+  Transactional SMS (your kid's game moved) is defensible; promotional needs
+  express consent. Add an SMS-consent flag, default transactional-only — mirror
+  the existing email consent model (upsertImpliedConsent / grantExpressConsent).
+
+**Blocking dependency:** owner provides Twilio credentials. Until then, the
+whole texting/verify track stays deferred; only 3a (data gap) is actionable now.
