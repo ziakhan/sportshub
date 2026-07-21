@@ -264,3 +264,52 @@ export async function sendOfferEmail({
   `
   return sendEmail({ to, subject, html })
 }
+
+export async function sendWaiverSignEmail({
+  to,
+  parentName,
+  playerName,
+  orgName,
+  waiverTitle,
+  seasonLabel,
+  teamName,
+  link,
+}: {
+  to: string
+  parentName?: string | null
+  playerName: string
+  orgName: string
+  waiverTitle: string
+  seasonLabel?: string | null
+  teamName?: string | null
+  link: string
+}) {
+  const greeting = parentName ? `Hi ${escapeHtml(parentName)},` : "Hi,"
+  const context = [teamName, seasonLabel].filter(Boolean).map((v) => escapeHtml(v as string)).join(" · ")
+  const subject = `Action needed: sign ${waiverTitle} for ${playerName}`
+  const html = `
+    <div style="font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 8px;">
+      <div style="background: #ffffff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 32px;">
+        <p style="margin: 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #4f46e5; font-weight: 700;">${escapeHtml(orgName)}</p>
+        <h1 style="margin: 10px 0 0; font-size: 21px; color: #18181b;">${escapeHtml(waiverTitle)}</h1>
+        ${context ? `<p style="margin: 6px 0 0; font-size: 13px; color: #71717a;">${context}</p>` : ""}
+        <p style="margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: #3f3f46;">
+          ${greeting} before <strong>${escapeHtml(playerName)}</strong> can participate with ${escapeHtml(orgName)},
+          a parent or guardian needs to review and sign this document. It takes about a minute.
+        </p>
+        <p style="margin: 22px 0 0;">
+          <a href="${link}" style="display: inline-block; padding: 13px 28px; background: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px;">
+            Review and sign
+          </a>
+        </p>
+        <p style="margin: 24px 0 0; font-size: 12px; line-height: 1.6; color: #a1a1aa;">
+          This link is personal to ${escapeHtml(playerName)} and expires in 30 days.
+          If someone else in your family already signed, the page will tell you and nothing more is needed.
+        </p>
+      </div>
+      ${transactionalFooter(orgName)}
+    </div>
+  `
+  const text = `${greeting}\n\nBefore ${playerName} can participate with ${orgName}, a parent or guardian needs to review and sign: ${waiverTitle}.\n\nReview and sign: ${link}\n\nThis link is personal to ${playerName} and expires in 30 days.`
+  return sendEmail({ to, subject, html, text })
+}

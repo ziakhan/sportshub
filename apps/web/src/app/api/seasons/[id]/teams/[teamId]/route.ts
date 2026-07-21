@@ -5,6 +5,7 @@ import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
 import { isSeasonLocked } from "@/lib/seasons/season-lock"
 import { cancelObligationIfUnpaid, ensureObligation } from "@/lib/payments/obligations"
+import { sendWaiversForApprovedSubmission } from "@/lib/waivers/auto-send"
 
 export const dynamic = "force-dynamic"
 
@@ -185,6 +186,17 @@ export async function PATCH(
       }
       return row
     })
+
+    // Owner flow 2026-07-20 (waivers-esign): approval triggers waiver emails to
+    // every roster parent for the league's required waivers. Outside the
+    // transaction on purpose — a slow SMTP must never roll back an approval.
+    if (approving) {
+      try {
+        await sendWaiversForApprovedSubmission(submission.id)
+      } catch (error) {
+        console.error("Waiver auto-send failed for submission", submission.id, error)
+      }
+    }
 
     // Notify the opposing club of every cancelled game
     if (cancelledGames.length > 0) {

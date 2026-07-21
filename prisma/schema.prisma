@@ -48,62 +48,63 @@ model User {
   pushQuietEnd   String?
 
   // Relationships
-  roles               UserRole[]
-  players             Player[]            @relation("ParentPlayers")
-  tryoutSignups       TryoutSignup[]
-  rsvpResponses       EventRsvp[]         @relation("RsvpResponses")
-  programAssignments  ProgramStaff[]      @relation("ProgramAssignments")
-  paymentsAsPayer     Payment[]           @relation("PayerPayments")
-  paymentsAsPayee     Payment[]           @relation("PayeePayments")
-  paymentsRecorded    Payment[]           @relation("RecordedPayments")
-  obligations         PaymentObligation[] @relation("UserObligations")
-  auditLogs           AuditLog[]
-  reviews             Review[]            @relation("ReviewsWritten")
-  reviewsReceived     Review[]            @relation("ReviewsReceived")
-  announcements       Announcement[]
-  sentInvitations     StaffInvitation[]   @relation("SentInvitations")
-  receivedInvitations StaffInvitation[]   @relation("ReceivedInvitations")
-  sentPlayerInvitations     PlayerInvitation[] @relation("SentPlayerInvitations")
-  receivedPlayerInvitations PlayerInvitation[] @relation("ReceivedPlayerInvitations")
-  notifications       Notification[]
-  clubClaims          ClubClaim[]
-  houseLeagueSignups  HouseLeagueSignup[]
-  campSignups         CampSignup[]
-  tournaments         Tournament[]
-  posts               Post[]
-  follows             Follow[]
-  teamMessages        TeamMessage[]       @relation("TeamMessagesSent")
-  teamChatReads       TeamChatRead[]      @relation("TeamChatReads")
-  pollsCreated        Poll[]              @relation("PollsCreated")
-  teamEventsCreated   TeamEvent[]         @relation("TeamEventsCreated")
-  connectedCustomers  ConnectedCustomer[] @relation("ConnectedCustomers")
-  pollVotes           PollVote[]          @relation("PollVotes")
-  rosterChangeRequests    RosterChangeRequest[] @relation("RosterChangeRequests")
-  rosterChangeResolutions RosterChangeRequest[] @relation("RosterChangeResolutions")
-  leagueRefereePools      LeagueReferee[]         @relation("LeagueReferees")
-  refereeAvailabilities   RefereeAvailability[]   @relation("RefereeAvailabilities")
-  targetedRefereeRequests RefereeSessionRequest[] @relation("TargetedRefereeRequests")
-  acceptedRefereeRequests RefereeSessionRequest[] @relation("AcceptedRefereeRequests")
-  refreshTokens           RefreshToken[]          @relation("UserRefreshTokens")
-  devices                 Device[]                @relation("UserDevices")
-  submissionRequestsMade    TeamSubmissionRequest[] @relation("SubmissionRequestsMade")
-  submissionRequestsDecided TeamSubmissionRequest[] @relation("SubmissionRequestsDecided")
-  messageReactions          MessageReaction[]       @relation("MessageReactions")
-  chatMutes                 ChatMute[]              @relation("ChatMutes")
+  roles                     UserRole[]
+  players                   Player[]                  @relation("ParentPlayers")
+  tryoutSignups             TryoutSignup[]
+  rsvpResponses             EventRsvp[]               @relation("RsvpResponses")
+  programAssignments        ProgramStaff[]            @relation("ProgramAssignments")
+  paymentsAsPayer           Payment[]                 @relation("PayerPayments")
+  paymentsAsPayee           Payment[]                 @relation("PayeePayments")
+  paymentsRecorded          Payment[]                 @relation("RecordedPayments")
+  obligations               PaymentObligation[]       @relation("UserObligations")
+  auditLogs                 AuditLog[]
+  reviews                   Review[]                  @relation("ReviewsWritten")
+  reviewsReceived           Review[]                  @relation("ReviewsReceived")
+  announcements             Announcement[]
+  sentInvitations           StaffInvitation[]         @relation("SentInvitations")
+  receivedInvitations       StaffInvitation[]         @relation("ReceivedInvitations")
+  sentPlayerInvitations     PlayerInvitation[]        @relation("SentPlayerInvitations")
+  receivedPlayerInvitations PlayerInvitation[]        @relation("ReceivedPlayerInvitations")
+  notifications             Notification[]
+  clubClaims                ClubClaim[]
+  houseLeagueSignups        HouseLeagueSignup[]
+  campSignups               CampSignup[]
+  tournaments               Tournament[]
+  posts                     Post[]
+  follows                   Follow[]
+  teamMessages              TeamMessage[]             @relation("TeamMessagesSent")
+  teamChatReads             TeamChatRead[]            @relation("TeamChatReads")
+  pollsCreated              Poll[]                    @relation("PollsCreated")
+  teamEventsCreated         TeamEvent[]               @relation("TeamEventsCreated")
+  connectedCustomers        ConnectedCustomer[]       @relation("ConnectedCustomers")
+  pollVotes                 PollVote[]                @relation("PollVotes")
+  rosterChangeRequests      RosterChangeRequest[]     @relation("RosterChangeRequests")
+  rosterChangeResolutions   RosterChangeRequest[]     @relation("RosterChangeResolutions")
+  leagueRefereePools        LeagueReferee[]           @relation("LeagueReferees")
+  refereeAvailabilities     RefereeAvailability[]     @relation("RefereeAvailabilities")
+  targetedRefereeRequests   RefereeSessionRequest[]   @relation("TargetedRefereeRequests")
+  acceptedRefereeRequests   RefereeSessionRequest[]   @relation("AcceptedRefereeRequests")
+  refreshTokens             RefreshToken[]            @relation("UserRefreshTokens")
+  devices                   Device[]                  @relation("UserDevices")
+  submissionRequestsMade    TeamSubmissionRequest[]   @relation("SubmissionRequestsMade")
+  submissionRequestsDecided TeamSubmissionRequest[]   @relation("SubmissionRequestsDecided")
+  waiverSignatures          WaiverSignature[]         @relation("WaiverSigner")
+  messageReactions          MessageReaction[]         @relation("MessageReactions")
+  chatMutes                 ChatMute[]                @relation("ChatMutes")
   conversationParticipants  ConversationParticipant[] @relation("ConversationParticipants")
-  directMessagesSent        DirectMessage[]         @relation("DirectMessagesSent")
-  scoreInvitesCreated       GameScoreInvite[]       @relation("ScoreInvitesCreated")
-  loginTokens               LoginToken[]            @relation("UserLoginTokens")
+  directMessagesSent        DirectMessage[]           @relation("DirectMessagesSent")
+  scoreInvitesCreated       GameScoreInvite[]         @relation("ScoreInvitesCreated")
+  loginTokens               LoginToken[]              @relation("UserLoginTokens")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  refereeProfile            RefereeProfile?
+  reviewInvites             ReviewInvite[]      @relation("ReviewInvites")
+  withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
+  withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
 
   @@index([email])
   @@index([status])
-  refereeProfile RefereeProfile?
-  reviewInvites ReviewInvite[] @relation("ReviewInvites")
-  withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
-  withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
 }
 
 enum UserStatus {
@@ -237,21 +238,21 @@ enum Role {
 // ============================================
 
 model Tenant {
-  id           String  @id @default(uuid())
-  slug         String  @unique
-  reviewInviteOverride String? // null = inherit platform reviewInvitePolicy
-  name         String
-  description  String? @db.Text
-  phoneNumber  String?
-  contactEmail String?
-  address      String?
-  city         String?
-  state        String?
-  zipCode      String?
-  country      String  @default("US") // ISO 3166-1 alpha-2
-  currency     String  @default("CAD") // ISO 4217
-  website      String?
-  customDomain String? @unique
+  id                     String    @id @default(uuid())
+  slug                   String    @unique
+  reviewInviteOverride   String? // null = inherit platform reviewInvitePolicy
+  name                   String
+  description            String?   @db.Text
+  phoneNumber            String?
+  contactEmail           String?
+  address                String?
+  city                   String?
+  state                  String?
+  zipCode                String?
+  country                String    @default("US") // ISO 3166-1 alpha-2
+  currency               String    @default("CAD") // ISO 4217
+  website                String?
+  customDomain           String?   @unique
   // Custom-domain plumbing (seo-strategy §6c; inert until CUSTOM_DOMAINS_ENABLED)
   customDomainVerifiedAt DateTime? // set by the DNS Verify endpoint
   customDomainCanonical  Boolean   @default(false) // false = mirror mode (their domain redirects to us)
@@ -272,38 +273,39 @@ model Tenant {
   isFeatured Boolean @default(false)
 
   // Relationships
-  branding         TenantBranding?
-  features         TenantFeatures?
-  teams            Team[]
-  staff            UserRole[]
-  tryouts          Tryout[]
-  practices        Practice[]
-  venues           Venue[]
-  announcements    Announcement[]
-  payments         Payment[]         @relation("TenantPayments")
-  paymentConfig    PaymentConfig?
-  payerObligations PaymentObligation[] @relation("TenantPayerObligations")
-  payeeObligations PaymentObligation[] @relation("TenantPayeeObligations")
-  reviews          Review[]
-  staffInvitations StaffInvitation[]
+  branding          TenantBranding?
+  features          TenantFeatures?
+  teams             Team[]
+  staff             UserRole[]
+  tryouts           Tryout[]
+  practices         Practice[]
+  venues            Venue[]
+  announcements     Announcement[]
+  payments          Payment[]           @relation("TenantPayments")
+  paymentConfig     PaymentConfig?
+  payerObligations  PaymentObligation[] @relation("TenantPayerObligations")
+  payeeObligations  PaymentObligation[] @relation("TenantPayeeObligations")
+  reviews           Review[]
+  staffInvitations  StaffInvitation[]
   playerInvitations PlayerInvitation[]
-  clubClaims       ClubClaim[]
-  houseLeagues     HouseLeague[]
-  camps            Camp[]
-  offerTemplates   OfferTemplate[]
-  tournaments      Tournament[]
-  postTags         PostTag[]
-  follows          Follow[]
+  clubClaims        ClubClaim[]
+  houseLeagues      HouseLeague[]
+  camps             Camp[]
+  offerTemplates    OfferTemplate[]
+  tournaments       Tournament[]
+  postTags          PostTag[]
+  follows           Follow[]
+  waiverDocuments   WaiverDocument[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  reviewInvites ReviewInvite[] @relation("ReviewInvites")
 
   @@index([slug])
   @@index([customDomain])
   // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
   // imported clubs (perf audit 2026-07-06)
   @@index([status])
-  reviewInvites ReviewInvite[] @relation("ReviewInvites")
 }
 
 enum TenantPlan {
@@ -379,8 +381,8 @@ model Team {
   players           TeamPlayer[]
   staff             UserRole[]
   seasonSubmissions TeamSubmission[]
-  homeGames         Game[]           @relation("HomeTeam")
-  awayGames         Game[]           @relation("AwayTeam")
+  homeGames         Game[]             @relation("HomeTeam")
+  awayGames         Game[]             @relation("AwayTeam")
   practices         Practice[]
   announcements     Announcement[]
   offers            Offer[]
@@ -391,14 +393,14 @@ model Team {
   postTags          PostTag[]
   follows           Follow[]
 
-  messages      TeamMessage[]
+  messages           TeamMessage[]
   chatMutes          ChatMute[]
   conversations      Conversation[]
   submissionRequests TeamSubmissionRequest[]
-  chatReads     TeamChatRead[]
-  polls         Poll[]
-  practiceSlots PracticeSlot[]
-  eventLinks    TeamEventTeam[]
+  chatReads          TeamChatRead[]
+  polls              Poll[]
+  practiceSlots      PracticeSlot[]
+  eventLinks         TeamEventTeam[]
 
   // Set when staff announce the practice schedule to families (bell+email);
   // the public team page shows practice days only after this.
@@ -410,15 +412,15 @@ model Team {
   // (Huskies U13 2025-26 → U14 2026-27) for rollover + future multi-season stats.
   archivedAt      DateTime?
   continuedFromId String?
-  continuedFrom   Team?   @relation("TeamLineage", fields: [continuedFromId], references: [id], onDelete: SetNull)
-  continuations   Team[]  @relation("TeamLineage")
+  continuedFrom   Team?     @relation("TeamLineage", fields: [continuedFromId], references: [id], onDelete: SetNull)
+  continuations   Team[]    @relation("TeamLineage")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, name, ageGroup, season])
   @@index([tenantId])
   @@index([ageGroup])
-  @@unique([tenantId, name, ageGroup, season])
 }
 
 // Team <-> family chat (TeamSnap-replacement messaging). One channel per
@@ -578,16 +580,16 @@ model TeamSubmissionRequest {
 
   divisionId String
   // Roster version chosen by the requester (playerIds) — used at approval.
-  playerIds Json?
+  playerIds  Json?
 
   requestedById String
   requestedBy   User   @relation("SubmissionRequestsMade", fields: [requestedById], references: [id], onDelete: Cascade)
 
   status        SubmissionRequestStatus @default(PENDING)
   decidedById   String?
-  decidedBy     User?     @relation("SubmissionRequestsDecided", fields: [decidedById], references: [id])
+  decidedBy     User?                   @relation("SubmissionRequestsDecided", fields: [decidedById], references: [id])
   decidedAt     DateTime?
-  declineReason String?   @db.Text
+  declineReason String?                 @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -625,7 +627,7 @@ model TeamEvent {
   createdBy   User   @relation("TeamEventsCreated", fields: [createdById], references: [id], onDelete: Cascade)
 
   title           String
-  description     String? @db.Text
+  description     String?  @db.Text
   location        String?
   startAt         DateTime
   durationMinutes Int      @default(60)
@@ -677,7 +679,7 @@ model Poll {
   status      PollStatus @default(OPEN)
   closedAt    DateTime?
 
-  questions PollQuestion[]
+  questions   PollQuestion[]
   // Set when this poll was posted as a quick poll in the team chat
   chatMessage TeamMessage?
 
@@ -785,13 +787,15 @@ model Player {
   seasonRosterEntries SeasonRosterPlayer[]
   postTags            PostTag[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  tryoutSignups      TryoutSignup[]
+  rsvps              EventRsvp[]
+  waiverSignRequests WaiverSignRequest[]
+  waiverSignatures   WaiverSignature[]
 
   @@index([parentId])
   @@index([isMinor])
-  tryoutSignups TryoutSignup[]
-  rsvps         EventRsvp[]
 }
 
 model TeamPlayer {
@@ -1018,7 +1022,7 @@ model Offer {
   chosenOptionId String?       @unique
   chosenOption   OfferOption?  @relation("ChosenOption", fields: [chosenOptionId], references: [id])
   // Which way the family chose to pay at accept (payments v2 Stage C)
-  paymentPlan PaymentPlan?
+  paymentPlan    PaymentPlan?
 
   message   String?  @db.Text
   expiresAt DateTime
@@ -1072,10 +1076,10 @@ model OfferOption {
   // Full payment and/or an installment plan = a deposit (due on accept) +
   // OfferInstallmentTerm rows (each an amount + due date). Snapshotted here
   // because the option is already offer-scoped.
-  allowFullPay     Boolean @default(true)
-  allowInstallments Boolean @default(false)
-  depositAmount    Decimal? @db.Decimal(10, 2)
-  installmentTerms OfferInstallmentTerm[]
+  allowFullPay      Boolean                @default(true)
+  allowInstallments Boolean                @default(false)
+  depositAmount     Decimal?               @db.Decimal(10, 2)
+  installmentTerms  OfferInstallmentTerm[]
 
   chosenBy Offer? @relation("ChosenOption")
 
@@ -1149,22 +1153,23 @@ model League {
 
   // Live-scoring configuration (docs/live-scoring-design.md) — owner-confirmed
   // defaults: STANDARD depth, simple clock ON.
-  statDepth     StatDepth  @default(STANDARD)
-  gameClockMode ClockMode  @default(SIMPLE)
-  periodType    PeriodType @default(QUARTERS)
-  periodMinutes Int        @default(10)
+  statDepth              StatDepth  @default(STANDARD)
+  gameClockMode          ClockMode  @default(SIMPLE)
+  periodType             PeriodType @default(QUARTERS)
+  periodMinutes          Int        @default(10)
   // Referee signs the scoresheet before a game can be finalized
-  requireRefereeApproval Boolean @default(false)
+  requireRefereeApproval Boolean    @default(false)
 
-  seasons Season[]
-  staff   UserRole[]
-  reviews Review[]
-  paymentConfig PaymentConfig?
-  obligations   PaymentObligation[] @relation("LeagueObligations")
+  seasons         Season[]
+  staff           UserRole[]
+  reviews         Review[]
+  paymentConfig   PaymentConfig?
+  obligations     PaymentObligation[]     @relation("LeagueObligations")
   leagueReferees  LeagueReferee[]
   refereeRequests RefereeSessionRequest[] @relation("LeagueRefereeRequests")
-  postTags      PostTag[]
-  follows       Follow[]
+  postTags        PostTag[]
+  follows         Follow[]
+  waiverDocuments WaiverDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1213,22 +1218,24 @@ model Season {
   playoffFormat String?
   playoffTeams  Int?
 
-  divisions        Division[]
-  teamSubmissions  TeamSubmission[]
+  divisions          Division[]
+  teamSubmissions    TeamSubmission[]
   submissionRequests TeamSubmissionRequest[]
-  sessions         SeasonSession[]
-  seasonVenues     SeasonVenue[]
-  rosters          SeasonRoster[]
-  games            Game[]
-  schedulingGroups SchedulingGroup[]
+  sessions           SeasonSession[]
+  seasonVenues       SeasonVenue[]
+  rosters            SeasonRoster[]
+  games              Game[]
+  schedulingGroups   SchedulingGroup[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  reviewInvites      ReviewInvite[]
+  waiverSignRequests WaiverSignRequest[]
+  waiverSignatures   WaiverSignature[]
 
+  @@unique([leagueId, label])
   @@index([leagueId])
   @@index([status])
-  @@unique([leagueId, label])
-  reviewInvites ReviewInvite[]
 }
 
 enum SeasonStatus {
@@ -1353,8 +1360,8 @@ model RosterChangeRequest {
 
   status         RosterChangeRequestStatus @default(PENDING)
   resolvedById   String?
-  resolvedBy     User?     @relation("RosterChangeResolutions", fields: [resolvedById], references: [id])
-  resolutionNote String?   @db.Text
+  resolvedBy     User?                     @relation("RosterChangeResolutions", fields: [resolvedById], references: [id])
+  resolutionNote String?                   @db.Text
   resolvedAt     DateTime?
 
   createdAt DateTime @default(now())
@@ -1405,8 +1412,8 @@ model SeasonSession {
 
   // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
   playoffPlan Json?
-  days  SeasonSessionDay[]
-  games Game[]
+  days        SeasonSessionDay[]
+  games       Game[]
 
   createdAt DateTime @default(now())
 
@@ -1417,7 +1424,6 @@ enum SessionPhase {
   REGULAR
   PLAYOFF
 }
-
 
 model SeasonSessionDay {
   id        String        @id @default(uuid())
@@ -1645,13 +1651,13 @@ model Game {
   scoringSessionAt   DateTime?
 
   // Referee sign-off at finalize (paper-scoresheet style; league-configurable)
-  refereeName     String?
-  refereeSignedAt DateTime?
+  refereeName      String?
+  refereeSignedAt  DateTime?
   // Drawn signature (PNG data URL from the console's signature pad)
-  refereeSignature String? @db.Text
+  refereeSignature String?   @db.Text
   // True when the sign-off was PIN-verified against the ASSIGNED referee's
   // account (UserRole role=Referee gameId=this game) — the strong approval.
-  refereeVerified Boolean @default(false)
+  refereeVerified  Boolean   @default(false)
 
   events       GameEvent[]
   scoreInvites GameScoreInvite[]
@@ -1701,11 +1707,11 @@ model GameEvent {
   teamId    String? // scoring/fouling team; null for period/clock events
   playerId  String? // Player involved
 
-  made      Boolean? // shots: made vs missed
-  points    Int? // For SCORE events
-  period    Int? // 1-4 (quarters) or 1-2 (halves)
+  made         Boolean? // shots: made vs missed
+  points       Int? // For SCORE events
+  period       Int? // 1-4 (quarters) or 1-2 (halves)
   clockSeconds Int? // seconds remaining in the period when recorded
-  timestamp DateTime @default(now())
+  timestamp    DateTime @default(now())
 
   // Per-game monotonic order (server-assigned) + offline idempotency key
   sequence      Int     @default(0)
@@ -1860,8 +1866,8 @@ model Practice {
   teamId String
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  venueId String?
-  venue   Venue?  @relation(fields: [venueId], references: [id])
+  venueId  String?
+  venue    Venue?  @relation(fields: [venueId], references: [id])
   // Free-text fallback ("Main Gym") — practices rarely justify a Venue row
   location String?
 
@@ -1895,7 +1901,7 @@ model PracticeSlot {
 
   dayOfWeek       Int // 0 = Sunday … 6 = Saturday
   startTime       String // "18:30" wall time in the app timezone
-  durationMinutes Int    @default(90)
+  durationMinutes Int     @default(90)
   location        String?
 
   practices Practice[]
@@ -2000,16 +2006,16 @@ model Payment {
   id String @id @default(uuid())
 
   // Stripe
-  stripePaymentIntentId String? @unique
-  stripeChargeId        String? @unique
+  stripePaymentIntentId      String? @unique
+  stripeChargeId             String? @unique
   // Connected account the charge lives on (CONNECT_DIRECT) — null = platform
-  stripeAccountId       String?
+  stripeAccountId            String?
   // PLATFORM_COLLECT destination charges: the connected account the club's
   // share transfers to at charge time; refunds must reverse_transfer.
   stripeDestinationAccountId String?
   // Auto-collect invoice backing a scheduled installment (payments v2 hybrid).
   // Cron finalizes it on the due date; Stripe charges + Smart-Retries + duns.
-  stripeInvoiceId String? @unique
+  stripeInvoiceId            String? @unique
 
   // Parties — payer may be a person (family flows) or an organization via
   // the obligation (club→league team fees), hence nullable.
@@ -2044,7 +2050,7 @@ model Payment {
   method       PaymentMethod      @default(STRIPE)
   // Club staff who recorded an offline payment (cash/e-transfer bookkeeping)
   recordedById String?
-  recordedBy   User?   @relation("RecordedPayments", fields: [recordedById], references: [id])
+  recordedBy   User?              @relation("RecordedPayments", fields: [recordedById], references: [id])
   note         String?
 
   // Relationships
@@ -2270,7 +2276,7 @@ model MediaAsset {
   durationS Int?
   width     Int?
   height    Int?
-  sortOrder Int    @default(0)
+  sortOrder Int            @default(0)
 
   createdAt DateTime @default(now())
 
@@ -2501,7 +2507,7 @@ model StaffInvitation {
   role        Role
   teamId      String?
   designation CoachDesignation? // carried through on accept
-  message     String? @db.Text
+  message     String?           @db.Text
 
   type   InvitationType
   status InvitationStatus @default(PENDING)
@@ -2827,7 +2833,7 @@ model PlatformSettings {
   // One of design-tokens' PALETTES ids ("hardwood" | "fastbreak" | "primetime").
   // Unknown values fail open to hardwood. Future custom palettes will add a
   // JSON override column beside this.
-  themePalette String @default("hardwood")
+  themePalette       String @default("hardwood")
   // Review invites (owner 2026-07-18): platform default, clubs may override
   reviewInvitePolicy String @default("AUTO") // AUTO | OFF
   reviewWindowDays   Int    @default(30)
@@ -2880,8 +2886,8 @@ model ClubClaim {
   attempts           Int       @default(0) // wrong-code counter (cap enforced in code)
 
   // v2 verification channel: EMAIL | SMS | PROOF (paper-proof -> admin review)
-  method       String?
-  contactPoint String? // the exact email/phone the code went to
+  method        String?
+  contactPoint  String? // the exact email/phone the code went to
   // paper-proof path: how we reach the claimer (no account yet)
   claimantEmail String?
   proofNote     String? @db.Text
@@ -3073,7 +3079,7 @@ model CommunicationConsent {
   source String // e.g. "registration:camp:<id>" | "checkbox:signup" | "unsubscribe-link"
 
   /// Rolls forward on each new registration — anchors the implied-consent window.
-  lastEngagedAt DateTime @default(now())
+  lastEngagedAt DateTime  @default(now())
   withdrawnAt   DateTime?
 
   createdAt DateTime @default(now())
@@ -3088,21 +3094,118 @@ model CommunicationConsent {
 /// Audit log for every marketing/broadcast send (composer ships phase 3, the
 /// log exists from day one so nothing ever sends unrecorded).
 model MessageLog {
-  id       String  @id @default(uuid())
+  id       String       @id @default(uuid())
   senderId String // user who triggered the send
   scope    ConsentScope
   tenantId String?
   leagueId String?
 
-  audience       String // computed-audience descriptor, e.g. "team:<id>:families"
-  subject        String
-  body           String @db.Text
-  recipientCount Int
-  suppressedCount Int   @default(0) // recipients skipped for lack of consent
+  audience        String // computed-audience descriptor, e.g. "team:<id>:families"
+  subject         String
+  body            String @db.Text
+  recipientCount  Int
+  suppressedCount Int    @default(0) // recipients skipped for lack of consent
 
   createdAt DateTime @default(now())
 
   @@index([tenantId])
   @@index([leagueId])
   @@index([senderId])
+}
+
+// ── Waivers + e-signature (docs/roadmap/waivers-esign.md, owner spec 2026-07-20) ──
+// Issued by leagues (auto-sent to roster parents on team-submission approval)
+// AND clubs (attached to registration paths — phase B). Ontario-structured
+// templates; province differences live in lib/waivers/templates.ts, not here.
+
+enum WaiverType {
+  ACKNOWLEDGMENT_INDEMNITY // Acknowledgment of risk + parent indemnity (ON: naive liability waivers for minors are likely unenforceable)
+  CONCUSSION_CODE // Rowan's Law concussion code of conduct — annual renewal
+  MEDIA_CONSENT
+  CUSTOM
+}
+
+model WaiverDocument {
+  id String @id @default(uuid())
+
+  // Owner: exactly one of tenantId (club) / leagueId (league)
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String     @db.Text
+  type     WaiverType @default(CUSTOM)
+  province String     @default("ON")
+
+  // Rowan's Law-style yearly re-acknowledgment: signatures expire 12 months out
+  annualRenewal Boolean @default(false)
+  // Required waivers are auto-sent on roster approval (league) / block signup (club)
+  required      Boolean @default(true)
+  active        Boolean @default(true)
+  // Bumped on body edits; signatures snapshot the version + body they signed
+  version       Int     @default(1)
+
+  signRequests WaiverSignRequest[]
+  signatures   WaiverSignature[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([leagueId])
+}
+
+// One emailed signing link (tokenized, public page — token hash at rest,
+// mechanics copied from lib/auth-magic.ts). Re-sends mint new rows.
+model WaiverSignRequest {
+  id       String         @id @default(uuid())
+  waiverId String
+  waiver   WaiverDocument @relation(fields: [waiverId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  seasonId String?
+  season   Season?        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  emailedTo  String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([playerId])
+  @@index([seasonId, waiverId])
+}
+
+model WaiverSignature {
+  id       String         @id @default(uuid())
+  waiverId String
+  waiver   WaiverDocument @relation(fields: [waiverId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  seasonId String?
+  season   Season?        @relation(fields: [seasonId], references: [id])
+
+  // Exact text signed — retrievable forever regardless of later edits
+  waiverVersion Int
+  bodySnapshot  String @db.Text
+
+  // Signer: the parent/guardian (or 13+ self). signerUser set when signed
+  // while authenticated; tokenized signing stores name + relationship only.
+  signerUserId  String?
+  signerUser    User?   @relation("WaiverSigner", fields: [signerUserId], references: [id])
+  signerName    String
+  relationship  String  @default("Parent/Guardian")
+  signatureData String  @db.Text // PNG data URL from SignaturePad
+  ipAddress     String?
+
+  signedAt   DateTime  @default(now())
+  // Set for annualRenewal waivers: signedAt + 12 months (Rowan's Law window)
+  validUntil DateTime?
+
+  @@index([waiverId, playerId])
+  @@index([playerId])
+  @@index([seasonId])
 }

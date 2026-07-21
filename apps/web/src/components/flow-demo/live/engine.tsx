@@ -95,6 +95,7 @@ export function LivePlayer({
   const stickyCapRef = useRef<HTMLParagraphElement>(null)
   const zoomScaleRef = useRef(1)
   const cameraOnRef = useRef(false)
+  const lastCursorIdRef = useRef<string | null>(null)
 
   pausedRef.current = paused
   autoRef.current = autoplay
@@ -283,6 +284,21 @@ export function LivePlayer({
     [sleep]
   )
 
+  /** Re-pin the visible cursor onto its target after the camera moves —
+      the dot lives outside the zoom layer and would otherwise go stale. */
+  const repinCursor = useCallback(() => {
+    const id = lastCursorIdRef.current
+    const cur = cursorRef.current
+    const stage = stageRef.current
+    if (!id || !cur || !stage || cur.style.opacity !== "1") return
+    const target = stage.querySelector<HTMLElement>(`[data-live-id="${id}"]`)
+    if (!target) return
+    const r = target.getBoundingClientRect()
+    const s = stage.getBoundingClientRect()
+    cur.style.left = `${r.left - s.left + r.width / 2}px`
+    cur.style.top = `${r.top - s.top + r.height / 2}px`
+  }, [])
+
   const moveCursor = useCallback(
     async (id: string, run: number) => {
       const target = el(id)
@@ -319,6 +335,7 @@ export function LivePlayer({
       cur.style.opacity = "1"
       cur.style.left = `${r.left - s.left + r.width / 2}px`
       cur.style.top = `${r.top - s.top + r.height / 2}px`
+      lastCursorIdRef.current = id
       await sleep(620, run)
     },
     [settleOn, zoomToWork, sleep]
@@ -453,6 +470,7 @@ export function LivePlayer({
           if (step.zoom && cameraOnRef.current) zoomToWork(step.zoom)
           else setZoom(step.zoom, step.scale)
           await sleep(1150, run)
+          repinCursor()
         } else if ("confirm" in step) {
           setConfirmText(step.confirm)
           await sleep(1250, run)
@@ -474,7 +492,10 @@ export function LivePlayer({
                 tR.right <= sR.right - 6
               if (!vis) {
                 const moved = zoomToWork(step.hold)
-                if (moved) await sleep(1120, run)
+                if (moved) {
+                  await sleep(1120, run)
+                  repinCursor()
+                }
               }
             }
           }

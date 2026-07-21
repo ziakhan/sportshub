@@ -54,6 +54,8 @@ const PUBLIC_PAGE_PREFIXES = [
   // Anonymous club-claim wizard + completion landing (owner 2026-07-18:
   // claim-first, account-at-end — no session until the token is redeemed)
   "/claim",
+  // Tokenized waiver signing (emailed link, no session — waivers-esign 2026-07-20)
+  "/waivers",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
@@ -102,6 +104,9 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   // code only ever goes to the club's contact ON FILE, and completion
   // (/api/clubs/claim-complete) still requires a session to bind ownership.
   "/api/clubs/claim-v2",
+  // Waiver e-signature POST — the emailed token IS the auth (parents sign
+  // without an account; the route validates the token itself)
+  "/api/waivers/sign",
 ] as const
 
 /** Dev-only utilities — never public in production. */

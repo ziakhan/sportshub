@@ -204,6 +204,12 @@ export default function LeagueManagePage() {
         >
           &larr; Back to {league.name}
         </Link>
+        <Link
+          href={`/manage/leagues/${leagueId}/seasons/${seasonId}/waivers`}
+          className="text-play-700 float-right text-sm font-medium hover:underline"
+        >
+          Waiver signing status &rarr;
+        </Link>
       </div>
 
       <div className="reveal mb-6 flex items-start justify-between gap-4">
