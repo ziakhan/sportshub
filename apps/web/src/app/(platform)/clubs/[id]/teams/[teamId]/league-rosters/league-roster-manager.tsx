@@ -10,6 +10,9 @@ interface RosterPlayer {
   name: string
   jerseyNumber: number | null
   position: string | null
+  /** League-waiver signing status (owner 2026-07-20): staff see it on the roster. */
+  waiversTotal?: number
+  waiversOutstanding?: number
 }
 
 interface RosterVersion {
@@ -543,6 +546,7 @@ export function LeagueRosterManager({
                       <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">#</th>
                       <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">Player</th>
                       <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">Position</th>
+                      <th className="text-ink-500 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wider">Waivers</th>
                     </tr>
                   </thead>
                   <tbody className="divide-ink-100 divide-y">
@@ -556,6 +560,17 @@ export function LeagueRosterManager({
                         </td>
                         <td className="text-ink-600 whitespace-nowrap px-4 py-2 text-sm">
                           {p.position ?? "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-sm">
+                          {!p.waiversTotal ? (
+                            <span className="text-ink-400">—</span>
+                          ) : p.waiversOutstanding === 0 ? (
+                            <Badge tone="court">Signed</Badge>
+                          ) : (
+                            <Badge tone="warning">
+                              {p.waiversOutstanding} unsigned
+                            </Badge>
+                          )}
                         </td>
                       </tr>
                     ))}

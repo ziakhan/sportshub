@@ -3209,3 +3209,19 @@ model WaiverSignature {
   @@index([playerId])
   @@index([seasonId])
 }
+
+// Waiver reminder dedupe (owner 2026-07-20: push + reminder 7 days / 24 hours
+// before the league season starts for unsigned required waivers). Plain ids on
+// purpose — no relations, rows are a send-once ledger.
+model WaiverReminder {
+  id           String   @id @default(uuid())
+  playerId     String
+  waiverId     String
+  seasonId     String
+  parentUserId String
+  window       String // "7d" | "24h"
+  sentAt       DateTime @default(now())
+
+  @@unique([playerId, waiverId, seasonId, window])
+  @@index([seasonId])
+}

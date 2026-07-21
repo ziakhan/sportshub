@@ -132,6 +132,34 @@ export default async function TeamRosterPage({
   const activePlayers = team.players.filter((tp) => tp.status === "ACTIVE")
   const releasedPlayers = team.players.filter((tp) => tp.status === "INACTIVE")
 
+  // Club-waiver status per player (owner 2026-07-20): staff see who has
+  // signed the club's required waivers straight on the roster.
+  const clubWaivers = await (prisma as any).waiverDocument.findMany({
+    where: { tenantId: params.id, active: true, required: true },
+    select: { id: true, version: true },
+  })
+  const waiverSignatures =
+    clubWaivers.length > 0 && activePlayers.length > 0
+      ? await (prisma as any).waiverSignature.findMany({
+          where: {
+            playerId: { in: activePlayers.map((tp) => tp.playerId) },
+            waiverId: { in: clubWaivers.map((w: any) => w.id) },
+            OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
+          },
+          select: { playerId: true, waiverId: true, waiverVersion: true },
+        })
+      : []
+  const signedWaiverKeys = new Set(
+    waiverSignatures
+      .filter((s: any) => {
+        const w = clubWaivers.find((w: any) => w.id === s.waiverId)
+        return w && s.waiverVersion === w.version
+      })
+      .map((s: any) => `${s.waiverId}:${s.playerId}`)
+  )
+  const unsignedCountFor = (playerId: string) =>
+    clubWaivers.filter((w: any) => !signedWaiverKeys.has(`${w.id}:${playerId}`)).length
+
   // Check if there are unfinalized players (accepted offers without jersey numbers)
   const hasUnfinalized = activePlayers.some(
     (tp) => tp.jerseyNumber === null
@@ -222,6 +250,11 @@ export default async function TeamRosterPage({
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Status
                 </th>
+                {clubWaivers.length > 0 && (
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-500">
+                    Waivers
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Actions
                 </th>
@@ -274,6 +307,17 @@ export default async function TeamRosterPage({
                         <Badge tone="gold">Pending finalization</Badge>
                       )}
                     </td>
+                    {clubWaivers.length > 0 && (
+                      <td className="whitespace-nowrap px-6 py-4">
+                        {unsignedCountFor(tp.playerId) === 0 ? (
+                          <Badge tone="court">Signed</Badge>
+                        ) : (
+                          <Badge tone="warning">
+                            {unsignedCountFor(tp.playerId)} unsigned
+                          </Badge>
+                        )}
+                      </td>
+                    )}
                     <td className="whitespace-nowrap px-6 py-4">
                       <RosterRowActions
                         teamId={team.id}

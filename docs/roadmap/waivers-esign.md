@@ -26,8 +26,21 @@ tags: [theme/compliance, type/plan, status/shipped-phase-1]
 > POST /api/waivers/sign-inline (parent-child checked), then the flow retries
 > (offer retry reuses an already-paid deposit intent). Server enforces
 > independently of the client. Int tests 12/12 (seed 1134), suite 321/321.
-> **Still open (owner's call)**: signed-copy PDF render · club-side signature
-> viewer · eligibility gate on unsigned league players · club dashboard nav
+> **REMINDERS + ROSTER VISIBILITY (owner directive, same day):**
+> daily cron `/api/cron/waiver-reminders` sends bell + **PUSH** (new
+> `waiver_reminder` type in PUSH_TYPES) + email with a fresh signing link at
+> **7 days and 24 hours before Season.startDate** for every outstanding
+> (player, required league waiver); `WaiverReminder` ledger makes each window
+> send-once (24h suppresses a late 7d). Push deep-links to the signing page —
+> a parent at the gym can sign on their phone. Staff visibility: **league
+> rosters page** shows a per-player Waivers column (league waivers, per
+> season) and the **club team roster** shows one for club waivers — all club
+> staff roles (owner/manager/staff/team manager, incl. coaches) see it.
+> Tests 14/14, suite 323/323.
+>
+> **Still open (owner's call)**: HARD eligibility gate (block unsigned players
+> from game rosters/scoring — currently visibility + reminders, no hard block)
+> · signed-copy PDF render · club-side signature viewer · club dashboard nav
 > link to /clubs/[id]/waivers (page live, reachable by URL).
 
 > **OWNER SPEC 2026-07-20** (researched same day): waivers are issued by **both leagues

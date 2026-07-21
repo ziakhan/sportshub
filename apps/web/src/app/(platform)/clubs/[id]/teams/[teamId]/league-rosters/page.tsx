@@ -48,7 +48,7 @@ export default async function LeagueRostersPage({
           status: true,
           rosterChangePolicy: true,
           rosterChangeDeadline: true,
-          league: { select: { name: true } },
+          league: { select: { id: true, name: true } },
         },
       },
       roster: {
@@ -84,6 +84,50 @@ export default async function LeagueRostersPage({
     position: tp.player.position,
   }))
 
+  // League-waiver status per player (owner 2026-07-20): staff see who has
+  // signed each league's required waivers straight on the roster.
+  const leagueIds = Array.from(
+    new Set(submissions.map((s) => s.season.league.id).filter(Boolean))
+  )
+  const rosterPlayerIds = Array.from(
+    new Set(
+      submissions.flatMap((s) => (s.roster?.players ?? []).map((p: any) => p.playerId))
+    )
+  )
+  const requiredWaivers =
+    leagueIds.length > 0
+      ? await (prisma as any).waiverDocument.findMany({
+          where: { leagueId: { in: leagueIds }, active: true, required: true },
+          select: { id: true, leagueId: true, version: true },
+        })
+      : []
+  const waiverSignatures =
+    requiredWaivers.length > 0 && rosterPlayerIds.length > 0
+      ? await (prisma as any).waiverSignature.findMany({
+          where: {
+            playerId: { in: rosterPlayerIds },
+            waiverId: { in: requiredWaivers.map((w: any) => w.id) },
+            OR: [{ validUntil: null }, { validUntil: { gt: new Date() } }],
+          },
+          select: { playerId: true, waiverId: true, waiverVersion: true },
+        })
+      : []
+  const signedKeys = new Set(
+    waiverSignatures
+      .filter((s: any) => {
+        const w = requiredWaivers.find((w: any) => w.id === s.waiverId)
+        return w && s.waiverVersion === w.version
+      })
+      .map((s: any) => `${s.waiverId}:${s.playerId}`)
+  )
+  const waiverStatusFor = (leagueId: string, playerId: string) => {
+    const waivers = requiredWaivers.filter((w: any) => w.leagueId === leagueId)
+    const outstanding = waivers.filter(
+      (w: any) => !signedKeys.has(`${w.id}:${playerId}`)
+    ).length
+    return { waiversTotal: waivers.length, waiversOutstanding: outstanding }
+  }
+
   const versions = submissions
     .filter((s) => s.roster)
     .map((s) => {
@@ -113,6 +157,7 @@ export default async function LeagueRostersPage({
           name: `${p.player.firstName} ${p.player.lastName}`,
           jerseyNumber: p.jerseyNumber,
           position: p.position,
+          ...waiverStatusFor(s.season.league.id, p.playerId),
         })),
         requests: s.roster.changeRequests.map((r: any) => ({
           id: r.id,

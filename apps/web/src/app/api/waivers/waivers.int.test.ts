@@ -12,6 +12,7 @@ import {
 } from "@youthbasketballhub/test-worlds"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { mintWaiverSignRequest } from "@/lib/waivers/tokens"
+import { sendWaiverReminders } from "@/lib/waivers/reminders"
 import { POST as signPOST } from "./sign/route"
 import { POST as signInlinePOST } from "./sign-inline/route"
 import { POST as tryoutSignupPOST } from "../tryouts/[id]/signup/route"
@@ -412,5 +413,58 @@ describe("status grid + versioning", () => {
       where: { waiverId: ackWaiverId, playerId: rosterPlayerIds[0] },
     })
     expect(signature.bodySnapshot).toBe(ackBody)
+  })
+})
+
+describe("season-start reminders (owner: push + reminder 7d / 24h before start)", () => {
+  // State at this point: league waivers = ack (v2 after the edit above, so
+  // player0's v1 signature is stale) + concussion (v1, signed by player1).
+  // Outstanding pairs: p0 ack+concussion, p1 ack, p2 ack+concussion = 5.
+
+  it("7d window: one reminder per outstanding (player, waiver), send-once", async () => {
+    await prisma.season.update({
+      where: { id: seasonId },
+      data: { startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
+    })
+    vi.mocked(sendWaiverSignEmail).mockClear()
+
+    const first = await sendWaiverReminders()
+    expect(first.sent).toBe(5)
+    expect(vi.mocked(sendWaiverSignEmail)).toHaveBeenCalledTimes(5)
+
+    const reminders = await (prisma as any).waiverReminder.findMany({
+      where: { seasonId },
+    })
+    expect(reminders).toHaveLength(5)
+    expect(reminders.every((r: any) => r.window === "7d")).toBe(true)
+
+    const bells = await (prisma as any).notification.findMany({
+      where: { type: "waiver_reminder" },
+    })
+    expect(bells.length).toBe(5)
+    expect(bells.every((b: any) => b.link.startsWith("/waivers/sign/"))).toBe(true)
+
+    // Second run: fully deduped
+    const second = await sendWaiverReminders()
+    expect(second.sent).toBe(0)
+    expect(second.skippedAlreadyReminded).toBe(5)
+  })
+
+  it("24h window fires once more as the start approaches", async () => {
+    await prisma.season.update({
+      where: { id: seasonId },
+      data: { startDate: new Date(Date.now() + 12 * 60 * 60 * 1000) },
+    })
+    vi.mocked(sendWaiverSignEmail).mockClear()
+
+    const run = await sendWaiverReminders()
+    expect(run.sent).toBe(5)
+    const dayOf = await (prisma as any).waiverReminder.findMany({
+      where: { seasonId, window: "24h" },
+    })
+    expect(dayOf).toHaveLength(5)
+
+    const again = await sendWaiverReminders()
+    expect(again.sent).toBe(0)
   })
 })

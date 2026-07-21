@@ -709,3 +709,17 @@ membership) and WITH the registration (camps / house leagues / tryouts).
 Verify post-push: add a required club waiver → register for that club's camp
 → signing modal appears → after signing, registration completes; same on an
 offer accept.
+
+## #33c — 2026-07-20 waiver reminders + roster visibility (small schema)
+Owner directive: enforce league waivers via reminders + staff visibility.
+- Schema: `WaiverReminder` send-once ledger (plain ids, additive db push).
+- Cron `/api/cron/waiver-reminders` (CRON_SECRET; vercel.json 10:00 daily) —
+  bell + push (`waiver_reminder` added to PUSH_TYPES) + email signing links at
+  7d and 24h before Season.startDate for unsigned required league waivers.
+  ⚠️ BOX: add the daily curl to the box's cron scheduler alongside the other
+  /api/cron/* jobs (Vercel crons don't run on the box).
+- Waivers column on league-rosters page (per-season league waivers) and club
+  team roster page (club waivers) for all club staff roles.
+Verify post-push: set a season startDate ~5 days out with an approved roster
+and unsigned waivers → run the cron with CRON_SECRET → parent gets bell+push+
+email; roster pages show Signed / N unsigned chips.

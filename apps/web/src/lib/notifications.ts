@@ -98,6 +98,8 @@ export type NotificationType =
   // RSVP: family nudge to answer; staff heads-up on a late "Not going"
   | "rsvp_reminder"
   | "rsvp_change"
+  // Waivers: family nudge to sign before the league season starts (7d/24h)
+  | "waiver_reminder"
   // Program staff: you were assigned to run a camp / house league
   | "program_assigned"
 
@@ -143,6 +145,8 @@ const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "announcement_posted",
   "rsvp_reminder",
   "rsvp_change",
+  // Time-sensitive family action: unsigned waiver blocks play (owner 2026-07-20)
+  "waiver_reminder",
 ])
 
 /**
