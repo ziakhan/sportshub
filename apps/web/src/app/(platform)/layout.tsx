@@ -7,7 +7,7 @@ import { getCurrentUser, isImpersonating } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { Sidebar } from "./dashboard/sidebar"
 import { MobileNav } from "./dashboard/mobile-nav"
-import { NotificationBell } from "./dashboard/notification-bell"
+import { ChatDock } from "@/components/chat-dock"
 import { AccountMenu } from "@/components/nav/account-menu"
 import { BottomTabs } from "@/components/nav/bottom-tabs"
 import { QuickIcons } from "@/components/nav/quick-icons"
@@ -205,9 +205,6 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               </div>
             )}
             <QuickIcons showCalendar={shape.hasCalendar} />
-            <div className="hidden md:block">
-              <NotificationBell />
-            </div>
             <AccountMenu
               userName={userName}
               userEmail={userEmail}
@@ -229,6 +226,12 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           />
         )}
         <main className="bg-ink-50 min-w-0 flex-1 overflow-x-hidden pb-16 lg:pb-0">{children}</main>
+      </div>
+      {/* Floating team-chat bubble in the workspace too (owner 2026-07-21 —
+          it lived only on public pages, so it vanished in the manage area).
+          Renders nothing until the user actually has team chats. */}
+      <div className="hidden lg:block">
+        <ChatDock userId={dbUser.id} />
       </div>
       <BottomTabs shape={shape} />
     </div>

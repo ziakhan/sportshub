@@ -54,8 +54,12 @@ vi.mock("@/app/(platform)/dashboard/mobile-nav", () => ({
   MobileNav: () => <div>MobileNav</div>,
 }))
 
-vi.mock("@/app/(platform)/dashboard/notification-bell", () => ({
-  NotificationBell: () => <div>NotificationBell</div>,
+vi.mock("@/components/brand/wordmark", () => ({
+  BrandWordmark: () => <div>SportsHub ONE</div>,
+  BrandIcon: () => <div>BrandIcon</div>,
+}))
+vi.mock("@/components/chat-dock", () => ({
+  ChatDock: () => <div>ChatDock</div>,
 }))
 
 vi.mock("@/app/(platform)/dashboard/create-menu", () => ({
@@ -101,8 +105,9 @@ describe("PlatformLayout", () => {
     const html = renderToStaticMarkup(element)
 
     expect(html).toContain("OnboardingContent")
-    expect(html).not.toContain("NotificationBell")
-    expect(html).not.toContain("sportshub")
+    // No dashboard chrome during onboarding (no header logo / account menu).
+    expect(html).not.toContain('aria-label="Open account menu"')
+    expect(html).not.toContain("ONE")
   })
 
   it("renders dashboard chrome after onboarding completes", async () => {
@@ -134,8 +139,9 @@ describe("PlatformLayout", () => {
     const element = await PlatformLayout({ children: <div>DashboardContent</div> })
     const html = renderToStaticMarkup(element)
 
-    expect(html).toContain("sportshub")
-    expect(html).toContain("NotificationBell")
+    expect(html).toContain("ONE") // BrandWordmark logo
+    // Single notification bell now lives in the account-menu cluster.
+    expect(html).toContain('aria-label="Notifications')
     // N3-v2 chrome: badge switchboard (initials button) + bottom tab bar
     expect(html).toContain('aria-label="Open account menu"')
     expect(html).toContain(">TJ<")
@@ -172,8 +178,8 @@ describe("PlatformLayout", () => {
     expect(html).not.toContain("MobileNav")
     expect(html).not.toContain(">Dashboard<")
     // …but keep the chrome they know: logo, bell, badge menu, bottom tabs
-    expect(html).toContain("sportshub")
-    expect(html).toContain("NotificationBell")
+    expect(html).toContain("ONE") // BrandWordmark logo
+    expect(html).toContain('aria-label="Notifications')
     expect(html).toContain('aria-label="Open account menu"')
     expect(html).toContain('aria-label="Primary"')
     expect(html).toContain("CalendarContent")

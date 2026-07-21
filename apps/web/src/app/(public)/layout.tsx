@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getPublicNav } from "@/lib/queries/nav"
 import { NavDropdown } from "@/components/nav-dropdown"
-import { NotificationBell } from "../(platform)/dashboard/notification-bell"
 import { AccountMenu } from "@/components/nav/account-menu"
 import { AnonymousBottomTabs, BottomTabs } from "@/components/nav/bottom-tabs"
 import { QuickIcons } from "@/components/nav/quick-icons"
@@ -121,10 +120,6 @@ export default async function PublicLayout({ children }: { children: React.React
                   </Link>
                 )}
                 <QuickIcons showCalendar={shape.hasCalendar} />
-                {/* Bell is desktop-only — on phones it folds into the badge */}
-                <div className="hidden md:block">
-                  <NotificationBell />
-                </div>
                 <AccountMenu
                   userName={userName}
                   userEmail={userEmail}
