@@ -1,4 +1,5 @@
 "use client"
+import { BrandWordmark } from "@/components/brand/wordmark"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -47,7 +48,7 @@ export function Sidebar({
             <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
           </svg>
         </span>
-        <span className="font-display text-ink-950 text-[15px] font-bold">sportshub</span>
+        <BrandWordmark size="sm" />
       </div>
 
       <nav className="sidebar-scroll flex-1 overflow-y-auto px-3 py-4">

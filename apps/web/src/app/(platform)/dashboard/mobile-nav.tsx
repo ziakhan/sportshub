@@ -1,4 +1,5 @@
 "use client"
+import { BrandWordmark } from "@/components/brand/wordmark"
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
@@ -80,7 +81,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
                 <div className="text-ink-400 text-[11px] font-semibold uppercase tracking-[0.2em]">
                   Navigation
                 </div>
-                <span className="font-display text-ink-950 text-lg font-bold">sportshub</span>
+                <BrandWordmark size="sm" />
               </div>
               <button
                 onClick={() => setOpen(false)}

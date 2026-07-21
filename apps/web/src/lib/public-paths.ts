@@ -48,6 +48,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/for-leagues",
   "/for-parents",
   "/how-it-works",
+  // Public legal/policy pages (privacy, terms, acceptable use)
+  "/legal",
   // Animated end-to-end product demo (owner brief 2026-07-19)
   "/demo",
   "/unsubscribed",

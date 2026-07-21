@@ -1,4 +1,5 @@
 import React from "react"
+import { BrandWordmark } from "@/components/brand/wordmark"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
@@ -140,7 +141,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                   <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
                 </svg>
               </span>
-              <span className="font-display text-ink-950 text-sm font-bold">sportshub</span>
+              <BrandWordmark size="sm" />
             </Link>
             {shape.isOperator && (
             <div className="hidden items-center gap-2 text-sm sm:flex">

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest"
 import { isPublicPath } from "@/lib/public-paths"
 
 describe("isPublicPath", () => {
+  it("keeps legal/policy pages public", () => {
+    expect(isPublicPath("/legal", "GET")).toBe(true)
+    expect(isPublicPath("/legal/privacy", "GET")).toBe(true)
+    expect(isPublicPath("/legal/terms", "GET")).toBe(true)
+  })
+
   it("allows exact public routes and nested public pages", () => {
     expect(isPublicPath("/")).toBe(true)
     expect(isPublicPath("/club")).toBe(true)

@@ -245,12 +245,34 @@ export default async function PublicLayout({ children }: { children: React.React
               <Link href="/news" className="block transition-colors hover:text-white">
                 News
               </Link>
+              <Link href="/legal/privacy" className="block transition-colors hover:text-white">
+                Privacy
+              </Link>
+              <Link href="/legal/terms" className="block transition-colors hover:text-white">
+                Terms
+              </Link>
+              <Link href="/legal" className="block transition-colors hover:text-white">
+                Legal &amp; policies
+              </Link>
             </div>
           </div>
         </div>
 
-        <div className="text-ink-400 container mx-auto mt-10 border-t border-white/5 px-4 pt-6 text-sm sm:px-6">
-          &copy; {new Date().getFullYear()} SportsHub One. All rights reserved.
+        <div className="container mx-auto mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/5 px-4 pt-6 text-sm sm:px-6">
+          <span className="text-ink-400">
+            &copy; 2019&ndash;{new Date().getFullYear()} SportsHub One. All rights reserved.
+          </span>
+          <span className="text-ink-400 flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/legal/privacy" className="transition-colors hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/legal/terms" className="transition-colors hover:text-white">
+              Terms
+            </Link>
+            <Link href="/legal/acceptable-use" className="transition-colors hover:text-white">
+              Acceptable Use
+            </Link>
+          </span>
         </div>
       </footer>
       {userId && (
