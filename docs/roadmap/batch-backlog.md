@@ -289,3 +289,44 @@ preset program types from a dropdown vs. let trainers name their own programs.
 
 **Decision:** NOT today (owner said scratch-if-complicated). Parked here to
 evaluate. Depends on / pairs well with items 1 (branded calendar) + 2 (venues).
+
+---
+
+## 6. Club business number (BN) / verification / tax — policy (owner 2026-07-21, my recommendation)
+**Owner asks:** collect a Canadian business number for tax? Our responsibility?
+Only for unknown clubs or known ones too? Require CRA proof / letter / picture?
+
+**Separate the two purposes — they're being conflated:**
+
+### Tax (business number)
+- **NOT our responsibility to collect club BNs for tax.** If clubs get paid via
+  **Stripe Connect** (club-owned account — our default), Stripe does the payout
+  KYC and collects the business/tax identity itself; it's the regulated
+  processor. We are a SaaS + facilitator, not the merchant of record for a
+  club's program fees. Our own tax duty is GST/HST on OUR SaaS fees — separate.
+- **Data minimization (our new PIPEDA privacy policy):** don't store sensitive
+  tax IDs without a clear need. Collecting BNs invites liability + storage
+  burden for no benefit while on Connect.
+- Reasons BN would ever matter later (all opt-in, none a gate): platform-collect
+  payouts (Stripe still KYCs), a "verified business" trust badge, or CHARITABLE
+  TAX RECEIPTS for registrants (needs the club's charity registration # — a
+  DIFFERENT number from BN; many youth orgs are registered charities/non-profits
+  and parents want receipts). These are value-adds, future.
+
+### Verification (proving the claimant controls the club) — already tiered, keep it
+The claim flow (ClubClaim v2) already has the right model:
+- **Known contact on file (email/phone):** 6-digit code → that contact
+  (`method` EMAIL/SMS). Sufficient proof of control. Do NOT add BN/doc
+  requirements on top — pure friction.
+- **No contact / can't receive a code:** the **PROOF path** (`proofNote` free
+  text → **admin review**). This is where heavier proof belongs.
+- **Recommendation:** for the PROOF/unknown tier ONLY, optionally add a
+  **document upload** (CRA letter, incorporation, insurance cert, or a photo)
+  to give the admin reviewer something concrete — as the EXCEPTION, not a
+  blanket requirement. Requiring CRA docs from every club would kill adoption
+  (youth clubs are small volunteer orgs).
+
+**Net:** (1) don't collect BN for tax — Stripe Connect handles it; (2) keep
+verification tiered — code for known clubs, proof→admin for unknown; (3) only
+enhance the PROOF path with an optional doc upload for the risky/unknown case;
+(4) charity # + tax receipts = a future opt-in feature, not a claim gate.
