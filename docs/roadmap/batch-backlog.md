@@ -194,11 +194,27 @@ checkbox → EXPRESS club; prefs page → any scope. Enforced ONLY on MARKETING
 email, per-recipient at send time (`hasMarketingConsent` in
 `api/comms/messages`). Transactional email (receipts, reminders, game changes)
 is exempt. Withdraw = unsubscribe link / prefs page.
-**GAP 1 — LEAGUE-scope consent for individuals isn't triggered.** Registrations
-create TENANT (club) implied consent, not LEAGUE — leagues relate to clubs (team
-registration), not directly to parents. So a league has no consent basis to
-email families directly except EXPRESS opt-in. Decide how leagues reach families
-(via the club? explicit opt-in?).
+**GAP 1 — LEAGUE→family messaging. RESOLVED direction (owner 2026-07-21):**
+Owner's insight: cancel-a-game / send-a-waiver are OPERATIONAL, not marketing,
+so they need NO consent (already transactional-exempt). Proposed "join a league
+= league-affiliated" → league may send league messages, not marketing. Refined
+model:
+- **League operational messages** (game cancel/reschedule, waiver, schedule,
+  standings, safety) = TRANSACTIONAL → always allowed to affiliated families,
+  no consent needed. This covers ~all real league→family needs.
+- **League affiliation = IMPLIED consent (CASL, ~2yr).** Trigger league-scope
+  implied consent at the moment a player is ROSTERED INTO A LEAGUE SEASON —
+  the SAME hook we already use for waiver auto-send on roster approval. Small
+  wire-up (today only club/TENANT implied is triggered). Legitimate CASL basis.
+- **League marketing** (promote next season, sponsors, cross-sell) = still a
+  SEPARATE EXPRESS opt-in checkbox. ⚠️ Do NOT bundle marketing consent into
+  mandatory join T&C — CASL forbids making express consent a condition of the
+  transaction / pre-checked; it's unenforceable + penalty risk. The join T&C IS
+  the right place for the participation agreement, "we'll contact you about
+  league operations" expectation, and the PIPEDA privacy notice — just not a
+  substitute for a marketing opt-in.
+- Net: operational=always · affiliation⇒implied (2yr, at roster) · marketing⇒
+  express checkbox. Ties to the waiver roster-approval hook already shipped.
 **GAP 2 — consent is EMAIL-only.** When SMS goes live (item 3b), texting
 Canadians needs its own CASL/CRTC consent + enforcement in the SMS send path
 (the current model/enforcement is wired to email only). Add an SMS channel to
