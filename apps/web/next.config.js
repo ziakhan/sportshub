@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
+let buildSha = "dev"
+try {
+  buildSha = require("child_process").execSync("git rev-parse --short HEAD").toString().trim()
+} catch {}
+
 const nextConfig = {
+  env: { NEXT_PUBLIC_BUILD_SHA: buildSha },
   reactStrictMode: true,
   transpilePackages: [
     "@youthbasketballhub/db",

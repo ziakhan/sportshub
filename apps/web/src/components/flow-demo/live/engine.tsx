@@ -380,6 +380,7 @@ export function LivePlayer({
     setConfirmText(null)
     setHoldHint(null)
     if (cursorRef.current) cursorRef.current.style.opacity = "0"
+    lastCursorIdRef.current = null
     if (zoomRef.current) zoomRef.current.style.transform = "none"
     zoomScaleRef.current = 1
     lastCamRef.current = null
@@ -514,6 +515,7 @@ export function LivePlayer({
             if (runRef.current !== run) return
             const cur = cursorRef.current
             if (cur) cur.style.opacity = "0"
+            lastCursorIdRef.current = null
           }
           setHolding(null)
           setReady(false)
@@ -574,6 +576,15 @@ export function LivePlayer({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holding, index])
+
+  /* Cursor glue: forms grow while they fill (chips, rows), shifting layout
+     under a parked dot. Re-pin on a cadence; the dot's own 0.55s transition
+     turns this into smooth tracking. */
+  useEffect(() => {
+    if (!started || done) return
+    const glue = setInterval(repinCursor, 200)
+    return () => clearInterval(glue)
+  }, [started, done, repinCursor])
 
   /* Keyboard advance while holding. */
   useEffect(() => {
@@ -912,6 +923,9 @@ export function LivePlayer({
         {autoplay && (
           <p className="text-ink-400 text-xs font-medium">Playing on its own. Click the demo to pause.</p>
         )}
+        <span className="text-ink-300 text-[10px] font-medium tabular-nums">
+          build {process.env.NEXT_PUBLIC_BUILD_SHA}
+        </span>
       </div>
     </div>
   )
