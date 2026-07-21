@@ -1,14 +1,21 @@
 ---
 updated: 2026-07-20
-status: planned
+status: committed
 tier: 0
 area: payments
 effort: L
 source: owner
-tags: [theme/payments, type/plan, status/planned]
+tags: [theme/payments, type/plan, status/committed]
 ---
 
 # 💸 Interac e-Transfer reconciliation ("no more midnight e-transfers")
+
+> **OWNER COMMITTED 2026-07-20**: "definitely added to the plan, and we will implement
+> them." Pricing ruling in the same message: parents choose their rail — **credit cards
+> stay an option, offline stays an option, e-transfer becomes an option** — and our
+> platform take targets **~1–2% (or flat equivalent) instead of the ~3%+ clubs pay
+> elsewhere**, with the credit-card processing cost shown for what it is (the card
+> networks' fee, not ours).
 
 > **OWNER 2026-07-20**, from a real club-owner conversation: clubs resist card fees
 > ("3–4%") and tracking parent e-transfers manually "is a pain in the butt." Solving

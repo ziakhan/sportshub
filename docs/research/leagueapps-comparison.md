@@ -48,6 +48,102 @@ Organizations can pass an optional $1–5 "processing fee" to parents. Offline p
 | Tryouts/evaluations | Player evaluations via third-party integration partners | Native tryout registration, check-in, notes, bulk offers + public tryout browse w/ club ratings. **Scoring rubric NOT built** ([[tryout-evaluations]] = planned, tier 1) | Mixed: our tryout *pipeline* is native and strong; player *scoring* is manual today — do NOT claim evaluations in demos |
 | Market | US-focused | Canada-first (single birth-year, e-transfer pain, CAD) | Different battlegrounds |
 
+## Scoring: the definitive answer (deep-dived 2026-07-20 after conflicting owner research)
+
+**How LeagueApps scoring actually works, per their own support docs:**
+- Score entry is **manual and post-game only**. Their docs say scorekeepers "can add and
+  edit game scores **once the game is over**."
+- **Who enters**: any-level admin from the management console; or a person the admin
+  designates as a **scorekeeper** (team-level or program-level) via Scorekeeper Settings;
+  or a **team captain** in adult leagues. Entry UI = Events tab → clipboard-pencil icon →
+  type home/away totals → pick outcome (Final / Final OT / Cancelled / Rescheduled /
+  Forfeit) → Save.
+- **No live scoring dashboard. No play-by-play. No game clock. No period/quarter scores.
+  No in-game anything.** One final score per team per game, entered after the fact.
+- "**Real-time**" in their marketing means: once someone types the final score, standings,
+  brackets (winner auto-advance) and the Play app update immediately. The *propagation* is
+  real-time; the *scoring* is not.
+- **No third-party live-scoring software** behind it either — there is nothing to power.
+  Their scoreboard story is score-entry → standings math.
+- ⚠️ **Name-collision trap** (likely the source of the conflicting research): a completely
+  unrelated product **"LeagueAppLive"** (leagueapplive.com, small UK live-scoring app for
+  pub-league sports like darts/pool) shows up in searches for "league apps live scoring."
+  It has live scores; it is not LeagueApps.
+
+**Us, for contrast**: scorekeeper console with game clock, per-basket/foul event stream
+(append-only, corrections VOID events), live box score, play-by-play, public /live/[gameId]
+page polling every 10s, DNP/absent handling, scoresheet PDFs, referee PIN access. This is
+a category they are simply not in.
+
+## Prioritized side-by-side (ordered by OUR internal priorities)
+
+Legend: ✅ have · 🟡 partial · 🗺️ planned (roadmap doc) · ❌ no. Verdict = who wins today.
+
+**P0 — the money path (what clubs buy first)**
+
+| Feature | LeagueApps | Us | Verdict |
+|---|---|---|---|
+| Registration models | ✅ clubs, leagues, camps, classes, lessons, tournaments, tryouts, fundraisers | 🟡 seasons, camps, house leagues, tournaments, tryouts (no classes/lessons/fundraisers) | Them, slightly — breadth |
+| Payment plans / autopay | ✅ stored cards, autopay, installments | ✅ Stripe installments, offers | Tie |
+| Fee structure | ❌ up to ~5.9% platform take + processing | ✅ target ~1–2% or flat; cards/offline/e-transfer choice ([[etransfer-reconciliation]] COMMITTED) | **Us — the wedge** |
+| e-Transfer auto-reconciliation | ❌ nothing (US company, no Interac) | 🗺️ committed, 3 tiers | **Us** once shipped |
+| Waitlists | ✅ automatic at capacity | 🗺️ [[waitlists]] | Them |
+| Waivers + e-sign | ✅ multiple waivers per registration, mandatory e-sign, PDF w/ IP+date | 🗺️ [[waivers-esign]] (owner-spec'd 2026-07-20) | Them today |
+| Registration insurance | ✅ Vertical Insure partner | ❌ not planned | Them (niche) |
+| Discounts/codes | ✅ + redemption reporting | ✅ offers/discounts | Tie |
+
+**P0 — game operations**
+
+| Feature | LeagueApps | Us | Verdict |
+|---|---|---|---|
+| Season schedule generation | ✅ round-robin, few clicks | ✅ scheduler (sessions/days/venues/courts) | Tie |
+| Tournament brackets / playoffs | ✅ seeds, pools, auto-advance | ✅ playoff generation, auto-advance | Tie |
+| **Live scoring** | ❌ post-game entry only (see above) | ✅ clock, play-by-play, live box, public live page | **Us — flagship** |
+| Standings | ✅ auto from scores, configurable rules | ✅ | Tie |
+| Game change comms | ✅ update notifications | ✅ Rescheduled/Cancelled templates + calendar strikethrough | Tie |
+| RSVP / attendance | ✅ RSVP, check-in, attendance reports | 🟡 EventRsvp shipped; practice attendance partial; no attendance reports | Them, slightly |
+| Referee ops | ❌ | ✅ booking, assignment, PIN scoring | **Us** |
+| **Live streaming** | ❌ | 🗺️ [[live-streaming-plan]] v2 | **Us** once shipped |
+
+**P1 — engagement & apps**
+
+| Feature | LeagueApps | Us | Verdict |
+|---|---|---|---|
+| Team chat | ✅ Play app only; reviews want better; Android lags iOS | ✅ web + iOS + Android parity | **Us** |
+| Broadcast comms | ✅ email + **SMS** to segments (gender/program/payment status), templates, automations (payment reminders) | 🟡 email templates + bell; SMS seam dark (Twilio, no creds); fewer automations | Them — SMS + automations |
+| Native apps | ✅ Play app mature, iOS-first | ✅ iOS + Android, parity rule, newer | Tie-ish |
+| Calendar sync | ✅ master calendar, external import | ✅ My Calendar lenses + webcal/Google one-click | Tie |
+| News/content/AI recaps | ❌ | ✅ AI recaps, covers, follow | **Us** |
+| Polls, practices | ❌/🟡 practices via scheduling | ✅ | Us |
+
+**P1 — growth & discovery**
+
+| Feature | LeagueApps | Us | Verdict |
+|---|---|---|---|
+| Public club pages | 🟡 paid WordPress Design Shop (separate site) | ✅ built-in, customizable, claiming | **Us** |
+| Reviews/ratings | ❌ | ✅ live on public pages | **Us** |
+| Tryout discovery ("near me") | ❌ | ✅ rated browse | **Us** |
+| SEO/city pages | ❌ (per-org sites only) | ✅ platform network + kill-switch | **Us** |
+| Player profiles/handles | ❌ | ✅ handles P0 shipped | Us |
+
+**P2 — back office (sell-with features as clubs grow)**
+
+| Feature | LeagueApps | Us | Verdict |
+|---|---|---|---|
+| Reporting & exports | ✅ deep (see §Deep dive) — scheduled exports, program comparisons | ❌ tiles only → 🗺️ [[accounting-exports]] **FAST-TRACKED** | Them — our #1 catch-up |
+| Accounting | ✅ reconciliation-grade + integrations | 🗺️ QuickBooks-friendly exports phase 1 | Them |
+| Background checks | ✅ NCSI owned + Yardstik auto-flow | 🗺️ [[staff-background-checks]] endorsed, Canadian-native | Them (US rails) |
+| Player evaluations | 🟡 via integration partners | 🟡 pipeline native, rubric 🗺️ [[tryout-evaluations]] endorsed | Mixed |
+| Facilities management | ✅ dedicated product | ❌ not our market yet | Them |
+| Integration marketplace | ✅ accounting/recruiting/hotels/marketing | ❌ | Them |
+| Hotel booking (stay-to-play rebates) | ✅ | ❌ irrelevant to beachhead | Them (their market) |
+
+**Bottom line for demos**: we win the *game-night experience* (live scoring, streaming,
+chat parity, public pages/discovery) and the *fee conversation*; they win *back-office
+maturity* (reporting, waitlists, waivers, SMS automations, background checks) — every one
+of which is on our roadmap with an owner-endorsed priority, led by accounting exports and
+waivers.
+
 ## Review-sourced weaknesses (G2/Capterra/SoftwareAdvice/Trustpilot)
 
 - Complexity: "flexible and complex… can get confusing"; asks for better FAQs.
