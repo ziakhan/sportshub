@@ -219,3 +219,21 @@ model:
 Canadians needs its own CASL/CRTC consent + enforcement in the SMS send path
 (the current model/enforcement is wired to email only). Add an SMS channel to
 consent (or a parallel SMS-consent), transactional-SMS exempt like email.
+
+---
+
+## ✅ 4. DONE 2026-07-21 (local `67cc802`, NOT deployed): legal pages + footer + logo fix
+- `/legal/{privacy,terms,acceptable-use}` + `/legal` index (public route group,
+  allowlisted). Privacy = PIPEDA + children's data + CASL consent + cookies +
+  retention + rights. Terms = platform-is-a-tool, payments-via-club, liability,
+  Ontario governing law. AUP = conduct/safety/security.
+- Public footer: Legal column + links + `© 2019–<year> SportsHub One`.
+- Fixed old `sportshub` wordmark → `<BrandWordmark>` in (platform) header +
+  mobile drawer + sidebar (the coach/manage-area logo the owner flagged).
+- ⚠️ OWNER FOLLOW-UPS before/at deploy (edit `apps/web/src/lib/legal.ts`):
+  (1) set the real legal ENTITY name (currently defaults to "SportsHub One");
+  (2) ensure privacy@ / legal@ / support@sportshubone.com inboxes exist (or
+  change them); (3) confirm jurisdiction = Ontario; (4) have a lawyer review
+  the policy copy before relying on it. These are a good-faith starting point.
+- Not linked from the (platform) operator footer/chrome — only the public
+  footer. Add there too if the owner wants it visible while logged in.
