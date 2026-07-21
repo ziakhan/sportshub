@@ -5,10 +5,35 @@ tags: [theme/backlog, type/plan, status/collecting]
 
 # 🗂️ Batch backlog — do these together (owner collecting, 2026-07-21)
 
-> Owner is accumulating a list to build in ONE pass. **Do NOT build until the
-> owner says go.** Add each item as it arrives, with enough spec + open
-> questions that we can execute later without re-deriving. Nothing here is
-> deployed.
+> Owner is accumulating a list to build in ONE pass. Add each item as it arrives
+> with enough spec + open questions to execute later without re-deriving.
+
+## ✅ SHIPPED overnight 2026-07-21 → PROD (box `3da65fd`, verified live on ysportshub.com)
+Owner directive: "finish all the rest of the assignments… completed and deployed
+by the morning… do not ask for my input." Deployed the two app-wide sweeps:
+
+- **Item 1 (branded date/time picker) — DONE + DEPLOYED.** Dropdown internals
+  (month/year/hour/minute) rebranded (BrandSelect: appearance-none + brand
+  chevron). `<DateTimePicker>` rolled out to ALL 22 forms in the inventory.
+  Commit `ebecef0`.
+- **Item 2 (venue picker sweep) — DONE + DEPLOYED (core).** Commits `45a13d7`
+  + `3da65fd`:
+  - `venueId` FK (nullable, additive — pushed to local + box DB) on Tryout,
+    Camp, HouseLeague, TeamEvent; `location` kept as denormalized fallback.
+  - `<VenueSelector>` on tryout/camp/house-league create + edit + their APIs.
+  - Public **/venues** directory + **/venues/[id]** detail (keyless Google map
+    embed, hours, courts, directions); `VenueLink` clickable venue names on
+    public tryout/camp/house-league pages + live game view.
+  - **Conflict detection (2b-iii):** `lib/venues/conflicts.ts` + GET
+    `/api/venues/[id]/conflicts` + `VenueConflictNotice` soft, non-blocking
+    advisory on the tryout forms (generic cross-org, no leak; same-org specifics
+    to that org's admins only).
+  - **STILL DEFERRED (documented, not built):** 2b per-entity scheduling-hours
+    model (the global-`VenueHours` mutation via venue-editor is CONFIRMED but
+    NOT yet repointed — see 2b/2b-i); TeamEvent + Practice venue-picker wiring
+    (FK exists, forms not yet swapped); tournaments (separate TournamentVenue
+    join, intentionally untouched); intra-org HARD block (only soft advisory
+    shipped). Item 5 (Trainer) NOT built — see §5 (owner: "scratch if complicated").
 
 ---
 
