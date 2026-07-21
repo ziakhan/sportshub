@@ -1,11 +1,20 @@
 import { prisma } from "@youthbasketballhub/db"
 
 /**
- * Who may run the scoring console for a game (docs/live-scoring-design.md,
- * owner-confirmed v1 access): the league owner, a platform admin, staff
- * (ClubOwner/ClubManager/Staff) of EITHER competing club, or a user assigned as
- * the game's Scorekeeper (UserRole role=Scorekeeper, gameId scoped) — mirroring
- * how referees are assigned per game.
+ * Who may run the scoring console for a game. Owner ruling 2026-07-20
+ * (tightened from the earlier "any staff of either competing club", which let
+ * a coach of an UNRELATED team score any game): scoring is limited to the two
+ * playing teams' people plus the competition operators —
+ *   - platform admin;
+ *   - the game's assigned Scorekeeper (UserRole role=Scorekeeper, gameId
+ *     scoped — this is how the LEAGUE assigns a scorekeeper);
+ *   - the league owner of the game's season;
+ *   - a ClubOwner/ClubManager of either competing club (club admins oversee
+ *     their own club's games);
+ *   - team-scoped Staff/TeamManager of the HOME or AWAY team — i.e. the head
+ *     coach, assistant coaches, and team manager of the two teams playing.
+ * A Staff row scoped to some OTHER team (or an unscoped staff-pool row) grants
+ * nothing here.
  */
 
 export interface ScorableGame {
@@ -45,14 +54,30 @@ export async function canScoreGame(
 
   const tenantIds = Array.from(new Set(teams.map((t: any) => t.tenantId)))
   if (tenantIds.length === 0) return false
-  const staffRole = await prisma.userRole.findFirst({
+
+  // Club admins of either competing club (club-wide by design).
+  const adminRole = await prisma.userRole.findFirst({
     where: {
       userId,
       tenantId: { in: tenantIds },
-      role: { in: ["ClubOwner", "ClubManager", "Staff"] },
+      role: { in: ["ClubOwner", "ClubManager"] },
     },
+    select: { id: true },
   })
-  return !!staffRole
+  if (adminRole) return true
+
+  // Team staff of one of the two teams actually playing (owner ruling
+  // 2026-07-20): head/assistant coaches (Staff) + team manager (TeamManager),
+  // scoped to home/away — NOT staff of an unrelated team in the same club.
+  const teamStaff = await prisma.userRole.findFirst({
+    where: {
+      userId,
+      teamId: { in: [game.homeTeamId, game.awayTeamId] },
+      role: { in: ["Staff", "TeamManager"] },
+    },
+    select: { id: true },
+  })
+  return !!teamStaff
 }
 
 /**

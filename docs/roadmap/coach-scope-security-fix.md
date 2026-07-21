@@ -93,17 +93,29 @@ parent/player IDOR, impersonation, chat/polls/practices/events, comms,
 payment-methods, RSVP, reviews, calendar, league/season/tournament approval
 routes (all derive scope from the resource).
 
-## ⚠️ OPEN — NEEDS OWNER RULING: game scoring by "either competing club"
-`lib/scoring/authz.ts` `canScoreGame` lets any Staff of EITHER competing
-club's tenant run/finalize scoring + assign referees (writes final score,
-standings, PlayerStats). The code comment says this is owner-confirmed
-by-design, but it's the pre-fix tenant-wide pattern and contradicts team
-scoping. **Question for owner:** should scoring be limited to staff of the
-two teams actually playing (canActOnTeam on home/away), or stay any-staff-of-
-either-club? Left UNCHANGED pending your call.
+## ✅ RESOLVED — game scoring restricted to the playing teams (owner ruling 2026-07-20)
+`lib/scoring/authz.ts` `canScoreGame` now allows: platform admin · the game's
+assigned **Scorekeeper** (gameId-scoped — how the LEAGUE assigns one) · the
+league owner · **ClubOwner/ClubManager of either competing club** · and
+**team-scoped Staff/TeamManager of the HOME or AWAY team** (head + assistant
+coaches, team manager). A Staff row scoped to another team, or an unscoped
+staff-pool row, no longer scores anyone else's game. This gates the whole
+scoring surface (scoring/events/finalize/clock/lock + referee & scorekeeper
+assignment, which all call canScoreGame). Tests: 3 new in coach-scope
+(non-playing coach blocked, playing coaches allowed, admin + assigned
+scorekeeper allowed, scorekeeper can't score a different game).
+
+**Guest scorekeeper ("invite anyone" question):** the mechanism already
+exists — `POST /api/games/[id]/score-invites` mints a one-time tokenized link
+(no account needed) for a single game, and it's gated by `canScoreGame`, so a
+playing team's coach/manager can now hand a parent in the stands a link to
+keep score when no assigned scorekeeper shows. The searchable assignment pool
+is limited to designated Scorekeepers (role=Scorekeeper, gameId null), NOT
+every user. So "invite anyone for this one game" is supported and safe; no
+standing club-wide grant is created. No change needed unless the owner wants
+to further restrict who can mint guest links.
 
 ## Open (owner's call)
-- The scoring ruling above.
 - Migration to delete legacy unscoped `teamId: null` Staff rows (now inert
   everywhere — all checks are team-scoped or admin).
 - Coach request→approve flow for tryouts (you floated it; today a coach

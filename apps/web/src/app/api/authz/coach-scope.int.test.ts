@@ -3,6 +3,7 @@ import {
   buildWorld,
   destroyWorld,
   createClub,
+  createParentWithChildren,
   type BuiltWorld,
 } from "@youthbasketballhub/test-worlds"
 import { NextRequest } from "next/server"
@@ -23,6 +24,7 @@ import { GET as obligationsGET } from "../obligations/route"
 import { GET as offersGET } from "../offers/route"
 import { POST as tournamentsPOST } from "../tournaments/route"
 import { canManageTeamRoster } from "@/lib/teams/roster-access"
+import { canScoreGame } from "@/lib/scoring/authz"
 import { prisma } from "@youthbasketballhub/db"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
@@ -43,18 +45,22 @@ let coachA: string
 let coachB: string
 let teamAId: string
 let teamBId: string
+let teamCId: string
+let coachC: string
 
 beforeAll(async () => {
   world = await buildWorld({ seed: 1135, leagues: [] })
   const club = await createClub(world.ctx, {
-    teams: [{ headCoach: true }, { headCoach: true }],
+    teams: [{ headCoach: true }, { headCoach: true }, { headCoach: true }],
   })
   tenantId = club.tenantId
   ownerId = club.owner.id
   teamAId = club.teams[0].id
   teamBId = club.teams[1].id
+  teamCId = club.teams[2].id
   coachA = club.teams[0].headCoach!.id
   coachB = club.teams[1].headCoach!.id
+  coachC = club.teams[2].headCoach!.id
 })
 
 afterAll(async () => {
@@ -135,7 +141,7 @@ describe("read APIs are scoped for coaches (no club-wide leak)", () => {
     actAs(ownerId)
     const res = await teamsGET(getReq(`/api/teams?tenantId=${tenantId}`))
     const { teams } = await res.json()
-    expect(teams.map((t: any) => t.id).sort()).toEqual([teamAId, teamBId].sort())
+    expect(teams.map((t: any) => t.id).sort()).toEqual([teamAId, teamBId, teamCId].sort())
   })
 
   it("GET /api/tryouts scopes a coach to their own team's tryouts", async () => {
@@ -210,6 +216,55 @@ describe("audit fixes — read scoping + cross-team + spoofing", () => {
       })
     )
     expect(ok.status).toBe(201)
+  })
+})
+
+describe("game scoring is limited to the two playing teams' staff (owner ruling)", () => {
+  let game: { id: string; homeTeamId: string; awayTeamId: string; seasonId: string | null }
+
+  beforeAll(async () => {
+    // A game between teamA and teamB. teamC's coach is a same-club coach who
+    // is NOT involved — the exact "unrelated team" the old rule wrongly let in.
+    const row = await prisma.game.create({
+      data: {
+        homeTeamId: teamAId,
+        awayTeamId: teamBId,
+        scheduledAt: new Date(Date.now() + 864e5),
+        status: "SCHEDULED",
+      },
+      select: { id: true, homeTeamId: true, awayTeamId: true, seasonId: true },
+    })
+    game = row
+  })
+
+  it("a coach of a NON-playing team in the same club cannot score", async () => {
+    expect(await canScoreGame(coachC, false, game)).toBe(false)
+  })
+
+  it("the home and away teams' coaches can score", async () => {
+    expect(await canScoreGame(coachA, false, game)).toBe(true)
+    expect(await canScoreGame(coachB, false, game)).toBe(true)
+  })
+
+  it("a club admin and a league-assigned scorekeeper can score", async () => {
+    expect(await canScoreGame(ownerId, false, game)).toBe(true)
+    // League assigns a scorekeeper for THIS game (gameId-scoped role).
+    const keeper = await createParentWithChildren(world.ctx, { children: [] })
+    await prisma.userRole.create({
+      data: { userId: keeper.parent.id, role: "Scorekeeper", gameId: game.id },
+    })
+    expect(await canScoreGame(keeper.parent.id, false, game)).toBe(true)
+    // ...but that scorekeeper cannot score a DIFFERENT game.
+    const other = await prisma.game.create({
+      data: {
+        homeTeamId: teamCId,
+        awayTeamId: teamAId,
+        scheduledAt: new Date(Date.now() + 2 * 864e5),
+        status: "SCHEDULED",
+      },
+      select: { id: true, homeTeamId: true, awayTeamId: true, seasonId: true },
+    })
+    expect(await canScoreGame(keeper.parent.id, false, other)).toBe(false)
   })
 })
 
