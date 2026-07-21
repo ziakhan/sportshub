@@ -732,3 +732,28 @@ gets push + email with fresh signing links immediately (deliberate action,
 not deduped).
 Verify post-push: roster page → unsigned chip → Remind → parent device gets
 push; email lands.
+
+## ✅ DEPLOYED TO PROD (box) 2026-07-21 — sha 07c972f (owner approved "push to prod")
+Shipped the full 2026-07-20 batch: waivers (auto-send on roster approval,
+in-flow signing with offer/camp/HL/tryout, tokenized public sign page, season
+signing-status, scheduled 7d/24h reminders, roster visibility, manual remind)
++ the coach role-scoping security fix + Fable-audit fixes (roster IDOR,
+obligations/offers/invitations read-scoping, tournament tenantId spoof, venues,
+mobile operator, draft-tryout visibility) + game-scoring restricted to playing
+teams.
+- Box DB schema: WaiverReminder created by deploy.sh's `prisma db push`
+  (WaiverDocument/SignRequest/Signature were already present). All 4 waiver
+  tables confirmed. Additive, no data loss.
+- **Cron fix (07c972f)**: /api/cron was NOT in the middleware allowlist, so the
+  route's CRON_SECRET check never ran → NO cron job ever fired on box OR
+  Vercel. Allowlisted /api/cron GET-only. Box cron.d added:
+  /etc/cron.d/sportshub-waiver-reminders (daily 10:00 UTC, sources web.env for
+  the secret, curls localhost). Tested: 401 without secret, {ok:true,...}
+  no-op with secret.
+- ⚠️ STILL NOT SCHEDULED on box (pre-existing, owner's call): payment-reminders,
+  rsvp-reminders, charge-due, expire-offers — these have vercel.json entries
+  but Vercel is dormant and no box cron.d exists for them. Enabling would start
+  sending real payment/RSVP emails, so left OFF pending owner decision.
+- Verified prod: ysportshub.com + sportshubone.com 200; /api/health 200;
+  /waivers/sign/<token> 200 (renders invalid-link state); services active.
+- Neon (Vercel DB) NOT touched — dormant; still behind on schema.
