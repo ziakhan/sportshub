@@ -765,3 +765,17 @@ admin sees during review. `ClubClaim.proofDocumentUrl` (webp data URL, like
 avatars); wizard proof step gets an ImageUploadField; admin claims page shows
 the image. Additive column — plain `prisma db push` (local done; box+Neon on
 next deploy). Verified int 347/347.
+
+## ✅ DEPLOYED TO PROD 2026-07-21 (batch) — sha 9de3977 (owner: "build all + push to prod")
+Shipped since 07c972f: accounting/reports tab (clubs+leagues, CSV export) ·
+club-claim proof-document upload (schema #34 ClubClaim.proofDocumentUrl, applied
+by deploy.sh) · legal pages (privacy/terms/AUP) + footer + © 2019 + logo fix ·
+nav Marketplace-dup removed + mobile pill colors · single notification bell +
+chat bubble in manage area · phone data-gap fix · branded DateTimePicker +
+tryout-create rollout (wave 1). Verified: sha 9de3977, proofDocumentUrl column
+present, both domains + /legal/* + /api/health 200, services active. Unit 20/20
++ int 347/347 pre-deploy.
+⚠️ Owner follow-ups: lib/legal.ts placeholder contacts (privacy@/legal@/
+support@sportshubone.com) — ensure those inboxes exist or edit. STILL NOT BUILT
+(large, deliberate follow-ups): DateTimePicker wave-2 (~19 forms) · venue
+overhaul (schema+picker+detail/map+per-entity hours+conflicts) · trainer role.
