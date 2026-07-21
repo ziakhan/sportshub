@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { RemindWaiverButton } from "@/components/waivers/remind-button"
 
 interface RosterPlayer {
   playerId: string
@@ -567,9 +568,12 @@ export function LeagueRosterManager({
                           ) : p.waiversOutstanding === 0 ? (
                             <Badge tone="court">Signed</Badge>
                           ) : (
-                            <Badge tone="warning">
-                              {p.waiversOutstanding} unsigned
-                            </Badge>
+                            <span className="inline-flex items-center">
+                              <Badge tone="warning">
+                                {p.waiversOutstanding} unsigned
+                              </Badge>
+                              <RemindWaiverButton playerId={p.playerId} seasonId={v.seasonId} />
+                            </span>
                           )}
                         </td>
                       </tr>

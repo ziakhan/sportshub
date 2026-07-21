@@ -15,6 +15,7 @@ import { mintWaiverSignRequest } from "@/lib/waivers/tokens"
 import { sendWaiverReminders } from "@/lib/waivers/reminders"
 import { POST as signPOST } from "./sign/route"
 import { POST as signInlinePOST } from "./sign-inline/route"
+import { POST as remindPOST } from "./remind/route"
 import { POST as tryoutSignupPOST } from "../tryouts/[id]/signup/route"
 import { PATCH as offerPATCH } from "../offers/[id]/route"
 import { GET as waiversGET, POST as waiversPOST } from "../leagues/[id]/waivers/route"
@@ -466,5 +467,66 @@ describe("season-start reminders (owner: push + reminder 7d / 24h before start)"
 
     const again = await sendWaiverReminders()
     expect(again.sent).toBe(0)
+  })
+})
+
+describe("manual game-day reminder (owner: no hard block, staff nudge instead)", () => {
+  it("a plain parent cannot trigger it; rostering-club staff can, and it pushes + emails per outstanding waiver", async () => {
+    // p0 currently outstanding: ack (v2 after the edit) + concussion = 2
+    const p0 = await (prisma as any).player.findUnique({
+      where: { id: rosterPlayerIds[0] },
+      select: { parentId: true },
+    })
+    actAs(p0.parentId) // the family's parent — no staff roles anywhere
+    const forbidden = await remindPOST(
+      jsonRequest("/api/waivers/remind", {
+        playerId: rosterPlayerIds[0],
+        seasonId,
+      })
+    )
+    expect(forbidden.status).toBe(403)
+
+    vi.mocked(sendWaiverSignEmail).mockClear()
+    const before = await (prisma as any).notification.count({
+      where: { type: "waiver_reminder" },
+    })
+
+    actAs(clubOwnerId) // staff of the club that rosters the player
+    const ok = await remindPOST(
+      jsonRequest("/api/waivers/remind", {
+        playerId: rosterPlayerIds[0],
+        seasonId,
+      })
+    )
+    expect(ok.status).toBe(200)
+    const payload = await ok.json()
+    expect(payload.sent).toBe(2)
+    expect(vi.mocked(sendWaiverSignEmail)).toHaveBeenCalledTimes(2)
+    const after = await (prisma as any).notification.count({
+      where: { type: "waiver_reminder" },
+    })
+    expect(after - before).toBe(2)
+
+    // Deliberate staff action: NOT deduped — a second tap sends again
+    const again = await remindPOST(
+      jsonRequest("/api/waivers/remind", {
+        playerId: rosterPlayerIds[0],
+        seasonId,
+      })
+    )
+    expect((await again.json()).sent).toBe(2)
+  })
+
+  it("league side can trigger it too; player with nothing outstanding sends zero", async () => {
+    actAs(leagueOwnerId)
+    // player1: ack outstanding, concussion validly signed → 1
+    const res = await remindPOST(
+      jsonRequest("/api/waivers/remind", {
+        playerId: rosterPlayerIds[1],
+        seasonId,
+      })
+    )
+    expect(res.status).toBe(200)
+    expect((await res.json()).sent).toBe(1)
   })
 })

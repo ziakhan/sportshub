@@ -723,3 +723,12 @@ Owner directive: enforce league waivers via reminders + staff visibility.
 Verify post-push: set a season startDate ~5 days out with an approved roster
 and unsigned waivers → run the cron with CRON_SECRET → parent gets bell+push+
 email; roster pages show Signed / N unsigned chips.
+
+## #33d — 2026-07-20 manual game-day waiver reminder (code only)
+Owner ruling: NO hard block. Staff (club owner/manager/staff/team manager of
+the rostering club, or league side) tap "Remind" next to an unsigned player
+on the league-rosters or team-roster page → POST /api/waivers/remind → family
+gets push + email with fresh signing links immediately (deliberate action,
+not deduped).
+Verify post-push: roster page → unsigned chip → Remind → parent device gets
+push; email lands.

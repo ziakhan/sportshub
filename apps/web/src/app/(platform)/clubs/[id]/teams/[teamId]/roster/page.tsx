@@ -5,6 +5,7 @@ import { FinalizeButton } from "./finalize-button"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
 import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
+import { RemindWaiverButton } from "@/components/waivers/remind-button"
 
 interface RosterPlayer {
   id: string
@@ -312,9 +313,12 @@ export default async function TeamRosterPage({
                         {unsignedCountFor(tp.playerId) === 0 ? (
                           <Badge tone="court">Signed</Badge>
                         ) : (
-                          <Badge tone="warning">
-                            {unsignedCountFor(tp.playerId)} unsigned
-                          </Badge>
+                          <span className="inline-flex items-center">
+                            <Badge tone="warning">
+                              {unsignedCountFor(tp.playerId)} unsigned
+                            </Badge>
+                            <RemindWaiverButton playerId={tp.playerId} tenantId={params.id} />
+                          </span>
                         )}
                       </td>
                     )}
