@@ -458,12 +458,25 @@ export function LivePlayer({
           await sleep(1250, run)
           setConfirmText(null)
         } else if ("hold" in step) {
-          // Pull the camera back out so the whole finished screen reads
-          // before the viewer taps onward (the glow marks the button).
+          // Stay zoomed when the button is already framed: pressing in place
+          // beats a zoom-out-zoom-in shuffle. Only move (one glide) when the
+          // button is not in view; the next scene opens wide anyway.
           if (cameraOnRef.current && zoomScaleRef.current > 1) {
-            if (cursorRef.current) cursorRef.current.style.opacity = "0"
-            setZoom(null)
-            await sleep(1120, run)
+            const ht = el(step.hold)
+            const stg = stageRef.current
+            if (ht && stg) {
+              const sR = stg.getBoundingClientRect()
+              const tR = ht.getBoundingClientRect()
+              const vis =
+                tR.top >= sR.top + 6 &&
+                tR.bottom <= sR.bottom - 6 &&
+                tR.left >= sR.left + 6 &&
+                tR.right <= sR.right - 6
+              if (!vis) {
+                const moved = zoomToWork(step.hold)
+                if (moved) await sleep(1120, run)
+              }
+            }
           }
           setHolding(step.hold)
           setReady(true)
