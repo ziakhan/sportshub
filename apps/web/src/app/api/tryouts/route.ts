@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin } from "@/lib/authz/team-scope"
 import { z } from "zod"
 
 export const dynamic = "force-dynamic"
@@ -37,28 +38,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createTryoutSchema.parse(body)
 
-    // Verify permissions (ClubOwner, ClubManager, Staff, TeamManager, or
-    // PlatformAdmin) — owner call 2026-07-07: coaches AND team managers can
-    // post tryouts, same circle that runs the team day-to-day.
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        roles: {
-          where: {
-            OR: [
-              {
-                tenantId: validatedData.tenantId,
-                role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
-              },
-              { role: "PlatformAdmin" },
-            ],
-          },
-        },
-      },
-    })
-
-    if (!user || user.roles.length === 0) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Owner ruling 2026-07-20: tryout creation is CLUB-ADMIN ONLY. Fees +
+    // registration payments hang off a tryout, so it's owner/manager work,
+    // not a coach action (superseding the 2026-07-07 coach-can-post call).
+    if (!(await isClubAdmin(userId, validatedData.tenantId))) {
+      return NextResponse.json(
+        { error: "Only club owners or managers can create tryouts" },
+        { status: 403 }
+      )
     }
 
     const createData: Record<string, unknown> = {

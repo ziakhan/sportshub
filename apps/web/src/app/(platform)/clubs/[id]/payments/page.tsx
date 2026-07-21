@@ -32,8 +32,9 @@ export default async function ClubPaymentsPage({ params }: { params: { id: strin
     roleNames.includes("ClubOwner") ||
     roleNames.includes("ClubManager") ||
     roleNames.includes("PlatformAdmin")
-  const isStaff = roleNames.includes("Staff")
-  if (!isAdmin && !isStaff) notFound()
+  // Security fix 2026-07-20: club money is admin-only. Staff could see (and
+  // record cash against) every family's obligations club-wide.
+  if (!isAdmin) notFound()
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: params.id },
@@ -92,7 +93,7 @@ export default async function ClubPaymentsPage({ params }: { params: { id: strin
         <ObligationsTable
           obligations={incoming}
           view="merchant"
-          canRecord={isAdmin || isStaff}
+          canRecord={isAdmin}
           canWaive={isAdmin}
           canRefund={isAdmin}
         />

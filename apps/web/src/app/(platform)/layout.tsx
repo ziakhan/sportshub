@@ -74,9 +74,23 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     }
   }
 
+  // Coached teams per tenant (security fix 2026-07-20): the staff workspace
+  // links straight to a coach's own team(s), never the club root.
+  const teamsByTenant = new Map<string, { id: string; name: string }[]>()
+  for (const r of dbUser.roles as any[]) {
+    if ((r.role === "Staff" || r.role === "TeamManager") && r.teamId && r.team && r.tenantId) {
+      const list = teamsByTenant.get(r.tenantId) ?? []
+      if (!list.some((t) => t.id === r.teamId)) {
+        list.push({ id: r.teamId, name: r.team.name })
+      }
+      teamsByTenant.set(r.tenantId, list)
+    }
+  }
+
   const tenants = rawTenants.map((tenant: any) => ({
     ...tenant,
     counts: countsByTenant.get(tenant.id),
+    teams: teamsByTenant.get(tenant.id) ?? [],
   }))
 
   const checklist = await getCompletionChecklist(dbUser as any)

@@ -104,31 +104,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         )
       }
 
-      // If this is a team-scoped invitation, ensure the user also has
-      // a tenant-level role so they appear as club staff and can be
-      // assigned to additional teams later.
-      if (invitation.teamId) {
-        const existingTenantRole = await prisma.userRole.findFirst({
-          where: {
-            userId: targetUserId,
-            tenantId: invitation.tenantId,
-            role: roleToAssign as any,
-            teamId: null,
-          },
-        })
-
-        if (!existingTenantRole) {
-          await prisma.userRole.create({
-            data: {
-              userId: targetUserId,
-              role: roleToAssign,
-              tenantId: invitation.tenantId,
-              teamId: null,
-              designation: null,
-            },
-          })
-        }
-      }
+      // Security fix 2026-07-20: a team-scoped invitation creates ONLY the
+      // team-scoped role. The old code also minted an unscoped tenant-level
+      // duplicate "so they appear as club staff" — which handed every
+      // one-team coach club-wide Staff standing. The staff pool queries
+      // match team-scoped rows through their tenantId, so nothing needs the
+      // duplicate.
 
       // Create the (possibly team-scoped) UserRole
       await prisma.userRole.create({

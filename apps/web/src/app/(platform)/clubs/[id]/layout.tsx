@@ -1,8 +1,10 @@
 import { prisma } from "@youthbasketballhub/db"
+import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { brandStyle } from "@/lib/club-page/brand"
+import { coachedTeams } from "@/lib/authz/team-scope"
 import { ClubTabs } from "./club-tabs"
 
 async function getClubAccess(clubId: string, userId: string, userRoles: string[]) {
@@ -62,34 +64,58 @@ export default async function ClubLayout({
 
   const { tenant: club, isAdmin } = access
 
+  // SECURITY GATE (owner 2026-07-20): a team-only coach must NOT reach any
+  // club-wide surface (Overview, all-Teams, Tryouts, Offers, Templates,
+  // programs, payments, staff, settings). They may ONLY be inside their own
+  // team's pages. Enforced here, the single choke point for /clubs/[id]/*.
+  const myTeams = isAdmin ? [] : await coachedTeams(dbUser.id, params.id)
+  if (!isAdmin) {
+    const pathname = headers().get("x-pathname") || ""
+    const allowedTeamPrefixes = myTeams.map(
+      (t) => `/clubs/${params.id}/teams/${t.id}`
+    )
+    const onOwnTeamPage = allowedTeamPrefixes.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    )
+    // Public club page preview stays open; everything else club-wide is off.
+    const onPublicPreview = pathname === `/clubs/${params.id}/public`
+    if (!onOwnTeamPage && !onPublicPreview) {
+      if (myTeams.length === 1) {
+        redirect(`/clubs/${params.id}/teams/${myTeams[0].id}/dashboard`)
+      }
+      // 0 (defensive) or multiple teams → the personal multi-team landing
+      redirect("/teams")
+    }
+  }
+
   const branding = await prisma.tenantBranding.findUnique({
     where: { tenantId: params.id },
     select: { primaryColor: true },
   })
   const primaryColor = branding?.primaryColor || "#4f46e5"
 
-  // Coaches (Staff/TeamManager) get the team-day-to-day tabs only; program
-  // creation (camps/HL/tournaments) and club administration are admin turf
-  // (owner rule 2026-07-11 — a coach must not see program-creation surfaces)
-  const tabs = [
-    { label: "Overview", href: `/clubs/${params.id}` },
-    { label: "Teams", href: `/clubs/${params.id}/teams` },
-    { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
-    { label: "Offers", href: `/clubs/${params.id}/offers` },
-    { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
-    ...(isAdmin
-      ? [
-          { label: "House League", href: `/clubs/${params.id}/house-leagues` },
-          { label: "Camps", href: `/clubs/${params.id}/camps` },
-          { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
-          { label: "Payments", href: `/clubs/${params.id}/payments` },
-          { label: "Staff", href: `/clubs/${params.id}/staff` },
-          { label: "Customize page", href: `/clubs/${params.id}/customize` },
-          { label: "Messages", href: `/clubs/${params.id}/messages` },
-          { label: "Settings", href: `/clubs/${params.id}/settings` },
-        ]
-      : []),
-  ]
+  // Admins get the full club workspace tabs. Coaches get ONLY their team(s) —
+  // no club-wide navigation exists for them (owner 2026-07-20).
+  const tabs = isAdmin
+    ? [
+        { label: "Overview", href: `/clubs/${params.id}` },
+        { label: "Teams", href: `/clubs/${params.id}/teams` },
+        { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
+        { label: "Offers", href: `/clubs/${params.id}/offers` },
+        { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
+        { label: "House League", href: `/clubs/${params.id}/house-leagues` },
+        { label: "Camps", href: `/clubs/${params.id}/camps` },
+        { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
+        { label: "Payments", href: `/clubs/${params.id}/payments` },
+        { label: "Staff", href: `/clubs/${params.id}/staff` },
+        { label: "Customize page", href: `/clubs/${params.id}/customize` },
+        { label: "Messages", href: `/clubs/${params.id}/messages` },
+        { label: "Settings", href: `/clubs/${params.id}/settings` },
+      ]
+    : myTeams.map((t) => ({
+        label: t.name,
+        href: `/clubs/${params.id}/teams/${t.id}/dashboard`,
+      }))
 
   return (
     <div className="font-barlow" style={brandStyle(primaryColor)}>

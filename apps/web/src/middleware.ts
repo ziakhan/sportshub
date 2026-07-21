@@ -94,6 +94,9 @@ export default async function middleware(req: NextRequest) {
   }
 
   const requestHeaders = new Headers(req.headers)
+  // Expose the path to server components (Next.js doesn't). The club layout
+  // reads it to gate team-only coaches out of club-wide pages (2026-07-20).
+  requestHeaders.set("x-pathname", pathname)
   if (tenantSlug) {
     requestHeaders.set("x-tenant-slug", tenantSlug)
     requestHeaders.set("x-is-custom-domain", isCustomDomain.toString())

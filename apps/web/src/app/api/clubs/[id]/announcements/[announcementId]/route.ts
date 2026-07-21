@@ -10,7 +10,7 @@ async function authz(userId: string, tenantId: string, announcementId: string) {
     where: {
       userId,
       OR: [
-        { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
+        { tenantId, role: { in: ["ClubOwner", "ClubManager"] } }, // Staff dropped: security fix 2026-07-20
         { role: "PlatformAdmin" },
       ],
     },

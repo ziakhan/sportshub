@@ -21,6 +21,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 let world: BuiltWorld
 let tenantId: string
 let teamId: string
+let ownerId: string
 let coachId: string
 let teamManagerId: string
 let parentId: string
@@ -47,6 +48,7 @@ beforeAll(async () => {
   const club = world.clubs[0]
   tenantId = club.tenantId
   teamId = club.teams[0].id
+  ownerId = club.owner.id
   coachId = club.teams[0].headCoach!.id
 
   // TeamManager on this team (invitation-granted role in production)
@@ -64,17 +66,27 @@ afterAll(async () => {
   if (world) await destroyWorld(world.ctx)
 })
 
+// Security ruling 2026-07-20: tryout creation is CLUB-ADMIN ONLY (fees +
+// registration payments hang off it). Superseded the 2026-07-07 call that let
+// coaches/team managers post — that was part of the coach-overreach the owner
+// reported.
 describe("POST /api/tryouts — creation authz (integration)", () => {
-  it("team manager can post a tryout", async () => {
-    actAs(teamManagerId)
-    const res = await createTryout({ title: "TM-posted tryout" })
+  it("club owner can post a tryout", async () => {
+    actAs(ownerId)
+    const res = await createTryout({ title: "Owner-posted tryout" })
     expect(res.status).toBe(201)
   })
 
-  it("coach (Staff) can post a tryout", async () => {
+  it("team manager can NOT post a tryout", async () => {
+    actAs(teamManagerId)
+    const res = await createTryout({ title: "TM-posted tryout" })
+    expect(res.status).toBe(403)
+  })
+
+  it("coach (Staff) can NOT post a tryout", async () => {
     actAs(coachId)
     const res = await createTryout({ title: "Coach-posted tryout" })
-    expect(res.status).toBe(201)
+    expect(res.status).toBe(403)
   })
 
   it("a parent with no club role cannot", async () => {

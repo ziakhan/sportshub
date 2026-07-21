@@ -6,12 +6,14 @@ import { notifyMany } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
+// Security fix 2026-07-20: club-wide announcements blast every member and
+// parent in the club — admin-only. Coaches talk to their team via team chat.
 async function canManage(userId: string, tenantId: string) {
   const role = await prisma.userRole.findFirst({
     where: {
       userId,
       OR: [
-        { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
+        { tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
         { role: "PlatformAdmin" },
       ],
     },

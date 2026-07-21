@@ -324,9 +324,11 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
               Create team
             </Button>
           )}
-          <Button href={`/clubs/${params.id}/tryouts/create`} icon={ACTION_ICONS.plus}>
-            Create tryout
-          </Button>
+          {isAdmin && (
+            <Button href={`/clubs/${params.id}/tryouts/create`} icon={ACTION_ICONS.plus}>
+              Create tryout
+            </Button>
+          )}
           {isAdmin && (
             <Button href={`/clubs/${params.id}/staff`} variant="subtle" icon={ACTION_ICONS.people}>
               Manage staff

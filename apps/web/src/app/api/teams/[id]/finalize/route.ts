@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 import { notify } from "@/lib/notifications"
 import { assignJerseys } from "@/lib/teams/assign-jerseys"
 
@@ -31,22 +32,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // Verify club permission — coaches/team managers included (owner
-    // decision 2026-07-07: full roster authority for the bench)
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [
-          {
-            tenantId: team.tenantId,
-            role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
-          },
-          { role: "PlatformAdmin" },
-        ],
-      },
-    })
-
-    if (!hasAccess) {
+    // Owner decision 2026-07-07: full roster authority for the bench — for
+    // THEIR team. Security fix 2026-07-20: Staff/TeamManager must hold a
+    // team-scoped role for this exact team; admins keep club-wide access.
+    if (!(await canActOnTeam(userId, team.tenantId, team.id))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

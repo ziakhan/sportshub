@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
@@ -47,25 +48,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // Same club roles that may send offers
+    // Same rule as offers (security fix 2026-07-20): admins any team, Staff
+    // only their own team.
+    if (!(await canActOnTeam(userId, team.tenantId, team.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     const inviter = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        firstName: true,
-        lastName: true,
-        email: true,
-        roles: {
-          where: {
-            OR: [
-              { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-              { role: "PlatformAdmin" },
-            ],
-          },
-          select: { id: true },
-        },
-      },
+      select: { firstName: true, lastName: true, email: true },
     })
-    if (!inviter || inviter.roles.length === 0) {
+    if (!inviter) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

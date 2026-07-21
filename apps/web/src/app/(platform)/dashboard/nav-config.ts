@@ -67,6 +67,8 @@ export interface NavTenant {
   slug: string
   role?: string
   counts?: { teams: number; tryouts: number; offers: number }
+  /** For staff-only tenants: the coach's own team(s), for scoped nav links. */
+  teams?: { id: string; name: string }[]
 }
 
 export interface BuildNavSectionsInput {
@@ -120,12 +122,25 @@ function clubWorkspace(tenant: NavTenant): NavWorkspace {
   }
 }
 
+// Security fix 2026-07-20: a coach's workspace links ONLY to their own
+// team(s), never the club root (which exposed the whole club). Root points at
+// the first team's dashboard; each coached team is a sub-item.
 function staffWorkspace(tenant: NavTenant): NavWorkspace {
+  const teams = tenant.teams ?? []
+  const rootHref =
+    teams.length >= 1 ? `/clubs/${tenant.id}/teams/${teams[0].id}/dashboard` : "/teams"
   return {
     key: tenant.id,
     kindLabel: "Staff workspace",
-    root: { label: tenant.name, href: `/clubs/${tenant.id}`, icon: "dashboard" },
-    subItems: [],
+    root: { label: tenant.name, href: rootHref, icon: "dashboard" },
+    subItems:
+      teams.length > 1
+        ? teams.map((t) => ({
+            label: t.name,
+            href: `/clubs/${tenant.id}/teams/${t.id}/dashboard`,
+            icon: "users" as const,
+          }))
+        : [],
   }
 }
 

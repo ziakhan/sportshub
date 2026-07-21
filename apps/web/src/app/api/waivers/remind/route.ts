@@ -3,10 +3,9 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { sendManualWaiverReminder } from "@/lib/waivers/remind"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
-
-const CLUB_STAFF_ROLES = ["ClubOwner", "ClubManager", "Staff", "TeamManager"] as any[]
 
 const remindSchema = z
   .object({
@@ -49,39 +48,53 @@ export async function POST(request: NextRequest) {
       if (season.league.ownerId === sessionInfo.userId) {
         allowed = true
       } else {
-        const rosterTenants = await (prisma as any).seasonRosterPlayer.findMany({
-          where: { playerId, roster: { seasonId } },
-          select: {
-            roster: {
-              select: { teamSubmission: { select: { team: { select: { tenantId: true } } } } },
-            },
-          },
-        })
-        const tenantIds = Array.from(
-          new Set(
-            rosterTenants
-              .map((r: any) => r.roster?.teamSubmission?.team?.tenantId)
-              .filter(Boolean)
-          )
-        ) as string[]
-        const role = await prisma.userRole.findFirst({
+        const leagueRole = await prisma.userRole.findFirst({
           where: {
             userId: sessionInfo.userId,
-            OR: [
-              { leagueId: season.leagueId, role: { in: ["LeagueOwner", "LeagueManager"] } },
-              ...(tenantIds.length > 0
-                ? [{ tenantId: { in: tenantIds }, role: { in: CLUB_STAFF_ROLES } } as any]
-                : []),
-            ],
+            leagueId: season.leagueId,
+            role: { in: ["LeagueOwner", "LeagueManager"] },
           },
         })
-        allowed = !!role
+        allowed = !!leagueRole
+        if (!allowed) {
+          // Club side: team-scoped (security fix 2026-07-20) — only staff of
+          // the exact team that rosters this player, or that club's admins.
+          const rosterTeams = await (prisma as any).seasonRosterPlayer.findMany({
+            where: { playerId, roster: { seasonId } },
+            select: {
+              roster: {
+                select: {
+                  teamSubmission: {
+                    select: { team: { select: { id: true, tenantId: true } } },
+                  },
+                },
+              },
+            },
+          })
+          for (const r of rosterTeams) {
+            const team = r.roster?.teamSubmission?.team
+            if (team && (await canActOnTeam(sessionInfo.userId, team.tenantId, team.id))) {
+              allowed = true
+              break
+            }
+          }
+        }
       }
     } else if (!allowed && tenantId) {
-      const role = await prisma.userRole.findFirst({
-        where: { userId: sessionInfo.userId, tenantId, role: { in: CLUB_STAFF_ROLES } },
-      })
-      allowed = !!role
+      // Club context: admins, or staff who share an active team with the player
+      allowed = await isClubAdmin(sessionInfo.userId, tenantId)
+      if (!allowed) {
+        const playerTeams = await (prisma as any).teamPlayer.findMany({
+          where: { playerId, status: "ACTIVE", team: { tenantId } },
+          select: { teamId: true },
+        })
+        for (const t of playerTeams) {
+          if (await canActOnTeam(sessionInfo.userId, tenantId, t.teamId)) {
+            allowed = true
+            break
+          }
+        }
+      }
     }
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 

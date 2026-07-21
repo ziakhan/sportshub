@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { canActOnTeam, actorRoleAtTenant } from "@/lib/authz/team-scope"
 import { z } from "zod"
 import {
   createOfferForPlayer,
@@ -39,22 +40,11 @@ export async function POST(request: NextRequest) {
     })
     if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 })
 
-    const user = await prisma.user.findUnique({
-      where: { id: sessionInfo.userId },
-      include: {
-        roles: {
-          where: {
-            OR: [
-              { tenantId: team.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-              { role: "PlatformAdmin" },
-            ],
-          },
-        },
-      },
-    })
-    if (!user || user.roles.length === 0) {
+    // Security fix 2026-07-20: team-scoped — see /api/offers POST.
+    if (!(await canActOnTeam(sessionInfo.userId, team.tenantId, team.id))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
+    const actorRole = await actorRoleAtTenant(sessionInfo.userId, team.tenantId)
 
     // Signups must belong to a tryout of THIS team
     const signups = await (prisma as any).tryoutSignup.findMany({
@@ -169,7 +159,7 @@ export async function POST(request: NextRequest) {
           if (rivals.length > 0) {
             await audit(tx, {
               actorId: sessionInfo.realUserId,
-              actorRole: user.roles[0].role,
+              actorRole,
               action: "OFFER_CROSS_CLUB_RECRUIT",
               resource: "Offer",
               resourceId: created.id,

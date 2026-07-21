@@ -18,7 +18,10 @@ export async function merchantAccess(
   opts: { tenantRoles?: string[] } = {}
 ): Promise<boolean> {
   if (scope.payeeLeague?.ownerId === userId) return true
-  const tenantRoles = opts.tenantRoles ?? ["ClubOwner", "ClubManager", "Staff"]
+  // Security fix 2026-07-20: Staff dropped from the default — a one-team
+  // coach could record cash/e-transfer payments against ANY family's
+  // obligation club-wide. Money handling is admin work.
+  const tenantRoles = opts.tenantRoles ?? ["ClubOwner", "ClubManager"]
   const role = await prisma.userRole.findFirst({
     where: {
       userId,

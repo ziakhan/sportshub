@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 import { z } from "zod"
 import { notify } from "@/lib/notifications"
 import {
@@ -206,15 +207,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       return NextResponse.json({ error: "Invitation not found" }, { status: 404 })
     }
 
-    const hasAccess = await prisma.userRole.findFirst({
-      where: {
-        userId,
-        OR: [
-          { tenantId: invitation.tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-          { role: "PlatformAdmin" },
-        ],
-      },
-    })
+    // Security fix 2026-07-20: revoking is team-scoped for Staff, club-wide
+    // only for admins.
+    const hasAccess = invitation.teamId
+      ? await canActOnTeam(userId, invitation.tenantId, invitation.teamId)
+      : await isClubAdmin(userId, invitation.tenantId)
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }

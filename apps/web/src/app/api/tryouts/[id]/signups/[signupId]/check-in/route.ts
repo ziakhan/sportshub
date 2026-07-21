@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 import { getSessionUserId } from "@/lib/auth-helpers"
 
 export const dynamic = "force-dynamic"
@@ -25,23 +26,24 @@ export async function POST(
 
     const signup = await prisma.tryoutSignup.findFirst({
       where: { id: params.signupId, tryoutId: params.id },
-      select: { id: true, status: true, tryout: { select: { tenantId: true } } },
+      select: {
+        id: true,
+        status: true,
+        tryout: { select: { tenantId: true, teamId: true } },
+      },
     })
     if (!signup) {
       return NextResponse.json({ error: "Signup not found" }, { status: 404 })
     }
 
-    // Anyone running the tryout for this club can take roll call
+    // Roll call: club admins always; coaches only for THEIR team's tryout
+    // (security fix 2026-07-20 — was any tenant Staff, club-wide). Club-wide
+    // tryouts (no team) stay admin-run.
     if (!auth.isPlatformAdmin) {
-      const role = await prisma.userRole.findFirst({
-        where: {
-          userId: auth.userId,
-          tenantId: signup.tryout.tenantId,
-          role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
-        },
-        select: { id: true },
-      })
-      if (!role) {
+      const allowed = signup.tryout.teamId
+        ? await canActOnTeam(auth.userId, signup.tryout.tenantId, signup.tryout.teamId)
+        : await isClubAdmin(auth.userId, signup.tryout.tenantId)
+      if (!allowed) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
     }
