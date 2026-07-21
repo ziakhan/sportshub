@@ -65,12 +65,26 @@ export default async function PublicLayout({ children }: { children: React.React
           {/* lg, not md: at 768–1023px this nav + logo + account buttons don't
               fit (worse logged-in) and overflow the viewport — tablets get
               the scrollable pill row instead. */}
+          {/* Order matches the determined section order + the mobile pills:
+              Scores · News · Programs · Leagues · Clubs (owner 2026-07-18/21). */}
           <nav className="hidden items-center gap-1 lg:flex">
             <Link
               href="/scores"
               className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
             >
               Scores
+            </Link>
+            <Link
+              href="/news"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
+            >
+              News
+            </Link>
+            <Link
+              href="/events"
+              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
+            >
+              Programs
             </Link>
             <NavDropdown
               label="Leagues"
@@ -90,24 +104,6 @@ export default async function PublicLayout({ children }: { children: React.React
               browseHref="/club"
               browseLabel="Browse all clubs"
             />
-            <Link
-              href="/news"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
-            >
-              News
-            </Link>
-            <Link
-              href="/events"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
-            >
-              Programs
-            </Link>
-            <Link
-              href="/events"
-              className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 rounded-lg px-4 py-2 text-[15px] font-medium transition-colors"
-            >
-              Marketplace
-            </Link>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -192,9 +188,6 @@ export default async function PublicLayout({ children }: { children: React.React
               </Link>
               <Link href="/news" className="block transition-colors hover:text-white">
                 News
-              </Link>
-              <Link href="/events" className="block transition-colors hover:text-white">
-                Marketplace
               </Link>
             </div>
           </div>

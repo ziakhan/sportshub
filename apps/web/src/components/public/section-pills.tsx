@@ -31,15 +31,20 @@ const SECTIONS: Array<{
   {
     href: "/news",
     label: "News",
-    off: "bg-gold-50 text-gold-600",
-    on: "bg-gold-500 text-white",
+    // Violet breaks the warm run (Scores orange-red / Programs amber) — the
+    // brand palette is warm-heavy, so News takes the one cool accent that
+    // isn't already green (Leagues) or blue (Clubs). Owner 2026-07-21:
+    // permanent, well-separated per-category colors.
+    off: "bg-violet-50 text-violet-700",
+    on: "bg-violet-600 text-white",
   },
   {
     href: "/events",
     label: "Programs",
     also: ["/tryout", "/camp", "/house-league", "/tournament", "/marketplace"],
-    off: "bg-hoop-50 text-hoop-700",
-    on: "bg-hoop-600 text-white",
+    // Amber (was hoop orange-red, which was IDENTICAL to Scores' energy).
+    off: "bg-gold-50 text-gold-600",
+    on: "bg-gold-500 text-white",
   },
   {
     href: "/leagues",
