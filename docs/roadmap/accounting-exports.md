@@ -40,3 +40,23 @@ QuickBooks by hand; nonprofit treasurers need clean books for AGMs and audits.
 
 ## Refs
 [[leagueapps-comparison]] §Deep dive · [[etransfer-reconciliation]] · [[_moc-payments]]
+
+## ✅ FEASIBILITY CONFIRMED 2026-07-21 (owner asked "do we have enough?")
+YES — the data + helpers already exist; this is a REPORTING VIEW on top, not new
+data collection:
+- `PaymentObligation` (amount, status PENDING/PARTIALLY_PAID/PAID/WAIVED,
+  payeeTenantId | payeeLeagueId, referenceType = program type, payments[]) +
+  `Payment` (amount, SUCCEEDED/REFUNDED, refundAmount).
+- `lib/payments/queries.ts`: `merchantObligations({tenantId|leagueId})` fetches
+  all obligations for a club OR league; `summarize()` already computes
+  **collected** (money claimed), **outstanding** (pending amounts), **waived**,
+  AND **byType** (revenue per program type: camps/house leagues/tryouts/season
+  offers/tournaments).
+- The club `payments/page.tsx` + league `payments/page.tsx` ALREADY render
+  Collected/Outstanding/Waived tiles + ObligationsTable. That's the foundation.
+**So the "Accounting/Reports tab" incremental build =** (1) per-program revenue
+breakdown (surface `byType` with friendly labels); (2) a transactions report
+(list payments: date/payer/program/gross/fee/net/method/status); (3) CSV/Excel
+export (QuickBooks-friendly columns); (4) installment roll-up (paid/upcoming/
+overdue). Phase-2: scheduled email exports. Works for BOTH clubs and leagues
+(same helpers, keyed by tenantId vs leagueId). Ready to build on owner's go.
