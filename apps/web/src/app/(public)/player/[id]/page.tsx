@@ -56,6 +56,26 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
       ? "pending"
       : "active"
 
+  // Profile moments grid (social-feed-plan P4): the player's shared card
+  // posts. PUBLIC for everyone; FOLLOWERS also for approved followers/family.
+  const canSeeFollowersPosts =
+    followState === "active" || scope.playerIds.has(data.player.id)
+  const momentPosts = await (prisma as any).post.findMany({
+    where: {
+      status: "PUBLISHED",
+      kind: { in: ["STAT_CARD", "PLAYER_OF_GAME"] },
+      tags: { some: { playerId: data.player.id } },
+      ...(canSeeFollowersPosts ? {} : { visibility: "PUBLIC" }),
+    },
+    select: {
+      id: true,
+      kind: true,
+      tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 6,
+  })
+
   const a = data.aggregate
 
   return (
@@ -120,6 +140,32 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
             <StatBlock label="Blocks per game" value={a.bpg.toFixed(1)} tone="violet" />
             <StatBlock label="Games played" value={a.gamesPlayed} tone="neutral" />
           </div>
+
+          {momentPosts.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-ink-950 mb-3 text-lg font-bold">Moments</h2>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {momentPosts.map((p: any) => {
+                  const gameId = p.tags[0]?.gameId
+                  if (!gameId) return null
+                  const img =
+                    p.kind === "PLAYER_OF_GAME"
+                      ? `/api/live/${gameId}/card?src=post:${p.id}`
+                      : `/api/live/${gameId}/card/${data.player.id}?src=post:${p.id}`
+                  return (
+                    <Link key={p.id} href={`/live/${gameId}`} className="block">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img}
+                        alt="Shared game card"
+                        className="border-ink-100 w-full rounded-xl border transition hover:opacity-90"
+                      />
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <Card className="overflow-hidden p-0">
             <div className="border-ink-100 flex items-center justify-between border-b px-6 py-4">

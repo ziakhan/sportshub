@@ -835,3 +835,15 @@ new overdue nagging ships dark until scheduled (see #36 one-liner).
   panel (top scorer suggested, tap-to-change, table photo via capture input) ·
   /live game page gold banner (photo consent-gated server-side) · scoresheet
   line · final bell mentions POTG. No raw SQL, no cron, no env.
+
+## #38 — 2026-07-23: SOCIAL FEED P1–P5 (LOCAL, not deployed; owner reviewing)
+- Schema additive (deploy.sh db push covers): Follow.playerId+status,
+  Player.socialVisibility, Story/StoryView/PostReaction/Comment/
+  CommentReport/Repost, Post.visibility+kinds+card params, sharedPostId on
+  TeamMessage/DirectMessage. One `--accept-data-loss` prompt (new unique
+  constraints on empty columns — safe).
+- ⚠️ Before PUBLIC launch: set ANTHROPIC_API_KEY on box + flip STRICT_SCREEN
+  → true in apps/web/src/lib/social/photo-screen.ts (custom-photo screening
+  currently fails open in dev).
+- No raw SQL, no cron, no env otherwise. Commits ac354cf/999760a/e515aa6/
+  73bd0e3/598ca41 + docs.

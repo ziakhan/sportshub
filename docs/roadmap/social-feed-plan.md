@@ -15,6 +15,11 @@ tags: [theme/social, type/plan, status/committed]
 > clipping). Companion docs: [[player-handles-plan]] (P0 shipped),
 > [[live-streaming-plan]] (clipping depends on it).
 
+> **✅ 2026-07-23 overnight: P1–P5 BUILT LOCALLY** (owner: "finish everything,
+> local only") — commits `ac354cf` P1 · `999760a` P2 · `e515aa6` P3 ·
+> `73bd0e3` P4 · `598ca41` P5 (+ profile Moments grid). 17/17 E2E checks
+> pass. NOT deployed. Build decisions + deferred list: §Build log at bottom.
+
 > **2026-07-22 (later): FULL PLAN APPROVED in plan mode** — canonical approved
 > plan: Instagram-style BOTH formats (permanent posts with likes/text-comments-
 > day-one/shares/reposts AND 24h stories, sharer picks either/both) · follows
@@ -129,3 +134,31 @@ tags: [theme/social, type/plan, status/committed]
   scorer), can override/skip, can snap a photo → game page and scoresheet
   show "Player of the Game: #23 Trey J." (photo only with consent), and
   the final bell mentions it.
+
+## Build log (2026-07-23 overnight, all LOCAL — no box deploy)
+
+Shipped: P2 satori cards (`/api/live/[gameId]/card[/playerId]`, bold+clean
+templates, watermark + /p/handle, OG image, native POTG banner + share) ·
+P3 one additive migration + player follows w/ parent-approved requests +
+Social & followers controls on player edit · P4 share dialog (post/story/
+template/photo), stories API + rail + fullscreen viewer, Moments archive,
+Claude photo pre-screen · P5 /feed + FeedCard (reactions, TEXT comments day
+one w/ report→auto-hide(3)→soft removals, reposts, Send-to-chat), org
+composer, system final posts on finalize, profile Moments grid.
+
+**Decisions made solo (owner asleep, flagged for review):**
+- Photo pre-screen fails OPEN without ANTHROPIC_API_KEY (`STRICT_SCREEN=false`
+  in lib/social/photo-screen.ts) — FLIP TO TRUE BEFORE PUBLIC LAUNCH.
+- Chat share v1: sharedPostId stored + body carries title+link (renders on
+  every surface today); rich preview bubble = polish debt.
+- Share-to-chat/reposts PUBLIC posts only (FOLLOWERS content never leaves the
+  follower gate).
+- Feed = single page top-30, no pagination yet; comment counts unfiltered.
+- Follower counts shown to family only (comparison-dynamics concern).
+- Re-share refreshes the same story/post instead of duplicating.
+
+**Deferred debt:** int-test files (E2E script covered the matrix — add CI
+coverage) · native feed/stories/follows screens (web+mobile-web live; native
+has P2 POTG share only) · story ring on public profile · org posts listed on
+club pages (they surface via /news + feed) · chat preview bubble · feed
+pagination. Deploy note: runbook #38.
