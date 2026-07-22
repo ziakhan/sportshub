@@ -42,7 +42,9 @@ ALTER TABLE "UserRole" ADD CONSTRAINT "UserRole_scope_coherence" CHECK (
   ("gameId"   IS NULL OR "role" IN ('Scorekeeper', 'Referee'))
   AND ("leagueId" IS NULL OR "role" IN ('LeagueOwner', 'LeagueManager'))
   AND ("teamId"   IS NULL OR "role" IN ('Staff', 'TeamManager', 'Player'))
-  AND ("tenantId" IS NULL OR "role" IN ('ClubOwner', 'ClubManager', 'Staff', 'TeamManager', 'Scorekeeper'))
+  -- Trainer added 2026-07-21 (batch-backlog §5): the solo operator's role is
+  -- tenant-scoped to their TRAINER tenant.
+  AND ("tenantId" IS NULL OR "role" IN ('ClubOwner', 'ClubManager', 'Staff', 'TeamManager', 'Scorekeeper', 'Trainer'))
 );
 
 -- ============================================================
