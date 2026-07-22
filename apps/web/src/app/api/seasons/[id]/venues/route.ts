@@ -101,6 +101,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const venues = await (prisma as any).seasonVenue.findMany({
       where: { seasonId: params.id },
       include: {
+        // THIS season's private scheduling hours at the venue (§2b) — the
+        // editable set; venue.venueHours below is display-only reference.
+        hours: {
+          orderBy: { dayOfWeek: "asc" },
+          select: { id: true, dayOfWeek: true, openTime: true, closeTime: true },
+        },
         venue: {
           select: {
             id: true,

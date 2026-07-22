@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { isClubAdmin, canActOnTeam, coachedTeamIds } from "@/lib/authz/team-scope"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 import { z } from "zod"
 
 export const dynamic = "force-dynamic"
@@ -73,6 +74,18 @@ export async function POST(request: NextRequest) {
     if (validatedData.maxParticipants) createData.maxParticipants = validatedData.maxParticipants
     if (validatedData.teamId) createData.teamId = validatedData.teamId
     if (validatedData.venueId) createData.venueId = validatedData.venueId
+
+    // Intra-org HARD block (owner ruling): the club can't double-book its own
+    // venue slot. Cross-org overlaps stay a soft advisory in the form.
+    if (validatedData.venueId) {
+      const conflict = await intraOrgConflictMessage({
+        venueId: validatedData.venueId,
+        startAt: new Date(validatedData.scheduledAt),
+        durationMinutes: validatedData.duration ?? 90,
+        tenantId: validatedData.tenantId,
+      })
+      if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+    }
 
     const tryout = await prisma.tryout.create({
       data: createData as any,

@@ -9,6 +9,7 @@ import {
   notifyEventTeams,
   serializeEvent,
 } from "@/lib/teams/events"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +18,7 @@ const createSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(150),
   description: z.string().trim().max(1000).optional(),
   location: z.string().trim().max(200).optional(),
+  venueId: z.string().optional(),
   startAt: z.string().datetime(),
   durationMinutes: z.number().int().min(15).max(720).default(60),
   // Typed events (2026-07-15): workout/lift, training, scrimmage…
@@ -50,12 +52,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Venue link (batch-backlog §2): denormalize location from the venue so
+    // every display path keeps working for legacy free-text rows.
+    let venueId: string | null = null
+    let location = parsed.data.location || null
+    if (parsed.data.venueId) {
+      const venue = await (prisma as any).venue.findUnique({
+        where: { id: parsed.data.venueId },
+        select: { id: true, name: true },
+      })
+      if (!venue) return NextResponse.json({ error: "Venue not found" }, { status: 400 })
+      venueId = venue.id
+      if (!location) location = venue.name
+
+      // Intra-org HARD block: no org may double-book its own venue slot.
+      for (const tenantId of new Set(authz.teams.map((t) => t.tenantId))) {
+        const conflict = await intraOrgConflictMessage({
+          venueId: venue.id,
+          startAt: new Date(parsed.data.startAt),
+          durationMinutes: parsed.data.durationMinutes,
+          tenantId,
+        })
+        if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+      }
+    }
+
     const event = await (prisma as any).teamEvent.create({
       data: {
         createdById: auth.userId,
         title: parsed.data.title,
         description: parsed.data.description || null,
-        location: parsed.data.location || null,
+        location,
+        venueId,
         startAt: new Date(parsed.data.startAt),
         durationMinutes: parsed.data.durationMinutes,
         eventType: parsed.data.eventType,

@@ -10,6 +10,7 @@ import {
   serializeEvent,
   type EventTeamRef,
 } from "@/lib/teams/events"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +19,7 @@ const patchSchema = z
     title: z.string().trim().min(1).max(150).optional(),
     description: z.string().trim().max(1000).nullable().optional(),
     location: z.string().trim().max(200).nullable().optional(),
+    venueId: z.string().nullable().optional(),
     startAt: z.string().datetime().optional(),
     durationMinutes: z.number().int().min(15).max(720).optional(),
     eventType: z.enum(["WORKOUT", "TRAINING", "SCRIMMAGE", "MEETING", "OTHER"]).optional(),
@@ -63,6 +65,45 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       )
     }
 
+    // Venue link: validate + denormalize location when a venue is set/changed
+    let venuePatch: Record<string, unknown> = {}
+    if (parsed.data.venueId !== undefined) {
+      if (parsed.data.venueId) {
+        const venue = await (prisma as any).venue.findUnique({
+          where: { id: parsed.data.venueId },
+          select: { id: true, name: true },
+        })
+        if (!venue) return NextResponse.json({ error: "Venue not found" }, { status: 400 })
+        venuePatch = {
+          venueId: venue.id,
+          ...(parsed.data.location === undefined ? { location: venue.name } : {}),
+        }
+      } else {
+        venuePatch = { venueId: null }
+      }
+    }
+
+    // Intra-org HARD block: re-check when the venue or time is changing.
+    const effectiveVenueId =
+      parsed.data.venueId !== undefined ? parsed.data.venueId || null : event.venueId
+    const touchesBooking =
+      parsed.data.venueId !== undefined ||
+      parsed.data.startAt !== undefined ||
+      parsed.data.durationMinutes !== undefined
+    if (touchesBooking && effectiveVenueId) {
+      for (const tenantId of new Set(teams.map((t) => t.tenantId))) {
+        const conflict = await intraOrgConflictMessage({
+          venueId: effectiveVenueId,
+          startAt:
+            parsed.data.startAt !== undefined ? new Date(parsed.data.startAt) : event.startAt,
+          durationMinutes: parsed.data.durationMinutes ?? event.durationMinutes ?? 60,
+          tenantId,
+          excludeTeamEventId: params.id,
+        })
+        if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+      }
+    }
+
     const updated = await (prisma as any).teamEvent.update({
       where: { id: params.id },
       data: {
@@ -71,6 +112,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           ? { description: parsed.data.description || null }
           : {}),
         ...(parsed.data.location !== undefined ? { location: parsed.data.location || null } : {}),
+        ...venuePatch,
         ...(parsed.data.startAt !== undefined ? { startAt: new Date(parsed.data.startAt) } : {}),
         ...(parsed.data.durationMinutes !== undefined
           ? { durationMinutes: parsed.data.durationMinutes }

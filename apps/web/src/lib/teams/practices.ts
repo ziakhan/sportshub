@@ -16,6 +16,7 @@ export interface SlotInput {
   dayOfWeek: number
   startTime: string // "18:30"
   durationMinutes: number
+  venueId?: string | null
   location?: string | null
 }
 
@@ -46,11 +47,18 @@ export function generateOccurrences(
   slots: Array<SlotInput & { id?: string }>,
   weeks: number,
   from: Date
-): Array<{ slotId?: string; scheduledAt: Date; durationMinutes: number; location?: string | null }> {
+): Array<{
+  slotId?: string
+  scheduledAt: Date
+  durationMinutes: number
+  venueId?: string | null
+  location?: string | null
+}> {
   const out: Array<{
     slotId?: string
     scheduledAt: Date
     durationMinutes: number
+    venueId?: string | null
     location?: string | null
   }> = []
   const totalDays = weeks * 7
@@ -66,6 +74,7 @@ export function generateOccurrences(
         slotId: slot.id,
         scheduledAt,
         durationMinutes: slot.durationMinutes,
+        venueId: slot.venueId ?? null,
         location: slot.location ?? null,
       })
     }

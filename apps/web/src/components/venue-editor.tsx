@@ -22,11 +22,31 @@ interface VenueEditorProps {
   courts: Court[]
   hours: Hours[]
   onChange?: () => void
+  // Where "Save hours" PUTs. Defaults to the GLOBAL venue hours endpoint —
+  // pass a per-entity endpoint (e.g. season venue hours) so an org's
+  // scheduling windows never overwrite the shared venue's real hours
+  // (batch-backlog §2b).
+  hoursEndpoint?: string
+  hoursLabel?: string
+  // Read-only reference hours shown above the editable set (e.g. the venue's
+  // posted hours while editing a season's private scheduling windows).
+  referenceHours?: Hours[]
+  referenceLabel?: string
 }
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
-export function VenueEditor({ venueId, venueName, courts, hours, onChange }: VenueEditorProps) {
+export function VenueEditor({
+  venueId,
+  venueName,
+  courts,
+  hours,
+  onChange,
+  hoursEndpoint,
+  hoursLabel,
+  referenceHours,
+  referenceLabel,
+}: VenueEditorProps) {
   const [addingCourt, setAddingCourt] = useState(false)
   const [newCourtName, setNewCourtName] = useState("")
   const [savingHours, setSavingHours] = useState(false)
@@ -80,7 +100,7 @@ export function VenueEditor({ venueId, venueName, courts, hours, onChange }: Ven
 
   const saveHours = async () => {
     setSavingHours(true)
-    await fetch(`/api/venues/${venueId}/hours`, {
+    await fetch(hoursEndpoint ?? `/api/venues/${venueId}/hours`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -167,9 +187,29 @@ export function VenueEditor({ venueId, venueName, courts, hours, onChange }: Ven
         )}
       </div>
 
+      {referenceHours && referenceHours.some((h) => h.openTime || h.closeTime) && (
+        <div>
+          <p className="text-ink-700 mb-2 text-xs font-semibold uppercase tracking-[0.1em]">
+            {referenceLabel ?? "Venue's posted hours"}
+          </p>
+          <div className="space-y-0.5">
+            {referenceHours
+              .filter((h) => h.openTime || h.closeTime)
+              .map((h) => (
+                <div key={h.dayOfWeek} className="text-ink-500 flex items-center gap-2 text-xs">
+                  <span className="w-8">{DAY_LABELS[h.dayOfWeek]}</span>
+                  <span>
+                    {h.openTime ?? "?"} – {h.closeTime ?? "?"}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <p className="text-ink-700 mb-2 text-xs font-semibold uppercase tracking-[0.1em]">
-          Default hours
+          {hoursLabel ?? "Default hours"}
         </p>
         <div className="space-y-1">
           {hoursState.map((h) => {

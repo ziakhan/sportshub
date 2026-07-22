@@ -62,7 +62,6 @@ describe("K2 — mutating routes use getSessionUserId, not raw session.user.id",
     "tournaments/[id]/teams/route.ts",
     "tryouts/[id]/publish/route.ts",
     "tryouts/[id]/route.ts",
-    "venues/route.ts",
   ])
 
   it("no NEW mutating route reads session.user.id directly", () => {

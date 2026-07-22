@@ -35,14 +35,18 @@ export interface VenueConflictResult {
 
 const EMPTY: VenueConflictResult = { sameOrg: [], otherOrgCount: 0, hasAny: false }
 
-export async function findVenueConflicts(opts: {
+export interface VenueConflictQuery {
   venueId: string
   startAt: Date
   durationMinutes: number
   tenantId?: string | null
-  /** Exclude a row being edited so a program never conflicts with itself. */
+  /** Exclude the row being edited so a booking never conflicts with itself. */
   excludeTryoutId?: string
-}): Promise<VenueConflictResult> {
+  excludeTeamEventId?: string
+  excludePracticeId?: string
+}
+
+export async function findVenueConflicts(opts: VenueConflictQuery): Promise<VenueConflictResult> {
   if (!opts.venueId || Number.isNaN(opts.startAt.getTime())) return EMPTY
 
   const start = opts.startAt
@@ -70,6 +74,7 @@ export async function findVenueConflicts(opts: {
       where: {
         venueId: opts.venueId,
         status: "SCHEDULED",
+        ...(opts.excludePracticeId ? { id: { not: opts.excludePracticeId } } : {}),
         scheduledAt: { gte: windowStart, lt: end },
       },
       select: {
@@ -90,9 +95,15 @@ export async function findVenueConflicts(opts: {
       where: {
         venueId: opts.venueId,
         status: "SCHEDULED",
+        ...(opts.excludeTeamEventId ? { id: { not: opts.excludeTeamEventId } } : {}),
         startAt: { gte: windowStart, lt: end },
       },
-      select: { startAt: true, durationMinutes: true, title: true },
+      select: {
+        startAt: true,
+        durationMinutes: true,
+        title: true,
+        teams: { select: { team: { select: { tenantId: true } } } },
+      },
     }),
   ])
 
@@ -134,9 +145,41 @@ export async function findVenueConflicts(opts: {
     const s = ev.startAt
     const e = new Date(s.getTime() + (ev.durationMinutes ?? 60) * 60000)
     if (!overlaps(s, e)) continue
-    // TeamEvent org attribution is many-to-many — generic.
-    push(false, "event", ev.title, s, e)
+    const same =
+      !!opts.tenantId &&
+      (ev as any).teams?.some((l: any) => l.team?.tenantId === opts.tenantId)
+    push(same, "event", ev.title, s, e)
   }
 
   return { sameOrg, otherOrgCount, hasAny: sameOrg.length > 0 || otherOrgCount > 0 }
+}
+
+const KIND_LABEL: Record<VenueConflict["kind"], string> = {
+  game: "game",
+  practice: "practice",
+  tryout: "tryout",
+  event: "event",
+}
+
+/**
+ * Intra-org HARD block (owner ruling 2026-07-21: an org must not double-book
+ * its own venue slot). Returns a human-readable message when the org already
+ * has an overlapping booking at this venue — callers reject with 409.
+ * Cross-org overlaps stay a soft, generic advisory and never block.
+ */
+export async function intraOrgConflictMessage(
+  opts: VenueConflictQuery
+): Promise<string | null> {
+  if (!opts.venueId || !opts.tenantId) return null
+  const result = await findVenueConflicts(opts)
+  if (result.sameOrg.length === 0) return null
+  const first = result.sameOrg[0]
+  const when = new Date(first.startAt).toLocaleString("en-CA", {
+    timeZone: process.env.APP_TIMEZONE || "America/Toronto",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+  return `Your organization already has a ${KIND_LABEL[first.kind]} at this venue then — "${first.title}" (${when}). Pick a different time or venue.`
 }

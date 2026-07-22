@@ -5,6 +5,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany } from "@/lib/notifications"
 import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 
 export const dynamic = "force-dynamic"
 
@@ -132,7 +133,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const tryout = await prisma.tryout.findUnique({
       where: { id: params.id },
-      select: { id: true, tenantId: true, teamId: true, title: true, isPublished: true },
+      select: {
+        id: true,
+        tenantId: true,
+        teamId: true,
+        title: true,
+        isPublished: true,
+        venueId: true,
+        scheduledAt: true,
+        duration: true,
+      },
     })
 
     if (!tryout) {
@@ -183,6 +193,28 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (validatedData.isPublic !== undefined) data.isPublic = validatedData.isPublic
     if (validatedData.isPublished !== undefined) data.isPublished = validatedData.isPublished
     if (validatedData.teamId !== undefined) data.teamId = validatedData.teamId
+
+    // Intra-org HARD block: re-check whenever the venue or time is changing.
+    const touchesBooking =
+      validatedData.venueId !== undefined ||
+      validatedData.scheduledAt !== undefined ||
+      validatedData.duration !== undefined
+    const effectiveVenueId =
+      validatedData.venueId !== undefined ? validatedData.venueId || null : tryout.venueId
+    if (touchesBooking && effectiveVenueId) {
+      const conflict = await intraOrgConflictMessage({
+        venueId: effectiveVenueId,
+        startAt:
+          validatedData.scheduledAt !== undefined
+            ? new Date(validatedData.scheduledAt)
+            : tryout.scheduledAt,
+        durationMinutes:
+          (validatedData.duration !== undefined ? validatedData.duration : tryout.duration) ?? 90,
+        tenantId: tryout.tenantId,
+        excludeTryoutId: params.id,
+      })
+      if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+    }
 
     // G7: unpublishing a tryout that families already signed up for used to
     // be silent — tell every non-cancelled signup's parent.

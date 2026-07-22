@@ -18,6 +18,7 @@ const slotSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Time must be HH:MM"),
   durationMinutes: z.number().int().min(15).max(360),
+  venueId: z.string().optional().nullable(),
   location: z.string().trim().max(200).optional().nullable(),
 })
 
@@ -34,6 +35,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     const [slots, team] = await Promise.all([
       (prisma as any).practiceSlot.findMany({
         where: { teamId: params.id },
+        include: { venue: { select: { name: true } } },
         orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
       }),
       (prisma as any).team.findUnique({
@@ -70,21 +72,40 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    // Venue links (batch-backlog §2): resolve picked venues once so location
+    // stays denormalized (display keeps working for legacy free-text slots).
+    const venueIds = [...new Set(parsed.data.slots.map((s) => s.venueId).filter(Boolean))] as string[]
+    const venues = venueIds.length
+      ? await (prisma as any).venue.findMany({
+          where: { id: { in: venueIds } },
+          select: { id: true, name: true },
+        })
+      : []
+    const venueById = new Map(venues.map((v: any) => [v.id, v]))
+    if (venueIds.some((id) => !venueById.has(id))) {
+      return NextResponse.json({ error: "Venue not found" }, { status: 400 })
+    }
+
     const slots = await (prisma as any).$transaction(async (tx: any) => {
       await tx.practiceSlot.deleteMany({ where: { teamId: params.id } })
       if (parsed.data.slots.length > 0) {
         await tx.practiceSlot.createMany({
-          data: parsed.data.slots.map((s) => ({
-            teamId: params.id,
-            dayOfWeek: s.dayOfWeek,
-            startTime: s.startTime,
-            durationMinutes: s.durationMinutes,
-            location: s.location || null,
-          })),
+          data: parsed.data.slots.map((s) => {
+            const venue: any = s.venueId ? venueById.get(s.venueId) : null
+            return {
+              teamId: params.id,
+              dayOfWeek: s.dayOfWeek,
+              startTime: s.startTime,
+              durationMinutes: s.durationMinutes,
+              venueId: venue?.id ?? null,
+              location: s.location || venue?.name || null,
+            }
+          }),
         })
       }
       return tx.practiceSlot.findMany({
         where: { teamId: params.id },
+        include: { venue: { select: { name: true } } },
         orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
       })
     })

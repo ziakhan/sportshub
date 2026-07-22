@@ -8,6 +8,7 @@ import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
 import { DateTimePicker } from "@/components/ui"
+import { VenueSelector } from "@/components/venue-selector"
 
 /**
  * Live agenda: practices + games grouped by week, polling for updates every
@@ -41,6 +42,8 @@ interface SlotView {
   dayOfWeek: number
   startTime: string
   durationMinutes: number
+  venueId?: string | null
+  venue?: { name: string } | null
   location: string | null
 }
 
@@ -222,6 +225,7 @@ export function TeamCalendar({
             dayOfWeek: s.dayOfWeek,
             startTime: s.startTime,
             durationMinutes: s.durationMinutes,
+            venueId: s.venueId || undefined,
             location: s.location || undefined,
           })),
         }),
@@ -451,20 +455,44 @@ export function TeamCalendar({
                     </option>
                   ))}
                 </select>
-                <input
-                  defaultValue={slot.location ?? ""}
-                  placeholder="Location"
-                  maxLength={200}
-                  disabled={busy}
-                  onBlur={(e) => {
-                    if (e.target.value !== (slot.location ?? "")) {
+                <div className="min-w-[160px] flex-1">
+                  <VenueSelector
+                    value={slot.venueId ?? ""}
+                    venueName={slot.venue?.name ?? ""}
+                    onSelect={(v) =>
                       saveSlots(
-                        slots.map((s, j) => (j === i ? { ...s, location: e.target.value } : s))
+                        slots.map((s, j) =>
+                          j === i
+                            ? { ...s, venueId: v.id, venue: { name: v.name }, location: v.name }
+                            : s
+                        )
                       )
                     }
-                  }}
-                  className="border-ink-200 min-w-[120px] flex-1 rounded-lg border px-2 py-1.5 text-sm"
-                />
+                    onClear={() =>
+                      saveSlots(
+                        slots.map((s, j) =>
+                          j === i ? { ...s, venueId: null, venue: null, location: null } : s
+                        )
+                      )
+                    }
+                  />
+                </div>
+                {!slot.venueId && (
+                  <input
+                    defaultValue={slot.location ?? ""}
+                    placeholder="or type a location"
+                    maxLength={200}
+                    disabled={busy}
+                    onBlur={(e) => {
+                      if (e.target.value !== (slot.location ?? "")) {
+                        saveSlots(
+                          slots.map((s, j) => (j === i ? { ...s, location: e.target.value } : s))
+                        )
+                      }
+                    }}
+                    className="border-ink-200 min-w-[120px] flex-1 rounded-lg border px-2 py-1.5 text-sm"
+                  />
+                )}
                 <button
                   onClick={() => saveSlots(slots.filter((_, j) => j !== i))}
                   disabled={busy}
@@ -911,6 +939,8 @@ function AddEventForm({
   const [startAt, setStartAt] = useState("")
   const [duration, setDuration] = useState("60")
   const [eventType, setEventType] = useState("OTHER")
+  const [venueId, setVenueId] = useState("")
+  const [venueName, setVenueName] = useState("")
   const [location, setLocation] = useState("")
   const [description, setDescription] = useState("")
   const [clubTeams, setClubTeams] = useState<Array<{ id: string; name: string }>>([])
@@ -947,6 +977,7 @@ function AddEventForm({
           eventType,
           startAt: new Date(startAt).toISOString(),
           durationMinutes: Number(duration),
+          venueId: venueId || undefined,
           location: location.trim() || undefined,
           description: description.trim() || undefined,
         }),
@@ -1015,15 +1046,31 @@ function AddEventForm({
         </div>
         <div className="sm:col-span-2">
           <label className="text-ink-700 mb-1 block text-xs font-semibold">
-            Location <span className="text-ink-400 font-normal">(optional)</span>
+            Venue <span className="text-ink-400 font-normal">(optional)</span>
           </label>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            maxLength={200}
-            placeholder="Main gym"
-            className={inputClass}
+          <VenueSelector
+            value={venueId}
+            venueName={venueName}
+            onSelect={(v) => {
+              setVenueId(v.id)
+              setVenueName(v.name)
+              setLocation(v.name)
+            }}
+            onClear={() => {
+              setVenueId("")
+              setVenueName("")
+              setLocation("")
+            }}
           />
+          {!venueId && (
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              maxLength={200}
+              placeholder="or type a location — Main gym"
+              className={`${inputClass} mt-2`}
+            />
+          )}
         </div>
         <div className="sm:col-span-2">
           <label className="text-ink-700 mb-1 block text-xs font-semibold">

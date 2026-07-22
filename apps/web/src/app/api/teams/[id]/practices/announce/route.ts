@@ -61,6 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           tenantId: membership.tenantId,
           scheduledAt: o.scheduledAt,
           duration: o.durationMinutes,
+          venueId: o.venueId ?? null,
           location: o.location,
           slotId: o.slotId ?? null,
         })),

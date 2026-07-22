@@ -9,6 +9,7 @@ import {
   practiceSelect,
   serializePractice,
 } from "@/lib/teams/practices"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 
 export const dynamic = "force-dynamic"
 
@@ -43,7 +44,14 @@ export async function PATCH(
 
     const practice = await (prisma as any).practice.findFirst({
       where: { id: params.practiceId, teamId: params.id },
-      select: { id: true, scheduledAt: true, status: true, location: true },
+      select: {
+        id: true,
+        scheduledAt: true,
+        status: true,
+        location: true,
+        venueId: true,
+        duration: true,
+      },
     })
     if (!practice) return NextResponse.json({ error: "Practice not found" }, { status: 404 })
 
@@ -54,6 +62,18 @@ export async function PATCH(
 
     if (parsed.data.action === "move") {
       const newDate = new Date(parsed.data.scheduledAt)
+      // Intra-org HARD block: the club can't move a practice onto its own
+      // overlapping booking at the same venue.
+      if (practice.venueId) {
+        const conflict = await intraOrgConflictMessage({
+          venueId: practice.venueId,
+          startAt: newDate,
+          durationMinutes: practice.duration ?? 90,
+          tenantId: membership.tenantId,
+          excludePracticeId: practice.id,
+        })
+        if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+      }
       const newWhen = formatPracticeDate(newDate)
       data = { scheduledAt: newDate, status: "SCHEDULED" }
       change = {

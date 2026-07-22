@@ -37,9 +37,13 @@ export function SessionsTab({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled || !data?.venues?.length) return
-        const venue = data.venues[0].venue
+        const seasonVenue = data.venues[0]
+        const venue = seasonVenue.venue
         const map = new Map<number, { open: string; close: string }>()
-        for (const h of venue?.venueHours ?? []) {
+        // Prefer THIS season's scheduling hours (§2b); the venue's shared
+        // global hours are only a fallback default.
+        const hoursSource = seasonVenue.hours?.length ? seasonVenue.hours : venue?.venueHours ?? []
+        for (const h of hoursSource) {
           if (h.openTime && h.closeTime) {
             map.set(h.dayOfWeek, { open: h.openTime, close: h.closeTime })
           }

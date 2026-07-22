@@ -11,6 +11,7 @@ import {
 } from "@/lib/teams/practices"
 import { getRsvpsForItems } from "@/lib/rsvp"
 import type { RsvpItemType } from "@/lib/rsvp-shared"
+import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 
 export const dynamic = "force-dynamic"
 
@@ -131,6 +132,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 const createSchema = z.object({
   scheduledAt: z.string().datetime(),
   durationMinutes: z.number().int().min(15).max(360).default(90),
+  venueId: z.string().optional().nullable(),
   location: z.string().trim().max(200).optional().nullable(),
   notes: z.string().trim().max(500).optional().nullable(),
 })
@@ -154,13 +156,32 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
+    // Venue link (batch-backlog §2) + intra-org HARD block on double-booking.
+    let venueName: string | null = null
+    if (parsed.data.venueId) {
+      const venue = await (prisma as any).venue.findUnique({
+        where: { id: parsed.data.venueId },
+        select: { id: true, name: true },
+      })
+      if (!venue) return NextResponse.json({ error: "Venue not found" }, { status: 400 })
+      venueName = venue.name
+      const conflict = await intraOrgConflictMessage({
+        venueId: venue.id,
+        startAt: new Date(parsed.data.scheduledAt),
+        durationMinutes: parsed.data.durationMinutes,
+        tenantId: membership.tenantId,
+      })
+      if (conflict) return NextResponse.json({ error: conflict }, { status: 409 })
+    }
+
     const practice = await (prisma as any).practice.create({
       data: {
         teamId: params.id,
         tenantId: membership.tenantId,
         scheduledAt: new Date(parsed.data.scheduledAt),
         duration: parsed.data.durationMinutes,
-        location: parsed.data.location || null,
+        venueId: parsed.data.venueId || null,
+        location: parsed.data.location || venueName,
         notes: parsed.data.notes || null,
       },
       select: practiceSelect,

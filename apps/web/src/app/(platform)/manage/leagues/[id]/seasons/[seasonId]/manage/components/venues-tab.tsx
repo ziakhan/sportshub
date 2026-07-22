@@ -98,7 +98,14 @@ export function VenuesTab({
                     venueId={v.venue.id}
                     venueName={v.venue.name}
                     courts={v.venue.courtList ?? []}
-                    hours={v.venue.venueHours ?? []}
+                    // Per-season scheduling hours (SeasonVenueHours) — editing
+                    // here must never mutate the venue's shared global hours
+                    // (batch-backlog §2b).
+                    hours={v.hours ?? []}
+                    hoursEndpoint={`/api/seasons/${seasonId}/venues/${v.id}/hours`}
+                    hoursLabel="Your scheduling hours (this season)"
+                    referenceHours={v.venue.venueHours ?? []}
+                    referenceLabel="Venue's posted hours (shared, read-only)"
                     onChange={refresh}
                   />
                 </div>
