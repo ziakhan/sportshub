@@ -826,16 +826,6 @@ export function LivePlayer({
                   pace, and you can jump between acts any time.
                 </p>
               )}
-              <div className="border-gold-300 bg-gold-50 mt-4 flex items-start gap-2.5 rounded-xl border p-3 text-left sm:hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gold-600 mt-0.5 h-4 w-4 shrink-0">
-                  <rect x="2" y="4" width="20" height="14" rx="2" />
-                  <path d="M8 22h8M12 18v4" />
-                </svg>
-                <span className="text-ink-800 text-xs font-medium leading-relaxed">
-                  <b>This demo shines on a desktop screen.</b> On your phone it still works: the
-                  camera pans across the big operator screens as things happen.
-                </span>
-              </div>
               <div className="mt-6 grid gap-2.5">
                 <button
                   data-live-id="startManual"
