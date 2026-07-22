@@ -17,9 +17,8 @@ export default function DemoPage() {
             Watch it run, end to end
           </h1>
           <p className="text-ink-500 mt-3 text-lg leading-8">
-            This plays like the real thing: dropdowns open, forms fill in, checkmarks land. Each
-            step acts itself out, then the glowing button waits for you. Click it to keep the
-            season moving, or hit Autoplay and just watch.
+            Real screens, real clicks: a club builds its team, the league runs its season, and
+            game night is scored live.
           </p>
         </div>
         <div className="mx-auto max-w-5xl">

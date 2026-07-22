@@ -20,9 +20,8 @@ export default function ParentDemoPage() {
             Watch Maria&apos;s season run
           </h1>
           <p className="text-ink-500 mt-3 text-base leading-7 sm:text-lg sm:leading-8">
-            From finding the tryout to game day: signup, payment, the offer, the calendar that
-            keeps itself right, and a box score that moves while the game does. Every screen is
-            the real product.
+            From finding the tryout to a game day box score that moves on its own, every screen
+            is the real product.
           </p>
         </div>
         <div className="mx-auto max-w-5xl">

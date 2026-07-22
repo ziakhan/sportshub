@@ -80,6 +80,7 @@ export function LivePlayer({
   const [entering, setEntering] = useState(true)
   const [done, setDone] = useState(false)
   const [ready, setReady] = useState(false)
+  const [chaptersOpen, setChaptersOpen] = useState(false)
 
   const stageRef = useRef<HTMLDivElement>(null)
   const zoomRef = useRef<HTMLDivElement>(null)
@@ -103,6 +104,9 @@ export function LivePlayer({
   const scene = scenes[index]
   const total = scenes.length
   const actIndex = acts.findIndex((a) => a.id === scene?.act)
+
+  /* The phone chapter list closes itself when the story moves on. */
+  useEffect(() => setChaptersOpen(false), [actIndex])
 
   const g = useCallback((key: string, dflt?: unknown) => stateRef.current[key] ?? dflt, [])
   const mutate = useCallback((patch: Record<string, unknown>) => {
@@ -655,8 +659,9 @@ export function LivePlayer({
 
   return (
     <div className="select-none" data-demo-player data-live-scene={scene.id} data-live-ready={ready || undefined}>
-      {/* Acts */}
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      {/* Acts: full pill wall on desktop only; phones get the chapter chip
+          in the sticky bar so the list never stacks into rows */}
+      <div className="mb-3 hidden flex-wrap items-center gap-1.5 sm:flex">
         {acts.map((a, ai) => {
           const first = scenes.findIndex((s) => s.act === a.id)
           const active = a.id === scene.act
@@ -718,6 +723,28 @@ export function LivePlayer({
             Step {index + 1} of {total}
           </span>
           <button
+            onClick={() => setChaptersOpen((o) => !o)}
+            className={cn(
+              "flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-colors sm:hidden",
+              chaptersOpen
+                ? "border-ink-300 bg-ink-100 text-ink-800"
+                : "border-ink-200 text-ink-600 hover:bg-ink-50 bg-white"
+            )}
+          >
+            Ch {actIndex + 1}/{acts.length}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={cn("h-3 w-3 transition-transform", chaptersOpen && "rotate-180")}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <button
             onClick={() => {
               setAutoplay((a) => !a)
               setPaused(false)
@@ -744,6 +771,39 @@ export function LivePlayer({
             )}
           </button>
         </div>
+
+        {/* Phones: the full chapter list, folded into the sticky bar */}
+        {chaptersOpen && (
+          <div className="border-ink-100 mt-3 max-h-[45vh] space-y-0.5 overflow-y-auto border-t pt-2.5 sm:hidden">
+            {acts.map((a, ai) => {
+              const first = scenes.findIndex((s) => s.act === a.id)
+              const active = a.id === scene.act
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => {
+                    setChaptersOpen(false)
+                    jumpTo(first)
+                  }}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] font-semibold",
+                    active
+                      ? "text-[color:var(--brand-on)]"
+                      : ai < actIndex
+                        ? "text-court-700"
+                        : "text-ink-600"
+                  )}
+                  style={active ? { backgroundColor: "var(--brand)" } : undefined}
+                >
+                  <span className="w-5 shrink-0 text-center tabular-nums">
+                    {ai < actIndex ? "✓" : ai + 1}
+                  </span>
+                  {a.title}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Phones: the read-first card sits in normal flow above the screen,
@@ -815,17 +875,11 @@ export function LivePlayer({
           <div className="absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-gradient-to-br from-[#1e2d4d]/90 to-[#0b1628]/90 p-4 sm:p-6">
             <div className="demo-confirm-pop relative my-auto w-full max-w-lg overflow-hidden rounded-3xl bg-white p-5 text-center shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] sm:p-7">
               <span className="from-play-600 via-hoop-500 to-gold-500 absolute inset-x-0 top-0 h-2 bg-gradient-to-r" />
-              <h3 className="text-ink-950 text-2xl font-bold">Watch a season run itself</h3>
+              <h3 className="text-ink-950 text-2xl font-bold">How do you want to watch?</h3>
               <p className="text-ink-600 mx-auto mt-3 max-w-md text-sm leading-relaxed">
-                Every step works the same way: first you read what is about to happen, then the
-                screen acts it out for real, then it waits for you on a glowing button.
+                Each step explains itself, plays out on the real screens, then waits for you on
+                the glowing button.
               </p>
-              {durationLabel && (
-                <p className="text-ink-500 mx-auto mt-2 max-w-md text-xs font-medium">
-                  On autoplay the whole thing runs {durationLabel}. Clicking through, you set the
-                  pace, and you can jump between acts any time.
-                </p>
-              )}
               <div className="mt-6 grid gap-2.5">
                 <button
                   data-live-id="startManual"
@@ -845,9 +899,11 @@ export function LivePlayer({
                   ▶ Autoplay it for me
                 </button>
               </div>
-              <p className="text-ink-400 mt-4 text-xs">
-                The glowing button is always the next step. Switch modes any time, top right.
-              </p>
+              {durationLabel && (
+                <p className="text-ink-400 mt-4 text-xs">
+                  Autoplay runs {durationLabel}. Switch modes or jump chapters any time.
+                </p>
+              )}
             </div>
           </div>
         )}
