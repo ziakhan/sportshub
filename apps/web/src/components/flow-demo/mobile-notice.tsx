@@ -16,15 +16,12 @@ export function MobileDesktopNotice() {
         strokeLinejoin="round"
         className="text-gold-600 mt-0.5 h-5 w-5 shrink-0"
       >
-        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-        <path d="M12 9v4M12 17h.01" />
+        <rect width="20" height="14" x="2" y="3" rx="2" />
+        <path d="M8 21h8M12 17v4" />
       </svg>
       <p className="text-ink-800 text-[13px] font-medium leading-relaxed">
-        <b className="text-ink-950">You&apos;re on a phone: this demo works here, but it&apos;s best
-        on a computer.</b>{" "}
-        It walks through big desktop screens, so the camera zooms and pans to keep up. On a
-        laptop you see everything at full size. Either way, everything you watch is the real
-        product.
+        <b className="text-ink-950">This demo works on your phone.</b> For the best
+        experience, view it on a computer.
       </p>
     </div>
   )

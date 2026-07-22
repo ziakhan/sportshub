@@ -4,6 +4,7 @@ import { format } from "date-fns"
 import { Card, StarRating } from "@/components/ui"
 import { formatCurrency } from "@/lib/countries"
 import { ReviewForm, FlagReviewButton, type OwnReview } from "./review-form"
+import { OneOnOneBooking } from "@/components/training/one-on-one-booking"
 
 export interface ClubPageData {
   club: any
@@ -14,6 +15,14 @@ export interface ClubPageData {
   houseLeagues: any[]
   camps: any[]
   tournaments: any[]
+  trainingSessions: any[]
+  /** Trainer 1-on-1 booking (TRAINER tenants with booking on) — null = hidden */
+  oneOnOne: {
+    title: string
+    fee: number | null
+    slotMinutes: number
+    players: any[]
+  } | null
   reviews: any[]
   averageRating: number | null
   totalReviews: number
@@ -52,7 +61,14 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
     case "announcements":
       return d.announcements.length > 0
     case "programs":
-      return d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length > 0
+      return (
+        d.tryouts.length +
+          d.houseLeagues.length +
+          d.camps.length +
+          d.tournaments.length +
+          d.trainingSessions.length >
+          0 || !!d.oneOnOne
+      )
     case "teams":
       return true // shows an empty state
     case "schedule":
@@ -222,8 +238,13 @@ function AnnouncementsBlock({ d, variant }: { d: ClubPageData; variant: Variant 
 }
 
 function ProgramsBlock({ d }: { d: ClubPageData }) {
-  const count = d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length
-  if (count === 0) {
+  const count =
+    d.tryouts.length +
+    d.houseLeagues.length +
+    d.camps.length +
+    d.tournaments.length +
+    d.trainingSessions.length
+  if (count === 0 && !d.oneOnOne) {
     return (
       <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
         <BlockHeader title="Open programs" />
@@ -268,6 +289,16 @@ function ProgramsBlock({ d }: { d: ClubPageData }) {
             price={`${formatCurrency(c.weeklyFee, d.currency)}/wk`}
           />
         ))}
+        {d.trainingSessions.map((s: any) => (
+          <ProgramRow
+            key={`tr-${s.id}`}
+            href={`/training/${s.id}`}
+            title={s.title}
+            tag="Training"
+            meta={`${s.scheduleText}${s.location ? ` · ${s.location}` : ""}`}
+            price={s.fee === 0 ? "FREE" : formatCurrency(s.fee, d.currency)}
+          />
+        ))}
         {d.tournaments.map((t: any) => (
           <ProgramRow
             key={`tn-${t.id}`}
@@ -281,6 +312,20 @@ function ProgramsBlock({ d }: { d: ClubPageData }) {
           />
         ))}
       </div>
+      {d.oneOnOne && (
+        <div className="mt-4">
+          <OneOnOneBooking
+            tenantId={d.club.id}
+            title={d.oneOnOne.title}
+            fee={d.oneOnOne.fee}
+            slotMinutes={d.oneOnOne.slotMinutes}
+            currency={d.currency}
+            signedIn={d.signedIn}
+            players={d.oneOnOne.players}
+            returnPath={`/club/${d.club.slug}`}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -726,7 +771,7 @@ function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 function StatsBlock({ d }: { d: ClubPageData }) {
   const stats = [
     { value: d.teams.length, label: "Teams", cls: BRAND_INK },
-    { value: d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length, label: "Programs", cls: "text-court-600" },
+    { value: d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length + d.trainingSessions.length, label: "Programs", cls: "text-court-600" },
     { value: d.staffCount, label: "Staff", cls: "text-ink-700" },
   ]
   return (

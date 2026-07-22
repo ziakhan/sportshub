@@ -13,7 +13,9 @@ export default async function CustomizeClubPage({ params }: { params: { id: stri
   const isAdmin =
     roles.includes("PlatformAdmin") ||
     user.roles.some(
-      (r: any) => r.tenantId === params.id && (r.role === "ClubOwner" || r.role === "ClubManager")
+      (r: any) =>
+        r.tenantId === params.id &&
+        (r.role === "ClubOwner" || r.role === "ClubManager" || r.role === "Trainer")
     )
   if (!isAdmin) notFound()
 

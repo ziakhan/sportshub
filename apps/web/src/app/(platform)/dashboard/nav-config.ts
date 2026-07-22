@@ -45,6 +45,7 @@ export type NavSectionKey =
   | "parent"
   | "club"
   | "staff"
+  | "trainer"
   | "browse"
   | "referee"
   | "player"
@@ -122,6 +123,17 @@ function clubWorkspace(tenant: NavTenant): NavWorkspace {
   }
 }
 
+// Trainer solo operator (batch-backlog §5): same /clubs/[id] workspace,
+// pared-down tabs come from the club layout by tenant type.
+function trainerWorkspace(tenant: NavTenant): NavWorkspace {
+  return {
+    key: tenant.id,
+    kindLabel: "Trainer workspace",
+    root: { label: tenant.name, href: `/clubs/${tenant.id}`, icon: "dashboard" },
+    subItems: [],
+  }
+}
+
 // Security fix 2026-07-20: a coach's workspace links ONLY to their own
 // team(s), never the club root (which exposed the whole club). Root points at
 // the first team's dashboard; each coached team is a sub-item.
@@ -157,6 +169,7 @@ export function buildNavSections({
 
   const isAdmin = hasRole("ClubOwner") || hasRole("ClubManager")
   const isStaff = hasRole("Staff") || hasRole("TeamManager")
+  const isTrainer = hasRole("Trainer")
 
   const uniqueTenants = Array.from(new Map(tenants.map((tenant) => [tenant.id, tenant])).values())
   const adminTenantIds = new Set(
@@ -164,8 +177,14 @@ export function buildNavSections({
       .filter((tenant) => tenant.role === "ClubOwner" || tenant.role === "ClubManager")
       .map((tenant) => tenant.id)
   )
-  const staffOnlyTenants = uniqueTenants.filter((tenant) => !adminTenantIds.has(tenant.id))
+  const trainerTenantIds = new Set(
+    tenants.filter((tenant) => tenant.role === "Trainer").map((tenant) => tenant.id)
+  )
+  const staffOnlyTenants = uniqueTenants.filter(
+    (tenant) => !adminTenantIds.has(tenant.id) && !trainerTenantIds.has(tenant.id)
+  )
   const adminTenants = uniqueTenants.filter((tenant) => adminTenantIds.has(tenant.id))
+  const trainerTenants = uniqueTenants.filter((tenant) => trainerTenantIds.has(tenant.id))
 
   const sections: NavSection[] = []
 
@@ -202,6 +221,18 @@ export function buildNavSections({
               { label: "Create Club", href: "/clubs/create", icon: "plus" },
               { label: "Find & Claim Club", href: "/clubs/find", icon: "search" },
             ],
+    })
+  }
+
+  if (isTrainer) {
+    sections.push({
+      key: "trainer",
+      label: "Training",
+      workspaces: trainerTenants.map(trainerWorkspace),
+      items:
+        trainerTenants.length > 0
+          ? []
+          : [{ label: "Set up trainer profile", href: "/trainers/create", icon: "plus" }],
     })
   }
 

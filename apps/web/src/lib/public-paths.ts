@@ -60,6 +60,8 @@ const PUBLIC_PAGE_PREFIXES = [
   "/waivers",
   // Public venue directory + detail pages (name, address, map, hours — 2026-07-21)
   "/venues",
+  // Public trainer program pages (batch-backlog §5 — training sessions)
+  "/training",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
@@ -99,6 +101,9 @@ const PUBLIC_API_READ_PREFIXES = [
   // the middleware 401'd every cron call before that check ran, so no
   // /api/cron job could ever fire (Vercel or box). Fixed 2026-07-21.
   "/api/cron",
+  // Trainer 1-on-1 open-slot grid (GET only) — shown on the public trainer
+  // page; booking/profile/availability mutations stay session-guarded.
+  "/api/trainers",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;

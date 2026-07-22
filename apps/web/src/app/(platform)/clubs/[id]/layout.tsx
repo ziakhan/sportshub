@@ -12,12 +12,13 @@ async function getClubAccess(clubId: string, userId: string, userRoles: string[]
   const isPlatformAdmin = userRoles.includes("PlatformAdmin")
 
   if (!isPlatformAdmin) {
-    // Check if user has ANY role at this club (owner, manager, staff, team manager)
+    // Check if user has ANY role at this tenant (owner, manager, staff, team
+    // manager — or Trainer, the solo operator of a TRAINER tenant)
     const roles = await prisma.userRole.findMany({
       where: {
         userId,
         tenantId: clubId,
-        role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] },
+        role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager", "Trainer"] as any },
       },
       select: { role: true },
     })
@@ -25,11 +26,14 @@ async function getClubAccess(clubId: string, userId: string, userRoles: string[]
     if (roles.length === 0) return null
 
     const roleNames = roles.map((r: { role: string }) => r.role)
-    const isAdmin = roleNames.includes("ClubOwner") || roleNames.includes("ClubManager")
+    const isAdmin =
+      roleNames.includes("ClubOwner") ||
+      roleNames.includes("ClubManager") ||
+      roleNames.includes("Trainer")
 
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await (prisma as any).tenant.findUnique({
       where: { id: clubId },
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, type: true },
     })
 
     if (!tenant) return null
@@ -38,9 +42,9 @@ async function getClubAccess(clubId: string, userId: string, userRoles: string[]
   }
 
   // PlatformAdmin gets full admin access
-  const tenant = await prisma.tenant.findUnique({
+  const tenant = await (prisma as any).tenant.findUnique({
     where: { id: clubId },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, type: true },
   })
 
   if (!tenant) return null
@@ -99,24 +103,38 @@ export default async function ClubLayout({
   const primaryColor = branding?.primaryColor || "#4f46e5"
 
   // Admins get the full club workspace tabs. Coaches get ONLY their team(s) —
-  // no club-wide navigation exists for them (owner 2026-07-20).
+  // no club-wide navigation exists for them (owner 2026-07-20). TRAINER
+  // tenants are solo program operators: no teams/rosters/staff surfaces.
+  const isTrainerTenant = (club as any).type === "TRAINER"
   const tabs = isAdmin
-    ? [
-        { label: "Overview", href: `/clubs/${params.id}` },
-        { label: "Teams", href: `/clubs/${params.id}/teams` },
-        { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
-        { label: "Offers", href: `/clubs/${params.id}/offers` },
-        { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
-        { label: "House League", href: `/clubs/${params.id}/house-leagues` },
-        { label: "Camps", href: `/clubs/${params.id}/camps` },
-        { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
-        { label: "Payments", href: `/clubs/${params.id}/payments` },
-        { label: "Accounting", href: `/clubs/${params.id}/accounting` },
-        { label: "Staff", href: `/clubs/${params.id}/staff` },
-        { label: "Customize page", href: `/clubs/${params.id}/customize` },
-        { label: "Messages", href: `/clubs/${params.id}/messages` },
-        { label: "Settings", href: `/clubs/${params.id}/settings` },
-      ]
+    ? isTrainerTenant
+      ? [
+          { label: "Overview", href: `/clubs/${params.id}` },
+          { label: "Training", href: `/clubs/${params.id}/training` },
+          { label: "1-on-1", href: `/clubs/${params.id}/one-on-one` },
+          { label: "Camps", href: `/clubs/${params.id}/camps` },
+          { label: "Payments", href: `/clubs/${params.id}/payments` },
+          { label: "Accounting", href: `/clubs/${params.id}/accounting` },
+          { label: "Customize page", href: `/clubs/${params.id}/customize` },
+          { label: "Messages", href: `/clubs/${params.id}/messages` },
+          { label: "Settings", href: `/clubs/${params.id}/settings` },
+        ]
+      : [
+          { label: "Overview", href: `/clubs/${params.id}` },
+          { label: "Teams", href: `/clubs/${params.id}/teams` },
+          { label: "Tryouts", href: `/clubs/${params.id}/tryouts` },
+          { label: "Offers", href: `/clubs/${params.id}/offers` },
+          { label: "Templates", href: `/clubs/${params.id}/offer-templates` },
+          { label: "House League", href: `/clubs/${params.id}/house-leagues` },
+          { label: "Camps", href: `/clubs/${params.id}/camps` },
+          { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
+          { label: "Payments", href: `/clubs/${params.id}/payments` },
+          { label: "Accounting", href: `/clubs/${params.id}/accounting` },
+          { label: "Staff", href: `/clubs/${params.id}/staff` },
+          { label: "Customize page", href: `/clubs/${params.id}/customize` },
+          { label: "Messages", href: `/clubs/${params.id}/messages` },
+          { label: "Settings", href: `/clubs/${params.id}/settings` },
+        ]
     : [
         ...myTeams.map((t) => ({
           label: t.name,

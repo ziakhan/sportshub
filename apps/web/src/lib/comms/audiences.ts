@@ -49,7 +49,7 @@ export async function canSendOrgComms(
   if (scope === "TENANT") {
     if (!orgId) return false
     const role = await prisma.userRole.findFirst({
-      where: { userId, tenantId: orgId, role: { in: ["ClubOwner", "ClubManager"] } },
+      where: { userId, tenantId: orgId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
       select: { id: true },
     })
     return !!role
@@ -153,7 +153,7 @@ async function leaguePastClubs(leagueId: string): Promise<string[]> {
   const tenantIds = unique(submissions.map((s: any) => s.team.tenantId))
   if (tenantIds.length === 0) return []
   const roles = await prisma.userRole.findMany({
-    where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager"] } },
+    where: { tenantId: { in: tenantIds }, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
     select: { userId: true },
   })
   return unique(roles.map((r: any) => r.userId))

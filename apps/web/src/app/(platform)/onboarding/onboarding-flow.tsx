@@ -48,6 +48,13 @@ const ROLE_OPTIONS = [
       "Organize competitive basketball leagues with divisions, schedules, and standings.",
     icon: "league",
   },
+  {
+    id: "Trainer",
+    title: "I'm a Trainer",
+    description:
+      "Run skills training, camps, group workouts, and 1-on-1 sessions families can book.",
+    icon: "trainer",
+  },
 ] as const
 
 function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
@@ -137,6 +144,24 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
     )
   }
 
+  if (icon === "trainer") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className={iconClass}
+      >
+        <path d="M6 7v10" />
+        <path d="M18 7v10" />
+        <path d="M3 9v6" />
+        <path d="M21 9v6" />
+        <path d="M6 12h12" />
+      </svg>
+    )
+  }
+
   return (
     <svg
       viewBox="0 0 24 24"
@@ -176,8 +201,9 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
     setError(null)
 
-    // ClubOwner skips step 2 — goes straight to API then /clubs/create
-    if (selectedRole === "ClubOwner") {
+    // ClubOwner and Trainer skip step 2 — straight to the API, then their
+    // create flow (/clubs/create, /trainers/create)
+    if (selectedRole === "ClubOwner" || selectedRole === "Trainer") {
       await submitOnboarding(selectedRole)
       return
     }

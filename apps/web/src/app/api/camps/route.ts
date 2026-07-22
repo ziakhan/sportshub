@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId,
         OR: [
-          { tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          { tenantId: data.tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
           { role: "PlatformAdmin" },
         ],
       },

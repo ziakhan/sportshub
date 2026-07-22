@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         where: {
           userId: auth.userId,
           tenantId: camp.tenantId,
-          role: { in: ["ClubOwner", "ClubManager"] },
+          role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
         },
         select: { id: true },
       }))

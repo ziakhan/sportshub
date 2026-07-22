@@ -13,6 +13,7 @@ import { ClubSubNav } from "./club-subnav"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
+import { formatTrainingSchedule } from "@/lib/training"
 
 async function getClubBySlug(slug: string) {
   const tenant = await prisma.tenant.findUnique({
@@ -50,6 +51,51 @@ async function getCamps(tenantId: string) {
     weeklyFee: Number(c.weeklyFee),
     fullCampFee: c.fullCampFee ? Number(c.fullCampFee) : null,
   }))
+}
+
+async function getTrainingSessions(tenantId: string) {
+  const raw = await (prisma as any).trainingSession.findMany({
+    where: {
+      tenantId,
+      isPublished: true,
+      OR: [
+        { scheduleType: "ONE_TIME", startAt: { gte: new Date() } },
+        { scheduleType: "RECURRING", endDate: { gte: todayUtcDateFloor() } },
+      ],
+    },
+    select: {
+      id: true, title: true, sessionType: true, scheduleType: true, startAt: true,
+      dayOfWeek: true, startTime: true, startDate: true, endDate: true,
+      durationMinutes: true, capacity: true, fee: true, location: true,
+    },
+  })
+  return (raw || []).map((s: any) => ({
+    ...s,
+    fee: Number(s.fee),
+    scheduleText: formatTrainingSchedule(s),
+  }))
+}
+
+/** 1-on-1 booking block data for TRAINER tenants with booking turned on. */
+async function getOneOnOne(tenantId: string, userId: string | null) {
+  const profile = await (prisma as any).trainerProfile.findUnique({
+    where: { tenantId },
+    select: { oneOnOneEnabled: true, oneOnOneTitle: true, oneOnOneFee: true, slotMinutes: true },
+  })
+  if (!profile?.oneOnOneEnabled) return null
+  const players = userId
+    ? await prisma.player.findMany({
+        where: { parentId: userId, deletedAt: null },
+        select: { id: true, firstName: true, lastName: true },
+        orderBy: { firstName: "asc" },
+      })
+    : []
+  return {
+    title: profile.oneOnOneTitle,
+    fee: profile.oneOnOneFee != null ? Number(profile.oneOnOneFee) : null,
+    slotMinutes: profile.slotMinutes,
+    players,
+  }
 }
 
 async function getHostedTournaments(tenantId: string) {
@@ -234,16 +280,18 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     tenantId: club.id,
   })
 
-  const [clubData, houseLeagues, camps, tournaments, reviewsData, announcements] = await Promise.all([
+  const [clubData, houseLeagues, camps, tournaments, trainingSessions, reviewsData, announcements] = await Promise.all([
     getClubData(club.id),
     getHouseLeagues(club.id),
     getCamps(club.id),
     getHostedTournaments(club.id),
+    getTrainingSessions(club.id),
     getReviewsData(club.id),
     getAnnouncements(club.id),
   ])
   const { teams, tryouts, staffCount } = clubData
   const { userId } = reviewsData
+  const oneOnOne = await getOneOnOne(club.id, userId)
   const teamIds = teams.map((t: any) => t.id)
   const [{ recentGames, upcomingGames }, news] = await Promise.all([
     getGames(teamIds),
@@ -278,6 +326,8 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     houseLeagues,
     camps,
     tournaments,
+    trainingSessions,
+    oneOnOne,
     reviews: reviewsData.reviews,
     averageRating: reviewsData.averageRating,
     totalReviews: reviewsData.totalReviews,
@@ -304,7 +354,8 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
 
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")
   const nextGame = upcomingGames[0]
-  const programCount = tryouts.length + houseLeagues.length + camps.length + tournaments.length
+  const programCount =
+    tryouts.length + houseLeagues.length + camps.length + tournaments.length + trainingSessions.length
 
   // Quick-stats strip under the hero.
   const heroStats: Array<{ value: string; label: string }> = [

@@ -50,7 +50,7 @@ export async function isClubAdmin(
 ): Promise<boolean> {
   if (isPlatformAdmin) return true
   const role = await prisma.userRole.findFirst({
-    where: { userId, tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+    where: { userId, tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
     select: { id: true },
   })
   return !!role

@@ -30,7 +30,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       where: {
         userId: sessionInfo.userId,
         OR: [
-          { tenantId: params.id, role: { in: ["ClubOwner", "ClubManager"] } },
+          { tenantId: params.id, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
           { role: "PlatformAdmin" },
         ],
       },

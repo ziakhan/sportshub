@@ -112,7 +112,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: {
         userId: session.userId,
         OR: [
-          { tenantId: params.id, role: { in: ["ClubOwner", "ClubManager"] } },
+          { tenantId: params.id, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
           { role: "PlatformAdmin" },
         ],
       },

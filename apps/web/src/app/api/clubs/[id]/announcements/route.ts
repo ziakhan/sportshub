@@ -13,7 +13,7 @@ async function canManage(userId: string, tenantId: string) {
     where: {
       userId,
       OR: [
-        { tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+        { tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
         { role: "PlatformAdmin" },
       ],
     },

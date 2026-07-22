@@ -70,7 +70,7 @@ async function canFlag(session: SessionInfo, review: ReviewForAuthz): Promise<bo
       where: {
         userId: session.userId,
         tenantId: review.tenantId,
-        role: { in: ["ClubOwner", "ClubManager"] },
+        role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
       },
       select: { id: true },
     })

@@ -49,6 +49,7 @@ const ACCOUNT_GROUP = "Your account"
 const CLUB_GROUP = "Your club"
 const LEAGUE_GROUP = "Your league"
 const REFEREE_GROUP = "Referee setup"
+const TRAINER_GROUP = "Trainer setup"
 const FAMILY_GROUP = "Your family"
 
 interface UserLike {
@@ -91,19 +92,23 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
   const hasClub = roleSet.has("ClubOwner") || roleSet.has("ClubManager")
   const hasLeague = roleSet.has("LeagueOwner") || roleSet.has("LeagueManager")
   const hasReferee = roleSet.has("Referee")
+  const hasTrainer = roleSet.has("Trainer")
   const hasParent = roleSet.has("Parent")
 
   const primaryTenantId =
     user.roles.find((r) => (r.role === "ClubOwner" || r.role === "ClubManager") && r.tenantId)
       ?.tenantId ?? null
+  const trainerTenantId =
+    user.roles.find((r) => r.role === "Trainer" && r.tenantId)?.tenantId ?? null
   const leagueRoleIds = user.roles
     .filter((r) => (r.role === "LeagueOwner" || r.role === "LeagueManager") && r.leagueId)
     .map((r) => r.leagueId as string)
 
-  const [club, league, referee, family] = await Promise.all([
+  const [club, league, referee, trainer, family] = await Promise.all([
     hasClub && primaryTenantId ? loadClub(primaryTenantId) : Promise.resolve(null),
     hasLeague ? loadLeague(user.id, leagueRoleIds) : Promise.resolve(null),
     hasReferee ? loadReferee(user.id) : Promise.resolve(null),
+    hasTrainer && trainerTenantId ? loadTrainer(trainerTenantId) : Promise.resolve(null),
     hasParent ? loadFamily(user.id) : Promise.resolve(null),
   ])
 
@@ -245,6 +250,37 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
     )
   }
 
+  if (hasTrainer) {
+    const tBase = trainerTenantId ? `/clubs/${trainerTenantId}` : "/trainers/create"
+    steps.push(
+      {
+        key: "trainer-create",
+        group: TRAINER_GROUP,
+        label: "Set up your trainer profile",
+        hint: "Your public page, programs, and bookings all hang off it.",
+        href: "/trainers/create",
+        done: !!trainerTenantId,
+      },
+      {
+        key: "trainer-program",
+        group: TRAINER_GROUP,
+        label: "Publish your first program",
+        hint: "A camp, clinic, or group session families can register for.",
+        href: trainerTenantId ? `${tBase}/training` : "/trainers/create",
+        done: !!trainer?.hasProgram,
+      },
+      {
+        key: "trainer-one-on-one",
+        group: TRAINER_GROUP,
+        label: "Open 1-on-1 booking",
+        hint: "Set your session length and fee, then add availability.",
+        href: trainerTenantId ? `${tBase}/one-on-one` : "/trainers/create",
+        done: !!trainer?.oneOnOneEnabled,
+        optional: true,
+      }
+    )
+  }
+
   if (hasParent) {
     steps.push(
       {
@@ -278,6 +314,21 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
 
   return { percent, complete, requiredTotal, requiredDone, steps, nextStep, applicable }
 })
+
+async function loadTrainer(tenantId: string) {
+  const [publishedSessions, publishedCamps, profile] = await Promise.all([
+    (prisma as any).trainingSession.count({ where: { tenantId, isPublished: true } }),
+    (prisma as any).camp.count({ where: { tenantId, isPublished: true } }),
+    (prisma as any).trainerProfile.findUnique({
+      where: { tenantId },
+      select: { oneOnOneEnabled: true },
+    }),
+  ])
+  return {
+    hasProgram: publishedSessions + publishedCamps > 0,
+    oneOnOneEnabled: !!profile?.oneOnOneEnabled,
+  }
+}
 
 async function loadClub(tenantId: string) {
   const [tenant, branding, teams, staff, tryouts, lockedRosters, payConfig] = await Promise.all([

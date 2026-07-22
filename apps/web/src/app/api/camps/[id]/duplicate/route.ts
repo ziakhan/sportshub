@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       where: {
         userId,
         OR: [
-          { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+          { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
           { role: "PlatformAdmin" },
         ],
       },

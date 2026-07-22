@@ -13,13 +13,17 @@
 
 import { prisma } from "@youthbasketballhub/db"
 
-/** ClubOwner/ClubManager at the tenant, or PlatformAdmin. */
+/**
+ * ClubOwner/ClubManager at the tenant, or PlatformAdmin. Trainer counts too:
+ * a TRAINER tenant is a one-person org and its Trainer role IS the admin
+ * (batch-backlog §5) — Trainer roles only ever exist on trainer tenants.
+ */
 export async function isClubAdmin(userId: string, tenantId: string): Promise<boolean> {
   const role = await prisma.userRole.findFirst({
     where: {
       userId,
       OR: [
-        { tenantId, role: { in: ["ClubOwner", "ClubManager"] as any } },
+        { tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
         { role: "PlatformAdmin" as any },
       ],
     },
@@ -64,7 +68,7 @@ export async function actorRoleAtTenant(userId: string, tenantId: string): Promi
     select: { role: true },
   })
   const names = roles.map((r) => r.role as string)
-  for (const preferred of ["ClubOwner", "ClubManager", "TeamManager", "Staff"]) {
+  for (const preferred of ["ClubOwner", "ClubManager", "Trainer", "TeamManager", "Staff"]) {
     if (names.includes(preferred)) return preferred
   }
   return names[0] ?? "Staff"

@@ -31,6 +31,7 @@ export default async function ClubPaymentsPage({ params }: { params: { id: strin
   const isAdmin =
     roleNames.includes("ClubOwner") ||
     roleNames.includes("ClubManager") ||
+    roleNames.includes("Trainer") ||
     roleNames.includes("PlatformAdmin")
   // Security fix 2026-07-20: club money is admin-only. Staff could see (and
   // record cash against) every family's obligations club-wide.

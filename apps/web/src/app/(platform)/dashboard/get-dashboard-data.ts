@@ -155,6 +155,15 @@ export interface DashboardData {
     gamesThisWeek: number
     pendingSubmissions: number
   }
+  trainer?: {
+    tenants: Array<{
+      id: string
+      name: string
+      slug: string
+      publishedSessions: number
+      upcomingBookings: number
+    }>
+  }
   player?: {
     teams: Array<{
       id: string
@@ -472,6 +481,48 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
       data.staff = { teams, programs }
     } else {
       data.staff = { teams: [], programs }
+    }
+  }
+
+  // Trainer data (batch-backlog §5) — solo operator card per trainer tenant
+  if (roleNames.includes("Trainer")) {
+    const trainerTenantIds = user.roles
+      .filter((r) => r.role === "Trainer" && r.tenantId)
+      .map((r) => r.tenantId!)
+    if (trainerTenantIds.length > 0) {
+      const [tenants, sessionGroups, bookingGroups] = await Promise.all([
+        prisma.tenant.findMany({
+          where: { id: { in: trainerTenantIds } },
+          select: { id: true, name: true, slug: true },
+        }),
+        (prisma as any).trainingSession.groupBy({
+          by: ["tenantId"],
+          where: { tenantId: { in: trainerTenantIds }, isPublished: true },
+          _count: { _all: true },
+        }),
+        (prisma as any).oneOnOneBooking.groupBy({
+          by: ["tenantId"],
+          where: {
+            tenantId: { in: trainerTenantIds },
+            status: "CONFIRMED",
+            startAt: { gte: new Date() },
+          },
+          _count: { _all: true },
+        }),
+      ])
+      const sessionsBy = new Map(sessionGroups.map((g: any) => [g.tenantId, g._count._all]))
+      const bookingsBy = new Map(bookingGroups.map((g: any) => [g.tenantId, g._count._all]))
+      data.trainer = {
+        tenants: tenants.map((t: any) => ({
+          id: t.id,
+          name: t.name,
+          slug: t.slug,
+          publishedSessions: Number(sessionsBy.get(t.id) ?? 0),
+          upcomingBookings: Number(bookingsBy.get(t.id) ?? 0),
+        })),
+      }
+    } else {
+      data.trainer = { tenants: [] }
     }
   }
 

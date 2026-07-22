@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { getClubRatings } from "@/lib/queries/club-ratings"
+import { formatTrainingSchedule, trainingSortDate, trainingTypeLabel } from "@/lib/training"
 
 /**
  * Public programs aggregation — tryouts, house leagues, camps and
@@ -11,7 +12,7 @@ import { getClubRatings } from "@/lib/queries/club-ratings"
 
 export interface EventItem {
   id: string
-  type: "tryout" | "house-league" | "camp" | "tournament"
+  type: "tryout" | "house-league" | "camp" | "tournament" | "training"
   name: string
   clubName: string
   clubSlug: string
@@ -51,7 +52,7 @@ const tenantSelect = {
 
 export async function getAllPrograms(): Promise<EventItem[]> {
   const today = todayUtcDateFloor()
-  const [tryouts, houseLeagues, camps, tournaments] = await Promise.all([
+  const [tryouts, houseLeagues, camps, tournaments, trainingSessions] = await Promise.all([
     // Same filters as GET /api/tryouts?marketplace=true
     prisma.tryout.findMany({
       where: { isPublished: true, isPublic: true, scheduledAt: { gte: new Date() } },
@@ -76,14 +77,29 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       include: { divisions: true, _count: { select: { teams: true } } },
       orderBy: { startDate: "asc" },
     }),
+    // Trainer programs (batch-backlog §5): published, not yet ended —
+    // one-time sessions key off startAt, recurring off endDate.
+    (prisma as any).trainingSession.findMany({
+      where: {
+        isPublished: true,
+        OR: [
+          { scheduleType: "ONE_TIME", startAt: { gte: new Date() } },
+          { scheduleType: "RECURRING", endDate: { gte: today } },
+        ],
+      },
+      include: {
+        tenant: tenantSelect,
+        _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+      },
+    }),
   ])
 
   // One groupBy covers every club on the page (parents pick programs by the
   // club's reviews as much as by date and fee).
   const ratings = await getClubRatings([
     ...new Set(
-      [...tryouts, ...houseLeagues, ...camps]
-        .map((x) => x.tenantId)
+      [...tryouts, ...houseLeagues, ...camps, ...trainingSessions]
+        .map((x: any) => x.tenantId)
         .filter(Boolean) as string[]
     ),
   ])
@@ -155,6 +171,29 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       href: `/camp/${c.id}`,
       clubRating: ratingOf(c.tenantId)?.average,
       clubReviewCount: ratingOf(c.tenantId)?.count,
+    })
+  }
+
+  for (const s of trainingSessions) {
+    items.push({
+      id: s.id,
+      type: "training",
+      name: s.title,
+      clubName: s.tenant?.name || "",
+      clubSlug: s.tenant?.slug || "",
+      ageGroup: s.ageGroup || "All ages",
+      gender: s.gender,
+      startDate: trainingSortDate(s).toISOString(),
+      endDate: s.endDate ? s.endDate.toISOString() : undefined,
+      location: s.location || "",
+      fee: Number(s.fee),
+      currency: s.tenant?.currency || "CAD",
+      primaryColor: s.tenant?.branding?.primaryColor || "#f97316",
+      spotsInfo: `${s._count.signups}${s.capacity ? `/${s.capacity}` : ""} registered`,
+      extra: `${trainingTypeLabel(s.sessionType)} • ${formatTrainingSchedule(s)}`,
+      href: `/training/${s.id}`,
+      clubRating: ratingOf(s.tenantId)?.average,
+      clubReviewCount: ratingOf(s.tenantId)?.count,
     })
   }
 

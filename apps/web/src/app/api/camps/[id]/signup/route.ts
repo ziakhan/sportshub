@@ -117,7 +117,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Notify the club that a new signup arrived (gap: signups were silent).
     const staff = await prisma.userRole.findMany({
-      where: { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager"] } },
+      where: { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
       select: { userId: true },
     })
     await notifyMany(

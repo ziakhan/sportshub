@@ -28,6 +28,11 @@ const CREATE_ACTIONS = [
     title: "Become a referee",
     description: "Set availability and officiate games",
   },
+  {
+    href: "/trainers/create",
+    title: "Start training clients",
+    description: "Camps, group sessions, and 1-on-1 booking",
+  },
 ]
 
 export function CreateMenu() {

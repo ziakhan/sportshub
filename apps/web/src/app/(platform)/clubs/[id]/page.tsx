@@ -140,7 +140,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
         where: {
           userId: auth.userId,
           tenantId: params.id,
-          role: { in: ["ClubOwner", "ClubManager"] },
+          role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
         },
         select: { id: true },
       })))

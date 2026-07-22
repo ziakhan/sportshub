@@ -9,6 +9,7 @@ import { ParentSection } from "./sections/parent-section"
 import { ClubSection } from "./sections/club-section"
 import { StaffSection } from "./sections/staff-section"
 import { RefereeSection } from "./sections/referee-section"
+import { TrainerSection } from "./sections/trainer-section"
 import { LeagueSection } from "./sections/league-section"
 import { PlayerSection } from "./sections/player-section"
 import { DoMoreSection } from "./sections/do-more-section"
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
   const hasStaffRole = roles.includes("Staff") || roles.includes("TeamManager")
   const hasLeagueRole = roles.includes("LeagueOwner") || roles.includes("LeagueManager")
   const hasRefereeRole = roles.includes("Referee")
+  const hasTrainerRole = roles.includes("Trainer")
   const hasParentRole = roles.includes("Parent")
   const hasPlayerRole = roles.includes("Player")
 
@@ -67,6 +69,8 @@ export default async function DashboardPage() {
 
       {hasRefereeRole && dashboardData.referee && <RefereeSection data={dashboardData.referee} />}
 
+      {hasTrainerRole && dashboardData.trainer && <TrainerSection data={dashboardData.trainer} />}
+
       {hasPlayerRole && dashboardData.player && <PlayerSection data={dashboardData.player} />}
 
       {hasParentRole && dashboardData.parent && <ParentSection data={dashboardData.parent} />}
@@ -76,6 +80,7 @@ export default async function DashboardPage() {
         hasClub={hasClubRole}
         hasLeague={hasLeagueRole}
         hasReferee={hasRefereeRole}
+        hasTrainer={hasTrainerRole}
       />
     </div>
   )

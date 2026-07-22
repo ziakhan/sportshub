@@ -7,14 +7,14 @@ import { formatCurrency } from "@/lib/countries"
 import { Badge, StarRating } from "@/components/ui"
 import type { EventItem } from "./page"
 
-type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "tournaments"
+type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "training" | "tournaments"
 
 export function EventsBrowser({ events }: { events: EventItem[] }) {
   const [filter, setFilter] = useState<EventType>("all")
   const [search, setSearch] = useState("")
 
   const filterMap: Record<EventType, string | null> = {
-    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", tournaments: "tournament",
+    all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", training: "training", tournaments: "tournament",
   }
   const filtered = events.filter((e) => {
     const ft = filterMap[filter]
@@ -30,6 +30,7 @@ export function EventsBrowser({ events }: { events: EventItem[] }) {
     tryout: { bg: "bg-hoop-50", text: "text-hoop-600", label: "Tryout" },
     "house-league": { bg: "bg-court-50", text: "text-court-700", label: "House League" },
     camp: { bg: "bg-violet-100", text: "text-violet-700", label: "Camp" },
+    training: { bg: "bg-sky-100", text: "text-sky-700", label: "Training" },
     tournament: { bg: "bg-gold-50", text: "text-gold-600", label: "Tournament" },
   }
 
@@ -43,6 +44,7 @@ export function EventsBrowser({ events }: { events: EventItem[] }) {
             { key: "tryouts", label: "Tryouts" },
             { key: "house-leagues", label: "House Leagues" },
             { key: "camps", label: "Camps" },
+            { key: "training", label: "Training" },
             { key: "tournaments", label: "Tournaments" },
           ] as const).map((f) => (
             <button

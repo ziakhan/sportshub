@@ -49,7 +49,7 @@ export async function createWithdrawalRequest(input: {
       where: {
         userId: input.userId,
         tenantId: submission.team.tenantId,
-        role: { in: ["ClubOwner", "ClubManager"] },
+        role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
       },
       select: { id: true },
     })
@@ -139,7 +139,7 @@ export async function createWithdrawalRequest(input: {
   const clubManagers = await prisma.userRole.findMany({
     where: {
       tenantId: teamPlayer.team.tenantId,
-      role: { in: ["ClubOwner", "ClubManager"] },
+      role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
     },
     select: { userId: true },
     distinct: ["userId"],
@@ -178,7 +178,7 @@ async function canDecide(userId: string, isPlatformAdmin: boolean, req: any): Pr
     where: {
       userId,
       tenantId: req.teamPlayer?.team?.tenantId,
-      role: { in: ["ClubOwner", "ClubManager"] },
+      role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
     },
     select: { id: true },
   })
@@ -319,7 +319,7 @@ export async function decideWithdrawalRequest(input: {
       const opponentManagers = await prisma.userRole.findMany({
         where: {
           tenantId: { in: [...new Set(opponentTeams.map((t) => t.tenantId))] },
-          role: { in: ["ClubOwner", "ClubManager"] },
+          role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any },
         },
         select: { userId: true },
         distinct: ["userId"],

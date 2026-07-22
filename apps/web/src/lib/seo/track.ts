@@ -29,7 +29,14 @@ const SEARCH_HOSTS = [
   "yandex.",
 ]
 
-export type TrackedEntity = "CLUB" | "CAMP" | "TRYOUT" | "HOUSE_LEAGUE" | "TOURNAMENT" | "NEWS"
+export type TrackedEntity =
+  | "CLUB"
+  | "CAMP"
+  | "TRYOUT"
+  | "HOUSE_LEAGUE"
+  | "TOURNAMENT"
+  | "NEWS"
+  | "TRAINING"
 
 function classify(referer: string | null, userAgent: string | null, ownHost: string) {
   if (userAgent && BOT_RE.test(userAgent)) {

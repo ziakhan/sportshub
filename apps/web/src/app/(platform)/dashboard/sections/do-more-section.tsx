@@ -6,6 +6,7 @@ interface DoMoreSectionProps {
   hasClub: boolean
   hasLeague: boolean
   hasReferee: boolean
+  hasTrainer?: boolean
 }
 
 /**
@@ -14,7 +15,13 @@ interface DoMoreSectionProps {
  * matter how they joined. Mirrors the "+ New" menu in the top nav; surfaces the
  * actions the user doesn't already have so they know the door is open.
  */
-export function DoMoreSection({ hasParent, hasClub, hasLeague, hasReferee }: DoMoreSectionProps) {
+export function DoMoreSection({
+  hasParent,
+  hasClub,
+  hasLeague,
+  hasReferee,
+  hasTrainer,
+}: DoMoreSectionProps) {
   const actions = [
     {
       show: !hasParent,
@@ -39,6 +46,12 @@ export function DoMoreSection({ hasParent, hasClub, hasLeague, hasReferee }: DoM
       href: "/referee/profile",
       title: "Become a referee",
       description: "Set your certification, fee, and availability to officiate games.",
+    },
+    {
+      show: !hasTrainer,
+      href: "/trainers/create",
+      title: "Start training clients",
+      description: "Run camps, group sessions, and 1-on-1 training families can book.",
     },
   ].filter((a) => a.show)
 
