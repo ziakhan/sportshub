@@ -71,6 +71,18 @@ function fmtClock(seconds: number) {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
+/** Downscale the table-side POTG photo to ≤1000px JPEG data URL — the
+ *  finalize API caps the payload (same pattern as the signature pad). */
+async function photoToDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement("canvas")
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL("image/jpeg", 0.85)
+}
+
 const EVENT_LABELS: Partial<Record<FoldEventType, string>> = {
   SCORE_2PT: "2PT",
   SCORE_3PT: "3PT",
@@ -162,6 +174,11 @@ export function ScoringConsole({
   const [refereeUserId, setRefereeUserId] = useState<string | null>(null)
   const [approvalMode, setApprovalMode] = useState<"sign" | "pin">("sign")
   const [finalizeError, setFinalizeError] = useState<string | null>(null)
+  // Player of the Game (social-feed-plan P1): top scorer is suggested until
+  // the scorekeeper touches the picker; photo is optional, snapped table-side.
+  const [potgChoice, setPotgChoice] = useState<string | null>(null)
+  const [potgTouched, setPotgTouched] = useState(false)
+  const [potgPhoto, setPotgPhoto] = useState<string | null>(null)
   const [clockDisplay, setClockDisplay] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   // Phone player-area layout — a per-DEVICE preference (scorekeepers pick
@@ -867,6 +884,22 @@ export function ScoringConsole({
       (approvalMode === "pin" && pinReady) ||
       (approvalMode === "sign" && (!!refereeSignature || refereeName.trim().length >= 2))
     const needsReferee = config.requireRefereeApproval && !hasApproval
+
+    // POTG candidates: everyone with a stat line, top scorer first; leagues
+    // scoring by team only fall back to the full roster.
+    const potgCandidates =
+      Object.values(fold.players).length > 0
+        ? Object.values(fold.players)
+            .sort((a, b) => b.points - a.points)
+            .map((l) => ({ playerId: l.playerId, points: l.points }))
+        : [...rosters.home, ...rosters.away].map((r) => ({ playerId: r.playerId, points: 0 }))
+    const suggestedPotg =
+      potgCandidates.length > 0 && potgCandidates[0].points > 0 ? potgCandidates[0].playerId : null
+    const potgSelected = potgTouched ? potgChoice : suggestedPotg
+    const potgPayload = potgSelected
+      ? { potgPlayerId: potgSelected, ...(potgPhoto ? { potgPhotoUrl: potgPhoto } : {}) }
+      : {}
+
     return (
       <div className="mx-auto max-w-5xl space-y-4 p-4">
         <h2 className="text-ink-950 text-center text-lg font-bold">
@@ -875,6 +908,69 @@ export function ScoringConsole({
         <div className="flex flex-col gap-4 md:flex-row">
           {boxTable(game.homeTeam.id, game.homeTeam.name)}
           {boxTable(game.awayTeam.id, game.awayTeam.name)}
+        </div>
+
+        <div className="border-play-200 bg-play-50 rounded-xl border p-3">
+          <p className="text-play-800 text-[13px] font-semibold">
+            Player of the Game (optional)
+            {suggestedPotg && !potgTouched && (
+              <span className="text-play-600 ml-1.5 font-normal">— top scorer suggested</span>
+            )}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {potgCandidates.map((c) => (
+              <button
+                key={c.playerId}
+                onClick={() => {
+                  setPotgTouched(true)
+                  setPotgChoice(c.playerId === potgSelected ? null : c.playerId)
+                }}
+                className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
+                  potgSelected === c.playerId
+                    ? "border-play-500 bg-play-100 text-play-900"
+                    : "border-ink-200 bg-white text-ink-700"
+                }`}
+              >
+                #{jerseyOf(c.playerId)} {nameOf(c.playerId)}
+                {c.points > 0 ? ` · ${c.points} pts` : ""}
+              </button>
+            ))}
+          </div>
+          {potgSelected && (
+            <div className="mt-2 flex items-center gap-2">
+              {potgPhoto ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={potgPhoto}
+                    alt="Player of the Game"
+                    className="h-12 w-12 rounded-lg object-cover"
+                  />
+                  <button
+                    onClick={() => setPotgPhoto(null)}
+                    className="text-ink-500 hover:text-ink-800 text-xs font-semibold underline"
+                  >
+                    Remove photo
+                  </button>
+                </>
+              ) : (
+                <label className="border-play-300 text-play-700 hover:bg-play-100 cursor-pointer rounded-lg border bg-white px-2.5 py-1.5 text-xs font-semibold">
+                  📷 Snap their photo (optional)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0]
+                      if (f) setPotgPhoto(await photoToDataUrl(f))
+                      e.target.value = ""
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="border-amber-300 bg-amber-50 rounded-xl border p-3">
@@ -969,7 +1065,7 @@ export function ScoringConsole({
                   const res = await scoreFetch(`/api/games/${gameId}/finalize`, {
                     method: "POST",
                     headers: { "content-type": "application/json" },
-                    body: JSON.stringify({ withoutReferee: true }),
+                    body: JSON.stringify({ withoutReferee: true, ...potgPayload }),
                   })
                   setFinalizing(false)
                   if (res.ok) setFinalized(true)
@@ -1010,7 +1106,7 @@ export function ScoringConsole({
                 await new Promise((r) => setTimeout(r, 800))
                 await syncTick()
               }
-              const payload: Record<string, unknown> = {}
+              const payload: Record<string, unknown> = { ...potgPayload }
               if (approvalMode === "pin" && refereeUserId && refereePin) {
                 payload.refereeUserId = refereeUserId
                 payload.refereePin = refereePin

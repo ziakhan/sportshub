@@ -43,6 +43,12 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
           select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
         },
         venue: { select: { id: true, name: true } },
+        // POTG rides the header fields so it appears the moment the game
+        // finalizes mid-view; the photo never leaves the server without the
+        // player's media consent.
+        potgPlayerId: true,
+        potgPhotoUrl: true,
+        potgPlayer: { select: { mediaConsent: true } },
         clockEnabled: true,
         season: {
           select: {
@@ -205,6 +211,11 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
         // 2026-07-15: many games run on the arena clock instead).
         clockMode: effectiveClockMode((game as any).clockEnabled, game.season?.league?.gameClockMode ?? "OFF"),
         seasonName: game.season?.label ?? null,
+        potgPlayerId: game.potgPlayerId ?? null,
+        potgPhotoUrl:
+          game.potgPlayerId && game.potgPlayer?.mediaConsent === "GRANTED"
+            ? (game.potgPhotoUrl ?? null)
+            : null,
       },
       events: events.map((e: any) => ({ ...e, timestampMs: new Date(e.timestamp).getTime() })),
       voidedSequences,

@@ -25,6 +25,7 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
       homeScore: true,
       awayScore: true,
       finalizedAt: true,
+      potgPlayer: { select: { firstName: true, lastName: true } },
       refereeName: true,
       refereeSignedAt: true,
       refereeSignature: true,
@@ -406,6 +407,12 @@ export default async function ScoresheetPage({ params }: { params: { gameId: str
           field goal · <span className="text-gray-400 line-through">2</span> = missed (where
           tracked) · ● made free throw · ○ missed free throw. Fouls: ☒ personal · Ⓣ technical.
         </p>
+
+        {game.potgPlayer && (
+          <p className="mt-3 text-sm font-bold">
+            Player of the Game: {game.potgPlayer.firstName} {game.potgPlayer.lastName}
+          </p>
+        )}
 
         {/* signatures */}
         {final &&

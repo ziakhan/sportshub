@@ -58,6 +58,9 @@ interface LivePayload {
     leagueName: string | null
     clockMode?: "SIMPLE" | "OFF"
     seasonName: string | null
+    potgPlayerId?: string | null
+    /** Only present when the player's media consent allows it */
+    potgPhotoUrl?: string | null
   }
   events: FoldEvent[]
   /** Incremental polls only: sequences ≤ sinceSeq that are currently voided. */
@@ -971,6 +974,44 @@ export function LiveView({ gameId }: { gameId: string }) {
             Score
           </a>
         )}
+
+        {/* ---------- Player of the Game (social-feed-plan P1) ---------- */}
+        {final &&
+          game.potgPlayerId &&
+          nameOf(game.potgPlayerId) &&
+          (() => {
+            const line = fold.players[game.potgPlayerId!]
+            return (
+              <div className="border-gold-300 from-gold-50 mt-4 flex items-center gap-4 rounded-2xl border bg-gradient-to-r to-white p-4">
+                {game.potgPhotoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={game.potgPhotoUrl}
+                    alt={nameOf(game.potgPlayerId)}
+                    className="border-gold-400 h-16 w-16 rounded-full border-2 object-cover"
+                  />
+                ) : (
+                  <div className="bg-gold-100 text-gold-700 flex h-16 w-16 items-center justify-center rounded-full text-xl font-extrabold">
+                    #{jerseyOf(game.potgPlayerId)}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-gold-700 text-[11px] font-extrabold uppercase tracking-[0.18em]">
+                    🏀 Player of the Game
+                  </p>
+                  <p className="text-ink-950 truncate text-lg font-bold">
+                    #{jerseyOf(game.potgPlayerId)} {nameOf(game.potgPlayerId)}
+                  </p>
+                  {line && (
+                    <p className="text-ink-600 text-sm font-semibold">
+                      {line.points} PTS · {line.offRebounds + line.defRebounds} REB ·{" "}
+                      {line.assists} AST
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
 
         {/* ---------- pre-game: rosters with season averages ---------- */}
         {!hasAnyStats && !live && !final && (

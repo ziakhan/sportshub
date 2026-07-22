@@ -826,3 +826,12 @@ ysportshub.com / /events /venues /api/health all 200, /training 404s cleanly
 on unknown ids. Neon untouched (dormant).
 ⚠️ STILL OFF (owner switch): payment-reminders + charge-due box crons — the
 new overdue nagging ships dark until scheduled (see #36 one-liner).
+
+## #37 — 2026-07-22: Player of the Game (social-feed-plan P1) — LOCAL, not deployed
+- Schema (additive, plain `prisma db push` — deploy.sh covers box; Neon dormant):
+  `Game.potgPlayerId` (+FK→Player, SetNull) · `Game.potgPhotoUrl` (Text, data-URL).
+- Code: finalize API accepts potgPlayerId/potgPhotoUrl (roster-validated, capped
+  2MB, re-finalize without a pick keeps the award) · console review screen POTG
+  panel (top scorer suggested, tap-to-change, table photo via capture input) ·
+  /live game page gold banner (photo consent-gated server-side) · scoresheet
+  line · final bell mentions POTG. No raw SQL, no cron, no env.

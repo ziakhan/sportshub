@@ -806,6 +806,7 @@ model Player {
   postTags            PostTag[]
   trainingSignups     TrainingSessionSignup[] @relation("PlayerTrainingSignups")
   oneOnOneBookings    OneOnOneBooking[]       @relation("PlayerOneOnOneBookings")
+  potgGames           Game[]                  @relation("PlayerOfTheGame")
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -1700,6 +1701,13 @@ model Game {
   // account (UserRole role=Referee gameId=this game) — the strong approval.
   refereeVerified  Boolean   @default(false)
 
+  // Player of the Game (social-feed-plan P1): scorekeeper picks at finalize,
+  // top scorer auto-suggested. Photo = capped data URL snapped at the table;
+  // it only RENDERS where the player's mediaConsent is GRANTED.
+  potgPlayerId String?
+  potgPlayer   Player? @relation("PlayerOfTheGame", fields: [potgPlayerId], references: [id], onDelete: SetNull)
+  potgPhotoUrl String? @db.Text
+
   events       GameEvent[]
   scoreInvites GameScoreInvite[]
   stats        PlayerStat[]
@@ -1719,6 +1727,7 @@ model Game {
   @@index([venueId])
   @@index([homeTeamId])
   @@index([awayTeamId])
+  @@index([potgPlayerId])
   @@index([scheduledAt])
   @@index([status])
   // Scoreboard strips / /scores filter status + scheduledAt-range together;

@@ -32,6 +32,16 @@ const finalizeSchema = z.object({
   refereeUserId: z.string().optional(),
   refereePin: z.string().min(4).max(32).optional(),
   withoutReferee: z.boolean().default(false),
+  // Player of the Game (social-feed-plan P1): picked on the review screen,
+  // top scorer suggested client-side. Photo is snapped at the table — same
+  // capped data-URL pattern as the referee signature; display is gated on
+  // the player's mediaConsent, storage is not.
+  potgPlayerId: z.string().optional(),
+  potgPhotoUrl: z
+    .string()
+    .regex(/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$/)
+    .max(2_000_000)
+    .optional(),
 })
 
 /**
@@ -102,8 +112,35 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { refereeName, refereeSignature, refereeUserId, refereePin, withoutReferee } =
-      finalizeSchema.parse(body ?? {})
+    const {
+      refereeName,
+      refereeSignature,
+      refereeUserId,
+      refereePin,
+      withoutReferee,
+      potgPlayerId,
+      potgPhotoUrl,
+    } = finalizeSchema.parse(body ?? {})
+
+    // POTG must be a real player on one of the two teams (any roster status —
+    // a call-up who just dropped 20 still counts).
+    let potgName: string | null = null
+    if (potgPlayerId) {
+      const potg = await prisma.player.findFirst({
+        where: {
+          id: potgPlayerId,
+          teams: { some: { teamId: { in: [game.homeTeamId, game.awayTeamId] } } },
+        },
+        select: { firstName: true, lastName: true },
+      })
+      if (!potg) {
+        return NextResponse.json(
+          { error: "Player of the Game must be on one of the two teams", code: "BAD_POTG" },
+          { status: 400 }
+        )
+      }
+      potgName = `${potg.firstName} ${potg.lastName}`.trim()
+    }
 
     // PIN path: verify against the assigned referee's account
     let verifiedRefereeName: string | null = null
@@ -188,6 +225,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           scoringSessionId: null,
           scoringSessionUser: null,
           scoringSessionAt: null,
+          // POTG: set when picked; a re-finalize without a pick keeps the
+          // existing award (corrections shouldn't erase it silently).
+          ...(potgPlayerId ? { potgPlayerId, potgPhotoUrl: potgPhotoUrl ?? null } : {}),
           ...(verifiedRefereeName || refereeName || refereeSignature
             ? {
                 refereeName: verifiedRefereeName ?? refereeName ?? null,
@@ -294,7 +334,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await notifyMany(prisma, audienceUserIds, {
           type: "game_final",
           title: "Final Score",
-          message: `Final: ${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}`,
+          message: `Final: ${game.homeTeam.name} ${folded.homeScore} — ${folded.awayScore} ${game.awayTeam.name}${potgName ? `. Player of the Game: ${potgName}` : ""}`,
           link: `/live/${game.id}`,
           referenceId: game.id,
           referenceType: "Game",
