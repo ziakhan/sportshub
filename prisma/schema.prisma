@@ -95,6 +95,8 @@ model User {
   directMessagesSent        DirectMessage[]           @relation("DirectMessagesSent")
   scoreInvitesCreated       GameScoreInvite[]         @relation("ScoreInvitesCreated")
   loginTokens               LoginToken[]              @relation("UserLoginTokens")
+  trainingSessionSignups    TrainingSessionSignup[]   @relation("TrainingSessionSignups")
+  oneOnOneBookings          OneOnOneBooking[]         @relation("OneOnOneBookings")
 
   createdAt                 DateTime            @default(now())
   updatedAt                 DateTime            @updatedAt
@@ -230,6 +232,7 @@ enum Role {
   Parent
   Player
   Referee
+  Trainer
   PlatformAdmin
 }
 
@@ -240,6 +243,9 @@ enum Role {
 model Tenant {
   id                     String    @id @default(uuid())
   slug                   String    @unique
+  // Solo-operator support (batch-backlog §5): a TRAINER tenant is a
+  // one-person org that only runs programs — no teams/rosters/staff tabs.
+  type                   TenantType @default(CLUB)
   reviewInviteOverride   String? // null = inherit platform reviewInvitePolicy
   name                   String
   description            String?   @db.Text
@@ -296,6 +302,10 @@ model Tenant {
   postTags          PostTag[]
   follows           Follow[]
   waiverDocuments   WaiverDocument[]
+  trainingSessions  TrainingSession[]
+  trainerProfile    TrainerProfile?
+  trainerAvailabilities TrainerAvailability[]
+  oneOnOneBookings  OneOnOneBooking[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -306,6 +316,11 @@ model Tenant {
   // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
   // imported clubs (perf audit 2026-07-06)
   @@index([status])
+}
+
+enum TenantType {
+  CLUB
+  TRAINER
 }
 
 enum TenantPlan {
@@ -789,6 +804,8 @@ model Player {
   campSignups         CampSignup[]
   seasonRosterEntries SeasonRosterPlayer[]
   postTags            PostTag[]
+  trainingSignups     TrainingSessionSignup[] @relation("PlayerTrainingSignups")
+  oneOnOneBookings    OneOnOneBooking[]       @relation("PlayerOneOnOneBookings")
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -1558,8 +1575,26 @@ model SeasonVenue {
   isPrimary       Boolean @default(false)
   courtsAvailable Int?
 
+  hours SeasonVenueHours[]
+
   @@unique([seasonId, venueId])
   @@index([seasonId])
+}
+
+// A league's PRIVATE scheduling window at a venue for one season
+// (batch-backlog §2b). Global VenueHours = the venue's real operating hours,
+// shared by every org — scheduling edits must never write there.
+model SeasonVenueHours {
+  id            String      @id @default(uuid())
+  seasonVenueId String
+  seasonVenue   SeasonVenue @relation(fields: [seasonVenueId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // 0 = Sunday ... 6 = Saturday
+  openTime  String? // null = no availability claimed that day
+  closeTime String?
+
+  @@unique([seasonVenueId, dayOfWeek])
+  @@index([seasonVenueId])
 }
 
 model SchedulingGroup {
@@ -1821,6 +1856,7 @@ model Venue {
 
   games            Game[]
   practices        Practice[]
+  practiceSlots    PracticeSlot[]
   seasonVenues     SeasonVenue[]
   dayVenues        SeasonSessionDayVenue[]
   courtList        Court[]
@@ -1830,6 +1866,7 @@ model Venue {
   camps            Camp[]
   houseLeagues     HouseLeague[]
   teamEvents       TeamEvent[]
+  trainingSessions TrainingSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1912,7 +1949,9 @@ model PracticeSlot {
   dayOfWeek       Int // 0 = Sunday … 6 = Saturday
   startTime       String // "18:30" wall time in the app timezone
   durationMinutes Int     @default(90)
-  location        String?
+  venueId         String?
+  venue           Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  location        String? // Free-text fallback ("Main Gym") when no Venue row fits
 
   practices Practice[]
 
@@ -2820,6 +2859,157 @@ enum CampSignupStatus {
   REGISTERED
   CONFIRMED
   WAITLISTED
+  CANCELLED
+}
+
+// ============================================
+// TRAINER PROGRAMS (batch-backlog §5)
+// Solo-operator (TenantType TRAINER) offerings. Camps reuse the Camp model;
+// everything session-shaped (group training, clinics, S&C, open workouts)
+// lives here. 1-on-1 booking = TrainerProfile + availability windows that
+// generate fixed-length bookable slots.
+// ============================================
+
+enum TrainingSessionType {
+  GROUP_TRAINING
+  CLINIC
+  STRENGTH_CONDITIONING
+  OPEN_WORKOUT
+}
+
+enum TrainingScheduleType {
+  ONE_TIME
+  RECURRING
+}
+
+model TrainingSession {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String? @db.Text
+  sessionType TrainingSessionType  @default(GROUP_TRAINING)
+  ageGroup    String?
+  gender      Gender?
+
+  scheduleType TrainingScheduleType @default(ONE_TIME)
+  // ONE_TIME
+  startAt DateTime?
+  // RECURRING ("Tuesdays 18:00, Jan 6 – Mar 30")
+  dayOfWeek Int? // 0 = Sunday ... 6 = Saturday
+  startTime String? // "18:00" wall time in the app timezone
+  startDate DateTime?
+  endDate   DateTime?
+
+  durationMinutes Int     @default(60)
+  capacity        Int? // null = unlimited; small-group = 2-4
+  fee             Decimal @db.Decimal(10, 2)
+
+  venueId  String?
+  venue    Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  location String? // Denormalized venue label / free-text fallback
+
+  isPublished Boolean @default(false)
+
+  signups TrainingSessionSignup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([isPublished, startAt])
+  @@index([venueId])
+}
+
+model TrainingSessionSignup {
+  id        String          @id @default(uuid())
+  sessionId String
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  userId   String
+  user     User   @relation("TrainingSessionSignups", fields: [userId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation("PlayerTrainingSignups", fields: [playerId], references: [id], onDelete: Cascade)
+
+  status   TrainingSignupStatus @default(CONFIRMED)
+  totalFee Decimal              @db.Decimal(10, 2)
+  notes    String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, playerId])
+  @@index([userId])
+}
+
+enum TrainingSignupStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+// One row per trainer tenant — the 1-on-1 offering ("One-on-One Training",
+// owner ruling 2026-07-21: ONE generic program; parents book INTO it by
+// picking a generated slot of slotMinutes length).
+model TrainerProfile {
+  id       String @id @default(uuid())
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  bio String? @db.Text
+
+  oneOnOneEnabled Boolean  @default(false)
+  oneOnOneTitle   String   @default("One-on-One Training")
+  oneOnOneFee     Decimal? @db.Decimal(10, 2)
+  slotMinutes     Int      @default(60) // 30/45/60/90... — generated slot length
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Trainer-declared availability windows (mirrors RefereeAvailability) —
+// slots of TrainerProfile.slotMinutes are generated inside these windows.
+model TrainerAvailability {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  date      DateTime // calendar day (midnight UTC)
+  startTime String // "09:00" wall time in the app timezone
+  endTime   String // "17:00"
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, date])
+}
+
+model OneOnOneBooking {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  userId   String
+  user     User   @relation("OneOnOneBookings", fields: [userId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation("PlayerOneOnOneBookings", fields: [playerId], references: [id], onDelete: Cascade)
+
+  startAt         DateTime // absolute UTC slot start
+  durationMinutes Int
+  fee             Decimal @db.Decimal(10, 2)
+
+  status OneOnOneBookingStatus @default(CONFIRMED)
+  notes  String?
+
+  createdAt DateTime @default(now())
+
+  // No-double-book is enforced in the booking transaction (a CONFIRMED row
+  // per tenant+startAt); a DB unique would block rebooking cancelled slots.
+  @@index([userId])
+  @@index([tenantId, startAt])
+}
+
+enum OneOnOneBookingStatus {
+  CONFIRMED
   CANCELLED
 }
 
