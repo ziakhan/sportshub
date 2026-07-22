@@ -44,6 +44,63 @@ export function parseTemplate(value: string | null): CardTemplate {
   return value === "clean" ? "clean" : "bold"
 }
 
+/**
+ * Render overrides carried by a shared story/post (?src=story:<id>|post:<id>):
+ * the chosen template plus the one custom-photo slot. The photo only renders
+ * when it passed the AI pre-screen AND the player's mediaConsent is GRANTED.
+ * Unknown/invalid src just falls back to defaults — never an error.
+ */
+export async function loadShareOverrides(
+  src: string | null
+): Promise<{ templateId?: CardTemplate; customPhotoUrl?: string }> {
+  if (!src) return {}
+  const [kind, id] = src.split(":")
+  if (!id) return {}
+
+  if (kind === "story") {
+    const story = await (prisma as any).story.findUnique({
+      where: { id },
+      select: {
+        templateId: true,
+        customPhotoUrl: true,
+        photoScreenState: true,
+        player: { select: { mediaConsent: true } },
+      },
+    })
+    if (!story) return {}
+    return {
+      ...(story.templateId ? { templateId: parseTemplate(story.templateId) } : {}),
+      ...(story.customPhotoUrl &&
+      story.photoScreenState === "APPROVED" &&
+      story.player?.mediaConsent === "GRANTED"
+        ? { customPhotoUrl: story.customPhotoUrl }
+        : {}),
+    }
+  }
+
+  if (kind === "post") {
+    const post = await (prisma as any).post.findUnique({
+      where: { id },
+      select: {
+        templateId: true,
+        customPhotoUrl: true,
+        photoScreenState: true,
+        tags: { where: { playerId: { not: null } }, select: { player: { select: { mediaConsent: true } } }, take: 1 },
+      },
+    })
+    if (!post) return {}
+    const consent = post.tags[0]?.player?.mediaConsent === "GRANTED"
+    return {
+      ...(post.templateId ? { templateId: parseTemplate(post.templateId) } : {}),
+      ...(post.customPhotoUrl && post.photoScreenState === "APPROVED" && consent
+        ? { customPhotoUrl: post.customPhotoUrl }
+        : {}),
+    }
+  }
+
+  return {}
+}
+
 interface CardData {
   eyebrow: string
   name: string

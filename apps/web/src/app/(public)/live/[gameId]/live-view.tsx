@@ -7,6 +7,7 @@ import { monogram } from "@/lib/content/matchup-cover"
 import { useRealtime } from "@/lib/realtime/use-realtime"
 import { FlashNum } from "@/components/scoring/flash-num"
 import { VenueLink } from "@/components/venues/venue-link"
+import { ShareCardDialog } from "@/components/social/share-card-dialog"
 
 /**
  * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
@@ -71,23 +72,6 @@ interface LivePayload {
   viewerPlayerIds?: string[]
 }
 
-/** Share a rendered card image via the native share sheet; new tab fallback. */
-async function shareCardImage(url: string, title: string) {
-  try {
-    const res = await fetch(url)
-    if (res.ok) {
-      const blob = await res.blob()
-      const file = new File([blob], "sportshub-card.png", { type: "image/png" })
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title })
-        return
-      }
-    }
-  } catch {
-    /* user cancelled the sheet, or fetch failed — fall back below */
-  }
-  window.open(url, "_blank")
-}
 
 type Tab = "game" | "box" | "plays"
 
@@ -104,6 +88,8 @@ export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
   const [error, setError] = useState(false)
   const [canScore, setCanScore] = useState(false)
+  // Which of the viewer's players the share dialog is open for (P4)
+  const [shareFor, setShareFor] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("game")
   const [boxSide, setBoxSide] = useState<"home" | "away">("home")
   const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
@@ -1045,14 +1031,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               .map((pid) => (
                 <button
                   key={pid}
-                  onClick={() =>
-                    shareCardImage(
-                      pid === game.potgPlayerId
-                        ? `/api/live/${gameId}/card`
-                        : `/api/live/${gameId}/card/${pid}`,
-                      `${nameOf(pid)} — game card`
-                    )
-                  }
+                  onClick={() => setShareFor(pid)}
                   className="border-play-200 bg-play-50 text-play-700 hover:bg-play-100 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
@@ -1063,6 +1042,16 @@ export function LiveView({ gameId }: { gameId: string }) {
                 </button>
               ))}
           </div>
+        )}
+
+        {shareFor && (
+          <ShareCardDialog
+            gameId={gameId}
+            playerId={shareFor}
+            playerName={nameOf(shareFor)}
+            isPotg={shareFor === game.potgPlayerId}
+            onClose={() => setShareFor(null)}
+          />
         )}
 
         {/* ---------- pre-game: rosters with season averages ---------- */}

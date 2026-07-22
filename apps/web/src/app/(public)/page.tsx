@@ -10,6 +10,7 @@ import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
+import { StoriesRail } from "@/components/social/stories-rail"
 import { HomePersonalBand } from "./home-personal-band"
 import { formatCurrency } from "@/lib/countries"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
@@ -130,6 +131,9 @@ export default async function HomePage() {
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}
+      {/* Stories rail (social-feed-plan P4): followed players + own kids;
+          renders nothing when empty */}
+      {userId && <StoriesRail chrome="home" />}
       <YourTeamsRail cards={yourTeams} />
       {participantView ? (
         <section className="border-ink-100 border-b bg-white">

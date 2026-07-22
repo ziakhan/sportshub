@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
-import { loadCardData, parseTemplate, renderCard } from "@/lib/cards/game-card"
+import { loadCardData, loadShareOverrides, parseTemplate, renderCard } from "@/lib/cards/game-card"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +22,12 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     const data = await loadCardData(params.gameId, game.potgPlayerId, "Player of the Game")
     if (!data) return NextResponse.json({ error: "Not available" }, { status: 404 })
 
-    const res = renderCard(data, parseTemplate(request.nextUrl.searchParams.get("template")))
+    const overrides = await loadShareOverrides(request.nextUrl.searchParams.get("src"))
+    if (overrides.customPhotoUrl) data.photoUrl = overrides.customPhotoUrl
+    const res = renderCard(
+      data,
+      overrides.templateId ?? parseTemplate(request.nextUrl.searchParams.get("template"))
+    )
     res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600")
     return res
   } catch (error) {
