@@ -43,7 +43,7 @@ export async function GET() {
         visibility: true,
         templateId: true,
         createdAt: true,
-        player: { select: { firstName: true, lastName: true, mediaConsent: true } },
+        player: { select: { firstName: true, lastName: true, mediaConsent: true, handle: true } },
         views: { where: { userId: sessionInfo.userId }, select: { id: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -55,9 +55,10 @@ export async function GET() {
       // (rail is already scoped to followed/own players).
       const entry = byPlayer.get(s.playerId) ?? {
         playerId: s.playerId,
-        name: ownIds.has(s.playerId)
-          ? `${s.player.firstName} ${s.player.lastName}`.trim()
-          : publicPlayerName(s.player),
+        // Instagram-style: the handle IS the label; names only as fallback
+        name:
+          s.player.handle ??
+          (ownIds.has(s.playerId) ? s.player.firstName : publicPlayerName(s.player)),
         own: ownIds.has(s.playerId),
         stories: [],
         allViewed: true,

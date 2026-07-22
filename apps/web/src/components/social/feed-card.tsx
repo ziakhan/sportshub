@@ -24,7 +24,7 @@ function Ic({ d, className, filled }: { d: string; className?: string; filled?: 
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className ?? "h-[18px] w-[18px]"}
+      className={className ?? "h-6 w-6"}
     >
       <path d={d} />
     </svg>
@@ -180,6 +180,28 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
     }
   }
 
+  const shareOutside = async () => {
+    const url = `${window.location.origin}${href}`
+    try {
+      if (item.cardImage) {
+        const res = await fetch(item.cardImage)
+        const blob = await res.blob()
+        const file = new File([blob], "sportshub-card.png", { type: "image/png" })
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: item.title })
+          return
+        }
+      }
+      if (navigator.share) {
+        await navigator.share({ title: item.title, url })
+        return
+      }
+    } catch {
+      /* cancelled or unsupported — fall through */
+    }
+    window.open(item.cardImage ?? url, "_blank")
+  }
+
   const sendToTeam = async (teamId: string) => {
     try {
       const res = await fetch(`/api/teams/${teamId}/messages`, {
@@ -330,7 +352,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
         </a>
       )}
 
-      <div className="border-ink-50 text-ink-500 mt-2.5 flex items-center border-t px-2 py-1 text-xs font-semibold">
+      <div className="text-ink-800 mt-1 flex items-center gap-1 px-2.5 py-1 text-[13px] font-semibold">
         <span className="relative">
           <button
             onClick={() => setPickerOpen((o) => !o)}
@@ -395,6 +417,12 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
 
       {sendOpen && (
         <div className="border-ink-100 mx-4 mb-3 rounded-xl border p-3">
+          <button
+            onClick={shareOutside}
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 mb-2 w-full rounded-lg border bg-white px-3 py-2 text-xs font-semibold"
+          >
+            Share outside (Instagram, TikTok, anywhere…)
+          </button>
           {sent ? (
             <p className="text-court-700 text-xs font-semibold">Sent to the team chat.</p>
           ) : teams === null ? (

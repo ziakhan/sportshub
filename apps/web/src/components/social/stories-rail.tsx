@@ -93,7 +93,7 @@ export function StoriesRail({
 
   return wrap(
     <div className={className}>
-      <div className="flex gap-4 overflow-x-auto pb-1">
+      <div className="flex gap-3 overflow-x-auto py-1">
         {rail.map((entry, ei) => (
           <button
             key={entry.playerId}
@@ -101,27 +101,27 @@ export function StoriesRail({
               setOpen({ entry: ei, story: 0 })
               markViewed(entry.stories[0].id)
             }}
-            className="flex w-16 shrink-0 flex-col items-center gap-1.5"
+            className="flex w-20 shrink-0 flex-col items-center gap-1"
           >
             <span
               className={cn(
                 "rounded-full p-[3px]",
                 entry.allViewed
-                  ? "bg-ink-200"
+                  ? "bg-ink-200 p-[2px]"
                   : "from-gold-400 via-hoop-500 to-play-600 bg-gradient-to-tr"
               )}
             >
               <span
                 className={cn(
-                  "flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold",
+                  "flex h-[68px] w-[68px] items-center justify-center rounded-full border-2 border-white bg-white text-xl font-extrabold",
                   entry.allViewed ? "text-ink-400" : "text-hoop-600"
                 )}
               >
                 {entry.name.slice(0, 1)}
               </span>
             </span>
-            <span className="text-ink-600 w-full truncate text-center text-[11px] font-semibold">
-              {entry.own ? `${entry.name} ⭐` : entry.name}
+            <span className="text-ink-700 w-full truncate text-center text-xs font-medium">
+              {entry.name}
             </span>
           </button>
         ))}
