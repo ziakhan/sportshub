@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
 import { coachTeamHref, operatorMenuLabel, type NavShape } from "@/lib/queries/nav-shape"
-import { useUnreadNotifications } from "./unread-notifications"
+import { NotificationsBell } from "./notifications-bell"
 
 /**
  * The badge menu v2 — the canonical switchboard (site-ia-plan §5.6.5):
@@ -59,54 +59,43 @@ const ICONS = {
   chat: ic("M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"),
   account: ic("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21a8 8 0 0 1 16 0"),
   whistle: ic("M15 13a6 6 0 1 1-6-6h6zM15 7l6-3-2 6"),
-  bell: ic("M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"),
   plus: ic("M12 5v14M5 12h14"),
 }
 
 export function AccountMenu({ userName, userEmail, userInitials, shape }: Props) {
-  const [open, setOpen] = useState(false)
+  // One panel at a time: the bell dropdown and the badge menu share this
+  // state so opening one always closes the other.
+  const [panel, setPanel] = useState<"account" | "bell" | null>(null)
   const ref = useRef<HTMLDivElement>(null)
-  const close = () => setOpen(false)
-  // Bell sits BESIDE the badge on all platforms (owner 2026-07-16 — was
-  // briefly folded into the menu; two taps to notifications was too many).
-  const unreadNotifications = useUnreadNotifications()
+  const close = () => setPanel(null)
+  const open = panel === "account"
 
   useEffect(() => {
-    if (!open) return
+    if (!panel) return
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) setPanel(null)
     }
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPanel(null)
     document.addEventListener("mousedown", onDown)
     document.addEventListener("keydown", onKey)
     return () => {
       document.removeEventListener("mousedown", onDown)
       document.removeEventListener("keydown", onKey)
     }
-  }, [open])
+  }, [panel])
 
   return (
     <div className="relative flex items-center gap-1.5" ref={ref}>
       {/* Bell beside the badge on EVERY platform (owner 2026-07-16):
-          notifications are one tap; the unread dot lives on the bell. */}
-      <Link
-        href="/notifications"
-        aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}
-        className="text-ink-600 hover:bg-ink-50 hover:text-ink-950 relative inline-flex rounded-xl p-2 transition"
-      >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"
-          />
-        </svg>
-        {unreadNotifications > 0 && (
-          <span className="bg-hoop-600 absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-white" />
-        )}
-      </Link>
+          notifications are one tap; the unread dot lives on the bell.
+          Since 2026-07-21 it opens a dropdown inbox, not the page. */}
+      <NotificationsBell
+        open={panel === "bell"}
+        onToggle={() => setPanel((p) => (p === "bell" ? null : "bell"))}
+        onClose={close}
+      />
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setPanel((p) => (p === "account" ? null : "account"))}
         aria-label="Open account menu"
         aria-expanded={open}
         className="bg-play-600 hover:bg-play-700 relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
@@ -156,16 +145,8 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
             <Row href="/messages" onClick={close} icon={ICONS.chat}>
               Chat
             </Row>
-            <Row href="/notifications" onClick={close} icon={ICONS.bell}>
-              <span className="flex flex-1 items-center justify-between">
-                Notifications
-                {unreadNotifications > 0 && (
-                  <span className="bg-hoop-600 flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold text-white">
-                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                  </span>
-                )}
-              </span>
-            </Row>
+            {/* No Notifications row: the bell beside the badge IS the inbox
+                (owner 2026-07-21 — having both was redundant). */}
             <Row href="/account" onClick={close} icon={ICONS.account}>
               Account &amp; settings
             </Row>
