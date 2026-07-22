@@ -42,9 +42,8 @@ export default async function FeedPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 px-4 py-6 sm:px-0">
+    <div className="mx-auto max-w-xl space-y-3 px-3 py-2 sm:px-0">
       <FeedTabs />
-      <h1 className="font-display text-ink-950 text-2xl font-bold">My Feed</h1>
       <StoriesRail />
       <OrgComposer orgs={orgs} />
       {items.length === 0 ? (

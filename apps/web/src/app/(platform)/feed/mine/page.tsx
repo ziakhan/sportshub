@@ -21,9 +21,8 @@ export default async function MyPostsPage() {
   const items = await getMyPosts(sessionInfo.userId)
 
   return (
-    <div className="mx-auto max-w-xl space-y-4 px-4 py-6 sm:px-0">
+    <div className="mx-auto max-w-xl space-y-3 px-3 py-2 sm:px-0">
       <FeedTabs />
-      <h1 className="font-display text-ink-950 text-2xl font-bold">My posts</h1>
       {items.length === 0 ? (
         <div className="border-ink-300 rounded-2xl border border-dashed bg-white p-8 text-center">
           <p className="text-ink-900 text-sm font-semibold">Nothing shared yet</p>

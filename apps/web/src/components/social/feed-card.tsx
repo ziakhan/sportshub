@@ -366,7 +366,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
             ) : (
               <Ic d={IC.heart} />
             )}
-            {reactionCount > 0 ? reactionCount : "Like"}
+            {reactionCount > 0 ? reactionCount : ""}
           </button>
           {pickerOpen && (
             <span className="border-ink-100 absolute bottom-full left-0 z-10 mb-1 flex gap-1 rounded-full border bg-white px-2 py-1.5 shadow-lg">
@@ -390,7 +390,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           className="hover:bg-play-50 hover:text-play-700 flex items-center gap-1.5 rounded-full px-3 py-2 transition"
         >
           <Ic d={IC.chat} />
-          {commentCount > 0 ? commentCount : "Comment"}
+          {commentCount > 0 ? commentCount : ""}
         </button>
         {item.visibility === "PUBLIC" && (
           <button
@@ -401,7 +401,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
             )}
           >
             <Ic d={IC.repeat} filled={false} />
-            {repostCount > 0 ? repostCount : "Repost"}
+            {repostCount > 0 ? repostCount : ""}
           </button>
         )}
         {item.visibility === "PUBLIC" && (
@@ -410,19 +410,15 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
             className="hover:bg-ink-50 hover:text-ink-800 ml-auto flex items-center gap-1.5 rounded-full px-3 py-2 transition"
           >
             <Ic d={IC.send} />
-            Send
           </button>
         )}
       </div>
 
       {sendOpen && (
-        <div className="border-ink-100 mx-4 mb-3 rounded-xl border p-3">
-          <button
-            onClick={shareOutside}
-            className="border-ink-200 text-ink-700 hover:bg-ink-50 mb-2 w-full rounded-lg border bg-white px-3 py-2 text-xs font-semibold"
-          >
-            Share outside (Instagram, TikTok, anywhere…)
-          </button>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={() => setSendOpen(false)}>
+        <div className="rounded-t-3xl bg-white p-4 pb-6" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-ink-200 mx-auto mb-3 h-1 w-10 rounded-full" />
+          <p className="text-ink-900 mb-2 text-sm font-bold">Send in SportsHub</p>
           {sent ? (
             <p className="text-court-700 text-xs font-semibold">Sent to the team chat.</p>
           ) : teams === null ? (
@@ -430,18 +426,33 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           ) : teams.length === 0 ? (
             <p className="text-ink-500 text-xs">No team chats yet.</p>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {teams.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => sendToTeam(t.id)}
-                  className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-full border bg-white px-3 py-1.5 text-xs font-semibold"
-                >
-                  {t.name}
+            <div className="flex gap-3 overflow-x-auto py-1">
+              {teams.map((t, i) => (
+                <button key={t.id} onClick={() => sendToTeam(t.id)} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
+                  <span className={cn("flex h-14 w-14 items-center justify-center rounded-full text-base font-extrabold text-white", AVATAR_BG[i % AVATAR_BG.length])}>
+                    {t.name.slice(0, 1)}
+                  </span>
+                  <span className="text-ink-600 w-full truncate text-center text-[11px] font-medium">{t.name}</span>
                 </button>
               ))}
             </div>
           )}
+          <p className="text-ink-900 border-ink-100 mb-2 mt-3 border-t pt-3 text-sm font-bold">Share to</p>
+          <div className="flex gap-3 overflow-x-auto py-1">
+            {[
+              ["🔗", "Copy link", () => { void navigator.clipboard.writeText(window.location.origin + href); setSent(false) }],
+              ["🟢", "WhatsApp", () => window.open(`https://wa.me/?text=${encodeURIComponent(item.title + " " + window.location.origin + href)}`, "_blank")],
+              ["🔵", "Facebook", () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + href)}`, "_blank")],
+              ["✉️", "Email", () => { window.location.href = `mailto:?subject=${encodeURIComponent(item.title)}&body=${encodeURIComponent(window.location.origin + href)}` }],
+              ["📤", "More…", () => void shareOutside()],
+            ].map(([emoji, label, fn]) => (
+              <button key={label as string} onClick={fn as () => void} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
+                <span className="bg-ink-100 flex h-14 w-14 items-center justify-center rounded-full text-2xl">{emoji as string}</span>
+                <span className="text-ink-600 w-full truncate text-center text-[11px] font-medium">{label as string}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         </div>
       )}
 
