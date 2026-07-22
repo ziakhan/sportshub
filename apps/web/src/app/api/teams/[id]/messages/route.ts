@@ -33,6 +33,9 @@ const sendMessageSchema = z
         allowMultiple: z.boolean().optional().default(false),
       })
       .optional(),
+    // Share-to-chat (social-feed-plan P5): the message carries a PUBLIC
+    // post reference; body is auto-filled with title + link by the sender UI
+    sharedPostId: z.string().optional(),
   })
   .refine((data) => data.body || data.poll, { message: "Message can't be empty" })
 
@@ -286,8 +289,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       message = created.msg
       chatPoll = serializeChatPoll(created.poll, auth.userId)
     } else {
+      // Chat-shared posts must be PUBLIC + PUBLISHED (a FOLLOWERS post
+      // pasted into a team chat would leak past the follower gate)
+      let sharedPostId: string | null = null
+      if (parsed.data.sharedPostId) {
+        const shared = await (prisma as any).post.findUnique({
+          where: { id: parsed.data.sharedPostId },
+          select: { status: true, visibility: true },
+        })
+        if (shared?.status === "PUBLISHED" && shared.visibility === "PUBLIC") {
+          sharedPostId = parsed.data.sharedPostId
+        }
+      }
       message = await prisma.teamMessage.create({
-        data: { teamId: params.id, senderId: auth.userId, body: parsed.data.body! },
+        data: {
+          teamId: params.id,
+          senderId: auth.userId,
+          body: parsed.data.body!,
+          ...(sharedPostId ? { sharedPostId } : {}),
+        },
         select: messageSelect,
       })
     }

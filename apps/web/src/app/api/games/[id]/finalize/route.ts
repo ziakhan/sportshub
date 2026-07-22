@@ -274,6 +274,39 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       console.error("Recap generation failed:", recapErr)
     }
 
+    // System final post (social-feed-plan P5): the score card lands in both
+    // teams' followers' feeds with zero human posting. POTG games use the
+    // POTG card kind so the feed renders the award card. Best-effort.
+    try {
+      const finalTitle = `Final: ${game.homeTeam.name} ${folded.homeScore}–${folded.awayScore} ${game.awayTeam.name}`
+      await (prisma as any).post.upsert({
+        where: { slug: `final-${params.id}` },
+        create: {
+          kind: potgName ? "PLAYER_OF_GAME" : "ANNOUNCEMENT",
+          title: finalTitle,
+          slug: `final-${params.id}`,
+          body: potgName ? `Player of the Game: ${potgName}.` : "",
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+          visibility: "PUBLIC",
+          tags: {
+            create: [
+              { gameId: params.id },
+              { teamId: game.homeTeamId },
+              { teamId: game.awayTeamId },
+            ],
+          },
+        },
+        update: {
+          kind: potgName ? "PLAYER_OF_GAME" : "ANNOUNCEMENT",
+          title: finalTitle,
+          body: potgName ? `Player of the Game: ${potgName}.` : "",
+        },
+      })
+    } catch (postErr) {
+      console.error("Final post failed:", postErr)
+    }
+
     // Distribute the scoresheet — club managers of BOTH teams + the league
     // owner. Best-effort: a mail hiccup never blocks the final whistle.
     try {

@@ -53,6 +53,7 @@ const ic = (d: string) => (
 
 const ICONS = {
   home: ic("M3 10 12 3l9 7M5 10v10h14V10"),
+  feed: ic("M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16M6 19a1 1 0 1 0 0-2 1 1 0 0 0 0 2"),
   dashboard: ic("M4 4h6v8H4zM14 4h6v5h-6zM14 13h6v7h-6zM4 16h6v4H4z"),
   team: ic("M17 20a5 5 0 0 0-10 0M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8"),
   calendar: ic("M16 2v4M8 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v12H3V8a2 2 0 0 1 2-2z"),
@@ -113,6 +114,9 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
           <div className="py-1">
             <Row href="/" onClick={close} icon={ICONS.home}>
               Home
+            </Row>
+            <Row href="/feed" onClick={close} icon={ICONS.feed}>
+              My Feed
             </Row>
             {shape.isOperator && (
               <Row href="/dashboard" onClick={close} icon={ICONS.dashboard}>
