@@ -64,7 +64,12 @@ function timeAgo(iso: string | null): string {
  * (report → auto-hide moderation), reposts (PUBLIC only), share-to-chat and
  * the native share sheet.
  */
-export function FeedCard({ item }: { item: FeedItem }) {
+export function FeedCard({ item, manageable = false }: { item: FeedItem; manageable?: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [caption, setCaption] = useState(item.body)
+  const [captionDraft, setCaptionDraft] = useState(item.body)
+  const [deleted, setDeleted] = useState(false)
   const [reactionCount, setReactionCount] = useState(item.counts.reactions)
   const [myEmojis, setMyEmojis] = useState<string[]>(item.myEmojis)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -191,6 +196,23 @@ export function FeedCard({ item }: { item: FeedItem }) {
     }
   }
 
+  const saveCaption = async () => {
+    setEditing(false)
+    setCaption(captionDraft)
+    await fetch(`/api/posts/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: captionDraft.trim() || " " }),
+    })
+  }
+  const deletePost = async () => {
+    if (!confirm("Delete this post? Likes, comments, and reposts go with it.")) return
+    setDeleted(true)
+    await fetch(`/api/posts/${item.id}`, { method: "DELETE" })
+  }
+
+  if (deleted) return null
+
   const authorLabel = item.authorName ?? "SportsHub One"
   const chip = item.isSystemFinal
     ? { label: "🏁 Final score", cls: "bg-court-50 text-court-700 ring-court-200" }
@@ -222,19 +244,70 @@ export function FeedCard({ item }: { item: FeedItem }) {
             </p>
           </div>
         </div>
-        {chip && (
-          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset", chip.cls)}>
-            {chip.label}
-          </span>
-        )}
+        <span className="flex shrink-0 items-center gap-1.5">
+          {chip && (
+            <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset", chip.cls)}>
+              {chip.label}
+            </span>
+          )}
+          {manageable && (
+            <span className="relative">
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-label="Manage post"
+                className="text-ink-400 hover:bg-ink-50 hover:text-ink-800 rounded-full p-1.5"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
+                  <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <span className="border-ink-100 absolute right-0 top-8 z-20 flex w-40 flex-col overflow-hidden rounded-xl border bg-white shadow-lg">
+                  <button
+                    onClick={() => { setMenuOpen(false); setCaptionDraft(caption); setEditing(true) }}
+                    className="text-ink-700 hover:bg-ink-50 px-3.5 py-2.5 text-left text-sm font-semibold"
+                  >
+                    Edit caption
+                  </button>
+                  <button
+                    onClick={() => { setMenuOpen(false); void deletePost() }}
+                    className="hover:bg-hoop-50 px-3.5 py-2.5 text-left text-sm font-semibold text-red-600"
+                  >
+                    Delete post
+                  </button>
+                </span>
+              )}
+            </span>
+          )}
+        </span>
       </div>
 
       <Link href={href} className="block px-4 pt-1.5">
         <h3 className="text-ink-950 text-[15px] font-bold leading-snug">{item.title}</h3>
-        {item.body && item.kind !== "STAT_CARD" && item.kind !== "PLAYER_OF_GAME" && (
-          <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{item.body}</p>
+        {caption.trim() && !editing && (
+          <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{caption}</p>
         )}
       </Link>
+      {editing && (
+        <div className="space-y-2 px-4 pt-2">
+          <textarea
+            value={captionDraft}
+            onChange={(e) => setCaptionDraft(e.target.value)}
+            maxLength={500}
+            rows={2}
+            placeholder="Write a caption…"
+            className="border-ink-200 w-full rounded-xl border px-3 py-2 text-sm"
+          />
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setEditing(false)} className="text-ink-500 hover:bg-ink-50 rounded-lg px-3 py-1.5 text-xs font-semibold">
+              Cancel
+            </button>
+            <button onClick={saveCaption} className="bg-play-600 hover:bg-play-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white">
+              Save
+            </button>
+          </div>
+        </div>
+      )}
 
       {(item.cardImage || (item.mediaUrl && item.mediaType === "IMAGE")) && (
         <Link href={href} className="mt-2.5 block">

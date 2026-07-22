@@ -54,14 +54,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const post = await (prisma as any).post.findUnique({
       where: { id: params.id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, authorId: true },
     })
     if (!post) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-    const manage = await canManageRecapPost(params.id, sessionInfo)
-    if (!manage.allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Authors manage their OWN posts (owner 2026-07-23, Instagram-style:
+    // edit caption, delete) — parents' shared cards, org admins' posts.
+    // Recap-moderation rights stay for everything else.
+    const isAuthor = !!post.authorId && post.authorId === sessionInfo.userId
+    if (!isAuthor) {
+      const manage = await canManageRecapPost(params.id, sessionInfo)
+      if (!manage.allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const data = patchSchema.parse(await request.json())
+    if (isAuthor && data.action) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     if (data.action === "takedown") {
       const updated = await (prisma as any).post.update({
@@ -112,15 +121,16 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    if (!sessionInfo.isPlatformAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
 
     const post = await (prisma as any).post.findUnique({
       where: { id: params.id },
-      select: { id: true },
+      select: { id: true, authorId: true },
     })
     if (!post) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    // Authors delete their own posts (Instagram-style); platform admin anything
+    if (!sessionInfo.isPlatformAdmin && post.authorId !== sessionInfo.userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     await (prisma as any).post.delete({ where: { id: params.id } })
     return NextResponse.json({ success: true })
