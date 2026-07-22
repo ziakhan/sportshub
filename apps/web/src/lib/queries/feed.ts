@@ -144,6 +144,53 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
   }
 }
 
+/**
+ * "My posts" (owner 2026-07-23: makes sense for every role): everything this
+ * user authored — parents' shared player cards, org admins' club/league
+ * posts — plus their reposts. One surface, role-agnostic.
+ */
+export async function getMyPosts(userId: string, limit = 50): Promise<FeedItem[]> {
+  const [posts, reposts] = await Promise.all([
+    (prisma as any).post.findMany({
+      where: { authorId: userId, status: "PUBLISHED" },
+      include: POST_INCLUDE,
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+      take: limit,
+    }),
+    (prisma as any).repost.findMany({
+      where: { userId, post: { status: "PUBLISHED" } },
+      include: { post: { include: POST_INCLUDE } },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    }),
+  ])
+  const pageIds = [...posts.map((p: any) => p.id), ...reposts.map((r: any) => r.post.id)]
+  const myReactions = await (prisma as any).postReaction.findMany({
+    where: { userId, postId: { in: pageIds } },
+    select: { postId: true, emoji: true },
+  })
+  const reactionsByPost = new Map<string, string[]>()
+  for (const r of myReactions) {
+    reactionsByPost.set(r.postId, [...(reactionsByPost.get(r.postId) ?? []), r.emoji])
+  }
+  const repostSet = new Set<string>(reposts.map((r: any) => r.postId))
+  const items = [
+    ...posts.map((p: any) => toItem(p, reactionsByPost, repostSet)),
+    ...reposts
+      .filter((r: any) => !posts.some((p: any) => p.id === r.post.id))
+      .map((r: any) => ({
+        ...toItem(r.post, reactionsByPost, repostSet),
+        repostedBy: "You",
+        repostedAt: new Date(r.createdAt).toISOString(),
+      })),
+  ]
+  return items
+    .sort((a, b) =>
+      (b.repostedAt ?? b.publishedAt ?? "").localeCompare(a.repostedAt ?? a.publishedAt ?? "")
+    )
+    .slice(0, limit)
+}
+
 export async function getSocialFeed(userId: string, limit = 30): Promise<FeedItem[]> {
   const t = await getFeedTargets(userId)
   const tagOr: any[] = []

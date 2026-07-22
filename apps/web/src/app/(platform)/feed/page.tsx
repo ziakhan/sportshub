@@ -8,6 +8,7 @@ import { getSocialFeed } from "@/lib/queries/feed"
 import { FeedCard } from "@/components/social/feed-card"
 import { StoriesRail } from "@/components/social/stories-rail"
 import { OrgComposer, type OrgOption } from "@/components/social/org-composer"
+import { FeedTabs } from "@/components/social/feed-tabs"
 
 export const dynamic = "force-dynamic"
 
@@ -42,7 +43,10 @@ export default async function FeedPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4 px-4 py-6 sm:px-0">
-      <h1 className="font-display text-ink-950 text-2xl font-bold">My Feed</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-ink-950 text-2xl font-bold">My Feed</h1>
+        <FeedTabs active="feed" />
+      </div>
       <StoriesRail />
       <OrgComposer orgs={orgs} />
       {items.length === 0 ? (
