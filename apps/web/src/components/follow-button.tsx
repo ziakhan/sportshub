@@ -4,11 +4,17 @@ import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/components/ui/cn"
 
+type FollowState = "none" | "pending" | "active"
+
 interface FollowButtonProps {
   teamId?: string
   tenantId?: string
   leagueId?: string
+  /** Player follows can be request-gated (social-feed-plan P3) */
+  playerId?: string
   initialFollowing: boolean
+  /** For player targets: pass "pending" when a request is already waiting */
+  initialStatus?: FollowState
   isAuthenticated: boolean
   /** Renders on dark banners (EntityHeader) by default; "light" for cards. */
   variant?: "banner" | "light"
@@ -33,24 +39,32 @@ function Star({ filled }: { filled: boolean }) {
 }
 
 /**
- * Follow/unfollow a team, club, or league (plan §3 — follows drive the
- * signed-in "Your teams" rail). Anonymous visitors are sent to sign-in with
- * a callback to the current page.
+ * Follow/unfollow a team, club, league, or player (plan §3 + social-feed-plan
+ * P3). Private players return a PENDING request ("Requested") that their
+ * parent approves; tapping again cancels it. Anonymous visitors are sent to
+ * sign-in with a callback to the current page.
  */
 export function FollowButton({
   teamId,
   tenantId,
   leagueId,
+  playerId,
   initialFollowing,
+  initialStatus,
   isAuthenticated,
   variant = "banner",
   compact = false,
   className,
 }: FollowButtonProps) {
-  const [following, setFollowing] = useState(initialFollowing)
+  const [state, setState] = useState<FollowState>(
+    initialStatus ?? (initialFollowing ? "active" : "none")
+  )
   const [busy, setBusy] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+
+  const following = state === "active"
+  const pending = state === "pending"
 
   const toggle = async () => {
     if (!isAuthenticated) {
@@ -59,23 +73,30 @@ export function FollowButton({
     }
     if (busy) return
     setBusy(true)
-    const next = !following
-    setFollowing(next) // optimistic
+    const wasState = state
+    const creating = state === "none"
+    setState(creating ? "active" : "none") // optimistic; corrected from response
     try {
       const res = await fetch("/api/follows", {
-        method: next ? "POST" : "DELETE",
+        method: creating ? "POST" : "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamId, tenantId, leagueId }),
+        body: JSON.stringify({ teamId, tenantId, leagueId, playerId }),
       })
-      if (!res.ok) setFollowing(!next)
+      if (!res.ok) {
+        setState(wasState)
+      } else if (creating) {
+        const data = await res.json().catch(() => ({}))
+        setState(data.status === "PENDING" ? "pending" : "active")
+      }
     } catch {
-      setFollowing(!next)
+      setState(wasState)
     } finally {
       setBusy(false)
     }
   }
 
   const banner = variant === "banner"
+  const label = pending ? "Requested" : following ? "Following" : "Follow"
 
   // Icon-only star for directory cards / dropdown rows
   if (compact) {
@@ -85,17 +106,24 @@ export function FollowButton({
         onClick={toggle}
         disabled={busy}
         aria-pressed={following}
-        title={following ? "Following — tap to unfollow" : "Follow"}
+        title={
+          pending
+            ? "Request sent — tap to cancel"
+            : following
+              ? "Following — tap to unfollow"
+              : "Follow"
+        }
         className={cn(
           "inline-flex h-8 w-8 items-center justify-center rounded-full transition disabled:opacity-60",
-          following
+          following || pending
             ? "bg-amber-50 text-amber-500 ring-1 ring-amber-200 hover:bg-amber-100"
             : "text-ink-400 hover:text-amber-500 hover:bg-amber-50 bg-white ring-1 ring-ink-200",
+          pending && "opacity-70",
           className
         )}
       >
-        <Star filled={following} />
-        <span className="sr-only">{following ? "Following" : "Follow"}</span>
+        <Star filled={following || pending} />
+        <span className="sr-only">{label}</span>
       </button>
     )
   }
@@ -109,17 +137,17 @@ export function FollowButton({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60",
         banner
-          ? following
+          ? following || pending
             ? "bg-white/15 text-white ring-1 ring-white/40 hover:bg-white/25"
             : "text-ink-950 hover:bg-ink-50 bg-white"
-          : following
+          : following || pending
             ? "bg-amber-50 text-amber-600 ring-amber-200 ring-1 hover:bg-amber-100"
             : "bg-ink-950 hover:bg-ink-800 text-white",
         className
       )}
     >
-      <Star filled={following} />
-      {following ? "Following" : "Follow"}
+      <Star filled={following || pending} />
+      {label}
     </button>
   )
 }

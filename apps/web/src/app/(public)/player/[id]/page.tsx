@@ -7,7 +7,9 @@ import { getPlayerSeasonData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName, publicPlayerName } from "@/lib/privacy/names"
 import { hasFamilyPass } from "@/lib/entitlements"
+import { prisma } from "@youthbasketballhub/db"
 import { Card, EntityHeader, StatBlock } from "@/components/ui"
+import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
 
@@ -40,6 +42,20 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
   const showFullLog = await hasFamilyPass(viewerId)
   const gameLog = showFullLog ? data.gameLog : data.gameLog.slice(0, 3)
 
+  // Player follows (social-feed-plan P3): show the button + the viewer's
+  // current state; private players get a parent-approved request.
+  const myFollow = viewerId
+    ? await (prisma as any).follow.findFirst({
+        where: { userId: viewerId, playerId: data.player.id },
+        select: { status: true },
+      })
+    : null
+  const followState: "none" | "pending" | "active" = !myFollow
+    ? "none"
+    : myFollow.status === "PENDING"
+      ? "pending"
+      : "active"
+
   const a = data.aggregate
 
   return (
@@ -62,6 +78,16 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
         crestText={name.slice(0, 1)}
         className="mb-4"
       />
+
+      <div className="mb-4 flex justify-end">
+        <FollowButton
+          playerId={data.player.id}
+          initialFollowing={followState === "active"}
+          initialStatus={followState}
+          isAuthenticated={!!viewerId}
+          variant="light"
+        />
+      </div>
 
       {(primaryTeam || data.player.teams[0]?.team?.tenant) && (
         <div className="mb-8 flex flex-wrap gap-2">

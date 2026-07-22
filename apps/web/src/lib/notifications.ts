@@ -65,6 +65,11 @@ export type NotificationType =
   | "game_rescheduled"
   | "game_final" // final score to team audiences
   | "game_live" // tip-off — to followers of either team (M3 live-push)
+  // Social layer (social-feed-plan P3/P5)
+  | "follow_request" // someone asked to follow a private player → guardian
+  | "follow_approved" // the guardian approved → requester
+  | "post_comment" // new comment on your post → post author
+  | "comment_hidden" // a comment auto-hid at the report threshold → post author
   // League lifecycle
   | "season_registration_open"
   // Club announcements
@@ -131,6 +136,8 @@ type DbClient =
  */
 const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "team_chat",
+  "follow_request",
+  "follow_approved",
   "direct_message",
   "submission_request",
   "submission_request_decided",

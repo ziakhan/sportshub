@@ -12,6 +12,9 @@ export const dynamic = "force-dynamic"
 // choice (matches the MediaConsent enum in prisma/schema.prisma exactly).
 const updatePlayerSchema = addPlayerSchema.extend({
   mediaConsent: z.enum(["UNSET", "GRANTED", "DENIED"]).optional(),
+  // Social distribution gate (social-feed-plan P3) — separate from
+  // mediaConsent, which gates rendering
+  socialVisibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
 })
 
 /**
@@ -48,6 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       weight: true,
       position: true,
       mediaConsent: true,
+      socialVisibility: true,
       handle: true,
     },
   })
@@ -111,6 +115,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         // Media consent is written only when explicitly sent; revoking
         // parentalConsentGiven/consentGivenAt is a separate policy decision.
         ...(data.mediaConsent ? { mediaConsent: data.mediaConsent } : {}),
+        ...(data.socialVisibility ? { socialVisibility: data.socialVisibility } : {}),
       },
       select: {
         id: true,

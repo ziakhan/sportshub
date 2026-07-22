@@ -91,6 +91,12 @@ model User {
   waiverSignatures          WaiverSignature[]         @relation("WaiverSigner")
   messageReactions          MessageReaction[]         @relation("MessageReactions")
   chatMutes                 ChatMute[]                @relation("ChatMutes")
+  postReactions             PostReaction[]            @relation("PostReactions")
+  commentsAuthored          Comment[]                 @relation("CommentsAuthored")
+  commentReports            CommentReport[]           @relation("CommentReports")
+  reposts                   Repost[]                  @relation("Reposts")
+  storyViews                StoryView[]               @relation("StoryViews")
+  storiesCreated            Story[]                   @relation("StoriesCreated")
   conversationParticipants  ConversationParticipant[] @relation("ConversationParticipants")
   directMessagesSent        DirectMessage[]           @relation("DirectMessagesSent")
   scoreInvitesCreated       GameScoreInvite[]         @relation("ScoreInvitesCreated")
@@ -465,6 +471,12 @@ model TeamMessage {
   pinnedAt   DateTime?
   pinnedById String?
 
+  // Social share-to-chat (social-feed-plan P5): the message carries a post
+  // reference; the bubble renders a preview at view time (visibility/expiry
+  // enforced then, not at send time). SetNull keeps the message as text.
+  sharedPostId String?
+  sharedPost   Post?   @relation("TeamMessageSharedPost", fields: [sharedPostId], references: [id], onDelete: SetNull)
+
   reactions MessageReaction[]
 
   createdAt DateTime @default(now())
@@ -539,7 +551,12 @@ model DirectMessage {
   body           String       @db.Text
   editedAt       DateTime?
   deletedAt      DateTime?
-  createdAt      DateTime     @default(now())
+
+  // Social share-to-chat (social-feed-plan P5) — same contract as TeamMessage
+  sharedPostId String?
+  sharedPost   Post?   @relation("DirectMessageSharedPost", fields: [sharedPostId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
 
   @@index([conversationId, createdAt])
 }
@@ -783,6 +800,11 @@ model Player {
   // into full names on public stats/rosters/leaders (plan §5/§11.1)
   mediaConsent MediaConsent @default(UNSET)
 
+  // Social layer (social-feed-plan P3): gates DISTRIBUTION only (follows
+  // auto-approve vs request, stories reach). The public league-record page
+  // stays untouched either way; mediaConsent keeps gating RENDERING.
+  socialVisibility SocialVisibility @default(PRIVATE)
+
   // Player handle — the marketable identity (docs/roadmap/player-handles-plan.md
   // P0). Claimed by the parent (or 13+ self); /p/<handle> resolves to the
   // player page. Lowercase, validated + reserved-word checked in lib/handles.
@@ -807,6 +829,8 @@ model Player {
   trainingSignups     TrainingSessionSignup[] @relation("PlayerTrainingSignups")
   oneOnOneBookings    OneOnOneBooking[]       @relation("PlayerOneOnOneBookings")
   potgGames           Game[]                  @relation("PlayerOfTheGame")
+  followers           Follow[]
+  stories             Story[]
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -1713,6 +1737,7 @@ model Game {
   stats        PlayerStat[]
   scorekeepers UserRole[]
   postTags     PostTag[]
+  stories      Story[]
 
   finalizedAt DateTime?
 
@@ -2309,8 +2334,21 @@ model Post {
   // RECAP_AI provenance: "template" or the model id that wrote it
   aiModel String?
 
+  // Social layer (social-feed-plan): FOLLOWERS posts only reach the tagged
+  // player's approved followers + family; card kinds carry render params.
+  visibility       Visibility        @default(PUBLIC)
+  templateId       String?
+  customPhotoUrl   String?           @db.Text
+  photoScreenState PhotoScreenState?
+
   tags  PostTag[]
   media MediaAsset[]
+
+  reactions            PostReaction[]
+  comments             Comment[]
+  reposts              Repost[]
+  sharedInTeamMessages TeamMessage[]  @relation("TeamMessageSharedPost")
+  sharedInDMs          DirectMessage[] @relation("DirectMessageSharedPost")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2354,6 +2392,8 @@ enum PostKind {
   VIDEO
   RECAP_AI
   ANNOUNCEMENT
+  STAT_CARD // a player's own game stat-line card, shared to their profile
+  PLAYER_OF_GAME // the POTG card (player-shared or the system final post)
 }
 
 enum PostStatus {
@@ -2394,9 +2434,12 @@ model PostTag {
   @@index([playerId])
 }
 
-// FOLLOW any team/club/league; parents' kids' teams are auto-included at
-// query time (derived, not materialized). Follows drive the signed-in
-// "Your teams" rail and, later, notifications/digests.
+// FOLLOW any team/club/league/player; parents' kids' teams are auto-included
+// at query time (derived, not materialized). Follows drive the signed-in
+// "Your teams" rail, the social feed, and the stories rail.
+// Player follows (social-feed-plan P3): PENDING until the parent (or 13+
+// player) approves when the player's socialVisibility is PRIVATE; org
+// targets are always ACTIVE. Every feed/rail query filters status ACTIVE.
 model Follow {
   id     String @id @default(uuid())
   userId String
@@ -2411,15 +2454,168 @@ model Follow {
   leagueId String?
   league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
+  playerId String?
+  player   Player? @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  status FollowStatus @default(ACTIVE)
+
   createdAt DateTime @default(now())
 
   @@unique([userId, teamId])
   @@unique([userId, tenantId])
   @@unique([userId, leagueId])
+  @@unique([userId, playerId])
   @@index([userId])
   @@index([teamId])
   @@index([tenantId])
   @@index([leagueId])
+  @@index([playerId, status])
+}
+
+enum FollowStatus {
+  ACTIVE
+  PENDING
+}
+
+// Shared by Story + Post: who may see it. FOLLOWERS = the subject player's
+// ACTIVE followers plus their own family (canActForPlayer).
+enum Visibility {
+  PUBLIC
+  FOLLOWERS
+}
+
+enum SocialVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum StoryCardType {
+  STAT_CARD
+  POTG
+}
+
+// Claude vision pre-screen for the one custom-photo slot on cards
+// (social-feed-plan: the single bounded exception to "no user imagery").
+enum PhotoScreenState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// 24h story of a system-generated card (social-feed-plan P4). Render-params
+// only — the image is drawn on demand by /api/live/[gameId]/card*. Rows are
+// KEPT after expiry (the family "My moments" archive); every public query
+// filters expiresAt > now().
+model Story {
+  id       String @id @default(uuid())
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  cardType   StoryCardType
+  visibility Visibility    @default(FOLLOWERS)
+
+  // Card render params
+  templateId       String?
+  customPhotoUrl   String?           @db.Text
+  photoScreenState PhotoScreenState?
+
+  // Who actually tapped share — the parent for minors, the player if 13+
+  createdByUserId String?
+  createdBy       User?   @relation("StoriesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  views StoryView[]
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@unique([playerId, gameId, cardType])
+  @@index([playerId, expiresAt])
+}
+
+model StoryView {
+  id      String @id @default(uuid())
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation("StoryViews", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+}
+
+// Fixed-emoji reactions on posts — same semantics as chat's MessageReaction.
+model PostReaction {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("PostReactions", fields: [userId], references: [id], onDelete: Cascade)
+  emoji  String
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId, emoji])
+  @@index([postId])
+}
+
+enum CommentStatus {
+  VISIBLE
+  HIDDEN // auto-hidden at the report threshold, pending review
+  REMOVED_ORG // removed by the post's owner/org — soft, audit stays
+  REMOVED_AUTHOR // removed by the commenter — soft, audit stays
+}
+
+// Flat text comments (no threading — youth platform). Soft-delete only.
+model Comment {
+  id       String @id @default(uuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation("CommentsAuthored", fields: [authorId], references: [id], onDelete: Cascade)
+
+  body        String        @db.Text
+  status      CommentStatus @default(VISIBLE)
+  reportCount Int           @default(0)
+
+  reports CommentReport[]
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, status, createdAt])
+}
+
+model CommentReport {
+  id         String  @id @default(uuid())
+  commentId  String
+  comment    Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User    @relation("CommentReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, reporterId])
+}
+
+// Repost = a join row, never a Post copy: likes/comments always attach to
+// the original, so counts can't duplicate. PUBLIC + PUBLISHED originals only
+// (guarded at create AND render).
+model Repost {
+  id     String @id @default(uuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("Reposts", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId, createdAt])
 }
 
 // Parental media consent (docs/public-site-content-plan.md §5). GRANTED also
