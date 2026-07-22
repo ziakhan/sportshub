@@ -802,3 +802,16 @@ constraint fix + verify script. NOT deployed.
 - Housekeeping: `venues/route.ts` removed from static-conformance KNOWN_DEBT
   (was a pre-existing red test). The 4 offers/invitations unit-test failures
   are pre-existing on HEAD (verified by stash-run) — untouched.
+
+## #36 — 2026-07-21 late: overdue reminders/visibility + accounting export formats (LOCAL, same pending batch as #35)
+Commit on top of #35. No schema change, no extra SQL — deploy.sh covers it.
+- Overdue: sendOverdueReminders in /api/cron/payment-reminders (nag every 4d,
+  stop at 90d) · Overdue tile + aging strip on club/league Payments · row
+  badges · club Overview attention row. Declined one-off cards now email the
+  payer (webhook).
+- Accounting: QuickBooks + Xero CSV formats + date-range filter + trainer
+  labels.
+- ⚠️ REMINDER EMAILS STILL DARK IN PROD: /api/cron/payment-reminders (and
+  charge-due) are not in box cron.d — only waiver-reminders runs. Enabling =
+  real emails to real families; owner's explicit call. One-liner mirrors
+  /etc/cron.d/sportshub-waiver-reminders (e.g. 30 9 * * * for reminders).
