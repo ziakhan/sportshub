@@ -12,8 +12,10 @@ import { cn } from "@/components/ui/cn"
 export function FeedTabs() {
   const pathname = usePathname()
   const active = pathname?.startsWith("/feed/mine") ? "mine" : "feed"
+  // Phones use the social bottom nav (BottomTabs switches on /feed*); this
+  // row is the desktop-only switcher (owner 2026-07-23: no sticky top bar).
   return (
-    <div className="border-ink-100 sticky top-[58px] z-30 -mx-4 mb-1 border-b bg-white/95 px-4 py-2.5 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border md:top-[76px]">
+    <div className="hidden lg:block">
       <div className="flex items-center justify-between">
         <div className="bg-ink-100 flex w-fit rounded-xl p-1">
           {(

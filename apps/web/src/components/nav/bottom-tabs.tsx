@@ -84,13 +84,30 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
   const unread = useUnreadChats()
   const ctx = contextTab(shape)
 
-  const tabs = [
-    { href: "/", label: "Home", icon: icon.home, exact: true },
-    { href: "/messages", label: "Chat", icon: icon.chat, badge: unread },
-    ...(shape.hasCalendar ? [{ href: "/calendar", label: "Calendar", icon: icon.calendar }] : []),
-    ...(ctx ? [ctx] : []),
-    { href: "/account", label: "Account", icon: icon.account },
-  ] as Array<{ href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: number }>
+  // Social gets its OWN bottom nav (owner 2026-07-23, Instagram-style
+  // separation): on /feed* the bar switches to Feed · My posts · Site.
+  // Site-side, Social replaces the Account tab (Account stays one tap away
+  // in the badge menu).
+  const social = pathname === "/feed" || pathname.startsWith("/feed/")
+  const socialIcon = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
+    </svg>
+  )
+  const tabs = social
+    ? [
+        { href: "/feed", label: "Feed", icon: socialIcon, exact: true },
+        { href: "/feed/mine", label: "My posts", icon: icon.account },
+        { href: "/", label: "Site", icon: icon.home, exact: true },
+      ]
+    : [
+        { href: "/", label: "Home", icon: icon.home, exact: true },
+        { href: "/messages", label: "Chat", icon: icon.chat, badge: unread },
+        ...(shape.hasCalendar ? [{ href: "/calendar", label: "Calendar", icon: icon.calendar }] : []),
+        ...(ctx ? [ctx] : []),
+        { href: "/feed", label: "Social", icon: socialIcon },
+      ] as Array<{ href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: number }>
 
   const isActive = (t: { href: string; exact?: boolean }) =>
     t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`)

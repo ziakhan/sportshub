@@ -128,19 +128,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                   : "inline-flex items-center gap-2"
               }
             >
-              <span className="bg-play-600 shadow-play-200 flex h-8 w-8 items-center justify-center rounded-xl text-white shadow-sm">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  aria-hidden="true"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
-                </svg>
-              </span>
+              {/* Wordmark only — the old square icon block is gone (owner
+                  2026-07-23: match the public site header) */}
               <BrandWordmark size="sm" />
             </Link>
             {shape.isOperator && (
