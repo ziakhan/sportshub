@@ -107,7 +107,28 @@ async function getClubOverview(clubId: string) {
   const expiredOffers = offers.filter((o) => o.status === "EXPIRED").length
   const rescindedOffers = offers.filter((o) => o.status === "RESCINDED").length
 
+  // Overdue money owed to the club (obligation dueDate OR an unpaid
+  // installment past due) — owner ask 2026-07-21: overdue must be visible.
+  const overduePayments = await prisma.paymentObligation.count({
+    where: {
+      payeeTenantId: clubId,
+      status: { in: ["PENDING", "PARTIALLY_PAID"] },
+      OR: [
+        { dueDate: { lt: new Date() } },
+        {
+          payments: {
+            some: {
+              dueDate: { lt: new Date() },
+              status: { in: ["PENDING", "PROCESSING", "FAILED"] },
+            },
+          },
+        },
+      ],
+    },
+  })
+
   return {
+    overduePayments,
     primaryColor: branding?.primaryColor || "#4f46e5",
     teamCount,
     tryoutCount,
@@ -150,7 +171,8 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
     data.pendingOffers > 0 ||
     data.teamsWithoutCoach.length > 0 ||
     data.draftTryouts > 0 ||
-    data.expiredOffers > 0
+    data.expiredOffers > 0 ||
+    data.overduePayments > 0
 
   const pipe = [
     { n: data.acceptedOffers, seg: "bg-court-500", dot: "bg-court-500", num: "text-court-700", label: "Accepted", status: "accepted" },
@@ -220,6 +242,16 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
         >
           <PanelHeader variant="band" title="Needs attention" />
           <div className="space-y-2 p-4">
+            {data.overduePayments > 0 && (
+              <AttnRow
+                href={`/clubs/${params.id}/payments`}
+                dot="bg-red-500"
+                chip={`${data.overduePayments} overdue`}
+                chipCls="bg-red-50 text-red-700"
+              >
+                <span className="text-ink-900">Payments past their due date</span>
+              </AttnRow>
+            )}
             {data.tryoutsNeedingOffers.map((t) => (
               <AttnRow
                 key={t.id}

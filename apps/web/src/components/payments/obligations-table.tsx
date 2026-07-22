@@ -11,6 +11,7 @@ import {
   OBLIGATION_STATUS_STYLE,
   TYPE_LABEL,
   paidSoFar,
+  daysOverdue,
   type ObligationRow,
 } from "./types"
 import { PayOnlineButton } from "./pay-online"
@@ -168,6 +169,11 @@ export function ObligationsTable({
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style.className}`}>
                         {style.label}
                       </span>
+                      {daysOverdue(o) > 0 && (
+                        <span className="ml-1.5 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                          Overdue {daysOverdue(o)}d
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-2">

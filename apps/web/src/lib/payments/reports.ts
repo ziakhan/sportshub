@@ -8,6 +8,8 @@ export const PROGRAM_LABELS: Record<string, string> = {
   Offer: "Team Offers / Season Fees",
   TeamSubmission: "League Team Fees",
   Season: "Season Fees",
+  TrainingSessionSignup: "Training Sessions",
+  OneOnOneBooking: "1-on-1 Training",
 }
 
 export function programLabel(referenceType: string): string {
@@ -110,12 +112,13 @@ export function buildAccountingReport(obligations: ObligationRow[]): AccountingR
 }
 
 /** QuickBooks-friendly CSV of the transactions (client downloads this). */
+const esc = (v: string | number) => {
+  const s = String(v)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+
 export function transactionsToCsv(report: AccountingReport): string {
   const header = ["Date", "Payer", "Program", "Description", "Gross", "Refund", "Net", "Method", "Status"]
-  const esc = (v: string | number) => {
-    const s = String(v)
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
   const lines = [header.join(",")]
   for (const t of report.transactions) {
     lines.push(
@@ -133,4 +136,52 @@ export function transactionsToCsv(report: AccountingReport): string {
     )
   }
   return lines.join("\n")
+}
+
+/**
+ * QuickBooks (Online & Desktop) bank-transactions import — the 3-column
+ * format QBO's "Upload from file" accepts without a mapping step
+ * (Date, Description, Amount). Money-in rows, net of refunds.
+ */
+export function transactionsToQuickBooksCsv(report: AccountingReport): string {
+  const lines = ["Date,Description,Amount"]
+  for (const t of report.transactions) {
+    const description = `${t.payer} — ${t.program}${t.description ? ` — ${t.description}` : ""}`
+    lines.push([t.date.slice(0, 10), esc(description), t.net.toFixed(2)].join(","))
+  }
+  return lines.join("\n")
+}
+
+/**
+ * Xero bank-statement import (their published CSV template:
+ * *Date, *Amount, Payee, Description, Reference). Net of refunds.
+ */
+export function transactionsToXeroCsv(report: AccountingReport): string {
+  const lines = ["*Date,*Amount,Payee,Description,Reference"]
+  for (const t of report.transactions) {
+    lines.push(
+      [
+        t.date.slice(0, 10),
+        t.net.toFixed(2),
+        esc(t.payer),
+        esc(`${t.program}${t.description ? ` — ${t.description}` : ""}`),
+        esc(t.method),
+      ].join(",")
+    )
+  }
+  return lines.join("\n")
+}
+
+export type ExportFormat = "generic" | "quickbooks" | "xero"
+
+export const EXPORT_FORMATS: Array<{ value: ExportFormat; label: string; hint: string }> = [
+  { value: "generic", label: "CSV (full detail)", hint: "Every column — Excel, Google Sheets, Wave" },
+  { value: "quickbooks", label: "QuickBooks CSV", hint: "3-column bank import (Date, Description, Amount)" },
+  { value: "xero", label: "Xero CSV", hint: "Bank statement template (*Date, *Amount, Payee…)" },
+]
+
+export function exportTransactions(report: AccountingReport, format: ExportFormat): string {
+  if (format === "quickbooks") return transactionsToQuickBooksCsv(report)
+  if (format === "xero") return transactionsToXeroCsv(report)
+  return transactionsToCsv(report)
 }

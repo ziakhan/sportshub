@@ -2,12 +2,19 @@
 
 import { useMemo, useState } from "react"
 import { formatCurrency } from "@/lib/countries"
-import { transactionsToCsv, type AccountingReport } from "@/lib/payments/reports"
+import { DateTimePicker } from "@/components/ui"
+import {
+  exportTransactions,
+  EXPORT_FORMATS,
+  type ExportFormat,
+  type AccountingReport,
+} from "@/lib/payments/reports"
 
 /**
  * Treasurer-facing accounting view (owner 2026-07-20/21 — sales asset): summary
- * tiles, revenue per program, a transactions table, and a QuickBooks-friendly
- * CSV export. Shared by the club and league accounting pages (same shape).
+ * tiles, revenue per program, a filterable transactions table (program +
+ * date range), and exports in generic / QuickBooks / Xero CSV layouts.
+ * Shared by the club and league accounting pages (same shape).
  */
 export function AccountingReportView({
   report,
@@ -19,24 +26,29 @@ export function AccountingReportView({
   exportName: string
 }) {
   const [programFilter, setProgramFilter] = useState<string>("")
+  const [from, setFrom] = useState("")
+  const [to, setTo] = useState("")
+  const [format, setFormat] = useState<ExportFormat>("generic")
 
-  const txns = useMemo(
-    () =>
-      programFilter
-        ? report.transactions.filter((t) => t.program === programFilter)
-        : report.transactions,
-    [report.transactions, programFilter]
-  )
+  const txns = useMemo(() => {
+    let rows = report.transactions
+    if (programFilter) rows = rows.filter((t) => t.program === programFilter)
+    if (from) rows = rows.filter((t) => t.date.slice(0, 10) >= from)
+    if (to) rows = rows.filter((t) => t.date.slice(0, 10) <= to)
+    return rows
+  }, [report.transactions, programFilter, from, to])
 
-  function downloadCsv() {
-    const csv = transactionsToCsv(
-      programFilter ? { ...report, transactions: txns } : report
-    )
+  const filtered = programFilter !== "" || from !== "" || to !== ""
+  const filteredNet = useMemo(() => txns.reduce((s, t) => s + t.net, 0), [txns])
+
+  function download() {
+    const csv = exportTransactions({ ...report, transactions: txns }, format)
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `${exportName}.csv`
+    const suffix = format === "generic" ? "" : `-${format}`
+    a.download = `${exportName}${suffix}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -109,21 +121,55 @@ export function AccountingReportView({
                 {programFilter} · clear
               </button>
             ) : null}
+            {filtered && (
+              <span className="text-ink-500 ml-2 text-sm font-normal">
+                net {money(filteredNet)}
+              </span>
+            )}
           </h3>
-          <button
-            type="button"
-            onClick={downloadCsv}
-            disabled={txns.length === 0}
-            className="border-ink-200 hover:border-ink-300 inline-flex items-center gap-1.5 rounded-xl border bg-white px-3.5 py-2 text-sm font-semibold text-ink-700 transition disabled:opacity-40"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Export CSV
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <DateTimePicker mode="date" value={from} onChange={setFrom} className="w-36" placeholder="From" />
+            <span className="text-ink-400 text-xs">–</span>
+            <DateTimePicker mode="date" value={to} onChange={setTo} className="w-36" placeholder="To" />
+            {(from || to) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFrom("")
+                  setTo("")
+                }}
+                className="text-ink-400 hover:text-ink-600 text-xs"
+              >
+                clear
+              </button>
+            )}
+            <select
+              value={format}
+              onChange={(e) => setFormat(e.target.value as ExportFormat)}
+              className="border-ink-200 rounded-xl border bg-white px-2.5 py-2 text-sm text-ink-700 focus:outline-none"
+              title={EXPORT_FORMATS.find((f) => f.value === format)?.hint}
+            >
+              {EXPORT_FORMATS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={download}
+              disabled={txns.length === 0}
+              className="border-ink-200 hover:border-ink-300 inline-flex items-center gap-1.5 rounded-xl border bg-white px-3.5 py-2 text-sm font-semibold text-ink-700 transition disabled:opacity-40"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Export
+            </button>
+          </div>
         </div>
         {txns.length === 0 ? (
-          <p className="text-ink-500 p-4 text-sm">No transactions yet.</p>
+          <p className="text-ink-500 p-4 text-sm">No transactions in this range.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -167,7 +213,7 @@ export function AccountingReportView({
             </table>
             {txns.length > 500 ? (
               <p className="text-ink-400 px-4 py-2 text-xs">
-                Showing the 500 most recent. Export CSV for the full list.
+                Showing the 500 most recent. Export for the full list.
               </p>
             ) : null}
           </div>

@@ -52,7 +52,7 @@ export default async function ClubPaymentsPage({ params }: { params: { id: strin
 
   return (
     <div className="space-y-8 p-4 md:p-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Tile
           label="Collected"
           value={formatCurrency(totals.collected, tenant.currency)}
@@ -66,12 +66,38 @@ export default async function ClubPaymentsPage({ params }: { params: { id: strin
           delay={70}
         />
         <Tile
+          label="Overdue"
+          value={formatCurrency(totals.overdue, tenant.currency)}
+          tone={totals.overdue > 0 ? "text-red-600" : "text-ink-400"}
+          delay={140}
+        />
+        <Tile
           label="Waived"
           value={formatCurrency(totals.waived, tenant.currency)}
           tone="text-ink-600"
-          delay={140}
+          delay={210}
         />
       </div>
+
+      {totals.overdue > 0 && (
+        <div
+          className="reveal flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700"
+          style={{ animationDelay: "180ms" }}
+        >
+          <span className="font-semibold">
+            {totals.overdueCount} payment{totals.overdueCount !== 1 ? "s" : ""} overdue
+          </span>
+          {totals.aging.d1to30 > 0 && (
+            <span>1–30 days: {formatCurrency(totals.aging.d1to30, tenant.currency)}</span>
+          )}
+          {totals.aging.d31to60 > 0 && (
+            <span>· 31–60 days: {formatCurrency(totals.aging.d31to60, tenant.currency)}</span>
+          )}
+          {totals.aging.d60plus > 0 && (
+            <span>· 60+ days: {formatCurrency(totals.aging.d60plus, tenant.currency)}</span>
+          )}
+        </div>
+      )}
 
       {totals.byType.length > 0 && (
         <div

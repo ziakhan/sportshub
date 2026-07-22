@@ -56,7 +56,7 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Team fees & payments</h1>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <Tile
           label="Collected"
           value={formatCurrency(totals.collected, league.currency)}
@@ -68,11 +68,33 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
           tone="text-hoop-700"
         />
         <Tile
+          label="Overdue"
+          value={formatCurrency(totals.overdue, league.currency)}
+          tone={totals.overdue > 0 ? "text-red-600" : "text-ink-400"}
+        />
+        <Tile
           label="Waived"
           value={formatCurrency(totals.waived, league.currency)}
           tone="text-ink-600"
         />
       </div>
+
+      {totals.overdue > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          <span className="font-semibold">
+            {totals.overdueCount} payment{totals.overdueCount !== 1 ? "s" : ""} overdue
+          </span>
+          {totals.aging.d1to30 > 0 && (
+            <span>1–30 days: {formatCurrency(totals.aging.d1to30, league.currency)}</span>
+          )}
+          {totals.aging.d31to60 > 0 && (
+            <span>· 31–60 days: {formatCurrency(totals.aging.d31to60, league.currency)}</span>
+          )}
+          {totals.aging.d60plus > 0 && (
+            <span>· 60+ days: {formatCurrency(totals.aging.d60plus, league.currency)}</span>
+          )}
+        </div>
+      )}
 
       <ObligationsTable
         obligations={obligations}

@@ -60,3 +60,44 @@ breakdown (surface `byType` with friendly labels); (2) a transactions report
 export (QuickBooks-friendly columns); (4) installment roll-up (paid/upcoming/
 overdue). Phase-2: scheduled email exports. Works for BOTH clubs and leagues
 (same helpers, keyed by tenantId vs leagueId). Ready to build on owner's go.
+
+## ✅ SHIPPED phase 1 (prod `9de3977`, 2026-07-21) + additions (LOCAL, 2026-07-21 evening)
+Prod: Accounting tab for clubs (`/clubs/[id]/accounting`) + leagues
+(`/manage/leagues/[id]/accounting`) — revenue by program, transactions table,
+generic QuickBooks-friendly CSV (`lib/payments/reports.ts` + `AccountingReportView`).
+
+LOCAL additions (awaiting deploy approval, same batch as trainer role):
+- **Per-tool export formats**: dropdown with *CSV (full detail)* ·
+  *QuickBooks CSV* (3-column bank import: Date, Description, Amount — QBO
+  "Upload from file" accepts without a mapping step) · *Xero CSV* (their bank
+  statement template: *Date, *Amount, Payee, Description, Reference). All net
+  of refunds; program + date filters apply to the export.
+- **Date-range filter** on the transactions table + filtered net total.
+- Trainer program labels (Training Sessions, 1-on-1 Training).
+- **Overdue visibility** (owner ask): Overdue tile + 1-30/31-60/60+ aging strip
+  on club AND league Payments tabs; "Overdue Xd" row badges; club Overview
+  "Needs attention" row; `dueDate` now flows through ObligationRow.
+- **Overdue reminders**: `sendOverdueReminders()` in the payment-reminders cron —
+  first notice the day after due, then every 4 days (OVERDUE_NAG_DAYS), stops
+  at 90 days; bell + email; respects club reminderEmail opt-out. ⚠️ The cron
+  itself is STILL NOT SCHEDULED on the box (owner call — real emails).
+- **Declined-card notice**: `payment_intent.payment_failed` now bells + emails
+  the payer (installment `invoice.payment_failed` already did, with Stripe
+  Smart Retries driving recovery).
+
+## Integration options (assessed 2026-07-21, in order of effort)
+1. **CSV templates (SHIPPED above)** — covers QuickBooks, Xero, Wave, Excel,
+   Google Sheets. Zero ongoing cost; treasurer does a monthly 2-click import.
+2. **Scheduled email export** (S effort) — weekly/monthly CSV attached to an
+   email to the treasurer (club setting: address + cadence). Reuses OCI email
+   + the existing cron seam. Recommended NEXT — makes it passive.
+3. **Zapier/Make webhook feed** (M) — signed webhook per settled payment →
+   clubs self-serve into 6000+ apps incl. QBO/Xero/Sheets. One generic
+   endpoint, no per-vendor API work. Good marketing checkbox ("Zapier").
+4. **QuickBooks Online API sync** (L) — OAuth app, push SalesReceipts nightly,
+   map programs → Items. Real "connected" experience but: Intuit app review,
+   token upkeep, refund/void edge-cases, support burden. Only if clubs ask.
+5. **Xero API sync** (L) — same shape as #4, smaller Canadian youth-sports
+   footprint. Defer behind demand.
+Recommendation: ship #2 next sprint; offer #3 when marketing wants the
+integrations page; hold #4/#5 until ≥3 paying clubs request direct sync.

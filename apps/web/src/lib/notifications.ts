@@ -81,6 +81,7 @@ export type NotificationType =
   | "team_event"
   // Installment payments (payments v2): pre-due reminder, receipt, failure
   | "payment_reminder"
+  | "payment_overdue"
   | "payment_receipt"
   | "payment_failed"
   | "payment_refunded"

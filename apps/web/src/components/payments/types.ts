@@ -8,6 +8,8 @@ export interface PaymentRow {
   note: string | null
   refundAmount: number | null
   createdAt: string
+  /** Installment due date (null for one-off/recorded payments). */
+  dueDate: string | null
   recordedBy?: { firstName: string | null; lastName: string | null } | null
 }
 
@@ -19,6 +21,8 @@ export interface ObligationRow {
   status: string
   createdAt: string
   referenceType: string
+  /** Obligation's own due date, or the earliest unpaid installment's. */
+  dueDate: string | null
   /** Who owes (merchant view) */
   payerName?: string | null
   /** Who is owed (payer view) */
@@ -61,4 +65,11 @@ export function paidSoFar(o: ObligationRow): number {
   return o.payments
     .filter((p) => p.status === "SUCCEEDED" || p.status === "REFUNDED")
     .reduce((sum, p) => sum + p.amount - (p.refundAmount ?? 0), 0)
+}
+
+/** Days past due for a still-owed obligation; 0 = not overdue (or undated). */
+export function daysOverdue(o: ObligationRow, now = Date.now()): number {
+  if (!o.dueDate || !["PENDING", "PARTIALLY_PAID"].includes(o.status)) return 0
+  const late = Math.floor((now - new Date(o.dueDate).getTime()) / 86_400_000)
+  return Math.max(0, late)
 }

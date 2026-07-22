@@ -21,8 +21,18 @@ function serializePayment(p: any) {
     note: p.note,
     refundAmount: p.refundAmount === null ? null : Number(p.refundAmount),
     createdAt: p.createdAt.toISOString(),
+    dueDate: p.dueDate ? p.dueDate.toISOString() : null,
     recordedBy: p.recordedBy,
   }
+}
+
+/** Obligation's own dueDate, else the earliest unpaid installment's. */
+function effectiveDueDate(o: any): string | null {
+  if (o.dueDate) return o.dueDate.toISOString()
+  const unpaid = o.payments
+    .filter((p: any) => p.dueDate && !["SUCCEEDED", "REFUNDED"].includes(p.status))
+    .map((p: any) => p.dueDate.getTime())
+  return unpaid.length ? new Date(Math.min(...unpaid)).toISOString() : null
 }
 
 /** Everything owed TO a merchant (club or league). */
@@ -51,6 +61,7 @@ export async function merchantObligations(
     status: o.status,
     createdAt: o.createdAt.toISOString(),
     referenceType: o.referenceType,
+    dueDate: effectiveDueDate(o),
     payerName:
       o.payerTenant?.name ??
       (o.payerUser
@@ -105,6 +116,7 @@ export async function payerObligations(
       status: o.status,
       createdAt: o.createdAt.toISOString(),
       referenceType: o.referenceType,
+      dueDate: effectiveDueDate(o),
       payeeName: o.payeeTenant?.name ?? o.payeeLeague?.name ?? null,
       payeeHref: o.payeeTenant?.slug
         ? `/club/${o.payeeTenant.slug}`
@@ -119,11 +131,16 @@ export async function payerObligations(
   return out
 }
 
-/** Tiles: collected / outstanding / waived-refunded + by-type breakdown. */
-export function summarize(obligations: ObligationRow[]) {
+/** Tiles: collected / outstanding / overdue (aging) / waived + by-type. */
+export function summarize(obligations: ObligationRow[], now = Date.now()) {
   let collected = 0
   let outstanding = 0
   let waived = 0
+  let overdue = 0
+  let overdueCount = 0
+  // Aging buckets over the overdue slice (owner ask 2026-07-21: any kind of
+  // overdue must be visible)
+  const aging = { d1to30: 0, d31to60: 0, d60plus: 0 }
   const byType = new Map<string, number>()
   for (const o of obligations) {
     const paid = o.payments
@@ -132,9 +149,28 @@ export function summarize(obligations: ObligationRow[]) {
     collected += paid
     byType.set(o.referenceType, (byType.get(o.referenceType) ?? 0) + paid)
     if (["PENDING", "PARTIALLY_PAID"].includes(o.status)) {
-      outstanding += Math.max(0, o.amount - paid)
+      const owed = Math.max(0, o.amount - paid)
+      outstanding += owed
+      if (owed > 0 && o.dueDate) {
+        const daysLate = Math.floor((now - new Date(o.dueDate).getTime()) / 86_400_000)
+        if (daysLate > 0) {
+          overdue += owed
+          overdueCount += 1
+          if (daysLate <= 30) aging.d1to30 += owed
+          else if (daysLate <= 60) aging.d31to60 += owed
+          else aging.d60plus += owed
+        }
+      }
     }
     if (o.status === "WAIVED") waived += Math.max(0, o.amount - paid)
   }
-  return { collected, outstanding, waived, byType: Array.from(byType.entries()) }
+  return {
+    collected,
+    outstanding,
+    waived,
+    overdue,
+    overdueCount,
+    aging,
+    byType: Array.from(byType.entries()),
+  }
 }

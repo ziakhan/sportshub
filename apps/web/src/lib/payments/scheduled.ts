@@ -9,9 +9,17 @@ import { resolveChargeContext } from "./installments"
  *   saved card and runs Smart Retries + dunning.
  * sendDueReminders — our branded pre-due nudge (email + bell), per club's
  *   reminderLeadDays.
+ * sendOverdueReminders — past-due nagging (owner ask 2026-07-21): first
+ *   notice the day after the due date, then every OVERDUE_NAG_DAYS until
+ *   paid/waived. Covers installment Payments AND dated obligations.
  */
 
 const DAY = 86_400_000
+
+/** Re-nag cadence for overdue payments (days between reminders). */
+export const OVERDUE_NAG_DAYS = 4
+/** Stop nagging after this long overdue — the club should intervene by then. */
+const OVERDUE_MAX_DAYS = 90
 
 /** Finalize invoices for installments due today → Stripe charges + retries. */
 export async function chargeDueInstallments(now = new Date()): Promise<{
@@ -132,4 +140,131 @@ export async function sendDueReminders(now = new Date()): Promise<{ reminded: nu
     reminded++
   }
   return { reminded }
+}
+
+/**
+ * Overdue nagging: bell + email every OVERDUE_NAG_DAYS while an installment
+ * (or a dated obligation) stays unpaid past its due date. Dedupe = the last
+ * payment_overdue notification for the same reference must be older than the
+ * nag interval. Respects the club's reminderEmail opt-out for the email leg.
+ */
+export async function sendOverdueReminders(now = new Date()): Promise<{ nagged: number }> {
+  const floor = new Date(now.getTime() - OVERDUE_MAX_DAYS * DAY)
+  const nagCutoff = new Date(now.getTime() - OVERDUE_NAG_DAYS * DAY)
+
+  const [payments, obligations] = await Promise.all([
+    // Unpaid installments past due (PROCESSING = charge attempted, may be in
+    // Stripe retry dunning — still worth surfacing to the family).
+    (prisma as any).payment.findMany({
+      where: {
+        status: { in: ["PENDING", "PROCESSING", "FAILED"] },
+        dueDate: { lt: now, gte: floor },
+        installmentNumber: { gt: 1 },
+      },
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        dueDate: true,
+        description: true,
+        tenantId: true,
+        payerId: true,
+      },
+      take: 1000,
+    }),
+    // Dated obligations still owed (fees where the club set a due date)
+    (prisma as any).paymentObligation.findMany({
+      where: {
+        status: { in: ["PENDING", "PARTIALLY_PAID"] },
+        dueDate: { lt: now, gte: floor },
+        payerUserId: { not: null },
+      },
+      select: {
+        id: true,
+        amount: true,
+        currency: true,
+        dueDate: true,
+        description: true,
+        payeeTenantId: true,
+        payerUserId: true,
+      },
+      take: 1000,
+    }),
+  ])
+
+  const targets = [
+    ...payments.map((p: any) => ({
+      refId: p.id as string,
+      refType: "Payment",
+      payerId: p.payerId as string | null,
+      tenantId: p.tenantId as string | null,
+      amount: Number(p.amount),
+      currency: p.currency as string,
+      dueDate: new Date(p.dueDate),
+      description: (p.description ?? "Installment") as string,
+    })),
+    ...obligations.map((o: any) => ({
+      refId: o.id as string,
+      refType: "PaymentObligation",
+      payerId: o.payerUserId as string | null,
+      tenantId: o.payeeTenantId as string | null,
+      amount: Number(o.amount),
+      currency: o.currency as string,
+      dueDate: new Date(o.dueDate),
+      description: (o.description ?? "Payment") as string,
+    })),
+  ]
+
+  let nagged = 0
+  for (const t of targets) {
+    if (!t.payerId) continue
+
+    // Nag at most every OVERDUE_NAG_DAYS per reference
+    const recent = await prisma.notification.findFirst({
+      where: {
+        userId: t.payerId,
+        type: "payment_overdue",
+        referenceId: t.refId,
+        createdAt: { gt: nagCutoff },
+      },
+      select: { id: true },
+    })
+    if (recent) continue
+
+    const daysLate = Math.max(1, Math.floor((now.getTime() - t.dueDate.getTime()) / DAY))
+    const money = formatMoney(t.amount, t.currency)
+    const message = `${t.description} — ${money} was due ${daysLate} day${daysLate === 1 ? "" : "s"} ago.`
+
+    await notify(prisma, {
+      userId: t.payerId,
+      type: "payment_overdue",
+      title: "Payment overdue",
+      message,
+      link: "/payments",
+      referenceId: t.refId,
+      referenceType: t.refType,
+    })
+
+    const cfgRow = t.tenantId
+      ? await prisma.paymentConfig.findUnique({
+          where: { tenantId: t.tenantId },
+          select: { reminderEmail: true },
+        })
+      : null
+    if (cfgRow?.reminderEmail !== false) {
+      const user = await prisma.user.findUnique({
+        where: { id: t.payerId },
+        select: { email: true },
+      })
+      if (user?.email) {
+        await sendEmail({
+          to: user.email,
+          subject: `Payment overdue — ${money}`,
+          html: `<p>${message}</p><p>Please settle it (or update your card if a charge failed): <a href="${appBaseUrl()}/payments">My payments</a>. Already paid the club directly? They'll record it and this reminder stops.</p>`,
+        }).catch(() => {})
+      }
+    }
+    nagged++
+  }
+  return { nagged }
 }

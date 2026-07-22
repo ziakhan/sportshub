@@ -156,6 +156,33 @@ async function onPaymentIntentFailed(intent: { id: string }): Promise<HandledRes
     return { handled: true, detail: `left as ${payment.status}` }
   }
   await prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } })
+
+  // Card declined on a one-off checkout: unlike invoice dunning there is no
+  // automatic retry, so tell the payer (owner ask 2026-07-21 — previously
+  // this failed silently outside the checkout screen).
+  if (payment.payerId) {
+    const money = formatMoney(Number(payment.amount), payment.currency)
+    await notify(prisma, {
+      userId: payment.payerId,
+      type: "payment_failed",
+      title: "Card declined",
+      message: `${payment.description ?? "Payment"} — ${money} didn't go through. Try again or use another card.`,
+      link: "/payments",
+      referenceId: payment.id,
+      referenceType: "Payment",
+    }).catch(() => {})
+    const user = await prisma.user.findUnique({
+      where: { id: payment.payerId },
+      select: { email: true },
+    })
+    if (user?.email) {
+      await sendEmail({
+        to: user.email,
+        subject: `Payment declined — ${money}`,
+        html: `<p>Your card was declined for <strong>${money}</strong>${payment.description ? ` (${escapeHtml(payment.description)})` : ""}. No money was taken.</p><p>Try again or use another card: <a href="${appBaseUrl()}/payments">my payments</a> · <a href="${appBaseUrl()}/settings/payments">manage cards</a>.</p>`,
+      }).catch(() => {})
+    }
+  }
   return { handled: true }
 }
 
