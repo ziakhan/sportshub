@@ -99,6 +99,9 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     }> = []
     let records: Record<string, { record: string; rank: number; divisionName: string }> = {}
     let seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }> = {}
+    // The viewer's own players (their kids, or themself if 13+) — powers the
+    // "Share my stats" card button on finished games (social-feed-plan P2).
+    let viewerPlayerIds: string[] = []
     if (sinceSeq === 0) {
       const submissions = await (prisma as any).teamSubmission.findMany({
         where: {
@@ -126,6 +129,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
       // consent-gated "First L." form — same rule as the leaders page.
       const session = await getServerSession(authOptions).catch(() => null)
       const scope = await getViewerScope((session?.user as any)?.id ?? null)
+      viewerPlayerIds = Array.from(scope.playerIds)
       const participant =
         isParticipant(scope, { teamId: game.homeTeamId }) ||
         isParticipant(scope, { teamId: game.awayTeamId }) ||
@@ -221,6 +225,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
       voidedSequences,
       players,
       seasonAverages,
+      viewerPlayerIds,
     })
   } catch (error) {
     console.error("Live game read error:", error)

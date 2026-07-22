@@ -67,6 +67,26 @@ interface LivePayload {
   voidedSequences?: number[]
   players: LivePlayer[]
   seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }>
+  /** Initial load only: the viewer's own players (kids / 13+ self) */
+  viewerPlayerIds?: string[]
+}
+
+/** Share a rendered card image via the native share sheet; new tab fallback. */
+async function shareCardImage(url: string, title: string) {
+  try {
+    const res = await fetch(url)
+    if (res.ok) {
+      const blob = await res.blob()
+      const file = new File([blob], "sportshub-card.png", { type: "image/png" })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title })
+        return
+      }
+    }
+  } catch {
+    /* user cancelled the sheet, or fetch failed — fall back below */
+  }
+  window.open(url, "_blank")
 }
 
 type Tab = "game" | "box" | "plays"
@@ -1012,6 +1032,38 @@ export function LiveView({ gameId }: { gameId: string }) {
               </div>
             )
           })()}
+
+        {/* Share-your-card row: shown to the family of players who played in
+            this final (social-feed-plan P2). POTG's family gets the POTG card. */}
+        {final && (data?.viewerPlayerIds ?? []).some((pid) => fold.players[pid]) && (
+          <div className="border-ink-100 mt-3 flex flex-wrap items-center gap-2 rounded-2xl border bg-white p-3">
+            <span className="text-ink-500 text-xs font-semibold uppercase tracking-[0.14em]">
+              Share
+            </span>
+            {(data?.viewerPlayerIds ?? [])
+              .filter((pid) => fold.players[pid])
+              .map((pid) => (
+                <button
+                  key={pid}
+                  onClick={() =>
+                    shareCardImage(
+                      pid === game.potgPlayerId
+                        ? `/api/live/${gameId}/card`
+                        : `/api/live/${gameId}/card/${pid}`,
+                      `${nameOf(pid)} — game card`
+                    )
+                  }
+                  className="border-play-200 bg-play-50 text-play-700 hover:bg-play-100 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
+                  </svg>
+                  {nameOf(pid)}&apos;s game card
+                  {pid === game.potgPlayerId ? " 🏀" : ""}
+                </button>
+              ))}
+          </div>
+        )}
 
         {/* ---------- pre-game: rosters with season averages ---------- */}
         {!hasAnyStats && !live && !final && (

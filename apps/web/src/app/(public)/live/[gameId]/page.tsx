@@ -7,14 +7,28 @@ export const dynamic = "force-dynamic"
 async function getGameHead(gameId: string) {
   return (prisma as any).game.findUnique({
     where: { id: gameId },
-    select: { id: true, homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } } },
+    select: {
+      id: true,
+      status: true,
+      potgPlayerId: true,
+      homeTeam: { select: { name: true } },
+      awayTeam: { select: { name: true } },
+    },
   })
 }
 
 export async function generateMetadata({ params }: { params: { gameId: string } }) {
   const game = await getGameHead(params.gameId)
   if (!game) return { title: "Game not found" }
-  return { title: `${game.homeTeam.name} vs ${game.awayTeam.name} — Live Score`, alternates: { canonical: `/live/${params.gameId}` } }
+  return {
+    title: `${game.homeTeam.name} vs ${game.awayTeam.name} — Live Score`,
+    alternates: { canonical: `/live/${params.gameId}` },
+    // Finished games with a POTG share as the rendered card (P2): link
+    // previews show the award + final instead of a generic page.
+    ...(game.status === "COMPLETED" && game.potgPlayerId
+      ? { openGraph: { images: [`/api/live/${params.gameId}/card`] } }
+      : {}),
+  }
 }
 
 /** Public live scoreboard — score, box, play-by-play; polls every 10s. */

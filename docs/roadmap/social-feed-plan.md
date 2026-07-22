@@ -15,6 +15,22 @@ tags: [theme/social, type/plan, status/committed]
 > clipping). Companion docs: [[player-handles-plan]] (P0 shipped),
 > [[live-streaming-plan]] (clipping depends on it).
 
+> **2026-07-22 (later): FULL PLAN APPROVED in plan mode** — canonical approved
+> plan: Instagram-style BOTH formats (permanent posts with likes/text-comments-
+> day-one/shares/reposts AND 24h stories, sharer picks either/both) · follows
+> only, no friendships (owner reviewed pros/cons; private-by-default parent
+> approval = the consent gate; any signed-in user may follow/request) · stories
+> family archive after 24h · reels = future Highlights swipe viewer over
+> clips/video posts, not a new format · share-to-chat via existing chat
+> (sharedPostId preview), no second inbox · card templates (templateId, 3-5
+> designs) + ONE custom-photo slot on own card (parent/13+ upload, consent-
+> gated render, report path, Claude image pre-screen) · org picture/video
+> posting (identified adults) · ONE additive social migration at P3 start
+> (Follow.playerId+status, Player.socialVisibility, Visibility enum, Story/
+> StoryView/PostReaction/Comment/CommentReport/Repost, Post.visibility+kinds,
+> card params, chat sharedPostId). Full build spec preserved in the sections
+> below + ~/.claude/plans/peaceful-sleeping-teacup.md.
+
 ## Owner rulings (LOCKED)
 
 1. **Players never author free-form posts.** No open text/photo/video

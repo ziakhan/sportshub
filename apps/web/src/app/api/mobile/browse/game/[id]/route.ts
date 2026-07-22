@@ -310,6 +310,27 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         seasonName: game.seasonName,
         clockMode: game.clockMode ?? "OFF",
       },
+      // Player of the Game (social-feed-plan P1/P2): banner + shareable card.
+      // Name/photo consent-gating already happened inside /api/live.
+      potg:
+        final && game.potgPlayerId && nameOf(game.potgPlayerId)
+          ? {
+              playerId: game.potgPlayerId,
+              name: shortName(game.potgPlayerId),
+              jersey: String(jerseyOf(game.potgPlayerId)),
+              photoUrl: game.potgPhotoUrl ?? null,
+              line: fold.players[game.potgPlayerId]
+                ? {
+                    points: fold.players[game.potgPlayerId].points,
+                    rebounds:
+                      fold.players[game.potgPlayerId].offRebounds +
+                      fold.players[game.potgPlayerId].defRebounds,
+                    assists: fold.players[game.potgPlayerId].assists,
+                  }
+                : null,
+              cardPath: `/api/live/${game.id}/card`,
+            }
+          : null,
       hasStats: Object.keys(fold.players).length > 0,
       linescore: {
         periods: displayPeriods.map((p) => ({ label: p <= 4 ? String(p) : periodLabel(p), played: played.has(p) })),

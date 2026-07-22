@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { EmptyState, Loading } from "@/components/ui"
-import { apiJson } from "@/lib/api"
+import { apiBaseUrl, apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
 import { palette, ui } from "@/lib/theme"
 import { useTheme } from "@/lib/theme-context"
@@ -53,6 +53,14 @@ interface GameView {
     periods: Array<{ label: string; played: boolean }>
     rows: Array<{ short: string; color: string | null; cells: Array<number | null>; total: number }>
   }
+  potg: {
+    playerId: string
+    name: string
+    jersey: string
+    photoUrl: string | null
+    line: { points: number; rebounds: number; assists: number } | null
+    cardPath: string
+  } | null
   leaders: Array<{ label: string; home: LeaderCell | null; away: LeaderCell | null }>
   teamStats: Array<{
     label: string
@@ -262,6 +270,43 @@ export default function GameScreen() {
           </View>
           {g.venueName ? <Text style={styles.heroVenue}>{g.venueName}</Text> : null}
         </View>
+
+        {/* Player of the Game (social-feed-plan P1/P2) — web parity: gold
+            banner + share of the rendered card image link */}
+        {data.potg && (
+          <View style={styles.potgCard}>
+            {data.potg.photoUrl ? (
+              <Image source={{ uri: data.potg.photoUrl }} style={styles.potgPhoto} />
+            ) : (
+              <View style={styles.potgJersey}>
+                <Text style={styles.potgJerseyText}>#{data.potg.jersey}</Text>
+              </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.potgEyebrow}>🏀 PLAYER OF THE GAME</Text>
+              <Text style={styles.potgName}>
+                #{data.potg.jersey} {data.potg.name}
+              </Text>
+              {data.potg.line && (
+                <Text style={styles.potgLine}>
+                  {data.potg.line.points} PTS · {data.potg.line.rebounds} REB ·{" "}
+                  {data.potg.line.assists} AST
+                </Text>
+              )}
+            </View>
+            <Pressable
+              onPress={() =>
+                void Share.share({
+                  message: `${data.potg!.name} — Player of the Game! ${apiBaseUrl()}${data.potg!.cardPath}`,
+                  url: `${apiBaseUrl()}${data.potg!.cardPath}`,
+                })
+              }
+              style={styles.potgShare}
+            >
+              <Text style={styles.potgShareText}>Share</Text>
+            </Pressable>
+          </View>
+        )}
 
         {data.hasStats ? (
           <>
@@ -488,6 +533,38 @@ const styles = StyleSheet.create({
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#fff" },
   livePillText: { color: "#fff", fontSize: 11, fontWeight: "900", letterSpacing: 1.5 },
   heroPeriod: { color: "#fff", fontSize: 20, fontWeight: "800", marginTop: 6 },
+  potgCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#fcd34d",
+    backgroundColor: "#fffbeb",
+  },
+  potgPhoto: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: "#f59e0b" },
+  potgJersey: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fef3c7",
+  },
+  potgJerseyText: { fontSize: 15, fontWeight: "800", color: "#b45309" },
+  potgEyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.5, color: "#b45309" },
+  potgName: { fontSize: 15, fontWeight: "800", color: "#0f172a", marginTop: 2 },
+  potgLine: { fontSize: 12.5, fontWeight: "600", color: "#475569", marginTop: 1 },
+  potgShare: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#f59e0b",
+  },
+  potgShareText: { fontSize: 13, fontWeight: "800", color: "#ffffff" },
   finalPill: {
     borderRadius: 999,
     paddingHorizontal: 14,
