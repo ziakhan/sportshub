@@ -815,3 +815,14 @@ Commit on top of #35. No schema change, no extra SQL — deploy.sh covers it.
   charge-due) are not in box cron.d — only waiver-reminders runs. Enabling =
   real emails to real families; owner's explicit call. One-liner mirrors
   /etc/cron.d/sportshub-waiver-reminders (e.g. 30 9 * * * for reminders).
+
+## ✅ DEPLOYED TO PROD 2026-07-22 (owner: "push everything to prod") — sha ce88071
+Covers runbook #35 + #36 (trainer batch had already reached the box as part of
+b370258 via the parallel window; this deploy added payments/overdue +
+accounting exports + nav bell + demo tweaks). deploy.sh ran clean (db push,
+build, restart); **authz-integrity SQL applied to box DB** (Trainer now valid
+in UserRole_scope_coherence). Verified: box sha ce88071, services active,
+ysportshub.com / /events /venues /api/health all 200, /training 404s cleanly
+on unknown ids. Neon untouched (dormant).
+⚠️ STILL OFF (owner switch): payment-reminders + charge-due box crons — the
+new overdue nagging ships dark until scheduled (see #36 one-liner).
