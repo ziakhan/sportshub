@@ -192,7 +192,9 @@ export function FeedCard({ item }: { item: FeedItem }) {
   }
 
   const authorLabel = item.authorName ?? "SportsHub One"
-  const chip = KIND_CHIP[item.kind]
+  const chip = item.isSystemFinal
+    ? { label: "🏁 Final score", cls: "bg-court-50 text-court-700 ring-court-200" }
+    : KIND_CHIP[item.kind]
   const avatarCls = AVATAR_BG[(authorLabel.charCodeAt(0) + authorLabel.length) % AVATAR_BG.length]
 
   return (

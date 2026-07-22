@@ -28,6 +28,8 @@ export interface FeedItem {
   mediaType: string | null
   gameId: string | null
   playerName: string | null
+  /** True for the platform's final-score posts (POTG kind, no player tag) */
+  isSystemFinal: boolean
   counts: { reactions: number; comments: number; reposts: number }
   myEmojis: string[]
   myRepost: boolean
@@ -131,6 +133,7 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
     mediaType: post.media[0]?.type ?? null,
     gameId,
     playerName: playerTag?.player ? publicPlayerName(playerTag.player) : null,
+    isSystemFinal: post.kind === "PLAYER_OF_GAME" && !playerTag,
     counts: {
       reactions: post._count.reactions,
       comments: post._count.comments,
