@@ -95,7 +95,8 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
       <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
     </svg>
   )
-  const tabs = social
+  type Tab = { href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: number }
+  const tabs: Tab[] = social
     ? [
         { href: "/feed", label: "Feed", icon: socialIcon, exact: true },
         { href: "/feed/mine", label: "My posts", icon: icon.account },
@@ -107,7 +108,7 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
         ...(shape.hasCalendar ? [{ href: "/calendar", label: "Calendar", icon: icon.calendar }] : []),
         ...(ctx ? [ctx] : []),
         { href: "/feed", label: "Social", icon: socialIcon },
-      ] as Array<{ href: string; label: string; icon: React.ReactNode; exact?: boolean; badge?: number }>
+      ]
 
   const isActive = (t: { href: string; exact?: boolean }) =>
     t.exact ? pathname === t.href : pathname === t.href || pathname.startsWith(`${t.href}/`)
