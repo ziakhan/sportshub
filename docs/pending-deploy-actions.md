@@ -779,3 +779,26 @@ present, both domains + /legal/* + /api/health 200, services active. Unit 20/20
 support@sportshubone.com) — ensure those inboxes exist or edit. STILL NOT BUILT
 (large, deliberate follow-ups): DateTimePicker wave-2 (~19 forms) · venue
 overhaul (schema+picker+detail/map+per-entity hours+conflicts) · trainer role.
+
+## #35 — 2026-07-21 evening: venue leftovers + TRAINER ROLE (LOCAL, awaiting owner deploy approval)
+Local commits `5124e4f` (schema) · `46ae486` (venue) · `0af445e` (trainer) ·
+constraint fix + verify script. NOT deployed.
+- **Schema (additive):** SeasonVenueHours · PracticeSlot.venueId · Tenant.type
+  (CLUB|TRAINER) · Role.Trainer · TrainingSession/TrainingSessionSignup ·
+  TrainerProfile · TrainerAvailability · OneOnOneBooking. Plain
+  `prisma db push` (deploy.sh does this) — local done; box + Neon on deploy.
+- ⚠️ **EXTRA STEP deploy.sh does NOT do:** re-run the raw-SQL integrity file on
+  the box DB (Trainer added to `UserRole_scope_coherence` — without it every
+  trainer signup 500s):
+  `sudo -u sportshub bash -c "cd /opt/sportshub && set -a && . /etc/sportshub/web.env && set +a && npx prisma db execute --file prisma/sql/2026-07-authz-integrity.sql --schema prisma/schema.prisma"`
+- Venue: league per-season scheduling hours (global VenueHours mutation bug
+  CLOSED) · VenueSelector on team-calendar events + practice slots · intra-org
+  HARD double-book block (409) on tryout/team-event/practice/training.
+- Trainer: full P1-P3 (see batch-backlog §5 status). Public: /training/[id] +
+  /events Training filter + club-page booking widget; /training +
+  /api/trainers (GET) added to public-paths allowlist.
+- Gates: tsc + lint clean · int 347/347 · prod build clean · runtime e2e
+  15/15 (`scripts/demo/verify-trainer.mjs`; cleanup SQL run after).
+- Housekeeping: `venues/route.ts` removed from static-conformance KNOWN_DEBT
+  (was a pre-existing red test). The 4 offers/invitations unit-test failures
+  are pre-existing on HEAD (verified by stash-run) — untouched.

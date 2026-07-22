@@ -28,12 +28,27 @@ by the morning… do not ask for my input." Deployed the two app-wide sweeps:
     `/api/venues/[id]/conflicts` + `VenueConflictNotice` soft, non-blocking
     advisory on the tryout forms (generic cross-org, no leak; same-org specifics
     to that org's admins only).
-  - **STILL DEFERRED (documented, not built):** 2b per-entity scheduling-hours
-    model (the global-`VenueHours` mutation via venue-editor is CONFIRMED but
-    NOT yet repointed — see 2b/2b-i); TeamEvent + Practice venue-picker wiring
-    (FK exists, forms not yet swapped); tournaments (separate TournamentVenue
-    join, intentionally untouched); intra-org HARD block (only soft advisory
-    shipped). Item 5 (Trainer) NOT built — see §5 (owner: "scratch if complicated").
+  - ~~STILL DEFERRED~~ → **BUILT 2026-07-21 evening (LOCAL commits `5124e4f`
+    `46ae486` `0af445e` + constraint fix, NOT yet deployed):**
+    - **2b per-entity hours — DONE.** `SeasonVenueHours` model; league
+      venues-tab hours editor now PUTs
+      `/api/seasons/[id]/venues/[seasonVenueId]/hours` (season-scoped);
+      global `VenueHours` shown read-only ("Venue's posted hours"); session
+      prefill prefers the season's own hours. Global mutation bug closed.
+    - **TeamEvent + Practice venue wiring — DONE.** VenueSelector on the
+      team-calendar AddEventForm + recurring practice-slot rows
+      (`PracticeSlot.venueId`, carried into announce-generated practices);
+      team-events + practices APIs accept venueId, denormalize location.
+    - **Intra-org HARD block — DONE.** `intraOrgConflictMessage()` → 409 on
+      tryout create/edit, team event create/edit, practice create/move, and
+      one-time training sessions. Cross-org stays the soft generic advisory.
+    - Tournaments still intentionally untouched (TournamentVenue join).
+- **Item 5 (Trainer role) — BUILT 2026-07-21 evening (LOCAL `0af445e`, NOT
+  yet deployed).** Full P1+P2+P3 — see §5 status note below. Runtime-verified
+  end-to-end 15/15 (`scripts/demo/verify-trainer.mjs`); int 347/347; prod
+  build clean. ⚠️ Deploy needs the updated
+  `prisma/sql/2026-07-authz-integrity.sql` run on the box DB (Trainer added
+  to `UserRole_scope_coherence`) — deploy.sh's `db push` does NOT apply it.
 
 ---
 
@@ -265,7 +280,22 @@ consent (or a parallel SMS-consent), transactional-SMS exempt like email.
 
 ---
 
-## 5. Trainer role (owner 2026-07-21 — DISCUSS + backlog, NOT today)
+## 5. Trainer role — ✅ BUILT 2026-07-21 evening (LOCAL `0af445e`, awaiting deploy approval)
+**Status:** owner greenlit ("continue with the trainer role"); P1+P2+P3 all
+built as specced below, runtime-verified 15/15. Shape shipped: Trainer =
+`Tenant.type TRAINER` + tenant-scoped `Trainer` role; reuses the /clubs/[id]
+workspace with pared tabs (Overview · Training · 1-on-1 · Camps · Payments ·
+Accounting · Customize · Messages · Settings). TrainingSession model (preset
+types Group Training/Clinic/S&C/Open Workout + free naming, one-time or
+weekly recurring, capacity+fee) + public /training/[id] with signup →
+obligation; 1-on-1 = TrainerProfile (slot length default 60, fee, on/off) +
+availability windows → generated slots → public booking widget on the club
+page (double-book 409s, off-grid 400s); listed in /events (Training filter);
+onboarding card + /trainers/create + dashboard section + nav + checklist.
+NOT built (small, later): trainer-side booking calendar export, reviews
+prompt for training, camp tab copy still says "club" in places.
+
+### Original spec (owner 2026-07-21 — kept for reference)
 **Ask:** a Trainer persona (skills trainer, strength & conditioning coach) who
 can ONLY post/create programs — no teams/rosters/leagues/club admin. Program
 kinds they want: mini-camps, daily/weekly camps (capacity), one-time "training
