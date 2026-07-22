@@ -276,6 +276,57 @@ export function renderCard(data: CardData, template: CardTemplate) {
   )
 }
 
+/** Score-only card (?variant=score): the final for games with or without a
+ *  POTG — used by system final posts in the feed so they read as a SCORE,
+ *  not a second player card (owner 2026-07-23: "why 2 POTG badges"). */
+export async function renderScoreCard(gameId: string, template: CardTemplate) {
+  const game = await (prisma as any).game.findUnique({
+    where: { id: gameId },
+    select: {
+      status: true, scheduledAt: true, homeScore: true, awayScore: true,
+      homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
+      season: { select: { label: true, league: { select: { name: true } } } },
+    },
+  })
+  if (!game || game.status !== "COMPLETED") return null
+  const t = TEMPLATES[template]
+  const rows: Array<[string, number, boolean]> = [
+    [game.homeTeam.name, game.homeScore ?? 0, (game.homeScore ?? 0) >= (game.awayScore ?? 0)],
+    [game.awayTeam.name, game.awayScore ?? 0, (game.awayScore ?? 0) >= (game.homeScore ?? 0)],
+  ]
+  const context = [
+    game.season?.league?.name, game.season?.label,
+    new Date(game.scheduledAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }),
+  ].filter(Boolean).join(" · ")
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
+          width: W, height: H, background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif",
+        }}
+      >
+        <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: 6, padding: "10px 32px", borderRadius: 999, background: t.accent, color: "#ffffff" }}>
+          FINAL
+        </span>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 44, width: 760 }}>
+          {rows.map(([name, score, won], i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 0", borderBottom: i === 0 ? `2px solid ${t.sub}44` : "none" }}>
+              <span style={{ fontSize: name.length > 20 ? 38 : 46, fontWeight: won ? 800 : 600, opacity: won ? 1 : 0.65 }}>{name}</span>
+              <span style={{ fontSize: 84, fontWeight: 800, opacity: won ? 1 : 0.65, color: won ? t.eyebrow : undefined }}>{score}</span>
+            </div>
+          ))}
+        </div>
+        <span style={{ fontSize: 24, color: t.sub, marginTop: 34 }}>{context}</span>
+        <span style={{ fontSize: 26, fontWeight: 800, marginTop: 30 }}>
+          Sports<span style={{ color: t.accent }}>Hub</span> One
+        </span>
+      </div>
+    ),
+    { width: W, height: H }
+  )
+}
+
 /** Load everything a card needs for one player in one game; null = 404. */
 export async function loadCardData(
   gameId: string,

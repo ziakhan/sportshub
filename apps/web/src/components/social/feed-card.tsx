@@ -15,6 +15,40 @@ interface CommentRow {
   authorName: string
 }
 
+function Ic({ d, className, filled }: { d: string; className?: string; filled?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className ?? "h-[18px] w-[18px]"}
+    >
+      <path d={d} />
+    </svg>
+  )
+}
+const IC = {
+  heart: "M19 14c1.5-1.4 3-3.1 3-5.3A4.7 4.7 0 0 0 17.3 4c-1.6 0-3 .8-4.2 2.1a1.5 1.5 0 0 1-2.2 0C9.7 4.8 8.3 4 6.7 4A4.7 4.7 0 0 0 2 8.7c0 2.2 1.5 3.9 3 5.3l6.3 6a1 1 0 0 0 1.4 0Z",
+  chat: "M21 12a8 8 0 0 1-8 8H4l2.4-2.4A8 8 0 1 1 21 12Z",
+  repeat: "M17 2l4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3",
+  send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z",
+}
+
+const KIND_CHIP: Record<string, { label: string; cls: string }> = {
+  PLAYER_OF_GAME: { label: "🏀 Player of the Game", cls: "bg-gold-50 text-gold-700 ring-gold-200" },
+  STAT_CARD: { label: "📊 Game stats", cls: "bg-play-50 text-play-700 ring-play-200" },
+  RECAP_AI: { label: "📰 Recap", cls: "bg-ink-50 text-ink-600 ring-ink-200" },
+  ANNOUNCEMENT: { label: "📣 Announcement", cls: "bg-court-50 text-court-700 ring-court-200" },
+  ARTICLE: { label: "📰 Club post", cls: "bg-ink-50 text-ink-600 ring-ink-200" },
+  PHOTO_SET: { label: "📷 Photos", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
+  VIDEO: { label: "🎥 Video", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
+}
+
+const AVATAR_BG = ["bg-play-600", "bg-court-600", "bg-hoop-600", "bg-gold-500", "bg-ink-700"]
+
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
   const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000))
@@ -157,18 +191,40 @@ export function FeedCard({ item }: { item: FeedItem }) {
     }
   }
 
+  const authorLabel = item.authorName ?? "SportsHub One"
+  const chip = KIND_CHIP[item.kind]
+  const avatarCls = AVATAR_BG[(authorLabel.charCodeAt(0) + authorLabel.length) % AVATAR_BG.length]
+
   return (
-    <article className="border-ink-100 shadow-soft rounded-2xl border bg-white">
-      <div className="flex items-center justify-between px-4 pt-3.5">
-        <div className="min-w-0">
-          {item.repostedBy && (
-            <p className="text-ink-400 text-xs font-semibold">🔁 {item.repostedBy} reposted</p>
-          )}
-          <p className="text-ink-500 truncate text-xs font-medium">
-            {item.authorName ?? "SportsHub One"} · {timeAgo(item.repostedAt ?? item.publishedAt)}
-            {item.visibility === "FOLLOWERS" ? " · Followers" : ""}
-          </p>
+    <article className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+      {item.repostedBy && (
+        <p className="text-ink-500 bg-ink-50/70 border-ink-100 flex items-center gap-1.5 border-b px-4 py-1.5 text-xs font-semibold">
+          <Ic d={IC.repeat} className="h-3.5 w-3.5" /> {item.repostedBy} reposted
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-2 px-4 pt-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white",
+              item.authorName ? avatarCls : "bg-ink-950"
+            )}
+          >
+            {item.authorName ? authorLabel.slice(0, 1) : "S"}
+          </span>
+          <div className="min-w-0">
+            <p className="text-ink-900 truncate text-[13px] font-semibold">{authorLabel}</p>
+            <p className="text-ink-400 text-[11px] font-medium">
+              {timeAgo(item.repostedAt ?? item.publishedAt)}
+              {item.visibility === "FOLLOWERS" ? " · 🔒 Followers" : ""}
+            </p>
+          </div>
         </div>
+        {chip && (
+          <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset", chip.cls)}>
+            {chip.label}
+          </span>
+        )}
       </div>
 
       <Link href={href} className="block px-4 pt-1.5">
@@ -199,16 +255,21 @@ export function FeedCard({ item }: { item: FeedItem }) {
         </a>
       )}
 
-      <div className="text-ink-500 flex items-center gap-1 px-2 py-1.5 text-xs font-semibold">
+      <div className="border-ink-50 text-ink-500 mt-2.5 flex items-center border-t px-2 py-1 text-xs font-semibold">
         <span className="relative">
           <button
             onClick={() => setPickerOpen((o) => !o)}
             className={cn(
-              "hover:bg-ink-50 flex items-center gap-1.5 rounded-full px-3 py-2",
-              myEmojis.length > 0 && "text-play-700"
+              "hover:bg-hoop-50 hover:text-hoop-600 flex items-center gap-1.5 rounded-full px-3 py-2 transition",
+              myEmojis.length > 0 && "text-hoop-600"
             )}
           >
-            {myEmojis.length > 0 ? myEmojis.join("") : "👍"} {reactionCount > 0 ? reactionCount : "Like"}
+            {myEmojis.length > 0 ? (
+              <span className="text-sm leading-none">{myEmojis.join("")}</span>
+            ) : (
+              <Ic d={IC.heart} />
+            )}
+            {reactionCount > 0 ? reactionCount : "Like"}
           </button>
           {pickerOpen && (
             <span className="border-ink-100 absolute bottom-full left-0 z-10 mb-1 flex gap-1 rounded-full border bg-white px-2 py-1.5 shadow-lg">
@@ -217,7 +278,7 @@ export function FeedCard({ item }: { item: FeedItem }) {
                   key={e}
                   onClick={() => react(e)}
                   className={cn(
-                    "rounded-full px-1 text-lg hover:scale-125",
+                    "rounded-full px-1 text-lg transition hover:scale-125",
                     myEmojis.includes(e) && "bg-play-50"
                   )}
                 >
@@ -227,20 +288,32 @@ export function FeedCard({ item }: { item: FeedItem }) {
             </span>
           )}
         </span>
-        <button onClick={openComments} className="hover:bg-ink-50 rounded-full px-3 py-2">
-          💬 {commentCount > 0 ? commentCount : "Comment"}
+        <button
+          onClick={openComments}
+          className="hover:bg-play-50 hover:text-play-700 flex items-center gap-1.5 rounded-full px-3 py-2 transition"
+        >
+          <Ic d={IC.chat} />
+          {commentCount > 0 ? commentCount : "Comment"}
         </button>
         {item.visibility === "PUBLIC" && (
           <button
             onClick={toggleRepost}
-            className={cn("hover:bg-ink-50 rounded-full px-3 py-2", reposted && "text-court-700")}
+            className={cn(
+              "hover:bg-court-50 hover:text-court-700 flex items-center gap-1.5 rounded-full px-3 py-2 transition",
+              reposted && "text-court-700"
+            )}
           >
-            🔁 {repostCount > 0 ? repostCount : "Repost"}
+            <Ic d={IC.repeat} filled={false} />
+            {repostCount > 0 ? repostCount : "Repost"}
           </button>
         )}
         {item.visibility === "PUBLIC" && (
-          <button onClick={openSend} className="hover:bg-ink-50 rounded-full px-3 py-2">
-            📤 Send
+          <button
+            onClick={openSend}
+            className="hover:bg-ink-50 hover:text-ink-800 ml-auto flex items-center gap-1.5 rounded-full px-3 py-2 transition"
+          >
+            <Ic d={IC.send} />
+            Send
           </button>
         )}
       </div>

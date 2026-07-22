@@ -6,6 +6,8 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { canManageRecapPost } from "@/lib/content/recap-authz"
 import { Badge, Card } from "@/components/ui"
 import { AdminBar } from "./admin-bar"
+import { prisma } from "@youthbasketballhub/db"
+import { publicPlayerName } from "@/lib/privacy/names"
 import { JsonLd, newsArticleJsonLd } from "@/lib/seo/jsonld"
 
 export const dynamic = "force-dynamic"
@@ -125,6 +127,29 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
             ))}
           </div>
         )}
+
+        {/* Player of the Game reference (owner 2026-07-23: the game summary
+            article never mentioned the award) — render-time lookup so recaps
+            written before the award still show it */}
+        {gameTag &&
+          (await (async () => {
+            const g = await (prisma as any).game.findUnique({
+              where: { id: gameTag.gameId },
+              select: {
+                potgPlayerId: true,
+                potgPlayer: { select: { firstName: true, lastName: true, mediaConsent: true } },
+              },
+            })
+            if (!g?.potgPlayerId) return null
+            return (
+              <Link
+                href={`/player/${g.potgPlayerId}`}
+                className="border-gold-300 bg-gold-50 text-gold-800 mt-6 flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold hover:bg-gold-100"
+              >
+                🏀 Player of the Game: {publicPlayerName(g.potgPlayer)}
+              </Link>
+            )
+          })())}
 
         {post.kind === "RECAP_AI" && (
           <p className="text-ink-400 mt-6 text-xs">

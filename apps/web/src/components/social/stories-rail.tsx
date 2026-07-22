@@ -105,11 +105,20 @@ export function StoriesRail({
           >
             <span
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-full border-[3px] bg-white text-lg font-extrabold",
-                entry.allViewed ? "border-ink-200 text-ink-400" : "border-gold-500 text-gold-600"
+                "rounded-full p-[3px]",
+                entry.allViewed
+                  ? "bg-ink-200"
+                  : "from-gold-400 via-hoop-500 to-play-600 bg-gradient-to-tr"
               )}
             >
-              {entry.name.slice(0, 1)}
+              <span
+                className={cn(
+                  "flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-white bg-white text-lg font-extrabold",
+                  entry.allViewed ? "text-ink-400" : "text-hoop-600"
+                )}
+              >
+                {entry.name.slice(0, 1)}
+              </span>
             </span>
             <span className="text-ink-600 w-full truncate text-center text-[11px] font-semibold">
               {entry.own ? `${entry.name} ⭐` : entry.name}

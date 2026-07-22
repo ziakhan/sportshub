@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
-import { loadCardData, loadShareOverrides, parseTemplate, renderCard } from "@/lib/cards/game-card"
+import { loadCardData, loadShareOverrides, parseTemplate, renderCard, renderScoreCard } from "@/lib/cards/game-card"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +12,17 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest, { params }: { params: { gameId: string } }) {
   try {
+    // ?variant=score → the score-only card (no POTG required)
+    if (request.nextUrl.searchParams.get("variant") === "score") {
+      const score = await renderScoreCard(
+        params.gameId,
+        parseTemplate(request.nextUrl.searchParams.get("template"))
+      )
+      if (!score) return NextResponse.json({ error: "Not available" }, { status: 404 })
+      score.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600")
+      return score
+    }
+
     const game = await (prisma as any).game.findUnique({
       where: { id: params.gameId },
       select: { potgPlayerId: true },

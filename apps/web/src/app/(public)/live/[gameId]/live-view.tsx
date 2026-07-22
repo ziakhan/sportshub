@@ -1005,9 +1005,12 @@ export function LiveView({ gameId }: { gameId: string }) {
                   <p className="text-gold-700 text-[11px] font-extrabold uppercase tracking-[0.18em]">
                     🏀 Player of the Game
                   </p>
-                  <p className="text-ink-950 truncate text-lg font-bold">
+                  <Link
+                    href={`/player/${game.potgPlayerId}`}
+                    className="text-ink-950 block truncate text-lg font-bold hover:underline"
+                  >
                     #{jerseyOf(game.potgPlayerId)} {nameOf(game.potgPlayerId)}
-                  </p>
+                  </Link>
                   {line && (
                     <p className="text-ink-600 text-sm font-semibold">
                       {line.points} PTS · {line.offRebounds + line.defRebounds} REB ·{" "}

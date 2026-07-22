@@ -118,7 +118,11 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
     cardImage:
       isCard && gameId
         ? post.kind === "PLAYER_OF_GAME"
-          ? `/api/live/${gameId}/card?src=post:${post.id}`
+          ? playerTag
+            ? `/api/live/${gameId}/card?src=post:${post.id}`
+            : // System final post (no player tag) → SCORE card, so the feed
+              // never shows two POTG cards for the same game
+              `/api/live/${gameId}/card?variant=score`
           : playerTag
             ? `/api/live/${gameId}/card/${playerTag.playerId}?src=post:${post.id}`
             : null

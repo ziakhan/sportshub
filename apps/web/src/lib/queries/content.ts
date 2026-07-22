@@ -34,7 +34,9 @@ function excerptOf(body: string, len = 180): string {
 export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
   const [posts, announcements] = await Promise.all([
     (prisma as any).post.findMany({
-      where: { status: "PUBLISHED" },
+      // Card kinds live in the social feed, not the news surfaces — a
+      // one-line "Final:" post has no article to read (owner 2026-07-23)
+      where: { status: "PUBLISHED", kind: { notIn: ["STAT_CARD", "PLAYER_OF_GAME"] } },
       select: {
         id: true,
         kind: true,
