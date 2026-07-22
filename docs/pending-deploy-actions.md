@@ -836,7 +836,7 @@ new overdue nagging ships dark until scheduled (see #36 one-liner).
   /live game page gold banner (photo consent-gated server-side) · scoresheet
   line · final bell mentions POTG. No raw SQL, no cron, no env.
 
-## #38 — 2026-07-23: SOCIAL FEED P1–P5 (LOCAL, not deployed; owner reviewing)
+## #38 — 2026-07-23: SOCIAL FEED P1–P5 — ✅ DEPLOYED TO BOX (sha 3f49980, owner-approved; schema applied w/ --accept-data-loss, verified in sync)
 - Schema additive (deploy.sh db push covers): Follow.playerId+status,
   Player.socialVisibility, Story/StoryView/PostReaction/Comment/
   CommentReport/Repost, Post.visibility+kinds+card params, sharedPostId on
