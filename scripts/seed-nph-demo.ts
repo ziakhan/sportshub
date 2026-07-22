@@ -47,7 +47,7 @@ const SPRING_SEASON = "Fall 2026"
 // demo world, then re-run the seeder (~30s). Everything downstream derives.
 // ════════════════════════════════════════════════════════════════════════
 const LEAGUE_TEAM_FEE = 3990 // real NPH SL per-team fee (docs/research)
-const SUMMER_GAMES_PER_TEAM = 10 // 2 per weekend × 5 weekends — never less than 2/weekend
+const SUMMER_GAMES_PER_TEAM = 20 // 2 per weekend × 10 weekends (season runs to end of August)
 const FALL_GAMES_PER_TEAM = 12 // monthly sessions Oct–Mar
 const GAME_SLOT_MINUTES = 90 // scheduler slot width (warmup + game + buffer)
 const GAME_LENGTH_MINUTES = 40 // actual playing time (4 × 10-min quarters)
@@ -588,7 +588,7 @@ async function seed() {
       status: "IN_PROGRESS",
       type: "SUMMER",
       startDate: new Date(now.getTime() - days(32)),
-      endDate: new Date(now.getTime() + days(24)), // wraps up end of July
+      endDate: new Date(now.getTime() + days(40)), // wraps up end of August (owner 2026-07-23)
       teamFee: LEAGUE_TEAM_FEE,
       gamePeriods: "QUARTERS",
       gamesGuaranteed: SUMMER_GAMES_PER_TEAM,
@@ -651,7 +651,9 @@ async function seed() {
     return created
   }
 
-  // 5 weekend sessions: 4 played, week 5 = today + next Saturday
+  // 10 weekend sessions: 4 played, week 5 = today + next Saturday, weeks
+  // 6-10 run the season to end of August (owner 2026-07-23: the old league
+  // was almost done — extend it so demos always have upcoming games)
   const dow = now.getDay()
   const lastSaturday = dow === 6 ? 0 : -((dow + 1) % 7)
   const summerSessions = await buildSessions(
@@ -662,10 +664,15 @@ async function seed() {
       { label: "Week 3", dayOffsets: [lastSaturday - 14, lastSaturday - 13] },
       { label: "Week 4", dayOffsets: [lastSaturday - 7, lastSaturday - 6] },
       { label: "Week 5", dayOffsets: [0, lastSaturday + 7] }, // today + next Saturday
+      { label: "Week 6", dayOffsets: [lastSaturday + 14, lastSaturday + 15] },
+      { label: "Week 7", dayOffsets: [lastSaturday + 21, lastSaturday + 22] },
+      { label: "Week 8", dayOffsets: [lastSaturday + 28, lastSaturday + 29] },
+      { label: "Week 9", dayOffsets: [lastSaturday + 35, lastSaturday + 36] },
+      { label: "Week 10", dayOffsets: [lastSaturday + 42, lastSaturday + 43] },
     ],
     2
   )
-  console.log(`✓ ${WINTER_LEAGUE} · ${WINTER_SEASON} · 4 grade divisions · 4 venues (2 courts each) · 5 weekend sessions`)
+  console.log(`✓ ${WINTER_LEAGUE} · ${WINTER_SEASON} · 4 grade divisions · 4 venues (2 courts each) · 10 weekend sessions (ends late August)`)
 
   // ── Teams + the full pipeline history per team ─────────────────────────
   const teams: SeededTeam[] = []
@@ -894,14 +901,20 @@ async function seed() {
 
   // Staged passes so the cadence lands exactly (generateSchedule packs
   // greedily-chronologically — a single pass would pour every game into the
-  // past sessions): 8 games/team across the four played weekends, then
-  // Week 5 as two single-day passes (1 game/team today, 1 next Saturday).
+  // past sessions): 8 games/team across the four played weekends, Week 5 as
+  // two single-day passes (1 game/team today, 1 next Saturday), then weeks
+  // 6-10 in one future pass (2/team/weekend through end of August).
   const week5Id = summerSessions.find((s) => s.label === "Week 5")!.id
+  const futureWeekIds = new Set(
+    summerSessions.filter((s) => /Week (6|7|8|9|10)$/.test(s.label)).map((s) => s.id)
+  )
   const week5Session = schedInput.sessions.find((s: any) => s.id === week5Id)!
   const playedPass = generateSchedule({
     ...schedInput,
-    gamesGuaranteed: SUMMER_GAMES_PER_TEAM - 2,
-    sessions: schedInput.sessions.filter((s: any) => s.id !== week5Id),
+    gamesGuaranteed: 8,
+    sessions: schedInput.sessions.filter(
+      (s: any) => s.id !== week5Id && !futureWeekIds.has(s.id)
+    ),
   })
   const week5DayPasses = week5Session.days.map((day: any) =>
     generateSchedule({
@@ -910,7 +923,12 @@ async function seed() {
       sessions: [{ ...week5Session, days: [day] }],
     })
   )
-  const allPasses = [playedPass, ...week5DayPasses]
+  const futurePass = generateSchedule({
+    ...schedInput,
+    gamesGuaranteed: 10,
+    sessions: schedInput.sessions.filter((s: any) => futureWeekIds.has(s.id)),
+  })
+  const allPasses = [playedPass, ...week5DayPasses, futurePass]
   const proposal = {
     games: allPasses.flatMap((r) => r.games),
     unscheduled: allPasses.flatMap((r) => r.unscheduled),
@@ -1420,6 +1438,221 @@ async function seed() {
       },
     })
   }
+
+  // ── SOCIAL LAYER (social-feed-plan P1–P5, seeded 2026-07-23) ──────────
+  // POTG on every completed game + system final posts, consent/visibility
+  // for the demo kids, active stories + card posts, player follows incl. one
+  // PENDING request (the approval demo), story views, reactions, comments
+  // (one auto-hidden by reports), reposts, and a club article — so the feed,
+  // stories rail, and moments surfaces are alive on first login.
+  const kidRows = await p.player.findMany({
+    where: { parentId: { in: [demoParent.id, demoParent2.id] } },
+    select: {
+      id: true, firstName: true, lastName: true, parentId: true,
+      teams: { where: { status: "ACTIVE" }, select: { teamId: true } },
+    },
+  })
+  const kidLords = kidRows.find(
+    (k: any) => k.parentId === demoParent.id && k.teams.some((t: any) => t.teamId === lordsG9.id)
+  )!
+  const kidForce = kidRows.find(
+    (k: any) => k.parentId === demoParent.id && k.teams.some((t: any) => t.teamId === forceG10.id)
+  )!
+  const kidMalik = kidRows.find((k: any) => k.parentId === demoParent2.id)!
+
+  // Demo kids: consent granted; Lords kid PUBLIC, the others PRIVATE
+  await p.player.update({ where: { id: kidLords.id }, data: { mediaConsent: "GRANTED", socialVisibility: "PUBLIC" } })
+  await p.player.update({ where: { id: kidForce.id }, data: { mediaConsent: "GRANTED", socialVisibility: "PRIVATE" } })
+  await p.player.update({ where: { id: kidMalik.id }, data: { mediaConsent: "GRANTED", socialVisibility: "PRIVATE" } })
+
+  // POTG: top scorer everywhere, except each demo kid takes their own best game
+  const potgByGame = new Map<string, { playerId: string; name: string }>()
+  for (const gameId of completedGameIds) {
+    const top = await p.playerStat.findFirst({
+      where: { gameId }, orderBy: { points: "desc" },
+      select: { playerId: true, player: { select: { firstName: true, lastName: true } } },
+    })
+    if (top) potgByGame.set(gameId, { playerId: top.playerId, name: `${top.player.firstName} ${top.player.lastName}` })
+  }
+  const kidBestGame = new Map<string, string>() // kidId → gameId
+  for (const kid of [kidLords, kidForce, kidMalik]) {
+    const best = await p.playerStat.findFirst({
+      where: { playerId: kid.id, gameId: { in: completedGameIds } },
+      orderBy: { points: "desc" }, select: { gameId: true },
+    })
+    if (best) {
+      kidBestGame.set(kid.id, best.gameId)
+      potgByGame.set(best.gameId, { playerId: kid.id, name: `${kid.firstName} ${kid.lastName}` })
+    }
+  }
+  let finalPosts = 0
+  for (const [gameId, potg] of potgByGame) {
+    const g = await p.game.findUnique({
+      where: { id: gameId },
+      select: {
+        homeScore: true, awayScore: true, finalizedAt: true, homeTeamId: true, awayTeamId: true,
+        homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
+      },
+    })
+    if (!g) continue
+    await p.game.update({ where: { id: gameId }, data: { potgPlayerId: potg.playerId } })
+    await p.post.create({
+      data: {
+        kind: "PLAYER_OF_GAME",
+        title: `Final: ${g.homeTeam.name} ${g.homeScore}–${g.awayScore} ${g.awayTeam.name}`,
+        slug: `final-${gameId}`,
+        body: `Player of the Game: ${potg.name}.`,
+        status: "PUBLISHED", publishedAt: g.finalizedAt ?? now, visibility: "PUBLIC",
+        tags: { create: [{ gameId }, { teamId: g.homeTeamId }, { teamId: g.awayTeamId }] },
+      },
+    })
+    finalPosts++
+  }
+
+  // Stories (active now) + permanent card posts for the demo kids
+  const storyFor = async (kid: any, visibility: "PUBLIC" | "FOLLOWERS", cardType: "STAT_CARD" | "POTG") => {
+    const gameId = kidBestGame.get(kid.id)
+    if (!gameId) return null
+    return p.story.create({
+      data: {
+        playerId: kid.id, gameId, cardType, visibility, templateId: "bold",
+        createdByUserId: kid.parentId,
+        createdAt: new Date(now.getTime() - 3 * 3600_000),
+        expiresAt: new Date(now.getTime() + 21 * 3600_000),
+      },
+      select: { id: true },
+    })
+  }
+  const storyLords = await storyFor(kidLords, "PUBLIC", "POTG")
+  const storyForce = await storyFor(kidForce, "FOLLOWERS", "STAT_CARD")
+  await storyFor(kidMalik, "FOLLOWERS", "STAT_CARD")
+  const cardPostFor = async (kid: any, visibility: "PUBLIC" | "FOLLOWERS", cardType: "STAT_CARD" | "POTG") => {
+    const gameId = kidBestGame.get(kid.id)
+    if (!gameId) return null
+    const stat = await p.playerStat.findUnique({
+      where: { gameId_playerId: { gameId, playerId: kid.id } },
+      select: { points: true, rebounds: true, assists: true },
+    })
+    return p.post.create({
+      data: {
+        kind: cardType === "POTG" ? "PLAYER_OF_GAME" : "STAT_CARD",
+        title: cardType === "POTG"
+          ? `${kid.firstName} ${kid.lastName}: Player of the Game`
+          : `${kid.firstName} ${kid.lastName}: ${stat?.points ?? 0} points`,
+        slug: `card-${cardType.toLowerCase().replace("_", "-")}-${gameId.slice(0, 8)}-${kid.id.slice(0, 8)}`,
+        body: stat ? `${stat.points} PTS · ${stat.rebounds} REB · ${stat.assists} AST.` : "",
+        status: "PUBLISHED", publishedAt: new Date(now.getTime() - 3 * 3600_000),
+        authorId: kid.parentId, visibility, templateId: "bold",
+        tags: { create: [{ playerId: kid.id }, { gameId }] },
+      },
+      select: { id: true },
+    })
+  }
+  const cardPostLords = await cardPostFor(kidLords, "PUBLIC", "POTG")
+  await cardPostFor(kidForce, "FOLLOWERS", "STAT_CARD")
+
+  // Player follows: fans + family follow the PUBLIC kid; one PENDING request
+  // sits on the demo parent's edit page (the approval demo); Sana has a
+  // "Requested" state of her own to show the other side.
+  const fanIds = [
+    ...lordsG9.rosterParents.slice(0, 3),
+    ...forceG10.rosterParents.slice(0, 2),
+    demoParent2.id,
+  ].filter((id: string) => id !== demoParent.id)
+  for (const userId of new Set(fanIds)) {
+    await p.follow.create({ data: { userId, playerId: kidLords.id, status: "ACTIVE" } }).catch(() => {})
+  }
+  await p.follow.create({
+    data: { userId: lordsG9.rosterParents[4] ?? demoParent2.id, playerId: kidForce.id, status: "PENDING" },
+  }).catch(() => {})
+  await p.notification.create({
+    data: {
+      userId: demoParent.id, type: "follow_request", title: "New follow request",
+      message: "A Lords family asked to follow your player.",
+      link: `/players/${kidForce.id}/edit`, referenceId: kidForce.id, referenceType: "Player",
+    },
+  })
+  await p.follow.create({ data: { userId: demoParent2.id, playerId: kidForce.id, status: "PENDING" } }).catch(() => {})
+
+  // Story views + reactions + comments + reposts from the crowd
+  if (storyLords) {
+    for (const userId of new Set(fanIds).values()) {
+      await p.storyView.create({ data: { storyId: storyLords.id, userId } }).catch(() => {})
+    }
+  }
+  if (storyForce) {
+    await p.storyView.create({ data: { storyId: storyForce.id, userId: demoParent2.id } }).catch(() => {})
+  }
+  const crowd = [...lordsG9.rosterParents, ...forceG10.rosterParents]
+  const finalPostRows = await p.post.findMany({
+    where: { kind: "PLAYER_OF_GAME", slug: { startsWith: "final-" } },
+    select: { id: true }, orderBy: { publishedAt: "desc" }, take: 8,
+  })
+  const emojis = ["🔥", "🏀", "👍", "❤️", "🎉"]
+  let reactions = 0
+  for (let i = 0; i < finalPostRows.length; i++) {
+    for (let k = 0; k < 2 + (i % 3); k++) {
+      const userId = crowd[(i * 5 + k * 3) % crowd.length]
+      await p.postReaction.create({
+        data: { postId: finalPostRows[i].id, userId, emoji: emojis[(i + k) % emojis.length] },
+      }).catch(() => {})
+      reactions++
+    }
+  }
+  const commentLines = [
+    "What a game — the fourth quarter was unreal.",
+    "Go Lords! 🏀",
+    "Defense wins games. Proud of these kids.",
+    "That comeback!!",
+    "Great officiating tonight too, smooth game.",
+  ]
+  if (cardPostLords) {
+    for (let i = 0; i < 3; i++) {
+      await p.comment.create({
+        data: {
+          postId: cardPostLords.id, authorId: crowd[(i * 7 + 1) % crowd.length],
+          body: commentLines[i], createdAt: new Date(now.getTime() - (2 - i) * 3600_000),
+        },
+      })
+    }
+    // Moderation demo: an auto-hidden comment (3 reports)
+    await p.comment.create({
+      data: {
+        postId: cardPostLords.id, authorId: crowd[9 % crowd.length],
+        body: "ref was garbage, total fix", status: "HIDDEN", reportCount: 3,
+      },
+    })
+    await p.postReaction.create({
+      data: { postId: cardPostLords.id, userId: demoParent2.id, emoji: "🔥" },
+    }).catch(() => {})
+    await p.repost.create({ data: { postId: cardPostLords.id, userId: demoParent2.id } }).catch(() => {})
+  }
+  for (let i = 0; i < Math.min(3, finalPostRows.length); i++) {
+    await p.comment.create({
+      data: {
+        postId: finalPostRows[i].id, authorId: crowd[(i * 11 + 2) % crowd.length],
+        body: commentLines[(i + 2) % commentLines.length],
+      },
+    })
+  }
+  await p.repost.create({
+    data: { postId: finalPostRows[0]?.id, userId: crowd[3 % crowd.length] },
+  }).catch(() => {})
+
+  // A club article post (org posting surface)
+  await p.post.create({
+    data: {
+      kind: "ARTICLE", title: "Championship weekend: what families need to know",
+      slug: `lords-championship-weekend-${Date.now().toString(36)}`,
+      body: "Top four in each grade division qualify for championship weekend at Pan Am Sports Centre, August 29–30. Doors open 45 minutes before tip. Every game is live-scored with stats, recaps, and Player of the Game cards families can share straight from the game page.",
+      status: "PUBLISHED", publishedAt: new Date(now.getTime() - days(1)),
+      authorId: clubRows.get("lords")!.ownerId, visibility: "PUBLIC",
+      tags: { create: [{ tenantId: clubRows.get("lords")!.id }, { leagueId: winterLeague.id }] },
+    },
+  })
+  console.log(
+    `✓ social layer: POTG + ${finalPosts} final posts · 3 stories (1 public, 2 followers) · card posts · ${reactions} reactions · comments (1 auto-hidden) · player follows (+1 pending request) · reposts · club article`
+  )
 
   // ── Team chats: every winter team has a living thread ─────────────────
   const chatLines: Array<[string, "coach" | "parent"]> = [
