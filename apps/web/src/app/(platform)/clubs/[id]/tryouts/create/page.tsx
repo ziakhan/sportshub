@@ -305,7 +305,7 @@ function CreateTryoutForm() {
                 </div>
                 <input type="hidden" {...register("location")} />
                 <p className="mt-1 text-xs text-ink-400">
-                  Search an existing venue or add one from Google Maps.
+                  Search an existing venue, or type a name and add it as a new venue.
                 </p>
                 {errors.location && (
                   <p className="mt-1 text-sm text-red-600">Please choose a venue.</p>

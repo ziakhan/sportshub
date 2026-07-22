@@ -36,6 +36,12 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
+  // Free-text fallback (bug 2026-07-23): with no Google key and a venue not
+  // yet in the directory, typing a name dead-ended and blocked the whole
+  // form. The dropdown now always offers "Add ... as a new venue" → this
+  // mini form (address/city/province), which needs no Google at all.
+  const [manual, setManual] = useState<null | { name: string; address: string; city: string; state: string }>(null)
+  const [manualError, setManualError] = useState<string | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
   const autocompleteServiceRef = useRef<any>(null)
@@ -147,6 +153,43 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
     setQuery("")
   }
 
+  const createManual = async () => {
+    if (!manual) return
+    if (manual.name.trim().length < 2 || manual.address.trim().length < 3 || !manual.city.trim()) {
+      setManualError("Please fill in the venue name, address, and city.")
+      return
+    }
+    setCreating(true)
+    setManualError(null)
+    try {
+      const res = await fetch("/api/venues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: manual.name.trim(),
+          address: manual.address.trim(),
+          city: manual.city.trim(),
+          state: manual.state.trim() || "ON",
+          country: "CA",
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.id) {
+        onSelect({ id: data.id, name: data.name, address: `${manual.address.trim()}, ${manual.city.trim()}` })
+        setMode("selected")
+        setShowDropdown(false)
+        setManual(null)
+        setQuery("")
+      } else {
+        setManualError(data.error || "Couldn't add the venue")
+      }
+    } catch {
+      setManualError("Couldn't add the venue")
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const selectGooglePlace = async (prediction: GooglePrediction) => {
     if (!placesServiceRef.current) return
     setCreating(true)
@@ -242,7 +285,61 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
         )}
       </div>
 
-      {showDropdown && (
+      {showDropdown && manual && (
+        <div className="absolute z-50 mt-1 w-full space-y-2 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+          <p className="text-xs font-semibold text-gray-500">Add a new venue</p>
+          <input
+            type="text"
+            value={manual.name}
+            onChange={(e) => setManual({ ...manual, name: e.target.value })}
+            placeholder="Venue name"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <input
+            type="text"
+            value={manual.address}
+            onChange={(e) => setManual({ ...manual, address: e.target.value })}
+            placeholder="Street address"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={manual.city}
+              onChange={(e) => setManual({ ...manual, city: e.target.value })}
+              placeholder="City"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <input
+              type="text"
+              value={manual.state}
+              onChange={(e) => setManual({ ...manual, state: e.target.value })}
+              placeholder="Province"
+              className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          {manualError && <p className="text-xs font-medium text-red-600">{manualError}</p>}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setManual(null)}
+              className="rounded-md px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={createManual}
+              disabled={creating}
+              className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
+            >
+              {creating ? "Adding…" : "Add venue"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDropdown && !manual && (
         <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-72 overflow-y-auto">
           {/* Existing venues */}
           {existingVenues.length > 0 && (
@@ -276,9 +373,22 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
           )}
 
           {existingVenues.length === 0 && googlePredictions.length === 0 && query.length >= 2 && !loading && (
-            <div className="px-3 py-4 text-center text-sm text-gray-500">
+            <div className="px-3 py-3 text-center text-sm text-gray-500">
               No venues found for &ldquo;{query}&rdquo;
             </div>
+          )}
+
+          {/* Free-text fallback — always available, works without Google */}
+          {query.length >= 2 && (
+            <button
+              type="button"
+              onClick={() =>
+                setManual({ name: query.trim(), address: "", city: "", state: "ON" })
+              }
+              className="w-full border-t border-gray-100 bg-gray-50 px-3 py-2.5 text-left text-sm font-semibold text-orange-700 hover:bg-orange-50"
+            >
+              ＋ Add &ldquo;{query.trim()}&rdquo; as a new venue
+            </button>
           )}
         </div>
       )}

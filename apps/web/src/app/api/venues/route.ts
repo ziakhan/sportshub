@@ -105,7 +105,9 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/venues?q=search — Search existing venues by name
+ * GET /api/venues?q=search — Search existing venues by name, address, or city
+ * (the selector's placeholder promises address search; name-only left users
+ * stranded — bug 2026-07-23)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -117,7 +119,11 @@ export async function GET(request: NextRequest) {
 
     const venues = await prisma.venue.findMany({
       where: {
-        name: { contains: q, mode: "insensitive" },
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { address: { contains: q, mode: "insensitive" } },
+          { city: { contains: q, mode: "insensitive" } },
+        ],
       } as any,
       select: {
         id: true,
