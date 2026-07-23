@@ -561,9 +561,9 @@ export async function renderMatchupCover(gameId: string) {
   return new ImageResponse(
     (
       <div style={{ display: "flex", width: 1200, height: 675, background: "#141317", position: "relative", fontFamily: FAMILY, overflow: "hidden" }}>
-        <div style={{ position: "absolute", left: -140, top: -50, width: 700, height: 800, background: `linear-gradient(135deg, ${hc} 0%, ${hc}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
-        <div style={{ position: "absolute", right: -140, top: -50, width: 640, height: 800, background: `linear-gradient(225deg, ${ac} 0%, ${ac}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
-        <div style={{ position: "absolute", left: 566, top: -50, width: 26, height: 800, background: "#141317", opacity: 0.85, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ position: "absolute", left: -140, top: -50, width: 790, height: 800, background: `linear-gradient(135deg, ${hc} 0%, ${hc}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ position: "absolute", right: -140, top: -50, width: 700, height: 800, background: `linear-gradient(225deg, ${ac} 0%, ${ac}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ position: "absolute", left: 615, top: -50, width: 14, height: 800, background: "#141317", opacity: 0.85, transform: "skewX(-11deg)", display: "flex" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "70px 40px 0" }}>
           {side(game.homeTeam.name, hc, game.homeScore ?? 0, homeWon)}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: -40 }}>

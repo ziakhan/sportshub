@@ -71,8 +71,14 @@ export async function GET() {
         })
       : []
     const gameByPost = new Map(gameTags.map((t: any) => [t.postId, t.gameId]))
-    // Original SVG cover as-is — the app's CoverImage (expo-image) renders it
-    const newsWithImages = news.map((n: any) => ({ ...n, imageUrl: n.coverUrl ?? null }))
+    const newsWithImages = news.map((n: any) => ({
+      ...n,
+      imageUrl: n.coverUrl?.startsWith("data:image/svg")
+        ? gameByPost.has(n.id)
+          ? `${appBaseUrl()}/api/live/${gameByPost.get(n.id)}/cover?v=5`
+          : null
+        : (n.coverUrl ?? null),
+    }))
 
     return NextResponse.json({
       scoreboard,
