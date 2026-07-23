@@ -139,13 +139,9 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
         : null,
     // SVG data-URI covers can't render in React Native — recaps fall back
     // to the game's PNG score card (native + web consistent)
-    mediaUrl: abs(
-      post.media[0]?.url?.startsWith("data:image/svg")
-        ? gameId
-          ? `/api/live/${gameId}/cover?v=4`
-          : null
-        : (post.media[0]?.url ?? null)
-    ),
+    // The ORIGINAL cover art travels as-is: web renders SVG natively and the
+    // app renders it via expo-image (the PNG twin chase is over, 2026-07-25)
+    mediaUrl: abs(post.media[0]?.url ?? null),
     mediaType: post.media[0]?.type ?? null,
     gameId,
     playerName: playerTag?.player ? publicPlayerName(playerTag.player) : null,

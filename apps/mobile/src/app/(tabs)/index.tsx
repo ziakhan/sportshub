@@ -4,7 +4,7 @@ import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
 import { StoriesRail } from "@/components/stories-rail"
-import { Card, ListRow, SectionHeader, TonePill, Monogram } from "@/components/ui"
+import { Card, CoverImage, ListRow, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { useBrowseHome } from "@/lib/browse"
 import { apiBaseUrl } from "@/lib/api"
 import { useHome, coachTeamPath } from "@/lib/home"
@@ -307,11 +307,7 @@ export default function HomeScreen() {
                 }
               >
                 {n.imageUrl ? (
-                  <Image
-                    source={{ uri: n.imageUrl.startsWith("/") ? `${apiBaseUrl()}${n.imageUrl}` : n.imageUrl }}
-                    style={styles.newsCover}
-                    resizeMode="cover"
-                  />
+                  <CoverImage url={n.imageUrl} style={styles.newsCover} aspectRatio={16 / 9} />
                 ) : null}
                 <Text style={styles.newsTitle}>{n.title}</Text>
                 <Text style={styles.mutedSmall} numberOfLines={2}>

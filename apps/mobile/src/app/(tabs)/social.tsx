@@ -13,6 +13,7 @@ import {
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
+import { CoverImage } from "@/components/ui"
 import { StoriesRail } from "@/components/stories-rail"
 import { apiBaseUrl, apiJson } from "@/lib/api"
 import { useSession } from "@/lib/session"
@@ -191,7 +192,11 @@ function FeedCard({ item }: { item: FeedItem }) {
             resizeMode="cover"
           />
         ) : item.mediaUrl && item.mediaType === "IMAGE" ? (
-          <Image source={{ uri: item.mediaUrl.startsWith("/") ? `${apiBaseUrl()}${item.mediaUrl}` : item.mediaUrl }} style={styles.mediaImage} resizeMode="cover" />
+          <CoverImage
+            url={item.mediaUrl.startsWith("/") ? `${apiBaseUrl()}${item.mediaUrl}` : item.mediaUrl}
+            aspectRatio={16 / 9}
+            style={styles.mediaImage}
+          />
         ) : null}
       </Pressable>
       <View style={styles.actions}>
@@ -384,7 +389,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 15, fontFamily: fonts.display, color: ui.text, paddingHorizontal: 14 },
   body: { fontSize: 13, fontFamily: fonts.body, color: ui.textMuted, paddingHorizontal: 14, marginTop: 3 },
   cardImage: { width: "100%", aspectRatio: 1080 / 1350, marginTop: 10, backgroundColor: "#eeeef1" },
-  mediaImage: { width: "100%", aspectRatio: 1200 / 675, marginTop: 10, borderRadius: 0, backgroundColor: "#eeeef1" },
+  mediaImage: { marginTop: 10 },
   actions: {
     flexDirection: "row",
     alignItems: "center",
