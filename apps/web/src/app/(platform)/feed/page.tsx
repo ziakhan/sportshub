@@ -42,6 +42,7 @@ export default async function FeedPage() {
   ]
 
   return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,#e4e9f7_0%,#f1f4fa_55%,#f6f7fb_100%)]">
     <div className="mx-auto max-w-xl space-y-5 px-3 py-3 sm:px-0">
       <FeedTabs />
       <StoriesRail />
@@ -63,6 +64,7 @@ export default async function FeedPage() {
       ) : (
         items.map((item) => <FeedCard key={`${item.id}-${item.repostedBy ?? "o"}`} item={item} />)
       )}
+    </div>
     </div>
   )
 }

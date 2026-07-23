@@ -248,7 +248,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const avatarCls = AVATAR_BG[(authorLabel.charCodeAt(0) + authorLabel.length) % AVATAR_BG.length]
 
   return (
-    <article className="ring-ink-950/5 overflow-hidden rounded-3xl bg-white shadow-[0_16px_48px_-20px_rgba(30,41,59,0.4)] ring-1">
+    <article className="ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.55)] ring-1">
       {item.repostedBy && (
         <p className="text-ink-500 bg-ink-50/70 border-ink-100 flex items-center gap-1.5 border-b px-4 py-1.5 text-xs font-semibold">
           <Ic d={IC.repeat} className="h-3.5 w-3.5" /> {item.repostedBy} reposted

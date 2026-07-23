@@ -21,6 +21,7 @@ export default async function MyPostsPage() {
   const items = await getMyPosts(sessionInfo.userId)
 
   return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,#e4e9f7_0%,#f1f4fa_55%,#f6f7fb_100%)]">
     <div className="mx-auto max-w-xl space-y-5 px-3 py-3 sm:px-0">
       <FeedTabs />
       {items.length === 0 ? (
@@ -40,6 +41,7 @@ export default async function MyPostsPage() {
       ) : (
         items.map((item) => <FeedCard key={`${item.id}-${item.repostedBy ?? "o"}`} item={item} manageable={!item.repostedBy} />)
       )}
+    </div>
     </div>
   )
 }
