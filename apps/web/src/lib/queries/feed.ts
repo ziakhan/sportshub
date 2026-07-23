@@ -123,7 +123,9 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
       : null,
     repostedBy: null,
     repostedAt: null,
-    cardImage: abs(
+    // cardImage stays RELATIVE: every shipped native bundle prefixes it with
+    // the API host unconditionally (absolute broke it — 2026-07-25).
+    cardImage:
       isCard && gameId
         ? post.kind === "PLAYER_OF_GAME"
           ? playerTag
@@ -134,8 +136,7 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
           : playerTag
             ? `/api/live/${gameId}/card/${playerTag.playerId}?src=post:${post.id}&aspect=portrait&v=3`
             : null
-        : null
-    ),
+        : null,
     // SVG data-URI covers can't render in React Native — recaps fall back
     // to the game's PNG score card (native + web consistent)
     mediaUrl: abs(

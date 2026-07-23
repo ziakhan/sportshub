@@ -15,12 +15,14 @@ import { fonts, palette, ui } from "@/lib/theme"
  * identical everywhere.
  */
 
+// EXACT web order + tints (components/public/section-pills.tsx, owner
+// 2026-07-25): Scores · News · Programs · Leagues · Clubs
 const BROWSE_PILLS: Array<{ label: string; href: string; bg: string; fg: string }> = [
   { label: "Scores", href: "/scores", bg: "#fef3ee", fg: "#bc2711" },
-  { label: "Programs", href: "/browse/programs", bg: palette.hoop[50], fg: palette.hoop[700] },
-  { label: "Clubs", href: "/browse/clubs", bg: palette.play[50], fg: palette.play[700] },
+  { label: "News", href: "/browse/news", bg: "#f5f3ff", fg: "#6d28d9" },
+  { label: "Programs", href: "/browse/programs", bg: palette.gold[50], fg: palette.gold[600] },
   { label: "Leagues", href: "/browse/leagues", bg: palette.court[50], fg: palette.court[700] },
-  { label: "News", href: "/browse/news", bg: palette.gold[50], fg: palette.gold[600] },
+  { label: "Clubs", href: "/browse/clubs", bg: palette.play[50], fg: palette.play[700] },
 ]
 
 export function TopBar({

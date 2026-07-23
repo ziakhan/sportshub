@@ -115,7 +115,7 @@ export function StoriesRail() {
           </View>
           {current ? (
             <Image
-              source={{ uri: `${apiBaseUrl()}${current.cardUrl}` }}
+              source={{ uri: current.cardUrl.startsWith("/") ? `${apiBaseUrl()}${current.cardUrl}` : current.cardUrl }}
               style={styles.viewerImage}
               resizeMode="contain"
             />

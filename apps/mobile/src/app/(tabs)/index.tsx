@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   programTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   programFee: { fontSize: 14, fontFamily: fonts.displayHeavy, color: ui.text },
   programName: { fontSize: 15, fontFamily: fonts.display, color: ui.text, marginTop: 4 },
-  newsCover: { width: "100%", aspectRatio: 1200 / 630, borderRadius: 12, marginBottom: 8 },
+  newsCover: { width: "100%", aspectRatio: 1200 / 675, borderRadius: 12, marginBottom: 8 },
   newsTitle: { fontSize: 14.5, fontFamily: fonts.display, color: ui.text },
   mutedSmall: { fontSize: 12, fontFamily: fonts.body, color: ui.textMuted, marginTop: 2, lineHeight: 17 },
   squadCard: { marginTop: 10, gap: 10 },

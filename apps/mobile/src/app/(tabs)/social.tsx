@@ -186,7 +186,7 @@ function FeedCard({ item }: { item: FeedItem }) {
         ) : null}
         {item.cardImage ? (
           <Image
-            source={{ uri: `${apiBaseUrl()}${item.cardImage}` }}
+            source={{ uri: item.cardImage.startsWith("/") ? `${apiBaseUrl()}${item.cardImage}` : item.cardImage }}
             style={styles.cardImage}
             resizeMode="cover"
           />
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 15, fontFamily: fonts.display, color: ui.text, paddingHorizontal: 14 },
   body: { fontSize: 13, fontFamily: fonts.body, color: ui.textMuted, paddingHorizontal: 14, marginTop: 3 },
   cardImage: { width: "100%", aspectRatio: 1080 / 1350, marginTop: 10, backgroundColor: "#eeeef1" },
-  mediaImage: { width: "100%", aspectRatio: 1200 / 675, marginTop: 10, backgroundColor: "#eeeef1" },
+  mediaImage: { width: "100%", aspectRatio: 1200 / 675, marginTop: 10, borderRadius: 0, backgroundColor: "#eeeef1" },
   actions: {
     flexDirection: "row",
     alignItems: "center",
