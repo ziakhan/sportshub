@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
-import { LinearGradient } from "expo-linear-gradient"
 import { apiBaseUrl, apiJson } from "@/lib/api"
 import { fonts, palette, ui } from "@/lib/theme"
 
@@ -89,24 +88,16 @@ export function StoriesRail() {
               markViewed(entry.stories[0].id)
             }}
           >
-            {entry.allViewed ? (
-              <View style={[styles.ring, styles.ringSeen]}>
-                <View style={styles.circle}>
-                  <Text style={[styles.initial, { color: ui.textFaint }]}>{entry.name.slice(0, 1).toUpperCase()}</Text>
-                </View>
+            {/* Pure-JS ring: expo-linear-gradient is a NATIVE module the
+                shipped builds don't include — OTA-safe two-tone ring instead
+                (true gradient returns with the next store build). */}
+            <View style={[styles.ring, entry.allViewed ? styles.ringSeen : styles.ringUnseen]}>
+              <View style={styles.circle}>
+                <Text style={[styles.initial, { color: entry.allViewed ? ui.textFaint : palette.hoop[600] }]}>
+                  {entry.name.slice(0, 1).toUpperCase()}
+                </Text>
               </View>
-            ) : (
-              <LinearGradient
-                colors={[palette.gold[400], palette.hoop[500], palette.play[600]]}
-                start={{ x: 0, y: 1 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.ring}
-              >
-                <View style={styles.circle}>
-                  <Text style={[styles.initial, { color: palette.hoop[600] }]}>{entry.name.slice(0, 1).toUpperCase()}</Text>
-                </View>
-              </LinearGradient>
-            )}
+            </View>
             <Text style={styles.label} numberOfLines={1}>
               {entry.name}
             </Text>
@@ -151,6 +142,11 @@ const styles = StyleSheet.create({
   item: { width: 82, alignItems: "center" },
   ring: { borderRadius: 999, padding: 3 },
   ringSeen: { backgroundColor: "rgba(217,217,223,0.6)", padding: 1.5 },
+  ringUnseen: {
+    backgroundColor: palette.hoop[500],
+    borderWidth: 2,
+    borderColor: palette.gold[400],
+  },
   circle: {
     width: 76,
     height: 76,

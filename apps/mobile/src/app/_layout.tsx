@@ -1,6 +1,6 @@
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
-import { useEffect, type ReactElement } from "react"
+import { useEffect, useState, type ReactElement } from "react"
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native"
 import { StatusBar } from "expo-status-bar"
 import { StripeProvider } from "@stripe/stripe-react-native"
@@ -69,17 +69,25 @@ function RootNavigator() {
     BarlowCondensed_600SemiBold,
     BarlowCondensed_700Bold,
   })
+  // OTA safety: never hold the splash hostage to font loading — after 2.5s
+  // we proceed on system fonts (release builds fall back silently).
+  const [fontTimeout, setFontTimeout] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setFontTimeout(true), 2500)
+    return () => clearTimeout(t)
+  }, [])
+  const fontsReady = fontsLoaded || fontTimeout
 
   useEffect(() => {
-    if (!isLoading && fontsLoaded) SplashScreen.hideAsync()
-  }, [isLoading, fontsLoaded])
+    if (!isLoading && fontsReady) SplashScreen.hideAsync()
+  }, [isLoading, fontsReady])
 
   useEffect(() => {
     if (isLoading) return
     return routePushResponses()
   }, [isLoading])
 
-  if (isLoading || !fontsLoaded) return null
+  if (isLoading || !fontsReady) return null
 
   return (
     <>
