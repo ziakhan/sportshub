@@ -31,6 +31,7 @@ const FONT_OPTS = CARD_FONTS.length ? { fonts: CARD_FONTS } : {}
 const FAMILY = CARD_FONTS.length ? "Outfit" : "sans-serif"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
+import { monogram } from "@/lib/content/matchup-cover"
 
 /**
  * Shareable landscape player cards (social-feed-plan P2), rendered on demand
@@ -523,4 +524,58 @@ export async function loadCardData(
       .join(" · "),
     handle: player.handle ?? null,
   }
+}
+
+/**
+ * Satori twin of the web's SVG matchup cover (lib/content/matchup-cover.ts):
+ * dark stage, two club-color diagonal panels, monogram crests, final score.
+ * News surfaces use THIS on every client — identical art, PNG everywhere.
+ */
+export async function renderMatchupCover(gameId: string) {
+  const game = await (prisma as any).game.findUnique({
+    where: { id: gameId },
+    select: {
+      status: true, homeScore: true, awayScore: true,
+      homeTeam: { select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } } },
+      awayTeam: { select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } } },
+      season: { select: { label: true, league: { select: { name: true } } } },
+    },
+  })
+  if (!game || game.status !== "COMPLETED") return null
+  const hc = game.homeTeam.tenant?.branding?.primaryColor || "#4f46e5"
+  const ac = game.awayTeam.tenant?.branding?.primaryColor || "#0d9488"
+  const homeWon = (game.homeScore ?? 0) >= (game.awayScore ?? 0)
+  const label = [game.season?.league?.name, game.season?.label].filter(Boolean).join(" · ")
+  const shorten = (n: string) => (n.length > 24 ? `${n.slice(0, 23)}…` : n)
+  const side = (name: string, color: string, score: number, won: boolean) => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 420 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 190, height: 190, borderRadius: 999, background: "rgba(255,255,255,0.95)" }}>
+        <span style={{ fontSize: 84, fontWeight: 800, color }}>{monogram(name)}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 96, marginTop: 18 }}>
+        <span style={{ fontSize: name.length > 18 ? 30 : 38, fontWeight: 700, color: "#fff", textAlign: "center" }}>{shorten(name)}</span>
+      </div>
+      <span style={{ fontSize: 132, fontWeight: 800, color: "#fff", opacity: won ? 1 : 0.55 }}>{score}</span>
+    </div>
+  )
+  return new ImageResponse(
+    (
+      <div style={{ display: "flex", width: 1200, height: 675, background: "#141317", position: "relative", fontFamily: FAMILY, overflow: "hidden" }}>
+        <div style={{ position: "absolute", left: -140, top: -50, width: 700, height: 800, background: `linear-gradient(135deg, ${hc} 0%, ${hc}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ position: "absolute", right: -140, top: -50, width: 640, height: 800, background: `linear-gradient(225deg, ${ac} 0%, ${ac}b8 100%)`, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ position: "absolute", left: 566, top: -50, width: 26, height: 800, background: "#141317", opacity: 0.85, transform: "skewX(-11deg)", display: "flex" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "70px 40px 0" }}>
+          {side(game.homeTeam.name, hc, game.homeScore ?? 0, homeWon)}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: -40 }}>
+            <span style={{ fontSize: 44, fontWeight: 800, color: "rgba(255,255,255,0.92)", letterSpacing: 4 }}>FINAL</span>
+          </div>
+          {side(game.awayTeam.name, ac, game.awayScore ?? 0, !homeWon)}
+        </div>
+        {label ? (
+          <span style={{ position: "absolute", bottom: 26, left: 0, right: 0, display: "flex", justifyContent: "center", fontSize: 26, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{label}</span>
+        ) : null}
+      </div>
+    ),
+    { width: 1200, height: 675, ...FONT_OPTS }
+  )
 }

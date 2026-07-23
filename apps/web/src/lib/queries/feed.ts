@@ -133,7 +133,7 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
     // to the game's PNG score card (native + web consistent)
     mediaUrl: post.media[0]?.url?.startsWith("data:image/svg")
       ? gameId
-        ? `/api/live/${gameId}/card?variant=score&v=3`
+        ? `/api/live/${gameId}/cover?v=4`
         : null
       : (post.media[0]?.url ?? null),
     mediaType: post.media[0]?.type ?? null,
