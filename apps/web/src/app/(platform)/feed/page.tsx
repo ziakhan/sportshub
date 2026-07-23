@@ -42,7 +42,7 @@ export default async function FeedPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-xl space-y-3 px-3 py-2 sm:px-0">
+    <div className="mx-auto max-w-xl space-y-5 px-3 py-3 sm:px-0">
       <FeedTabs />
       <StoriesRail />
       <OrgComposer orgs={orgs} />

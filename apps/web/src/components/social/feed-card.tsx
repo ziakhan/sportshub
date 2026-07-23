@@ -248,7 +248,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const avatarCls = AVATAR_BG[(authorLabel.charCodeAt(0) + authorLabel.length) % AVATAR_BG.length]
 
   return (
-    <article className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+    <article className="ring-ink-950/5 overflow-hidden rounded-3xl bg-white shadow-[0_16px_48px_-20px_rgba(30,41,59,0.4)] ring-1">
       {item.repostedBy && (
         <p className="text-ink-500 bg-ink-50/70 border-ink-100 flex items-center gap-1.5 border-b px-4 py-1.5 text-xs font-semibold">
           <Ic d={IC.repeat} className="h-3.5 w-3.5" /> {item.repostedBy} reposted
@@ -256,13 +256,15 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       )}
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white",
-              item.authorName ? avatarCls : "bg-ink-950"
-            )}
-          >
-            {item.authorName ? authorLabel.slice(0, 1) : "S"}
+          <span className="from-gold-400 via-hoop-500 to-play-600 shrink-0 rounded-full bg-gradient-to-tr p-[2px]">
+            <span
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white",
+                item.authorName ? avatarCls : "bg-ink-950"
+              )}
+            >
+              {item.authorName ? authorLabel.slice(0, 1) : "S"}
+            </span>
           </span>
           <div className="min-w-0">
             <p className="text-ink-900 truncate text-[13px] font-semibold">{authorLabel}</p>
