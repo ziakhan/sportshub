@@ -18,6 +18,7 @@ const FILTERS: Array<{ key: string; label: string }> = [
   { key: "camp", label: "Camps" },
   { key: "house-league", label: "House leagues" },
   { key: "tournament", label: "Tournaments" },
+  { key: "training", label: "Training" },
 ]
 
 export default function ProgramsScreen() {

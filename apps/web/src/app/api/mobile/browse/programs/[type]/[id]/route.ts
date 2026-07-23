@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { formatTrainingSchedule, trainingSortDate } from "@/lib/training"
 
 export const dynamic = "force-dynamic"
 
@@ -142,6 +143,41 @@ export async function GET(
           // Team registration is an operator flow (desktop) — native shows
           // the details and says who to talk to, never a broken form.
           registration: { kind: "team-desktop", endpoint: null },
+        },
+      })
+    }
+
+    if (params.type === "training") {
+      const s = await (prisma as any).trainingSession.findFirst({
+        where: { id: params.id, isPublished: true },
+        include: {
+          tenant: tenantSelect,
+          venue: { select: { name: true } },
+          _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+        },
+      })
+      if (!s) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      return NextResponse.json({
+        program: {
+          id: s.id,
+          type: "training",
+          name: s.title,
+          description: s.description,
+          details: null,
+          ageGroup: s.ageGroup,
+          gender: s.gender,
+          startDate: trainingSortDate(s),
+          endDate: s.scheduleType === "RECURRING" ? s.endDate : null,
+          schedule: `${formatTrainingSchedule(s)} · ${s.durationMinutes} minutes`,
+          location: s.venue?.name ?? s.location,
+          fee: Number(s.fee),
+          feeUnit: "for the full program",
+          currency: s.tenant?.currency ?? "CAD",
+          clubName: s.tenant?.name ?? "",
+          clubSlug: s.tenant?.slug ?? "",
+          signedUp: s._count.signups,
+          maxParticipants: s.capacity,
+          registration: { kind: "player", endpoint: `/api/training-sessions/${s.id}/signup` },
         },
       })
     }

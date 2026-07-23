@@ -49,7 +49,7 @@ export interface FeedItem {
 
 export interface ProgramItem {
   id: string
-  type: "tryout" | "house-league" | "camp" | "tournament"
+  type: "tryout" | "house-league" | "camp" | "tournament" | "training"
   name: string
   clubName: string
   clubSlug: string

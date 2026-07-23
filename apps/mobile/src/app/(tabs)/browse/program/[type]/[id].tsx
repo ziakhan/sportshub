@@ -25,7 +25,7 @@ import { palette, ui } from "@/lib/theme"
 
 interface ProgramDetail {
   id: string
-  type: "tryout" | "camp" | "house-league" | "tournament"
+  type: "tryout" | "camp" | "house-league" | "tournament" | "training"
   name: string
   description: string | null
   details: string | null
