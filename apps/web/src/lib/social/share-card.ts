@@ -13,7 +13,7 @@ export const shareCardSchema = z.object({
   gameId: z.string(),
   cardType: z.enum(["STAT_CARD", "POTG"]),
   visibility: z.enum(["PUBLIC", "FOLLOWERS"]).default("FOLLOWERS"),
-  templateId: z.enum(["bold", "clean"]).optional(),
+  templateId: z.enum(["bold", "clean", "court", "night"]).optional(),
   // Same capped data-URL contract as the POTG table photo
   customPhotoUrl: z
     .string()

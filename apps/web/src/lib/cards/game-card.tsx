@@ -11,7 +11,7 @@ import { publicPlayerName } from "@/lib/privacy/names"
  * watermark + /p/<handle> burn-in is the unpaid-distribution loop.
  */
 
-export type CardTemplate = "bold" | "clean"
+export type CardTemplate = "bold" | "clean" | "court" | "night"
 
 const W = 1200
 const H = 630
@@ -38,10 +38,28 @@ const TEMPLATES: Record<
     rightFg: "#ffffff",
     sub: "#94a3b8",
   },
+  court: {
+    leftBg: "linear-gradient(160deg, #14532d 0%, #052e16 100%)",
+    leftFg: "#ffffff",
+    eyebrow: "#a3e635",
+    accent: "#84cc16",
+    rightBg: "#052e16",
+    rightFg: "#ffffff",
+    sub: "#86efac",
+  },
+  night: {
+    leftBg: "linear-gradient(160deg, #18181b 0%, #000000 100%)",
+    leftFg: "#ffffff",
+    eyebrow: "#fb923c",
+    accent: "#f97316",
+    rightBg: "#000000",
+    rightFg: "#ffffff",
+    sub: "#a1a1aa",
+  },
 }
 
 export function parseTemplate(value: string | null): CardTemplate {
-  return value === "clean" ? "clean" : "bold"
+  return value === "clean" || value === "court" || value === "night" ? value : "bold"
 }
 
 /**
@@ -136,6 +154,51 @@ function statChip(label: string, value: number, t: (typeof TEMPLATES)["bold"]) {
 
 export function renderCard(data: CardData, template: CardTemplate, portrait = false) {
   const t = TEMPLATES[template]
+  if (portrait) {
+    const won = data.homeScore >= data.awayScore
+    return new ImageResponse(
+      (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: 1080, height: 1350, padding: "64px 56px", background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif" }}>
+          <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: 8, color: t.eyebrow }}>{data.eyebrow.toUpperCase()}</span>
+          {data.photoUrl ? (
+            <img src={data.photoUrl} alt="" width={300} height={300} style={{ borderRadius: 999, objectFit: "cover", border: `10px solid ${t.accent}` }} />
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 300, height: 300, borderRadius: 999, background: t.accent, color: "#fff", fontSize: 110, fontWeight: 800 }}>
+              {data.jersey ? `#${data.jersey}` : "🏀"}
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <span style={{ fontSize: data.name.length > 14 ? 62 : 76, fontWeight: 800, textAlign: "center" }}>{data.name}</span>
+            {data.jersey && <span style={{ fontSize: 36, fontWeight: 700, color: t.eyebrow, marginTop: 4 }}>#{data.jersey}</span>}
+          </div>
+          <div style={{ display: "flex", gap: 24 }}>
+            {data.statLine.map((sl) => (
+              <div key={sl.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "22px 40px", borderRadius: 24, background: "rgba(148,163,184,0.18)", border: `2px solid ${t.accent}44` }}>
+                <span style={{ fontSize: 72, fontWeight: 800 }}>{sl.value}</span>
+                <span style={{ fontSize: 26, fontWeight: 700, color: t.eyebrow, letterSpacing: 2 }}>{sl.label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "26px 40px", borderRadius: 28, background: "rgba(0,0,0,0.25)", border: `1px solid ${t.accent}33` }}>
+            <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: 5, padding: "6px 22px", borderRadius: 999, background: t.accent, color: "#fff" }}>FINAL</span>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: 16 }}>
+              <span style={{ fontSize: 32, fontWeight: won ? 800 : 600, opacity: won ? 1 : 0.7 }}>{data.homeName}</span>
+              <span style={{ fontSize: 40, fontWeight: 800, color: won ? t.eyebrow : undefined }}>{data.homeScore}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginTop: 6 }}>
+              <span style={{ fontSize: 32, fontWeight: !won ? 800 : 600, opacity: !won ? 1 : 0.7 }}>{data.awayName}</span>
+              <span style={{ fontSize: 40, fontWeight: 800, color: !won ? t.eyebrow : undefined }}>{data.awayScore}</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 24, color: t.sub }}>{data.contextLine}</span>
+            <span style={{ fontSize: 30, fontWeight: 800 }}>Sports<span style={{ color: t.accent }}>Hub</span> One{data.handle ? ` · /p/${data.handle}` : ""}</span>
+          </div>
+        </div>
+      ),
+      { width: 1080, height: 1350 }
+    )
+  }
   return new ImageResponse(
     (
       <div style={{ display: "flex", flexDirection: portrait ? "column" : "row", width: portrait ? 1080 : W, height: portrait ? 1350 : H, fontFamily: "sans-serif" }}>

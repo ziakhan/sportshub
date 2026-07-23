@@ -51,7 +51,7 @@ export function ShareCardDialog({
   onClose: () => void
 }) {
   const [cardType, setCardType] = useState<"STAT_CARD" | "POTG">(isPotg ? "POTG" : "STAT_CARD")
-  const [template, setTemplate] = useState<"bold" | "clean">("bold")
+  const [template, setTemplate] = useState<"bold" | "clean" | "court" | "night">("bold")
   const [photo, setPhoto] = useState<string | null>(null)
   const [toProfile, setToProfile] = useState(true)
   const [toStory, setToStory] = useState(true)
@@ -162,7 +162,7 @@ export function ShareCardDialog({
             <img src={cardUrl} alt="Card preview" className="border-ink-100 w-full rounded-xl border" />
 
             <div className="flex gap-2">
-              {(["bold", "clean"] as const).map((t) => (
+              {(["bold", "clean", "court", "night"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTemplate(t)}
