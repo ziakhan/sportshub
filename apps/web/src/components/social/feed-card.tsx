@@ -456,6 +456,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           <div className="no-scrollbar flex gap-3 overflow-x-auto py-1">
             {([
               ["copy", "Copy link", "#3f3f46", () => { void navigator.clipboard.writeText(window.location.origin + href) }],
+              ["instagram", "Instagram", "#E1306C", () => void shareOutside()],
               ["whatsapp", "WhatsApp", "#25D366", () => window.open(`https://wa.me/?text=${encodeURIComponent(item.title + " " + window.location.origin + href)}`, "_blank")],
               ["messages", "Messages", "#34C759", () => { window.location.href = `sms:?&body=${encodeURIComponent(item.title + " " + window.location.origin + href)}` }],
               ["facebook", "Facebook", "#1877F2", () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + href)}`, "_blank")],
@@ -464,7 +465,9 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
             ] as Array<[string, string, string, () => void]>).map(([kind, label, color, fn]) => (
               <button key={label} onClick={fn} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
                 <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
-                  {kind === "whatsapp" ? (
+                  {kind === "instagram" ? (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="#fff" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="#fff" stroke="none"/></svg>
+                  ) : kind === "whatsapp" ? (
                     <svg viewBox="0 0 24 24" className="h-8 w-8" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm5.2 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1.1 2.2 1.4 2.5 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4 0 .1 0 .7-.2 1.3z"/></svg>
                   ) : kind === "facebook" ? (
                     <svg viewBox="0 0 24 24" className="h-8 w-8" fill="#fff"><path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5V11H8.5v3H11v7h2.5z"/></svg>
