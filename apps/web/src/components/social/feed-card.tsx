@@ -419,14 +419,20 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       {sendOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end overscroll-contain bg-black/50" onClick={() => setSendOpen(false)}>
         <div
-          className="touch-pan-x rounded-t-3xl bg-white p-4 pb-6 transition-transform"
+          className="rounded-t-3xl bg-white p-4 pb-6 transition-transform"
           style={{ transform: `translateY(${dragY}px)` }}
           onClick={(e) => e.stopPropagation()}
-          onTouchStart={(e) => { dragStart.y = e.touches[0].clientY }}
-          onTouchMove={(e) => { const d = e.touches[0].clientY - dragStart.y; if (d > 0) setDragY(d) }}
-          onTouchEnd={() => { if (dragY > 70) { setSendOpen(false) } setDragY(0) }}
         >
-          <div className="bg-ink-200 mx-auto mb-3 h-1 w-10 rounded-full" />
+          {/* Swipe-to-close lives ONLY on the grab handle (owner: strip
+              scrolls were closing the sheet) — explicit downward pull here */}
+          <div
+            className="-mx-4 -mt-4 touch-none px-4 pb-2 pt-3"
+            onTouchStart={(e) => { dragStart.y = e.touches[0].clientY }}
+            onTouchMove={(e) => { const d = e.touches[0].clientY - dragStart.y; if (d > 0) setDragY(d) }}
+            onTouchEnd={() => { if (dragY > 70) { setSendOpen(false) } setDragY(0) }}
+          >
+            <div className="bg-ink-300 mx-auto h-1.5 w-12 rounded-full" />
+          </div>
           <p className="text-ink-900 mb-2 text-sm font-bold">Send in SportsHub</p>
           {sent ? (
             <p className="text-court-700 text-xs font-semibold">Sent to the team chat.</p>
