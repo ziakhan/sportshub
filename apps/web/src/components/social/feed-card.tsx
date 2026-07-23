@@ -187,7 +187,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
     // Instagram wants 3:4 — external shares fetch the portrait render.
     // Recaps/finals without their own card share the game's score card.
     const base = item.cardImage ?? (item.gameId ? `/api/live/${item.gameId}/card?variant=score` : null)
-    const shareImg = base ? `${base}${base.includes("?") ? "&" : "?"}aspect=portrait` : null
+    const shareImg = base ? (base.includes("aspect=") ? base : `${base}${base.includes("?") ? "&" : "?"}aspect=portrait`) : null
     try {
       if (shareImg) {
         const res = await fetch(shareImg)
@@ -343,7 +343,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           <img
             src={item.cardImage ?? item.mediaUrl!}
             alt=""
-            className="max-h-[420px] w-full object-cover"
+            className="max-h-[560px] w-full object-cover"
           />
         </Link>
       )}

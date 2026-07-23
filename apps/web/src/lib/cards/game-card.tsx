@@ -287,9 +287,26 @@ export async function renderScoreCard(gameId: string, template: CardTemplate, po
       status: true, scheduledAt: true, homeScore: true, awayScore: true,
       homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
       season: { select: { label: true, league: { select: { name: true } } } },
+      potgPlayer: { select: { firstName: true, lastName: true, mediaConsent: true } },
     },
   })
   if (!game || game.status !== "COMPLETED") return null
+  // Use the canvas (owner 2026-07-23): POTG + stat leaders on the card
+  const leaderOf = async (field: "points" | "rebounds" | "assists") => {
+    const row = await (prisma as any).playerStat.findFirst({
+      where: { gameId, [field]: { gt: 0 } },
+      orderBy: { [field]: "desc" },
+      select: { [field]: true, player: { select: { firstName: true, lastName: true, mediaConsent: true } } },
+    })
+    return row ? { name: publicPlayerName(row.player), value: row[field] as number } : null
+  }
+  const [pts, reb, ast] = await Promise.all([leaderOf("points"), leaderOf("rebounds"), leaderOf("assists")])
+  const leaders = [
+    pts ? { label: "PTS", ...pts } : null,
+    reb ? { label: "REB", ...reb } : null,
+    ast ? { label: "AST", ...ast } : null,
+  ].filter(Boolean) as Array<{ label: string; name: string; value: number }>
+  const potgName = game.potgPlayer ? publicPlayerName(game.potgPlayer) : null
   const t = TEMPLATES[template]
   const rows: Array<[string, number, boolean]> = [
     [game.homeTeam.name, game.homeScore ?? 0, (game.homeScore ?? 0) >= (game.awayScore ?? 0)],
@@ -318,8 +335,24 @@ export async function renderScoreCard(gameId: string, template: CardTemplate, po
             </div>
           ))}
         </div>
-        <span style={{ fontSize: 24, color: t.sub, marginTop: 34 }}>{context}</span>
-        <span style={{ fontSize: 26, fontWeight: 800, marginTop: 30 }}>
+        {potgName && (
+          <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 30, padding: "10px 26px", borderRadius: 999, background: "rgba(245,158,11,0.16)", color: t.eyebrow, fontSize: 26, fontWeight: 800 }}>
+            🏀 Player of the Game: {potgName}
+          </span>
+        )}
+        {leaders.length > 0 && (
+          <div style={{ display: "flex", gap: 16, marginTop: 26 }}>
+            {leaders.map((l) => (
+              <div key={l.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "14px 24px", borderRadius: 18, background: "rgba(148,163,184,0.16)" }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: t.eyebrow }}>{l.label} LEADER</span>
+                <span style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>{l.name}</span>
+                <span style={{ fontSize: 34, fontWeight: 800 }}>{l.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <span style={{ fontSize: 24, color: t.sub, marginTop: 28 }}>{context}</span>
+        <span style={{ fontSize: 26, fontWeight: 800, marginTop: 22 }}>
           Sports<span style={{ color: t.accent }}>Hub</span> One
         </span>
       </div>
