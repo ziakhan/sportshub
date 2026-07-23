@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { appBaseUrl } from "@/lib/email"
 import { cache } from "./request-cache"
 
 /**
@@ -49,6 +50,7 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
           orderBy: { sortOrder: "asc" },
           take: 3,
         },
+        tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
       },
       orderBy: { publishedAt: "desc" },
       take: limit,
@@ -78,7 +80,12 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
       dateISO: new Date(p.publishedAt ?? Date.now()).toISOString(),
       href: `/news/${p.slug}`,
       author: p.kind === "RECAP_AI" ? "Game recap" : p.kind === "VIDEO" ? "Highlights" : null,
-      coverUrl: coverOf(p.media ?? []),
+      // ONE image per game on EVERY surface (owner 2026-07-23): game posts
+      // use the PNG /cover on web and app alike — the SVG originals stay in
+      // the DB but never reach a client list again.
+      coverUrl: p.tags?.[0]?.gameId
+        ? `${appBaseUrl()}/api/live/${p.tags[0].gameId}/cover?v=5`
+        : coverOf(p.media ?? []),
     })),
     ...announcements.map((a: any): FeedItem => ({
       id: a.id,
