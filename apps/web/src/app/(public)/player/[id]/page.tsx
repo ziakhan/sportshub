@@ -150,8 +150,8 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
                   if (!gameId) return null
                   const img =
                     p.kind === "PLAYER_OF_GAME"
-                      ? `/api/live/${gameId}/card?src=post:${p.id}&v=2`
-                      : `/api/live/${gameId}/card/${data.player.id}?src=post:${p.id}&v=2`
+                      ? `/api/live/${gameId}/card?src=post:${p.id}&v=3`
+                      : `/api/live/${gameId}/card/${data.player.id}?src=post:${p.id}&v=3`
                   return (
                     <Link key={p.id} href={`/live/${gameId}`} className="block">
                       {/* eslint-disable-next-line @next/next/no-img-element */}

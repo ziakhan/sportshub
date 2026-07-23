@@ -74,7 +74,7 @@ export async function GET() {
       ...n,
       imageUrl: n.coverUrl?.startsWith("data:image/svg")
         ? gameByPost.has(n.id)
-          ? `/api/live/${gameByPost.get(n.id)}/card?variant=score`
+          ? `/api/live/${gameByPost.get(n.id)}/card?variant=score&v=3`
           : null
         : (n.coverUrl ?? null),
     }))

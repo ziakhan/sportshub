@@ -1,5 +1,34 @@
 import React from "react"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { ImageResponse } from "next/og"
+
+/**
+ * Embedded card fonts (bug 2026-07-25): the box's standalone build never
+ * loaded ImageResponse's bundled default font — every prod card rendered
+ * TEXTLESS (the "three vertical bars"). We now pass Outfit TTFs explicitly,
+ * which also puts the brand display font on every card. Resolved from the
+ * workspace node_modules wherever the server's cwd happens to be.
+ */
+function loadFont(rel: string): Buffer | null {
+  for (const base of [process.cwd(), join(process.cwd(), "../.."), join(process.cwd(), "..")]) {
+    try {
+      return readFileSync(join(base, "node_modules", rel))
+    } catch {
+      /* try next base */
+    }
+  }
+  console.error(`card fonts: could not load ${rel}`)
+  return null
+}
+const outfit700 = loadFont("@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf")
+const outfit800 = loadFont("@expo-google-fonts/outfit/800ExtraBold/Outfit_800ExtraBold.ttf")
+const CARD_FONTS = [
+  ...(outfit700 ? [{ name: "Outfit", data: outfit700, weight: 700 as const }] : []),
+  ...(outfit800 ? [{ name: "Outfit", data: outfit800, weight: 800 as const }] : []),
+]
+const FONT_OPTS = CARD_FONTS.length ? { fonts: CARD_FONTS } : {}
+const FAMILY = CARD_FONTS.length ? "Outfit" : "sans-serif"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
 
@@ -158,7 +187,7 @@ export function renderCard(data: CardData, template: CardTemplate, portrait = fa
     const won = data.homeScore >= data.awayScore
     return new ImageResponse(
       (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: 1080, height: 1350, padding: "64px 56px", background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", width: 1080, height: 1350, padding: "64px 56px", background: t.leftBg, color: t.leftFg, fontFamily: FAMILY }}>
           <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: 8, color: t.eyebrow }}>{data.eyebrow.toUpperCase()}</span>
           {data.photoUrl ? (
             <img src={data.photoUrl} alt="" width={300} height={300} style={{ borderRadius: 999, objectFit: "cover", border: `10px solid ${t.accent}` }} />
@@ -196,12 +225,12 @@ export function renderCard(data: CardData, template: CardTemplate, portrait = fa
           </div>
         </div>
       ),
-      { width: 1080, height: 1350 }
+      { width: 1080, height: 1350, ...FONT_OPTS }
     )
   }
   return new ImageResponse(
     (
-      <div style={{ display: "flex", flexDirection: portrait ? "column" : "row", width: portrait ? 1080 : W, height: portrait ? 1350 : H, fontFamily: "sans-serif" }}>
+      <div style={{ display: "flex", flexDirection: portrait ? "column" : "row", width: portrait ? 1080 : W, height: portrait ? 1350 : H, fontFamily: FAMILY }}>
         {/* Left: the player */}
         <div
           style={{
@@ -336,7 +365,7 @@ export function renderCard(data: CardData, template: CardTemplate, portrait = fa
         </div>
       </div>
     ),
-    { width: portrait ? 1080 : W, height: portrait ? 1350 : H }
+    { width: portrait ? 1080 : W, height: portrait ? 1350 : H, ...FONT_OPTS }
   )
 }
 
@@ -384,43 +413,43 @@ export async function renderScoreCard(gameId: string, template: CardTemplate, po
       <div
         style={{
           display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-          width: portrait ? 1080 : W, height: portrait ? 1350 : H, background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif",
+          width: portrait ? 1080 : W, height: portrait ? 1350 : H, background: t.leftBg, color: t.leftFg, fontFamily: FAMILY,
         }}
       >
-        <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: 6, padding: "10px 32px", borderRadius: 999, background: t.accent, color: "#ffffff" }}>
+        <span style={{ fontSize: portrait ? 26 : 20, fontWeight: 800, letterSpacing: 6, padding: portrait ? "10px 32px" : "6px 22px", borderRadius: 999, background: t.accent, color: "#ffffff" }}>
           FINAL
         </span>
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 44, width: 760 }}>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: portrait ? 44 : 18, width: 760 }}>
           {rows.map(([name, score, won], i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 0", borderBottom: i === 0 ? `2px solid ${t.sub}44` : "none" }}>
-              <span style={{ fontSize: name.length > 20 ? 38 : 46, fontWeight: won ? 800 : 600, opacity: won ? 1 : 0.65 }}>{name}</span>
-              <span style={{ fontSize: 84, fontWeight: 800, opacity: won ? 1 : 0.65, color: won ? t.eyebrow : undefined }}>{score}</span>
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: portrait ? "20px 0" : "10px 0", borderBottom: i === 0 ? `2px solid ${t.sub}44` : "none" }}>
+              <span style={{ fontSize: portrait ? (name.length > 20 ? 38 : 46) : name.length > 20 ? 30 : 36, fontWeight: won ? 800 : 600, opacity: won ? 1 : 0.65 }}>{name}</span>
+              <span style={{ fontSize: portrait ? 84 : 60, fontWeight: 800, opacity: won ? 1 : 0.65, color: won ? t.eyebrow : undefined }}>{score}</span>
             </div>
           ))}
         </div>
         {potgName && (
-          <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 30, padding: "10px 26px", borderRadius: 999, background: "rgba(245,158,11,0.16)", color: t.eyebrow, fontSize: 26, fontWeight: 800 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, marginTop: portrait ? 30 : 14, padding: portrait ? "10px 26px" : "7px 20px", borderRadius: 999, background: "rgba(245,158,11,0.16)", color: t.eyebrow, fontSize: portrait ? 26 : 21, fontWeight: 800 }}>
             🏀 Player of the Game: {potgName}
           </span>
         )}
         {leaders.length > 0 && (
-          <div style={{ display: "flex", gap: 16, marginTop: 26 }}>
+          <div style={{ display: "flex", gap: 16, marginTop: portrait ? 26 : 12 }}>
             {leaders.map((l) => (
-              <div key={l.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "14px 24px", borderRadius: 18, background: "rgba(148,163,184,0.16)" }}>
-                <span style={{ fontSize: 20, fontWeight: 700, color: t.eyebrow }}>{l.label} LEADER</span>
-                <span style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>{l.name}</span>
-                <span style={{ fontSize: 34, fontWeight: 800 }}>{l.value}</span>
+              <div key={l.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: portrait ? "14px 24px" : "10px 18px", borderRadius: 18, background: "rgba(148,163,184,0.16)" }}>
+                <span style={{ fontSize: portrait ? 20 : 15, fontWeight: 700, color: t.eyebrow }}>{l.label} LEADER</span>
+                <span style={{ fontSize: portrait ? 26 : 20, fontWeight: 800, marginTop: 4 }}>{l.name}</span>
+                <span style={{ fontSize: portrait ? 34 : 26, fontWeight: 800 }}>{l.value}</span>
               </div>
             ))}
           </div>
         )}
-        <span style={{ fontSize: 24, color: t.sub, marginTop: 28 }}>{context}</span>
-        <span style={{ fontSize: 26, fontWeight: 800, marginTop: 22 }}>
+        <span style={{ fontSize: portrait ? 24 : 18, color: t.sub, marginTop: portrait ? 28 : 12 }}>{context}</span>
+        <span style={{ fontSize: portrait ? 26 : 20, fontWeight: 800, marginTop: portrait ? 22 : 10 }}>
           Sports<span style={{ color: t.accent }}>Hub</span> One
         </span>
       </div>
     ),
-    { width: portrait ? 1080 : W, height: portrait ? 1350 : H }
+    { width: portrait ? 1080 : W, height: portrait ? 1350 : H, ...FONT_OPTS }
   )
 }
 

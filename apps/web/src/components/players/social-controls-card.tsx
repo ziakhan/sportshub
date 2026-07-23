@@ -153,8 +153,8 @@ export function SocialControlsCard({ playerId }: { playerId: string }) {
                 key={m.id}
                 href={
                   m.cardType === "POTG"
-                    ? `/api/live/${m.gameId}/card?src=story:${m.id}&v=2`
-                    : `/api/live/${m.gameId}/card/${playerId}?src=story:${m.id}&v=2`
+                    ? `/api/live/${m.gameId}/card?src=story:${m.id}&v=3`
+                    : `/api/live/${m.gameId}/card/${playerId}?src=story:${m.id}&v=3`
                 }
                 target="_blank"
                 rel="noreferrer"

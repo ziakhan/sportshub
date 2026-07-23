@@ -121,15 +121,21 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
       isCard && gameId
         ? post.kind === "PLAYER_OF_GAME"
           ? playerTag
-            ? `/api/live/${gameId}/card?src=post:${post.id}&aspect=portrait&v=2`
+            ? `/api/live/${gameId}/card?src=post:${post.id}&aspect=portrait&v=3`
             : // System final post (no player tag) → SCORE card, so the feed
               // never shows two POTG cards for the same game
-              `/api/live/${gameId}/card?variant=score&aspect=portrait&v=2`
+              `/api/live/${gameId}/card?variant=score&aspect=portrait&v=3`
           : playerTag
-            ? `/api/live/${gameId}/card/${playerTag.playerId}?src=post:${post.id}&aspect=portrait&v=2`
+            ? `/api/live/${gameId}/card/${playerTag.playerId}?src=post:${post.id}&aspect=portrait&v=3`
             : null
         : null,
-    mediaUrl: post.media[0]?.url ?? null,
+    // SVG data-URI covers can't render in React Native — recaps fall back
+    // to the game's PNG score card (native + web consistent)
+    mediaUrl: post.media[0]?.url?.startsWith("data:image/svg")
+      ? gameId
+        ? `/api/live/${gameId}/card?variant=score&v=3`
+        : null
+      : (post.media[0]?.url ?? null),
     mediaType: post.media[0]?.type ?? null,
     gameId,
     playerName: playerTag?.player ? publicPlayerName(playerTag.player) : null,
