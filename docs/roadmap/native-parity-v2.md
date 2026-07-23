@@ -42,3 +42,15 @@ across three platforms only comes from web-rendered surfaces (Capacitor/
 webview hybrid) — currently banned (owner 2026-07-15 NO WEBVIEWS). If
 "identical" is non-negotiable, selectively revisit for content surfaces
 (feed/news/game pages); native shell keeps tabs/push/share/camera.
+
+## ✅ Build log 2026-07-24 overnight (P0+P1 SHIPPED — box 5b61183, OTA b81d6e8c)
+P0: web tailwind imports design-tokens (hand-sync dead; clean build) · RN
+loads Outfit/Work Sans/Barlow Condensed (expo-font) + fonts tokens in
+theme.ts. P1: home = brand fonts everywhere + native StoriesRail (gradient
+rings, fullscreen viewer, view tracking) + squad cards (getYourTeams via
+/api/mobile/home) · new Social tab (native feed from GET /api/feed = same
+getSocialFeed as web; reactions/comments/reposts/share). Social replaces
+Account in the bar when signed in (web ruling); Account routable via top
+bar. tsc clean; NO simulator screenshots yet — owner should eyeball the
+app after the OTA lands. Remaining: P2 sweep (33 screens), venues/waivers
+screens, share-card dialog full UX + instagram-stories:// deep link.
