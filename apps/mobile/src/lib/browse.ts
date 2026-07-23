@@ -66,7 +66,19 @@ export interface ProgramItem {
   href: string
 }
 
+export interface ScoreboardGame {
+  id: string
+  status: "SCHEDULED" | "LIVE" | "FINAL"
+  dateISO: string
+  home: { name: string; color: string | null; score: number | null }
+  away: { name: string; color: string | null; score: number | null }
+  venue: string | null
+  leagueName: string | null
+}
+
 export interface BrowseHome {
+  scoreboard?: ScoreboardGame[]
+  stats?: { totalClubs: number; totalTeams: number; totalTryouts: number }
   clubs: BrowseClub[]
   leagues: BrowseLeague[]
   news: FeedItem[]

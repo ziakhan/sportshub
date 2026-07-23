@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
-import { getPublicFeed } from "@/lib/queries/content"
+import { getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
 import { getAllPrograms } from "@/lib/queries/programs"
 
 export const dynamic = "force-dynamic"
@@ -13,6 +13,14 @@ export const dynamic = "force-dynamic"
  */
 export async function GET() {
   try {
+    const [scoreboard, totalClubs, totalTeams, totalTryouts] = await Promise.all([
+      // Guest-home parity (native-parity-v2): the SAME scoreboard + stats the
+      // web homepage renders
+      getScoreboardGames(),
+      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] } } }),
+      prisma.team.count(),
+      prisma.tryout.count({ where: { isPublished: true, isPublic: true } }),
+    ])
     const [clubs, leagues, news, programs] = await Promise.all([
       prisma.tenant.findMany({
         where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
@@ -53,6 +61,8 @@ export async function GET() {
     ])
 
     return NextResponse.json({
+      scoreboard,
+      stats: { totalClubs, totalTeams, totalTryouts },
       clubs: clubs.map((c: any) => ({
         id: c.id,
         slug: c.slug,

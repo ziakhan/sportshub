@@ -17,13 +17,18 @@ import { fonts, palette, tones, ui } from "@/lib/theme"
  * programs, news). Anonymous users land here too — no login wall.
  */
 
+// Times render in UTC to MATCH the web home exactly (the seed writes
+// Toronto wall-times as UTC and the web formats the raw fields — device-TZ
+// formatting here showed 6:30am for the web's 10:30am. Parity bug 2026-07-25).
+const TZ = { timeZone: "UTC" as const }
+
 function dayLabel(iso: string): string {
   const d = new Date(iso)
   const today = new Date()
   const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
   if (d.toDateString() === today.toDateString()) return "Today"
   if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow"
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", ...TZ })
 }
 
 function fmtDate(iso: string): string {
@@ -36,7 +41,7 @@ function fmtDate(iso: string): string {
 
 function fmtTime(iso: string): string {
   return new Date(iso)
-    .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+    .toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", ...TZ })
     .toLowerCase()
     .replace(" ", "")
 }
@@ -80,6 +85,46 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
+
+        {/* Guest home parity: SCOREBOARD strip + stats band (same data as web) */}
+        {!signedIn && browse?.scoreboard && browse.scoreboard.length > 0 ? (
+          <View>
+            <View style={styles.bandHeaderRow}>
+              <Text style={styles.bandEyebrow}>Scoreboard</Text>
+              {browse.scoreboard.some((g) => g.status === "LIVE") ? (
+                <Text style={styles.liveNow}>● LIVE NOW</Text>
+              ) : null}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scoreStrip}>
+              {browse.scoreboard.slice(0, 8).map((g) => (
+                <Pressable key={g.id} style={styles.scoreCard} onPress={() => router.push(`/browse/game/${g.id}`)}>
+                  <Text style={[styles.scorePill, g.status === "LIVE" ? styles.scorePillLive : styles.scorePillFinal]}>
+                    {g.status === "LIVE" ? "● LIVE" : g.status === "FINAL" ? "FINAL" : fmtDate(g.dateISO)}
+                  </Text>
+                  {([["home", g.home], ["away", g.away]] as const).map(([k, t]) => (
+                    <View key={k} style={styles.scoreRow}>
+                      <Monogram name={t.name} color={t.color ?? undefined} size={26} />
+                      <Text style={styles.scoreName} numberOfLines={1}>{t.name}</Text>
+                      <Text style={styles.scoreNum}>{t.score ?? "–"}</Text>
+                    </View>
+                  ))}
+                  <Text style={styles.scoreMeta} numberOfLines={1}>
+                    {[g.leagueName, g.venue].filter(Boolean).join(" · ")}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+        {!signedIn && browse?.stats ? (
+          <View style={styles.statsBand}>
+            <Text style={styles.statsBandText}>
+              <Text style={{ color: palette.court[600] }}>● </Text>
+              <Text style={styles.statsBandStrong}>{browse.stats.totalTryouts} tryouts open now</Text>
+              {"   ·   "}{browse.stats.totalClubs} clubs{"   ·   "}{browse.stats.totalTeams} teams
+            </Text>
+          </View>
+        ) : null}
 
         {/* Stories rail (native-parity-v2 P1) — same band as web home */}
         {signedIn ? <StoriesRail /> : null}
@@ -164,7 +209,8 @@ export default function HomeScreen() {
 
         {signedIn && home?.yourTeams && home.yourTeams.length > 0 ? (
           <View>
-            <Text style={styles.bandEyebrow}>Catch up on your squad</Text>
+            <Text style={styles.squadEyebrow}>—  YOUR TEAMS</Text>
+            <Text style={styles.squadHeading}>Catch up on your squad</Text>
             {home.yourTeams.slice(0, 4).map((t) => (
               <Card
                 key={t.teamId}
@@ -174,7 +220,7 @@ export default function HomeScreen() {
                 }
               >
                 <View style={styles.squadTop}>
-                  <Monogram name={t.teamName} color={t.color ?? undefined} size={40} />
+                  <Monogram name={t.teamName.slice(0, 1)} color={t.color ?? undefined} size={40} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.squadName} numberOfLines={1}>{t.teamName}</Text>
                     <Text style={styles.mutedSmall} numberOfLines={1}>
@@ -182,7 +228,9 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   {t.kidNames.length > 0 ? (
-                    <TonePill tone="gold" label={`${t.kidNames[0].toUpperCase()}'S TEAM`} />
+                    <View style={styles.kidTeamPill}>
+                      <Text style={styles.kidTeamPillText}>{t.kidNames[0].toUpperCase()}&apos;S TEAM</Text>
+                    </View>
                   ) : null}
                 </View>
                 {t.lastGame ? (
@@ -208,6 +256,11 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                 ))}
+                {t.nextGame ? (
+                  <Text style={styles.mutedSmall} numberOfLines={1}>
+                    🗓 Next: vs {t.nextGame.opponent} · {fmtDate(t.nextGame.dateISO)}
+                  </Text>
+                ) : null}
               </Card>
             ))}
           </View>
@@ -437,6 +490,23 @@ const styles = StyleSheet.create({
   newsTitle: { fontSize: 14, fontFamily: fonts.display, color: ui.text },
   mutedSmall: { fontSize: 12, fontFamily: fonts.body, color: ui.textMuted, marginTop: 2, lineHeight: 17 },
   squadCard: { marginTop: 8, gap: 8 },
+  squadEyebrow: { fontSize: 11, fontFamily: fonts.bodyBold, color: palette.hoop[500], letterSpacing: 2, textTransform: "uppercase" },
+  squadHeading: { fontSize: 26, fontFamily: fonts.displayHeavy, color: ui.text, marginTop: 2, marginBottom: 6, letterSpacing: -0.5 },
+  kidTeamPill: { backgroundColor: "#fef3ee", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  kidTeamPillText: { fontSize: 10, fontFamily: fonts.bodyBold, color: "#bc2711", letterSpacing: 0.6 },
+  liveNow: { fontSize: 11, fontFamily: fonts.bodyBold, color: "#dc2626", backgroundColor: "#fef2f2", borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: "hidden", marginBottom: 8 },
+  scoreStrip: { gap: 10, paddingRight: 4 },
+  scoreCard: { width: 240, backgroundColor: "#fff", borderRadius: 16, padding: 12, gap: 7, shadowColor: "#18181b", shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  scorePill: { alignSelf: "flex-start", fontSize: 10.5, fontFamily: fonts.bodyBold, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: "hidden" },
+  scorePillLive: { color: "#dc2626", backgroundColor: "#fef2f2" },
+  scorePillFinal: { color: "#5e5e6e", backgroundColor: "#eeeef1" },
+  scoreRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  scoreName: { flex: 1, fontSize: 13.5, fontFamily: fonts.bodySemi, color: ui.text },
+  scoreNum: { fontSize: 20, fontFamily: fonts.condensed, color: ui.text },
+  scoreMeta: { fontSize: 11, fontFamily: fonts.body, color: ui.textFaint },
+  statsBand: { backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, alignSelf: "center", shadowColor: "#18181b", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  statsBandText: { fontSize: 12.5, fontFamily: fonts.bodyMed, color: ui.textMuted },
+  statsBandStrong: { fontFamily: fonts.bodyBold, color: ui.text },
   squadTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   squadName: { fontSize: 16, fontFamily: fonts.display, color: ui.text },
   squadGameRow: {

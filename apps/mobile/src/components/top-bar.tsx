@@ -39,12 +39,7 @@ export function TopBar({
         <Pressable style={styles.brand} onPress={() => router.navigate("/")} hitSlop={6}>
           {/* N3 icon + A1 wordmark (brand picks 2026-07-18; ONE is spelled out
               everywhere the name is read — the numeral lives only in icons) */}
-          <View style={styles.logoTile}>
-            <Text style={styles.logoS}>S</Text>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoBoxText}>1</Text>
-            </View>
-          </View>
+          {/* Wordmark only — square tile dropped for web parity (2026-07-25) */}
           <View style={styles.wordmarkRow}>
             <Text style={styles.wordmark}>
               Sports<Text style={styles.wordmarkHub}>Hub</Text>
