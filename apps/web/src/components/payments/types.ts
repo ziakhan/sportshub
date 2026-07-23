@@ -59,6 +59,9 @@ export const TYPE_LABEL: Record<string, string> = {
   CampSignup: "Camp",
   HouseLeagueSignup: "House league",
   TeamSubmission: "Team fee",
+  TournamentEntry: "Tournament entry",
+  TrainingSessionSignup: "Training",
+  OneOnOneBooking: "1-on-1 training",
 }
 
 export function paidSoFar(o: ObligationRow): number {

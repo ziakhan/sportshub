@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
 export default function CreateCampPage() {
   const params = useParams()
@@ -19,6 +20,7 @@ export default function CreateCampPage() {
   const [description, setDescription] = useState("")
   const [details, setDetails] = useState("")
   const [ageGroup, setAgeGroup] = useState("")
+  const [agePolicy, setAgePolicy] = useState("PREFERRED")
   const [gender, setGender] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
@@ -52,6 +54,7 @@ export default function CreateCampPage() {
           description: description || undefined,
           details: details || undefined,
           ageGroup,
+          agePolicy,
           gender: gender || undefined,
           startDate: new Date(startDate).toISOString(),
           endDate: new Date(endDate).toISOString(),
@@ -132,6 +135,7 @@ export default function CreateCampPage() {
                   ))}
                 </select>
               </div>
+              <AgePolicySelect value={agePolicy} onChange={setAgePolicy} />
               <div>
                 <label className="block text-sm font-medium text-ink-700">Gender</label>
                 <select value={gender} onChange={(e) => setGender(e.target.value)}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Badge, Button } from "@/components/ui"
+import { programLifecycle } from "@/lib/lifecycle"
 import { formatCurrency } from "@/lib/countries"
 import { formatTrainingSchedule, trainingTypeLabel } from "@/lib/training"
 
@@ -122,9 +123,18 @@ export default function ClubTrainingPage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-ink-900 font-semibold">{s.title}</span>
-                  <Badge tone={s.isPublished ? "success" : "neutral"}>
-                    {s.isPublished ? "Published" : "Draft"}
-                  </Badge>
+                  {(() => {
+                    // Real lifecycle (Full/In progress/Ended), not just a
+                    // published bit — audit 2026-07-23.
+                    const lc = programLifecycle({
+                      isPublished: s.isPublished,
+                      startAt: s.scheduleType === "RECURRING" ? (s.startDate ?? new Date()) : (s.startAt ?? new Date()),
+                      endAt: s.scheduleType === "RECURRING" ? s.endDate : s.startAt,
+                      maxParticipants: s.capacity,
+                      signupCount: s._count.signups,
+                    })
+                    return <Badge tone={lc.badge.tone} dot={lc.badge.dot}>{lc.label}</Badge>
+                  })()}
                   <span className="text-ink-400 text-xs">{trainingTypeLabel(s.sessionType)}</span>
                 </div>
                 <p className="text-ink-500 mt-1 text-sm">

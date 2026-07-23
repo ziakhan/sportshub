@@ -10,6 +10,7 @@ import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/u
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
 const AGE_GROUPS = [
   "U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18",
@@ -20,6 +21,7 @@ const editHouseLeagueSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(200),
   description: z.string().optional(),
   details: z.string().optional(),
+  agePolicy: z.string().min(1, "Select an age policy"),
   gender: z.string().optional(),
   season: z.string().optional(),
   startDate: z.string().min(1, "Select a start date"),
@@ -117,6 +119,7 @@ export default function EditHouseLeaguePage() {
           name: data.name,
           description: data.description || "",
           details: data.details || "",
+          agePolicy: data.agePolicy ?? "PREFERRED",
           gender: data.gender || "",
           season: data.season || "",
           startDate: toDateInputValue(data.startDate),
@@ -173,6 +176,7 @@ export default function EditHouseLeaguePage() {
         description: data.description || null,
         details: data.details || null,
         ageGroups: selectedAgeGroups.join(","),
+        agePolicy: data.agePolicy,
         season: data.season || null,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
@@ -325,6 +329,11 @@ export default function EditHouseLeaguePage() {
                     ))}
                   </div>
                 </div>
+
+                <AgePolicySelect
+                  value={watch("agePolicy") || "PREFERRED"}
+                  onChange={(v) => setValue("agePolicy", v, { shouldValidate: true })}
+                />
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>

@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { getClubRatings } from "@/lib/queries/club-ratings"
 import { formatTrainingSchedule, trainingSortDate, trainingTypeLabel } from "@/lib/training"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 /**
  * Public programs aggregation — tryouts, house leagues, camps and
@@ -56,19 +57,19 @@ export async function getAllPrograms(): Promise<EventItem[]> {
     // Same filters as GET /api/tryouts?marketplace=true
     prisma.tryout.findMany({
       where: { isPublished: true, isPublic: true, scheduledAt: { gte: new Date() } },
-      include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+      include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { scheduledAt: "asc" },
     }),
     // Same filters as GET /api/house-leagues?public=true
     prisma.houseLeague.findMany({
       where: { isPublished: true, endDate: { gte: today } },
-      include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+      include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { startDate: "asc" },
     }),
     // Same filters as GET /api/camps?public=true
     prisma.camp.findMany({
       where: { isPublished: true, endDate: { gte: today } },
-      include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+      include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { startDate: "asc" },
     }),
     // Same filters as GET /api/tournaments?public=true
@@ -89,7 +90,7 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       },
       include: {
         tenant: tenantSelect,
-        _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+        _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
       },
     }),
   ])

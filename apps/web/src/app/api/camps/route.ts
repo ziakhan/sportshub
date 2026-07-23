@@ -5,6 +5,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
@@ -15,6 +16,7 @@ const createSchema = z.object({
   details: z.string().optional(),
   campType: z.enum(["MARCH_BREAK", "HOLIDAY", "SUMMER", "WEEKLY"]),
   ageGroup: z.string(),
+  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime(),
@@ -65,6 +67,7 @@ export async function POST(request: NextRequest) {
         details: data.details || null,
         campType: data.campType,
         ageGroup: data.ageGroup,
+        agePolicy: data.agePolicy ?? "PREFERRED",
         gender: data.gender || null,
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
@@ -119,7 +122,7 @@ export async function GET(request: NextRequest) {
               branding: { select: { primaryColor: true } },
             },
           },
-          _count: { select: { signups: true } },
+          _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
         },
         orderBy: { startDate: "asc" },
       })
@@ -159,7 +162,7 @@ export async function GET(request: NextRequest) {
 
     const camps = await (prisma as any).camp.findMany({
       where: { tenantId },
-      include: { _count: { select: { signups: true } } },
+      include: { _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { startDate: "desc" },
     })
 

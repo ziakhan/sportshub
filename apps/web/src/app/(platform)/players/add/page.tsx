@@ -7,12 +7,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button, DateTimePicker } from "@/components/ui"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
+import { calculateAge } from "@/lib/coppa"
 
 function calcAge(dobStr: string | undefined): number | null {
   if (!dobStr) return null
   const dob = new Date(dobStr)
   if (isNaN(dob.getTime())) return null
-  return Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+  // Canonical calendar age (lib/coppa) — must agree with the server's
+  // isMinor gate or the consent checkbox can desync near a 13th birthday.
+  return calculateAge(dob)
 }
 
 function AddPlayerForm() {

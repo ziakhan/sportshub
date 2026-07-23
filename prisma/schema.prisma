@@ -925,6 +925,7 @@ model Tryout {
   title       String
   description String? @db.Text
   ageGroup    String
+  agePolicy   AgePolicy @default(STRICT)
   gender      Gender?
 
   location    String // Denormalized venue label / free-text fallback for legacy rows
@@ -2904,6 +2905,7 @@ model HouseLeague {
   details     String? @db.Text // What's included, program details
 
   ageGroups String // Comma-separated: "U8,U10,U12"
+  agePolicy AgePolicy @default(PREFERRED)
   gender    Gender?
   season    String? // "Fall 2026", "Winter 2026-27"
 
@@ -2987,9 +2989,10 @@ model Camp {
   description String? @db.Text
   details     String? @db.Text // What's included, daily activities, etc.
 
-  campType CampType
-  ageGroup String
-  gender   Gender?
+  campType  CampType
+  ageGroup  String
+  agePolicy AgePolicy @default(PREFERRED)
+  gender    Gender?
 
   // Dates
   startDate      DateTime
@@ -3034,6 +3037,16 @@ enum CampType {
   WEEKLY
 }
 
+// How a program's age group is enforced at registration (owner 2026-07-23):
+// STRICT blocks ineligible players server-side, PREFERRED warns but allows,
+// OPEN skips the check entirely. Tryouts default STRICT (team age groups are
+// mandatory); camps/training/house leagues default PREFERRED.
+enum AgePolicy {
+  STRICT
+  PREFERRED
+  OPEN
+}
+
 model CampSignup {
   id     String @id @default(uuid())
   campId String
@@ -3046,6 +3059,9 @@ model CampSignup {
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   weeksSelected Int     @default(1)
+  // Which specific weeks (1-based within the camp's numberOfWeeks). Empty for
+  // legacy count-only signups; when set, weeksSelected == weekNumbers.length.
+  weekNumbers   Int[]   @default([])
   totalFee      Decimal @db.Decimal(10, 2)
 
   status CampSignupStatus @default(REGISTERED)
@@ -3096,6 +3112,7 @@ model TrainingSession {
   description String? @db.Text
   sessionType TrainingSessionType  @default(GROUP_TRAINING)
   ageGroup    String?
+  agePolicy   AgePolicy @default(PREFERRED)
   gender      Gender?
 
   scheduleType TrainingScheduleType @default(ONE_TIME)

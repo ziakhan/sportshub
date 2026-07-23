@@ -1,5 +1,6 @@
 import { cache } from "./request-cache"
 import { prisma } from "@youthbasketballhub/db"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 /**
  * Public house league detail (tenant + signup count).
@@ -22,7 +23,7 @@ export const getPublicHouseLeague = cache(async (id: string): Promise<any | null
       venue: {
         select: { id: true, name: true },
       },
-      _count: { select: { signups: true } },
+      _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
     },
   })
 

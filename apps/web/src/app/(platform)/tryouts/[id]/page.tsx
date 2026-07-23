@@ -5,8 +5,9 @@ import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { SignupForm } from "./signup-form"
 import { formatCurrency } from "@/lib/countries"
+import { getRegistrationViewer } from "@/lib/registration/viewer"
+import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 import { brandStyle } from "@/lib/club-page/brand"
 import { AnimatedNumber, Badge, Button, PanelHeader } from "@/components/ui"
 
@@ -33,52 +34,21 @@ async function getTryout(id: string) {
   return { ...tryout, fee: Number(tryout.fee) }
 }
 
-async function getUserData(userId: string | null, tryoutId: string) {
-  if (!userId) return null
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true },
-  })
-
-  if (!user) return null
-
-  const [players, existingSignups] = await Promise.all([
-    prisma.player.findMany({
-      where: { parentId: user.id },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        dateOfBirth: true,
-        gender: true,
-      },
-      orderBy: { firstName: "asc" },
-    }),
-    prisma.tryoutSignup.findMany({
-      where: {
-        tryoutId,
-        userId: user.id,
-        status: { not: "CANCELLED" },
-      },
-      select: {
-        id: true,
-        playerName: true,
-        status: true,
-      },
-    }),
-  ])
-
-  return { players, existingSignups }
-}
-
 export default async function TryoutDetailPage({ params }: { params: { id: string } }) {
   const tryout = await getTryout(params.id)
   if (!tryout) notFound()
 
   const session = await getServerSession(authOptions)
   const userId = session?.user?.id ?? null
-  const userData = await getUserData(userId, params.id)
+  const viewer = await getRegistrationViewer({
+    userId,
+    kind: "tryout",
+    programId: params.id,
+    tenantId: tryout.tenantId,
+    ageGroup: tryout.ageGroup,
+    agePolicy: (tryout as any).agePolicy ?? "STRICT",
+    gender: tryout.gender,
+  })
 
   const isPast = new Date(tryout.scheduledAt) < new Date()
   const isFull = tryout.maxParticipants !== null && tryout._count.signups >= tryout.maxParticipants
@@ -200,14 +170,14 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
                   </Button>
                 </div>
               ) : (
-                <SignupForm
-                  tryoutId={params.id}
-                  tryoutFee={fee}
+                <ProgramSignupForm
+                  programName={tryout.title}
+                  endpoint={`/api/tryouts/${params.id}/signup`}
                   currency={currency}
-                  tryoutLocation={tryout.location}
-                  tryoutDate={format(new Date(tryout.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
-                  players={userData?.players || []}
-                  existingSignups={userData?.existingSignups || []}
+                  kids={viewer.kids}
+                  payment={viewer.payment}
+                  flatFee={fee}
+                  returnPath={`/tryouts/${params.id}`}
                 />
               )}
             </div>

@@ -5,6 +5,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
@@ -14,6 +15,7 @@ const createSchema = z.object({
   description: z.string().optional(),
   details: z.string().optional(),
   ageGroups: z.string().min(1),
+  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   season: z.string().optional(),
   startDate: z.string().datetime(),
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
         description: data.description || null,
         details: data.details || null,
         ageGroups: data.ageGroups,
+        agePolicy: data.agePolicy ?? "PREFERRED",
         gender: data.gender || null,
         season: data.season || null,
         startDate: new Date(data.startDate),
@@ -124,7 +127,7 @@ export async function GET(request: NextRequest) {
               branding: { select: { primaryColor: true } },
             },
           },
-          _count: { select: { signups: true } },
+          _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
         },
         orderBy: { startDate: "asc" },
       })
@@ -160,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     const leagues = await (prisma as any).houseLeague.findMany({
       where: { tenantId },
-      include: { _count: { select: { signups: true } } },
+      include: { _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { startDate: "desc" },
     })
 

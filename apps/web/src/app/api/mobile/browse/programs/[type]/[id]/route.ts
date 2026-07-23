@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { formatTrainingSchedule, trainingSortDate } from "@/lib/training"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { getRegistrationViewer, type ProgramKind } from "@/lib/registration/viewer"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
 /**
  * GET /api/mobile/browse/programs/[type]/[id] — one program (tryout, camp,
  * house league or tournament) normalized for the native detail + register
- * screen. Anonymous.
+ * screen. Anonymous; signed-in callers also get `viewer` (their kids with
+ * eligibility + already-registered + the club's payment rails) — the SAME
+ * getRegistrationViewer the web pages use, so the two can never disagree.
  */
+async function viewerFor(opts: {
+  kind: ProgramKind
+  programId: string
+  tenantId: string
+  ageGroup: string | null
+  agePolicy: string | null
+  gender?: string | null
+}) {
+  const session = await getSessionUserId().catch(() => null)
+  if (!session) return null
+  return getRegistrationViewer({
+    userId: session.userId,
+    kind: opts.kind,
+    programId: opts.programId,
+    tenantId: opts.tenantId,
+    ageGroup: opts.ageGroup,
+    agePolicy: (opts.agePolicy as any) ?? "PREFERRED",
+    gender: opts.gender,
+  })
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: { type: string; id: string } }
@@ -21,10 +47,19 @@ export async function GET(
     if (params.type === "tryout") {
       const t = await prisma.tryout.findFirst({
         where: { id: params.id, isPublished: true, isPublic: true },
-        include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+        include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       })
       if (!t) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      const viewer = await viewerFor({
+        kind: "tryout",
+        programId: t.id,
+        tenantId: t.tenantId,
+        ageGroup: t.ageGroup,
+        agePolicy: (t as any).agePolicy ?? "STRICT",
+        gender: t.gender,
+      })
       return NextResponse.json({
+        viewer,
         program: {
           id: t.id,
           type: "tryout",
@@ -52,10 +87,19 @@ export async function GET(
     if (params.type === "camp") {
       const c = await prisma.camp.findFirst({
         where: { id: params.id, isPublished: true },
-        include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+        include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       })
       if (!c) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      const viewer = await viewerFor({
+        kind: "camp",
+        programId: c.id,
+        tenantId: c.tenantId,
+        ageGroup: c.ageGroup,
+        agePolicy: (c as any).agePolicy ?? "PREFERRED",
+        gender: c.gender,
+      })
       return NextResponse.json({
+        viewer,
         program: {
           id: c.id,
           type: "camp",
@@ -85,10 +129,19 @@ export async function GET(
     if (params.type === "house-league") {
       const h = await prisma.houseLeague.findFirst({
         where: { id: params.id, isPublished: true },
-        include: { tenant: tenantSelect, _count: { select: { signups: true } } },
+        include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       })
       if (!h) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      const viewer = await viewerFor({
+        kind: "house-league",
+        programId: h.id,
+        tenantId: h.tenantId,
+        ageGroup: h.ageGroups,
+        agePolicy: (h as any).agePolicy ?? "PREFERRED",
+        gender: h.gender,
+      })
       return NextResponse.json({
+        viewer,
         program: {
           id: h.id,
           type: "house-league",
@@ -153,11 +206,20 @@ export async function GET(
         include: {
           tenant: tenantSelect,
           venue: { select: { name: true } },
-          _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+          _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
         },
       })
       if (!s) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      const viewer = await viewerFor({
+        kind: "training",
+        programId: s.id,
+        tenantId: s.tenantId,
+        ageGroup: s.ageGroup,
+        agePolicy: (s as any).agePolicy ?? "PREFERRED",
+        gender: s.gender,
+      })
       return NextResponse.json({
+        viewer,
         program: {
           id: s.id,
           type: "training",

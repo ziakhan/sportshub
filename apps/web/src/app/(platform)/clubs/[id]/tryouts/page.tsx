@@ -176,10 +176,14 @@ export default async function ClubTryoutsPage({
                     </h3>
                     {tryout.isPast ? (
                       <Badge tone="neutral">Past</Badge>
-                    ) : tryout.isPublished ? (
-                      <Badge tone="court">Published</Badge>
-                    ) : (
+                    ) : !tryout.isPublished ? (
                       <Badge tone="hoop">Draft</Badge>
+                    ) : tryout.maxParticipants != null &&
+                      tryout.signups.filter((s) => s.status !== "CANCELLED").length >=
+                        tryout.maxParticipants ? (
+                      <Badge tone="gold" dot>Full</Badge>
+                    ) : (
+                      <Badge tone="court">Published</Badge>
                     )}
                     {tryout.team && (
                       <Link

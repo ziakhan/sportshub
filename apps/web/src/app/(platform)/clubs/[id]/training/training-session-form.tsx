@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 import { TRAINING_SESSION_TYPES } from "@/lib/training"
 
 export interface TrainingSessionFormValues {
@@ -11,6 +12,7 @@ export interface TrainingSessionFormValues {
   description: string
   sessionType: string
   ageGroup: string
+  agePolicy: string
   gender: string
   scheduleType: "ONE_TIME" | "RECURRING"
   startAt: string
@@ -31,6 +33,7 @@ export const EMPTY_TRAINING_FORM: TrainingSessionFormValues = {
   description: "",
   sessionType: "GROUP_TRAINING",
   ageGroup: "",
+  agePolicy: "PREFERRED",
   gender: "",
   scheduleType: "ONE_TIME",
   startAt: "",
@@ -96,6 +99,7 @@ export function TrainingSessionForm({
         description: values.description.trim() || undefined,
         sessionType: values.sessionType,
         ageGroup: values.ageGroup.trim() || undefined,
+        agePolicy: values.agePolicy,
         gender: values.gender || undefined,
         scheduleType: values.scheduleType,
         durationMinutes: Number(values.durationMinutes),
@@ -194,6 +198,10 @@ export function TrainingSessionForm({
             className={inputClass}
           />
         </div>
+        <AgePolicySelect
+          value={values.agePolicy}
+          onChange={(v) => set("agePolicy", v)}
+        />
         <div>
           <label className={labelClass}>
             Who can join <span className="text-ink-400 font-normal">(optional)</span>

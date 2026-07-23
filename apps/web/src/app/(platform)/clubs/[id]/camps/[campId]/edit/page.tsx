@@ -10,6 +10,7 @@ import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/u
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
 const AGE_GROUPS = [
   "U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18",
@@ -22,6 +23,7 @@ const editCampSchema = z.object({
   description: z.string().optional(),
   details: z.string().optional(),
   ageGroup: z.string().min(1, "Select an age group"),
+  agePolicy: z.string().min(1, "Select an age policy"),
   gender: z.string().optional(),
   startDate: z.string().min(1, "Select a start date"),
   endDate: z.string().min(1, "Select an end date"),
@@ -109,6 +111,7 @@ export default function EditCampPage() {
           description: data.description || "",
           details: data.details || "",
           ageGroup: data.ageGroup || "",
+          agePolicy: data.agePolicy ?? "PREFERRED",
           gender: data.gender || "",
           startDate: toDateInputValue(data.startDate),
           endDate: toDateInputValue(data.endDate),
@@ -156,6 +159,7 @@ export default function EditCampPage() {
         description: data.description || null,
         details: data.details || null,
         ageGroup: data.ageGroup,
+        agePolicy: data.agePolicy,
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         dailyStartTime: data.dailyStartTime,
@@ -319,6 +323,10 @@ export default function EditCampPage() {
                       <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
                     )}
                   </div>
+                  <AgePolicySelect
+                    value={watch("agePolicy") || "PREFERRED"}
+                    onChange={(v) => setValue("agePolicy", v, { shouldValidate: true })}
+                  />
                   <div>
                     <label htmlFor="gender" className="block text-sm font-medium text-ink-700">
                       Gender

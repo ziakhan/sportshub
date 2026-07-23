@@ -37,6 +37,7 @@ export default function EditTrainingSessionPage() {
           description: session.description ?? "",
           sessionType: session.sessionType ?? "GROUP_TRAINING",
           ageGroup: session.ageGroup ?? "",
+          agePolicy: session.agePolicy ?? "PREFERRED",
           gender: session.gender ?? "",
           scheduleType: session.scheduleType ?? "ONE_TIME",
           startAt: toDateTimeInput(session.startAt),

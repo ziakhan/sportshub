@@ -16,6 +16,7 @@ const patchSchema = z.object({
     .enum(["GROUP_TRAINING", "CLINIC", "STRENGTH_CONDITIONING", "OPEN_WORKOUT"])
     .optional(),
   ageGroup: z.string().trim().max(50).nullable().optional(),
+  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   scheduleType: z.enum(["ONE_TIME", "RECURRING"]).optional(),
   startAt: z.string().datetime().nullable().optional(),
@@ -134,6 +135,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ...(data.description !== undefined ? { description: data.description || null } : {}),
         ...(data.sessionType !== undefined ? { sessionType: data.sessionType } : {}),
         ...(data.ageGroup !== undefined ? { ageGroup: data.ageGroup || null } : {}),
+        ...(data.agePolicy !== undefined ? { agePolicy: data.agePolicy } : {}),
         ...(data.gender !== undefined ? { gender: data.gender || null } : {}),
         ...(data.scheduleType !== undefined ? { scheduleType: data.scheduleType } : {}),
         ...(data.startAt !== undefined

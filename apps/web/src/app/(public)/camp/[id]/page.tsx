@@ -3,33 +3,18 @@ import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
+import { getRegistrationViewer } from "@/lib/registration/viewer"
+import { computeCampFee, campHasDiscount } from "@/lib/registration/camp-pricing"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
-import { CampSignupForm } from "./camp-signup-form"
+import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 
 export const dynamic = "force-dynamic"
-
-async function getRegistrantData(userId: string | null, campId: string) {
-  if (!userId) return { players: [], existingPlayerIds: [] as string[] }
-  const [players, signups] = await Promise.all([
-    prisma.player.findMany({
-      where: { parentId: userId },
-      select: { id: true, firstName: true, lastName: true },
-      orderBy: { firstName: "asc" },
-    }),
-    (prisma as any).campSignup.findMany({
-      where: { campId, userId, status: { not: "CANCELLED" } },
-      select: { playerId: true },
-    }),
-  ])
-  return { players, existingPlayerIds: signups.map((s: any) => s.playerId).filter(Boolean) }
-}
 
 const CAMP_TYPE_LABELS: Record<string, string> = {
   MARCH_BREAK: "March Break Camp",
@@ -60,7 +45,15 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
 
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = session?.user?.id ?? null
-  const { players, existingPlayerIds } = await getRegistrantData(userId, params.id)
+  const viewer = await getRegistrationViewer({
+    userId,
+    kind: "camp",
+    programId: params.id,
+    tenantId: camp.tenant.id,
+    ageGroup: camp.ageGroup,
+    agePolicy: camp.agePolicy ?? "PREFERRED",
+    gender: camp.gender,
+  })
 
   const isPast = new Date(camp.endDate) < new Date()
   const isFull = camp.maxParticipants && camp._count.signups >= camp.maxParticipants
@@ -68,8 +61,8 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
   const currency = camp.tenant.currency || "CAD"
   const primaryColor = camp.tenant.branding?.primaryColor || "#1a73e8"
   const weeks = camp.numberOfWeeks
-  const hasDiscount = camp.fullCampFee && weeks > 1 && camp.fullCampFee < camp.weeklyFee * weeks
-  const savingsPercent = hasDiscount ? Math.round((1 - camp.fullCampFee / (camp.weeklyFee * weeks)) * 100) : 0
+  const hasDiscount = campHasDiscount(camp)
+  const savingsPercent = computeCampFee(camp, weeks).savingsPercent
 
   const included = [
     camp.includesLunch && "Lunch",
@@ -195,16 +188,19 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
               ) : isFull ? (
                 <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">This camp is full.</div>
               ) : userId ? (
-                <CampSignupForm
-                  campId={camp.id}
-                  campName={camp.name}
-                  location={camp.location}
+                <ProgramSignupForm
+                  programName={camp.name}
+                  endpoint={`/api/camps/${camp.id}/signup`}
                   currency={currency}
-                  weeklyFee={camp.weeklyFee}
-                  fullCampFee={camp.fullCampFee}
-                  numberOfWeeks={camp.numberOfWeeks}
-                  players={players}
-                  existingPlayerIds={existingPlayerIds}
+                  kids={viewer.kids}
+                  payment={viewer.payment}
+                  camp={{
+                    numberOfWeeks: camp.numberOfWeeks,
+                    weeklyFee: camp.weeklyFee,
+                    fullCampFee: camp.fullCampFee,
+                    startDate: new Date(camp.startDate).toISOString(),
+                  }}
+                  returnPath={`/camp/${camp.id}`}
                 />
               ) : (
                 <Button

@@ -3,33 +3,17 @@ import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { getPublicHouseLeague } from "@/lib/queries/house-league"
+import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { AnimatedNumber, Badge, Button, Card, PanelHeader } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
-import { HouseLeagueSignupForm } from "./house-league-signup-form"
+import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 
 export const dynamic = "force-dynamic"
-
-async function getRegistrantData(userId: string | null, houseLeagueId: string) {
-  if (!userId) return { players: [], existingPlayerIds: [] as string[] }
-  const [players, signups] = await Promise.all([
-    prisma.player.findMany({
-      where: { parentId: userId },
-      select: { id: true, firstName: true, lastName: true },
-      orderBy: { firstName: "asc" },
-    }),
-    (prisma as any).houseLeagueSignup.findMany({
-      where: { houseLeagueId, userId, status: { not: "CANCELLED" } },
-      select: { playerId: true },
-    }),
-  ])
-  return { players, existingPlayerIds: signups.map((s: any) => s.playerId).filter(Boolean) }
-}
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const league = await getPublicHouseLeague(params.id)
@@ -53,7 +37,15 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
 
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = session?.user?.id ?? null
-  const { players, existingPlayerIds } = await getRegistrantData(userId, params.id)
+  const viewer = await getRegistrationViewer({
+    userId,
+    kind: "house-league",
+    programId: params.id,
+    tenantId: league.tenant.id,
+    ageGroup: league.ageGroups,
+    agePolicy: league.agePolicy ?? "PREFERRED",
+    gender: league.gender,
+  })
 
   const isPast = new Date(league.endDate) < new Date()
   const isFull = league.maxParticipants !== null && league._count.signups >= league.maxParticipants
@@ -195,14 +187,14 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
                   This program is full.
                 </div>
               ) : userId ? (
-                <HouseLeagueSignupForm
-                  houseLeagueId={league.id}
-                  leagueName={league.name}
-                  location={league.location}
+                <ProgramSignupForm
+                  programName={league.name}
+                  endpoint={`/api/house-leagues/${league.id}/signup`}
                   currency={currency}
-                  fee={league.fee}
-                  players={players}
-                  existingPlayerIds={existingPlayerIds}
+                  kids={viewer.kids}
+                  payment={viewer.payment}
+                  flatFee={Number(league.fee)}
+                  returnPath={`/house-league/${league.id}`}
                 />
               ) : (
                 <Button

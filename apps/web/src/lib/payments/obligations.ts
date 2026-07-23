@@ -73,6 +73,22 @@ export async function ensureObligation(db: any, input: EnsureObligationInput) {
   })
 }
 
+/**
+ * Revived registration (a CANCELLED signup re-registered in place): make the
+ * obligation live again at the current fee. Paid/waived rows are left alone;
+ * missing ones are created.
+ */
+export async function reviveObligation(db: any, input: EnsureObligationInput) {
+  const existing = await ensureObligation(db, input)
+  if (existing && existing.status === "CANCELLED") {
+    return db.paymentObligation.update({
+      where: { id: existing.id },
+      data: { status: "PENDING", amount: input.amount, description: input.description },
+    })
+  }
+  return existing
+}
+
 /** Sum of successful payments minus refunds, as a number. */
 function paidTotal(payments: Array<{ status: string; amount: any; refundAmount: any }>): number {
   return payments

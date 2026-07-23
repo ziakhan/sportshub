@@ -6,6 +6,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { isClubAdmin, canActOnTeam, coachedTeamIds } from "@/lib/authz/team-scope"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 import { z } from "zod"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,7 @@ const createTryoutSchema = z.object({
   title: z.string().min(3).max(200),
   description: z.string().optional(),
   ageGroup: z.string(),
+  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   location: z.string().min(3),
   venueId: z.string().uuid().nullable().optional(),
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest) {
     const createData: Record<string, unknown> = {
       title: validatedData.title,
       ageGroup: validatedData.ageGroup,
+      agePolicy: validatedData.agePolicy ?? "STRICT",
       location: validatedData.location,
       scheduledAt: new Date(validatedData.scheduledAt),
       fee: validatedData.fee,
@@ -133,7 +136,7 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              signups: true,
+              signups: { where: ACTIVE_SIGNUPS },
             },
           },
         },
@@ -172,7 +175,7 @@ export async function GET(request: NextRequest) {
           },
           _count: {
             select: {
-              signups: true,
+              signups: { where: ACTIVE_SIGNUPS },
             },
           },
         },

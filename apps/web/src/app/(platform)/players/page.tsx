@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button, Card } from "@/components/ui"
 import RemovePlayerButton from "./remove-player-button"
+import { calculateAge } from "@/lib/coppa"
 
 interface PlayerTeam {
   jerseyNumber: number | null
@@ -99,7 +100,7 @@ export default function PlayersPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           {players.map((player, index) => {
             const dob = new Date(player.dateOfBirth)
-            const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            const age = calculateAge(dob)
 
             return (
               <div

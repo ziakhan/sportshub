@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
+import { ensureObligation, cancelObligationIfUnpaid } from "@/lib/payments/obligations"
 
 export const dynamic = "force-dynamic"
 
@@ -51,7 +52,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const tournament = await (prisma as any).tournament.findUnique({
       where: { id: params.id },
-      select: { ownerId: true },
+      select: { ownerId: true, name: true, tenantId: true, teamFee: true, currency: true },
     })
     if (!tournament) {
       return NextResponse.json({ error: "Not found" }, { status: 404 })
@@ -74,13 +75,39 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Scope: the registration must belong to THIS tournament (IDOR guard, gap-audit §2).
     const target = await (prisma as any).tournamentTeam.findFirst({
       where: { id: tournamentTeamId, tournamentId: params.id },
-      select: { id: true },
+      select: {
+        id: true,
+        registrationFee: true,
+        team: { select: { name: true, tenantId: true } },
+      },
     })
     if (!target) return NextResponse.json({ error: "Team registration not found" }, { status: 404 })
 
-    await (prisma as any).tournamentTeam.update({
-      where: { id: tournamentTeamId },
-      data: { status },
+    await prisma.$transaction(async (tx: any) => {
+      await tx.tournamentTeam.update({
+        where: { id: tournamentTeamId },
+        data: { status },
+      })
+
+      // Payment audit 2026-07-23: entry fees previously existed only as a
+      // number on the row — no obligation, no ledger, invisible to the club
+      // payments page. Approval now creates the club-owed debt (mirrors the
+      // league team-fee wiring); rejection/withdrawal cancels it if unpaid.
+      const fee = Number(target.registrationFee ?? tournament.teamFee ?? 0)
+      if (status === "APPROVED" && fee > 0 && tournament.tenantId && target.team?.tenantId) {
+        await ensureObligation(tx, {
+          payerTenantId: target.team.tenantId,
+          payeeTenantId: tournament.tenantId,
+          referenceType: "TournamentEntry",
+          referenceId: target.id,
+          description: `Tournament entry — ${tournament.name} (${target.team.name})`,
+          amount: fee,
+          currency: tournament.currency ?? "CAD",
+        })
+      }
+      if (status === "REJECTED" || status === "WITHDRAWN") {
+        await cancelObligationIfUnpaid(tx, "TournamentEntry", target.id)
+      }
     })
 
     return NextResponse.json({ success: true })

@@ -193,7 +193,9 @@ describe("offline payment lifecycle", () => {
   })
 
   it("cancelling an unpaid signup cancels its obligation", async () => {
-    const family = await createParentWithChildren(world.ctx, { children: [{ age: 13 }] })
+    // age 12 — the fixture tryout is U12 and tryouts now enforce STRICT age
+    // policy (2026-07-23); a 13-year-old is correctly rejected at signup.
+    const family = await createParentWithChildren(world.ctx, { children: [{ age: 12 }] })
     actAs(family.parent.id)
     const signup = await (await signUp(paidTryoutId, family.players[0].id)).json()
 

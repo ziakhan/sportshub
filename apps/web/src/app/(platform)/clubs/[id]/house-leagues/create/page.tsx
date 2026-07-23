@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -20,6 +21,7 @@ export default function CreateHouseLeaguePage() {
   const [description, setDescription] = useState("")
   const [details, setDetails] = useState("")
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([])
+  const [agePolicy, setAgePolicy] = useState("PREFERRED")
   const [gender, setGender] = useState("")
   const [season, setSeason] = useState("")
   const [startDate, setStartDate] = useState("")
@@ -67,6 +69,7 @@ export default function CreateHouseLeaguePage() {
           description: description || undefined,
           details: details || undefined,
           ageGroups: selectedAgeGroups.join(","),
+          agePolicy,
           gender: gender || undefined,
           season: season || undefined,
           startDate: new Date(startDate).toISOString(),
@@ -143,6 +146,8 @@ export default function CreateHouseLeaguePage() {
                 ))}
               </div>
             </div>
+
+            <AgePolicySelect value={agePolicy} onChange={setAgePolicy} />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>

@@ -10,7 +10,9 @@ import { Badge, Card, Button, AnimatedNumber } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { formatTrainingSchedule, trainingTypeLabel, trainingSortDate } from "@/lib/training"
-import { TrainingSignupForm } from "./training-signup-form"
+import { getRegistrationViewer } from "@/lib/registration/viewer"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
+import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 
 export const dynamic = "force-dynamic"
 
@@ -28,27 +30,11 @@ async function getPublicTrainingSession(id: string) {
         },
       },
       venue: { select: { name: true } },
-      _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+      _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
     },
   })
   if (!session) return null
   return { ...session, fee: Number(session.fee) }
-}
-
-async function getRegistrantData(userId: string | null, sessionId: string) {
-  if (!userId) return { players: [], existingPlayerIds: [] as string[] }
-  const [players, signups] = await Promise.all([
-    prisma.player.findMany({
-      where: { parentId: userId, deletedAt: null },
-      select: { id: true, firstName: true, lastName: true },
-      orderBy: { firstName: "asc" },
-    }),
-    (prisma as any).trainingSessionSignup.findMany({
-      where: { sessionId, userId, status: { not: "CANCELLED" } },
-      select: { playerId: true },
-    }),
-  ])
-  return { players, existingPlayerIds: signups.map((s: any) => s.playerId).filter(Boolean) }
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
@@ -77,7 +63,15 @@ export default async function PublicTrainingDetailPage({ params }: { params: { i
 
   const authSession = await getServerSession(authOptions).catch(() => null)
   const userId = authSession?.user?.id ?? null
-  const { players, existingPlayerIds } = await getRegistrantData(userId, params.id)
+  const viewer = await getRegistrationViewer({
+    userId,
+    kind: "training",
+    programId: params.id,
+    tenantId: session.tenant.id,
+    ageGroup: session.ageGroup,
+    agePolicy: session.agePolicy ?? "PREFERRED",
+    gender: session.gender,
+  })
 
   const endReference = session.scheduleType === "RECURRING" ? session.endDate : session.startAt
   const isPast = !!endReference && new Date(endReference) < new Date()
@@ -209,13 +203,14 @@ export default async function PublicTrainingDetailPage({ params }: { params: { i
                   This program is full.
                 </div>
               ) : userId ? (
-                <TrainingSignupForm
-                  sessionId={session.id}
-                  sessionTitle={session.title}
+                <ProgramSignupForm
+                  programName={session.title}
+                  endpoint={`/api/training-sessions/${session.id}/signup`}
                   currency={currency}
-                  fee={session.fee}
-                  players={players}
-                  existingPlayerIds={existingPlayerIds}
+                  kids={viewer.kids}
+                  payment={viewer.payment}
+                  flatFee={session.fee}
+                  returnPath={`/training/${session.id}`}
                 />
               ) : (
                 <Button

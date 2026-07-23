@@ -4,21 +4,24 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { format } from "date-fns"
 import { notifyMany, notifySafe } from "@/lib/notifications"
-import { ensureObligation } from "@/lib/payments/obligations"
+import { ensureObligation, reviveObligation } from "@/lib/payments/obligations"
 import { sendEmail, appBaseUrl, escapeHtml, formatMoney, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent, grantExpressConsent } from "@/lib/comms/consent"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
+import { signupPayloadSchema, normalizeRegistrations } from "@/lib/registration/payload"
+import { checkEligibility } from "@/lib/registration/eligibility"
+import { computeCampFee } from "@/lib/registration/camp-pricing"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
-const signupSchema = z.object({
-  playerId: z.string(),
-  weeksSelected: z.number().min(1),
-  notes: z.string().optional(),
-  // CASL express-consent checkbox from the public form.
-  marketingConsent: z.boolean().optional(),
-})
-
+/**
+ * POST /api/camps/[id]/signup — register one or more of the parent's kids
+ * (owner 2026-07-23: multi-kid + pick WHICH weeks). Accepts the legacy
+ * `{ playerId, weeksSelected }` single-kid payload forever (fielded apps).
+ * One CampSignup + one PaymentObligation per kid; STRICT age policy blocks
+ * ineligible kids server-side.
+ */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sessionInfo = await getSessionUserId()
@@ -27,20 +30,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json()
-    const data = signupSchema.parse(body)
+    const data = signupPayloadSchema.parse(body)
+    const entries = normalizeRegistrations(data)
+    if (entries.length === 0) {
+      return NextResponse.json({ error: "Select at least one player" }, { status: 400 })
+    }
 
-    const player = await prisma.player.findFirst({
-      where: { id: data.playerId, parentId: sessionInfo.userId },
+    const players = await prisma.player.findMany({
+      where: { id: { in: entries.map((e) => e.playerId) }, parentId: sessionInfo.userId },
+      select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
     })
-    if (!player) {
+    if (players.length !== entries.length) {
       return NextResponse.json({ error: "Player not found" }, { status: 403 })
     }
+    const playerById = new Map(players.map((p) => [p.id, p]))
 
     const camp = await (prisma as any).camp.findUnique({
       where: { id: params.id },
       include: {
         tenant: { select: { name: true, currency: true } },
-        _count: { select: { signups: true } },
+        _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
       },
     })
 
@@ -52,70 +61,124 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "This camp has ended" }, { status: 400 })
     }
 
-    if (camp.maxParticipants && camp._count.signups >= camp.maxParticipants) {
-      return NextResponse.json({ error: "This camp is full" }, { status: 400 })
-    }
-
-    if (data.weeksSelected > camp.numberOfWeeks) {
+    if (camp.maxParticipants && camp._count.signups + entries.length > camp.maxParticipants) {
+      const left = Math.max(0, camp.maxParticipants - camp._count.signups)
       return NextResponse.json(
-        { error: "Cannot select more weeks than available" },
+        { error: left === 0 ? "This camp is full" : `Only ${left} spot${left === 1 ? "" : "s"} left` },
         { status: 400 }
       )
     }
 
-    const existing = await (prisma as any).campSignup.findUnique({
-      where: { campId_playerId: { campId: params.id, playerId: data.playerId } },
+    // Per-kid validation: weeks, age policy, duplicates.
+    for (const entry of entries) {
+      const player = playerById.get(entry.playerId)!
+      const name = `${player.firstName} ${player.lastName}`
+
+      const weeksCount = entry.weeksCount ?? camp.numberOfWeeks
+      if (weeksCount > camp.numberOfWeeks) {
+        return NextResponse.json({ error: "Cannot select more weeks than available" }, { status: 400 })
+      }
+      if (entry.weekNumbers?.some((w) => w < 1 || w > camp.numberOfWeeks)) {
+        return NextResponse.json({ error: "Invalid week selection" }, { status: 400 })
+      }
+
+      const eligibility = checkEligibility({
+        dateOfBirth: player.dateOfBirth,
+        gender: player.gender,
+        program: { ageGroup: camp.ageGroup, agePolicy: camp.agePolicy, gender: camp.gender },
+      })
+      if (eligibility.status === "block") {
+        return NextResponse.json(
+          { error: `${name} isn't eligible: ${eligibility.reason}`, code: "NOT_ELIGIBLE" },
+          { status: 400 }
+        )
+      }
+    }
+
+    const existing = await (prisma as any).campSignup.findMany({
+      where: { campId: params.id, playerId: { in: entries.map((e) => e.playerId) } },
     })
-    if (existing && existing.status !== "CANCELLED") {
-      return NextResponse.json({ error: "This player is already registered" }, { status: 409 })
+    const activeDup = existing.find((s: any) => s.status !== "CANCELLED")
+    if (activeDup) {
+      const p = playerById.get(activeDup.playerId)
+      return NextResponse.json(
+        { error: `${p ? `${p.firstName} ${p.lastName}` : "This player"} is already registered` },
+        { status: 409 }
+      )
+    }
+    const cancelledByPlayer = new Map(
+      existing.filter((s: any) => s.status === "CANCELLED").map((s: any) => [s.playerId, s.id])
+    )
+
+    // Required club waivers are signed WITH the registration (owner ruling
+    // 2026-07-20) — collect across every kid; client gates then retries.
+    const waiversByPlayer: Array<{ playerId: string; playerName: string; waivers: any[] }> = []
+    for (const entry of entries) {
+      const player = playerById.get(entry.playerId)!
+      const outstanding = await getOutstandingRequiredWaivers({
+        tenantId: camp.tenantId,
+        playerId: player.id,
+      })
+      if (outstanding.length > 0) {
+        waiversByPlayer.push({
+          playerId: player.id,
+          playerName: `${player.firstName} ${player.lastName}`,
+          waivers: outstanding,
+        })
+      }
+    }
+    if (waiversByPlayer.length > 0) {
+      return NextResponse.json(
+        { ...waiversRequiredResponse(waiversByPlayer[0].waivers), waiversByPlayer },
+        { status: 409 }
+      )
     }
 
-    // Owner ruling 2026-07-20 (waivers-esign): required club waivers are
-    // signed WITH the registration — the client opens the signing gate on
-    // this 409 and retries.
-    const outstandingWaivers = await getOutstandingRequiredWaivers({
-      tenantId: camp.tenantId,
-      playerId: player.id,
-    })
-    if (outstandingWaivers.length > 0) {
-      return NextResponse.json(waiversRequiredResponse(outstandingWaivers), { status: 409 })
+    const pricing = {
+      numberOfWeeks: camp.numberOfWeeks,
+      weeklyFee: Number(camp.weeklyFee),
+      fullCampFee: camp.fullCampFee != null ? Number(camp.fullCampFee) : null,
     }
 
-    // Calculate fee
-    const weeklyFee = Number(camp.weeklyFee)
-    const fullCampFee = camp.fullCampFee ? Number(camp.fullCampFee) : null
-    let totalFee: number
-
-    if (data.weeksSelected >= camp.numberOfWeeks && fullCampFee !== null) {
-      totalFee = fullCampFee // Full camp discount
-    } else {
-      totalFee = weeklyFee * data.weeksSelected
-    }
-
-    const signup = await prisma.$transaction(async (tx: any) => {
-      const created = await tx.campSignup.create({
-        data: {
-          campId: params.id,
-          userId: sessionInfo.userId,
-          playerId: data.playerId,
-          weeksSelected: data.weeksSelected,
-          totalFee,
+    const results = await prisma.$transaction(async (tx: any) => {
+      const created: Array<{ playerId: string; signupId: string; totalFee: number; weeksCount: number }> = []
+      for (const entry of entries) {
+        const weeksCount = entry.weeksCount ?? camp.numberOfWeeks
+        const fee = computeCampFee(pricing, weeksCount)
+        const signupData = {
+          weeksSelected: weeksCount,
+          weekNumbers: entry.weekNumbers ?? [],
+          totalFee: fee.total,
           notes: data.notes || null,
-        },
-      })
-      await ensureObligation(tx, {
-        payerUserId: sessionInfo.userId,
-        payeeTenantId: camp.tenantId,
-        referenceType: "CampSignup",
-        referenceId: created.id,
-        description: `Camp fee — ${camp.name} (${data.weeksSelected} week${data.weeksSelected > 1 ? "s" : ""})`,
-        amount: totalFee,
-        currency: camp.tenant?.currency ?? "CAD",
-      })
+          status: "REGISTERED",
+        }
+        // A CANCELLED row for this kid is revived in place (unique campId+playerId).
+        const cancelledId = cancelledByPlayer.get(entry.playerId)
+        const signup = cancelledId
+          ? await tx.campSignup.update({ where: { id: cancelledId }, data: signupData })
+          : await tx.campSignup.create({
+              data: { campId: params.id, userId: sessionInfo.userId, playerId: entry.playerId, ...signupData },
+            })
+        await (cancelledId ? reviveObligation : ensureObligation)(tx, {
+          payerUserId: sessionInfo.userId,
+          payeeTenantId: camp.tenantId,
+          referenceType: "CampSignup",
+          referenceId: signup.id,
+          description: `Camp fee — ${camp.name} (${weeksCount} week${weeksCount > 1 ? "s" : ""})`,
+          amount: fee.total,
+          currency: camp.tenant?.currency ?? "CAD",
+        })
+        created.push({ playerId: entry.playerId, signupId: signup.id, totalFee: fee.total, weeksCount })
+      }
       return created
     })
 
-    // Notify the club that a new signup arrived (gap: signups were silent).
+    const names = results.map((r) => {
+      const p = playerById.get(r.playerId)!
+      return `${p.firstName} ${p.lastName}`
+    })
+
+    // Notify the club that new signups arrived.
     const staff = await prisma.userRole.findMany({
       where: { tenantId: camp.tenantId, role: { in: ["ClubOwner", "ClubManager", "Trainer"] as any } },
       select: { userId: true },
@@ -126,29 +189,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       {
         type: "signup_received",
         title: "New Camp Signup",
-        message: `A new player signed up for "${camp.name}".`,
+        message: `${names.join(", ")} signed up for "${camp.name}".`,
         link: `/clubs/${camp.tenantId}/camps`,
-        referenceId: signup.id,
+        referenceId: results[0].signupId,
         referenceType: "CampSignup",
       }
     )
 
-    // ── Family-side confirmation (gap: the paying family got nothing) ──
-    // All additive best-effort side-effects: never fail the registration.
-    const playerName = `${player.firstName} ${player.lastName}`
+    // ── Family-side confirmation — additive best-effort, never fails the
+    // registration. ONE notification + ONE email covering every kid.
     const clubName = camp.tenant?.name ?? "the club"
     const currency = camp.tenant?.currency ?? "CAD"
-    const feeText = totalFee > 0 ? formatMoney(totalFee, currency) : "Free"
+    const totalAll = results.reduce((sum, r) => sum + r.totalFee, 0)
     const dates = `${format(new Date(camp.startDate), "MMM d")} – ${format(new Date(camp.endDate), "MMM d, yyyy")}`
-    const weeksText = `${data.weeksSelected} week${data.weeksSelected > 1 ? "s" : ""}`
 
     await notifySafe({
       userId: sessionInfo.userId,
       type: "registration_confirmed",
       title: "You're registered!",
-      message: `${playerName} is registered for "${camp.name}" with ${clubName}.`,
+      message: `${names.join(" and ")} ${names.length > 1 ? "are" : "is"} registered for "${camp.name}" with ${clubName}.`,
       link: "/dashboard",
-      referenceId: signup.id,
+      referenceId: results[0].signupId,
       referenceType: "CampSignup",
     })
 
@@ -158,18 +219,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         select: { email: true },
       })
       if (parent?.email) {
+        const kidLines = results
+          .map((r) => {
+            const p = playerById.get(r.playerId)!
+            const feeText = r.totalFee > 0 ? formatMoney(r.totalFee, currency) : "Free"
+            return `<li><strong>${escapeHtml(`${p.firstName} ${p.lastName}`)}</strong> — ${r.weeksCount} week${r.weeksCount > 1 ? "s" : ""}, ${escapeHtml(feeText)}</li>`
+          })
+          .join("")
         await sendEmail({
           to: parent.email,
           subject: `Registration confirmed — ${camp.name}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>You're registered!</h2>
-              <p><strong>${escapeHtml(playerName)}</strong> is registered for <strong>${escapeHtml(camp.name)}</strong> with <strong>${escapeHtml(clubName)}</strong>.</p>
+              <p>Registered for <strong>${escapeHtml(camp.name)}</strong> with <strong>${escapeHtml(clubName)}</strong>:</p>
+              <ul>${kidLines}</ul>
               <p>
-                <strong>Dates:</strong> ${escapeHtml(dates)} (${escapeHtml(weeksText)})<br />
+                <strong>Dates:</strong> ${escapeHtml(dates)}<br />
                 <strong>Daily hours:</strong> ${escapeHtml(camp.dailyStartTime)} – ${escapeHtml(camp.dailyEndTime)}<br />
                 <strong>Where:</strong> ${escapeHtml(camp.location)}<br />
-                <strong>Fee:</strong> ${escapeHtml(feeText)}
+                <strong>Total:</strong> ${escapeHtml(totalAll > 0 ? formatMoney(totalAll, currency) : "Free")}
               </p>
               <p style="color: #666; font-size: 14px;">Payment and registration details are available on your dashboard.</p>
               <p>
@@ -189,31 +258,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // CASL: registration = existing business relationship (implied consent);
     // the explicit checkbox upgrades it to express.
     try {
-      await upsertImpliedConsent(
-        sessionInfo.userId,
-        "TENANT",
-        camp.tenantId,
-        `registration:camp:${params.id}`
-      )
+      await upsertImpliedConsent(sessionInfo.userId, "TENANT", camp.tenantId, `registration:camp:${params.id}`)
       if (data.marketingConsent === true) {
-        await grantExpressConsent(
-          sessionInfo.userId,
-          "TENANT",
-          camp.tenantId,
-          `checkbox:camp:${params.id}`
-        )
+        await grantExpressConsent(sessionInfo.userId, "TENANT", camp.tenantId, `checkbox:camp:${params.id}`)
       }
     } catch (consentError) {
       console.error("Camp consent capture failed:", consentError)
     }
 
-    return NextResponse.json({ success: true, id: signup.id, totalFee }, { status: 201 })
+    return NextResponse.json(
+      // Legacy top-level id/totalFee kept for fielded single-kid clients.
+      { success: true, id: results[0].signupId, totalFee: totalAll, results },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }
     console.error("Camp signup error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

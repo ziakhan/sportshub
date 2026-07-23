@@ -266,5 +266,76 @@ export async function sendOverdueReminders(now = new Date()): Promise<{ nagged: 
     }
     nagged++
   }
+
+  // ── Club-owed obligations (payerTenantId — league team fees, tournament
+  // entries). Payment audit 2026-07-23: these previously got NO reminder at
+  // all, so an overdue club→league fee could sit unnagged forever. Nag every
+  // ClubOwner/ClubManager on the payer club, same cadence per reference.
+  const clubObligations = await (prisma as any).paymentObligation.findMany({
+    where: {
+      status: { in: ["PENDING", "PARTIALLY_PAID"] },
+      dueDate: { lt: now, gte: floor },
+      payerTenantId: { not: null },
+    },
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      dueDate: true,
+      description: true,
+      payerTenantId: true,
+    },
+    take: 1000,
+  })
+
+  for (const o of clubObligations) {
+    const admins = await prisma.userRole.findMany({
+      where: { tenantId: o.payerTenantId, role: { in: ["ClubOwner", "ClubManager"] as any } },
+      select: { userId: true },
+      distinct: ["userId"],
+    })
+    if (admins.length === 0) continue
+
+    const daysLate = Math.max(1, Math.floor((now.getTime() - new Date(o.dueDate).getTime()) / DAY))
+    const money = formatMoney(Number(o.amount), o.currency)
+    const message = `${o.description ?? "Club fee"} — ${money} was due ${daysLate} day${daysLate === 1 ? "" : "s"} ago.`
+
+    for (const admin of admins) {
+      const recent = await prisma.notification.findFirst({
+        where: {
+          userId: admin.userId,
+          type: "payment_overdue",
+          referenceId: o.id,
+          createdAt: { gt: nagCutoff },
+        },
+        select: { id: true },
+      })
+      if (recent) continue
+
+      await notify(prisma, {
+        userId: admin.userId,
+        type: "payment_overdue",
+        title: "Club payment overdue",
+        message,
+        link: `/clubs/${o.payerTenantId}/payments`,
+        referenceId: o.id,
+        referenceType: "PaymentObligation",
+      })
+
+      const user = await prisma.user.findUnique({
+        where: { id: admin.userId },
+        select: { email: true },
+      })
+      if (user?.email) {
+        await sendEmail({
+          to: user.email,
+          subject: `Club payment overdue — ${money}`,
+          html: `<p>${message}</p><p>Settle it from your club payments page: <a href="${appBaseUrl()}/clubs/${o.payerTenantId}/payments">Club payments</a>.</p>`,
+        }).catch(() => {})
+      }
+      nagged++
+    }
+  }
+
   return { nagged }
 }

@@ -18,6 +18,14 @@ import { useMyCalendar } from "@/lib/calendar"
 import { ui } from "@/lib/theme"
 import type { KidRow } from "./index"
 
+/** Calendar age — mirrors web lib/coppa calculateAge (no float-year drift). */
+function calendarAge(dob: Date, at = new Date()): number {
+  let age = at.getFullYear() - dob.getFullYear()
+  const monthDiff = at.getMonth() - dob.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && at.getDate() < dob.getDate())) age--
+  return age
+}
+
 /**
  * Kid detail — web /players card anatomy (element sweep 2026-07-17): hero
  * with chips (age/position/jersey), team rows with monogram + jersey +
@@ -113,7 +121,7 @@ export default function KidDetailScreen() {
   }
 
   const age = kid.dateOfBirth
-    ? Math.floor((Date.now() - new Date(kid.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000))
+    ? calendarAge(new Date(kid.dateOfBirth))
     : null
   const chips = [
     age != null ? `Age ${age}` : null,

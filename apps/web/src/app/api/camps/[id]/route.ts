@@ -72,6 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "details",
       "campType",
       "ageGroup",
+      "agePolicy",
       "gender",
       "dailyStartTime",
       "dailyEndTime",

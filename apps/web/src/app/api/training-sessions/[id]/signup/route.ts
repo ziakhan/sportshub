@@ -3,24 +3,22 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { notifyMany, notifySafe } from "@/lib/notifications"
-import { ensureObligation } from "@/lib/payments/obligations"
+import { ensureObligation, reviveObligation } from "@/lib/payments/obligations"
 import { sendEmail, appBaseUrl, escapeHtml, formatMoney, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent, grantExpressConsent } from "@/lib/comms/consent"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
 import { formatTrainingSchedule } from "@/lib/training"
+import { signupPayloadSchema, normalizeRegistrations } from "@/lib/registration/payload"
+import { checkEligibility } from "@/lib/registration/eligibility"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
-const signupSchema = z.object({
-  playerId: z.string(),
-  notes: z.string().optional(),
-  marketingConsent: z.boolean().optional(),
-})
-
 /**
- * POST /api/training-sessions/[id]/signup — a parent registers their player
- * for a trainer's session. Mirrors camp signup: capacity + dup checks,
- * fee → PaymentObligation, both sides notified (batch-backlog §5 P1).
+ * POST /api/training-sessions/[id]/signup — register one or more of the
+ * parent's kids for a trainer's session (owner 2026-07-23: multi-kid; legacy
+ * `{ playerId }` accepted forever). One signup + one obligation per kid;
+ * STRICT age policy blocks ineligible kids server-side.
  */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -30,20 +28,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json()
-    const data = signupSchema.parse(body)
+    const data = signupPayloadSchema.parse(body)
+    const entries = normalizeRegistrations(data)
+    if (entries.length === 0) {
+      return NextResponse.json({ error: "Select at least one player" }, { status: 400 })
+    }
 
-    const player = await prisma.player.findFirst({
-      where: { id: data.playerId, parentId: sessionInfo.userId },
+    const players = await prisma.player.findMany({
+      where: { id: { in: entries.map((e) => e.playerId) }, parentId: sessionInfo.userId },
+      select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
     })
-    if (!player) {
+    if (players.length !== entries.length) {
       return NextResponse.json({ error: "Player not found" }, { status: 403 })
     }
+    const playerById = new Map(players.map((p) => [p.id, p]))
 
     const session = await (prisma as any).trainingSession.findUnique({
       where: { id: params.id },
       include: {
         tenant: { select: { name: true, currency: true } },
-        _count: { select: { signups: { where: { status: "CONFIRMED" } } } },
+        _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
       },
     })
 
@@ -51,60 +55,111 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Session not found" }, { status: 404 })
     }
 
-    const endReference =
-      session.scheduleType === "RECURRING" ? session.endDate : session.startAt
+    const endReference = session.scheduleType === "RECURRING" ? session.endDate : session.startAt
     if (endReference && new Date(endReference) < new Date()) {
       return NextResponse.json({ error: "This program has ended" }, { status: 400 })
     }
 
-    if (session.capacity && session._count.signups >= session.capacity) {
-      return NextResponse.json({ error: "This program is full" }, { status: 400 })
+    if (session.capacity && session._count.signups + entries.length > session.capacity) {
+      const left = Math.max(0, session.capacity - session._count.signups)
+      return NextResponse.json(
+        { error: left === 0 ? "This program is full" : `Only ${left} spot${left === 1 ? "" : "s"} left` },
+        { status: 400 }
+      )
     }
 
-    const existing = await (prisma as any).trainingSessionSignup.findUnique({
-      where: { sessionId_playerId: { sessionId: params.id, playerId: data.playerId } },
-    })
-    if (existing && existing.status !== "CANCELLED") {
-      return NextResponse.json({ error: "This player is already registered" }, { status: 409 })
+    for (const entry of entries) {
+      const player = playerById.get(entry.playerId)!
+      const eligibility = checkEligibility({
+        dateOfBirth: player.dateOfBirth,
+        gender: player.gender,
+        program: { ageGroup: session.ageGroup, agePolicy: session.agePolicy, gender: session.gender },
+      })
+      if (eligibility.status === "block") {
+        return NextResponse.json(
+          {
+            error: `${player.firstName} ${player.lastName} isn't eligible: ${eligibility.reason}`,
+            code: "NOT_ELIGIBLE",
+          },
+          { status: 400 }
+        )
+      }
     }
 
-    const outstandingWaivers = await getOutstandingRequiredWaivers({
-      tenantId: session.tenantId,
-      playerId: player.id,
+    const existing = await (prisma as any).trainingSessionSignup.findMany({
+      where: { sessionId: params.id, playerId: { in: entries.map((e) => e.playerId) } },
     })
-    if (outstandingWaivers.length > 0) {
-      return NextResponse.json(waiversRequiredResponse(outstandingWaivers), { status: 409 })
+    const activeDup = existing.find((s: any) => s.status !== "CANCELLED")
+    if (activeDup) {
+      const p = playerById.get(activeDup.playerId)
+      return NextResponse.json(
+        { error: `${p ? `${p.firstName} ${p.lastName}` : "This player"} is already registered` },
+        { status: 409 }
+      )
+    }
+    const cancelledByPlayer = new Map(
+      existing.filter((s: any) => s.status === "CANCELLED").map((s: any) => [s.playerId, s.id])
+    )
+
+    const waiversByPlayer: Array<{ playerId: string; playerName: string; waivers: any[] }> = []
+    for (const entry of entries) {
+      const player = playerById.get(entry.playerId)!
+      const outstanding = await getOutstandingRequiredWaivers({
+        tenantId: session.tenantId,
+        playerId: player.id,
+      })
+      if (outstanding.length > 0) {
+        waiversByPlayer.push({
+          playerId: player.id,
+          playerName: `${player.firstName} ${player.lastName}`,
+          waivers: outstanding,
+        })
+      }
+    }
+    if (waiversByPlayer.length > 0) {
+      return NextResponse.json(
+        { ...waiversRequiredResponse(waiversByPlayer[0].waivers), waiversByPlayer },
+        { status: 409 }
+      )
     }
 
     const totalFee = Number(session.fee)
 
-    const signup = await prisma.$transaction(async (tx: any) => {
-      if (existing) {
-        // Re-registering after a cancellation reuses the row
-        return tx.trainingSessionSignup.update({
-          where: { id: existing.id },
-          data: { status: "CONFIRMED", totalFee, notes: data.notes || null },
+    const results = await prisma.$transaction(async (tx: any) => {
+      const created: Array<{ playerId: string; signupId: string }> = []
+      for (const entry of entries) {
+        const cancelledId = cancelledByPlayer.get(entry.playerId)
+        const signup = cancelledId
+          ? await tx.trainingSessionSignup.update({
+              where: { id: cancelledId },
+              data: { status: "CONFIRMED", totalFee, notes: data.notes || null },
+            })
+          : await tx.trainingSessionSignup.create({
+              data: {
+                sessionId: params.id,
+                userId: sessionInfo.userId,
+                playerId: entry.playerId,
+                totalFee,
+                notes: data.notes || null,
+              },
+            })
+        await (cancelledId ? reviveObligation : ensureObligation)(tx, {
+          payerUserId: sessionInfo.userId,
+          payeeTenantId: session.tenantId,
+          referenceType: "TrainingSessionSignup",
+          referenceId: signup.id,
+          description: `Training fee — ${session.title}`,
+          amount: totalFee,
+          currency: session.tenant?.currency ?? "CAD",
         })
+        created.push({ playerId: entry.playerId, signupId: signup.id })
       }
-      const created = await tx.trainingSessionSignup.create({
-        data: {
-          sessionId: params.id,
-          userId: sessionInfo.userId,
-          playerId: data.playerId,
-          totalFee,
-          notes: data.notes || null,
-        },
-      })
-      await ensureObligation(tx, {
-        payerUserId: sessionInfo.userId,
-        payeeTenantId: session.tenantId,
-        referenceType: "TrainingSessionSignup",
-        referenceId: created.id,
-        description: `Training fee — ${session.title}`,
-        amount: totalFee,
-        currency: session.tenant?.currency ?? "CAD",
-      })
       return created
+    })
+
+    const names = results.map((r) => {
+      const p = playerById.get(r.playerId)!
+      return `${p.firstName} ${p.lastName}`
     })
 
     const staff = await prisma.userRole.findMany({
@@ -120,26 +175,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       {
         type: "signup_received",
         title: "New Training Signup",
-        message: `A new player signed up for "${session.title}".`,
+        message: `${names.join(", ")} signed up for "${session.title}".`,
         link: `/clubs/${session.tenantId}/training`,
-        referenceId: signup.id,
+        referenceId: results[0].signupId,
         referenceType: "TrainingSessionSignup",
       }
     )
 
-    const playerName = `${player.firstName} ${player.lastName}`
     const trainerName = session.tenant?.name ?? "the trainer"
     const currency = session.tenant?.currency ?? "CAD"
-    const feeText = totalFee > 0 ? formatMoney(totalFee, currency) : "Free"
+    const totalAll = totalFee * results.length
     const scheduleText = formatTrainingSchedule(session)
 
     await notifySafe({
       userId: sessionInfo.userId,
       type: "registration_confirmed",
       title: "You're registered!",
-      message: `${playerName} is registered for "${session.title}" with ${trainerName}.`,
+      message: `${names.join(" and ")} ${names.length > 1 ? "are" : "is"} registered for "${session.title}" with ${trainerName}.`,
       link: "/dashboard",
-      referenceId: signup.id,
+      referenceId: results[0].signupId,
       referenceType: "TrainingSessionSignup",
     })
 
@@ -149,17 +203,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         select: { email: true },
       })
       if (parent?.email) {
+        const kidLines = names
+          .map((n) => `<li><strong>${escapeHtml(n)}</strong> — ${escapeHtml(totalFee > 0 ? formatMoney(totalFee, currency) : "Free")}</li>`)
+          .join("")
         await sendEmail({
           to: parent.email,
           subject: `Registration confirmed — ${session.title}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>You're registered!</h2>
-              <p><strong>${escapeHtml(playerName)}</strong> is registered for <strong>${escapeHtml(session.title)}</strong> with <strong>${escapeHtml(trainerName)}</strong>.</p>
+              <p>Registered for <strong>${escapeHtml(session.title)}</strong> with <strong>${escapeHtml(trainerName)}</strong>:</p>
+              <ul>${kidLines}</ul>
               <p>
                 <strong>When:</strong> ${escapeHtml(scheduleText)}<br />
                 ${session.location ? `<strong>Where:</strong> ${escapeHtml(session.location)}<br />` : ""}
-                <strong>Fee:</strong> ${escapeHtml(feeText)}
+                <strong>Total:</strong> ${escapeHtml(totalAll > 0 ? formatMoney(totalAll, currency) : "Free")}
               </p>
               <p style="color: #666; font-size: 14px;">Payment and registration details are available on your dashboard.</p>
               <p>
@@ -177,31 +235,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     try {
-      await upsertImpliedConsent(
-        sessionInfo.userId,
-        "TENANT",
-        session.tenantId,
-        `registration:training:${params.id}`
-      )
+      await upsertImpliedConsent(sessionInfo.userId, "TENANT", session.tenantId, `registration:training:${params.id}`)
       if (data.marketingConsent === true) {
-        await grantExpressConsent(
-          sessionInfo.userId,
-          "TENANT",
-          session.tenantId,
-          `checkbox:training:${params.id}`
-        )
+        await grantExpressConsent(sessionInfo.userId, "TENANT", session.tenantId, `checkbox:training:${params.id}`)
       }
     } catch (consentError) {
       console.error("Training consent capture failed:", consentError)
     }
 
-    return NextResponse.json({ success: true, id: signup.id, totalFee }, { status: 201 })
+    return NextResponse.json({ success: true, id: results[0].signupId, totalFee: totalAll, results }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }
     console.error("Training signup error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

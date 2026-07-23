@@ -13,6 +13,7 @@ const updateTryoutSchema = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().nullable().optional(),
   ageGroup: z.string().optional(),
+  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   location: z.string().min(3).optional(),
   venueId: z.string().uuid().nullable().optional(),
@@ -181,6 +182,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (validatedData.title !== undefined) data.title = validatedData.title
     if (validatedData.description !== undefined) data.description = validatedData.description
     if (validatedData.ageGroup !== undefined) data.ageGroup = validatedData.ageGroup
+    if (validatedData.agePolicy !== undefined) data.agePolicy = validatedData.agePolicy
     if (validatedData.gender !== undefined) data.gender = validatedData.gender
     if (validatedData.location !== undefined) data.location = validatedData.location
     if (validatedData.venueId !== undefined) data.venueId = validatedData.venueId || null

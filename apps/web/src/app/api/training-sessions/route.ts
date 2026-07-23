@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { isClubAdmin } from "@/lib/authz/team-scope"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
+import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +19,7 @@ const createSchema = z
       .enum(["GROUP_TRAINING", "CLINIC", "STRENGTH_CONDITIONING", "OPEN_WORKOUT"])
       .default("GROUP_TRAINING"),
     ageGroup: z.string().trim().max(50).optional(),
+    agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
     gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
     scheduleType: z.enum(["ONE_TIME", "RECURRING"]).default("ONE_TIME"),
     startAt: z.string().datetime().optional(),
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     const sessions = await (prisma as any).trainingSession.findMany({
       where: { tenantId },
-      include: { _count: { select: { signups: { where: { status: "CONFIRMED" } } } } },
+      include: { _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
       orderBy: { createdAt: "desc" },
     })
     return NextResponse.json({
@@ -113,6 +115,7 @@ export async function POST(request: NextRequest) {
         description: data.description || null,
         sessionType: data.sessionType,
         ageGroup: data.ageGroup || null,
+        agePolicy: data.agePolicy ?? "PREFERRED",
         gender: data.gender || null,
         scheduleType: data.scheduleType,
         startAt: data.scheduleType === "ONE_TIME" && data.startAt ? new Date(data.startAt) : null,

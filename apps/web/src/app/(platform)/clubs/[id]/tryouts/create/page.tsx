@@ -9,6 +9,7 @@ import { z } from "zod"
 import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
+import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
 const createTryoutSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200),
@@ -19,6 +20,7 @@ const createTryoutSchema = z.object({
   fee: z.coerce.number().min(0, "Fee must be 0 or more"),
   maxParticipants: z.coerce.number().min(1).optional(),
   isPublic: z.boolean().default(true),
+  agePolicy: z.string().min(1, "Select an age policy"),
 })
 
 type CreateTryoutFormData = z.infer<typeof createTryoutSchema>
@@ -87,6 +89,7 @@ function CreateTryoutForm() {
     defaultValues: {
       fee: 0,
       isPublic: true,
+      agePolicy: "STRICT",
     },
   })
 
@@ -104,6 +107,7 @@ function CreateTryoutForm() {
         title: data.title,
         description: data.description || undefined,
         ageGroup: selectedTeam?.ageGroup,
+        agePolicy: data.agePolicy,
         location: data.location,
         venueId: venueId || undefined,
         scheduledAt: new Date(data.scheduledAt).toISOString(),
@@ -253,6 +257,11 @@ function CreateTryoutForm() {
                   <Badge tone="play">{genderLabel(selectedTeam.gender)}</Badge>
                 </div>
               )}
+
+              <AgePolicySelect
+                value={watch("agePolicy") || "STRICT"}
+                onChange={(v) => setValue("agePolicy", v, { shouldValidate: true })}
+              />
 
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-ink-700">

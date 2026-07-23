@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
 import { z } from "zod"
+import { calculateAge } from "@/lib/coppa"
 
 export const dynamic = "force-dynamic"
 
@@ -97,7 +98,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const data = updatePlayerSchema.parse(body)
 
     const dob = new Date(data.dateOfBirth)
-    const ageInYears = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    // Canonical calendar age (lib/coppa) — the old float formula here could
+    // flip isMinor/canLogin differently than creation near a 13th birthday.
+    const ageInYears = calculateAge(dob)
 
     const player = await prisma.player.update({
       where: { id: params.id },

@@ -80,6 +80,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "description",
       "details",
       "ageGroups",
+      "agePolicy",
       "gender",
       "season",
       "daysOfWeek",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
@@ -17,10 +17,11 @@ import { useSession } from "@/lib/session"
 import { palette, ui } from "@/lib/theme"
 
 /**
- * Program detail + NATIVE registration (owner rule: no webviews). Tryouts
- * and house leagues take a kid; camps take a kid + number of weeks.
- * Tournament registration is a league-side desktop flow — details render,
- * registration says so ("defer, never dead-end").
+ * Program detail + NATIVE registration (owner rule: no webviews). Parity
+ * with the web ProgramSignupForm (owner 2026-07-23): multi-kid checkboxes,
+ * per-kid week picker on camps, eligibility + already-registered shown
+ * BEFORE the button, payment copy from the club's actual rails. The server's
+ * `viewer` payload is THE source — same getRegistrationViewer as web.
  */
 
 interface ProgramDetail {
@@ -47,61 +48,135 @@ interface ProgramDetail {
   registration: { kind: "player" | "player-weeks" | "team-desktop"; endpoint: string | null }
 }
 
-interface Kid {
+interface ViewerKid {
   id: string
   firstName: string
   lastName: string
+  birthYear: number
+  eligibility: { status: "ok" | "warn" | "block"; reason: string | null }
+  alreadyRegistered: boolean
+}
+
+interface Viewer {
+  kids: ViewerKid[]
+  payment: { online: boolean; offlineMethods: string[] }
+}
+
+const METHOD_LABELS: Record<string, string> = {
+  CASH: "cash",
+  ETRANSFER: "e-transfer",
+  CHEQUE: "cheque",
+}
+
+function methodsText(methods: string[]): string {
+  const labels = methods.map((m) => METHOD_LABELS[m] ?? m.toLowerCase())
+  return labels.length <= 1 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`
+}
+
+/** Same math as web lib/registration/camp-pricing (server is authoritative). */
+function campTotal(program: ProgramDetail, weeksCount: number): number {
+  const n = program.numberOfWeeks ?? 1
+  const weeklyTotal = program.fee * weeksCount
+  if (weeksCount >= n && program.fullCampFee != null && program.fullCampFee <= weeklyTotal) {
+    return program.fullCampFee
+  }
+  return weeklyTotal
 }
 
 export default function ProgramDetailScreen() {
   const { type, id } = useLocalSearchParams<{ type: string; id: string }>()
   const { signedIn } = useSession()
   const [program, setProgram] = useState<ProgramDetail | null>(null)
+  const [viewer, setViewer] = useState<Viewer | null>(null)
   const [error, setError] = useState(false)
-  const [kids, setKids] = useState<Kid[] | null>(null)
-  const [kidId, setKidId] = useState<string | null>(null)
-  const [weeks, setWeeks] = useState(1)
+  const [selected, setSelected] = useState<string[]>([])
+  const [weeksByKid, setWeeksByKid] = useState<Record<string, number[]>>({})
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  useEffect(() => {
-    apiJson<{ program: ProgramDetail }>(`/api/mobile/browse/programs/${type}/${id}`)
-      .then((d) => setProgram(d.program))
+  const load = useCallback(() => {
+    apiJson<{ program: ProgramDetail; viewer: Viewer | null }>(
+      `/api/mobile/browse/programs/${type}/${id}`
+    )
+      .then((d) => {
+        setProgram(d.program)
+        setViewer(d.viewer ?? null)
+        const selectable = (d.viewer?.kids ?? []).filter(
+          (k) => !k.alreadyRegistered && k.eligibility.status !== "block"
+        )
+        if (selectable.length === 1) setSelected([selectable[0].id])
+      })
       .catch(() => setError(true))
   }, [type, id])
 
   useEffect(() => {
-    if (!signedIn) return
-    apiJson<{ players: Kid[] }>("/api/players")
-      .then((d) => {
-        setKids(d.players)
-        if (d.players.length === 1) setKidId(d.players[0].id)
-      })
-      .catch(() => setKids([]))
-  }, [signedIn])
+    load()
+  }, [load, signedIn])
+
+  const allWeeks = useMemo(
+    () => (program?.numberOfWeeks ? Array.from({ length: program.numberOfWeeks }, (_, i) => i + 1) : []),
+    [program?.numberOfWeeks]
+  )
+  const kidWeeks = useCallback(
+    (kidId: string) => weeksByKid[kidId] ?? allWeeks,
+    [weeksByKid, allWeeks]
+  )
+
+  const isCamp = program?.registration.kind === "player-weeks"
+  const totalFor = useCallback(
+    (kidId: string) => (program ? (isCamp ? campTotal(program, kidWeeks(kidId).length) : program.fee) : 0),
+    [program, isCamp, kidWeeks]
+  )
+  const total = selected.reduce((sum, kidId) => sum + totalFor(kidId), 0)
+
+  const toggleKid = (kidId: string) =>
+    setSelected((prev) => (prev.includes(kidId) ? prev.filter((k) => k !== kidId) : [...prev, kidId]))
+
+  const toggleWeek = (kidId: string, week: number) =>
+    setWeeksByKid((prev) => {
+      const current = prev[kidId] ?? allWeeks
+      const next = current.includes(week)
+        ? current.filter((w) => w !== week)
+        : [...current, week].sort((a, b) => a - b)
+      return { ...prev, [kidId]: next.length === 0 ? current : next }
+    })
 
   const register = useCallback(async () => {
-    if (!program?.registration.endpoint || !kidId || busy) return
+    if (!program?.registration.endpoint || selected.length === 0 || busy) return
     setBusy(true)
     setFormError(null)
     try {
       await apiJson(program.registration.endpoint, {
         method: "POST",
-        body: JSON.stringify(
-          program.registration.kind === "player-weeks"
-            ? { playerId: kidId, weeksSelected: weeks }
-            : { playerId: kidId }
-        ),
+        body: JSON.stringify({
+          registrations: selected.map((playerId) => ({
+            playerId,
+            ...(isCamp ? { weekNumbers: kidWeeks(playerId) } : {}),
+          })),
+        }),
       })
-      Alert.alert("You're in! 🏀", "Registration received — the club will follow up from here.", [
-        { text: "Done", onPress: () => router.back() },
-      ])
+      const names = selected
+        .map((kidId) => viewer?.kids.find((k) => k.id === kidId))
+        .filter(Boolean)
+        .map((k) => k!.firstName)
+      const paymentLine = !program.fee
+        ? "See you there!"
+        : viewer?.payment.online
+          ? "You can pay online from your Payments page."
+          : viewer?.payment.offlineMethods.length
+            ? `The club accepts ${methodsText(viewer.payment.offlineMethods)} — pay them directly.`
+            : "The club will contact you about payment."
+      Alert.alert(
+        "You're in! 🏀",
+        `${names.join(" and ")} ${names.length > 1 ? "are" : "is"} registered. ${paymentLine}`,
+        [{ text: "Done", onPress: () => router.back() }]
+      )
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Registration failed")
     } finally {
       setBusy(false)
     }
-  }, [program, kidId, weeks, busy])
+  }, [program, selected, busy, isCamp, kidWeeks, viewer])
 
   if (error) {
     return (
@@ -120,6 +195,7 @@ export default function ProgramDetailScreen() {
     )
   }
 
+  const kids = viewer?.kids ?? []
   const spotsLeft =
     program.maxParticipants != null ? program.maxParticipants - program.signedUp : null
   const full = spotsLeft != null && spotsLeft <= 0
@@ -192,56 +268,98 @@ export default function ProgramDetailScreen() {
           <>
             <SectionHeader eyebrow="Register" title="Who's playing?" accent="hoop" />
             <Card>
-              {kids === null ? (
+              {viewer === null ? (
                 <Loading />
               ) : kids.length === 0 ? (
                 <Text style={styles.body}>
                   Add your player under Account → My kids first, then come back to register.
                 </Text>
               ) : (
-                kids.map((k) => (
-                  <Pressable
-                    key={k.id}
-                    style={[styles.kidOption, kidId === k.id && styles.kidOptionOn]}
-                    onPress={() => setKidId(k.id)}
-                  >
-                    <Text style={[styles.kidName, kidId === k.id && styles.kidNameOn]}>
-                      {k.firstName} {k.lastName}
-                    </Text>
-                  </Pressable>
-                ))
+                kids.map((k) => {
+                  const checked = selected.includes(k.id)
+                  const blocked = k.alreadyRegistered || k.eligibility.status === "block"
+                  return (
+                    <View key={k.id}>
+                      <Pressable
+                        style={[
+                          styles.kidOption,
+                          checked && styles.kidOptionOn,
+                          blocked && styles.kidOptionOff,
+                        ]}
+                        disabled={blocked}
+                        onPress={() => toggleKid(k.id)}
+                      >
+                        <View style={styles.kidRow}>
+                          <Text
+                            style={[
+                              styles.kidName,
+                              checked && styles.kidNameOn,
+                              blocked && styles.kidNameOff,
+                            ]}
+                          >
+                            {k.firstName} {k.lastName}
+                          </Text>
+                          {k.alreadyRegistered ? (
+                            <TonePill tone="positive" label="✓ Registered" />
+                          ) : k.eligibility.status === "block" ? (
+                            <TonePill tone="danger" label="Not eligible" />
+                          ) : k.eligibility.status === "warn" ? (
+                            <TonePill tone="warning" label="Outside age group" />
+                          ) : null}
+                        </View>
+                        {!k.alreadyRegistered && k.eligibility.reason ? (
+                          <Text style={styles.reason}>
+                            {k.firstName} is {k.eligibility.reason}
+                            {k.eligibility.status === "warn" ? " — you can still register." : "."}
+                          </Text>
+                        ) : null}
+                      </Pressable>
+                      {isCamp && checked && (program.numberOfWeeks ?? 1) > 1 ? (
+                        <View style={styles.weekRow}>
+                          {allWeeks.map((n) => {
+                            const on = kidWeeks(k.id).includes(n)
+                            return (
+                              <Pressable
+                                key={n}
+                                style={[styles.weekChip, on && styles.kidOptionOn]}
+                                onPress={() => toggleWeek(k.id, n)}
+                              >
+                                <Text style={[styles.kidName, on && styles.kidNameOn]}>W{n}</Text>
+                              </Pressable>
+                            )
+                          })}
+                          <Text style={styles.weekTotal}>
+                            {kidWeeks(k.id).length}/{program.numberOfWeeks} wks ·{" "}
+                            {program.currency} {totalFor(k.id).toFixed(0)}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  )
+                })
               )}
             </Card>
 
-            {program.registration.kind === "player-weeks" && program.numberOfWeeks ? (
-              <Card>
-                <Text style={styles.label}>Weeks</Text>
-                <View style={styles.weekRow}>
-                  {Array.from({ length: program.numberOfWeeks }, (_, i) => i + 1).map((n) => (
-                    <Pressable
-                      key={n}
-                      style={[styles.weekChip, weeks === n && styles.kidOptionOn]}
-                      onPress={() => setWeeks(n)}
-                    >
-                      <Text style={[styles.kidName, weeks === n && styles.kidNameOn]}>{n}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <Text style={styles.footnote}>
-                  {program.fullCampFee != null && weeks >= program.numberOfWeeks
-                    ? `Full camp: ${program.currency} ${program.fullCampFee.toFixed(0)}`
-                    : `${program.currency} ${(program.fee * weeks).toFixed(0)} total`}
-                </Text>
-              </Card>
-            ) : null}
-
             {formError ? <Text style={styles.error}>{formError}</Text> : null}
             <PrimaryButton
-              label={program.fee > 0 ? "Register — pay via the club" : "Register"}
+              label={
+                total > 0
+                  ? `Register${selected.length > 1 ? ` ${selected.length} players` : ""} · ${program.currency} ${total.toFixed(0)}`
+                  : `Register${selected.length > 1 ? ` ${selected.length} players` : ""}`
+              }
               onPress={register}
               busy={busy}
-              disabled={!kidId}
+              disabled={selected.length === 0}
             />
+            {total > 0 && viewer ? (
+              <Text style={styles.footnote}>
+                {viewer.payment.online
+                  ? "Pay online after registering — no charge until you do."
+                  : viewer.payment.offlineMethods.length > 0
+                    ? `This organizer accepts ${methodsText(viewer.payment.offlineMethods)} — pay them directly after registering.`
+                    : "The organizer will contact you about payment after registering."}
+              </Text>
+            ) : null}
           </>
         )}
       </ScrollView>
@@ -259,13 +377,6 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, color: ui.textMuted, marginTop: 2 },
   spots: { fontSize: 12, color: ui.primaryInk, fontWeight: "700", marginTop: 6 },
   body: { fontSize: 13, color: ui.textMuted, lineHeight: 19 },
-  label: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: ui.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
   kidOption: {
     borderWidth: 1,
     borderColor: ui.borderStrong,
@@ -274,16 +385,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   kidOptionOn: { borderColor: ui.primary, backgroundColor: palette.play[50] },
+  kidOptionOff: { opacity: 0.6, backgroundColor: ui.background },
+  kidRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   kidName: { fontSize: 15, fontWeight: "600", color: ui.text },
   kidNameOn: { color: palette.play[700] },
-  weekRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  kidNameOff: { color: ui.textFaint },
+  reason: { fontSize: 12, color: ui.textMuted, marginTop: 4, lineHeight: 16 },
+  weekRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 6,
+    marginLeft: 12,
+  },
   weekChip: {
     borderWidth: 1,
     borderColor: ui.borderStrong,
     borderRadius: ui.radius.sm,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
+  weekTotal: { fontSize: 12, color: ui.textMuted, fontWeight: "600" },
   error: { color: palette.hoop[600], fontSize: 14, textAlign: "center" },
   footnote: { fontSize: 12, color: ui.textFaint, textAlign: "center", marginTop: 6 },
 })
