@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native"
 import { router } from "expo-router"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
 import { StoriesRail } from "@/components/stories-rail"
 import { apiBaseUrl, apiJson } from "@/lib/api"
@@ -196,9 +197,14 @@ function FeedCard({ item }: { item: FeedItem }) {
       <View style={styles.actions}>
         <View>
           <Pressable onPress={() => setPickerOpen((o) => !o)} style={styles.actionBtn}>
-            <Text style={styles.actionText}>
-              {myEmojis.length > 0 ? myEmojis.join("") : "♡"} {reactionCount > 0 ? reactionCount : ""}
-            </Text>
+            {myEmojis.length > 0 ? (
+              <Text style={styles.actionText}>{myEmojis.join("")} {reactionCount}</Text>
+            ) : (
+              <View style={styles.actionIconRow}>
+                <Ionicons name="heart-outline" size={24} color="#42424c" />
+                {reactionCount > 0 ? <Text style={styles.actionCount}>{reactionCount}</Text> : null}
+              </View>
+            )}
           </Pressable>
           {pickerOpen ? (
             <View style={styles.picker}>
@@ -211,18 +217,22 @@ function FeedCard({ item }: { item: FeedItem }) {
           ) : null}
         </View>
         <Pressable onPress={openComments} style={styles.actionBtn}>
-          <Text style={styles.actionText}>💬 {commentCount > 0 ? commentCount : ""}</Text>
+          <View style={styles.actionIconRow}>
+            <Ionicons name="chatbubble-outline" size={23} color="#42424c" />
+            {commentCount > 0 ? <Text style={styles.actionCount}>{commentCount}</Text> : null}
+          </View>
         </Pressable>
         {item.visibility === "PUBLIC" ? (
           <Pressable onPress={toggleRepost} style={styles.actionBtn}>
-            <Text style={[styles.actionText, reposted && { color: palette.court[700] }]}>
-              🔁 {repostCount > 0 ? repostCount : ""}
-            </Text>
+            <View style={styles.actionIconRow}>
+              <Ionicons name="repeat-outline" size={26} color={reposted ? palette.court[700] : "#42424c"} />
+              {repostCount > 0 ? <Text style={[styles.actionCount, reposted && { color: palette.court[700] }]}>{repostCount}</Text> : null}
+            </View>
           </Pressable>
         ) : null}
         <View style={{ flex: 1 }} />
         <Pressable onPress={shareOut} style={styles.actionBtn}>
-          <Text style={styles.actionText}>📤</Text>
+          <Ionicons name="paper-plane-outline" size={23} color="#42424c" />
         </Pressable>
       </View>
       {commentsOpen ? (
@@ -254,19 +264,21 @@ function FeedCard({ item }: { item: FeedItem }) {
 
 export default function SocialScreen() {
   const { signedIn } = useSession()
+  const [mode, setMode] = useState<"feed" | "mine">("feed")
   const [items, setItems] = useState<FeedItem[] | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
     try {
-      const data = await apiJson<{ items: FeedItem[] }>("/api/feed")
+      const data = await apiJson<{ items: FeedItem[] }>(mode === "mine" ? "/api/feed/mine" : "/api/feed")
       setItems(data.items)
     } catch {
       setItems([])
     }
-  }, [])
+  }, [mode])
 
   useEffect(() => {
+    setItems(null)
     if (signedIn) void load()
   }, [signedIn, load])
 
@@ -310,6 +322,26 @@ export default function SocialScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Social's OWN bottom bar (web ruling: Feed · My posts · Site) */}
+      <View style={styles.socialBar}>
+        {([["feed", "Feed", "basketball-outline"], ["mine", "My posts", "person-circle-outline"]] as const).map(
+          ([key, label, icon]) => (
+            <Pressable key={key} style={styles.socialBarBtn} onPress={() => setMode(key)}>
+              <View style={[styles.socialBarCapsule, mode === key && styles.socialBarCapsuleOn]}>
+                <Ionicons name={icon} size={22} color={mode === key ? "#fff" : "#5e5e6e"} />
+                <Text style={[styles.socialBarLabel, mode === key && styles.socialBarLabelOn]}>{label}</Text>
+              </View>
+            </Pressable>
+          )
+        )}
+        <Pressable style={styles.socialBarBtn} onPress={() => router.navigate("/")}>
+          <View style={styles.socialBarCapsule}>
+            <Ionicons name="home-outline" size={22} color="#5e5e6e" />
+            <Text style={styles.socialBarLabel}>Site</Text>
+          </View>
+        </Pressable>
+      </View>
     </View>
   )
 }
@@ -351,7 +383,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 10.5, fontFamily: fonts.bodyBold },
   title: { fontSize: 15, fontFamily: fonts.display, color: ui.text, paddingHorizontal: 14 },
   body: { fontSize: 13, fontFamily: fonts.body, color: ui.textMuted, paddingHorizontal: 14, marginTop: 3 },
-  cardImage: { width: "100%", aspectRatio: 1080 / 1350, marginTop: 10, maxHeight: 460 },
+  cardImage: { width: "100%", aspectRatio: 1080 / 1350, marginTop: 10, backgroundColor: "#eeeef1" },
   mediaImage: { width: "100%", height: 220, marginTop: 10 },
   actions: {
     flexDirection: "row",
@@ -404,6 +436,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   commentSendText: { color: "#fff", fontSize: 12, fontFamily: fonts.bodyBold },
+  actionIconRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  actionCount: { fontSize: 13, fontFamily: fonts.bodySemi, color: "#42424c" },
+  socialBar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#fff",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ui.border,
+    paddingTop: 6,
+    paddingBottom: 24,
+  },
+  socialBarBtn: { flex: 1, alignItems: "center" },
+  socialBarCapsule: { alignItems: "center", gap: 2, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 5 },
+  socialBarCapsuleOn: { backgroundColor: palette.hoop[500] },
+  socialBarLabel: { fontSize: 11.5, fontFamily: fonts.bodyBold, color: "#5e5e6e" },
+  socialBarLabelOn: { color: "#fff" },
   empty: { backgroundColor: "#fff", borderRadius: 20, padding: 24, alignItems: "center", gap: 6 },
   emptyTitle: { fontSize: 16, fontFamily: fonts.display, color: ui.text },
   emptyBody: { fontSize: 13, fontFamily: fonts.body, color: ui.textMuted, textAlign: "center" },

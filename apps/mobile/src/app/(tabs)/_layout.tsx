@@ -186,6 +186,8 @@ export default function TabsLayout() {
         name="social"
         options={{
           title: "Social",
+          // The social space swaps in its OWN bottom bar (web ruling):
+          tabBarStyle: { display: "none" },
           tabBarItemStyle: signedIn ? undefined : { display: "none" },
           tabBarButton: (props) =>
             signedIn ? (
