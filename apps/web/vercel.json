@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": { "deploymentEnabled": false },
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "cd ../.. && npx prisma generate --schema=prisma/schema.prisma && npx turbo run build --filter=@youthbasketballhub/web",
   "framework": "nextjs",
