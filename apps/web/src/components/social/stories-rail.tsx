@@ -93,7 +93,7 @@ export function StoriesRail({
 
   return wrap(
     <div className={className}>
-      <div className="flex gap-2 overflow-x-auto py-0.5">
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto py-0.5">
         {rail.map((entry, ei) => (
           <button
             key={entry.playerId}
@@ -101,13 +101,13 @@ export function StoriesRail({
               setOpen({ entry: ei, story: 0 })
               markViewed(entry.stories[0].id)
             }}
-            className="flex w-[86px] shrink-0 flex-col items-center gap-0.5"
+            className="flex w-[84px] shrink-0 flex-col items-center gap-0.5"
           >
             <span
               className={cn(
                 "rounded-full p-[3px]",
                 entry.allViewed
-                  ? "bg-ink-200 p-[2px]"
+                  ? "bg-ink-200/60 p-px"
                   : "from-gold-400 via-hoop-500 to-play-600 bg-gradient-to-tr"
               )}
             >

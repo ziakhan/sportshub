@@ -31,9 +31,9 @@ function Ic({ d, className, filled }: { d: string; className?: string; filled?: 
   )
 }
 const IC = {
-  heart: "M19 14c1.5-1.4 3-3.1 3-5.3A4.7 4.7 0 0 0 17.3 4c-1.6 0-3 .8-4.2 2.1a1.5 1.5 0 0 1-2.2 0C9.7 4.8 8.3 4 6.7 4A4.7 4.7 0 0 0 2 8.7c0 2.2 1.5 3.9 3 5.3l6.3 6a1 1 0 0 0 1.4 0Z",
-  chat: "M21 12a8 8 0 0 1-8 8H4l2.4-2.4A8 8 0 1 1 21 12Z",
-  repeat: "M17 2l4 4-4 4M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v1a4 4 0 0 1-4 4H3",
+  heart: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
+  chat: "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z",
+  repeat: "M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3",
   send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z",
 }
 
@@ -82,6 +82,8 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const [sendOpen, setSendOpen] = useState(false)
   const [teams, setTeams] = useState<Array<{ id: string; name: string }> | null>(null)
   const [sent, setSent] = useState(false)
+  const [dragY, setDragY] = useState(0)
+  const dragStart = { y: 0 }
 
   const href =
     item.kind === "STAT_CARD" || item.kind === "PLAYER_OF_GAME" || item.kind === "ANNOUNCEMENT"
@@ -415,8 +417,15 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       </div>
 
       {sendOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={() => setSendOpen(false)}>
-        <div className="rounded-t-3xl bg-white p-4 pb-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end overscroll-contain bg-black/50" onClick={() => setSendOpen(false)}>
+        <div
+          className="touch-pan-x rounded-t-3xl bg-white p-4 pb-6 transition-transform"
+          style={{ transform: `translateY(${dragY}px)` }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => { dragStart.y = e.touches[0].clientY }}
+          onTouchMove={(e) => { const d = e.touches[0].clientY - dragStart.y; if (d > 0) setDragY(d) }}
+          onTouchEnd={() => { if (dragY > 70) { setSendOpen(false) } setDragY(0) }}
+        >
           <div className="bg-ink-200 mx-auto mb-3 h-1 w-10 rounded-full" />
           <p className="text-ink-900 mb-2 text-sm font-bold">Send in SportsHub</p>
           {sent ? (
@@ -426,7 +435,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           ) : teams.length === 0 ? (
             <p className="text-ink-500 text-xs">No team chats yet.</p>
           ) : (
-            <div className="flex gap-3 overflow-x-auto py-1">
+            <div className="no-scrollbar flex gap-3 overflow-x-auto py-1">
               {teams.map((t, i) => (
                 <button key={t.id} onClick={() => sendToTeam(t.id)} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
                   <span className={cn("flex h-14 w-14 items-center justify-center rounded-full text-base font-extrabold text-white", AVATAR_BG[i % AVATAR_BG.length])}>
@@ -438,17 +447,32 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
             </div>
           )}
           <p className="text-ink-900 border-ink-100 mb-2 mt-3 border-t pt-3 text-sm font-bold">Share to</p>
-          <div className="flex gap-3 overflow-x-auto py-1">
-            {[
-              ["🔗", "Copy link", () => { void navigator.clipboard.writeText(window.location.origin + href); setSent(false) }],
-              ["🟢", "WhatsApp", () => window.open(`https://wa.me/?text=${encodeURIComponent(item.title + " " + window.location.origin + href)}`, "_blank")],
-              ["🔵", "Facebook", () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + href)}`, "_blank")],
-              ["✉️", "Email", () => { window.location.href = `mailto:?subject=${encodeURIComponent(item.title)}&body=${encodeURIComponent(window.location.origin + href)}` }],
-              ["📤", "More…", () => void shareOutside()],
-            ].map(([emoji, label, fn]) => (
-              <button key={label as string} onClick={fn as () => void} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
-                <span className="bg-ink-100 flex h-14 w-14 items-center justify-center rounded-full text-2xl">{emoji as string}</span>
-                <span className="text-ink-600 w-full truncate text-center text-[11px] font-medium">{label as string}</span>
+          <div className="no-scrollbar flex gap-3 overflow-x-auto py-1">
+            {([
+              ["copy", "Copy link", "#3f3f46", () => { void navigator.clipboard.writeText(window.location.origin + href) }],
+              ["whatsapp", "WhatsApp", "#25D366", () => window.open(`https://wa.me/?text=${encodeURIComponent(item.title + " " + window.location.origin + href)}`, "_blank")],
+              ["messages", "Messages", "#34C759", () => { window.location.href = `sms:?&body=${encodeURIComponent(item.title + " " + window.location.origin + href)}` }],
+              ["facebook", "Facebook", "#1877F2", () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + href)}`, "_blank")],
+              ["email", "Email", "#6366f1", () => { window.location.href = `mailto:?subject=${encodeURIComponent(item.title)}&body=${encodeURIComponent(window.location.origin + href)}` }],
+              ["more", "More…", "#0f172a", () => void shareOutside()],
+            ] as Array<[string, string, string, () => void]>).map(([kind, label, color, fn]) => (
+              <button key={label} onClick={fn} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
+                  {kind === "whatsapp" ? (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm5.2 14.2c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1.1 2.2 1.4 2.5 1.5.3.1.5.1.7-.1l1-1.2c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4 0 .1 0 .7-.2 1.3z"/></svg>
+                  ) : kind === "facebook" ? (
+                    <svg viewBox="0 0 24 24" className="h-8 w-8" fill="#fff"><path d="M13.5 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.5 1.6-1.5h1.3V4.9c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5V11H8.5v3H11v7h2.5z"/></svg>
+                  ) : kind === "messages" ? (
+                    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="#fff"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.2 1.1 4.2 2.9 5.6-.2 1-.7 2.1-1.6 3 1.8-.2 3.3-.8 4.4-1.5 1.3.5 2.8.8 4.3.8 5.5 0 10-3.6 10-7.9S17.5 3 12 3z"/></svg>
+                  ) : kind === "copy" ? (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                  ) : kind === "email" ? (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#fff" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><circle cx="5" cy="12" r="1.6" fill="#fff"/><circle cx="12" cy="12" r="1.6" fill="#fff"/><circle cx="19" cy="12" r="1.6" fill="#fff"/></svg>
+                  )}
+                </span>
+                <span className="text-ink-600 w-full truncate text-center text-[11px] font-medium">{label}</span>
               </button>
             ))}
           </div>

@@ -444,3 +444,7 @@
     animation: none;
   }
 }
+
+/* Hide horizontal scrollbars on social strips (Instagram-style) */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
