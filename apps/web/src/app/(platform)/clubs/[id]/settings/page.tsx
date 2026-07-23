@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Button, Card } from "@/components/ui"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 const inputCls =
   "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
@@ -140,7 +141,7 @@ export default function SettingsPage() {
             </label>
             <div className="mt-1 flex">
               <span className="border-ink-200 bg-ink-50 text-ink-500 inline-flex items-center rounded-l-xl border border-r-0 px-3 text-sm">
-                youthbasketballhub.com/
+                {PRIMARY_DOMAIN}/
               </span>
               <input
                 type="text"

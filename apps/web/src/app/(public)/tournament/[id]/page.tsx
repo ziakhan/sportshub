@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/countries"
 import { getPublicTournament } from "@/lib/queries/tournament"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
-import { Card } from "@/components/ui"
+import { Card, SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -68,9 +68,7 @@ export default async function PublicTournamentPage({ params }: { params: { id: s
       {/* Banner */}
       <div className="bg-navy-900 border-b border-navy-700">
         <div className="container mx-auto px-4 py-6">
-          <Link href="/events" className="mb-2 inline-block text-sm text-white/70 hover:text-white">
-            &larr; Back to Events
-          </Link>
+          <SmartBack fallback="/events?type=tournaments" fallbackLabel="Events" tone="brand" className="mb-1" />
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-white">{tournament.name}</h2>
             {canRegister && (

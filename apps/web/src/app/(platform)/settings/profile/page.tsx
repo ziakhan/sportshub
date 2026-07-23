@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { CountryStateSelector } from "@/components/country-state-selector"
-import { Button, Card } from "@/components/ui"
+import { Button, Card, SmartBack } from "@/components/ui"
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -243,6 +243,7 @@ export default function ProfileEditPage() {
 
   return (
     <div className="mx-auto max-w-xl p-6 md:p-8">
+      <SmartBack fallback="/account" fallbackLabel="Account" className="-ml-1 mb-2" />
       <Card className="reveal p-8">
         <h1 className="font-condensed text-ink-950 mb-1 text-3xl font-bold uppercase leading-none tracking-wide">
           Edit Profile

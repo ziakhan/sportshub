@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 import { prisma } from "@youthbasketballhub/db"
 import { siteUrl } from "@/lib/site"
+import { isOurHost } from "@/lib/domains"
 
 /**
  * First-party public-page view tracking (SEO analytics).
@@ -45,7 +46,9 @@ function classify(referer: string | null, userAgent: string | null, ownHost: str
   if (!referer) return { source: "DIRECT", refHost: null as string | null }
   try {
     const refHost = new URL(referer).host.toLowerCase()
-    if (refHost === ownHost || refHost.startsWith("localhost")) {
+    // Any of OUR hosts counts as internal — a visitor hopping between the
+    // two live domains is not a referral (lib/domains).
+    if (refHost === ownHost || isOurHost(refHost)) {
       return { source: "INTERNAL", refHost }
     }
     if (SEARCH_HOSTS.some((h) => refHost.includes(h))) {

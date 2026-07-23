@@ -17,7 +17,11 @@ export const metadata = {
   alternates: { canonical: "/events" },
 }
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams?: { type?: string }
+}) {
   const events = await getAllPrograms()
 
   return (
@@ -28,7 +32,7 @@ export default async function EventsPage() {
           Browse tryouts, house leagues, camps, and tournaments to find the right fit for your player.
         </p>
       </div>
-      <EventsBrowser events={events} />
+      <EventsBrowser events={events} initialFilter={searchParams?.type} />
     </div>
   )
 }

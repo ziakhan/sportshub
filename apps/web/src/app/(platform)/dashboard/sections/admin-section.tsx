@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { StatTile, PanelHeader, Button, Badge, type StatTileTone } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 interface AdminSectionProps {
   data: NonNullable<DashboardData["admin"]>
@@ -130,7 +131,7 @@ export function AdminSection({ data }: AdminSectionProps) {
                   className="border-ink-100 bg-ink-50 rounded-2xl border p-5 transition-colors hover:border-[color:var(--brand-line)]"
                 >
                   <h4 className="text-ink-950 font-semibold">{club.name}</h4>
-                  <p className="text-ink-500 mt-1 text-sm">{club.slug}.youthbasketballhub.com</p>
+                  <p className="text-ink-500 mt-1 text-sm">{club.slug}.{PRIMARY_DOMAIN}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Badge tone="court">{club._count.teams} teams</Badge>
                     <Badge tone="hoop">{club._count.tryouts} tryouts</Badge>

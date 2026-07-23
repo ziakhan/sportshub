@@ -27,6 +27,11 @@ model User {
   state        String?
   country      String  @default("CA") // ISO 3166-1 alpha-2
 
+  // Universal handle (owner 2026-07-23): EVERY account reserves one at
+  // signup (auto-generated default, changeable later). Validated/reserved
+  // in lib/handles.ts. Clubs' equivalent is Tenant.slug.
+  handle String? @unique
+
   // Soft Delete (Recommended Addition)
   status    UserStatus @default(ACTIVE)
   deletedAt DateTime?
@@ -50,6 +55,8 @@ model User {
   // Relationships
   roles                     UserRole[]
   players                   Player[]                  @relation("ParentPlayers")
+  playerAccount             Player?                   @relation("PlayerAccount")
+  familyInvitationsSent     FamilyInvitation[]        @relation("FamilyInvitationsSent")
   tryoutSignups             TryoutSignup[]
   rsvpResponses             EventRsvp[]               @relation("RsvpResponses")
   programAssignments        ProgramStaff[]            @relation("ProgramAssignments")
@@ -814,14 +821,24 @@ model Player {
   // tryout signups, team rosters) but excludes from active listings.
   deletedAt DateTime?
 
-  // Parent/Guardian
+  // Parent/Guardian — the GUARDIAN + PAYER of record (family-accounts plan
+  // 2026-07-23). For self-registered 13+ players this is their own user id
+  // until a real guardian accepts a GUARDIAN FamilyInvitation.
   parentId String
   parent   User   @relation("ParentPlayers", fields: [parentId], references: [id], onDelete: Cascade)
+
+  // The player's OWN login account (family-accounts plan): set for
+  // self-registered 13+ players and for parent-added kids who accepted a
+  // CHILD_LOGIN invite. Distinct from parentId — guardianship/payment vs
+  // "who can sign in as this player" are different concerns.
+  userId      String? @unique
+  userAccount User?   @relation("PlayerAccount", fields: [userId], references: [id], onDelete: SetNull)
 
   // Relationships
   teams               TeamPlayer[]
   stats               PlayerStat[]
   offers              Offer[]
+  familyInvitations   FamilyInvitation[]
   houseLeagueSignups  HouseLeagueSignup[]
   campSignups         CampSignup[]
   seasonRosterEntries SeasonRosterPlayer[]
@@ -2839,6 +2856,53 @@ model PlayerInvitation {
   @@index([teamId])
   @@index([invitedUserId, status])
   @@index([invitedEmail])
+}
+
+// ============================================
+// FAMILY INVITATIONS (family-accounts plan 2026-07-23)
+// The parent↔child linking layer that never existed: CHILD_LOGIN gives a
+// parent-added 13+ kid their own account attached to the SAME Player row;
+// GUARDIAN attaches a real parent (guardian+payer) to a self-registered
+// 13+ player. Under-13: never — COPPA keeps them parent-managed only.
+// ============================================
+
+enum FamilyInvitationType {
+  CHILD_LOGIN
+  GUARDIAN
+}
+
+enum FamilyInvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model FamilyInvitation {
+  id   String               @id @default(uuid())
+  type FamilyInvitationType
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  invitedEmail  String
+  // Backfilled at signup (mirrors StaffInvitation) so the invite surfaces
+  // in-app the moment the invitee creates their account.
+  invitedUserId String?
+
+  invitedByUserId String
+  invitedBy       User   @relation("FamilyInvitationsSent", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+
+  token  String                 @unique @default(uuid())
+  status FamilyInvitationStatus @default(PENDING)
+
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@index([invitedEmail])
+  @@index([invitedUserId, status])
+  @@index([playerId, status])
 }
 
 model Notification {

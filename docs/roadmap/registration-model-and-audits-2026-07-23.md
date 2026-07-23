@@ -1,6 +1,6 @@
 # Registration Model Rework + Two System Audits (2026-07-23)
 
-Status: PROPOSED (owner to pick build order) · Training-detail bugfix SHIPPED to box `23f11c0`
+Status: **SHIPPED 2026-07-24** (owner: "go ahead and implement it") — §4 registration rework + §3.1-.3 payment gaps + §2.1/.2/.4 consolidations all live; box `7c40120`+. Build log: shared ProgramSignupForm (multi-kid, per-kid weeks, eligibility chips, payment-aware copy), agePolicy enforced (tryouts STRICT), ACTIVE_SIGNUPS capacity rule, computeCampFee, coppa consolidation, tournament-fee obligations, club overdue nags, reviveObligation. e2e 14/14 · int 347/347. Deferred: §2.3 tournament-page badge cosmetics, §2.5 program-shaping modules, camp create/edit savings%% display dedup.
 
 ## 1. Shipped: training program detail error (app)
 

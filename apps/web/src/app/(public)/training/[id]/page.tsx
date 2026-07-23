@@ -6,7 +6,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
-import { Badge, Card, Button, AnimatedNumber } from "@/components/ui"
+import { Badge, Card, Button, AnimatedNumber, SmartBack } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { formatTrainingSchedule, trainingTypeLabel, trainingSortDate } from "@/lib/training"
@@ -102,12 +102,7 @@ export default async function PublicTrainingDetailPage({ params }: { params: { i
       />
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="container mx-auto px-4 py-6">
-          <Link
-            href="/events"
-            className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100"
-          >
-            &larr; Back to Events
-          </Link>
+          <SmartBack fallback="/events?type=training" fallbackLabel="Training programs" tone="brand" className="mb-1" />
           <Link href={`/club/${session.tenant.slug}`}>
             <h2 className="font-condensed text-xl font-bold tracking-tight text-[color:var(--brand-on)] transition hover:opacity-90">
               {session.tenant.name}

@@ -30,12 +30,7 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
     <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <div className="min-w-0">
-          <Link
-            href={isStaffSide ? `/teams/${membership.teamId}` : `/team/${membership.teamId}`}
-            className="text-ink-900 hover:text-play-700 block truncate text-xl font-bold hover:underline"
-          >
-            {membership.teamName}
-          </Link>
+          <h2 className="text-ink-900 truncate text-xl font-bold">{membership.teamName}</h2>
           <p className="text-ink-500 truncate text-sm">
             {membership.clubName} • Team chat
           </p>
@@ -46,6 +41,12 @@ export default async function TeamChatPage({ params }: { params: { teamId: strin
             className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
           >
             Polls
+          </Link>
+          <Link
+            href={isStaffSide ? `/teams/${membership.teamId}` : `/team/${membership.teamId}`}
+            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
+          >
+            {isStaffSide ? "Team Home" : "Team Page"}
           </Link>
         </div>
       </div>

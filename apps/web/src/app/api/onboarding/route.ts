@@ -109,6 +109,10 @@ export async function POST(req: Request) {
               height: profileData.height || null,
               position: profileData.position || null,
               parentId: user.id,
+              // Family-accounts plan 2026-07-23: userId = the player's OWN
+              // login; parentId stays guardian/payer (their own id until a
+              // real guardian accepts a GUARDIAN invite).
+              userId: user.id,
               isMinor: false,
               canLogin: true,
             },

@@ -9,6 +9,7 @@ import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryou
 import { DateTimePicker } from "@/components/ui"
 import RemovePlayerButton from "../../remove-player-button"
 import { ClaimHandleCard } from "@/components/players/claim-handle-card"
+import { FamilyCard } from "@/components/players/family-card"
 import { SocialControlsCard } from "@/components/players/social-controls-card"
 
 type MediaConsent = "UNSET" | "GRANTED" | "DENIED"
@@ -321,6 +322,7 @@ export default function EditPlayerPage() {
 
           <div className="mt-6">
             <ClaimHandleCard playerId={playerId} />
+            <FamilyCard playerId={playerId} />
             <SocialControlsCard playerId={playerId} />
           </div>
 

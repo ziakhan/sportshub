@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 interface Club {
   id: string
@@ -189,7 +190,7 @@ export default function AdminClubsPage() {
                 <div className="mb-3 flex items-start justify-between">
                   <div>
                     <h3 className="text-ink-950 text-lg font-semibold">{club.name}</h3>
-                    <p className="text-ink-500 text-xs">{club.slug}.youthbasketballhub.com</p>
+                    <p className="text-ink-500 text-xs">{club.slug}.{PRIMARY_DOMAIN}</p>
                   </div>
                   <div className="flex gap-1">
                     {club.isFeatured && (

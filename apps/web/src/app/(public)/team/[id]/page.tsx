@@ -9,7 +9,7 @@ import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { formatSlotSummary } from "@/lib/teams/practices"
 import { playerDisplayName } from "@/lib/privacy/names"
-import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
+import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader, SmartBack } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -79,6 +79,11 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
 
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
+      <SmartBack
+        fallback={team.tenant ? `/club/${team.tenant.slug}` : "/"}
+        fallbackLabel={team.tenant ? team.tenant.name : "Home"}
+        className="-ml-1 mb-2"
+      />
       <EntityHeader
         name={team.name}
         subtitle={[team.tenant?.name, team.ageGroup, team.season].filter(Boolean).join(" · ")}

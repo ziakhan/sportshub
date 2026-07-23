@@ -11,16 +11,19 @@ import { prisma } from "@youthbasketballhub/db"
 export async function canActForPlayer(userId: string, playerId: string): Promise<boolean> {
   const player = await (prisma as any).player.findUnique({
     where: { id: playerId },
-    select: { parentId: true },
+    select: { parentId: true, userId: true },
   })
-  return !!player && player.parentId === userId
+  // Guardian (parentId) OR the player's own login (userId — family-accounts
+  // plan 2026-07-23: a parent-added 13+ kid with a claimed account).
+  return !!player && (player.parentId === userId || player.userId === userId)
 }
 
-/** The user ids who act for this player (guardian today). */
+/** The user ids who act for this player (guardian + own account). */
 export async function guardianUserIds(playerId: string): Promise<string[]> {
   const player = await (prisma as any).player.findUnique({
     where: { id: playerId },
-    select: { parentId: true },
+    select: { parentId: true, userId: true },
   })
-  return player ? [player.parentId] : []
+  if (!player) return []
+  return [...new Set([player.parentId, player.userId].filter(Boolean))] as string[]
 }

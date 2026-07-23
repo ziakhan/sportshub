@@ -847,3 +847,9 @@ new overdue nagging ships dark until scheduled (see #36 one-liner).
   currently fails open in dev).
 - No raw SQL, no cron, no env otherwise. Commits ac354cf/999760a/e515aa6/
   73bd0e3/598ca41 + docs.
+
+## #39 — 2026-07-24: OVERNIGHT BATCH (registration rework + family accounts + handles + domains + nav)
+- **Wave 1 ✅ DEPLOYED box `7c40120`**: multi-kid/multi-week registration, agePolicy (tryouts STRICT enforced), capacity fix, tournament-fee obligations, club overdue nags, COPPA consolidation. db push ran via deploy.sh (additive).
+- **Wave 2 (family accounts + handles + domains + SmartBack)**: deploy = normal box push; deploy.sh's prisma db push flags the new UNIQUE on User.handle as "data loss" — it is safe (new null column) but if deploy.sh fatals, run on box: `prisma db push --accept-data-loss` as sportshub with web.env, then re-run deploy.sh.
+- **AFTER wave-2 deploy, run ONCE on box**: `npx tsx scripts/backfill-user-handles.ts` (sportshub user, web.env sourced) — assigns default handles to existing users. Idempotent.
+- Crons: payment-reminders now also nags club-owed obligations when the owner enables the payment crons (#36 unchanged).

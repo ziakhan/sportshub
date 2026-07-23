@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { PaymentMethodsManager } from "@/components/payments/payment-methods-manager"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -15,6 +16,7 @@ export default async function PaymentMethodsPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-6">
+      <SmartBack fallback="/payments" fallbackLabel="My payments" className="-ml-1 mb-2" />
       <div className="reveal mb-5">
         <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase leading-none tracking-wide md:text-3xl">
           Payment methods

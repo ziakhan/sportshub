@@ -18,6 +18,9 @@ const RESERVED = new Set([
   "signin", "signup", "sportshub", "staff", "stats", "support", "team",
   "teams", "terms", "tournament", "tournaments", "tryout", "tryouts",
   "user", "users", "www", "youthbasketballhub",
+  "sportshubone",
+  "ysportshub",
+  "sportshub",
 ])
 
 export function normalizeHandle(raw: string): string {
@@ -33,4 +36,40 @@ export function validateHandle(handle: string): string | null {
     return "That handle is reserved"
   }
   return null
+}
+
+/**
+ * Default handle candidates for a new account (owner 2026-07-23: EVERY
+ * signup reserves a handle; users can change it later). Name-based first,
+ * email local-part second, then numbered variants — callers try each
+ * against the unique column until one inserts.
+ */
+export function defaultHandleCandidates(opts: {
+  firstName?: string | null
+  lastName?: string | null
+  email: string
+}): string[] {
+  const clean = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "")
+      .slice(0, 18)
+  const first = clean(opts.firstName ?? "")
+  const last = clean(opts.lastName ?? "")
+  const local = clean(opts.email.split("@")[0] ?? "")
+
+  const bases = [
+    first && last ? `${first}${last}`.slice(0, 20) : "",
+    first && last ? `${first}-${last}`.slice(0, 20) : "",
+    local,
+    first,
+  ].filter((b) => b.length >= 3 && !RESERVED.has(b) && HANDLE_RE.test(b))
+
+  const out: string[] = [...new Set(bases)]
+  const seedBase = out[0] ?? (local.length >= 1 ? local.padEnd(3, "0") : "player")
+  for (let i = 0; i < 6; i++) {
+    const n = Math.floor(10 + (((Date.now() / 1000) | 0) % 90)) + i * 7
+    out.push(`${seedBase.slice(0, 16)}${n}`)
+  }
+  return out.filter((h) => !validateHandle(h))
 }

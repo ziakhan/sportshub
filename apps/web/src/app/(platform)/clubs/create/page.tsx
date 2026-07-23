@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { CreateClubGate } from "./create-club-gate"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
+import { SmartBack } from "@/components/ui"
 
 export default async function CreateClubPage() {
   const dbUser = await getCurrentUser()
@@ -12,6 +14,7 @@ export default async function CreateClubPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1 mb-2" />
         <div className="mb-8">
           <h1 className="text-ink-900 text-3xl font-semibold">Create Your Club</h1>
           <p className="text-ink-700 mt-2">
@@ -31,7 +34,7 @@ export default async function CreateClubPage() {
             <li>✓ Accept payments with Stripe Connect</li>
             <li>✓ Join leagues and schedule games</li>
             <li>✓ Track player stats and standings</li>
-            <li>✓ Your own subdomain ({"{slug}"}.youthbasketballhub.com)</li>
+            <li>✓ Your own subdomain ({"{slug}"}.{PRIMARY_DOMAIN})</li>
           </ul>
         </div>
       </div>

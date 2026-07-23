@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { Badge, StarRating } from "@/components/ui"
@@ -9,9 +10,40 @@ import type { EventItem } from "./page"
 
 type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "training" | "tournaments"
 
-export function EventsBrowser({ events }: { events: EventItem[] }) {
-  const [filter, setFilter] = useState<EventType>("all")
+const VALID_TYPES: readonly EventType[] = [
+  "all",
+  "tryouts",
+  "house-leagues",
+  "camps",
+  "training",
+  "tournaments",
+]
+
+function isEventType(value: string | undefined): value is EventType {
+  return !!value && (VALID_TYPES as readonly string[]).includes(value)
+}
+
+export function EventsBrowser({
+  events,
+  initialFilter,
+}: {
+  events: EventItem[]
+  initialFilter?: string
+}) {
+  const router = useRouter()
+  const [filter, setFilter] = useState<EventType>(
+    isEventType(initialFilter) ? initialFilter : "all"
+  )
   const [search, setSearch] = useState("")
+
+  // Root-cause fix (owner 2026-07-23): the type tab is real URL state, not
+  // just useState — a shared/reloaded /events?type=training link now filters
+  // on first paint via initialFilter above, and clicking a tab keeps the URL
+  // in sync so back/forward and copy-link both work.
+  const selectFilter = (key: EventType) => {
+    setFilter(key)
+    router.replace(`/events?type=${key}`, { scroll: false })
+  }
 
   const filterMap: Record<EventType, string | null> = {
     all: null, tryouts: "tryout", "house-leagues": "house-league", camps: "camp", training: "training", tournaments: "tournament",
@@ -49,7 +81,7 @@ export function EventsBrowser({ events }: { events: EventItem[] }) {
           ] as const).map((f) => (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
+              onClick={() => selectFilter(f.key)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium ${
                 filter === f.key ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
               }`}

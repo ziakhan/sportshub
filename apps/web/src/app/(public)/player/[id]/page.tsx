@@ -8,7 +8,7 @@ import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName, publicPlayerName } from "@/lib/privacy/names"
 import { hasFamilyPass } from "@/lib/entitlements"
 import { prisma } from "@youthbasketballhub/db"
-import { Card, EntityHeader, StatBlock } from "@/components/ui"
+import { Card, EntityHeader, SmartBack, StatBlock } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -80,6 +80,7 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
 
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
+      <SmartBack fallback="/players" fallbackLabel="My players" className="-ml-1 mb-2" />
       <EntityHeader
         name={name}
         subtitle={

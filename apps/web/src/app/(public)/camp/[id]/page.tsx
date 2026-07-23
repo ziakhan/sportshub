@@ -9,7 +9,7 @@ import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { computeCampFee, campHasDiscount } from "@/lib/registration/camp-pricing"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
-import { Badge, Card, Button, PanelHeader, AnimatedNumber } from "@/components/ui"
+import { Badge, Card, Button, PanelHeader, AnimatedNumber, SmartBack } from "@/components/ui"
 import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { ProgramSignupForm } from "@/components/registration/program-signup-form"
@@ -92,7 +92,7 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
       />
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="container mx-auto px-4 py-6">
-          <Link href="/events" className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100">&larr; Back to Events</Link>
+          <SmartBack fallback="/events?type=camps" fallbackLabel="Events" tone="brand" className="mb-1" />
           <Link href={`/club/${camp.tenant.slug}`}>
             <h2 className="font-condensed text-xl font-bold tracking-tight text-[color:var(--brand-on)] transition hover:opacity-90">{camp.tenant.name}</h2>
           </Link>

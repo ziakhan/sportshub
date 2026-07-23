@@ -12,6 +12,7 @@ import {
 import { getRsvpsForItems } from "@/lib/rsvp"
 import type { RsvpItemType } from "@/lib/rsvp-shared"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       link: `/teams/${membership.teamId}/calendar`,
       referenceId: membership.teamId,
       emailSubject: `Practice added — ${membership.teamName}: ${when}`,
-      emailHtml: `<p>A practice was added for <strong>${membership.teamName}</strong>.</p><p><strong>${when}</strong>${practice.location ? ` at ${practice.location}` : ""} (${practice.duration} min)</p><p>Team calendar: <a href="${process.env.NEXTAUTH_URL || ""}/teams/${membership.teamId}/calendar">view schedule</a></p>`,
+      emailHtml: `<p>A practice was added for <strong>${membership.teamName}</strong>.</p><p><strong>${when}</strong>${practice.location ? ` at ${practice.location}` : ""} (${practice.duration} min)</p><p>Team calendar: <a href="${appBaseUrl()}/teams/${membership.teamId}/calendar">view schedule</a></p>`,
     })
 
     return NextResponse.json({ practice: serializePractice(practice) }, { status: 201 })

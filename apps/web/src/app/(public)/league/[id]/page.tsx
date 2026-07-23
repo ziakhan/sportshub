@@ -10,7 +10,7 @@ import { getSeasonStandings } from "@/lib/queries/standings"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
-import { Badge, Card, NewsCard, ScoreCard, SectionHeader, StandingsTable } from "@/components/ui"
+import { Badge, Card, NewsCard, ScoreCard, SectionHeader, SmartBack, StandingsTable } from "@/components/ui"
 import { socialLinks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
@@ -157,12 +157,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
       style={brandStyle(brand?.primaryColor)}
     >
       <div className="mb-6 flex items-center justify-between gap-4">
-        <Link
-          href="/leagues"
-          className="brand-focus text-[color:var(--brand-ink)] text-sm font-semibold hover:underline"
-        >
-          &larr; All leagues
-        </Link>
+        <SmartBack fallback="/leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>
 
       {/* Branded league hero (customizable — docs/roadmap/customizable-pages.md) */}

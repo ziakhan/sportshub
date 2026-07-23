@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt"
 import { isPublicPath } from "@/lib/public-paths"
 import { bearerToken, verifyAccessToken } from "@/lib/native-auth-tokens"
 import { siteUrl } from "@/lib/site"
+import { isOurHost, tenantSlugFromHost } from "@/lib/domains"
 
 // Subdomains that serve the platform itself — never treated as club slugs.
 const RESERVED_SUBDOMAINS = new Set([
@@ -26,20 +27,11 @@ export default async function middleware(req: NextRequest) {
   // should never be bounced to sign-in on the way).
   const hostname = req.headers.get("host") || ""
 
-  let tenantSlug: string | null = null
-  let isCustomDomain = false
-
-  if (
-    hostname === "app.youthbasketballhub.com" ||
-    hostname === "localhost:3000" ||
-    hostname.startsWith("localhost:")
-  ) {
-    tenantSlug = null
-  } else if (hostname.endsWith(".youthbasketballhub.com")) {
-    tenantSlug = hostname.split(".")[0]
-  } else {
-    isCustomDomain = true
-  }
+  // lib/domains.ts is the single domain registry (2026-07-23): both live
+  // apexes serve the main site; their subdomains are club vanity hosts; a
+  // host we don't own at all is (potentially) a custom club domain.
+  const tenantSlug: string | null = tenantSlugFromHost(hostname)
+  const isCustomDomain = !isOurHost(hostname)
 
   // Club subdomains are vanity front doors, not duplicate sites: 301 to the
   // canonical path URL (seo-strategy §6c — one URL per club). Reserved

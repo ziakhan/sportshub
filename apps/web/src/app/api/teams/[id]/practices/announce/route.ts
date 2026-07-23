@@ -4,6 +4,7 @@ import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
 import { formatSlotSummary, generateOccurrences, notifyTeam } from "@/lib/teams/practices"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       link: `/teams/${membership.teamId}/calendar`,
       referenceId: membership.teamId,
       emailSubject: `Practice schedule announced — ${membership.teamName}`,
-      emailHtml: `<p>The practice schedule for <strong>${membership.teamName}</strong> (${membership.clubName}) is out:</p><p><strong>${summary}</strong></p><p>See dates, get changes live, and add the schedule to your phone's calendar: <a href="${process.env.NEXTAUTH_URL || ""}/teams/${membership.teamId}/calendar">team calendar</a></p>`,
+      emailHtml: `<p>The practice schedule for <strong>${membership.teamName}</strong> (${membership.clubName}) is out:</p><p><strong>${summary}</strong></p><p>See dates, get changes live, and add the schedule to your phone's calendar: <a href="${appBaseUrl()}/teams/${membership.teamId}/calendar">team calendar</a></p>`,
     })
 
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
 import { getTeamRoster } from "@/lib/teams/roster"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -133,6 +134,7 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6 lg:max-w-5xl">
+      <SmartBack fallback="/teams" fallbackLabel="My teams" className="-ml-1" />
       <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           My team

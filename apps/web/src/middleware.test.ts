@@ -50,8 +50,8 @@ describe("middleware", () => {
 
     const response = await middleware(
       createRequest(
-        "https://warriors.youthbasketballhub.com/dashboard",
-        "warriors.youthbasketballhub.com"
+        "https://warriors.sportshubone.com/dashboard",
+        "warriors.sportshubone.com"
       )
     )
 
@@ -63,7 +63,7 @@ describe("middleware", () => {
     vi.mocked(getToken).mockResolvedValue({ sub: "user-1" } as any)
 
     const response = await middleware(
-      createRequest("https://www.youthbasketballhub.com/dashboard", "www.youthbasketballhub.com")
+      createRequest("https://www.sportshubone.com/dashboard", "www.sportshubone.com")
     )
 
     expect(response.status).toBe(200)

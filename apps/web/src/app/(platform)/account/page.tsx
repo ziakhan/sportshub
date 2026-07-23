@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getNavShape } from "@/lib/queries/nav-shape"
 import { SignOutRow } from "./sign-out-row"
+import { HandleCard } from "@/components/account/handle-card"
 
 export const dynamic = "force-dynamic"
 
@@ -83,6 +84,8 @@ export default async function AccountPage() {
             </Link>
           ))}
       </div>
+
+      <HandleCard />
 
       <div className="border-ink-100 mt-6 overflow-hidden rounded-2xl border bg-white">
         <SignOutRow />

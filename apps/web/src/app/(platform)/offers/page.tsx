@@ -4,7 +4,7 @@ import Link from "next/link"
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
-import { Badge, Button, Card, toneForStatus } from "@/components/ui"
+import { Badge, Button, Card, SmartBack, toneForStatus } from "@/components/ui"
 import { OfferResponseForm } from "./offer-response-form"
 import { formatCurrency } from "@/lib/countries"
 
@@ -99,6 +99,7 @@ export default function OffersPage() {
 
   return (
     <div className="space-y-6">
+      <SmartBack fallback="/account" fallbackLabel="Account" className="-ml-1" />
       <Card className="reveal sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           Offers

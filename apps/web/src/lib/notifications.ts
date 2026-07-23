@@ -41,6 +41,7 @@ export type NotificationType =
   | "request_declined"
   // Player invitations (G3)
   | "player_invite"
+  | "family_invite"
   | "player_invite_accepted"
   | "player_invite_declined"
   | "player_invite_cancelled"
@@ -138,6 +139,7 @@ const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "team_chat",
   "follow_request",
   "follow_approved",
+  "family_invite",
   "direct_message",
   "submission_request",
   "submission_request_decided",

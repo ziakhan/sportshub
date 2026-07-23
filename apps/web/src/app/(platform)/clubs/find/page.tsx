@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { SmartBack } from "@/components/ui"
 
 interface Club {
   id: string
@@ -105,6 +106,7 @@ export default function FindClubPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1 mb-2" />
         <div className="mb-6">
           <h1 className="text-ink-900 text-2xl font-semibold">Find Your Club</h1>
           <p className="text-ink-500 mt-1 text-sm">

@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import type { Metadata } from "next"
 import { FollowButton } from "@/components/follow-button"
+import { SmartBack } from "@/components/ui"
 import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
@@ -406,6 +407,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
         />
 
         <div className="container relative mx-auto px-4 pb-0 pt-10 sm:pt-14">
+          <SmartBack fallback="/" fallbackLabel="Home" tone="brand" className="-ml-1 mb-2" />
           {canManage && (
             <Link
               href={`/clubs/${club.id}/customize`}

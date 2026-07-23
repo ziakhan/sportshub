@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { CreateTrainerForm } from "./create-trainer-form"
+import { SmartBack } from "@/components/ui"
 
 export default async function CreateTrainerPage() {
   const dbUser = await getCurrentUser()
@@ -12,6 +13,7 @@ export default async function CreateTrainerPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1 mb-2" />
         <div className="mb-8">
           <h1 className="text-ink-900 text-3xl font-semibold">Set Up Your Training Business</h1>
           <p className="text-ink-700 mt-2">

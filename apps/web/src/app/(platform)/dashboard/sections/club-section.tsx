@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { StatTile, AnimatedNumber, Button, PanelHeader, Badge } from "@/components/ui"
 import type { DashboardData } from "../get-dashboard-data"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 interface ClubSectionProps {
   data: NonNullable<DashboardData["clubOwner"]>
@@ -106,7 +107,7 @@ export function ClubSection({ data }: ClubSectionProps) {
                       <div>
                         <h4 className="text-ink-950 font-semibold">{tenant.name}</h4>
                         <p className="text-ink-500 mt-1 text-xs">
-                          {tenant.slug}.youthbasketballhub.com
+                          {tenant.slug}.{PRIMARY_DOMAIN}
                         </p>
                       </div>
                       <span className="bg-ink-950 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">

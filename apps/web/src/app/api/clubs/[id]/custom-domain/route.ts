@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import dns from "node:dns/promises"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { isOurHost } from "@/lib/domains"
 
 export const dynamic = "force-dynamic"
 
@@ -69,7 +70,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return "localhost"
     }
   })()
-  if (domain && (domain === ownHost || domain.endsWith(".youthbasketballhub.com") || domain === "youthbasketballhub.com")) {
+  // A club can never claim one of the platform's own domains (lib/domains).
+  if (domain && (domain === ownHost || isOurHost(domain))) {
     return NextResponse.json({ error: "That domain belongs to the platform" }, { status: 400 })
   }
 

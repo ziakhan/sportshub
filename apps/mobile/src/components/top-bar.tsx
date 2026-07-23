@@ -108,11 +108,14 @@ export function SubHeader({
   title,
   right,
   onTitlePress,
+  fallback = "/",
 }: {
   title: string
   right?: React.ReactNode
   /** Entities are clickable (owner law 2026-07-17) — tap the title to open it. */
   onTitlePress?: () => void
+  /** Where back goes on a cold deep-link (no stack) — the logical parent, not home. */
+  fallback?: string
 }) {
   const insets = useSafeAreaInsets()
   return (
@@ -120,7 +123,7 @@ export function SubHeader({
       <View style={styles.bar}>
         <View style={styles.subLeft}>
           <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.navigate("/"))}
+            onPress={() => (router.canGoBack() ? router.back() : router.navigate(fallback as any))}
             hitSlop={8}
             style={styles.backButton}
           >

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { SmartBack } from "@/components/ui"
 
 interface NotificationItem {
   id: string
@@ -147,6 +148,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      <SmartBack fallback="/account" fallbackLabel="Account" className="-ml-1" />
       <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           Inbox

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 export const dynamic = "force-dynamic"
 
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
         id: tenant.id,
         slug: tenant.slug,
         name: tenant.name,
-        subdomain: `${tenant.slug}.youthbasketballhub.com`,
+        subdomain: `${tenant.slug}.${PRIMARY_DOMAIN}`,
         plan: tenant.plan,
         createdAt: tenant.createdAt,
       },
@@ -177,7 +178,7 @@ export async function GET() {
         slug: role.tenant!.slug,
         name: role.tenant!.name,
         role: role.role,
-        subdomain: `${role.tenant!.slug}.youthbasketballhub.com`,
+        subdomain: `${role.tenant!.slug}.${PRIMARY_DOMAIN}`,
         branding: role.tenant!.branding,
       }))
 

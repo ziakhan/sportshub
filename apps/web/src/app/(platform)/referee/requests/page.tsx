@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 
 interface InboxRequest {
   id: string
@@ -104,6 +104,7 @@ export default function RefereeRequestsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4">
+      <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-ink-950 text-2xl font-bold">Shifts &amp; availability</h1>

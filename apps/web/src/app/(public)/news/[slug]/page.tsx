@@ -4,7 +4,7 @@ import { format } from "date-fns"
 import { getPostBySlug, getPublishedPost } from "@/lib/queries/content"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { canManageRecapPost } from "@/lib/content/recap-authz"
-import { Badge, Card } from "@/components/ui"
+import { Badge, Card, SmartBack } from "@/components/ui"
 import { AdminBar } from "./admin-bar"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
@@ -55,9 +55,7 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
         />
       )}
       <div className="mb-6">
-        <Link href="/news" className="text-hoop-600 text-sm hover:underline">
-          &larr; All news
-        </Link>
+        <SmartBack fallback="/news" fallbackLabel="News" className="-ml-1" />
       </div>
 
       {canManage && (

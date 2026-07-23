@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
+import { SmartBack } from "@/components/ui"
 import { LiveView } from "./live-view"
 
 export const dynamic = "force-dynamic"
@@ -36,5 +37,12 @@ export default async function LiveGamePage({ params }: { params: { gameId: strin
   // Real 404 for unknown ids (the client view handles its own polling)
   const game = await getGameHead(params.gameId)
   if (!game) notFound()
-  return <LiveView gameId={params.gameId} />
+  return (
+    <div>
+      <div className="mx-auto w-full max-w-[1760px] px-4 pt-3 sm:px-6">
+        <SmartBack fallback="/scores" fallbackLabel="Scores" className="-ml-1" />
+      </div>
+      <LiveView gameId={params.gameId} />
+    </div>
+  )
 }

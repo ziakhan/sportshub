@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/countries"
 import { payerObligations } from "@/lib/payments/queries"
 import { ObligationsTable } from "@/components/payments/obligations-table"
 import { paidSoFar } from "@/components/payments/types"
-import { Badge, Card, PanelHeader, type BadgeTone } from "@/components/ui"
+import { Badge, Card, PanelHeader, SmartBack, type BadgeTone } from "@/components/ui"
 
 const STATUS_LABEL: Record<string, { label: string; tone: BadgeTone }> = {
   SUCCEEDED: { label: "Paid", tone: "court" },
@@ -54,6 +54,7 @@ export default async function MyPaymentsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+      <SmartBack fallback="/account" fallbackLabel="Account" className="-ml-1" />
       <Card className="reveal sm:p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
           Payments

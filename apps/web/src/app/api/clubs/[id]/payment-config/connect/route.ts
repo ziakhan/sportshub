@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { getPaymentConfig } from "@/lib/payments/config"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -66,7 +67,7 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       })
     }
 
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000"
+    const baseUrl = appBaseUrl()
     const link = await stripe.accountLinks.create({
       account: accountId,
       type: "account_onboarding",

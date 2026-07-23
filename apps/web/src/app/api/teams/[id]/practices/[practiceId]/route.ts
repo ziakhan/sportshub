@@ -10,6 +10,7 @@ import {
   serializePractice,
 } from "@/lib/teams/practices"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -58,7 +59,7 @@ export async function PATCH(
     const oldWhen = formatPracticeDate(new Date(practice.scheduledAt))
     let data: any
     let change: { title: string; message: string; subject: string; html: string } | null = null
-    const calendarLink = `${process.env.NEXTAUTH_URL || ""}/teams/${membership.teamId}/calendar`
+    const calendarLink = `${appBaseUrl()}/teams/${membership.teamId}/calendar`
 
     if (parsed.data.action === "move") {
       const newDate = new Date(parsed.data.scheduledAt)

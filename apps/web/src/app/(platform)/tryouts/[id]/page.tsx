@@ -4,12 +4,11 @@ import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import type { ReactNode } from "react"
-import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 import { brandStyle } from "@/lib/club-page/brand"
-import { AnimatedNumber, Badge, Button, PanelHeader } from "@/components/ui"
+import { AnimatedNumber, Badge, Button, PanelHeader, SmartBack } from "@/components/ui"
 
 async function getTryout(id: string) {
   const tryout = await prisma.tryout.findUnique({
@@ -62,12 +61,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
       {/* Club header */}
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="px-4 py-6 md:px-6">
-          <Link
-            href="/events"
-            className="mb-2 inline-block text-sm text-[color:var(--brand-on)] opacity-80 transition hover:opacity-100"
-          >
-            &larr; Back to Marketplace
-          </Link>
+          <SmartBack fallback="/events?type=tryouts" fallbackLabel="Events" tone="brand" className="mb-1" />
           <h2 className="text-[color:var(--brand-on)] font-condensed text-xl font-bold uppercase tracking-wide">
             {tryout.tenant.name}
           </h2>

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notifyBatch } from "@/lib/notifications"
 import { grantExpressConsent } from "@/lib/comms/consent"
+import { defaultHandleCandidates } from "@/lib/handles"
 
 const signupSchema = z.object({
   email: normalizedEmailSchema("Invalid email address"),
@@ -131,6 +132,63 @@ export async function POST(request: Request) {
           referenceType: "PlayerInvitation",
         }))
       )
+    }
+
+    // Same auto-attach for FamilyInvitations (family-accounts plan): a
+    // parent invited this email to claim a kid's login, or a player invited
+    // this email to become their guardian.
+    const pendingFamilyInvites = await (prisma as any).familyInvitation.findMany({
+      where: {
+        invitedEmail: { equals: normalizedEmail, mode: "insensitive" },
+        invitedUserId: null,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+        type: true,
+        token: true,
+        player: { select: { firstName: true, lastName: true } },
+      },
+    })
+
+    if (pendingFamilyInvites.length > 0) {
+      await (prisma as any).familyInvitation.updateMany({
+        where: { id: { in: pendingFamilyInvites.map((i: any) => i.id) } },
+        data: { invitedUserId: user.id },
+      })
+      await notifyBatch(
+        prisma,
+        pendingFamilyInvites.map((inv: any) => ({
+          userId: user.id,
+          type: "family_invite" as const,
+          title: inv.type === "CHILD_LOGIN" ? "Your player login is waiting" : "Guardian invitation",
+          message:
+            inv.type === "CHILD_LOGIN"
+              ? `You've been invited to take over ${inv.player.firstName} ${inv.player.lastName}'s player profile.`
+              : `${inv.player.firstName} ${inv.player.lastName} asked you to become their parent/guardian on SportsHub.`,
+          link: `/family/accept/${inv.token}`,
+          referenceId: inv.id,
+          referenceType: "FamilyInvitation",
+        }))
+      )
+    }
+
+    // Every account reserves a handle at creation (owner 2026-07-23) — a
+    // generated default the user can change later. Best-effort: a collision
+    // storm must never fail the signup.
+    try {
+      for (const candidate of defaultHandleCandidates({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: normalizedEmail,
+      })) {
+        const taken = await prisma.user.findFirst({ where: { handle: candidate }, select: { id: true } })
+        if (taken) continue
+        await prisma.user.update({ where: { id: user.id }, data: { handle: candidate } })
+        break
+      }
+    } catch (handleErr) {
+      console.error("Signup default-handle error:", handleErr)
     }
 
     return NextResponse.json({

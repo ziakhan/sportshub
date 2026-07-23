@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { brandStyle } from "@/lib/club-page/brand"
 import { coachedTeams } from "@/lib/authz/team-scope"
 import { ClubTabs } from "./club-tabs"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 async function getClubAccess(clubId: string, userId: string, userRoles: string[]) {
   // PlatformAdmin can access any club
@@ -163,7 +164,7 @@ export default async function ClubLayout({
               <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide md:text-3xl">
                 {club.name}
               </h1>
-              <p className="text-ink-500 text-sm">{club.slug}.youthbasketballhub.com</p>
+              <p className="text-ink-500 text-sm">{club.slug}.{PRIMARY_DOMAIN}</p>
             </div>
           </div>
           <ClubTabs tabs={tabs} />

@@ -2,6 +2,7 @@ import nodemailer from "nodemailer"
 import { createUnsubscribeToken } from "@/lib/comms/unsubscribe"
 import type { ConsentScope } from "@/lib/comms/consent"
 import { siteUrl } from "@/lib/site"
+import { senderEmail } from "@/lib/domains"
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "localhost",
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
     : undefined,
 })
 
-const FROM = process.env.SMTP_FROM || "noreply@youthbasketballhub.com"
+const FROM = process.env.SMTP_FROM || senderEmail("noreply")
 
 /**
  * Canonical base URL for links inside emails. Two env vars were used

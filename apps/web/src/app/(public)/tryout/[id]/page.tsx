@@ -5,7 +5,7 @@ import Link from "next/link"
 import { formatCurrency } from "@/lib/countries"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { Badge, Card } from "@/components/ui"
+import { Badge, Card, SmartBack } from "@/components/ui"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { VenueLink } from "@/components/venues/venue-link"
@@ -94,12 +94,7 @@ export default async function PublicTryoutDetailPage({
         style={{ backgroundColor: tryout.tenant.branding?.primaryColor || "#1a73e8" }}
       >
         <div className="container mx-auto px-4 py-6">
-          <Link
-            href="/events"
-            className="mb-2 inline-block text-sm text-white/80 hover:text-white"
-          >
-            &larr; Back to Marketplace
-          </Link>
+          <SmartBack fallback="/events?type=tryouts" fallbackLabel="Events" tone="brand" className="mb-1" />
           <Link href={`/club/${tryout.tenant.slug}`} className="block">
             <h2 className="text-lg font-semibold text-white hover:text-white/90">
               {tryout.tenant.name}

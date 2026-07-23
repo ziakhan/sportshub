@@ -17,7 +17,7 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      'youthbasketballhub.com',
+      'sportshubone.com', 'ysportshub.com',
       'vercel.app',
       // Add Vercel Blob domain when configured
     ],

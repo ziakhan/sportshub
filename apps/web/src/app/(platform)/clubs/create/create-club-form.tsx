@@ -7,6 +7,7 @@ import { z } from "zod"
 import Link from "next/link"
 import { CountryStateSelector } from "@/components/country-state-selector"
 import { getCountryConfig, getCurrencyForCountry, getTimezonesForCountry } from "@/lib/countries"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 const createClubSchema = z.object({
   name: z.string().min(3, "Club name must be at least 3 characters").max(100),
@@ -64,6 +65,28 @@ export function CreateClubForm() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
   }
+
+  // Subdomain suggestions from the name's words (owner 2026-07-23: offer
+  // "kings"/"tigers"-style picks, not just the full hyphenated name). Words
+  // like "basketball"/"club" make weak subdomains, so they're filtered.
+  const FILLER = new Set(["basketball", "club", "association", "athletics", "sports", "the", "of", "and"])
+  const slugSuggestions = (name: string): string[] => {
+    const words = name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(/\s+/)
+      .filter(Boolean)
+    const strong = words.filter((w) => !FILLER.has(w) && w.length >= 3)
+    const out = new Set<string>()
+    const full = generateSlug(name)
+    if (full) out.add(full)
+    if (strong.length > 0) out.add(strong[strong.length - 1])
+    if (strong.length > 1) out.add(strong.join("-"))
+    if (strong.length > 1) out.add(strong[0][0] + strong[strong.length - 1])
+    return [...out].filter((s) => s.length >= 3).slice(0, 4)
+  }
+  const nameValue = watch("name") ?? ""
+  const suggestions = slugSuggestions(nameValue)
 
   const onSubmit = async (data: CreateClubFormData) => {
     setIsSubmitting(true)
@@ -163,12 +186,32 @@ export function CreateClubForm() {
             placeholder="warriors"
           />
           <span className="border-ink-200 bg-court-50 text-ink-500 inline-flex items-center rounded-r-xl border border-l-0 px-3 text-sm">
-            .youthbasketballhub.com
+            .{PRIMARY_DOMAIN}
           </span>
         </div>
         {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
+        {suggestions.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="text-ink-400 text-xs">Suggestions:</span>
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setValue("slug", s, { shouldValidate: true })}
+                className={`cursor-pointer rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 ${
+                  watch("slug") === s
+                    ? "border-play-500 bg-play-50 text-play-700"
+                    : "border-ink-200 text-ink-600 hover:border-play-300 hover:text-play-700"
+                }`}
+              >
+                {s}.{PRIMARY_DOMAIN}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <p className={helperClass}>
-          This will be your club&apos;s unique URL. Only lowercase letters, numbers, and hyphens.
+          Your club&apos;s own web address — share it on jerseys and flyers. Only lowercase
+          letters, numbers, and hyphens, and it&apos;s first come, first served.
         </p>
       </div>
 
