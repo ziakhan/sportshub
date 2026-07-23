@@ -3,6 +3,9 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/barlow-condensed": "^0.4.1",
+    "@expo-google-fonts/outfit": "^0.4.3",
+    "@expo-google-fonts/work-sans": "^0.4.2",
     "@expo/ui": "~57.0.4",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-google-signin/google-signin": "^16.1.2",
@@ -16,6 +19,7 @@
     "expo-font": "~57.0.0",
     "expo-glass-effect": "~57.0.0",
     "expo-image": "~57.0.0",
+    "expo-linear-gradient": "^57.0.1",
     "expo-linking": "~57.0.2",
     "expo-notifications": "~57.0.3",
     "expo-router": "~57.0.4",

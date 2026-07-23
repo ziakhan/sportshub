@@ -55,6 +55,17 @@ export interface HomeData {
   shape: NavShape
   contexts: MyContexts
   unreadNotifications?: number
+  yourTeams?: Array<{
+    teamId: string
+    teamName: string
+    ageGroup: string
+    clubName: string | null
+    color: string | null
+    kidNames: string[]
+    lastGame: { gameId: string; opponent: string; us: number; them: number; result: "W" | "L" | "T"; dateISO: string } | null
+    nextGame: { gameId: string; opponent: string; dateISO: string; venue: string | null } | null
+    kidLines: Array<{ playerId: string; name: string; points: number; rebounds: number; assists: number }>
+  }>
 }
 
 let cached: HomeData | null = null

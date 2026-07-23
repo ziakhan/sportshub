@@ -1,4 +1,7 @@
 import type { Config } from "tailwindcss"
+// Single token source (native-parity-v2 P0): the same package the RN app
+// reads — the hand-synced hex copies below are gone.
+import { tailwindTokens } from "@youthbasketballhub/design-tokens"
 
 const config = {
   darkMode: ["class"],
@@ -65,71 +68,15 @@ const config = {
           900: "#0f1b33",
           950: "#0b1628",
         },
-        ink: {
-          50: "#f7f7f8",
-          100: "#eeeef1",
-          200: "#d9d9df",
-          300: "#b8b8c3",
-          400: "#9191a1",
-          500: "#747486",
-          600: "#5e5e6e",
-          700: "#4d4d5a",
-          800: "#42424c",
-          900: "#3a3a42",
-          950: "#18181b",
-        },
-        court: {
-          50: "#f0fdf0",
-          100: "#dcfce7",
-          200: "#bbf7d0",
-          300: "#86efac",
-          400: "#4ade80",
-          500: "#22c55e",
-          600: "#16a34a",
-          700: "#15803d",
-          800: "#166534",
-          900: "#14532d",
-        },
-        hoop: {
-          50: "#fef3ee",
-          100: "#fee5d6",
-          200: "#fcc7ac",
-          300: "#f9a178",
-          400: "#f57041",
-          500: "#f24e1e",
-          600: "#e33612",
-          700: "#bc2711",
-          800: "#962216",
-          900: "#792015",
-        },
-        play: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
-        },
+        ink: tailwindTokens.colors.ink,
+        court: tailwindTokens.colors.court,
+        hoop: tailwindTokens.colors.hoop,
+        play: tailwindTokens.colors.play,
         // Reserved strictly for live/in-progress states (live score dot, "LIVE"
         // badge). Scarcity keeps it meaningful — do not use as a general red.
-        live: {
-          50: "#fef2f2",
-          100: "#fee2e2",
-          500: "#ef4444",
-          600: "#dc2626",
-        },
+        live: tailwindTokens.colors.live,
         // Highlight / featured / standings-leader accent. Used sparingly.
-        gold: {
-          50: "#fffbeb",
-          100: "#fef3c7",
-          400: "#fbbf24",
-          500: "#f59e0b",
-          600: "#d97706",
-        },
+        gold: tailwindTokens.colors.gold,
         // Energy Pass semantic tokens — CSS-var backed so the admin-chosen
         // palette (PlatformSettings.themePalette → <html> style stamp) reskins
         // the site with zero rebuild. NOTE: plain var() colors don't support

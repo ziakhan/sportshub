@@ -3,11 +3,12 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
+import { StoriesRail } from "@/components/stories-rail"
 import { Card, ListRow, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { useBrowseHome } from "@/lib/browse"
 import { useHome, coachTeamPath } from "@/lib/home"
 import { useSession } from "@/lib/session"
-import { palette, tones, ui } from "@/lib/theme"
+import { fonts, palette, tones, ui } from "@/lib/theme"
 
 /**
  * Home — the web homepage's shape (site-ia-plan §5.6.3): personal band on
@@ -79,6 +80,9 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
+
+        {/* Stories rail (native-parity-v2 P1) — same band as web home */}
+        {signedIn ? <StoriesRail /> : null}
 
         {/* Personal band — signed-in participants only */}
         {signedIn && due && dueCount > 0 ? (
@@ -158,7 +162,56 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {signedIn && c && c.coachTeams.length > 0 ? (
+        {signedIn && home?.yourTeams && home.yourTeams.length > 0 ? (
+          <View>
+            <Text style={styles.bandEyebrow}>Catch up on your squad</Text>
+            {home.yourTeams.slice(0, 4).map((t) => (
+              <Card
+                key={t.teamId}
+                style={styles.squadCard}
+                onPress={
+                  t.lastGame ? () => router.push(`/browse/game/${t.lastGame!.gameId}`) : undefined
+                }
+              >
+                <View style={styles.squadTop}>
+                  <Monogram name={t.teamName} color={t.color ?? undefined} size={40} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.squadName} numberOfLines={1}>{t.teamName}</Text>
+                    <Text style={styles.mutedSmall} numberOfLines={1}>
+                      {[t.clubName, t.ageGroup].filter(Boolean).join(" · ")}
+                    </Text>
+                  </View>
+                  {t.kidNames.length > 0 ? (
+                    <TonePill tone="gold" label={`${t.kidNames[0].toUpperCase()}'S TEAM`} />
+                  ) : null}
+                </View>
+                {t.lastGame ? (
+                  <View style={styles.squadGameRow}>
+                    <Text style={styles.mutedSmall}>
+                      Last game · {new Date(t.lastGame.dateISO).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      {"  vs "}{t.lastGame.opponent}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.squadScore,
+                        { color: t.lastGame.result === "W" ? palette.court[700] : t.lastGame.result === "L" ? palette.hoop[700] : ui.text },
+                      ]}
+                    >
+                      {t.lastGame.result} {t.lastGame.us}–{t.lastGame.them}
+                    </Text>
+                  </View>
+                ) : null}
+                {t.kidLines.slice(0, 2).map((k) => (
+                  <View key={k.playerId} style={styles.kidLine}>
+                    <Text style={styles.kidLineText}>
+                      {k.name}: {k.points} PTS · {k.rebounds} REB · {k.assists} AST →
+                    </Text>
+                  </View>
+                ))}
+              </Card>
+            ))}
+          </View>
+        ) : signedIn && c && c.coachTeams.length > 0 ? (
           <Card>
             <Text style={styles.cardTitle}>My teams</Text>
             {c.coachTeams.map((t) => (
@@ -308,16 +361,16 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
   screen: { flex: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 12 },
-  greeting: { fontSize: 22, fontWeight: "800", color: ui.text },
+  greeting: { fontSize: 22, fontFamily: fonts.displayHeavy, color: ui.text },
   hero: { gap: 6, paddingVertical: 8 },
-  heroTitle: { fontSize: 24, fontWeight: "800", color: ui.text, letterSpacing: -0.5 },
-  heroBody: { fontSize: 14, color: ui.textMuted, lineHeight: 20 },
-  cardTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginBottom: 4 },
+  heroTitle: { fontSize: 24, fontFamily: fonts.displayHeavy, color: ui.text, letterSpacing: -0.5 },
+  heroBody: { fontSize: 14, fontFamily: fonts.body, color: ui.textMuted, lineHeight: 20 },
+  cardTitle: { fontSize: 15, fontFamily: fonts.display, color: ui.text, marginBottom: 4 },
   section: { gap: 8 },
   sectionCard: { marginTop: 2 },
   bandEyebrow: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bodyBold,
     color: ui.textFaint,
     textTransform: "uppercase",
     letterSpacing: 1.6,
@@ -329,7 +382,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 0,
   },
-  bandLink: { fontSize: 12, fontWeight: "700", color: ui.primaryInk, marginBottom: 8 },
+  bandLink: { fontSize: 12, fontFamily: fonts.bodyBold, color: ui.primaryInk, marginBottom: 8 },
   actionStrip: { gap: 10, paddingRight: 4 },
   actionCard: {
     minWidth: 200,
@@ -337,13 +390,13 @@ const styles = StyleSheet.create({
     borderRadius: ui.radius.lg,
     padding: 13,
   },
-  actionTitle: { fontSize: 15, fontWeight: "700" },
-  actionDetail: { fontSize: 13, marginTop: 2, opacity: 0.85 },
+  actionTitle: { fontSize: 15, fontFamily: fonts.bodyBold },
+  actionDetail: { fontSize: 13, fontFamily: fonts.body, marginTop: 2, opacity: 0.85 },
   dayHeader: {
     backgroundColor: ui.surfaceSunken,
     color: ui.textMuted,
     fontSize: 11.5,
-    fontWeight: "700",
+    fontFamily: fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     paddingHorizontal: 14,
@@ -360,13 +413,13 @@ const styles = StyleSheet.create({
   },
   weekTime: {
     width: 60,
-    fontSize: 14.5,
-    fontWeight: "700",
+    fontSize: 16,
+    fontFamily: fonts.condensed,
     color: ui.text,
     fontVariant: ["tabular-nums"],
   },
-  weekTitle: { fontSize: 15, fontWeight: "600", color: ui.text },
-  weekSub: { fontSize: 13, color: ui.textMuted, marginTop: 1 },
+  weekTitle: { fontSize: 15, fontFamily: fonts.bodySemi, color: ui.text },
+  weekSub: { fontSize: 13, fontFamily: fonts.body, color: ui.textMuted, marginTop: 1 },
   liveBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -377,10 +430,30 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: ui.live },
-  liveBannerText: { flex: 1, color: "#fff", fontSize: 14, fontWeight: "700" },
+  liveBannerText: { flex: 1, color: "#fff", fontSize: 14, fontFamily: fonts.bodyBold },
   programTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  programFee: { fontSize: 14, fontWeight: "800", color: ui.text },
-  programName: { fontSize: 15, fontWeight: "700", color: ui.text, marginTop: 4 },
-  newsTitle: { fontSize: 14, fontWeight: "700", color: ui.text },
-  mutedSmall: { fontSize: 12, color: ui.textMuted, marginTop: 2, lineHeight: 17 },
+  programFee: { fontSize: 14, fontFamily: fonts.displayHeavy, color: ui.text },
+  programName: { fontSize: 15, fontFamily: fonts.display, color: ui.text, marginTop: 4 },
+  newsTitle: { fontSize: 14, fontFamily: fonts.display, color: ui.text },
+  mutedSmall: { fontSize: 12, fontFamily: fonts.body, color: ui.textMuted, marginTop: 2, lineHeight: 17 },
+  squadCard: { marginTop: 8, gap: 8 },
+  squadTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+  squadName: { fontSize: 16, fontFamily: fonts.display, color: ui.text },
+  squadGameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: ui.surfaceSunken,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  squadScore: { fontSize: 15, fontFamily: fonts.condensed },
+  kidLine: {
+    backgroundColor: "#fef3ee",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  kidLineText: { fontSize: 13, fontFamily: fonts.bodyBold, color: "#bc2711" },
 })

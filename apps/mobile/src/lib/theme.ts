@@ -72,3 +72,21 @@ export const tones = {
 export type Tone = keyof typeof tones
 
 export { radii, shadows }
+
+/**
+ * Brand typography (native-parity-v2 P0) — the SAME families the web loads
+ * via next/font: Outfit = font-display, Work Sans = font-body, Barlow
+ * Condensed = font-condensed (scores/tabular). Loaded in app/_layout.tsx.
+ */
+export const fonts = {
+  display: "Outfit_700Bold",
+  displayHeavy: "Outfit_800ExtraBold",
+  displaySemi: "Outfit_600SemiBold",
+  displayMed: "Outfit_500Medium",
+  body: "WorkSans_400Regular",
+  bodyMed: "WorkSans_500Medium",
+  bodySemi: "WorkSans_600SemiBold",
+  bodyBold: "WorkSans_700Bold",
+  condensed: "BarlowCondensed_700Bold",
+  condensedMed: "BarlowCondensed_600SemiBold",
+} as const

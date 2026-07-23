@@ -9,6 +9,20 @@ import { ThemeProvider } from "@/lib/theme-context"
 import { useMobileConfig } from "@/lib/config"
 import { routePushResponses } from "@/lib/push"
 import { ui } from "@/lib/theme"
+import {
+  useFonts,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+} from "@expo-google-fonts/outfit"
+import {
+  WorkSans_400Regular,
+  WorkSans_500Medium,
+  WorkSans_600SemiBold,
+  WorkSans_700Bold,
+} from "@expo-google-fonts/work-sans"
+import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold } from "@expo-google-fonts/barlow-condensed"
 
 SplashScreen.preventAutoHideAsync()
 
@@ -41,17 +55,31 @@ function ForcedUpgrade({ minVersion }: { minVersion: string }) {
  */
 function RootNavigator() {
   const { isLoading } = useSession()
+  // The same brand fonts the web loads via next/font (native-parity-v2 P0):
+  // typography was the single biggest looks-different gap.
+  const [fontsLoaded] = useFonts({
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+    WorkSans_400Regular,
+    WorkSans_500Medium,
+    WorkSans_600SemiBold,
+    WorkSans_700Bold,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+  })
 
   useEffect(() => {
-    if (!isLoading) SplashScreen.hideAsync()
-  }, [isLoading])
+    if (!isLoading && fontsLoaded) SplashScreen.hideAsync()
+  }, [isLoading, fontsLoaded])
 
   useEffect(() => {
     if (isLoading) return
     return routePushResponses()
   }, [isLoading])
 
-  if (isLoading) return null
+  if (isLoading || !fontsLoaded) return null
 
   return (
     <>

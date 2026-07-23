@@ -179,11 +179,29 @@ export default function TabsLayout() {
             ) : null,
         }}
       />
+      {/* Social replaces the Account tab (owner 2026-07-23 web ruling, kept
+          on native): Account stays routable from the top-bar avatar. Signed
+          out, Account shows instead — the feed needs a session anyway. */}
+      <Tabs.Screen
+        name="social"
+        options={{
+          title: "Social",
+          tabBarItemStyle: signedIn ? undefined : { display: "none" },
+          tabBarButton: (props) =>
+            signedIn ? (
+              <TabButton {...(props as object)} name="basketball-outline" label="Social" />
+            ) : null,
+        }}
+      />
       <Tabs.Screen
         name="account"
         options={{
           title: "Account",
-          tabBarButton: (props) => <TabButton {...(props as object)} name="person-circle-outline" label="Account" />,
+          tabBarItemStyle: signedIn ? { display: "none" } : undefined,
+          tabBarButton: (props) =>
+            signedIn ? null : (
+              <TabButton {...(props as object)} name="person-circle-outline" label="Account" />
+            ),
         }}
       />
       {/* Hidden routes — reachable from Home, the top bar and deep links. */}
