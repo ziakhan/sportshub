@@ -60,6 +60,25 @@ export async function GET() {
       getAllPrograms(),
     ])
 
+    // RN can't render the web's inline-SVG matchup covers — map each game
+    // recap to its PNG score card instead (same art, native-safe).
+    const newsIds = news.map((n: any) => n.id)
+    const gameTags = newsIds.length
+      ? await prisma.postTag.findMany({
+          where: { postId: { in: newsIds }, gameId: { not: null } },
+          select: { postId: true, gameId: true },
+        })
+      : []
+    const gameByPost = new Map(gameTags.map((t: any) => [t.postId, t.gameId]))
+    const newsWithImages = news.map((n: any) => ({
+      ...n,
+      imageUrl: n.coverUrl?.startsWith("data:image/svg")
+        ? gameByPost.has(n.id)
+          ? `/api/live/${gameByPost.get(n.id)}/card?variant=score`
+          : null
+        : (n.coverUrl ?? null),
+    }))
+
     return NextResponse.json({
       scoreboard,
       stats: { totalClubs, totalTeams, totalTryouts },
@@ -83,7 +102,7 @@ export async function GET() {
           teamCount: s._count.teamSubmissions,
         })),
       })),
-      news,
+      news: newsWithImages,
       programs: programs.slice(0, 6),
     })
   } catch (error) {

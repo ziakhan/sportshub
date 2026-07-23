@@ -4,7 +4,7 @@ import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useSession } from "@/lib/session"
 import { Avatar } from "@/components/ui"
-import { palette, ui } from "@/lib/theme"
+import { fonts, palette, ui } from "@/lib/theme"
 
 /**
  * Branded top bar — the web header in native form ("menus on top", audit v2
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
   logoBoxText: { color: "#fff", fontSize: 6.5, fontWeight: "800" },
   wordmarkRow: { flexDirection: "row", alignItems: "flex-start" },
   wordmark: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 23,
+    fontFamily: fonts.displayHeavy,
     letterSpacing: -0.4,
     color: ui.text,
   },

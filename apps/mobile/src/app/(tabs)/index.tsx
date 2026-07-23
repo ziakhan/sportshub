@@ -1,11 +1,12 @@
 import { useCallback, useState } from "react"
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
 import { StoriesRail } from "@/components/stories-rail"
 import { Card, ListRow, SectionHeader, TonePill, Monogram } from "@/components/ui"
 import { useBrowseHome } from "@/lib/browse"
+import { apiBaseUrl } from "@/lib/api"
 import { useHome, coachTeamPath } from "@/lib/home"
 import { useSession } from "@/lib/session"
 import { fonts, palette, tones, ui } from "@/lib/theme"
@@ -305,6 +306,13 @@ export default function HomeScreen() {
                     : undefined
                 }
               >
+                {n.imageUrl ? (
+                  <Image
+                    source={{ uri: n.imageUrl.startsWith("/") ? `${apiBaseUrl()}${n.imageUrl}` : n.imageUrl }}
+                    style={styles.newsCover}
+                    resizeMode="cover"
+                  />
+                ) : null}
                 <Text style={styles.newsTitle}>{n.title}</Text>
                 <Text style={styles.mutedSmall} numberOfLines={2}>
                   {n.excerpt}
@@ -413,14 +421,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
   screen: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32, gap: 12 },
+  content: { padding: 16, paddingBottom: 40, gap: 18 },
   greeting: { fontSize: 22, fontFamily: fonts.displayHeavy, color: ui.text },
   hero: { gap: 6, paddingVertical: 8 },
   heroTitle: { fontSize: 24, fontFamily: fonts.displayHeavy, color: ui.text, letterSpacing: -0.5 },
   heroBody: { fontSize: 14, fontFamily: fonts.body, color: ui.textMuted, lineHeight: 20 },
   cardTitle: { fontSize: 15, fontFamily: fonts.display, color: ui.text, marginBottom: 4 },
-  section: { gap: 8 },
-  sectionCard: { marginTop: 2 },
+  section: { gap: 10 },
+  sectionCard: { marginTop: 6 },
   bandEyebrow: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
@@ -487,9 +495,10 @@ const styles = StyleSheet.create({
   programTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   programFee: { fontSize: 14, fontFamily: fonts.displayHeavy, color: ui.text },
   programName: { fontSize: 15, fontFamily: fonts.display, color: ui.text, marginTop: 4 },
-  newsTitle: { fontSize: 14, fontFamily: fonts.display, color: ui.text },
+  newsCover: { width: "100%", aspectRatio: 1200 / 630, borderRadius: 12, marginBottom: 8 },
+  newsTitle: { fontSize: 14.5, fontFamily: fonts.display, color: ui.text },
   mutedSmall: { fontSize: 12, fontFamily: fonts.body, color: ui.textMuted, marginTop: 2, lineHeight: 17 },
-  squadCard: { marginTop: 8, gap: 8 },
+  squadCard: { marginTop: 10, gap: 10 },
   squadEyebrow: { fontSize: 11, fontFamily: fonts.bodyBold, color: palette.hoop[500], letterSpacing: 2, textTransform: "uppercase" },
   squadHeading: { fontSize: 26, fontFamily: fonts.displayHeavy, color: ui.text, marginTop: 2, marginBottom: 6, letterSpacing: -0.5 },
   kidTeamPill: { backgroundColor: "#fef3ee", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },

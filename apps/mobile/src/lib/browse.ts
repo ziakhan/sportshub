@@ -43,6 +43,8 @@ export interface FeedItem {
   href: string | null
   author: string | null
   coverUrl: string | null
+  /** RN-safe cover (PNG score card for recaps; https for videos) */
+  imageUrl?: string | null
 }
 
 export interface ProgramItem {
