@@ -64,7 +64,7 @@ export function StoriesRail({
   const wrap = (children: ReactNode) =>
     chrome === "home" ? (
       <div className="border-ink-100 border-b bg-white">
-        <div className="container mx-auto px-4 py-3 sm:px-6">{children}</div>
+        <div className="container mx-auto px-4 py-1 sm:px-6">{children}</div>
       </div>
     ) : (
       <>{children}</>
@@ -93,7 +93,7 @@ export function StoriesRail({
 
   return wrap(
     <div className={className}>
-      <div className="no-scrollbar flex gap-1.5 overflow-x-auto py-0.5">
+      <div className="no-scrollbar flex gap-1 overflow-x-auto">
         {rail.map((entry, ei) => (
           <button
             key={entry.playerId}
@@ -101,7 +101,7 @@ export function StoriesRail({
               setOpen({ entry: ei, story: 0 })
               markViewed(entry.stories[0].id)
             }}
-            className="flex w-[84px] shrink-0 flex-col items-center gap-0.5"
+            className="flex w-[82px] shrink-0 flex-col items-center"
           >
             <span
               className={cn(
@@ -120,7 +120,7 @@ export function StoriesRail({
                 {entry.name.slice(0, 1)}
               </span>
             </span>
-            <span className="text-ink-700 w-full truncate text-center text-xs font-medium">
+            <span className="text-ink-700 -mt-0.5 w-full truncate text-center text-xs font-medium leading-tight">
               {entry.name}
             </span>
           </button>
