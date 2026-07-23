@@ -60,7 +60,7 @@ export function ShareCardDialog({
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const cardUrl = `/api/live/${gameId}/card${cardType === "POTG" ? "" : `/${playerId}`}?template=${template}`
+  const cardUrl = `/api/live/${gameId}/card${cardType === "POTG" ? "" : `/${playerId}`}?template=${template}&v=2`
 
   const submit = async () => {
     if (busy || (!toProfile && !toStory)) return

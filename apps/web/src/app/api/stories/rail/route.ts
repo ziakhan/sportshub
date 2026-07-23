@@ -68,8 +68,8 @@ export async function GET() {
         id: s.id,
         cardUrl:
           s.cardType === "POTG"
-            ? `/api/live/${s.gameId}/card?src=story:${s.id}&aspect=portrait`
-            : `/api/live/${s.gameId}/card/${s.playerId}?src=story:${s.id}&aspect=portrait`,
+            ? `/api/live/${s.gameId}/card?src=story:${s.id}&aspect=portrait&v=2`
+            : `/api/live/${s.gameId}/card/${s.playerId}?src=story:${s.id}&aspect=portrait&v=2`,
         cardType: s.cardType,
         createdAt: s.createdAt,
         viewed,
