@@ -184,9 +184,13 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
 
   const shareOutside = async () => {
     const url = `${window.location.origin}${href}`
+    // Instagram wants 3:4 — external shares fetch the portrait render.
+    // Recaps/finals without their own card share the game's score card.
+    const base = item.cardImage ?? (item.gameId ? `/api/live/${item.gameId}/card?variant=score` : null)
+    const shareImg = base ? `${base}${base.includes("?") ? "&" : "?"}aspect=portrait` : null
     try {
-      if (item.cardImage) {
-        const res = await fetch(item.cardImage)
+      if (shareImg) {
+        const res = await fetch(shareImg)
         const blob = await res.blob()
         const file = new File([blob], "sportshub-card.png", { type: "image/png" })
         if (navigator.canShare?.({ files: [file] })) {
@@ -201,7 +205,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
     } catch {
       /* cancelled or unsupported — fall through */
     }
-    window.open(item.cardImage ?? url, "_blank")
+    window.open(shareImg ?? url, "_blank")
   }
 
   const sendToTeam = async (teamId: string) => {

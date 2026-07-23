@@ -21,7 +21,8 @@ export async function GET(
     if (overrides.customPhotoUrl) data.photoUrl = overrides.customPhotoUrl
     const res = renderCard(
       data,
-      overrides.templateId ?? parseTemplate(request.nextUrl.searchParams.get("template"))
+      overrides.templateId ?? parseTemplate(request.nextUrl.searchParams.get("template")),
+      request.nextUrl.searchParams.get("aspect") === "portrait"
     )
     res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600")
     return res

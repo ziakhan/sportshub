@@ -16,7 +16,8 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     if (request.nextUrl.searchParams.get("variant") === "score") {
       const score = await renderScoreCard(
         params.gameId,
-        parseTemplate(request.nextUrl.searchParams.get("template"))
+        parseTemplate(request.nextUrl.searchParams.get("template")),
+        request.nextUrl.searchParams.get("aspect") === "portrait"
       )
       if (!score) return NextResponse.json({ error: "Not available" }, { status: 404 })
       score.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600")
@@ -37,7 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
     if (overrides.customPhotoUrl) data.photoUrl = overrides.customPhotoUrl
     const res = renderCard(
       data,
-      overrides.templateId ?? parseTemplate(request.nextUrl.searchParams.get("template"))
+      overrides.templateId ?? parseTemplate(request.nextUrl.searchParams.get("template")),
+      request.nextUrl.searchParams.get("aspect") === "portrait"
     )
     res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600")
     return res

@@ -134,18 +134,19 @@ function statChip(label: string, value: number, t: (typeof TEMPLATES)["bold"]) {
   )
 }
 
-export function renderCard(data: CardData, template: CardTemplate) {
+export function renderCard(data: CardData, template: CardTemplate, portrait = false) {
   const t = TEMPLATES[template]
   return new ImageResponse(
     (
-      <div style={{ display: "flex", width: W, height: H, fontFamily: "sans-serif" }}>
+      <div style={{ display: "flex", flexDirection: portrait ? "column" : "row", width: portrait ? 1080 : W, height: portrait ? 1350 : H, fontFamily: "sans-serif" }}>
         {/* Left: the player */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            width: 560,
+            width: portrait ? "100%" : 560,
+            flexGrow: portrait ? 1 : 0,
             padding: "0 48px",
             background: t.leftBg,
             color: t.leftFg,
@@ -272,14 +273,14 @@ export function renderCard(data: CardData, template: CardTemplate) {
         </div>
       </div>
     ),
-    { width: W, height: H }
+    { width: portrait ? 1080 : W, height: portrait ? 1350 : H }
   )
 }
 
 /** Score-only card (?variant=score): the final for games with or without a
  *  POTG — used by system final posts in the feed so they read as a SCORE,
  *  not a second player card (owner 2026-07-23: "why 2 POTG badges"). */
-export async function renderScoreCard(gameId: string, template: CardTemplate) {
+export async function renderScoreCard(gameId: string, template: CardTemplate, portrait = false) {
   const game = await (prisma as any).game.findUnique({
     where: { id: gameId },
     select: {
@@ -303,7 +304,7 @@ export async function renderScoreCard(gameId: string, template: CardTemplate) {
       <div
         style={{
           display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center",
-          width: W, height: H, background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif",
+          width: portrait ? 1080 : W, height: portrait ? 1350 : H, background: t.leftBg, color: t.leftFg, fontFamily: "sans-serif",
         }}
       >
         <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: 6, padding: "10px 32px", borderRadius: 999, background: t.accent, color: "#ffffff" }}>
@@ -323,7 +324,7 @@ export async function renderScoreCard(gameId: string, template: CardTemplate) {
         </span>
       </div>
     ),
-    { width: W, height: H }
+    { width: portrait ? 1080 : W, height: portrait ? 1350 : H }
   )
 }
 
