@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -66,10 +67,11 @@ export async function GET() {
       const viewed = s.views.length > 0
       entry.stories.push({
         id: s.id,
-        cardUrl:
+        cardUrl: `${appBaseUrl()}${
           s.cardType === "POTG"
             ? `/api/live/${s.gameId}/card?src=story:${s.id}&aspect=portrait&v=3`
-            : `/api/live/${s.gameId}/card/${s.playerId}?src=story:${s.id}&aspect=portrait&v=3`,
+            : `/api/live/${s.gameId}/card/${s.playerId}?src=story:${s.id}&aspect=portrait&v=3`
+        }`,
         cardType: s.cardType,
         createdAt: s.createdAt,
         viewed,

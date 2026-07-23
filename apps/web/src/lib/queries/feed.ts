@@ -1,5 +1,11 @@
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
+import { appBaseUrl } from "@/lib/email"
+
+/** Image URLs leave the server ABSOLUTE (bug 2026-07-25): native app bundles
+ * historically mishandled relative /api/live paths — absolute URLs render on
+ * every client and every bundle version, web included (same origin). */
+const abs = (u: string | null) => (u && u.startsWith("/") ? `${appBaseUrl()}${u}` : u)
 
 /**
  * The personalized social feed (social-feed-plan P5): published posts tagged
@@ -117,7 +123,7 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
       : null,
     repostedBy: null,
     repostedAt: null,
-    cardImage:
+    cardImage: abs(
       isCard && gameId
         ? post.kind === "PLAYER_OF_GAME"
           ? playerTag
@@ -128,14 +134,17 @@ function toItem(post: any, viewerReactions: Map<string, string[]>, viewerReposts
           : playerTag
             ? `/api/live/${gameId}/card/${playerTag.playerId}?src=post:${post.id}&aspect=portrait&v=3`
             : null
-        : null,
+        : null
+    ),
     // SVG data-URI covers can't render in React Native — recaps fall back
     // to the game's PNG score card (native + web consistent)
-    mediaUrl: post.media[0]?.url?.startsWith("data:image/svg")
-      ? gameId
-        ? `/api/live/${gameId}/cover?v=4`
-        : null
-      : (post.media[0]?.url ?? null),
+    mediaUrl: abs(
+      post.media[0]?.url?.startsWith("data:image/svg")
+        ? gameId
+          ? `/api/live/${gameId}/cover?v=4`
+          : null
+        : (post.media[0]?.url ?? null)
+    ),
     mediaType: post.media[0]?.type ?? null,
     gameId,
     playerName: playerTag?.player ? publicPlayerName(playerTag.player) : null,

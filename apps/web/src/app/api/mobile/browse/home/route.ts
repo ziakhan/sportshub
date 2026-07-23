@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
 import { getAllPrograms } from "@/lib/queries/programs"
+import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -74,7 +75,7 @@ export async function GET() {
       ...n,
       imageUrl: n.coverUrl?.startsWith("data:image/svg")
         ? gameByPost.has(n.id)
-          ? `/api/live/${gameByPost.get(n.id)}/cover?v=4`
+          ? `${appBaseUrl()}/api/live/${gameByPost.get(n.id)}/cover?v=4`
           : null
         : (n.coverUrl ?? null),
     }))
