@@ -144,7 +144,7 @@ export default function SeasonScreen() {
                 <Pressable
                   key={row.teamId}
                   style={({ pressed }) => [styles.standingsRow, pressed && { backgroundColor: ui.surfaceSunken }]}
-                  onPress={() => router.push(`/team/${row.teamId}`)}
+                  onPress={() => router.push(`/browse/team/${row.teamId}`)}
                 >
                   <Text style={[styles.standingsRank, idx === 0 && styles.leader]}>{idx + 1}</Text>
                   <Text style={[styles.standingsTeam, idx === 0 && styles.leader]} numberOfLines={1}>

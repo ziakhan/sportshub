@@ -126,7 +126,11 @@ export default function TeamScreen() {
           return (
             <Card
               key={`${item.kind}:${item.id}`}
-              onPress={item.kind === "game" ? () => router.push(`/browse/game/${item.id}`) : undefined}
+              onPress={() =>
+                router.push(
+                  item.kind === "game" ? `/browse/game/${item.id}` : `/event/${item.kind}/${item.id}`
+                )
+              }
             >
               <View style={styles.top}>
                 <Text style={styles.when}>

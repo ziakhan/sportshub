@@ -140,7 +140,10 @@ export function EventCard({
       ]
     )
   }
-  const hasActions = item.kind === "game" ? true : isStaff
+  // Every row opens the sheet now (native-parity gap 2): games and
+  // practices/events alike get a "view details" door, staff additionally
+  // get cancel/restore/postpone from the same sheet.
+  const hasActions = true
 
 
   return (
@@ -221,7 +224,19 @@ export function EventCard({
               >
                 <Text style={styles.sheetActionText}>Open game page →</Text>
               </Pressable>
-            ) : null}
+            ) : (
+              <Pressable
+                style={styles.sheetAction}
+                onPress={() => {
+                  setSheetOpen(false)
+                  router.push(`/event/${item.kind}/${item.id}`)
+                }}
+              >
+                <Text style={styles.sheetActionText}>
+                  View {item.kind === "practice" ? "practice" : "event"} details →
+                </Text>
+              </Pressable>
+            )}
             {item.kind !== "game" && isStaff && !cancelled ? (
               <Pressable style={[styles.sheetAction, styles.sheetDanger]} disabled={actionBusy} onPress={() => confirmAction("cancel")}>
                 <Text style={styles.sheetDangerText}>

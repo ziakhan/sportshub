@@ -52,6 +52,8 @@ export interface MyCalendarItem {
   detail: string | null
   /** Team-event type (WORKOUT/TRAINING/SCRIMMAGE/MEETING/OTHER) — events only */
   eventType?: string | null
+  /** Practices/events only — lets the app link out to the venue page. */
+  venueId?: string | null
 }
 
 export interface MyCalendarPayload {
@@ -145,6 +147,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         location: true,
         notes: true,
         status: true,
+        venueId: true,
         venue: { select: { name: true } },
       },
       orderBy: { scheduledAt: "asc" },
@@ -188,6 +191,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         title: true,
         description: true,
         location: true,
+        venueId: true,
         startAt: true,
         durationMinutes: true,
         status: true,
@@ -287,6 +291,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
       title: "Practice",
       location: p.venue?.name ?? p.location ?? null,
       detail: p.notes ?? null,
+      venueId: p.venueId ?? null,
     })),
     ...games.map((g: any) => {
       const memberTeamIds = [g.homeTeamId, g.awayTeamId].filter((id) =>
@@ -341,6 +346,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         location: e.location ?? null,
         detail: e.description ?? null,
         eventType: e.eventType ?? null,
+        venueId: e.venueId ?? null,
       }
     }),
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())

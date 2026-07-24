@@ -212,6 +212,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="alerts" options={{ href: null, title: "Alerts" }} />
       <Tabs.Screen name="kids" options={{ href: null }} />
       <Tabs.Screen name="team" options={{ href: null }} />
+      <Tabs.Screen name="event" options={{ href: null }} />
       <Tabs.Screen name="referee" options={{ href: null, title: "Refereeing" }} />
       <Tabs.Screen name="operator" options={{ href: null, title: "Operations" }} />
       <Tabs.Screen name="polls" options={{ href: null, title: "Polls" }} />

@@ -18,7 +18,7 @@ interface Article {
   tags: Array<{
     team: { id: string; name: string } | null
     tenant: { id: string; name: string; slug: string } | null
-    league: { id: string; name: string } | null
+    league: { id: string; name: string; seasons: Array<{ id: string }> } | null
   }>
 }
 
@@ -54,18 +54,21 @@ export default function ArticleScreen() {
     post.media?.find((m) => m.type === "IMAGE")?.url ??
     post.media?.find((m) => m.posterUrl)?.posterUrl ??
     null
-  // Team and club tags have a native destination; league tags don't (no
-  // native /browse/league/[id] screen exists yet) — those render as plain
-  // text rather than a dead tap target.
+  // Team and club tags route natively; league tags go to that league's
+  // latest season (web pattern: league -> seasons[0]) — plain text only
+  // when a league tag somehow has no season yet.
   const tagChips = post.tags
     .map((t) => {
       const label = t.team?.name ?? t.tenant?.name ?? t.league?.name
       if (!label) return null
+      const leagueSeasonId = t.league?.seasons?.[0]?.id
       const onPress = t.team
-        ? () => router.push(`/team/${t.team!.id}`)
+        ? () => router.push(`/browse/team/${t.team!.id}`)
         : t.tenant
           ? () => router.push(`/browse/club/${t.tenant!.slug}`)
-          : undefined
+          : leagueSeasonId
+            ? () => router.push(`/browse/season/${leagueSeasonId}`)
+            : undefined
       return { label, onPress }
     })
     .filter((t): t is { label: string; onPress: (() => void) | undefined } => !!t)
