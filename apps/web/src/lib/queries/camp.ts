@@ -33,5 +33,6 @@ export const getPublicCamp = cache(async (id: string): Promise<any | null> => {
     ...camp,
     weeklyFee: Number(camp.weeklyFee),
     fullCampFee: camp.fullCampFee ? Number(camp.fullCampFee) : null,
+    pricePerSession: camp.pricePerSession != null ? Number(camp.pricePerSession) : null,
   }
 })

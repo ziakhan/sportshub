@@ -42,6 +42,11 @@ export default function EditTrainingSessionPage() {
           scheduleType: session.scheduleType ?? "ONE_TIME",
           startAt: toDateTimeInput(session.startAt),
           dayOfWeek: session.dayOfWeek ?? 2,
+          daysOfWeek:
+            Array.isArray(session.daysOfWeek) && session.daysOfWeek.length > 0
+              ? session.daysOfWeek
+              : [session.dayOfWeek ?? 2],
+          groupTier: session.groupTier ?? "",
           startTime: session.startTime ?? "18:00",
           startDate: toDateInput(session.startDate),
           endDate: toDateInput(session.endDate),

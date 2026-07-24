@@ -1241,6 +1241,11 @@ model League {
   // Referee signs the scoresheet before a game can be finalized
   requireRefereeApproval Boolean    @default(false)
 
+  // League perks / "what's included" (QA-205) — predefined perk keys mixed
+  // with free-text custom entries, plus an optional short "why join" blurb.
+  perks     String[] @default([])
+  perksNote String?  @db.Text
+
   seasons         Season[]
   staff           UserRole[]
   reviews         Review[]
@@ -3095,6 +3100,12 @@ model Camp {
   weeklyFee     Decimal  @db.Decimal(10, 2) // Price per single week
   fullCampFee   Decimal? @db.Decimal(10, 2) // Discounted price for all weeks
 
+  // Schedule model (owner 2026-07-24): CONSECUTIVE keeps the fields above;
+  // DAILY/WEEKDAY_PATTERN use daysOfWeek + per-session pricing.
+  scheduleKind    CampScheduleKind @default(CONSECUTIVE)
+  daysOfWeek      Int[]            @default([]) // 0=Sun..6, WEEKDAY_PATTERN only
+  pricePerSession Decimal?         @db.Decimal(10, 2)
+
   maxParticipants Int?
 
   // What's included
@@ -3128,6 +3139,23 @@ enum CampType {
 // STRICT blocks ineligible players server-side, PREFERRED warns but allows,
 // OPEN skips the check entirely. Tryouts default STRICT (team age groups are
 // mandatory); camps/training/house leagues default PREFERRED.
+// Camp scheduling (owner 2026-07-24, Bucket D1): CONSECUTIVE = legacy
+// week-block (weeklyFee/numberOfWeeks); DAILY = consecutive days;
+// WEEKDAY_PATTERN = chosen weekdays between start/end ("every Mon + Wed").
+// Pattern/daily camps price per SESSION with optional fullCampFee.
+enum CampScheduleKind {
+  CONSECUTIVE
+  DAILY
+  WEEKDAY_PATTERN
+}
+
+// Training group-size tiers families filter by (QA-202).
+enum TrainingGroupTier {
+  PRIVATE
+  SMALL_GROUP
+  LARGE_GROUP
+}
+
 enum AgePolicy {
   STRICT
   PREFERRED
@@ -3149,6 +3177,8 @@ model CampSignup {
   // Which specific weeks (1-based within the camp's numberOfWeeks). Empty for
   // legacy count-only signups; when set, weeksSelected == weekNumbers.length.
   weekNumbers   Int[]   @default([])
+  // Pattern/daily camps: the specific session dates the family picked.
+  selectedDates DateTime[] @default([])
   totalFee      Decimal @db.Decimal(10, 2)
 
   status CampSignupStatus @default(REGISTERED)
@@ -3207,6 +3237,10 @@ model TrainingSession {
   startAt DateTime?
   // RECURRING ("Tuesdays 18:00, Jan 6 – Mar 30")
   dayOfWeek Int? // 0 = Sunday ... 6 = Saturday
+  // Multi-day recurrence (QA-203): when set, wins over dayOfWeek.
+  daysOfWeek Int[] @default([])
+  // Group-size tier families filter by (QA-202).
+  groupTier  TrainingGroupTier?
   startTime String? // "18:00" wall time in the app timezone
   startDate DateTime?
   endDate   DateTime?

@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { Button } from "@/components/ui"
 import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 import { computeCampFee } from "@/lib/registration/camp-pricing"
+import { campFeeFor, sessionDatesFor, type CampScheduleKind } from "@/lib/registration/camp-schedule"
 
 /**
  * THE program registration panel — one component for camps, house leagues,
@@ -35,11 +37,18 @@ export interface SignupPayment {
 }
 
 interface CampWeeks {
+  /** Program flexibility (owner 2026-07-24). CONSECUTIVE keeps the week
+   * picker below; DAILY/WEEKDAY_PATTERN render session-date chips instead. */
+  scheduleKind: CampScheduleKind
   numberOfWeeks: number
   weeklyFee: number
   fullCampFee: number | null
-  /** ISO — week N spans startDate + (N-1)*7 days. */
+  pricePerSession: number | null
+  daysOfWeek: number[]
+  /** ISO — week N spans startDate + (N-1)*7 days (CONSECUTIVE only). */
   startDate: string
+  /** ISO — DAILY/WEEKDAY_PATTERN session-date range. */
+  endDate: string
 }
 
 interface ProgramSignupFormProps {
@@ -95,8 +104,14 @@ export function ProgramSignupForm({
     [kids]
   )
   const [selected, setSelected] = useState<string[]>(selectable.length === 1 ? [selectable[0].id] : [])
-  const allWeeks = camp ? Array.from({ length: camp.numberOfWeeks }, (_, i) => i + 1) : []
+  const isConsecutive = !camp || camp.scheduleKind === "CONSECUTIVE"
+  const allWeeks = camp && isConsecutive ? Array.from({ length: camp.numberOfWeeks }, (_, i) => i + 1) : []
+  const allSessionDates = useMemo(
+    () => (camp && !isConsecutive ? sessionDatesFor(camp) : []),
+    [camp, isConsecutive]
+  )
   const [weeksByKid, setWeeksByKid] = useState<Record<string, number[]>>({})
+  const [datesByKid, setDatesByKid] = useState<Record<string, string[]>>({})
   const [notes, setNotes] = useState("")
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -109,10 +124,12 @@ export function ProgramSignupForm({
   >([])
 
   const kidWeeks = (kidId: string) => weeksByKid[kidId] ?? allWeeks
+  const kidDates = (kidId: string) => datesByKid[kidId] ?? allSessionDates.map((d) => d.toISOString())
 
   const totalFor = (kidId: string): number => {
-    if (camp) return computeCampFee(camp, kidWeeks(kidId).length).total
-    return flatFee
+    if (!camp) return flatFee
+    if (isConsecutive) return computeCampFee(camp, kidWeeks(kidId).length).total
+    return campFeeFor(camp, { sessionCount: kidDates(kidId).length })
   }
   const total = selected.reduce((sum, id) => sum + totalFor(id), 0)
 
@@ -123,6 +140,13 @@ export function ProgramSignupForm({
     setWeeksByKid((prev) => {
       const current = prev[kidId] ?? allWeeks
       const next = current.includes(week) ? current.filter((w) => w !== week) : [...current, week].sort((a, b) => a - b)
+      return { ...prev, [kidId]: next.length === 0 ? current : next }
+    })
+
+  const toggleDate = (kidId: string, iso: string) =>
+    setDatesByKid((prev) => {
+      const current = prev[kidId] ?? allSessionDates.map((d) => d.toISOString())
+      const next = current.includes(iso) ? current.filter((d) => d !== iso) : [...current, iso].sort()
       return { ...prev, [kidId]: next.length === 0 ? current : next }
     })
 
@@ -140,7 +164,11 @@ export function ProgramSignupForm({
         body: JSON.stringify({
           registrations: selected.map((playerId) => ({
             playerId,
-            ...(camp ? { weekNumbers: kidWeeks(playerId) } : {}),
+            ...(camp
+              ? isConsecutive
+                ? { weekNumbers: kidWeeks(playerId) }
+                : { sessionDates: kidDates(playerId) }
+              : {}),
           })),
           notes: notes || undefined,
           marketingConsent,
@@ -306,7 +334,7 @@ export function ProgramSignupForm({
             return (
               <div key={kid.id}>
                 <KidRow kid={kid} checked={checked} disabled={disabled} onToggle={() => toggleKid(kid.id)} />
-                {camp && checked && camp.numberOfWeeks > 1 ? (
+                {camp && checked && isConsecutive && camp.numberOfWeeks > 1 ? (
                   <div className="ml-8 mt-2 flex flex-wrap gap-1.5">
                     {allWeeks.map((w) => {
                       const on = kidWeeks(kid.id).includes(w)
@@ -327,7 +355,7 @@ export function ProgramSignupForm({
                     })}
                   </div>
                 ) : null}
-                {camp && checked && camp.numberOfWeeks > 1 ? (
+                {camp && checked && isConsecutive && camp.numberOfWeeks > 1 ? (
                   <p className="ml-8 mt-1.5 text-xs text-ink-500">
                     {kidWeeks(kid.id).length === camp.numberOfWeeks
                       ? computeCampFee(camp, camp.numberOfWeeks).usedFullCampFee &&
@@ -335,6 +363,37 @@ export function ProgramSignupForm({
                         ? `All ${camp.numberOfWeeks} weeks — full-camp price (save ${computeCampFee(camp, camp.numberOfWeeks).savingsPercent}%)`
                         : `All ${camp.numberOfWeeks} weeks`
                       : `${kidWeeks(kid.id).length} of ${camp.numberOfWeeks} weeks`}
+                    {" · "}
+                    {formatCurrency(totalFor(kid.id), currency)}
+                  </p>
+                ) : null}
+                {camp && checked && !isConsecutive ? (
+                  <div className="ml-8 mt-2 flex flex-wrap gap-1.5">
+                    {allSessionDates.map((d) => {
+                      const iso = d.toISOString()
+                      const on = kidDates(kid.id).includes(iso)
+                      return (
+                        <button
+                          key={iso}
+                          type="button"
+                          onClick={() => toggleDate(kid.id, iso)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                            on
+                              ? "border-[color:var(--brand)] bg-[color:var(--brand)] text-white"
+                              : "border-ink-200 bg-white text-ink-600 hover:border-ink-300"
+                          }`}
+                        >
+                          {format(d, "EEE MMM d")}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : null}
+                {camp && checked && !isConsecutive ? (
+                  <p className="ml-8 mt-1.5 text-xs text-ink-500">
+                    {kidDates(kid.id).length === allSessionDates.length
+                      ? `All ${allSessionDates.length} session${allSessionDates.length !== 1 ? "s" : ""}`
+                      : `${kidDates(kid.id).length} of ${allSessionDates.length} sessions`}
                     {" · "}
                     {formatCurrency(totalFor(kid.id), currency)}
                   </p>

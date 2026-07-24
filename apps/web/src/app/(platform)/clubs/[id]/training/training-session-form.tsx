@@ -17,6 +17,10 @@ export interface TrainingSessionFormValues {
   scheduleType: "ONE_TIME" | "RECURRING"
   startAt: string
   dayOfWeek: number
+  /** Multi-day recurrence (QA-203) — wins over dayOfWeek when >1 selected. */
+  daysOfWeek: number[]
+  /** Group-size tier families filter by (QA-202). "" = none set. */
+  groupTier: string
   startTime: string
   startDate: string
   endDate: string
@@ -38,6 +42,8 @@ export const EMPTY_TRAINING_FORM: TrainingSessionFormValues = {
   scheduleType: "ONE_TIME",
   startAt: "",
   dayOfWeek: 2,
+  daysOfWeek: [2],
+  groupTier: "",
   startTime: "18:00",
   startDate: "",
   endDate: "",
@@ -49,7 +55,14 @@ export const EMPTY_TRAINING_FORM: TrainingSessionFormValues = {
   location: "",
 }
 
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+const GROUP_TIERS = [
+  { value: "", label: "Not set" },
+  { value: "PRIVATE", label: "Private (1-on-1)" },
+  { value: "SMALL_GROUP", label: "Small group (2-4)" },
+  { value: "LARGE_GROUP", label: "Large group (6-10)" },
+]
 
 /**
  * Shared create/edit form for a trainer's Training Program (batch-backlog
@@ -79,6 +92,14 @@ export function TrainingSessionForm({
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
+  const toggleDay = (day: number) =>
+    setValues((v) => {
+      const daysOfWeek = v.daysOfWeek.includes(day)
+        ? v.daysOfWeek.filter((d) => d !== day)
+        : [...v.daysOfWeek, day].sort((a, b) => a - b)
+      return { ...v, daysOfWeek }
+    })
+
   const submit = async () => {
     setError(null)
     if (values.title.trim().length < 3) return setError("Give the program a name.")
@@ -86,9 +107,9 @@ export function TrainingSessionForm({
       return setError("Pick a date and time.")
     if (
       values.scheduleType === "RECURRING" &&
-      (!values.startTime || !values.startDate || !values.endDate)
+      (values.daysOfWeek.length === 0 || !values.startTime || !values.startDate || !values.endDate)
     )
-      return setError("Recurring programs need a weekday, time, and date range.")
+      return setError("Recurring programs need at least one weekday, a time, and a date range.")
     const fee = Number(values.fee)
     if (Number.isNaN(fee) || fee < 0) return setError("Enter a fee (0 for free).")
 
@@ -101,6 +122,7 @@ export function TrainingSessionForm({
         ageGroup: values.ageGroup.trim() || undefined,
         agePolicy: values.agePolicy,
         gender: values.gender || undefined,
+        groupTier: values.groupTier || null,
         scheduleType: values.scheduleType,
         durationMinutes: Number(values.durationMinutes),
         capacity: values.capacity ? Number(values.capacity) : null,
@@ -111,7 +133,10 @@ export function TrainingSessionForm({
       if (values.scheduleType === "ONE_TIME") {
         payload.startAt = new Date(values.startAt).toISOString()
       } else {
-        payload.dayOfWeek = Number(values.dayOfWeek)
+        // A single selection also fills the legacy dayOfWeek column
+        // (back-compat for older fielded clients that only read it).
+        payload.dayOfWeek = values.daysOfWeek.length > 0 ? Math.min(...values.daysOfWeek) : null
+        payload.daysOfWeek = values.daysOfWeek
         payload.startTime = values.startTime
         payload.startDate = values.startDate
         payload.endDate = values.endDate
@@ -217,6 +242,22 @@ export function TrainingSessionForm({
             <option value="FEMALE">Girls</option>
           </select>
         </div>
+        <div>
+          <label className={labelClass}>
+            Group size <span className="text-ink-400 font-normal">(optional)</span>
+          </label>
+          <select
+            value={values.groupTier}
+            onChange={(e) => set("groupTier", e.target.value)}
+            className={inputClass}
+          >
+            {GROUP_TIERS.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="border-ink-200 border-t pt-5">
@@ -269,58 +310,66 @@ export function TrainingSessionForm({
             </div>
           </div>
         ) : (
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <div className="mt-3 space-y-4">
             <div>
-              <label className={labelClass}>Day of week</label>
-              <select
-                value={values.dayOfWeek}
-                onChange={(e) => set("dayOfWeek", Number(e.target.value))}
-                className={inputClass}
-              >
-                {DAYS.map((d, i) => (
-                  <option key={d} value={i}>
-                    {d}s
-                  </option>
+              <label className={labelClass}>Days of week</label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {DAY_ABBR.map((label, i) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleDay(i)}
+                    className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+                      values.daysOfWeek.includes(i)
+                        ? "border-play-600 bg-play-600 text-white"
+                        : "border-ink-200 text-ink-600 hover:bg-court-50"
+                    }`}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
+              </div>
+              <p className="mt-1 text-xs text-ink-400">Pick every weekday this program runs.</p>
             </div>
-            <div>
-              <label className={labelClass}>Start time</label>
-              <DateTimePicker
-                mode="time"
-                value={values.startTime}
-                onChange={(v) => set("startTime", v)}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>First session</label>
-              <DateTimePicker
-                mode="date"
-                value={values.startDate}
-                onChange={(v) => set("startDate", v)}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Last session</label>
-              <DateTimePicker
-                mode="date"
-                value={values.endDate}
-                onChange={(v) => set("endDate", v)}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Duration</label>
-              <select
-                value={values.durationMinutes}
-                onChange={(e) => set("durationMinutes", Number(e.target.value))}
-                className={inputClass}
-              >
-                {[30, 45, 60, 75, 90, 120, 180].map((m) => (
-                  <option key={m} value={m}>
-                    {m} min
-                  </option>
-                ))}
-              </select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>Start time</label>
+                <DateTimePicker
+                  mode="time"
+                  value={values.startTime}
+                  onChange={(v) => set("startTime", v)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>First session</label>
+                <DateTimePicker
+                  mode="date"
+                  value={values.startDate}
+                  onChange={(v) => set("startDate", v)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Last session</label>
+                <DateTimePicker
+                  mode="date"
+                  value={values.endDate}
+                  onChange={(v) => set("endDate", v)}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Duration</label>
+                <select
+                  value={values.durationMinutes}
+                  onChange={(e) => set("durationMinutes", Number(e.target.value))}
+                  className={inputClass}
+                >
+                  {[30, 45, 60, 75, 90, 120, 180].map((m) => (
+                    <option key={m} value={m}>
+                      {m} min
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}

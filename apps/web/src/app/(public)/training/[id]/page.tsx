@@ -16,6 +16,12 @@ import { ProgramSignupForm } from "@/components/registration/program-signup-form
 
 export const dynamic = "force-dynamic"
 
+const GROUP_TIER_LABELS: Record<string, string> = {
+  PRIVATE: "Private",
+  SMALL_GROUP: "Small group (2-4)",
+  LARGE_GROUP: "Large group (6-10)",
+}
+
 async function getPublicTrainingSession(id: string) {
   const session = await (prisma as any).trainingSession.findFirst({
     where: { id, isPublished: true },
@@ -119,6 +125,9 @@ export default async function PublicTrainingDetailPage({ params }: { params: { i
                 <span className="rounded-full bg-[var(--brand-soft)] px-3 py-1 text-sm font-semibold text-[color:var(--brand-ink)]">
                   {trainingTypeLabel(session.sessionType)}
                 </span>
+                {session.groupTier && (
+                  <Badge tone="neutral">{GROUP_TIER_LABELS[session.groupTier] ?? session.groupTier}</Badge>
+                )}
                 {isPast && <Badge tone="neutral">Ended</Badge>}
                 {!isPast && !isFull && <Badge tone="court">Open</Badge>}
                 {isFull && !isPast && <Badge tone="danger">Full</Badge>}

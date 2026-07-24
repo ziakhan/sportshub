@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ImageUploadField } from "@/components/club-page/image-upload-field"
+import { PREDEFINED_PERKS, perkLabel } from "@/lib/leagues/perks"
 
 interface Initial {
   description: string
@@ -11,6 +12,8 @@ interface Initial {
   tagline: string
   primaryColor: string
   socials: Record<string, string>
+  perks: string[]
+  perksNote: string
 }
 
 const input =
@@ -24,12 +27,36 @@ const SOCIALS = [
   ["tiktok", "TikTok", "@handle"],
 ] as const
 
+const PREDEFINED_KEYS = new Set(PREDEFINED_PERKS.map((p) => p.key))
+
 export function LeagueBrandEditor({ leagueId, initial }: { leagueId: string; initial: Initial }) {
   const router = useRouter()
   const [f, setF] = useState({ ...initial })
+  const [customPerk, setCustomPerk] = useState("")
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const set = (k: keyof Initial, v: any) => setF((p) => ({ ...p, [k]: v }))
+
+  const customPerks = f.perks.filter((p) => !PREDEFINED_KEYS.has(p))
+
+  function togglePredefinedPerk(key: string) {
+    setF((p) => ({
+      ...p,
+      perks: p.perks.includes(key) ? p.perks.filter((x) => x !== key) : [...p.perks, key],
+    }))
+  }
+
+  function addCustomPerk() {
+    const value = customPerk.trim()
+    if (!value || f.perks.includes(value)) return
+    if (f.perks.length >= 24) return
+    setF((p) => ({ ...p, perks: [...p.perks, value] }))
+    setCustomPerk("")
+  }
+
+  function removePerk(entry: string) {
+    setF((p) => ({ ...p, perks: p.perks.filter((x) => x !== entry) }))
+  }
 
   async function save() {
     setSaving(true)
@@ -48,6 +75,8 @@ export function LeagueBrandEditor({ leagueId, initial }: { leagueId: string; ini
           tagline: f.tagline || null,
           primaryColor: f.primaryColor,
           socials,
+          perks: f.perks,
+          perksNote: f.perksNote || null,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -139,6 +168,89 @@ export function LeagueBrandEditor({ leagueId, initial }: { leagueId: string; ini
               />
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="border-ink-100 shadow-soft rounded-3xl border bg-white p-6">
+        <h3 className="text-ink-950 font-bold">What&apos;s included</h3>
+        <p className="text-ink-500 mb-4 mt-0.5 text-sm">
+          Show clubs what they get by joining. These perks appear on your league page and
+          anywhere clubs browse leagues.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {PREDEFINED_PERKS.map((perk) => (
+            <label
+              key={perk.key}
+              className="border-ink-100 hover:bg-ink-50 flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm"
+            >
+              <input
+                type="checkbox"
+                checked={f.perks.includes(perk.key)}
+                onChange={() => togglePredefinedPerk(perk.key)}
+                className="accent-play-600"
+              />
+              <span className="text-ink-800">{perk.label}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="mt-5">
+          <label className={label}>Add a custom perk</label>
+          <div className="mt-1 flex gap-2">
+            <input
+              className="w-full rounded-xl border border-ink-200 px-3 py-2 text-sm text-ink-900 focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
+              value={customPerk}
+              maxLength={60}
+              placeholder="e.g. Championship banner"
+              onChange={(e) => setCustomPerk(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  addCustomPerk()
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={addCustomPerk}
+              disabled={!customPerk.trim()}
+              className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+          {customPerks.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {customPerks.map((entry) => (
+                <span
+                  key={entry}
+                  className="bg-ink-100 text-ink-700 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+                >
+                  {perkLabel(entry)}
+                  <button
+                    type="button"
+                    onClick={() => removePerk(entry)}
+                    aria-label={`Remove ${entry}`}
+                    className="text-ink-400 hover:text-ink-700 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5">
+          <label className={label}>Why join this league (optional)</label>
+          <textarea
+            className={input}
+            rows={3}
+            value={f.perksNote}
+            maxLength={400}
+            placeholder="2-3 lines on what makes this league worth joining."
+            onChange={(e) => set("perksNote", e.target.value)}
+          />
         </div>
       </div>
 

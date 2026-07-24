@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { perkLabel } from "@/lib/leagues/perks"
 
 interface RosterPreviewPlayer {
   playerId: string
@@ -172,6 +173,27 @@ function SeasonDetailSubmitInner() {
             </div>
             <h1 className="text-ink-900 mb-2 text-2xl font-semibold">{leagueName}</h1>
             {leagueDescription && <p className="text-ink-700 mb-4">{leagueDescription}</p>}
+
+            {(season.league?.perks?.length > 0 || season.league?.perksNote) && (
+              <div className="border-court-100 bg-court-50 mb-4 rounded-xl border p-3">
+                <div className="text-ink-500 mb-2 text-xs font-medium">What&apos;s included</div>
+                {season.league?.perksNote && (
+                  <p className="text-ink-700 mb-2 text-sm">{season.league.perksNote}</p>
+                )}
+                {season.league?.perks?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {season.league.perks.map((entry: string) => (
+                      <span
+                        key={entry}
+                        className="text-ink-700 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium"
+                      >
+                        {perkLabel(entry)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               {season.startDate && (

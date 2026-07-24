@@ -14,6 +14,7 @@ import { Badge, Card, NewsCard, ScoreCard, SectionHeader, SmartBack, StandingsTa
 import { socialLinks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
+import { perkLabel } from "@/lib/leagues/perks"
 
 export const dynamic = "force-dynamic"
 
@@ -54,6 +55,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
           tagline: true,
           primaryColor: true,
           socials: true,
+          perks: true,
+          perksNote: true,
         },
       })
     : null
@@ -264,6 +267,30 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
           </div>
         </div>
       </header>
+
+      {(brand?.perks?.length > 0 || brand?.perksNote) && (
+        <section className="border-ink-100 shadow-soft mb-10 rounded-3xl border bg-white p-6 sm:p-7">
+          <SectionHeader title="What's included" accent="play" className="mb-4" />
+          {brand?.perksNote && (
+            <p className="text-ink-600 mb-4 max-w-3xl text-sm leading-relaxed">{brand.perksNote}</p>
+          )}
+          {brand?.perks?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {brand.perks.map((entry: string) => (
+                <span
+                  key={entry}
+                  className="bg-court-50 text-court-800 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3.5 w-3.5">
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {perkLabel(entry)}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-10 lg:col-span-2">

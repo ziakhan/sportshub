@@ -10,7 +10,16 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
   const season = await (prisma as any).season.findUnique({
     where: { id },
     include: {
-      league: { select: { id: true, name: true, description: true, ownerId: true } },
+      league: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          ownerId: true,
+          perks: true,
+          perksNote: true,
+        },
+      },
       divisions: { orderBy: { ageGroup: "asc" } },
       teamSubmissions: {
         include: {

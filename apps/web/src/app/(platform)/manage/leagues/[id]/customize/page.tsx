@@ -15,6 +15,7 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
     select: {
       id: true, name: true, ownerId: true, description: true,
       logoUrl: true, bannerUrl: true, tagline: true, primaryColor: true, socials: true,
+      perks: true, perksNote: true,
       seasons: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true } },
     },
   })
@@ -67,6 +68,8 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
           tagline: league.tagline ?? "",
           primaryColor: league.primaryColor ?? "#1d4ed8",
           socials: (league.socials as any) ?? {},
+          perks: (league.perks as any) ?? [],
+          perksNote: league.perksNote ?? "",
         }}
       />
     </div>

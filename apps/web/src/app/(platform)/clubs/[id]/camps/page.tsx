@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { Badge, Button } from "@/components/ui"
 import { programLifecycle } from "@/lib/lifecycle"
+import { campScheduleText, type CampScheduleKind } from "@/lib/registration/camp-schedule"
 
 interface Camp {
   id: string
@@ -23,6 +24,9 @@ interface Camp {
   numberOfWeeks: number
   weeklyFee: number
   fullCampFee: number | null
+  scheduleKind: CampScheduleKind
+  daysOfWeek: number[]
+  pricePerSession: number | null
   maxParticipants: number | null
   isPublished: boolean
   _count: { signups: number }
@@ -171,7 +175,11 @@ export default function ClubCampsPage() {
                 <div className="mb-4 flex flex-wrap gap-3 text-sm text-ink-500">
                   <span>{camp.ageGroup}{camp.gender ? ` • ${camp.gender}` : ""}</span>
                   <span>{format(new Date(camp.startDate), "MMM d")} - {format(new Date(camp.endDate), "MMM d, yyyy")}</span>
-                  <span>{camp.numberOfWeeks} week{camp.numberOfWeeks !== 1 ? "s" : ""}</span>
+                  <span>
+                    {camp.scheduleKind === "CONSECUTIVE"
+                      ? `${camp.numberOfWeeks} week${camp.numberOfWeeks !== 1 ? "s" : ""}`
+                      : campScheduleText(camp)}
+                  </span>
                   <span>{camp.location}</span>
                 </div>
 
@@ -184,9 +192,18 @@ export default function ClubCampsPage() {
                     <div className="text-xs text-ink-500">registered</div>
                   </div>
                   <div className="text-sm">
-                    <div className="font-medium">{formatCurrency(camp.weeklyFee)}/wk</div>
-                    {camp.fullCampFee && camp.numberOfWeeks > 1 && (
-                      <div className="text-xs text-green-600">{formatCurrency(camp.fullCampFee)} all</div>
+                    {camp.scheduleKind === "CONSECUTIVE" ? (
+                      <>
+                        <div className="font-medium">{formatCurrency(camp.weeklyFee)}/wk</div>
+                        {camp.fullCampFee && camp.numberOfWeeks > 1 && (
+                          <div className="text-xs text-green-600">{formatCurrency(camp.fullCampFee)} all</div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-medium">{formatCurrency(camp.pricePerSession ?? 0)}/session</div>
+                        {camp.fullCampFee && <div className="text-xs text-green-600">{formatCurrency(camp.fullCampFee)} all</div>}
+                      </>
                     )}
                   </div>
                   <div className="ml-auto flex flex-wrap items-center gap-2">

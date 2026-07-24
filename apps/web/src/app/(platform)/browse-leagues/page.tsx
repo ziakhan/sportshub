@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { perkLabel } from "@/lib/leagues/perks"
 
 interface Season {
   id: string
@@ -23,6 +24,7 @@ interface League {
   name: string
   description: string | null
   currency: string
+  perks: string[]
   seasons: Season[]
 }
 
@@ -120,6 +122,24 @@ function BrowseLeaguesInner() {
                     </span>
                   )}
                 </div>
+
+                {league.perks?.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {league.perks.slice(0, 4).map((entry) => (
+                      <span
+                        key={entry}
+                        className="bg-ink-50 text-ink-600 rounded-full px-2 py-0.5 text-xs font-medium"
+                      >
+                        {perkLabel(entry)}
+                      </span>
+                    ))}
+                    {league.perks.length > 4 && (
+                      <span className="text-ink-400 rounded-full px-2 py-0.5 text-xs font-medium">
+                        +{league.perks.length - 4} more
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="text-ink-500 flex items-center justify-between text-sm">
                   <div className="flex gap-4">

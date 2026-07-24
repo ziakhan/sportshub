@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/countries"
 import { getPublicCamp } from "@/lib/queries/camp"
 import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { computeCampFee, campHasDiscount } from "@/lib/registration/camp-pricing"
+import { campScheduleText, sessionDatesFor } from "@/lib/registration/camp-schedule"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { Badge, Card, Button, PanelHeader, AnimatedNumber, SmartBack } from "@/components/ui"
@@ -63,6 +64,14 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
   const weeks = camp.numberOfWeeks
   const hasDiscount = campHasDiscount(camp)
   const savingsPercent = computeCampFee(camp, weeks).savingsPercent
+  const isConsecutive = camp.scheduleKind === "CONSECUTIVE"
+  const sessionCount = isConsecutive ? 0 : sessionDatesFor(camp).length
+  const scheduleText = isConsecutive ? "" : campScheduleText(camp)
+  const sessionsFullPrice = sessionCount * (camp.pricePerSession ?? 0)
+  const sessionFullProgramSavings =
+    !isConsecutive && camp.fullCampFee != null && sessionCount > 0 && camp.fullCampFee < sessionsFullPrice
+      ? Math.round((1 - camp.fullCampFee / sessionsFullPrice) * 100)
+      : null
 
   const included = [
     camp.includesLunch && "Lunch",
@@ -123,7 +132,9 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                   <div className="text-ink-950">
                     {format(new Date(camp.startDate), "MMM d")} - {format(new Date(camp.endDate), "MMM d, yyyy")}
                   </div>
-                  <div className="text-sm text-ink-500">{weeks} week{weeks !== 1 ? "s" : ""}</div>
+                  <div className="text-sm text-ink-500">
+                    {isConsecutive ? `${weeks} week${weeks !== 1 ? "s" : ""}` : scheduleText}
+                  </div>
                 </div>
                 <div className={infoTile}>
                   <div className={infoLabel}>Daily Schedule</div>
@@ -165,23 +176,44 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
 
           <div>
             <Card className="reveal sticky top-4 [animation-delay:120ms]">
-              <div className="mb-4 text-center">
-                <div className="font-condensed text-4xl font-bold leading-none text-[color:var(--brand-ink)]">
-                  {formatCurrency(camp.weeklyFee, currency)}
-                </div>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-500">per week</p>
-
-                {hasDiscount && (
-                  <div className="mt-3 rounded-2xl bg-court-50 p-3">
-                    <div className="font-condensed text-2xl font-bold text-court-700">
-                      {formatCurrency(camp.fullCampFee, currency)}
-                    </div>
-                    <p className="text-xs font-medium text-court-600">
-                      All {weeks} weeks — save {savingsPercent}%
-                    </p>
+              {isConsecutive ? (
+                <div className="mb-4 text-center">
+                  <div className="font-condensed text-4xl font-bold leading-none text-[color:var(--brand-ink)]">
+                    {formatCurrency(camp.weeklyFee, currency)}
                   </div>
-                )}
-              </div>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-500">per week</p>
+
+                  {hasDiscount && (
+                    <div className="mt-3 rounded-2xl bg-court-50 p-3">
+                      <div className="font-condensed text-2xl font-bold text-court-700">
+                        {formatCurrency(camp.fullCampFee, currency)}
+                      </div>
+                      <p className="text-xs font-medium text-court-600">
+                        All {weeks} weeks · save {savingsPercent}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-4 text-center">
+                  <div className="font-condensed text-4xl font-bold leading-none text-[color:var(--brand-ink)]">
+                    {formatCurrency(camp.pricePerSession ?? 0, currency)}
+                  </div>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink-500">per session</p>
+                  <p className="mt-2 text-sm text-ink-600">{scheduleText}</p>
+
+                  {sessionFullProgramSavings != null && (
+                    <div className="mt-3 rounded-2xl bg-court-50 p-3">
+                      <div className="font-condensed text-2xl font-bold text-court-700">
+                        {formatCurrency(camp.fullCampFee, currency)}
+                      </div>
+                      <p className="text-xs font-medium text-court-600">
+                        Full program · save {sessionFullProgramSavings}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {isPast ? (
                 <div className="rounded-2xl bg-ink-100 p-4 text-center text-sm text-ink-600">This camp has ended.</div>
@@ -195,10 +227,14 @@ export default async function PublicCampDetailPage({ params }: { params: { id: s
                   kids={viewer.kids}
                   payment={viewer.payment}
                   camp={{
+                    scheduleKind: camp.scheduleKind,
                     numberOfWeeks: camp.numberOfWeeks,
                     weeklyFee: camp.weeklyFee,
                     fullCampFee: camp.fullCampFee,
+                    pricePerSession: camp.pricePerSession,
+                    daysOfWeek: camp.daysOfWeek,
                     startDate: new Date(camp.startDate).toISOString(),
+                    endDate: new Date(camp.endDate).toISOString(),
                   }}
                   returnPath={`/camp/${camp.id}`}
                 />

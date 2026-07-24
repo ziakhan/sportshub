@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { z } from "zod"
 import { getPublicCamp } from "@/lib/queries/camp"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { MANAGE_LITE_FIELDS, isAssignedProgramStaff } from "@/lib/programs/staff"
@@ -9,6 +10,21 @@ import { cancelObligationIfUnpaid } from "@/lib/payments/obligations"
 import { sendEmail, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
+
+// Schedule model (owner 2026-07-24): validated only when the edit touches
+// scheduleKind — the edit form always submits the full schedule together.
+const scheduleUpdateSchema = z
+  .object({
+    scheduleKind: z.enum(["CONSECUTIVE", "DAILY", "WEEKDAY_PATTERN"]),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+    pricePerSession: z.number().min(0).nullable().optional(),
+  })
+  .refine((d) => d.scheduleKind !== "WEEKDAY_PATTERN" || (d.daysOfWeek?.length ?? 0) > 0, {
+    message: "Pick at least one weekday for a weekly pattern camp",
+  })
+  .refine((d) => d.scheduleKind === "CONSECUTIVE" || (d.pricePerSession ?? 0) > 0, {
+    message: "Set a per-session price",
+  })
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -68,6 +84,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         )
       }
     }
+    if (body.scheduleKind !== undefined) {
+      const parsed = scheduleUpdateSchema.safeParse({
+        scheduleKind: body.scheduleKind,
+        daysOfWeek: body.daysOfWeek,
+        pricePerSession: body.pricePerSession,
+      })
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: parsed.error.errors[0]?.message || "Invalid schedule" },
+          { status: 400 }
+        )
+      }
+    }
+
     const updateData: Record<string, any> = {}
 
     const fields = [
@@ -88,12 +118,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "includesJersey",
       "includesBall",
       "isPublished",
+      "scheduleKind",
     ]
     for (const field of fields) {
       if (body[field] !== undefined) updateData[field] = body[field]
     }
     if (body.weeklyFee !== undefined) updateData.weeklyFee = body.weeklyFee
     if (body.fullCampFee !== undefined) updateData.fullCampFee = body.fullCampFee
+    if (body.daysOfWeek !== undefined) updateData.daysOfWeek = body.daysOfWeek
+    if (body.pricePerSession !== undefined) updateData.pricePerSession = body.pricePerSession
     if (body.venueId !== undefined) updateData.venueId = body.venueId || null
     if (body.startDate) updateData.startDate = new Date(body.startDate)
     if (body.endDate) updateData.endDate = new Date(body.endDate)
@@ -108,8 +141,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       ...updated,
       weeklyFee: Number(updated.weeklyFee),
       fullCampFee: updated.fullCampFee ? Number(updated.fullCampFee) : null,
+      pricePerSession: updated.pricePerSession != null ? Number(updated.pricePerSession) : null,
     })
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors[0]?.message || "Validation error" },
+        { status: 400 }
+      )
+    }
     console.error("Update camp error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

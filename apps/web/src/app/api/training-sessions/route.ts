@@ -24,6 +24,10 @@ const createSchema = z
     scheduleType: z.enum(["ONE_TIME", "RECURRING"]).default("ONE_TIME"),
     startAt: z.string().datetime().optional(),
     dayOfWeek: z.number().int().min(0).max(6).optional(),
+    // Multi-day recurrence (QA-203) — wins over dayOfWeek when >1 selected.
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).default([]),
+    // Group-size tier families filter by (QA-202).
+    groupTier: z.enum(["PRIVATE", "SMALL_GROUP", "LARGE_GROUP"]).nullable().optional(),
     startTime: z.string().regex(timeRegex).optional(),
     startDate: z.string().optional(),
     endDate: z.string().optional(),
@@ -120,6 +124,8 @@ export async function POST(request: NextRequest) {
         scheduleType: data.scheduleType,
         startAt: data.scheduleType === "ONE_TIME" && data.startAt ? new Date(data.startAt) : null,
         dayOfWeek: data.scheduleType === "RECURRING" ? data.dayOfWeek : null,
+        daysOfWeek: data.scheduleType === "RECURRING" ? data.daysOfWeek : [],
+        groupTier: data.groupTier ?? null,
         startTime: data.scheduleType === "RECURRING" ? data.startTime : null,
         startDate:
           data.scheduleType === "RECURRING" && data.startDate ? new Date(data.startDate) : null,

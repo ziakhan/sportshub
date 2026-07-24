@@ -21,6 +21,10 @@ const patchSchema = z.object({
   scheduleType: z.enum(["ONE_TIME", "RECURRING"]).optional(),
   startAt: z.string().datetime().nullable().optional(),
   dayOfWeek: z.number().int().min(0).max(6).nullable().optional(),
+  // Multi-day recurrence (QA-203) — wins over dayOfWeek when >1 selected.
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+  // Group-size tier families filter by (QA-202).
+  groupTier: z.enum(["PRIVATE", "SMALL_GROUP", "LARGE_GROUP"]).nullable().optional(),
   startTime: z.string().regex(timeRegex).nullable().optional(),
   startDate: z.string().nullable().optional(),
   endDate: z.string().nullable().optional(),
@@ -142,6 +146,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           ? { startAt: data.startAt ? new Date(data.startAt) : null }
           : {}),
         ...(data.dayOfWeek !== undefined ? { dayOfWeek: data.dayOfWeek } : {}),
+        ...(data.daysOfWeek !== undefined ? { daysOfWeek: data.daysOfWeek } : {}),
+        ...(data.groupTier !== undefined ? { groupTier: data.groupTier } : {}),
         ...(data.startTime !== undefined ? { startTime: data.startTime } : {}),
         ...(data.startDate !== undefined
           ? { startDate: data.startDate ? new Date(data.startDate) : null }

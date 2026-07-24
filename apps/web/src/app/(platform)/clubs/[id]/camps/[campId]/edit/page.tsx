@@ -17,12 +17,14 @@ const AGE_GROUPS = [
   "All Ages",
 ]
 
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 const editCampSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(200),
   campType: z.string().min(1, "Select a camp type"),
   description: z.string().optional(),
   details: z.string().optional(),
-  ageGroup: z.string().min(1, "Select an age group"),
+  ageGroup: z.string().min(1, "Enter an age group"),
   agePolicy: z.string().min(1, "Select an age policy"),
   gender: z.string().optional(),
   startDate: z.string().min(1, "Select a start date"),
@@ -35,6 +37,11 @@ const editCampSchema = z.object({
   // Optional numerics stay strings so an empty input means "clear", not 0.
   fullCampFee: z.string().optional(),
   maxParticipants: z.string().optional(),
+  // Schedule model (owner 2026-07-24): CONSECUTIVE keeps the fields above;
+  // DAILY/WEEKDAY_PATTERN sell individual sessions instead. fullCampFee
+  // doubles as the WEEKDAY_PATTERN full-program price (same DB column).
+  scheduleKind: z.enum(["CONSECUTIVE", "DAILY", "WEEKDAY_PATTERN"]),
+  pricePerSession: z.string().optional(),
 })
 
 type EditCampFormData = z.infer<typeof editCampSchema>
@@ -50,6 +57,9 @@ interface LoadedCamp {
   includesSnacks: boolean
   includesJersey: boolean
   includesBall: boolean
+  scheduleKind?: "CONSECUTIVE" | "DAILY" | "WEEKDAY_PATTERN"
+  daysOfWeek?: number[]
+  pricePerSession?: number | null
   _count?: { signups: number }
 }
 
@@ -81,6 +91,7 @@ export default function EditCampPage() {
   const [includesBall, setIncludesBall] = useState(false)
   const [venueId, setVenueId] = useState("")
   const [venueName, setVenueName] = useState("")
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
 
   const {
     register,
@@ -106,6 +117,7 @@ export default function EditCampPage() {
         setIncludesBall(!!data.includesBall)
         setVenueId(data.venueId || "")
         setVenueName(data.venue?.name || "")
+        setDaysOfWeek(data.daysOfWeek || [])
         reset({
           name: data.name,
           campType: data.campType,
@@ -123,6 +135,8 @@ export default function EditCampPage() {
           weeklyFee: Number(data.weeklyFee) || 0,
           fullCampFee: data.fullCampFee != null ? String(data.fullCampFee) : "",
           maxParticipants: data.maxParticipants != null ? String(data.maxParticipants) : "",
+          scheduleKind: data.scheduleKind ?? "CONSECUTIVE",
+          pricePerSession: data.pricePerSession != null ? String(data.pricePerSession) : "",
         })
       } catch {
         setError("Failed to load camp")
@@ -148,6 +162,7 @@ export default function EditCampPage() {
   const weeks = Number(watch("numberOfWeeks")) || 1
   const weeklyFeeValue = Number(watch("weeklyFee")) || 0
   const fullCampFeeValue = watch("fullCampFee") || ""
+  const scheduleKind = watch("scheduleKind") || "CONSECUTIVE"
 
   const onSubmit = async (data: EditCampFormData) => {
     setIsSubmitting(true)
@@ -177,11 +192,24 @@ export default function EditCampPage() {
       }
       // Gender is a Prisma enum — omit rather than sending "" (empty select).
       if (data.gender) payload.gender = data.gender
-      // Money is locked once the program starts — never send fee fields then.
+      // Money (and the schedule model driving it) is locked once the program
+      // starts — never send fee/schedule fields then.
       if (!feesLocked) {
         payload.weeklyFee = data.weeklyFee
         payload.fullCampFee =
-          weeks > 1 && data.fullCampFee ? parseFloat(data.fullCampFee) : null
+          data.scheduleKind === "CONSECUTIVE"
+            ? weeks > 1 && data.fullCampFee
+              ? parseFloat(data.fullCampFee)
+              : null
+            : data.scheduleKind === "WEEKDAY_PATTERN" && data.fullCampFee
+              ? parseFloat(data.fullCampFee)
+              : null
+        payload.scheduleKind = data.scheduleKind
+        payload.daysOfWeek = data.scheduleKind === "WEEKDAY_PATTERN" ? daysOfWeek : []
+        payload.pricePerSession =
+          data.scheduleKind !== "CONSECUTIVE" && data.pricePerSession
+            ? parseFloat(data.pricePerSession)
+            : null
       }
 
       const res = await fetch(`/api/camps/${campId}`, {
@@ -321,20 +349,22 @@ export default function EditCampPage() {
                     <label htmlFor="ageGroup" className="block text-sm font-medium text-ink-700">
                       Age Group <span className="text-red-500">*</span>
                     </label>
-                    <select {...register("ageGroup")} id="ageGroup" className={inputCls}>
-                      <option value="">Select...</option>
-                      {/* Older/imported camps can hold a free-text age group (e.g.
-                          "Ages 9-14") — keep it selectable so loading the form
-                          doesn't blank the field and force a re-pick. */}
-                      {camp?.ageGroup && !AGE_GROUPS.includes(camp.ageGroup) && (
-                        <option value={camp.ageGroup}>{camp.ageGroup}</option>
-                      )}
+                    <input
+                      {...register("ageGroup")}
+                      type="text"
+                      id="ageGroup"
+                      list="camp-age-groups"
+                      placeholder="e.g. U12 or U10, U12"
+                      className={inputCls}
+                    />
+                    <datalist id="camp-age-groups">
                       {AGE_GROUPS.map((ag) => (
-                        <option key={ag} value={ag}>
-                          {ag}
-                        </option>
+                        <option key={ag} value={ag} />
                       ))}
-                    </select>
+                    </datalist>
+                    <p className="mt-1 text-xs text-ink-400">
+                      Comma-separated multiple groups allowed (e.g. &quot;U10, U12&quot;).
+                    </p>
                     {errors.ageGroup && (
                       <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
                     )}
@@ -449,25 +479,76 @@ export default function EditCampPage() {
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="numberOfWeeks"
-                      className="block text-sm font-medium text-ink-700"
-                    >
-                      Number of Weeks <span className="text-red-500">*</span>
+                    <label htmlFor="scheduleKind" className="block text-sm font-medium text-ink-700">
+                      Schedule <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      {...register("numberOfWeeks")}
-                      type="number"
-                      id="numberOfWeeks"
-                      min="1"
-                      max="12"
+                    <select
+                      {...register("scheduleKind")}
+                      id="scheduleKind"
+                      disabled={feesLocked}
                       className={inputCls}
-                    />
-                    {errors.numberOfWeeks && (
-                      <p className="mt-1 text-sm text-red-600">{errors.numberOfWeeks.message}</p>
-                    )}
+                    >
+                      <option value="CONSECUTIVE">Consecutive weeks</option>
+                      <option value="DAILY">Daily block</option>
+                      <option value="WEEKDAY_PATTERN">Weekly pattern</option>
+                    </select>
                   </div>
                 </div>
+
+                {scheduleKind === "CONSECUTIVE" && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <label
+                        htmlFor="numberOfWeeks"
+                        className="block text-sm font-medium text-ink-700"
+                      >
+                        Number of Weeks <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        {...register("numberOfWeeks")}
+                        type="number"
+                        id="numberOfWeeks"
+                        min="1"
+                        max="12"
+                        disabled={feesLocked}
+                        className={inputCls}
+                      />
+                      {errors.numberOfWeeks && (
+                        <p className="mt-1 text-sm text-red-600">{errors.numberOfWeeks.message}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {scheduleKind === "WEEKDAY_PATTERN" && (
+                  <div>
+                    <label className="block text-sm font-medium text-ink-700">
+                      Which days? <span className="text-red-500">*</span>
+                    </label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {DAY_NAMES.map((label, i) => (
+                        <button
+                          key={label}
+                          type="button"
+                          disabled={feesLocked}
+                          onClick={() =>
+                            setDaysOfWeek((prev) =>
+                              prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i].sort()
+                            )
+                          }
+                          className={`rounded-md border px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+                            daysOfWeek.includes(i)
+                              ? "border-play-600 bg-play-600 text-white"
+                              : "border-ink-200 text-ink-600 hover:bg-court-50"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-ink-400">Sessions run on these weekdays between the start and end date.</p>
+                  </div>
+                )}
 
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-ink-700">
@@ -502,51 +583,89 @@ export default function EditCampPage() {
               <PanelHeader title="Pricing" />
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div>
-                    <label htmlFor="weeklyFee" className="block text-sm font-medium text-ink-700">
-                      Per Week ($) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      {...register("weeklyFee")}
-                      type="number"
-                      id="weeklyFee"
-                      min="0"
-                      step="0.01"
-                      disabled={feesLocked}
-                      className={inputCls}
-                    />
-                    {errors.weeklyFee && (
-                      <p className="mt-1 text-sm text-red-600">{errors.weeklyFee.message}</p>
-                    )}
-                  </div>
-                  {weeks > 1 && (
-                    <div>
-                      <label
-                        htmlFor="fullCampFee"
-                        className="block text-sm font-medium text-ink-700"
-                      >
-                        All {weeks} Weeks ($)
-                      </label>
-                      <input
-                        {...register("fullCampFee")}
-                        type="number"
-                        id="fullCampFee"
-                        min="0"
-                        step="0.01"
-                        disabled={feesLocked}
-                        placeholder={`${(weeklyFeeValue * weeks).toFixed(2)} (no discount)`}
-                        className={inputCls}
-                      />
-                      {!feesLocked &&
-                        fullCampFeeValue &&
-                        parseFloat(fullCampFeeValue) < weeklyFeeValue * weeks && (
-                          <p className="mt-1 text-xs text-green-600">
-                            Save{" "}
-                            {((1 - parseFloat(fullCampFeeValue) / (weeklyFeeValue * weeks)) * 100).toFixed(0)}
-                            % vs weekly
-                          </p>
+                  {scheduleKind === "CONSECUTIVE" ? (
+                    <>
+                      <div>
+                        <label htmlFor="weeklyFee" className="block text-sm font-medium text-ink-700">
+                          Per Week ($) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register("weeklyFee")}
+                          type="number"
+                          id="weeklyFee"
+                          min="0"
+                          step="0.01"
+                          disabled={feesLocked}
+                          className={inputCls}
+                        />
+                        {errors.weeklyFee && (
+                          <p className="mt-1 text-sm text-red-600">{errors.weeklyFee.message}</p>
                         )}
-                    </div>
+                      </div>
+                      {weeks > 1 && (
+                        <div>
+                          <label
+                            htmlFor="fullCampFee"
+                            className="block text-sm font-medium text-ink-700"
+                          >
+                            All {weeks} Weeks ($)
+                          </label>
+                          <input
+                            {...register("fullCampFee")}
+                            type="number"
+                            id="fullCampFee"
+                            min="0"
+                            step="0.01"
+                            disabled={feesLocked}
+                            placeholder={`${(weeklyFeeValue * weeks).toFixed(2)} (no discount)`}
+                            className={inputCls}
+                          />
+                          {!feesLocked &&
+                            fullCampFeeValue &&
+                            parseFloat(fullCampFeeValue) < weeklyFeeValue * weeks && (
+                              <p className="mt-1 text-xs text-green-600">
+                                Save{" "}
+                                {((1 - parseFloat(fullCampFeeValue) / (weeklyFeeValue * weeks)) * 100).toFixed(0)}
+                                % vs weekly
+                              </p>
+                            )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label htmlFor="pricePerSession" className="block text-sm font-medium text-ink-700">
+                          Per Session ($) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          {...register("pricePerSession")}
+                          type="number"
+                          id="pricePerSession"
+                          min="0"
+                          step="0.01"
+                          disabled={feesLocked}
+                          className={inputCls}
+                        />
+                      </div>
+                      {scheduleKind === "WEEKDAY_PATTERN" && (
+                        <div>
+                          <label htmlFor="fullCampFee" className="block text-sm font-medium text-ink-700">
+                            Full Program ($) <span className="text-ink-400 font-normal">(optional)</span>
+                          </label>
+                          <input
+                            {...register("fullCampFee")}
+                            type="number"
+                            id="fullCampFee"
+                            min="0"
+                            step="0.01"
+                            disabled={feesLocked}
+                            placeholder="Discounted price for every session"
+                            className={inputCls}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                   <div>
                     <label

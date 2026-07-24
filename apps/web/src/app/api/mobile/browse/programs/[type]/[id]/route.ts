@@ -112,8 +112,8 @@ export async function GET(
           endDate: c.endDate,
           schedule: `${c.dailyStartTime}–${c.dailyEndTime} daily`,
           location: c.location,
-          fee: Number(c.weeklyFee),
-          feeUnit: "per week",
+          fee: c.scheduleKind === "CONSECUTIVE" ? Number(c.weeklyFee) : Number(c.pricePerSession ?? 0),
+          feeUnit: c.scheduleKind === "CONSECUTIVE" ? "per week" : "per session",
           currency: c.tenant?.currency ?? "CAD",
           clubName: c.tenant?.name ?? "",
           clubSlug: c.tenant?.slug ?? "",
@@ -121,6 +121,11 @@ export async function GET(
           maxParticipants: c.maxParticipants,
           numberOfWeeks: c.numberOfWeeks,
           fullCampFee: c.fullCampFee != null ? Number(c.fullCampFee) : null,
+          // Program flexibility (owner 2026-07-24) — additive; native update
+          // to render session-date chips comes later.
+          scheduleKind: c.scheduleKind,
+          daysOfWeek: c.daysOfWeek,
+          pricePerSession: c.pricePerSession != null ? Number(c.pricePerSession) : null,
           registration: { kind: "player-weeks", endpoint: `/api/camps/${c.id}/signup` },
         },
       })

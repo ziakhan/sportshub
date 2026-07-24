@@ -51,7 +51,14 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         status: season.status,
         startDate: season.startDate,
         endDate: season.endDate,
-        league: season.league ? { id: season.league.id, name: season.league.name } : null,
+        league: season.league
+          ? {
+              id: season.league.id,
+              name: season.league.name,
+              perks: season.league.perks ?? [],
+              perksNote: season.league.perksNote ?? null,
+            }
+          : null,
         divisions: (season.divisions ?? []).map((d: any) => ({
           id: d.id,
           name: d.name ?? d.ageGroup,

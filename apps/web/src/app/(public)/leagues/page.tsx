@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { Badge, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
+import { perkLabel } from "@/lib/leagues/perks"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +31,7 @@ async function getPublicLeagues() {
       id: true,
       name: true,
       description: true,
+      perks: true,
       seasons: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -122,9 +124,28 @@ export default async function PublicLeaguesPage() {
                 <h2 className="text-ink-950 group-hover:text-play-600 mb-2 text-2xl font-bold transition-colors">
                   {l.name}
                 </h2>
-                {l.description && (
-                  <p className="text-ink-500 mb-5 line-clamp-2 flex-1 text-sm leading-6">{l.description}</p>
-                )}
+                <div className="mb-5 flex-1">
+                  {l.description && (
+                    <p className="text-ink-500 mb-3 line-clamp-2 text-sm leading-6">{l.description}</p>
+                  )}
+                  {l.perks?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {l.perks.slice(0, 4).map((entry: string) => (
+                        <span
+                          key={entry}
+                          className="bg-ink-50 text-ink-600 rounded-full px-2 py-0.5 text-xs font-medium"
+                        >
+                          {perkLabel(entry)}
+                        </span>
+                      ))}
+                      {l.perks.length > 4 && (
+                        <span className="text-ink-400 rounded-full px-2 py-0.5 text-xs font-medium">
+                          +{l.perks.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-3 text-sm">
                   <div className="bg-ink-50 rounded-2xl p-3">
                     <div className="text-ink-400 text-xs uppercase tracking-[0.14em]">Teams</div>

@@ -64,6 +64,9 @@ const updateLeagueSchema = z.object({
   periodType: z.enum(["QUARTERS", "HALVES"]).optional(),
   periodMinutes: z.number().int().min(1).max(30).optional(),
   requireRefereeApproval: z.boolean().optional(),
+  // League perks / "what's included" (QA-205)
+  perks: z.array(z.string().trim().min(1).max(60)).max(24).optional(),
+  perksNote: z.string().trim().max(400).nullable().optional(),
 })
 
 /**

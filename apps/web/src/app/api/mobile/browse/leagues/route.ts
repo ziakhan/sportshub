@@ -17,6 +17,7 @@ export async function GET() {
         id: true,
         name: true,
         description: true,
+        perks: true,
         seasons: {
           where: { status: { in: ["REGISTRATION", "IN_PROGRESS"] } },
           orderBy: { createdAt: "desc" },
@@ -38,6 +39,7 @@ export async function GET() {
         id: l.id,
         name: l.name,
         description: l.description,
+        perks: l.perks ?? [],
         seasons: l.seasons.map((s: any) => ({
           id: s.id,
           name: s.label,

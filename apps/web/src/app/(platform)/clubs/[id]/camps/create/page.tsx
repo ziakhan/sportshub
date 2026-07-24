@@ -7,6 +7,8 @@ import { DateTimePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
 export default function CreateCampPage() {
   const params = useParams()
   const router = useRouter()
@@ -33,6 +35,12 @@ export default function CreateCampPage() {
   const [numberOfWeeks, setNumberOfWeeks] = useState("1")
   const [weeklyFee, setWeeklyFee] = useState("0")
   const [fullCampFee, setFullCampFee] = useState("")
+  const [scheduleKind, setScheduleKind] = useState<"CONSECUTIVE" | "DAILY" | "WEEKDAY_PATTERN">(
+    "CONSECUTIVE"
+  )
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>([])
+  const [pricePerSession, setPricePerSession] = useState("")
+  const [fullProgramPrice, setFullProgramPrice] = useState("")
   const [maxParticipants, setMaxParticipants] = useState("")
   const [includesLunch, setIncludesLunch] = useState(false)
   const [includesSnacks, setIncludesSnacks] = useState(false)
@@ -64,9 +72,19 @@ export default function CreateCampPage() {
           dailyEndTime,
           location,
           venueId: venueId || undefined,
-          numberOfWeeks: parseInt(numberOfWeeks),
-          weeklyFee: parseFloat(weeklyFee),
-          fullCampFee: fullCampFee ? parseFloat(fullCampFee) : undefined,
+          numberOfWeeks: scheduleKind === "CONSECUTIVE" ? parseInt(numberOfWeeks) : 1,
+          weeklyFee: scheduleKind === "CONSECUTIVE" ? parseFloat(weeklyFee) : 0,
+          fullCampFee:
+            scheduleKind === "CONSECUTIVE"
+              ? fullCampFee
+                ? parseFloat(fullCampFee)
+                : undefined
+              : scheduleKind === "WEEKDAY_PATTERN" && fullProgramPrice
+                ? parseFloat(fullProgramPrice)
+                : undefined,
+          scheduleKind,
+          daysOfWeek: scheduleKind === "WEEKDAY_PATTERN" ? daysOfWeek : undefined,
+          pricePerSession: scheduleKind !== "CONSECUTIVE" ? parseFloat(pricePerSession) : undefined,
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : undefined,
           includesLunch,
           includesSnacks,
@@ -94,6 +112,9 @@ export default function CreateCampPage() {
       setIsSubmitting(false)
     }
   }
+
+  const toggleDay = (day: number) =>
+    setDaysOfWeek((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()))
 
   const weeks = parseInt(numberOfWeeks) || 1
 
@@ -147,13 +168,23 @@ export default function CreateCampPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Age Group *</label>
-                <select value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} required
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
-                  <option value="">Select...</option>
+                <input
+                  type="text"
+                  list="camp-age-groups"
+                  value={ageGroup}
+                  onChange={(e) => setAgeGroup(e.target.value)}
+                  required
+                  placeholder="e.g. U12 or U10, U12"
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
+                />
+                <datalist id="camp-age-groups">
                   {["U5", "U6", "U7", "U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18", "All Ages"].map((ag) => (
-                    <option key={ag} value={ag}>{ag}</option>
+                    <option key={ag} value={ag} />
                   ))}
-                </select>
+                </datalist>
+                <p className="mt-1 text-xs text-ink-400">
+                  Comma-separated multiple groups allowed (e.g. &quot;U10, U12&quot;).
+                </p>
               </div>
               <AgePolicySelect value={agePolicy} onChange={setAgePolicy} />
               <div>
@@ -206,11 +237,51 @@ export default function CreateCampPage() {
                 <DateTimePicker mode="time" value={dailyEndTime} onChange={setDailyEndTime} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-700">Number of Weeks *</label>
-                <input type="number" min="1" max="12" value={numberOfWeeks} onChange={(e) => setNumberOfWeeks(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-ink-700">Schedule *</label>
+                <select
+                  value={scheduleKind}
+                  onChange={(e) => setScheduleKind(e.target.value as typeof scheduleKind)}
+                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
+                >
+                  <option value="CONSECUTIVE">Consecutive weeks</option>
+                  <option value="DAILY">Daily block</option>
+                  <option value="WEEKDAY_PATTERN">Weekly pattern</option>
+                </select>
               </div>
             </div>
+
+            {scheduleKind === "CONSECUTIVE" && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-medium text-ink-700">Number of Weeks *</label>
+                  <input type="number" min="1" max="12" value={numberOfWeeks} onChange={(e) => setNumberOfWeeks(e.target.value)}
+                    className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                </div>
+              </div>
+            )}
+
+            {scheduleKind === "WEEKDAY_PATTERN" && (
+              <div>
+                <label className="block text-sm font-medium text-ink-700">Which days? *</label>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {DAY_NAMES.map((label, i) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleDay(i)}
+                      className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
+                        daysOfWeek.includes(i)
+                          ? "border-play-600 bg-play-600 text-white"
+                          : "border-ink-200 text-ink-600 hover:bg-court-50"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-ink-400">Sessions run on these weekdays between the start and end date.</p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-ink-700">Venue *</label>
@@ -228,23 +299,45 @@ export default function CreateCampPage() {
             <h3 className="font-semibold text-ink-900">Pricing</h3>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-ink-700">Per Week ($) *</label>
-                <input type="number" min="0" step="0.01" value={weeklyFee} onChange={(e) => setWeeklyFee(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
-              </div>
-              {weeks > 1 && (
-                <div>
-                  <label className="block text-sm font-medium text-ink-700">All {weeks} Weeks ($)</label>
-                  <input type="number" min="0" step="0.01" value={fullCampFee} onChange={(e) => setFullCampFee(e.target.value)}
-                    placeholder={`${(parseFloat(weeklyFee) * weeks).toFixed(2)} (no discount)`}
-                    className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
-                  {fullCampFee && parseFloat(fullCampFee) < parseFloat(weeklyFee) * weeks && (
-                    <p className="mt-1 text-xs text-green-600">
-                      Save {((1 - parseFloat(fullCampFee) / (parseFloat(weeklyFee) * weeks)) * 100).toFixed(0)}% vs weekly
-                    </p>
+              {scheduleKind === "CONSECUTIVE" ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-ink-700">Per Week ($) *</label>
+                    <input type="number" min="0" step="0.01" value={weeklyFee} onChange={(e) => setWeeklyFee(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                  </div>
+                  {weeks > 1 && (
+                    <div>
+                      <label className="block text-sm font-medium text-ink-700">All {weeks} Weeks ($)</label>
+                      <input type="number" min="0" step="0.01" value={fullCampFee} onChange={(e) => setFullCampFee(e.target.value)}
+                        placeholder={`${(parseFloat(weeklyFee) * weeks).toFixed(2)} (no discount)`}
+                        className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                      {fullCampFee && parseFloat(fullCampFee) < parseFloat(weeklyFee) * weeks && (
+                        <p className="mt-1 text-xs text-green-600">
+                          Save {((1 - parseFloat(fullCampFee) / (parseFloat(weeklyFee) * weeks)) * 100).toFixed(0)}% vs weekly
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-ink-700">Per Session ($) *</label>
+                    <input type="number" min="0" step="0.01" value={pricePerSession} onChange={(e) => setPricePerSession(e.target.value)}
+                      className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                  </div>
+                  {scheduleKind === "WEEKDAY_PATTERN" && (
+                    <div>
+                      <label className="block text-sm font-medium text-ink-700">
+                        Full Program ($) <span className="text-ink-400 font-normal">(optional)</span>
+                      </label>
+                      <input type="number" min="0" step="0.01" value={fullProgramPrice} onChange={(e) => setFullProgramPrice(e.target.value)}
+                        placeholder="Discounted price for every session"
+                        className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm" />
+                    </div>
+                  )}
+                </>
               )}
               <div>
                 <label className="block text-sm font-medium text-ink-700">Max Participants</label>

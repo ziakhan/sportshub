@@ -10,7 +10,7 @@ import { upsertImpliedConsent, grantExpressConsent } from "@/lib/comms/consent"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
 import { signupPayloadSchema, normalizeRegistrations } from "@/lib/registration/payload"
 import { checkEligibility } from "@/lib/registration/eligibility"
-import { computeCampFee } from "@/lib/registration/camp-pricing"
+import { campFeeFor, sessionDatesFor, unitLabel } from "@/lib/registration/camp-schedule"
 import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
@@ -69,17 +69,40 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    // Per-kid validation: weeks, age policy, duplicates.
+    // Program flexibility (owner 2026-07-24): CONSECUTIVE keeps the week
+    // model; DAILY/WEEKDAY_PATTERN sell individual session dates.
+    const scheduleInput = {
+      scheduleKind: camp.scheduleKind as "CONSECUTIVE" | "DAILY" | "WEEKDAY_PATTERN",
+      startDate: camp.startDate,
+      endDate: camp.endDate,
+      daysOfWeek: (camp.daysOfWeek ?? []) as number[],
+    }
+    const validSessionTimes = new Set(
+      sessionDatesFor(scheduleInput).map((d) => d.getTime())
+    )
+
+    // Per-kid validation: weeks/dates, age policy, duplicates.
     for (const entry of entries) {
       const player = playerById.get(entry.playerId)!
       const name = `${player.firstName} ${player.lastName}`
 
-      const weeksCount = entry.weeksCount ?? camp.numberOfWeeks
-      if (weeksCount > camp.numberOfWeeks) {
-        return NextResponse.json({ error: "Cannot select more weeks than available" }, { status: 400 })
-      }
-      if (entry.weekNumbers?.some((w) => w < 1 || w > camp.numberOfWeeks)) {
-        return NextResponse.json({ error: "Invalid week selection" }, { status: 400 })
+      if (camp.scheduleKind === "CONSECUTIVE") {
+        const weeksCount = entry.weeksCount ?? camp.numberOfWeeks
+        if (weeksCount > camp.numberOfWeeks) {
+          return NextResponse.json({ error: "Cannot select more weeks than available" }, { status: 400 })
+        }
+        if (entry.weekNumbers?.some((w) => w < 1 || w > camp.numberOfWeeks)) {
+          return NextResponse.json({ error: "Invalid week selection" }, { status: 400 })
+        }
+      } else {
+        const dates = entry.sessionDates ?? []
+        if (dates.length === 0) {
+          return NextResponse.json({ error: "Select at least one session date" }, { status: 400 })
+        }
+        const invalid = dates.some((iso) => !validSessionTimes.has(new Date(iso).getTime()))
+        if (invalid) {
+          return NextResponse.json({ error: "Invalid session date selection" }, { status: 400 })
+        }
       }
 
       const eligibility = checkEligibility({
@@ -135,10 +158,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const pricing = {
+      scheduleKind: scheduleInput.scheduleKind,
       numberOfWeeks: camp.numberOfWeeks,
       weeklyFee: Number(camp.weeklyFee),
       fullCampFee: camp.fullCampFee != null ? Number(camp.fullCampFee) : null,
+      pricePerSession: camp.pricePerSession != null ? Number(camp.pricePerSession) : null,
+      startDate: camp.startDate,
+      endDate: camp.endDate,
+      daysOfWeek: scheduleInput.daysOfWeek,
     }
+    const unit = unitLabel(scheduleInput.scheduleKind)
 
     const results = await prisma.$transaction(
       async (tx: any) => {
@@ -151,14 +180,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           })
           if (activeNow + entries.length > camp.maxParticipants) throw new Error("CAPACITY_FULL")
         }
-      const created: Array<{ playerId: string; signupId: string; totalFee: number; weeksCount: number }> = []
+      const created: Array<{ playerId: string; signupId: string; totalFee: number; count: number; unit: "week" | "session" }> = []
       for (const entry of entries) {
+        const isConsecutive = scheduleInput.scheduleKind === "CONSECUTIVE"
         const weeksCount = entry.weeksCount ?? camp.numberOfWeeks
-        const fee = computeCampFee(pricing, weeksCount)
+        const dates = (entry.sessionDates ?? []).map((iso) => new Date(iso))
+        const count = isConsecutive ? weeksCount : dates.length
+        const feeTotal = campFeeFor(pricing, isConsecutive ? { weeksCount } : { sessionCount: count })
+        const countLabel = `${count} ${unit}${count > 1 ? "s" : ""}`
         const signupData = {
-          weeksSelected: weeksCount,
-          weekNumbers: entry.weekNumbers ?? [],
-          totalFee: fee.total,
+          weeksSelected: isConsecutive ? weeksCount : 0,
+          weekNumbers: isConsecutive ? entry.weekNumbers ?? [] : [],
+          selectedDates: isConsecutive ? [] : dates,
+          totalFee: feeTotal,
           notes: data.notes || null,
           status: "REGISTERED",
         }
@@ -174,11 +208,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           payeeTenantId: camp.tenantId,
           referenceType: "CampSignup",
           referenceId: signup.id,
-          description: `Camp fee — ${camp.name} (${weeksCount} week${weeksCount > 1 ? "s" : ""})`,
-          amount: fee.total,
+          description: `Camp fee — ${camp.name} (${countLabel})`,
+          amount: feeTotal,
           currency: camp.tenant?.currency ?? "CAD",
         })
-        created.push({ playerId: entry.playerId, signupId: signup.id, totalFee: fee.total, weeksCount })
+        created.push({ playerId: entry.playerId, signupId: signup.id, totalFee: feeTotal, count, unit })
       }
         return created
       },
@@ -235,7 +269,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           .map((r) => {
             const p = playerById.get(r.playerId)!
             const feeText = r.totalFee > 0 ? formatMoney(r.totalFee, currency) : "Free"
-            return `<li><strong>${escapeHtml(`${p.firstName} ${p.lastName}`)}</strong> — ${r.weeksCount} week${r.weeksCount > 1 ? "s" : ""}, ${escapeHtml(feeText)}</li>`
+            return `<li><strong>${escapeHtml(`${p.firstName} ${p.lastName}`)}</strong> · ${r.count} ${r.unit}${r.count > 1 ? "s" : ""}, ${escapeHtml(feeText)}</li>`
           })
           .join("")
         await sendEmail({
