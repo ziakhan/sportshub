@@ -66,8 +66,12 @@ export async function GET() {
       (prisma as any).game.findMany({
         where: { status: "COMPLETED", scheduledAt: { gte: weekBack } },
         select: gameSelect,
+        // Five-tab parity pass (2026-07-24): the public (public)/scores page
+        // takes 36 finals — this route (native scores.tsx's data source) was
+        // capped at 24, a silent drift where the app could show fewer
+        // "Recent results" than the web page for the same week.
         orderBy: { scheduledAt: "desc" },
-        take: 24,
+        take: 36,
       }),
       (prisma as any).game.findMany({
         where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead } },

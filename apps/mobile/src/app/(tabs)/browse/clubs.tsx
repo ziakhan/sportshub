@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, Loading, Monogram, TonePill } from "@/components/ui"
+import { Card, EmptyState, Loading, Monogram, StarRating, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
-import { ui } from "@/lib/theme"
+import { palette, ui } from "@/lib/theme"
 
 /**
  * Clubs directory — /api/mobile/browse/clubs, shared with the web /club page
@@ -12,8 +12,9 @@ import { ui } from "@/lib/theme"
  * screen used to hit /api/clubs/public, a separate query with no
  * test-world exclusion and no featured/city grouping. Now: debounced name
  * search, city filter chips (from the API's own city list), a Featured
- * section, then the rest of the directory — matching the web page's shape.
- * Anonymous.
+ * section, then the rest of the directory, star ratings and a gold
+ * "Featured clubs" eyebrow — matching the web page's shape exactly (five-tab
+ * visual-parity pass 2026-07-24). Anonymous.
  */
 
 interface DirectoryClub {
@@ -28,6 +29,7 @@ interface DirectoryClub {
   tryoutCount: number
   primaryColor: string | null
   logoUrl: string | null
+  rating?: { average: number; count: number } | null
 }
 
 interface DirectoryCity {
@@ -69,12 +71,24 @@ export default function ClubsDirectoryScreen() {
     return () => clearTimeout(timer)
   }, [q, city])
 
+  // Rated clubs first within the grid, same as the web page — ranked by
+  // rating without hiding unrated clubs below a fold of empty stars.
+  const sortedRegular = data
+    ? [...data.clubs].sort((a, b) => {
+        const ra = a.rating
+        const rb = b.rating
+        if (!!ra !== !!rb) return ra ? -1 : 1
+        if (ra && rb && rb.average !== ra.average) return rb.average - ra.average
+        return 0
+      })
+    : []
+
   const sections: Section[] = data
     ? [
         ...(data.featured.length > 0 ? [{ title: "Featured clubs", data: data.featured }] : []),
         {
           title: city ? `Clubs in ${city}` : q.length >= 2 ? "Results" : "Top clubs",
-          data: data.clubs,
+          data: sortedRegular,
         },
       ].filter((s) => s.data.length > 0)
     : []
@@ -132,7 +146,11 @@ export default function ClubsDirectoryScreen() {
             <EmptyState icon="business-outline" title="No clubs found" body="Try a different name or city." />
           }
           renderSectionHeader={({ section }) => (
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text
+              style={[styles.sectionTitle, section.title === "Featured clubs" && styles.sectionTitleGold]}
+            >
+              {section.title}
+            </Text>
           )}
           renderItem={({ item, section }) => (
             <Card style={styles.cardSpacing} onPress={() => router.push(`/browse/club/${item.slug}`)}>
@@ -145,6 +163,11 @@ export default function ClubsDirectoryScreen() {
                     </Text>
                     {section.title === "Featured clubs" && <TonePill tone="gold" label="Featured" />}
                   </View>
+                  {item.rating ? (
+                    <View style={styles.ratingRow}>
+                      <StarRating rating={item.rating.average} count={item.rating.count} />
+                    </View>
+                  ) : null}
                   <Text style={styles.clubSub} numberOfLines={1}>
                     {[
                       [item.city, item.state].filter(Boolean).join(", "),
@@ -204,10 +227,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
+  // Web's "Featured clubs" eyebrow is gold (text-gold-600); every other
+  // section stays the muted ink-400 tone above.
+  sectionTitleGold: { color: palette.gold[600] },
   cardSpacing: { marginBottom: 10 },
   clubRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   clubName: { fontSize: 15, fontWeight: "800", color: ui.text, flexShrink: 1 },
+  ratingRow: { marginTop: 2 },
   clubSub: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
   description: { fontSize: 12, color: ui.textMuted, lineHeight: 17, marginTop: 6 },
 })

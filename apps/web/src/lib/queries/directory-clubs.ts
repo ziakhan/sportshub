@@ -1,12 +1,17 @@
 import { prisma } from "@youthbasketballhub/db"
 import { isTestWorldSlug } from "@/lib/demo-data"
+import { getClubRatings, type ClubRating } from "@/lib/queries/club-ratings"
 
 /**
  * Public clubs directory — ONE source for the web /club page and the native
  * Browse → Clubs screen (2026-07-24 drift fix, same class as the leagues
  * directory bug: two independent queries for what should be one browse
  * surface). Owns: status ACTIVE/UNCLAIMED, test-world exclusion, featured
- * carve-out, city filter, name search, and the "top cities" chip list.
+ * carve-out, city filter, name search, the "top cities" chip list, and
+ * (additive, 2026-07-24 five-tab parity pass) each club's published-review
+ * rating — the web page used to call getClubRatings separately; folding it
+ * in here means the native clubs screen gets the SAME star ratings for free
+ * instead of hand-rolling its own groupBy.
  */
 
 export interface DirectoryClub {
@@ -20,6 +25,8 @@ export interface DirectoryClub {
   description: string | null
   branding: { primaryColor: string | null; logoUrl: string | null } | null
   _count: { teams: number; tryouts: number }
+  /** Published-review rating — undefined when the club has no reviews yet. */
+  rating?: ClubRating
 }
 
 export interface DirectoryCity {
@@ -92,6 +99,10 @@ export async function getClubsDirectory(opts: { q?: string; city?: string } = {}
   const cities = (citiesRaw as Array<{ city: string | null; _count: { city: number } }>)
     .filter((g) => g.city)
     .map((g) => ({ city: g.city as string, count: g._count.city }))
+
+  const ratings = await getClubRatings([...featured, ...clubs].map((c) => c.id))
+  for (const c of featured) c.rating = ratings.get(c.id)
+  for (const c of clubs) c.rating = ratings.get(c.id)
 
   return { featured, clubs, cities }
 }

@@ -67,6 +67,12 @@ export const tones = {
   info: { fg: colors.play[700], bg: colors.play[50], border: colors.play[200] },
   neutral: { fg: colors.ink[600], bg: colors.ink[50], border: colors.ink[200] },
   gold: { fg: colors.gold[600], bg: colors.gold[50], border: colors.gold[100] },
+  // Programs-tab parity (five-tab visual-parity pass 2026-07-24): the web
+  // /events type badges use Tailwind violet (camp) and sky (training) — two
+  // families the app didn't have a tone for yet. Same hex values as the
+  // web's bg-violet-100/text-violet-700 and bg-sky-100/text-sky-700.
+  violet: { fg: "#6d28d9", bg: "#ede9fe", border: "#ddd6fe" },
+  sky: { fg: "#0369a1", bg: "#e0f2fe", border: "#bae6fd" },
 } as const
 
 export type Tone = keyof typeof tones

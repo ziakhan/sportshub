@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { router } from "expo-router"
+import { router, usePathname } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useSession } from "@/lib/session"
 import { Avatar } from "@/components/ui"
@@ -25,6 +25,8 @@ const BROWSE_PILLS: Array<{ label: string; href: string; bg: string; fg: string 
   { label: "Clubs", href: "/browse/clubs", bg: palette.play[50], fg: palette.play[700] },
 ]
 
+const PILL_PATHS = ["/scores", "/browse/news", "/browse/programs", "/browse/leagues", "/browse/clubs"]
+
 export function TopBar({
   pills = false,
   unread = 0,
@@ -33,7 +35,19 @@ export function TopBar({
   unread?: number
 }) {
   const insets = useSafeAreaInsets()
+  const pathname = usePathname()
   const { signedIn, user } = useSession()
+
+  // Owner 2026-07-24: pills switch LATERALLY. Pushing stacked pill screens
+  // made back walk News→Programs→News instead of returning home — so when
+  // already on a pill destination, REPLACE it instead of pushing.
+  const goPill = (href: string) => {
+    if (PILL_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      router.replace(href as never)
+    } else {
+      router.push(href as never)
+    }
+  }
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top }]}>
@@ -91,7 +105,7 @@ export function TopBar({
             <Pressable
               key={p.href}
               style={({ pressed }) => [styles.pill, { backgroundColor: p.bg }, pressed && { opacity: 0.7 }]}
-              onPress={() => router.push(p.href as any)}
+              onPress={() => goPill(p.href)}
             >
               <View style={[styles.pillDot, { backgroundColor: p.fg }]} />
               <Text style={[styles.pillText, { color: p.fg }]}>{p.label}</Text>

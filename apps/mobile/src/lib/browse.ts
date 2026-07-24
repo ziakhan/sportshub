@@ -66,6 +66,9 @@ export interface ProgramItem {
   status?: string
   feeUnit?: string
   href: string
+  /** Hosting club's published-review average, when it has any (web parity). */
+  clubRating?: number | null
+  clubReviewCount?: number | null
 }
 
 export interface ScoreboardGame {

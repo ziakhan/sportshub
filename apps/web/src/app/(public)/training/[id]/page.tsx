@@ -2,7 +2,6 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
@@ -11,7 +10,7 @@ import { brandStyle } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { formatTrainingSchedule, trainingTypeLabel, trainingSortDate } from "@/lib/training"
 import { getRegistrationViewer } from "@/lib/registration/viewer"
-import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
+import { getPublicTraining as getPublicTrainingSession } from "@/lib/queries/training"
 import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 
 export const dynamic = "force-dynamic"
@@ -20,27 +19,6 @@ const GROUP_TIER_LABELS: Record<string, string> = {
   PRIVATE: "Private",
   SMALL_GROUP: "Small group (2-4)",
   LARGE_GROUP: "Large group (6-10)",
-}
-
-async function getPublicTrainingSession(id: string) {
-  const session = await (prisma as any).trainingSession.findFirst({
-    where: { id, isPublished: true },
-    include: {
-      tenant: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          currency: true,
-          branding: { select: { primaryColor: true } },
-        },
-      },
-      venue: { select: { name: true } },
-      _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
-    },
-  })
-  if (!session) return null
-  return { ...session, fee: Number(session.fee) }
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }) {

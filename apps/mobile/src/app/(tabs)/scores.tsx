@@ -56,6 +56,33 @@ function timeLabel(iso: string): string {
   })
 }
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+}
+
+/** Web DayGroups twin: "Today" for the current day, else "Weekday, Month d". */
+function dayLabel(d: Date): string {
+  if (isSameDay(d, new Date())) return "Today"
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+}
+
+/** Bucket games by calendar day, in the given chronological order (web parity). */
+function groupByDay(games: ScoreGame[], order: "asc" | "desc"): Array<{ label: string; games: ScoreGame[] }> {
+  const sorted = [...games].sort((a, b) =>
+    order === "asc"
+      ? +new Date(a.scheduledAt) - +new Date(b.scheduledAt)
+      : +new Date(b.scheduledAt) - +new Date(a.scheduledAt)
+  )
+  const days: Array<{ date: Date; games: ScoreGame[] }> = []
+  for (const g of sorted) {
+    const d = new Date(g.scheduledAt)
+    const bucket = days.find((x) => isSameDay(x.date, d))
+    if (bucket) bucket.games.push(g)
+    else days.push({ date: d, games: [g] })
+  }
+  return days.map((d) => ({ label: dayLabel(d.date), games: d.games }))
+}
+
 function GameCard({ game }: { game: ScoreGame }) {
   const isLive = game.status === "LIVE"
   const isFinal = game.status === "COMPLETED"
@@ -102,24 +129,38 @@ function GameCard({ game }: { game: ScoreGame }) {
   )
 }
 
+/**
+ * A section of games — flat (Live now) or day-grouped (Upcoming/Recent
+ * results, web DayGroups twin: "Today" then "Weekday, Month d" headers)
+ * depending on whether `order` is passed.
+ */
 function Section({
   title,
   games,
   accent,
+  order,
 }: {
   title: string
   games: ScoreGame[]
   accent: "danger" | "neutral" | "info"
+  /** Present → day-grouped with date headers; absent → one flat list. */
+  order?: "asc" | "desc"
 }) {
   if (games.length === 0) return null
+  const groups = order ? groupByDay(games, order) : [{ label: null, games }]
   return (
     <View style={styles.section}>
       <View style={styles.sectionBar}>
         <View style={[styles.sectionDot, { backgroundColor: tones[accent].fg }]} />
         <Text style={[styles.sectionTitle, { color: tones[accent].fg }]}>{title}</Text>
       </View>
-      {games.map((g) => (
-        <GameCard key={g.id} game={g} />
+      {groups.map((group, i) => (
+        <View key={group.label ?? i}>
+          {group.label ? <Text style={styles.dayLabel}>{group.label}</Text> : null}
+          {group.games.map((g) => (
+            <GameCard key={g.id} game={g} />
+          ))}
+        </View>
       ))}
     </View>
   )
@@ -165,7 +206,13 @@ export default function ScoresScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="Live scores" />
+      <SubHeader title="Scores" />
+      <View style={styles.intro}>
+        <Text style={styles.introEyebrow}>Around the hub</Text>
+        <Text style={styles.introBody}>
+          Live games, this week’s finals and what’s coming up — across every league.
+        </Text>
+      </View>
       <ScrollView
         style={styles.screen}
         contentContainerStyle={styles.content}
@@ -176,9 +223,10 @@ export default function ScoresScreen() {
         ) : null}
         {board ? (
           <>
+            {/* Web section order: Live now, Upcoming, Recent results. */}
             <Section title="Live now" games={board.live} accent="danger" />
-            <Section title="This week’s finals" games={board.finals} accent="neutral" />
-            <Section title="Coming up" games={board.upcoming} accent="info" />
+            <Section title="Upcoming" games={board.upcoming} accent="info" order="asc" />
+            <Section title="Recent results" games={board.finals} accent="neutral" order="desc" />
             {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
               <Text style={styles.empty}>No games this week.</Text>
             ) : null}
@@ -191,6 +239,24 @@ export default function ScoresScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
+  // Web SectionHeader twin ("Around the hub" eyebrow + description) — page
+  // header copy parity (five-tab visual-parity pass 2026-07-24).
+  intro: {
+    padding: 12,
+    paddingBottom: 14,
+    gap: 4,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: ui.border,
+  },
+  introEyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: ui.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+  },
+  introBody: { fontSize: 12.5, color: ui.textMuted, lineHeight: 17 },
   screen: { flex: 1 },
   content: { padding: 16, gap: 8 },
   section: { marginBottom: 16 },
@@ -201,6 +267,16 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  // Web DayGroups' day header ("Today" / "Wednesday, July 22").
+  dayLabel: {
+    fontSize: 12.5,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    color: ui.textMuted,
+    marginTop: 4,
+    marginBottom: 6,
   },
   card: {
     borderWidth: 1,

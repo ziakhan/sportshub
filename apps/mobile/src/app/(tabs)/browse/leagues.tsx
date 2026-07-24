@@ -6,7 +6,7 @@ import { Card, EmptyState, Loading, Monogram, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { perkLabel } from "@/lib/perks"
 import type { Tone } from "@/lib/theme"
-import { ui } from "@/lib/theme"
+import { tones, ui } from "@/lib/theme"
 
 /**
  * Leagues browse — the full public directory (any league with a season, not
@@ -62,6 +62,12 @@ export default function LeaguesScreen() {
   return (
     <View style={styles.root}>
       <SubHeader title="Leagues" />
+      <View style={styles.intro}>
+        <Text style={styles.introEyebrow}>Competitive play</Text>
+        <Text style={styles.introBody}>
+          Live scores, standings, stat leaders and recaps from every league on the platform.
+        </Text>
+      </View>
       {leagues === null ? (
         <Loading />
       ) : (
@@ -147,6 +153,26 @@ export default function LeaguesScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
+  // Web SectionHeader twin ("Competitive play" eyebrow + description) — page
+  // header copy parity (five-tab visual-parity pass 2026-07-24).
+  intro: {
+    padding: 12,
+    paddingBottom: 14,
+    gap: 4,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: ui.border,
+  },
+  introEyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    // Web SectionHeader accent="court" (Browse leagues uses the court/green
+    // family, not the default play blue).
+    color: tones.positive.fg,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+  },
+  introBody: { fontSize: 12.5, color: ui.textMuted, lineHeight: 17 },
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
   cardSpacing: { marginBottom: 10, gap: 8 },

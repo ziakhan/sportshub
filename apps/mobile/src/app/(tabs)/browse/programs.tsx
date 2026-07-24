@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, Loading, TonePill } from "@/components/ui"
+import { Card, EmptyState, Loading, StarRating, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import type { ProgramItem } from "@/lib/browse"
 import { ui } from "@/lib/theme"
@@ -12,14 +12,24 @@ import { ui } from "@/lib/theme"
  * /events aggregate), with type filter chips. Anonymous.
  */
 
+// Same order + Title Case as the web /events filter tabs.
 const FILTERS: Array<{ key: string; label: string }> = [
   { key: "all", label: "All" },
   { key: "tryout", label: "Tryouts" },
+  { key: "house-league", label: "House Leagues" },
   { key: "camp", label: "Camps" },
-  { key: "house-league", label: "House leagues" },
-  { key: "tournament", label: "Tournaments" },
   { key: "training", label: "Training" },
+  { key: "tournament", label: "Tournaments" },
 ]
+
+/** Same badge copy as the web /events type chips (typeBadge.label). */
+const TYPE_LABEL: Record<ProgramItem["type"], string> = {
+  tryout: "Tryout",
+  camp: "Camp",
+  "house-league": "House League",
+  tournament: "Tournament",
+  training: "Training",
+}
 
 export default function ProgramsScreen() {
   const [programs, setPrograms] = useState<ProgramItem[] | null>(null)
@@ -78,16 +88,21 @@ export default function ProgramsScreen() {
             >
               <View style={styles.top}>
                 <TonePill
+                  // Same family-per-type mapping as the web /events badges
+                  // (tryout=hoop, house-league=court, camp=violet,
+                  // training=sky, tournament=gold).
                   tone={
                     item.type === "tryout"
-                      ? "info"
+                      ? "danger"
                       : item.type === "camp"
-                        ? "gold"
+                        ? "violet"
                         : item.type === "tournament"
-                          ? "danger"
-                          : "positive"
+                          ? "gold"
+                          : item.type === "training"
+                            ? "sky"
+                            : "positive"
                   }
-                  label={item.type.replace("-", " ")}
+                  label={TYPE_LABEL[item.type]}
                 />
                 <Text style={styles.fee}>
                   {item.fee > 0
@@ -99,6 +114,11 @@ export default function ProgramsScreen() {
               <Text style={styles.meta}>
                 {[item.clubName, item.ageGroup].filter(Boolean).join(" · ")}
               </Text>
+              {item.clubRating != null ? (
+                <View style={styles.ratingRow}>
+                  <StarRating rating={item.clubRating} count={item.clubReviewCount ?? undefined} />
+                </View>
+              ) : null}
               <Text style={styles.meta}>
                 {new Date(item.startDate).toLocaleDateString(undefined, {
                   weekday: "short",
@@ -127,16 +147,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: ui.border,
   },
+  // Web pill styling: filled gray at rest, filled play-blue when active
+  // (bg-ink-100/text-ink-700 → bg-play-600/text-white) — not an outline.
   filterChip: {
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: ui.borderStrong,
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: ui.surfaceSunken,
   },
-  filterChipOn: { backgroundColor: ui.primary, borderColor: ui.primary },
-  filterText: { fontSize: 12, fontWeight: "600", color: ui.textMuted },
+  filterChipOn: { backgroundColor: ui.primary },
+  filterText: { fontSize: 12.5, fontWeight: "600", color: ui.textMuted },
   filterTextOn: { color: "#fff" },
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
@@ -145,5 +165,6 @@ const styles = StyleSheet.create({
   fee: { fontSize: 14, fontWeight: "800", color: ui.text },
   name: { fontSize: 15, fontWeight: "700", color: ui.text, marginTop: 4 },
   meta: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
+  ratingRow: { marginTop: 2 },
   spots: { fontSize: 12, color: ui.primaryInk, fontWeight: "600", marginTop: 4 },
 })

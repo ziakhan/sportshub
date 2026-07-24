@@ -31,6 +31,12 @@ export default function NewsScreen() {
   return (
     <View style={styles.root}>
       <SubHeader title="News & recaps" />
+      <View style={styles.intro}>
+        <Text style={styles.introEyebrow}>Around the hub</Text>
+        <Text style={styles.introBody}>
+          Every scored game gets a story — plus announcements from clubs and leagues.
+        </Text>
+      </View>
       {items === null ? (
         <Loading />
       ) : (
@@ -90,6 +96,24 @@ export default function NewsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
+  // Web SectionHeader twin ("Around the hub" eyebrow + description) — page
+  // header copy parity (five-tab visual-parity pass 2026-07-24).
+  intro: {
+    padding: 12,
+    paddingBottom: 14,
+    gap: 4,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: ui.border,
+  },
+  introEyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: ui.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+  },
+  introBody: { fontSize: 12.5, color: ui.textMuted, lineHeight: 17 },
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
   // Cover bleeds to the card edge — padding lives on the text block instead

@@ -35,6 +35,10 @@ export async function GET(request: NextRequest) {
       tryoutCount: c._count.tryouts,
       primaryColor: c.branding?.primaryColor || "#1a73e8",
       logoUrl: c.branding?.logoUrl ?? null,
+      // Additive (five-tab parity pass, 2026-07-24): published-review rating,
+      // the SAME getClubRatings the web /club page shows — null when the
+      // club has no reviews yet, never omitted (old builds ignore it).
+      rating: c.rating ? { average: c.rating.average, count: c.rating.count } : null,
     })
 
     return NextResponse.json({

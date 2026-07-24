@@ -345,6 +345,45 @@ export function Avatar({ name, size = 32 }: { name: string | null | undefined; s
   )
 }
 
+/**
+ * Star rating — native twin of the web's StarRating (club-ratings, five-tab
+ * parity pass 2026-07-24): a five-★ row in a faint tone with a gold overlay
+ * clipped to the rating fraction, so 4.3 reads as 4.3, not rounded to a
+ * whole star. Pure JS (glyphs, not SVG/an icon font) — same trick as the
+ * web's clipped-overlay CSS, done here with an absolutely-positioned
+ * percentage-width clip.
+ */
+export function StarRating({
+  rating,
+  count,
+  size = 13,
+}: {
+  /** 0–5 */
+  rating: number
+  /** Review count; rendered as "(n)" when provided. */
+  count?: number
+  size?: number
+}) {
+  const clamped = Math.max(0, Math.min(5, rating))
+  const glyphWidth = size * 5 * 1.08
+  return (
+    <View style={styles.starRow}>
+      <View style={[styles.starTrack, { width: glyphWidth, height: size + 2 }]}>
+        <Text style={[styles.starGlyphs, { fontSize: size, color: palette.ink[200] }]}>★★★★★</Text>
+        <View style={[styles.starClip, { width: `${(clamped / 5) * 100}%` }]}>
+          <Text style={[styles.starGlyphs, { fontSize: size, color: palette.gold[500] }]} numberOfLines={1}>
+            ★★★★★
+          </Text>
+        </View>
+      </View>
+      <Text style={[styles.starValue, { fontSize: size - 1 }]}>{clamped.toFixed(1)}</Text>
+      {count !== undefined ? (
+        <Text style={[styles.starCount, { fontSize: size - 1 }]}>({count})</Text>
+      ) : null}
+    </View>
+  )
+}
+
 export function Loading() {
   return <ActivityIndicator style={{ marginTop: 40 }} color={ui.primary} />
 }
@@ -466,4 +505,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  starRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  starTrack: { justifyContent: "center" },
+  starGlyphs: { letterSpacing: 1, lineHeight: undefined },
+  starClip: { position: "absolute", top: 0, left: 0, height: "100%", overflow: "hidden" },
+  starValue: { fontWeight: "800", color: ui.text },
+  starCount: { color: ui.textFaint, fontWeight: "600" },
 })

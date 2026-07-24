@@ -2,7 +2,7 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { getClubRatings, type ClubRating } from "@/lib/queries/club-ratings"
+import type { ClubRating } from "@/lib/queries/club-ratings"
 import { getClubsDirectory, type DirectoryClub } from "@/lib/queries/directory-clubs"
 import { StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
@@ -85,7 +85,9 @@ export default async function ClubDirectoryPage({
 }) {
   const city = searchParams.city?.trim() || undefined
   const { featured: featuredClubs, clubs: regularClubs, cities } = await getClubsDirectory({ city })
-  const ratings = await getClubRatings([...featuredClubs, ...regularClubs].map((c) => c.id))
+  const ratings = new Map<string, ClubRating>(
+    [...featuredClubs, ...regularClubs].flatMap((c) => (c.rating ? [[c.id, c.rating] as const] : []))
+  )
 
   // Follow (favorite) state per club for the signed-in viewer
   const session = await getServerSession(authOptions).catch(() => null)
