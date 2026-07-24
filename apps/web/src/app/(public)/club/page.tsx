@@ -2,8 +2,8 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { isTestWorldSlug } from "@/lib/demo-data"
 import { getClubRatings, type ClubRating } from "@/lib/queries/club-ratings"
+import { getClubsDirectory, type DirectoryClub } from "@/lib/queries/directory-clubs"
 import { StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
@@ -14,75 +14,6 @@ export const metadata = {
   title: "Find a Youth Basketball Club Near You",
   alternates: { canonical: "/club" },
   description: "Discover youth basketball clubs near you, rated by real families.",
-}
-
-interface DirectoryClub {
-  id: string
-  slug: string
-  name: string
-  city: string | null
-  state: string | null
-  status: string
-  isFeatured: boolean
-  branding: { primaryColor: string | null } | null
-  _count: { teams: number; tryouts: number }
-}
-
-const CLUB_SELECT = {
-  id: true,
-  slug: true,
-  name: true,
-  city: true,
-  state: true,
-  status: true,
-  isFeatured: true,
-  branding: { select: { primaryColor: true } },
-  _count: { select: { teams: true, tryouts: true } },
-} as const
-
-/** Browseable directory (audit GAP-024): search on top, but never a blank
- *  page — the most active clubs render first, filterable by city.
- *  Renders the FULL directory (no cap): this page is the crawl path to every
- *  club page — a former .slice(0, 36) orphaned 150+ club pages from search
- *  engines (SEO Phase T, 2026-07-12). */
-async function getDirectoryClubs(city?: string): Promise<DirectoryClub[]> {
-  const clubs = await (prisma as any).tenant.findMany({
-    where: {
-      status: { in: ["ACTIVE", "UNCLAIMED"] },
-      ...(city ? { city: { equals: city, mode: "insensitive" } } : {}),
-    },
-    select: CLUB_SELECT,
-    orderBy: [{ teams: { _count: "desc" } }, { name: "asc" }],
-  })
-  return clubs.filter((c: DirectoryClub) => !isTestWorldSlug(c.slug))
-}
-
-async function getFeaturedClubs(city?: string): Promise<DirectoryClub[]> {
-  const clubs = await (prisma as any).tenant.findMany({
-    where: {
-      isFeatured: true,
-      status: { in: ["ACTIVE", "UNCLAIMED"] },
-      ...(city ? { city: { equals: city, mode: "insensitive" } } : {}),
-    },
-    select: CLUB_SELECT,
-    orderBy: { name: "asc" },
-    take: 6,
-  })
-  return clubs.filter((c: DirectoryClub) => !isTestWorldSlug(c.slug))
-}
-
-/** Top cities by club count — the "near me" entry point. */
-async function getTopCities(): Promise<{ city: string; count: number }[]> {
-  const grouped = await prisma.tenant.groupBy({
-    by: ["city"],
-    where: { status: { in: ["ACTIVE", "UNCLAIMED"] }, city: { not: null } },
-    _count: { city: true },
-    orderBy: { _count: { city: "desc" } },
-    take: 10,
-  })
-  return grouped
-    .filter((g: (typeof grouped)[number]) => g.city)
-    .map((g: (typeof grouped)[number]) => ({ city: g.city as string, count: g._count.city }))
 }
 
 function ClubCard({
@@ -153,14 +84,7 @@ export default async function ClubDirectoryPage({
   searchParams: { city?: string }
 }) {
   const city = searchParams.city?.trim() || undefined
-  const [clubs, featuredClubs, cities] = await Promise.all([
-    getDirectoryClubs(city),
-    getFeaturedClubs(city),
-    getTopCities(),
-  ])
-
-  const featuredIds = new Set(featuredClubs.map((c) => c.id))
-  const regularClubs = clubs.filter((c) => !featuredIds.has(c.id))
+  const { featured: featuredClubs, clubs: regularClubs, cities } = await getClubsDirectory({ city })
   const ratings = await getClubRatings([...featuredClubs, ...regularClubs].map((c) => c.id))
 
   // Follow (favorite) state per club for the signed-in viewer

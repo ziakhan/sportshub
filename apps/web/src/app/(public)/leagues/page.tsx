@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { Badge, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
+import { getLeaguesDirectory } from "@/lib/queries/directory-leagues"
 
 export const dynamic = "force-dynamic"
 
@@ -24,48 +25,10 @@ const STATUS_LABEL: Record<string, { label: string; tone: "court" | "play" | "ne
   DRAFT: { label: "Coming soon", tone: "neutral" },
 }
 
-async function getPublicLeagues() {
-  const leagues = await (prisma as any).league.findMany({
-    where: { seasons: { some: {} } },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      perks: true,
-      seasons: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-        select: {
-          id: true,
-          label: true,
-          status: true,
-          _count: { select: { teamSubmissions: { where: { status: "APPROVED" } }, divisions: true } },
-        },
-      },
-    },
-    orderBy: { updatedAt: "desc" },
-  })
-
-  return Promise.all(
-    leagues
-      .filter((l: any) => l.seasons.length > 0)
-      .map(async (l: any) => {
-        const season = l.seasons[0]
-        const completedGames = await (prisma as any).game.count({
-          where: { seasonId: season.id, status: "COMPLETED" },
-        })
-        const liveGames = await (prisma as any).game.count({
-          where: { seasonId: season.id, status: "LIVE" },
-        })
-        return { ...l, season, completedGames, liveGames }
-      })
-  )
-}
-
 export default async function PublicLeaguesPage() {
-  const leagues = await getPublicLeagues()
-  // Active content first, drafts last
-  leagues.sort((a: any, b: any) => b.completedGames + b.liveGames * 10 - (a.completedGames + a.liveGames * 10))
+  // Directory ordering (active content first, drafts last) is applied inside
+  // getLeaguesDirectory() so the web page and native app never drift again.
+  const leagues = await getLeaguesDirectory()
 
   // Follow (favorite) state per league for the signed-in viewer
   const session = await getServerSession(authOptions).catch(() => null)
@@ -150,13 +113,13 @@ export default async function PublicLeaguesPage() {
                   <div className="bg-ink-50 rounded-2xl p-3">
                     <div className="text-ink-400 text-xs uppercase tracking-[0.14em]">Teams</div>
                     <div className="text-ink-950 mt-1 text-lg font-semibold tabular-nums">
-                      {l.season._count.teamSubmissions}
+                      {l.season.teamCount}
                     </div>
                   </div>
                   <div className="bg-ink-50 rounded-2xl p-3">
                     <div className="text-ink-400 text-xs uppercase tracking-[0.14em]">Divisions</div>
                     <div className="text-ink-950 mt-1 text-lg font-semibold tabular-nums">
-                      {l.season._count.divisions}
+                      {l.season.divisionCount}
                     </div>
                   </div>
                   <div className="bg-ink-50 rounded-2xl p-3">

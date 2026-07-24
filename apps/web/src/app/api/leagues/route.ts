@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/leagues — List leagues
  * ?mine=true   — leagues owned by the current user (or all leagues for platform admin)
- * ?public=true — leagues that have at least one season accepting registration or in progress
+ * ?public=true — every league with at least one season (any status; UI badges it)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -62,13 +62,15 @@ export async function GET(request: NextRequest) {
     const isPublic = request.nextUrl.searchParams.get("public") === "true"
 
     if (isPublic) {
+      // Directory doctrine (2026-07-24 drift fix): ANY league with a season
+      // is listed — clubs see upcoming leagues before registration opens;
+      // season status is in the payload for the UI to badge.
       const leagues = await (prisma as any).league.findMany({
         where: {
-          seasons: { some: { status: { in: ["REGISTRATION", "IN_PROGRESS"] } } },
+          seasons: { some: {} },
         },
         include: {
           seasons: {
-            where: { status: { in: ["REGISTRATION", "IN_PROGRESS"] } },
             orderBy: { createdAt: "desc" },
             include: { _count: { select: { teamSubmissions: true, divisions: true } } },
           },

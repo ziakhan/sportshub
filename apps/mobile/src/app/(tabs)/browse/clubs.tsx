@@ -1,44 +1,83 @@
-import { useCallback, useEffect, useState } from "react"
-import { FlatList, StyleSheet, Text, TextInput, View } from "react-native"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Pressable, ScrollView, SectionList, StyleSheet, Text, TextInput, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, Loading, Monogram } from "@/components/ui"
+import { Card, EmptyState, Loading, Monogram, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { ui } from "@/lib/theme"
 
-/** Clubs directory — /api/clubs/public with live search. Anonymous. */
+/**
+ * Clubs directory — /api/mobile/browse/clubs, shared with the web /club page
+ * via getClubsDirectory() (2026-07-24 drift fix + native-parity pass): the
+ * screen used to hit /api/clubs/public, a separate query with no
+ * test-world exclusion and no featured/city grouping. Now: debounced name
+ * search, city filter chips (from the API's own city list), a Featured
+ * section, then the rest of the directory — matching the web page's shape.
+ * Anonymous.
+ */
 
-interface PublicClub {
+interface DirectoryClub {
   id: string
   slug: string
   name: string
   city: string | null
   state: string | null
   description: string | null
+  status: string
   teamCount: number
+  tryoutCount: number
   primaryColor: string | null
   logoUrl: string | null
 }
 
+interface DirectoryCity {
+  city: string
+  count: number
+}
+
+interface ClubsResponse {
+  clubs: DirectoryClub[]
+  featured: DirectoryClub[]
+  cities: DirectoryCity[]
+}
+
+type Section = { title: string; data: DirectoryClub[] }
+
 export default function ClubsDirectoryScreen() {
   const [q, setQ] = useState("")
-  const [clubs, setClubs] = useState<PublicClub[] | null>(null)
+  const [city, setCity] = useState<string | undefined>(undefined)
+  const [data, setData] = useState<ClubsResponse | null>(null)
 
-  const load = useCallback(async (query: string) => {
+  const load = useCallback(async (query: string, cityFilter: string | undefined) => {
     try {
-      const data = await apiJson<{ clubs: PublicClub[] }>(
-        `/api/clubs/public?limit=30${query.length >= 2 ? `&q=${encodeURIComponent(query)}` : ""}`
-      )
-      setClubs(data.clubs)
+      const params = new URLSearchParams()
+      if (query.length >= 2) params.set("q", query)
+      if (cityFilter) params.set("city", cityFilter)
+      const qs = params.toString()
+      const res = await apiJson<ClubsResponse>(`/api/mobile/browse/clubs${qs ? `?${qs}` : ""}`)
+      setData(res)
     } catch {
-      setClubs((cur) => cur ?? [])
+      setData((cur) => cur ?? { clubs: [], featured: [], cities: [] })
     }
   }, [])
 
+  const loadRef = useRef(load)
+  loadRef.current = load
+
   useEffect(() => {
-    const timer = setTimeout(() => void load(q), q ? 250 : 0)
+    const timer = setTimeout(() => void loadRef.current(q, city), q ? 250 : 0)
     return () => clearTimeout(timer)
-  }, [q, load])
+  }, [q, city])
+
+  const sections: Section[] = data
+    ? [
+        ...(data.featured.length > 0 ? [{ title: "Featured clubs", data: data.featured }] : []),
+        {
+          title: city ? `Clubs in ${city}` : q.length >= 2 ? "Results" : "Top clubs",
+          data: data.clubs,
+        },
+      ].filter((s) => s.data.length > 0)
+    : []
 
   return (
     <View style={styles.root}>
@@ -52,26 +91,60 @@ export default function ClubsDirectoryScreen() {
           onChangeText={setQ}
           autoCapitalize="none"
         />
+        {data && data.cities.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipScroll}
+            contentContainerStyle={styles.chipRow}
+          >
+            <Pressable
+              style={[styles.chip, !city && styles.chipActive]}
+              onPress={() => setCity(undefined)}
+            >
+              <Text style={[styles.chipText, !city && styles.chipTextActive]}>All cities</Text>
+            </Pressable>
+            {data.cities.map((c) => {
+              const active = city?.toLowerCase() === c.city.toLowerCase()
+              return (
+                <Pressable
+                  key={c.city}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setCity(active ? undefined : c.city)}
+                >
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.city}</Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        )}
       </View>
-      {clubs === null ? (
+      {data === null ? (
         <Loading />
       ) : (
-        <FlatList
+        <SectionList
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          data={clubs}
+          sections={sections}
           keyExtractor={(c) => c.id}
+          stickySectionHeadersEnabled={false}
           ListEmptyComponent={
-            <EmptyState icon="business-outline" title="No clubs found" body="Try a different name." />
+            <EmptyState icon="business-outline" title="No clubs found" body="Try a different name or city." />
           }
-          renderItem={({ item }) => (
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+          )}
+          renderItem={({ item, section }) => (
             <Card style={styles.cardSpacing} onPress={() => router.push(`/browse/club/${item.slug}`)}>
               <View style={styles.clubRow}>
                 <Monogram name={item.name} logoUrl={item.logoUrl} color={item.primaryColor} size={44} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.clubName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.clubName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {section.title === "Featured clubs" && <TonePill tone="gold" label="Featured" />}
+                  </View>
                   <Text style={styles.clubSub} numberOfLines={1}>
                     {[
                       [item.city, item.state].filter(Boolean).join(", "),
@@ -81,6 +154,7 @@ export default function ClubsDirectoryScreen() {
                       .join(" · ")}
                   </Text>
                 </View>
+                {item.status === "UNCLAIMED" && <TonePill tone="neutral" label="Open profile" />}
               </View>
               {item.description ? (
                 <Text style={styles.description} numberOfLines={2}>
@@ -97,7 +171,7 @@ export default function ClubsDirectoryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
-  searchWrap: { padding: 12, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: ui.border },
+  searchWrap: { padding: 12, gap: 10, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: ui.border },
   search: {
     borderWidth: 1,
     borderColor: ui.borderStrong,
@@ -108,11 +182,32 @@ const styles = StyleSheet.create({
     color: ui.text,
     backgroundColor: ui.surfaceSunken,
   },
+  chipScroll: { marginHorizontal: -12 },
+  chipRow: { paddingHorizontal: 12, gap: 8 },
+  chip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: ui.surfaceSunken,
+  },
+  chipActive: { backgroundColor: ui.primary },
+  chipText: { fontSize: 12.5, fontWeight: "700", color: ui.textMuted },
+  chipTextActive: { color: "#fff" },
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
+  sectionTitle: {
+    fontSize: 11.5,
+    fontWeight: "800",
+    color: ui.textFaint,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   cardSpacing: { marginBottom: 10 },
   clubRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  clubName: { fontSize: 15, fontWeight: "800", color: ui.text },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  clubName: { fontSize: 15, fontWeight: "800", color: ui.text, flexShrink: 1 },
   clubSub: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
-  description: { fontSize: 12, color: ui.textMuted, lineHeight: 17 },
+  description: { fontSize: 12, color: ui.textMuted, lineHeight: 17, marginTop: 6 },
 })
