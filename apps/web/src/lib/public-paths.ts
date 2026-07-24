@@ -66,6 +66,8 @@ const PUBLIC_PAGE_PREFIXES = [
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
 const PUBLIC_API_READ_PREFIXES = [
+  // Caddy on-demand-TLS ask (localhost caller, no session possible)
+  "/api/domains/check",
   // One-click unsubscribe must work signed-out (CASL); token-authenticated.
   "/api/comms/unsubscribe",
   // Public tournament browsing (/events) — GET-only; ?mine + mutations stay guarded.
