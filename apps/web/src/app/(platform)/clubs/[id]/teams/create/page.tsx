@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 
 const createTeamSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -363,12 +363,7 @@ export default function CreateTeamPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={`/clubs/${clubId}/teams`}
-          className="text-ink-500 hover:text-ink-700 mb-2 inline-flex items-center text-sm"
-        >
-          &larr; Back to Teams
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/teams`} fallbackLabel="Teams" className="-ml-1 mb-1" />
         <h2 className="text-ink-900 text-xl font-bold">Create New Team</h2>
         <p className="text-ink-600 mt-1 text-sm">
           Add a team to your club and assign coaching staff

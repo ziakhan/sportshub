@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
@@ -198,12 +198,7 @@ function CreateTryoutForm() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={`/clubs/${clubId}/tryouts`}
-          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; Back to Tryouts
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/tryouts`} fallbackLabel="Tryouts" className="-ml-1 mb-1" />
         <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
           Create Tryout
         </h2>

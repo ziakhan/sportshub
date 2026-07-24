@@ -1,7 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
-import { Card } from "@/components/ui"
+import { Card, SmartBack } from "@/components/ui"
 import { VenueMap } from "@/components/venues/venue-map"
 
 export const dynamic = "force-dynamic"
@@ -57,12 +56,7 @@ export default async function VenueDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/venues"
-        className="text-ink-500 hover:text-ink-700 mb-3 inline-flex items-center text-sm"
-      >
-        &larr; All venues
-      </Link>
+      <SmartBack fallback="/venues" fallbackLabel="All venues" className="-ml-1 mb-3" />
 
       <div className="mb-6">
         <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase leading-none tracking-wide">

@@ -11,223 +11,9 @@ import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
-import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
-import { formatTrainingSchedule } from "@/lib/training"
-
-async function getClubBySlug(slug: string) {
-  const tenant = await prisma.tenant.findUnique({
-    where: { slug },
-    include: { branding: true },
-  })
-  if (!tenant || (tenant.status !== "ACTIVE" && tenant.status !== "UNCLAIMED")) return null
-  return tenant
-}
-
-async function getHouseLeagues(tenantId: string) {
-  const raw = await (prisma as any).houseLeague.findMany({
-    where: { tenantId, isPublished: true, endDate: { gte: todayUtcDateFloor() } },
-    select: {
-      id: true, name: true, ageGroups: true, gender: true, season: true,
-      startDate: true, endDate: true, location: true, fee: true, maxParticipants: true,
-      _count: { select: { signups: true } },
-    },
-    orderBy: { startDate: "asc" },
-  })
-  return (raw || []).map((l: any) => ({ ...l, fee: Number(l.fee) }))
-}
-
-async function getCamps(tenantId: string) {
-  const raw = await (prisma as any).camp.findMany({
-    where: { tenantId, isPublished: true, endDate: { gte: todayUtcDateFloor() } },
-    select: {
-      id: true, name: true, campType: true, ageGroup: true, gender: true,
-      numberOfWeeks: true, weeklyFee: true, fullCampFee: true, location: true,
-    },
-    orderBy: { startDate: "asc" },
-  })
-  return (raw || []).map((c: any) => ({
-    ...c,
-    weeklyFee: Number(c.weeklyFee),
-    fullCampFee: c.fullCampFee ? Number(c.fullCampFee) : null,
-  }))
-}
-
-async function getTrainingSessions(tenantId: string) {
-  const raw = await (prisma as any).trainingSession.findMany({
-    where: {
-      tenantId,
-      isPublished: true,
-      OR: [
-        { scheduleType: "ONE_TIME", startAt: { gte: new Date() } },
-        { scheduleType: "RECURRING", endDate: { gte: todayUtcDateFloor() } },
-      ],
-    },
-    select: {
-      id: true, title: true, sessionType: true, scheduleType: true, startAt: true,
-      dayOfWeek: true, startTime: true, startDate: true, endDate: true,
-      durationMinutes: true, capacity: true, fee: true, location: true,
-    },
-  })
-  return (raw || []).map((s: any) => ({
-    ...s,
-    fee: Number(s.fee),
-    scheduleText: formatTrainingSchedule(s),
-  }))
-}
-
-/** 1-on-1 booking block data for TRAINER tenants with booking turned on. */
-async function getOneOnOne(tenantId: string, userId: string | null) {
-  const profile = await (prisma as any).trainerProfile.findUnique({
-    where: { tenantId },
-    select: { oneOnOneEnabled: true, oneOnOneTitle: true, oneOnOneFee: true, slotMinutes: true },
-  })
-  if (!profile?.oneOnOneEnabled) return null
-  const players = userId
-    ? await prisma.player.findMany({
-        where: { parentId: userId, deletedAt: null },
-        select: { id: true, firstName: true, lastName: true },
-        orderBy: { firstName: "asc" },
-      })
-    : []
-  return {
-    title: profile.oneOnOneTitle,
-    fee: profile.oneOnOneFee != null ? Number(profile.oneOnOneFee) : null,
-    slotMinutes: profile.slotMinutes,
-    players,
-  }
-}
-
-async function getHostedTournaments(tenantId: string) {
-  const raw = await (prisma as any).tournament.findMany({
-    where: {
-      tenantId,
-      status: { in: ["REGISTRATION", "IN_PROGRESS"] },
-      startDate: { gte: todayUtcDateFloor() },
-    },
-    select: {
-      id: true, name: true, city: true, state: true, status: true,
-      startDate: true, endDate: true, teamFee: true, currency: true,
-      _count: { select: { teams: true } },
-    },
-    orderBy: { startDate: "asc" },
-  })
-  return (raw || []).map((t: any) => ({ ...t, teamFee: Number(t.teamFee) }))
-}
-
-async function getClubData(tenantId: string) {
-  const [teams, tryouts, staffCount] = await Promise.all([
-    prisma.team.findMany({
-      where: { tenantId },
-      select: { id: true, name: true, ageGroup: true, gender: true, season: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.tryout.findMany({
-      where: { tenantId, isPublished: true, isPublic: true, scheduledAt: { gte: new Date() } },
-      select: { id: true, title: true, ageGroup: true, gender: true, location: true, scheduledAt: true, fee: true },
-      orderBy: { scheduledAt: "asc" },
-    }),
-    prisma.userRole.count({
-      where: { tenantId, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
-    }),
-  ])
-  return { teams, tryouts: tryouts.map((t: any) => ({ ...t, fee: Number(t.fee) })), staffCount }
-}
-
-async function getReviewsData(tenantId: string) {
-  const session = await getServerSession(authOptions).catch(() => null)
-  const userId = session?.user?.id ?? null
-  // Visibility policy ("Gate + moderate"): FLAGGED reviews stay publicly
-  // visible until an admin moderates (a flag is not a takedown); only REMOVED
-  // is hidden. Keep in sync with GET /api/reviews.
-  const publicStatuses = ["PUBLISHED", "FLAGGED"] as any
-  const [reviews, aggregate, ownReview] = await Promise.all([
-    prisma.review.findMany({
-      where: { tenantId, status: { in: publicStatuses } },
-      select: {
-        id: true, rating: true, title: true, content: true, status: true, createdAt: true,
-        reviewer: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-    prisma.review.aggregate({
-      where: { tenantId, status: { in: publicStatuses } },
-      _avg: { rating: true },
-      _count: { rating: true },
-    }),
-    userId
-      ? prisma.review.findFirst({
-          where: { tenantId, reviewerId: userId },
-          select: { id: true, rating: true, title: true, content: true, status: true },
-        })
-      : null,
-  ])
-  return {
-    reviews,
-    averageRating: aggregate._avg.rating ? Number(aggregate._avg.rating.toFixed(1)) : null,
-    totalReviews: aggregate._count.rating,
-    signedIn: !!userId,
-    ownReview,
-    userId,
-  }
-}
-
-async function getAnnouncements(tenantId: string) {
-  return (prisma as any).announcement.findMany({
-    where: { tenantId, teamId: null, isPublic: true },
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-    take: 6,
-  })
-}
-
-async function getGames(teamIds: string[]) {
-  if (teamIds.length === 0) return { recentGames: [], upcomingGames: [] }
-  const now = new Date()
-  const [recentGames, upcomingGames] = await Promise.all([
-    prisma.game.findMany({
-      where: {
-        status: "COMPLETED",
-        OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
-      },
-      select: {
-        id: true, scheduledAt: true, homeScore: true, awayScore: true,
-        homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
-      },
-      orderBy: { scheduledAt: "desc" },
-      take: 4,
-    }),
-    prisma.game.findMany({
-      where: {
-        status: { in: ["SCHEDULED", "LIVE"] },
-        scheduledAt: { gte: now },
-        OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
-      },
-      select: {
-        id: true, scheduledAt: true, status: true,
-        homeTeam: { select: { name: true } }, awayTeam: { select: { name: true } },
-      },
-      orderBy: { scheduledAt: "asc" },
-      take: 4,
-    }),
-  ])
-  return { recentGames, upcomingGames }
-}
-
-async function getClubNews(tenantId: string, teamIds: string[]) {
-  const orTags: any[] = [{ tenantId }]
-  if (teamIds.length) orTags.push({ teamId: { in: teamIds } })
-  return (prisma as any).post.findMany({
-    where: { status: "PUBLISHED", tags: { some: { OR: orTags } } },
-    select: {
-      id: true, title: true, slug: true, publishedAt: true,
-      media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
-    },
-    orderBy: { publishedAt: "desc" },
-    take: 4,
-  })
-}
+import { getClubProfile } from "@/lib/queries/club-profile"
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const tenant = await prisma.tenant.findUnique({
@@ -271,8 +57,31 @@ const NAV = [
 ] as const
 
 export default async function ClubProfilePage({ params }: { params: { slug: string } }) {
-  const club = await getClubBySlug(params.slug)
-  if (!club) notFound()
+  const session = await getServerSession(authOptions).catch(() => null)
+  const userId = (session?.user as any)?.id ?? null
+
+  // Single shared source for the public data — the same getClubProfile() the
+  // native club screen calls (GET /api/mobile/browse/clubs/[slug]).
+  const profile = await getClubProfile(params.slug, { userId })
+  if (!profile) notFound()
+  const {
+    club,
+    teams,
+    tryouts,
+    houseLeagues,
+    camps,
+    tournaments,
+    trainingSessions,
+    oneOnOne,
+    staffCount,
+    announcements,
+    recentGames,
+    upcomingGames,
+    news,
+    rating,
+    reviews,
+    ownReview,
+  } = profile
 
   await trackPublicView({
     path: `/club/${params.slug}`,
@@ -281,23 +90,6 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     tenantId: club.id,
   })
 
-  const [clubData, houseLeagues, camps, tournaments, trainingSessions, reviewsData, announcements] = await Promise.all([
-    getClubData(club.id),
-    getHouseLeagues(club.id),
-    getCamps(club.id),
-    getHostedTournaments(club.id),
-    getTrainingSessions(club.id),
-    getReviewsData(club.id),
-    getAnnouncements(club.id),
-  ])
-  const { teams, tryouts, staffCount } = clubData
-  const { userId } = reviewsData
-  const oneOnOne = await getOneOnOne(club.id, userId)
-  const teamIds = teams.map((t: any) => t.id)
-  const [{ recentGames, upcomingGames }, news] = await Promise.all([
-    getGames(teamIds),
-    getClubNews(club.id, teamIds),
-  ])
   const initialFollowing = userId
     ? !!(await (prisma as any).follow.findFirst({ where: { userId, tenantId: club.id }, select: { id: true } }))
     : false
@@ -316,7 +108,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
       })) > 0
     : false
 
-  const branding: any = club.branding
+  const branding = club.branding
   const primary = branding?.primaryColor || "#1a73e8"
   const data: ClubPageData = {
     club,
@@ -329,11 +121,11 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     tournaments,
     trainingSessions,
     oneOnOne,
-    reviews: reviewsData.reviews,
-    averageRating: reviewsData.averageRating,
-    totalReviews: reviewsData.totalReviews,
-    signedIn: reviewsData.signedIn,
-    ownReview: reviewsData.ownReview,
+    reviews,
+    averageRating: rating.average,
+    totalReviews: rating.count,
+    signedIn: !!userId,
+    ownReview,
     canManage,
     staffCount,
     announcements,
@@ -366,8 +158,8 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
       value: nextGame ? format(new Date(nextGame.scheduledAt), "MMM d") : "—",
       label: "Next game",
     },
-    reviewsData.averageRating !== null
-      ? { value: reviewsData.averageRating.toFixed(1), label: "Rating" }
+    rating.average !== null
+      ? { value: rating.average.toFixed(1), label: "Rating" }
       : { value: String(staffCount), label: "Staff" },
   ]
 
@@ -385,8 +177,8 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
           phoneNumber: club.phoneNumber,
           website: club.website,
           logoUrl: club.branding?.logoUrl ?? null,
-          averageRating: reviewsData.averageRating,
-          totalReviews: reviewsData.totalReviews,
+          averageRating: rating.average,
+          totalReviews: rating.count,
         })}
       />
       {/* HERO */}
@@ -484,7 +276,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
               <FollowButton
                 tenantId={club.id}
                 initialFollowing={initialFollowing}
-                isAuthenticated={reviewsData.signedIn}
+                isAuthenticated={!!userId}
                 variant="banner"
               />
             )}

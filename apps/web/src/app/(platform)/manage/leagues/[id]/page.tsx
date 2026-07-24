@@ -13,6 +13,7 @@ import {
   PanelHeader,
   Badge,
   DateTimePicker,
+  SmartBack,
   type BadgeTone,
 } from "@/components/ui"
 
@@ -234,12 +235,7 @@ function LeagueDashboard() {
       style={brandStyle(league.primaryColor || "#4f46e5")}
     >
       <div className="mb-2">
-        <Link
-          href="/manage/leagues"
-          className="text-[color:var(--brand-ink)] text-sm font-medium hover:underline"
-        >
-          &larr; Back to Leagues
-        </Link>
+        <SmartBack fallback="/manage/leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>
 
       <div className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">

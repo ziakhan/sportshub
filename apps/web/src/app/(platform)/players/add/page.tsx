@@ -2,10 +2,9 @@
 
 import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Button, DateTimePicker } from "@/components/ui"
+import { Button, DateTimePicker, SmartBack } from "@/components/ui"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 import { calculateAge } from "@/lib/coppa"
 
@@ -121,9 +120,7 @@ function AddPlayerForm() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
-          <Link href={redirectTo || "/players"} className="text-ink-500 hover:text-ink-700 text-sm">
-            &larr; Back to Players
-          </Link>
+          <SmartBack fallback={redirectTo || "/players"} fallbackLabel="Players" className="-ml-1" />
         </div>
 
         <div className="reveal border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">

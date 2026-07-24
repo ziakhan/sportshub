@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 
 export default function CreateTournamentPage() {
   const params = useParams()
@@ -73,12 +73,7 @@ export default function CreateTournamentPage() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
-          <Link
-            href={`/clubs/${clubId}/tournaments`}
-            className="text-sm text-play-700 hover:underline"
-          >
-            &larr; Back to Tournaments
-          </Link>
+          <SmartBack fallback={`/clubs/${clubId}/tournaments`} fallbackLabel="Tournaments" className="-ml-1" />
         </div>
 
         <h1 className="text-2xl font-bold text-ink-900 mb-6">Create Tournament</h1>

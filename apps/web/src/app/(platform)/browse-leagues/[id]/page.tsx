@@ -2,10 +2,10 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useParams, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { perkLabel } from "@/lib/leagues/perks"
+import { SmartBack } from "@/components/ui"
 
 interface RosterPreviewPlayer {
   playerId: string
@@ -141,9 +141,7 @@ function SeasonDetailSubmitInner() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <div className="mb-6">
-        <Link href="/browse-leagues" className="text-play-700 text-sm font-medium hover:underline">
-          &larr; Back to Leagues
-        </Link>
+        <SmartBack fallback="/browse-leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>
 
       {message && (

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
@@ -121,9 +121,7 @@ export default function CreateCampPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/camps`} className="text-sm text-play-700 hover:underline">
-          &larr; Back to Camps
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/camps`} fallbackLabel="Camps" className="-ml-1" />
       </div>
 
       <div className="mx-auto max-w-2xl">

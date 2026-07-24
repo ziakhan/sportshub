@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { SignoffPinCard } from "@/components/scoring/signoff-pin-card"
 import { CertificationUploadField } from "@/components/referee/certification-upload-field"
+import { SmartBack } from "@/components/ui"
 
 const refereeProfileSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]),
@@ -119,9 +120,7 @@ export default function RefereeProfilePage() {
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
-        <Link href="/dashboard" className="text-ink-500 hover:text-ink-700 text-sm">
-          &larr; Back to Dashboard
-        </Link>
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1" />
       </div>
 
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">

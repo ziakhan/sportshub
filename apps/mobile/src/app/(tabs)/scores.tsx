@@ -12,6 +12,7 @@ import { SubHeader } from "@/components/top-bar"
 import { Monogram, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
+import { useSession } from "@/lib/session"
 import { fonts, tones, ui } from "@/lib/theme"
 
 /**
@@ -40,6 +41,8 @@ interface Scoreboard {
   live: ScoreGame[]
   finals: ScoreGame[]
   upcoming: ScoreGame[]
+  /** Signed-in only — absent/empty for anonymous callers (server parity). */
+  yourGames?: ScoreGame[]
 }
 
 const LIVE_POLL_MS = 15_000
@@ -139,12 +142,18 @@ function Section({
   games,
   accent,
   order,
+  subtitle,
+  showCount,
 }: {
   title: string
   games: ScoreGame[]
-  accent: "danger" | "neutral" | "info"
+  accent: "danger" | "neutral" | "info" | "gold"
   /** Present → day-grouped with date headers; absent → one flat list. */
   order?: "asc" | "desc"
+  /** Web SectionHeader twin — "Your games" explains what pinned it here. */
+  subtitle?: string
+  /** Web's "Your games"/"Live now" Badge count — Upcoming/Recent don't have one. */
+  showCount?: boolean
 }) {
   if (games.length === 0) return null
   const groups = order ? groupByDay(games, order) : [{ label: null, games }]
@@ -153,7 +162,9 @@ function Section({
       <View style={styles.sectionBar}>
         <View style={[styles.sectionDot, { backgroundColor: tones[accent].fg }]} />
         <Text style={[styles.sectionTitle, { color: tones[accent].fg }]}>{title}</Text>
+        {showCount ? <TonePill tone={accent} label={String(games.length)} /> : null}
       </View>
+      {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       {groups.map((group, i) => (
         <View key={group.label ?? i}>
           {group.label ? <Text style={styles.dayLabel}>{group.label}</Text> : null}
@@ -167,6 +178,7 @@ function Section({
 }
 
 export default function ScoresScreen() {
+  const { signedIn } = useSession()
   const [board, setBoard] = useState<Scoreboard | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(false)
@@ -204,6 +216,14 @@ export default function ScoresScreen() {
     setRefreshing(false)
   }, [load])
 
+  // Guests see exactly today's screen — the server only ever sends
+  // yourGames for a recognized session, but gate here too so a stale board
+  // held across a sign-out can't flash a personal section.
+  const yourGames = signedIn ? board?.yourGames ?? [] : []
+  const myGameIds = new Set(yourGames.map((g) => g.id))
+  const notMine = (games: ScoreGame[]) =>
+    myGameIds.size === 0 ? games : games.filter((g) => !myGameIds.has(g.id))
+
   return (
     <View style={styles.root}>
       <SubHeader title="Scores" />
@@ -223,10 +243,17 @@ export default function ScoresScreen() {
         ) : null}
         {board ? (
           <>
-            {/* Web section order: Live now, Upcoming, Recent results. */}
-            <Section title="Live now" games={board.live} accent="danger" />
-            <Section title="Upcoming" games={board.upcoming} accent="info" order="asc" />
-            <Section title="Recent results" games={board.finals} accent="neutral" order="desc" />
+            {/* Web section order: Your games, Live now, Upcoming, Recent results. */}
+            <Section
+              title="Your games"
+              games={yourGames}
+              accent="gold"
+              showCount
+              subtitle="Games for your kids’ teams and teams you follow."
+            />
+            <Section title="Live now" games={notMine(board.live)} accent="danger" showCount />
+            <Section title="Upcoming" games={notMine(board.upcoming)} accent="info" order="asc" />
+            <Section title="Recent results" games={notMine(board.finals)} accent="neutral" order="desc" />
             {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
               <Text style={styles.empty}>No games this week.</Text>
             ) : null}
@@ -267,6 +294,13 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 1,
+  },
+  // Web SectionHeader's "Your games" description line.
+  sectionSubtitle: {
+    fontSize: 12.5,
+    color: ui.textMuted,
+    marginTop: -4,
+    marginBottom: 8,
   },
   // Web DayGroups' day header ("Today" / "Wednesday, July 22").
   dayLabel: {

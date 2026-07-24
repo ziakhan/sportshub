@@ -1,5 +1,4 @@
 import { prisma } from "@youthbasketballhub/db"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { formatCurrency } from "@/lib/countries"
@@ -7,6 +6,7 @@ import { merchantObligations, summarize } from "@/lib/payments/queries"
 import { getPaymentConfig } from "@/lib/payments/config"
 import { ObligationsTable } from "@/components/payments/obligations-table"
 import { PaymentSettingsCard } from "@/components/payments/payment-settings-card"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -47,12 +47,7 @@ export default async function LeaguePaymentsPage({ params }: { params: { id: str
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <div>
-        <Link
-          href={`/manage/leagues/${params.id}`}
-          className="text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; {league.name}
-        </Link>
+        <SmartBack fallback={`/manage/leagues/${params.id}`} fallbackLabel={league.name} className="-ml-1" />
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Team fees & payments</h1>
       </div>
 

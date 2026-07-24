@@ -1,9 +1,9 @@
 import { prisma } from "@youthbasketballhub/db"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { WAIVER_TEMPLATES } from "@/lib/waivers/templates"
 import { WaiversManager } from "@/components/waivers/waivers-manager"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -43,9 +43,7 @@ export default async function ClubWaiversPage({ params }: { params: { id: string
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
       <div>
-        <Link href={`/clubs/${params.id}`} className="text-sm text-ink-500 hover:text-ink-700">
-          &larr; {tenant.name}
-        </Link>
+        <SmartBack fallback={`/clubs/${params.id}`} fallbackLabel={tenant.name} className="-ml-1" />
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Waivers</h1>
         <p className="mt-1 text-sm text-ink-500">
           Club-level participation documents, e.g. for programs run in school gyms.

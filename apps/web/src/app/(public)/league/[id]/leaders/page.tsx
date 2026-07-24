@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
-import { Card, SectionHeader } from "@/components/ui"
+import { Card, SectionHeader, SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -30,9 +30,11 @@ export default async function LeagueLeadersPage({ params }: { params: { id: stri
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
       <div className="mb-6">
-        <Link href={`/league/${params.id}`} className="text-hoop-600 text-sm hover:underline">
-          &larr; {leaders.season.leagueName} {leaders.season.label}
-        </Link>
+        <SmartBack
+          fallback={`/league/${params.id}`}
+          fallbackLabel={`${leaders.season.leagueName} ${leaders.season.label}`}
+          className="-ml-1"
+        />
       </div>
 
       <SectionHeader

@@ -15,6 +15,12 @@
 - Tie-break by scale: for a **single** subtle task, "in doubt → Fable" (owner's standing rule). For a **fan-out (>3 agents)**, uncertainty resolves DOWN a tier — the expensive model checks the result instead.
 - Any run projected to put >1M tokens on the top model needs the owner's explicit OK first.
 
+## 🔒 PLATFORM PARITY LAW (owner, 2026-07-24 — PERMANENT)
+- **One data source per surface**: every API consumed by the native apps MUST serve from the SAME shared query module (`lib/queries/*`) as the web page showing the same data. New endpoints NEVER hand-roll prisma shaping that duplicates a web query. New features ship the shared module FIRST, then both consumers.
+- **Design parity**: web, mobile web, iOS, Android share the same design concepts — headers/eyebrows, filters, chips, badges, colors, ratings — as close as native idioms allow. A screen existing on one surface at richer fidelity than another is a bug.
+- **Back navigation is history-first, never static**: back controls return the user to where they CAME FROM (history), falling back to the hierarchical parent only on cold entry (web: SmartBack component; native: router.back() with fallback). Static "Back to <parent>" links are forbidden.
+- **Server never leads the client**: mobile API changes are additive; never remove/rename fields fielded bundles read.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)

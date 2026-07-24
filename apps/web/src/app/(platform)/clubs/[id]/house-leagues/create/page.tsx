@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
@@ -113,9 +113,7 @@ export default function CreateHouseLeaguePage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/house-leagues`} className="text-sm text-play-700 hover:underline">
-          &larr; Back to House Leagues
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/house-leagues`} fallbackLabel="House Leagues" className="-ml-1" />
       </div>
 
       <div className="mx-auto max-w-2xl">

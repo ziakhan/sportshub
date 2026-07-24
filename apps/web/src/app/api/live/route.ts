@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { getSessionUserId } from "@/lib/auth-helpers"
+import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
 
 export const dynamic = "force-dynamic"
 
@@ -9,6 +11,12 @@ export const dynamic = "force-dynamic"
  * this week's finals, next week's schedule. Public read (only shows what
  * the anonymous website already shows); the app refetches on `game.update`
  * socket pings to the public `scores` room.
+ *
+ * Five-tab parity pass (2026-07-24): when the caller is signed in (bearer
+ * or session cookie), an extra `yourGames` array rides along — the SAME
+ * lib/queries/scores resolver the web /scores page's "Your games" section
+ * uses, so the native Scores tab can never disagree with the web one.
+ * Anonymous callers are unaffected (yourGames is just empty).
  */
 
 const gameSelect = {
@@ -81,10 +89,19 @@ export async function GET() {
       }),
     ])
 
+    // Optional viewer scoping — a missing/invalid bearer or no session
+    // cookie both resolve to null here, same as the anonymous website.
+    const session = await getSessionUserId().catch(() => null)
+    const myTeamIds = session ? await getYourGameTeamIds(session.userId) : new Set<string>()
+    // Same cap as the web /scores "Your games" section (myGames.slice(0, 6)).
+    const yourGames =
+      myTeamIds.size > 0 ? pickYourGames([...live, ...upcoming, ...finals], myTeamIds).slice(0, 6) : []
+
     return NextResponse.json({
       live: live.map(serialize),
       finals: finals.map(serialize),
       upcoming: upcoming.map(serialize),
+      yourGames: yourGames.map(serialize),
     })
   } catch (error) {
     console.error("Live scoreboard list error:", error)

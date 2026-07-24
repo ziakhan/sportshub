@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { signOut } from "next-auth/react"
-import { Button, Card } from "@/components/ui"
+import { Button, Card, SmartBack } from "@/components/ui"
 
 const labelClass = "block text-sm font-medium text-ink-800"
 const inputClass =
@@ -286,16 +285,9 @@ export default function SecuritySettingsPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6 p-6 md:p-8">
       <div>
+        <SmartBack fallback="/settings/profile" fallbackLabel="Profile" className="-ml-1 mb-1" />
         <h1 className="text-ink-900 text-2xl font-semibold">Security &amp; sign-in</h1>
-        <p className="text-ink-600 mt-1 text-sm">
-          Manage how you sign in to your account.{" "}
-          <Link
-            href="/settings/profile"
-            className="text-play-600 hover:text-play-700 font-semibold"
-          >
-            Back to profile &rarr;
-          </Link>
-        </p>
+        <p className="text-ink-600 mt-1 text-sm">Manage how you sign in to your account.</p>
       </div>
 
       <ChangePasswordCard />

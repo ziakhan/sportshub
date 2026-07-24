@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 
 /** Statuses where the team fee may still be changed. */
 const FEE_EDITABLE_STATUSES = ["DRAFT", "REGISTRATION"]
@@ -128,12 +127,11 @@ export default function EditTournamentPage() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
-          <Link
-            href={`/clubs/${clubId}/tournaments/${tournamentId}/manage`}
-            className="text-sm text-play-700 hover:underline"
-          >
-            &larr; Back to Tournament
-          </Link>
+          <SmartBack
+            fallback={`/clubs/${clubId}/tournaments/${tournamentId}/manage`}
+            fallbackLabel="Tournament"
+            className="-ml-1"
+          />
         </div>
 
         <h1 className="font-condensed text-ink-950 mb-6 text-3xl font-bold uppercase tracking-wide">

@@ -1,13 +1,41 @@
 import { useCallback, useEffect, useState } from "react"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
+import { Linking, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
-import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, ListRow, Loading, SectionHeader, TonePill, Monogram } from "@/components/ui"
+import { Card, EmptyState, ListRow, Loading, SectionHeader, StarRating, TonePill, Monogram } from "@/components/ui"
 import { apiJson } from "@/lib/api"
-import { palette, ui } from "@/lib/theme"
+import { palette, ui, type Tone } from "@/lib/theme"
 
-/** Club profile — native version of the public /club/[slug] page. Anonymous. */
+/** Club profile — native version of the public /club/[slug] page. Anonymous.
+ *
+ * Data comes from getClubProfile(), the SAME shared query module the web
+ * page's assembly uses (2026-07-24 drift fix) — five-tab visual-parity pass:
+ * shared StarRating (was a bespoke Stars() glyph row), color-coded program
+ * type pills matching the web's tag chips (was a flat generic pill), a
+ * Contact card (address/phone/email/website — the web's Contact block, new
+ * on native), and tournament/training program entries (new fields, additive).
+ */
+
+type ProgramType = "tryout" | "camp" | "house-league" | "tournament" | "training"
+
+const TYPE_LABEL: Record<ProgramType, string> = {
+  tryout: "Tryout",
+  camp: "Camp",
+  "house-league": "House League",
+  tournament: "Tournament",
+  training: "Training",
+}
+
+// Same family-per-type mapping as the web /events badges and the native
+// Programs screen (tryout=danger, camp=violet, tournament=gold,
+// training=sky, house-league=positive).
+const TYPE_TONE: Record<ProgramType, Tone> = {
+  tryout: "danger",
+  camp: "violet",
+  tournament: "gold",
+  training: "sky",
+  "house-league": "positive",
+}
 
 interface ClubProfile {
   club: {
@@ -20,12 +48,17 @@ interface ClubProfile {
     website: string | null
     primaryColor: string | null
     teams: Array<{ id: string; name: string; ageGroup: string | null; gender: string | null }>
+    /** Additive (five-tab parity pass): venue/contact + staff size. */
+    address?: string | null
+    phoneNumber?: string | null
+    contactEmail?: string | null
+    staffCount?: number
   }
   programs: Array<{
     id: string
-    type: "tryout" | "camp" | "house-league"
+    type: ProgramType
     name: string
-    ageGroup: string
+    ageGroup: string | null
     startDate: string
     location: string
     fee: number
@@ -39,21 +72,6 @@ interface ClubProfile {
     createdAt: string
     reviewer: string
   }>
-}
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <View style={{ flexDirection: "row", gap: 1 }}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Ionicons
-          key={i}
-          name={rating >= i - 0.25 ? "star" : rating >= i - 0.75 ? "star-half" : "star-outline"}
-          size={14}
-          color={palette.gold[500]}
-        />
-      ))}
-    </View>
-  )
 }
 
 export default function ClubProfileScreen() {
@@ -91,6 +109,7 @@ export default function ClubProfileScreen() {
   }
 
   const { club, programs, rating, reviews } = data
+  const hasContact = !!(club.address || club.phoneNumber || club.contactEmail || club.website)
 
   return (
     <View style={styles.root}>
@@ -104,11 +123,8 @@ export default function ClubProfileScreen() {
             </Text>
           ) : null}
           {rating.count > 0 && rating.average != null ? (
-            <View style={styles.heroRating}>
-              <Stars rating={rating.average} />
-              <Text style={styles.heroRatingText}>
-                {rating.average.toFixed(1)} · {rating.count} review{rating.count === 1 ? "" : "s"}
-              </Text>
+            <View style={styles.heroRatingChip}>
+              <StarRating rating={rating.average} count={rating.count} size={13} />
             </View>
           ) : null}
         </View>
@@ -128,8 +144,14 @@ export default function ClubProfileScreen() {
                   key={`${p.type}:${p.id}`}
                   icon="pricetags-outline"
                   text={p.name}
-                  sub={`${p.ageGroup} · ${new Date(p.startDate).toLocaleDateString()}${p.fee > 0 ? ` · $${p.fee.toFixed(0)}` : ""}`}
-                  right={<TonePill tone="info" label={p.type.replace("-", " ")} />}
+                  sub={[
+                    p.ageGroup,
+                    new Date(p.startDate).toLocaleDateString(),
+                    p.fee > 0 ? `$${p.fee.toFixed(0)}` : "Free",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  right={<TonePill tone={TYPE_TONE[p.type]} label={TYPE_LABEL[p.type]} />}
                   onPress={() => router.push(`/browse/program/${p.type}/${p.id}`)}
                 />
               ))}
@@ -154,13 +176,48 @@ export default function ClubProfileScreen() {
           </>
         ) : null}
 
+        {hasContact ? (
+          <>
+            <SectionHeader eyebrow="Get in touch" title="Contact" accent="ink" />
+            <Card>
+              {club.address ? (
+                <ListRow icon="location-outline" text={club.address} tone="neutral" />
+              ) : null}
+              {club.phoneNumber ? (
+                <ListRow
+                  icon="call-outline"
+                  text={club.phoneNumber}
+                  tone="neutral"
+                  onPress={() => void Linking.openURL(`tel:${club.phoneNumber}`)}
+                />
+              ) : null}
+              {club.contactEmail ? (
+                <ListRow
+                  icon="mail-outline"
+                  text={club.contactEmail}
+                  tone="neutral"
+                  onPress={() => void Linking.openURL(`mailto:${club.contactEmail}`)}
+                />
+              ) : null}
+              {club.website ? (
+                <ListRow
+                  icon="globe-outline"
+                  text={club.website.replace(/^https?:\/\//, "")}
+                  tone="neutral"
+                  onPress={() => void Linking.openURL(club.website!)}
+                />
+              ) : null}
+            </Card>
+          </>
+        ) : null}
+
         {reviews.length > 0 ? (
           <>
             <SectionHeader eyebrow="From families" title="Reviews" accent="gold" />
             {reviews.map((r) => (
               <Card key={r.id}>
                 <View style={styles.reviewTop}>
-                  <Stars rating={r.rating} />
+                  <StarRating rating={r.rating} size={13} />
                   <Text style={styles.reviewMeta}>
                     {r.reviewer} · {new Date(r.createdAt).toLocaleDateString()}
                   </Text>
@@ -188,8 +245,14 @@ const styles = StyleSheet.create({
   },
   heroName: { color: "#fff", fontSize: 20, fontWeight: "800" },
   heroCity: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  heroRating: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
-  heroRatingText: { color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" },
+  heroRatingChip: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
   description: { fontSize: 13, color: ui.textMuted, lineHeight: 19 },
   reviewTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   reviewMeta: { fontSize: 11, color: ui.textFaint },

@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
@@ -255,12 +255,7 @@ export default function EditCampPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={listHref}
-          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; Back to Camps
-        </Link>
+        <SmartBack fallback={listHref} fallbackLabel="Camps" className="-ml-1 mb-1" />
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
             Edit Camp

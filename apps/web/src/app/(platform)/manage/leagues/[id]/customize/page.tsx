@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { LeagueBrandEditor } from "./league-brand-editor"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -36,12 +37,7 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link
-            href={`/manage/leagues/${params.id}`}
-            className="text-play-700 text-sm font-medium hover:underline"
-          >
-            &larr; Back to league
-          </Link>
+          <SmartBack fallback={`/manage/leagues/${params.id}`} fallbackLabel="League" className="-ml-1 mb-1" />
           <h1 className="text-ink-950 mt-1 text-xl font-bold">Customize your league page</h1>
           <p className="text-ink-500 text-sm">
             Brand the public page for {league.name}. Standings, scores, and leaders are shown

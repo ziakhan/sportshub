@@ -3,9 +3,9 @@
 // composers, same consent rail).
 
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { MessageComposer } from "@/components/comms/message-composer"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -16,9 +16,7 @@ export default async function AdminMessagesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6">
-        <Link href="/dashboard" className="text-play-700 text-sm font-medium hover:underline">
-          &larr; Back to dashboard
-        </Link>
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1 mb-1" />
         <h1 className="text-ink-950 mt-1 text-xl font-bold">Platform messages</h1>
         <p className="text-ink-500 text-sm">
           Email all platform users. Only users with platform-scope marketing consent receive it —

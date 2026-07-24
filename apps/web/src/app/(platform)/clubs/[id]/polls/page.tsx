@@ -1,9 +1,9 @@
 import { notFound, redirect } from "next/navigation"
-import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { canManageClubPolls } from "@/lib/polls/authz"
 import { ClubPolls } from "./club-polls"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -30,9 +30,7 @@ export default async function ClubPollsPage({ params }: { params: { id: string }
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <Link href={`/clubs/${params.id}`} className="text-sm text-ink-500 hover:text-ink-700">
-          &larr; {tenant.name}
-        </Link>
+        <SmartBack fallback={`/clubs/${params.id}`} fallbackLabel={tenant.name} className="-ml-1" />
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Polls</h1>
         <p className="mt-1 text-sm text-ink-500">
           Ask the whole club something. Everyone with a role at the club, plus every rostered

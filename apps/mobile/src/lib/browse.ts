@@ -16,12 +16,18 @@ export interface BrowseClub {
   teamCount: number
   primaryColor: string | null
   logoUrl: string | null
+  /** Additive (2026-07-24 five-tab parity pass) — published-review rating,
+   *  shared with the web /club page and native Clubs/Programs screens. */
+  rating?: { average: number; count: number } | null
 }
 
 export interface BrowseLeague {
   id: string
   name: string
   description?: string | null
+  /** Additive — getLeaguesDirectory() extras, same as the native Leagues screen. */
+  completedGames?: number
+  liveGames?: number
   seasons: Array<{
     id: string
     name: string

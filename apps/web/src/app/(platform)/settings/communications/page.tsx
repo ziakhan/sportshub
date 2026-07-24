@@ -1,8 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import Link from "next/link"
-import { Badge, Button, PanelHeader, type BadgeTone } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack, type BadgeTone } from "@/components/ui"
 
 type ConsentScope = "PLATFORM" | "TENANT" | "LEAGUE"
 type ConsentStatus = "IMPLIED" | "EXPRESS" | "WITHDRAWN"
@@ -198,12 +197,7 @@ export default function CommunicationsPreferencesPage() {
         </section>
 
         <div className="border-ink-100 mt-8 border-t pt-4">
-          <Link
-            href="/settings/profile"
-            className="text-play-600 hover:text-play-700 text-sm font-semibold"
-          >
-            &larr; Back to profile
-          </Link>
+          <SmartBack fallback="/settings/profile" fallbackLabel="Profile" className="-ml-1" />
         </div>
       </div>
     </div>

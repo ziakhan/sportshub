@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
+import { SmartBack } from "@/components/ui"
 
 interface Club {
   id: string
@@ -119,12 +120,7 @@ export default function AdminClubsPage() {
               <span className="text-hoop-700">{statusCounts.suspended} suspended</span>
             </p>
           </div>
-          <Link
-            href="/dashboard"
-            className="text-play-600 hover:text-play-700 text-sm font-semibold"
-          >
-            ← Back to Dashboard
-          </Link>
+          <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
 import { TeamPolls } from "./team-polls"
+import { SmartBack } from "@/components/ui"
 
 /**
  * Team polls & surveys — same membership as team chat. Staff create and
@@ -31,12 +32,11 @@ export default async function TeamPollsPage({ params }: { params: { teamId: stri
           >
             Team Chat
           </Link>
-          <Link
-            href={isStaffSide ? `/teams/${membership.teamId}` : `/team/${membership.teamId}`}
-            className="border-ink-200 text-ink-700 hover:bg-court-50 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-          >
-            {isStaffSide ? "Team Home" : "Team Page"}
-          </Link>
+          <SmartBack
+            fallback={isStaffSide ? `/teams/${membership.teamId}` : `/team/${membership.teamId}`}
+            fallbackLabel={isStaffSide ? "Team Home" : "Team Page"}
+            className="shrink-0"
+          />
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import {
 } from "@/lib/offers/order-rollup"
 import { DownloadOrderCsv } from "./download-order-csv"
 import { SummaryTeamFilter } from "./summary-team-filter"
+import { SmartBack } from "@/components/ui"
 
 interface AcceptedOffer {
   id: string
@@ -199,12 +200,7 @@ export default async function OrderSheetPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/clubs/${params.id}/offers`}
-          className="text-play-700 text-sm hover:underline"
-        >
-          &larr; Back to Offers
-        </Link>
+        <SmartBack fallback={`/clubs/${params.id}/offers`} fallbackLabel="Offers" className="-ml-1" />
       </div>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
