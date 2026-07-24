@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
+import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { getPublicNav } from "@/lib/queries/nav"
 import { NavDropdown } from "@/components/nav-dropdown"
@@ -39,9 +40,10 @@ export default async function PublicLayout({ children }: { children: React.React
     // Session check failed — render as unauthenticated
   }
 
-  const [nav, shape] = await Promise.all([
+  const [nav, shape, dbUser] = await Promise.all([
     getPublicNav(userId),
     userId ? getNavShape(userId) : Promise.resolve(EMPTY_NAV_SHAPE),
+    userId ? prisma.user.findUnique({ where: { id: userId }, select: { avatarUrl: true } }) : Promise.resolve(null),
   ])
 
   return (
@@ -124,6 +126,7 @@ export default async function PublicLayout({ children }: { children: React.React
                   userName={userName}
                   userEmail={userEmail}
                   userInitials={userInitials}
+                  avatarUrl={dbUser?.avatarUrl}
                   shape={shape}
                 />
               </>
@@ -148,6 +151,19 @@ export default async function PublicLayout({ children }: { children: React.React
 
         <div className="border-ink-100 border-t px-4 py-2 lg:hidden">
           <OverflowStrip className="gap-2">
+            {/* QA-002: the Manage button above is hidden <sm, which left phones
+                with NO door into the workspace — lead the pill row with one. */}
+            {isLoggedIn && (nav.isOperator || nav.isFamily) ? (
+              <Link
+                href="/dashboard"
+                className="bg-ink-950 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-bold text-white"
+              >
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+                {nav.isOperator ? operatorTabLabel(shape) : "My Hub"}
+              </Link>
+            ) : null}
             <SectionPills />
           </OverflowStrip>
         </div>

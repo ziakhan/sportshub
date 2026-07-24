@@ -393,11 +393,13 @@ export default function TournamentManagePage() {
                 className="flex items-center justify-between rounded-md bg-court-50 px-3 py-2"
               >
                 <div>
-                  <span className="font-medium text-ink-900">{v.name}</span>
-                  {v.address && (
-                    <span className="ml-2 text-xs text-ink-500">{v.address}</span>
+                  {/* QA-406: rows rendered blank — the API returns the venue
+                      NESTED ({ venue: { name } }), not flat. */}
+                  <span className="font-medium text-ink-900">{v.venue?.name ?? v.name}</span>
+                  {(v.venue?.address ?? v.address) && (
+                    <span className="ml-2 text-xs text-ink-500">{v.venue?.address ?? v.address}</span>
                   )}
-                  <span className="ml-2 text-xs text-ink-400">{v.city}</span>
+                  <span className="ml-2 text-xs text-ink-400">{v.venue?.city ?? v.city}</span>
                 </div>
                 <button
                   onClick={() => removeVenue(v.id)}

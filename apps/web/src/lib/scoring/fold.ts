@@ -251,7 +251,10 @@ export function foldEvents(
       case "SCORE_3PT":
       case "SCORE_FT": {
         if (!teamId) break
-        const made = e.made !== false // default made for legacy events
+        // QA-009: only an EXPLICIT make scores. Every fielded client sends
+        // made true/false on score events (audited 2026-07-24; zero null-made
+        // rows in any DB) — a null flag must never silently add points.
+        const made = e.made === true
         const pts = SHOT_POINTS[e.eventType]
         if (e.playerId) {
           const l = line(e.playerId, teamId)

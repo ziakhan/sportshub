@@ -30,12 +30,30 @@ export function GameRefereeControl({
   const [pool, setPool] = useState<PoolReferee[] | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // QA-004b: viewers without scoring authz (e.g. the assigned referee) used
+  // to see the control, hit 403, and stare at "Loading…" forever. A 403 now
+  // hides the whole control; other failures show a real error (QA-004a).
+  const [forbidden, setForbidden] = useState(false)
 
   const loadPool = async (query = "") => {
+    setError(null)
     const res = await fetch(
       `/api/games/${gameId}/referee${query ? `?q=${encodeURIComponent(query)}` : ""}`
     ).catch(() => null)
-    if (!res?.ok) return
+    if (!res) {
+      setError("Couldn't reach the server — check your connection and try again.")
+      setPool([])
+      return
+    }
+    if (res.status === 403 || res.status === 401) {
+      setForbidden(true)
+      return
+    }
+    if (!res.ok) {
+      setError("Couldn't load the referee list. Try again in a moment.")
+      setPool([])
+      return
+    }
     const data = await res.json()
     setPool(data.pool)
   }
@@ -66,6 +84,20 @@ export function GameRefereeControl({
     if (!window.confirm(`Remove ${name} from this game?`)) return
     await fetch(`/api/games/${gameId}/referee?userId=${userId}`, { method: "DELETE" })
     router.refresh()
+  }
+
+  if (forbidden) {
+    // Read-only view for viewers who can't assign: names, no controls.
+    return assigned.length > 0 ? (
+      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <span className="text-ink-400 text-[11px] font-medium uppercase tracking-wide">Refs:</span>
+        {assigned.map((r) => (
+          <span key={r.userId} className="bg-court-50 text-ink-700 rounded-full px-2 py-0.5 text-xs font-medium">
+            {r.name}
+          </span>
+        ))}
+      </div>
+    ) : null
   }
 
   return (

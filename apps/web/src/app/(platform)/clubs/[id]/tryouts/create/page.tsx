@@ -93,6 +93,8 @@ function CreateTryoutForm() {
     },
   })
 
+  const [publishOnCreate, setPublishOnCreate] = useState(false)
+
   const onSubmit = async (data: CreateTryoutFormData) => {
     if (!selectedTeamId) {
       setError("Please select a team")
@@ -113,6 +115,7 @@ function CreateTryoutForm() {
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
+        publish: publishOnCreate,
         tenantId: clubId,
         teamId: selectedTeamId,
       }
@@ -426,8 +429,21 @@ function CreateTryoutForm() {
             <Button variant="subtle" href={`/clubs/${clubId}/tryouts`}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !selectedTeamId} className="flex-1">
-              {isSubmitting ? "Creating..." : "Create Tryout"}
+            <Button
+              type="submit"
+              variant="subtle"
+              disabled={isSubmitting || !selectedTeamId}
+              onClick={() => setPublishOnCreate(false)}
+            >
+              {isSubmitting && !publishOnCreate ? "Saving..." : "Save draft"}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !selectedTeamId}
+              className="flex-1"
+              onClick={() => setPublishOnCreate(true)}
+            >
+              {isSubmitting && publishOnCreate ? "Publishing..." : "Create & publish"}
             </Button>
           </div>
         </form>

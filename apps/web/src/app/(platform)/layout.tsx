@@ -198,6 +198,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               userName={userName}
               userEmail={userEmail}
               userInitials={userInitials}
+              avatarUrl={dbUser.avatarUrl}
               shape={shape}
             />
           </div>

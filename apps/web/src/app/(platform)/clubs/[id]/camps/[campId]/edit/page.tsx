@@ -73,6 +73,7 @@ export default function EditCampPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetails, setErrorDetails] = useState<string[] | null>(null)
   const [camp, setCamp] = useState<LoadedCamp | null>(null)
   const [includesLunch, setIncludesLunch] = useState(false)
   const [includesSnacks, setIncludesSnacks] = useState(false)
@@ -151,6 +152,7 @@ export default function EditCampPage() {
   const onSubmit = async (data: EditCampFormData) => {
     setIsSubmitting(true)
     setError(null)
+    setErrorDetails(null)
 
     try {
       const payload: Record<string, unknown> = {
@@ -193,6 +195,13 @@ export default function EditCampPage() {
         try {
           const errorData = await res.json()
           errorMsg = errorData.error || errorMsg
+          if (Array.isArray(errorData.details)) {
+            setErrorDetails(
+              errorData.details
+                .slice(0, 5)
+                .map((d: { path: (string | number)[]; message: string }) => `${d.path.join(".")}: ${d.message}`)
+            )
+          }
         } catch {
           // Response wasn't JSON
         }
@@ -264,6 +273,13 @@ export default function EditCampPage() {
             {error && (
               <div className="rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
                 {error}
+                {errorDetails && errorDetails.length > 0 && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {errorDetails.map((d, i) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

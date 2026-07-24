@@ -19,6 +19,8 @@ interface Props {
   userName: string
   userEmail: string
   userInitials: string
+  /** Profile photo — falls back to the initials badge when null/unset. */
+  avatarUrl?: string | null
   shape: NavShape
 }
 
@@ -63,7 +65,7 @@ const ICONS = {
   plus: ic("M12 5v14M5 12h14"),
 }
 
-export function AccountMenu({ userName, userEmail, userInitials, shape }: Props) {
+export function AccountMenu({ userName, userEmail, userInitials, avatarUrl, shape }: Props) {
   // One panel at a time: the bell dropdown and the badge menu share this
   // state so opening one always closes the other.
   const [panel, setPanel] = useState<"account" | "bell" | null>(null)
@@ -101,7 +103,11 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
         aria-expanded={open}
         className="bg-play-600 hover:bg-play-700 relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
       >
-        {userInitials}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          userInitials
+        )}
       </button>
 
       {open && (

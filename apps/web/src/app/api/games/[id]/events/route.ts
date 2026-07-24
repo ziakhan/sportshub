@@ -184,11 +184,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             playerId: e.playerId ?? null,
             made: e.made ?? null,
             points:
-              e.eventType === "SCORE_2PT" && e.made !== false
+              e.eventType === "SCORE_2PT" && e.made === true
                 ? 2
-                : e.eventType === "SCORE_3PT" && e.made !== false
+                : e.eventType === "SCORE_3PT" && e.made === true
                   ? 3
-                  : e.eventType === "SCORE_FT" && e.made !== false
+                  : e.eventType === "SCORE_FT" && e.made === true
                     ? 1
                     : null,
             period: e.period ?? null,

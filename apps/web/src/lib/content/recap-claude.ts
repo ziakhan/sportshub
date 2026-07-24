@@ -13,12 +13,22 @@ import { analyzeGame } from "./recap"
 
 export const RECAP_MODEL = process.env.RECAP_AI_MODEL || "claude-opus-4-8"
 
+// House headline verbs (must match buildTemplateRecap's titleVerb() in
+// recap.ts, chosen by winning margin) — the AI headline has to read like the
+// template one, not like free-form prose.
+const TITLE_VERBS_BY_MARGIN =
+  "1-3 points: \"edges\"; 4-9 points: \"tops\"; 10-14 points: \"pulls away from\"; 15+ points: \"rolls past\""
+
 const RECAP_SCHEMA = {
   type: "object" as const,
   properties: {
     title: {
       type: "string" as const,
-      description: "Headline, e.g. 'Raptors edge Hawks 52–50'. Include the final score.",
+      description:
+        "Headline, and ONLY in this exact format: '<Winning team> <verb> <losing team> " +
+        `<winnerScore>-<loserScore>' (e.g. 'Raptors edges Hawks 52-50'). The verb MUST be one of ` +
+        `edges / tops / pulls away from / rolls past, picked by winning margin (${TITLE_VERBS_BY_MARGIN}). ` +
+        "No other headline style, no puns, no leading adjectives — just that pattern.",
     },
     body: {
       type: "string" as const,
@@ -72,7 +82,10 @@ export async function generateRecapWithClaude(input: RecapInput): Promise<RecapR
         "You write short youth-basketball game recaps for a community sports site. " +
         "Newspaper game-story style: energetic but factual, positive framing for BOTH teams " +
         "(these are kids — never mock or single out a poor performance), no invented details. " +
-        "Use ONLY the facts provided. Use player names exactly as given.",
+        "Use ONLY the facts provided. Use player names exactly as given. " +
+        "The title MUST follow the exact house headline format '<Winning team> <verb> <losing team> " +
+        `<winnerScore>-<loserScore>', with <verb> being one of edges / tops / pulls away from / rolls past ` +
+        `(picked by winning margin: ${TITLE_VERBS_BY_MARGIN}). Do not use any other headline style for the title.`,
       messages: [
         {
           role: "user",

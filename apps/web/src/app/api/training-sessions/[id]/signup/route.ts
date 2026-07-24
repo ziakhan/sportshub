@@ -125,7 +125,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const totalFee = Number(session.fee)
 
-    const results = await prisma.$transaction(async (tx: any) => {
+    const results = await prisma.$transaction(
+      async (tx: any) => {
+        // QA-007: the pre-transaction capacity check is advisory only — two
+        // concurrent signups could both pass it. This SERIALIZABLE re-check
+        // is the authoritative gate; Postgres aborts one of two racers.
+        if (session.capacity) {
+          const activeNow = await tx.trainingSessionSignup.count({
+            where: { sessionId: params.id, status: { not: "CANCELLED" } },
+          })
+          if (activeNow + entries.length > session.capacity) throw new Error("CAPACITY_FULL")
+        }
       const created: Array<{ playerId: string; signupId: string }> = []
       for (const entry of entries) {
         const cancelledId = cancelledByPlayer.get(entry.playerId)
@@ -154,8 +164,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         })
         created.push({ playerId: entry.playerId, signupId: signup.id })
       }
-      return created
-    })
+        return created
+      },
+      { isolationLevel: "Serializable" }
+    )
 
     const names = results.map((r) => {
       const p = playerById.get(r.playerId)!
@@ -245,6 +257,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     return NextResponse.json({ success: true, id: results[0].signupId, totalFee: totalAll, results }, { status: 201 })
   } catch (error) {
+    if (error instanceof Error && error.message === "CAPACITY_FULL") {
+      return NextResponse.json({ error: "This program is full" }, { status: 400 })
+    }
+    if ((error as any)?.code === "P2034") {
+      // Serialization conflict: another registration landed first.
+      return NextResponse.json(
+        { error: "Registrations are moving fast — please try again." },
+        { status: 409 }
+      )
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }
