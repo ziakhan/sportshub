@@ -36,7 +36,7 @@ export function runningUpdateLabel(): string {
         minute: "2-digit",
       })
     : null
-  return at ? `Update ${id} · ${at}` : `Update ${id}`
+  return at ? `SportsHub One · Update ${id} · ${at}` : `SportsHub One · Update ${id}`
 }
 
 const styles = StyleSheet.create({
