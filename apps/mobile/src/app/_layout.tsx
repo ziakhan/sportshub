@@ -23,6 +23,7 @@ import {
   WorkSans_700Bold,
 } from "@expo-google-fonts/work-sans"
 import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold } from "@expo-google-fonts/barlow-condensed"
+import { UpdateBanner } from "@/components/update-banner"
 
 SplashScreen.preventAutoHideAsync()
 
@@ -97,6 +98,7 @@ function RootNavigator() {
         <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
         <Stack.Screen name="sign-up" options={{ presentation: "modal" }} />
       </Stack>
+      <UpdateBanner />
     </>
   )
 }

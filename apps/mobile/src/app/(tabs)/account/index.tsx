@@ -16,6 +16,7 @@ import { apiBaseUrl } from "@/lib/api"
 import { useHome } from "@/lib/home"
 import { useSession } from "@/lib/session"
 import { ui } from "@/lib/theme"
+import { runningUpdateLabel } from "@/components/update-banner"
 
 /**
  * Account hub — the filing cabinet (§5.6.4): profile, kids, payments,
@@ -127,7 +128,10 @@ export default function AccountScreen() {
           </Text>
           <Text style={styles.sub}>Server: {apiBaseUrl()}</Text>
         </Card>
-      </ScrollView>
+        <Text style={{ textAlign: "center", fontSize: 11, color: "#9ca3af", paddingVertical: 14 }}>
+        {runningUpdateLabel()}
+      </Text>
+    </ScrollView>
     </View>
   )
 }
