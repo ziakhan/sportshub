@@ -937,8 +937,14 @@ model RefereeProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Certifications
-  certificationLevel  String? // "Level 1", "Level 2", etc.
+  certificationLevel  String? // "Level 1", "Level 2", etc. — self-declared
   certificationExpiry DateTime?
+  // QA-208: proof of the self-declared level above. Data-URL upload (PDF or
+  // image), same cap/shape as ClubClaim.proofDocumentUrl. verifiedById is a
+  // plain id (no relation), matching ClubClaim.reviewedById.
+  certificationDocUrl       String?   @db.Text
+  certificationVerifiedAt   DateTime?
+  certificationVerifiedById String?
 
   // Availability
   availableRegions String[] // ["California", "Nevada"]
@@ -1071,6 +1077,19 @@ model OfferTemplate {
   installments     Int     @default(1)
   practiceSessions Int     @default(0)
 
+  // Games are the headline (owner ruling 2026-07-24, refines QA-211): a
+  // from/to range shown prominently near the fee. Equal min/max = "N games".
+  gamesMin Int?
+  gamesMax Int?
+
+  // Program structure is prose, not checkboxes (owner ruling 2026-07-24):
+  // "2 leagues, 2 tournaments, about 18 games" — free text, club's own words.
+  programDescription String? @db.Text
+
+  // Custom extras beyond the fixed gear checklist below (owner ruling
+  // 2026-07-24): club-authored line items, e.g. "End-of-season banquet".
+  customItems String[] @default([])
+
   // Included items
   includesBall      Boolean @default(false) // basketball
   includesBag       Boolean @default(false) // equipment bag
@@ -1109,6 +1128,14 @@ model Offer {
   seasonFee        Decimal @db.Decimal(10, 2)
   installments     Int     @default(1)
   practiceSessions Int     @default(0)
+
+  // Games headline + program prose + custom extras, snapshotted from the
+  // template at creation (owner ruling 2026-07-24, refines QA-211) — same
+  // pattern as the fields above.
+  gamesMin           Int?
+  gamesMax           Int?
+  programDescription String?  @db.Text
+  customItems        String[] @default([])
 
   // Included items
   includesBall      Boolean @default(false)

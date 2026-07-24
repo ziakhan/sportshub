@@ -11,6 +11,9 @@ interface PoolReferee {
   certification: string | null
   gamesRefereed: number
   hasPin: boolean
+  // QA-208: cert proof-of-doc flags — the doc itself never ships in this list.
+  hasCertDoc: boolean
+  certVerified: boolean
   inPool: boolean
   availability: "available" | "partial" | "unknown"
 }
@@ -142,6 +145,21 @@ export function RefereesTab({
   const removeFromPool = async (userId: string, name: string) => {
     if (!window.confirm(`Remove ${name} from your referee pool?`)) return
     await fetch(`/api/leagues/${leagueId}/referees?userId=${userId}`, { method: "DELETE" })
+    loadPool()
+  }
+
+  const verifyCert = async (userId: string, name: string) => {
+    if (!window.confirm(`Mark ${name}'s certification as verified?`)) return
+    const res = await fetch(`/api/leagues/${leagueId}/referees`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => ({}))
+      setNote(data?.error || "Couldn't verify that certification")
+      return
+    }
     loadPool()
   }
 
@@ -351,12 +369,27 @@ export function RefereesTab({
                   <div className="min-w-0">
                     <span className="text-ink-900 font-medium">{r.name}</span>
                     <span className="text-ink-400 ml-2 text-xs">
-                      {r.certification ?? "Uncertified"} · {r.gamesRefereed} games
+                      {r.certification ?? "Uncertified"}
+                      {r.certification && !r.hasCertDoc ? " · Self-declared" : ""} ·{" "}
+                      {r.gamesRefereed} games
                       {r.hasPin ? "" : " · no sign-off PIN"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {dayId && <Badge tone={cls}>{label}</Badge>}
+                    {r.certVerified ? (
+                      <Badge tone="court">Verified</Badge>
+                    ) : r.hasCertDoc ? (
+                      <Badge tone="neutral">Cert on file</Badge>
+                    ) : null}
+                    {r.hasCertDoc && !r.certVerified && (
+                      <button
+                        onClick={() => verifyCert(r.userId, r.name)}
+                        className="text-play-700 text-xs font-semibold hover:underline"
+                      >
+                        Verify
+                      </button>
+                    )}
                     <button
                       onClick={() => removeFromPool(r.userId, r.name)}
                       className="text-hoop-600 text-xs font-semibold hover:underline"

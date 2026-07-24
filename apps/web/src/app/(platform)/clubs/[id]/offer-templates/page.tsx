@@ -10,6 +10,10 @@ interface TemplateData {
   seasonFee: number
   installments: number
   practiceSessions: number
+  gamesMin: number | null
+  gamesMax: number | null
+  programDescription: string | null
+  customItems: string[]
   includesBall: boolean
   includesBag: boolean
   includesShoes: boolean
@@ -28,6 +32,10 @@ async function getClubTemplates(clubId: string): Promise<TemplateData[]> {
     seasonFee: Number(t.seasonFee),
     installments: t.installments,
     practiceSessions: t.practiceSessions,
+    gamesMin: t.gamesMin,
+    gamesMax: t.gamesMax,
+    programDescription: t.programDescription,
+    customItems: t.customItems,
     includesBall: t.includesBall,
     includesBag: t.includesBag,
     includesShoes: t.includesShoes,

@@ -14,6 +14,11 @@ export function TemplateForm({ clubId }: { clubId: string }) {
   const [seasonFee, setSeasonFee] = useState("0")
   const [installments, setInstallments] = useState("1")
   const [practiceSessions, setPracticeSessions] = useState("0")
+  const [gamesMin, setGamesMin] = useState("")
+  const [gamesMax, setGamesMax] = useState("")
+  const [programDescription, setProgramDescription] = useState("")
+  const [customItems, setCustomItems] = useState<string[]>([])
+  const [customItemDraft, setCustomItemDraft] = useState("")
   const [includesBall, setIncludesBall] = useState(false)
   const [includesBag, setIncludesBag] = useState(false)
   const [includesShoes, setIncludesShoes] = useState(false)
@@ -25,6 +30,11 @@ export function TemplateForm({ clubId }: { clubId: string }) {
     setSeasonFee("0")
     setInstallments("1")
     setPracticeSessions("0")
+    setGamesMin("")
+    setGamesMax("")
+    setProgramDescription("")
+    setCustomItems([])
+    setCustomItemDraft("")
     setIncludesBall(false)
     setIncludesBag(false)
     setIncludesShoes(false)
@@ -33,12 +43,22 @@ export function TemplateForm({ clubId }: { clubId: string }) {
     setError(null)
   }
 
+  const addCustomItem = () => {
+    const value = customItemDraft.trim()
+    if (!value || customItems.length >= 12) return
+    setCustomItems([...customItems, value])
+    setCustomItemDraft("")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
 
     try {
+      const parsedMin = gamesMin.trim() ? parseInt(gamesMin, 10) : undefined
+      const parsedMax = gamesMax.trim() ? parseInt(gamesMax, 10) : undefined
+
       const res = await fetch(`/api/clubs/${clubId}/offer-templates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,6 +67,12 @@ export function TemplateForm({ clubId }: { clubId: string }) {
           seasonFee: parseFloat(seasonFee),
           installments: parseInt(installments),
           practiceSessions: parseInt(practiceSessions),
+          // A single number (only "from" or only "to" filled) means the
+          // same both ways — a fixed game count.
+          gamesMin: parsedMin ?? parsedMax,
+          gamesMax: parsedMax ?? parsedMin,
+          programDescription: programDescription.trim() || undefined,
+          customItems,
           includesBall,
           includesBag,
           includesShoes,
@@ -108,6 +134,34 @@ export function TemplateForm({ clubId }: { clubId: string }) {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-ink-700">Games (from / to)</label>
+          <p className="text-ink-400 mb-1 text-xs">
+            Games are the headline for families: enter one number if it&apos;s fixed, or a range.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              max="200"
+              value={gamesMin}
+              onChange={(e) => setGamesMin(e.target.value)}
+              placeholder="From"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
+            />
+            <span className="text-ink-400 mt-1">&ndash;</span>
+            <input
+              type="number"
+              min="0"
+              max="200"
+              value={gamesMax}
+              onChange={(e) => setGamesMax(e.target.value)}
+              placeholder="To (leave blank if same)"
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-ink-700">Season Fee ($)</label>
@@ -135,7 +189,9 @@ export function TemplateForm({ clubId }: { clubId: string }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink-700">Practice Sessions</label>
+            <label className="block text-sm font-medium text-ink-700">
+              Practice Sessions (total for the season)
+            </label>
             <input
               type="number"
               min="0"
@@ -144,6 +200,22 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-ink-700">Program Description</label>
+          <p className="text-ink-400 mb-1 text-xs">
+            Describe the season: leagues, tournaments, total games (e.g. 2 leagues, 2 tournaments,
+            about 18 games).
+          </p>
+          <textarea
+            value={programDescription}
+            onChange={(e) => setProgramDescription(e.target.value)}
+            rows={3}
+            maxLength={2000}
+            placeholder="e.g. 2 leagues, 2 tournaments, about 18 games"
+            className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
+          />
         </div>
 
         <div>
@@ -173,6 +245,61 @@ export function TemplateForm({ clubId }: { clubId: string }) {
               </label>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-ink-700 mb-2">
+            Custom Extras <span className="text-ink-400 font-normal">(optional)</span>
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customItemDraft}
+              onChange={(e) => setCustomItemDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  addCustomItem()
+                }
+              }}
+              maxLength={60}
+              placeholder="e.g. End-of-season banquet"
+              disabled={customItems.length >= 12}
+              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
+            />
+            <Button
+              type="button"
+              variant="subtle"
+              className="mt-1 shrink-0"
+              onClick={addCustomItem}
+              disabled={!customItemDraft.trim() || customItems.length >= 12}
+            >
+              Add
+            </Button>
+          </div>
+          {customItems.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {customItems.map((item, i) => (
+                <span
+                  key={`${item}-${i}`}
+                  className="bg-ink-50 text-ink-700 border-ink-200 flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+                >
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => setCustomItems(customItems.filter((_, j) => j !== i))}
+                    className="text-ink-400 hover:text-red-500"
+                    aria-label={`Remove ${item}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {customItems.length >= 12 && (
+            <p className="text-ink-400 mt-1 text-xs">Maximum of 12 custom items.</p>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-2">

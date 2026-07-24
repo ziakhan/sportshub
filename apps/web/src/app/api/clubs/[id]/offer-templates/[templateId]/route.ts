@@ -6,17 +6,30 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const updateTemplateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  seasonFee: z.number().min(0).optional(),
-  installments: z.number().min(1).max(12).optional(),
-  practiceSessions: z.number().min(0).optional(),
-  includesBall: z.boolean().optional(),
-  includesBag: z.boolean().optional(),
-  includesShoes: z.boolean().optional(),
-  includesUniform: z.boolean().optional(),
-  includesTracksuit: z.boolean().optional(),
-})
+const updateTemplateSchema = z
+  .object({
+    name: z.string().min(1).max(100).optional(),
+    seasonFee: z.number().min(0).optional(),
+    installments: z.number().min(1).max(12).optional(),
+    practiceSessions: z.number().min(0).optional(),
+    // Games are the headline (owner ruling 2026-07-24, refines QA-211).
+    gamesMin: z.number().int().min(0).max(200).optional().nullable(),
+    gamesMax: z.number().int().min(0).max(200).optional().nullable(),
+    // Program structure is prose, not checkboxes.
+    programDescription: z.string().trim().max(2000).optional().nullable(),
+    // Custom extras beyond the fixed gear checklist.
+    customItems: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+    includesBall: z.boolean().optional(),
+    includesBag: z.boolean().optional(),
+    includesShoes: z.boolean().optional(),
+    includesUniform: z.boolean().optional(),
+    includesTracksuit: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.gamesMin == null || data.gamesMax == null || data.gamesMin <= data.gamesMax,
+    { message: "Games (from) must be less than or equal to games (to)", path: ["gamesMin"] }
+  )
 
 async function verifyClubAdmin(clubId: string, userId: string) {
   const hasAccess = await prisma.userRole.findFirst({

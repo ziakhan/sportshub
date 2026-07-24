@@ -16,6 +16,14 @@ export interface OfferTerms {
   includesShoes: boolean
   includesUniform: boolean
   includesTracksuit: boolean
+  // Games headline + program prose + custom extras (owner ruling 2026-07-24,
+  // refines QA-211). Optional: only the legacy templateId+overrides path
+  // resolves these from a template; they're not part of the per-package
+  // options shape, so callers building OfferPackageInput may omit them.
+  gamesMin?: number | null
+  gamesMax?: number | null
+  programDescription?: string | null
+  customItems?: string[]
 }
 
 export type OfferTermOverrides = Partial<OfferTerms>
@@ -81,6 +89,10 @@ export async function resolveOfferTerms(
         includesShoes: template.includesShoes,
         includesUniform: template.includesUniform,
         includesTracksuit: template.includesTracksuit,
+        gamesMin: template.gamesMin,
+        gamesMax: template.gamesMax,
+        programDescription: template.programDescription,
+        customItems: template.customItems,
       }
     }
   }
@@ -91,6 +103,31 @@ export async function resolveOfferTerms(
     if (override !== undefined) (terms as any)[key] = override
   }
   return { terms, templateId: resolvedTemplateId }
+}
+
+/**
+ * Games headline + program prose + custom extras for a template, used by the
+ * package-options offer path (POST /api/offers with `options[]`) — that path
+ * builds its terms from the chosen OfferPackageInput, which doesn't carry
+ * these fields, so the Offer snapshot pulls them from the package's source
+ * template directly. Returns null when there's no template (blank package).
+ */
+export async function getTemplateProgramFields(
+  db: any,
+  tenantId: string,
+  templateId: string
+): Promise<Pick<OfferTerms, "gamesMin" | "gamesMax" | "programDescription" | "customItems"> | null> {
+  const template = await db.offerTemplate.findFirst({
+    where: { id: templateId, tenantId, isActive: true },
+    select: { gamesMin: true, gamesMax: true, programDescription: true, customItems: true },
+  })
+  if (!template) return null
+  return {
+    gamesMin: template.gamesMin,
+    gamesMax: template.gamesMax,
+    programDescription: template.programDescription,
+    customItems: template.customItems,
+  }
 }
 
 /** One package choice on a multi-option offer — a copy seeded from a template. */
