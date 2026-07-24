@@ -37,7 +37,15 @@ export default async function middleware(req: NextRequest) {
   // canonical path URL (seo-strategy §6c — one URL per club). Reserved
   // subdomains fall through (www serves the main site, not /club/www).
   if (tenantSlug && !RESERVED_SUBDOMAINS.has(tenantSlug)) {
-    return NextResponse.redirect(new URL(`/club/${tenantSlug}`, siteUrl()), 301)
+    // Root = the vanity front door -> the club page (301, canonical).
+    // Every OTHER path forwards to the SAME path on the apex (owner repro
+    // 2026-07-25: browsing on a subdomain turned every nav click into a
+    // bounce to the club page, flooding history with clubs). 302 on paths so
+    // browsers never permanently cache a deep link to the wrong place.
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL(`/club/${tenantSlug}`, siteUrl()), 301)
+    }
+    return NextResponse.redirect(new URL(pathname + req.nextUrl.search, siteUrl()), 302)
   }
 
   // Custom club domains (Pro tier) — inert until CUSTOM_DOMAINS_ENABLED=1.
