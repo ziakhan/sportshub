@@ -24,6 +24,11 @@ const voteSchema = z.object({
  * Answers any subset of questions; re-submitting a question replaces that
  * question's previous choices. Single-choice questions accept exactly one
  * option. Returns the freshly aggregated poll.
+ *
+ * Also serves the PollBubble embedded in this team's chat for polls relayed
+ * in from another scope (a club poll with "Also post to team chats" —
+ * three-tier polls ruling, owner 2026-07-24): team-chat membership is the
+ * gate either way, so voting through the chat bubble needs no client change.
  */
 export async function POST(
   request: NextRequest,
@@ -44,8 +49,15 @@ export async function POST(
       )
     }
 
+    // Own-team poll OR a poll relayed into this team's chat (three-tier
+    // polls ruling, owner 2026-07-24): a club poll with "Also post to team
+    // chats" checked carries no teamId of its own, but the PollBubble in
+    // this team's chat still needs to vote through this exact route.
     const poll = await (prisma as any).poll.findFirst({
-      where: { id: params.pollId, teamId: params.id },
+      where: {
+        id: params.pollId,
+        OR: [{ teamId: params.id }, { chatMessages: { some: { teamId: params.id } } }],
+      },
       select: {
         id: true,
         status: true,

@@ -328,6 +328,9 @@ model Tenant {
   trainerProfile    TrainerProfile?
   trainerAvailabilities TrainerAvailability[]
   oneOnOneBookings  OneOnOneBooking[]
+  // Club-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll has
+  // exactly one scope: teamId, tenantId, or leagueId.
+  polls             Poll[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -482,7 +485,10 @@ model TeamMessage {
   // Quick poll posted into the stream (WhatsApp-style): the message carries
   // a single-question Poll; the bubble renders live result bars. SetNull so
   // deleting the poll from the polls page leaves the message as plain text.
-  pollId String? @unique
+  // Not unique: a club poll relayed to several team chats (three-tier polls
+  // ruling 2026-07-24) creates one TeamMessage per selected team, all
+  // pointing at the same Poll.
+  pollId String?
   poll   Poll?   @relation(fields: [pollId], references: [id], onDelete: SetNull)
 
   deletedAt   DateTime?
@@ -506,6 +512,7 @@ model TeamMessage {
   @@index([teamId, createdAt])
   @@index([teamId, pinnedAt])
   @@index([senderId])
+  @@index([pollId])
 }
 
 // Emoji reactions on team-chat messages (one per user+emoji+message).
@@ -718,15 +725,26 @@ model TeamEventTeam {
 // Same membership as team chat: staff create, staff + rostered families
 // vote and see results. A poll holds 1..N questions so it doubles as a
 // lightweight survey ("which tournaments should we enter?").
+//
+// Three-tier polls (owner ruling 2026-07-24): a poll now has exactly ONE
+// scope — teamId (unchanged), tenantId (club-wide, ClubOwner/ClubManager),
+// or leagueId (league-wide, LeagueOwner/LeagueManager). Enforced at the API
+// layer (no DB check constraint via Prisma) — see lib/polls/scope.ts.
 enum PollStatus {
   OPEN
   CLOSED
 }
 
 model Poll {
-  id     String @id @default(uuid())
-  teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id     String  @id @default(uuid())
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   createdById String
   createdBy   User   @relation("PollsCreated", fields: [createdById], references: [id], onDelete: Cascade)
@@ -737,13 +755,17 @@ model Poll {
   closedAt    DateTime?
 
   questions   PollQuestion[]
-  // Set when this poll was posted as a quick poll in the team chat
-  chatMessage TeamMessage?
+  // Set for every team chat this poll was posted/relayed into — a team
+  // poll relays to its own team (0 or 1 row); a club poll may relay to
+  // several selected teams; a league poll never relays (owner: maybe later).
+  chatMessages TeamMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([teamId, status])
+  @@index([tenantId, status])
+  @@index([leagueId, status])
   @@index([createdById])
 }
 
@@ -1257,6 +1279,9 @@ model League {
   postTags        PostTag[]
   follows         Follow[]
   waiverDocuments WaiverDocument[]
+  // League-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll
+  // has exactly one scope: teamId, tenantId, or leagueId.
+  polls           Poll[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

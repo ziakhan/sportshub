@@ -3,20 +3,19 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { notifyMany } from "@/lib/notifications"
-import { getChatMembers, getChatMembership } from "@/lib/teams/chat-access"
+import { canManageLeaguePolls } from "@/lib/polls/authz"
+import { isLeaguePollAudience, leaguePollAudienceUserIds } from "@/lib/polls/audience"
 import { pollInclude, serializePoll } from "@/lib/teams/polls"
-import { relayPollToTeamChat } from "@/lib/polls/chat-relay"
 
 export const dynamic = "force-dynamic"
 
 /**
- * Team polls & surveys (engagement v1). Membership mirrors team chat:
- * staff (club owners/managers + team Staff/TeamManager) create, close and
- * delete; staff + rostered families vote and see aggregate results. Staff
- * additionally see who picked what.
- *
- * Three-tier polls ruling (owner 2026-07-24, QA-207): creating a poll here
- * also relays it into the team's own chat as a message bubble.
+ * League-wide polls (three-tier polls ruling, owner 2026-07-24). LeagueOwner/
+ * LeagueManager create; the audience is every operator, staff, and family
+ * of a team with an APPROVED submission into one of the league's seasons
+ * (the same cascade `seasons/[id]/schedule/commit` uses for
+ * `schedule_published`). No chat relay — league polls never post to team
+ * chats (owner: maybe later).
  */
 
 const createPollSchema = z.object({
@@ -37,43 +36,41 @@ const createPollSchema = z.object({
     .max(10),
 })
 
-/** GET /api/teams/[id]/polls — open polls first, newest first within group */
+/** GET /api/leagues/[id]/polls — open polls first, newest first within group */
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const membership = await getChatMembership(params.id, auth.userId, auth.isPlatformAdmin)
-    if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const isStaff = auth.isPlatformAdmin || (await canManageLeaguePolls(auth.userId, params.id))
+    if (!isStaff && !(await isLeaguePollAudience(auth.userId, params.id))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
     const polls = await (prisma as any).poll.findMany({
-      where: { teamId: params.id },
+      where: { leagueId: params.id },
       include: pollInclude,
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       take: 50,
     })
 
-    const isStaffView = membership.role !== "family"
     return NextResponse.json({
-      membership: { role: membership.role },
-      polls: polls.map((p: any) => serializePoll(p, auth.userId, isStaffView)),
+      isStaff,
+      polls: polls.map((p: any) => serializePoll(p, auth.userId, isStaff)),
     })
   } catch (error) {
-    console.error("Poll list error:", error)
+    console.error("League poll list error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-/** POST /api/teams/[id]/polls — staff only; nested create, bells members */
+/** POST /api/leagues/[id]/polls — LeagueOwner/LeagueManager only */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-    const membership = await getChatMembership(params.id, auth.userId, auth.isPlatformAdmin)
-    if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    if (membership.role === "family") {
-      return NextResponse.json({ error: "Only team staff can create polls" }, { status: 403 })
+    if (!(await canManageLeaguePolls(auth.userId, params.id, auth.isPlatformAdmin))) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
     const parsed = createPollSchema.safeParse(await request.json().catch(() => null))
@@ -84,9 +81,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
+    const league = await prisma.league.findUnique({ where: { id: params.id }, select: { name: true } })
+    if (!league) return NextResponse.json({ error: "League not found" }, { status: 404 })
+
     const poll = await (prisma as any).poll.create({
       data: {
-        teamId: params.id,
+        leagueId: params.id,
         createdById: auth.userId,
         title: parsed.data.title,
         description: parsed.data.description || null,
@@ -102,38 +102,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       include: pollInclude,
     })
 
-    const members = await getChatMembers(membership.teamId, membership.tenantId)
-    const toNotify = members.userIds.filter((id) => id !== auth.userId)
-    if (toNotify.length > 0) {
-      await notifyMany(prisma, toNotify, {
-        type: "team_poll",
-        title: `New poll for ${membership.teamName}`,
-        message: parsed.data.title,
-        link: `/teams/${membership.teamId}/polls`,
-        referenceId: poll.id,
-        referenceType: "Poll",
-      })
-    }
-
-    // QA-207: hub-created polls also land in the team chat — the same
-    // TeamMessage mechanism chat quick-polls already use. Best-effort: a
-    // chat-post hiccup never blocks the poll itself from being created.
+    // Bell fanout to the whole league — best-effort, mirrors the
+    // schedule_published fanout (never fails the poll creation itself).
     try {
-      await relayPollToTeamChat({
-        pollId: poll.id,
-        teamId: membership.teamId,
-        teamName: membership.teamName,
-        tenantId: membership.tenantId,
-        senderId: auth.userId,
-        body: poll.title,
-      })
-    } catch (relayError) {
-      console.error("Poll chat relay failed:", relayError)
+      const audience = (await leaguePollAudienceUserIds(params.id)).filter((id) => id !== auth.userId)
+      if (audience.length > 0) {
+        await notifyMany(prisma, audience, {
+          type: "league_poll",
+          title: `${league.name}: ${parsed.data.title}`,
+          message: "New league poll. Cast your vote.",
+          link: `/polls`,
+          referenceId: poll.id,
+          referenceType: "Poll",
+        })
+      }
+    } catch (notifyError) {
+      console.error("League poll bell fanout failed:", notifyError)
     }
 
     return NextResponse.json({ poll: serializePoll(poll, auth.userId, true) }, { status: 201 })
   } catch (error) {
-    console.error("Poll create error:", error)
+    console.error("League poll create error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

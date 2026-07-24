@@ -82,6 +82,9 @@ export type NotificationType =
   | "direct_message"
   // Team polls & surveys (one bell per poll created)
   | "team_poll"
+  // Club-wide and league-wide polls (three-tier polls ruling, owner 2026-07-24)
+  | "club_poll"
+  | "league_poll"
   // Practice schedule announced / a practice moved, added or cancelled
   | "practice_schedule"
   | "practice_change"

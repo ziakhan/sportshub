@@ -63,6 +63,7 @@ const ICONS = {
   account: ic("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21a8 8 0 0 1 16 0"),
   whistle: ic("M15 13a6 6 0 1 1-6-6h6zM15 7l6-3-2 6"),
   plus: ic("M12 5v14M5 12h14"),
+  poll: ic("M4 20V10M12 20V4M20 20v-7"),
 }
 
 export function AccountMenu({ userName, userEmail, userInitials, avatarUrl, shape }: Props) {
@@ -154,6 +155,9 @@ export function AccountMenu({ userName, userEmail, userInitials, avatarUrl, shap
             )}
             <Row href="/messages" onClick={close} icon={ICONS.chat}>
               Chat
+            </Row>
+            <Row href="/polls" onClick={close} icon={ICONS.poll}>
+              Polls
             </Row>
             {/* No Notifications row: the bell beside the badge IS the inbox
                 (owner 2026-07-21 — having both was redundant). */}

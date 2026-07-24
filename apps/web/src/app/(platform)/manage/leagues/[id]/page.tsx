@@ -279,6 +279,9 @@ function LeagueDashboard() {
             <Button href={`/manage/leagues/${leagueId}/waivers`} variant="subtle" icon={BTN_ICONS.pen}>
               Waivers
             </Button>
+            <Button href={`/manage/leagues/${leagueId}/polls`} variant="subtle" icon={BTN_ICONS.poll}>
+              Polls
+            </Button>
             <Button
               onClick={() => setShowCreate((v) => !v)}
               icon={showCreate ? BTN_ICONS.x : BTN_ICONS.plus}
@@ -593,6 +596,11 @@ const BTN_ICONS: Record<string, React.ReactNode> = {
   pen: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  poll: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 20V10M12 20V4M20 20v-7" strokeLinecap="round" />
     </svg>
   ),
 }
