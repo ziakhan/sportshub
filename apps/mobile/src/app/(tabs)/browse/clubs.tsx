@@ -95,7 +95,7 @@ export default function ClubsDirectoryScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="Clubs" />
+      <SubHeader backHome title="Clubs" />
       <View style={styles.searchWrap}>
         <TextInput
           style={styles.search}

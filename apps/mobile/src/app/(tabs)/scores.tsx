@@ -226,7 +226,7 @@ export default function ScoresScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="Scores" />
+      <SubHeader backHome title="Scores" />
       <View style={styles.intro}>
         <Text style={styles.introEyebrow}>Around the hub</Text>
         <Text style={styles.introBody}>

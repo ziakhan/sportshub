@@ -30,7 +30,7 @@ export default function NewsScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="News & recaps" />
+      <SubHeader backHome title="News & recaps" />
       <View style={styles.intro}>
         <Text style={styles.introEyebrow}>Around the hub</Text>
         <Text style={styles.introBody}>

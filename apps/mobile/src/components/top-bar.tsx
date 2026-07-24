@@ -123,6 +123,7 @@ export function SubHeader({
   right,
   onTitlePress,
   fallback = "/",
+  backHome = false,
 }: {
   title: string
   right?: React.ReactNode
@@ -130,6 +131,10 @@ export function SubHeader({
   onTitlePress?: () => void
   /** Where back goes on a cold deep-link (no stack) — the logical parent, not home. */
   fallback?: string
+  /** Pill ROOT screens (owner 2026-07-25): back ALWAYS returns Home — the
+      browse stack retains stale siblings across tab switches, so history
+      back could resurface a previously visited pill instead of Home. */
+  backHome?: boolean
 }) {
   const insets = useSafeAreaInsets()
   return (
@@ -137,7 +142,13 @@ export function SubHeader({
       <View style={styles.bar}>
         <View style={styles.subLeft}>
           <Pressable
-            onPress={() => (router.canGoBack() ? router.back() : router.navigate(fallback as any))}
+            onPress={() =>
+              backHome
+                ? router.navigate("/")
+                : router.canGoBack()
+                  ? router.back()
+                  : router.navigate(fallback as any)
+            }
             hitSlop={8}
             style={styles.backButton}
           >

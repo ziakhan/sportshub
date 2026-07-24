@@ -52,7 +52,7 @@ export default function ProgramsScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="Programs & tryouts" />
+      <SubHeader backHome title="Programs & tryouts" />
       <View style={styles.filterRow}>
         {FILTERS.map((f) => (
           <Pressable

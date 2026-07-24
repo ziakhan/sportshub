@@ -61,7 +61,7 @@ export default function LeaguesScreen() {
 
   return (
     <View style={styles.root}>
-      <SubHeader title="Leagues" />
+      <SubHeader backHome title="Leagues" />
       <View style={styles.intro}>
         <Text style={styles.introEyebrow}>Competitive play</Text>
         <Text style={styles.introBody}>
