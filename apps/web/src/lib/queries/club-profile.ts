@@ -71,6 +71,8 @@ export interface ClubProfileData {
   /** Trainer 1-on-1 booking (TRAINER tenants with booking on) — null = hidden. */
   oneOnOne: { title: string; fee: number | null; slotMinutes: number; players: any[] } | null
   staffCount: number
+  /** Follow.tenantId count — native club hero stat chip (2026-07-25 additive). */
+  followerCount: number
   announcements: any[]
   recentGames: any[]
   upcomingGames: any[]
@@ -248,6 +250,7 @@ export async function getClubProfile(
     teams,
     tryouts,
     staffCount,
+    followerCount,
     houseLeagues,
     camps,
     tournaments,
@@ -274,6 +277,7 @@ export async function getClubProfile(
     prisma.userRole.count({
       where: { tenantId: tenant.id, role: { in: ["ClubOwner", "ClubManager", "Staff"] } },
     }),
+    (prisma as any).follow.count({ where: { tenantId: tenant.id } }),
     getHouseLeagues(tenant.id),
     getCamps(tenant.id),
     getHostedTournaments(tenant.id),
@@ -346,6 +350,7 @@ export async function getClubProfile(
     trainingSessions,
     oneOnOne,
     staffCount,
+    followerCount,
     announcements,
     recentGames,
     upcomingGames,

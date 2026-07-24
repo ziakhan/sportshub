@@ -11,6 +11,8 @@ import {
   type ViewStyle,
 } from "react-native"
 import { Image } from "expo-image"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { cardShadow, palette, tones, ui, type Tone } from "@/lib/theme"
 import { useTheme } from "@/lib/theme-context"
@@ -51,26 +53,33 @@ export function SectionHeader({
   eyebrow,
   title,
   accent = "brand",
+  color,
   action,
   onAction,
 }: {
   eyebrow?: string
   title: string
   accent?: "play" | "court" | "hoop" | "gold" | "ink" | "brand" | "energy"
+  /** Literal color override — wins over `accent` (an org's own brand hex,
+   *  e.g. club/team/league hero pages "weaving the brand through" section
+   *  eyebrows, additive 2026-07-25). */
+  color?: string
   action?: string
   onAction?: () => void
 }) {
   const t = useTheme()
-  const accentColor = {
-    play: ui.primary,
-    court: tones.positive.fg,
-    hoop: ui.danger,
-    gold: tones.gold.fg,
-    ink: ui.textMuted,
-    // Energy Pass accents — follow the admin palette live
-    brand: t.brand,
-    energy: t.energyInk,
-  }[accent]
+  const accentColor =
+    color ??
+    {
+      play: ui.primary,
+      court: tones.positive.fg,
+      hoop: ui.danger,
+      gold: tones.gold.fg,
+      ink: ui.textMuted,
+      // Energy Pass accents — follow the admin palette live
+      brand: t.brand,
+      energy: t.energyInk,
+    }[accent]
   return (
     <View style={styles.sectionHeader}>
       <View style={{ flex: 1 }}>
@@ -261,6 +270,175 @@ export function CoverImage({
       contentFit="cover"
       transition={150}
     />
+  )
+}
+
+/**
+ * Full-bleed brand hero band — the native club/team/league profile header
+ * (2026-07-25 rebuild): an edge-to-edge View in the org's primaryColor,
+ * behind the status bar, with a translucent back button and an optional
+ * dimmed banner photo. Pure View/Image layering — no gradient library.
+ */
+export function HeroBand({
+  color,
+  onColor = "#ffffff",
+  bannerUrl,
+  fallback = "/",
+  backHome = false,
+  children,
+}: {
+  color: string
+  /** Text/icon color that reads on `color` — brandTokens().onBrand. */
+  onColor?: string
+  bannerUrl?: string | null
+  /** Where back goes on a cold deep-link (no stack). */
+  fallback?: string
+  /** Back always returns Home (pill-root screens) — see SubHeader's twin. */
+  backHome?: boolean
+  children: ReactNode
+}) {
+  const insets = useSafeAreaInsets()
+  const dark = onColor === "#18181b"
+  const backBg = dark ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.22)"
+  return (
+    <View style={[styles.hero, { backgroundColor: color, paddingTop: insets.top + 10 }]}>
+      {bannerUrl ? (
+        <>
+          <Image source={{ uri: bannerUrl }} alt="" style={StyleSheet.absoluteFill} contentFit="cover" />
+          <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
+        </>
+      ) : null}
+      <Pressable
+        onPress={() =>
+          backHome
+            ? router.navigate("/")
+            : router.canGoBack()
+              ? router.back()
+              : router.navigate(fallback as any)
+        }
+        hitSlop={10}
+        style={[styles.heroBack, { backgroundColor: backBg }]}
+      >
+        <Ionicons name="chevron-back" size={20} color={onColor} />
+      </Pressable>
+      <View style={styles.heroBody}>{children}</View>
+    </View>
+  )
+}
+
+/** Hero quick-stats strip (web's translucent tile grid, native twin). */
+export function HeroStatRow({
+  stats,
+  onColor = "#ffffff",
+}: {
+  stats: Array<{ value: string; label: string }>
+  onColor?: string
+}) {
+  const dark = onColor === "#18181b"
+  const tileBg = dark ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.16)"
+  return (
+    <View style={styles.heroStatRow}>
+      {stats.map((s) => (
+        <View key={s.label} style={[styles.heroStatTile, { backgroundColor: tileBg }]}>
+          <Text style={[styles.heroStatValue, { color: onColor }]}>{s.value}</Text>
+          <Text style={[styles.heroStatLabel, { color: onColor }]}>{s.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/**
+ * Hero crest — logo (or initials) on an opaque white card, always legible
+ * against any brand fill color (a same-hue tinted Monogram tile can vanish
+ * against its own hero band). Web's `bg-white/95` crest treatment.
+ */
+export function HeroCrest({
+  name,
+  logoUrl,
+  ink,
+  size = 60,
+}: {
+  name: string
+  logoUrl?: string | null
+  /** Initials color when there's no logo — pass brandTokens().ink. */
+  ink: string
+  size?: number
+}) {
+  const initials =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "?"
+  const radius = size * 0.28
+  return (
+    <View style={[styles.heroCrest, { width: size, height: size, borderRadius: radius }]}>
+      {logoUrl ? (
+        <Image
+          source={{ uri: logoUrl }}
+          alt={name}
+          style={{ width: "100%", height: "100%", borderRadius: radius }}
+          contentFit="cover"
+          transition={150}
+        />
+      ) : (
+        <Text style={{ color: ink, fontWeight: "800", fontSize: size * 0.36 }}>{initials}</Text>
+      )}
+    </View>
+  )
+}
+
+export interface GameRowData {
+  id: string
+  scheduledAt: string
+  status: string
+  homeScore: number | null
+  awayScore: number | null
+  homeTeam: { name: string }
+  awayTeam: { name: string }
+  venue?: { name: string } | null
+}
+
+/** Tappable game row (score or tip-off time) — shared by club/team/season
+ *  screens so schedules read identically everywhere. */
+export function GameRow({ game, onPress }: { game: GameRowData; onPress?: () => void }) {
+  const live = game.status === "LIVE"
+  const done = game.status === "COMPLETED"
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.gameRow, pressed && onPress && { backgroundColor: ui.surfaceSunken }]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
+      <View style={{ flex: 1 }}>
+        <View style={styles.gameTop}>
+          <TonePill tone={live ? "danger" : done ? "neutral" : "info"} label={live ? "Live" : done ? "Final" : "Upcoming"} />
+          {game.venue ? (
+            <Text style={styles.gameVenue} numberOfLines={1}>
+              {game.venue.name}
+            </Text>
+          ) : null}
+        </View>
+        <Text style={styles.gameTeams} numberOfLines={1}>
+          {game.homeTeam.name} vs {game.awayTeam.name}
+        </Text>
+        <Text style={styles.gameMeta}>
+          {done || live
+            ? `${game.homeScore ?? 0}–${game.awayScore ?? 0}`
+            : new Date(game.scheduledAt).toLocaleString(undefined, {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+        </Text>
+      </View>
+      {onPress ? <Ionicons name="chevron-forward" size={15} color={ui.textFaint} /> : null}
+    </Pressable>
   )
 }
 
@@ -511,4 +689,52 @@ const styles = StyleSheet.create({
   starClip: { position: "absolute", top: 0, left: 0, height: "100%", overflow: "hidden" },
   starValue: { fontWeight: "800", color: ui.text },
   starCount: { color: ui.textFaint, fontWeight: "600" },
+  hero: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    overflow: "hidden",
+  },
+  heroScrim: { backgroundColor: "rgba(0,0,0,0.38)" },
+  heroBack: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  heroBody: { gap: 4 },
+  heroCrest: {
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  heroStatRow: {
+    flexDirection: "row",
+    gap: 2,
+    marginTop: 18,
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  heroStatTile: { flex: 1, alignItems: "center", paddingVertical: 10, paddingHorizontal: 4 },
+  heroStatValue: { fontSize: 20, fontWeight: "800", fontVariant: ["tabular-nums"] },
+  heroStatLabel: { fontSize: 10.5, fontWeight: "700", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.4, opacity: 0.85 },
+  gameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 8,
+    borderRadius: ui.radius.sm,
+    marginHorizontal: -6,
+    paddingHorizontal: 6,
+  },
+  gameTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 3 },
+  gameVenue: { flex: 1, fontSize: 11.5, color: ui.textFaint, textAlign: "right" },
+  gameTeams: { fontSize: 13.5, fontWeight: "700", color: ui.text },
+  gameMeta: { fontSize: 13, color: ui.textMuted, marginTop: 2, fontWeight: "700", fontVariant: ["tabular-nums"] },
 })

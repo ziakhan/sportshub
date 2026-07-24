@@ -16,14 +16,34 @@ export const dynamic = "force-dynamic"
  * as-is (additive only) — a fielded app build reading only the old fields
  * still works. New: `club.address/phoneNumber/contactEmail/staffCount`,
  * `tournament`/`training` program entries, and richer review status parity.
+ *
+ * 2026-07-25 (native club-page rebuild): further additive fields for the
+ * beautified native club screen — `club.tagline/bannerUrl/zipCode/
+ * followerCount`, plus `announcements`, `recentGames`, `upcomingGames`, and
+ * `news` (all rendered on web but previously missing from this payload).
  */
 export async function GET(_request: NextRequest, { params }: { params: { slug: string } }) {
   try {
     const profile = await getClubProfile(params.slug)
     if (!profile) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-    const { club, teams, tryouts, camps, houseLeagues, tournaments, trainingSessions, rating, reviews, staffCount } =
-      profile
+    const {
+      club,
+      teams,
+      tryouts,
+      camps,
+      houseLeagues,
+      tournaments,
+      trainingSessions,
+      rating,
+      reviews,
+      staffCount,
+      followerCount,
+      announcements,
+      recentGames,
+      upcomingGames,
+      news,
+    } = profile
 
     return NextResponse.json({
       club: {
@@ -46,6 +66,12 @@ export async function GET(_request: NextRequest, { params }: { params: { slug: s
         phoneNumber: club.phoneNumber,
         contactEmail: club.contactEmail,
         staffCount,
+        // Additive (native club-page rebuild, 2026-07-25): hero branding +
+        // stat-chip data the beautified native screen needs.
+        tagline: club.branding?.tagline ?? null,
+        bannerUrl: club.branding?.bannerUrl ?? null,
+        zipCode: club.zipCode,
+        followerCount,
       },
       programs: [
         ...tryouts.map((t: any) => ({
@@ -107,6 +133,41 @@ export async function GET(_request: NextRequest, { params }: { params: { slug: s
         content: r.content,
         createdAt: r.createdAt,
         reviewer: r.reviewer?.firstName ?? "Parent",
+      })),
+      // Additive (native club-page rebuild, 2026-07-25): announcements,
+      // schedule and news the web page's Announcements/Schedule/News blocks
+      // render but the mobile screen never requested.
+      announcements: announcements.map((a: any) => ({
+        id: a.id,
+        title: a.title,
+        content: a.content,
+        isPinned: a.isPinned,
+        createdAt: a.createdAt,
+      })),
+      recentGames: recentGames.map((g: any) => ({
+        id: g.id,
+        scheduledAt: g.scheduledAt,
+        status: "COMPLETED" as const,
+        homeScore: g.homeScore,
+        awayScore: g.awayScore,
+        homeTeam: { name: g.homeTeam?.name ?? "" },
+        awayTeam: { name: g.awayTeam?.name ?? "" },
+      })),
+      upcomingGames: upcomingGames.map((g: any) => ({
+        id: g.id,
+        scheduledAt: g.scheduledAt,
+        status: g.status,
+        homeScore: null,
+        awayScore: null,
+        homeTeam: { name: g.homeTeam?.name ?? "" },
+        awayTeam: { name: g.awayTeam?.name ?? "" },
+      })),
+      news: news.map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        slug: p.slug,
+        publishedAt: p.publishedAt,
+        coverUrl: p.media?.[0]?.posterUrl || (p.media?.[0]?.type === "IMAGE" ? p.media?.[0]?.url : null) || null,
       })),
     })
   } catch (error) {
