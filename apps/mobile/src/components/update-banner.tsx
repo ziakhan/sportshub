@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { useEffect } from "react"
+import { AppState, Pressable, StyleSheet, Text, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Updates from "expo-updates"
 import { palette } from "@/lib/theme"
@@ -9,9 +10,38 @@ import { palette } from "@/lib/theme"
  * applies them on the NEXT cold launch — so a finished download now surfaces
  * as a one-tap restart instead of an invisible maybe.
  */
+const CHECK_INTERVAL_MS = 4 * 60_000
+
+async function checkAndFetch() {
+  try {
+    const check = await Updates.checkForUpdateAsync()
+    if (check.isAvailable) await Updates.fetchUpdateAsync()
+  } catch {
+    // network/dev-client — never surface
+  }
+}
+
 export function UpdateBanner() {
   const { isUpdatePending } = Updates.useUpdates()
   const insets = useSafeAreaInsets()
+
+  // Owner 2026-07-25: the built-in check runs ONLY at launch, so a publish
+  // mid-session was invisible until the next open. Poll while foregrounded
+  // and re-check whenever the app returns to the foreground.
+  useEffect(() => {
+    if (__DEV__) return
+    void checkAndFetch()
+    const interval = setInterval(() => {
+      if (AppState.currentState === "active") void checkAndFetch()
+    }, CHECK_INTERVAL_MS)
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") void checkAndFetch()
+    })
+    return () => {
+      clearInterval(interval)
+      sub.remove()
+    }
+  }, [])
 
   if (!isUpdatePending) return null
 
