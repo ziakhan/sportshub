@@ -27,6 +27,10 @@ model User {
   state        String?
   country      String  @default("CA") // ISO 3166-1 alpha-2
 
+  // Operator roles require an 18+ attestation at onboarding (owner
+  // 2026-07-24, QA-106) — we don't collect adult DOBs, this is the record.
+  adultAttestedAt DateTime?
+
   // Universal handle (owner 2026-07-23): EVERY account reserves one at
   // signup (auto-generated default, changeable later). Validated/reserved
   // in lib/handles.ts. Clubs' equivalent is Tenant.slug.
@@ -57,6 +61,7 @@ model User {
   players                   Player[]                  @relation("ParentPlayers")
   playerAccount             Player?                   @relation("PlayerAccount")
   familyInvitationsSent     FamilyInvitation[]        @relation("FamilyInvitationsSent")
+  refereeSettlements        RefereeSettlement[]       @relation("RefereeSettlements")
   tryoutSignups             TryoutSignup[]
   rsvpResponses             EventRsvp[]               @relation("RsvpResponses")
   programAssignments        ProgramStaff[]            @relation("ProgramAssignments")
@@ -291,6 +296,10 @@ model Tenant {
   // Paid placement: spotlighted in discovery surfaces (admin-toggled)
   isFeatured Boolean @default(false)
 
+  // Club-wide default for showing how full teams are (owner 2026-07-24) —
+  // off by default so slow fills don't deter families; teams can override.
+  showRosterFillDefault Boolean @default(false)
+
   // Relationships
   branding          TenantBranding?
   features          TenantFeatures?
@@ -404,6 +413,12 @@ model Team {
   gender      Gender?
   season      String? // "Spring 2026"
   description String? @db.Text
+
+  // Roster commitment cap (owner 2026-07-24, QA-103): counts PAID/committed
+  // players, never offers — clubs over-offer on purpose. null = no cap.
+  maxPlayers Int?
+  // Show public roster-fill progress? null = inherit the club-wide default.
+  showRosterFill Boolean?
 
   // Relationships
   players           TeamPlayer[]
@@ -1233,6 +1248,7 @@ model League {
   obligations     PaymentObligation[]     @relation("LeagueObligations")
   leagueReferees  LeagueReferee[]
   refereeRequests RefereeSessionRequest[] @relation("LeagueRefereeRequests")
+  refereeSettlements RefereeSettlement[]
   postTags        PostTag[]
   follows         Follow[]
   waiverDocuments WaiverDocument[]
@@ -1554,6 +1570,13 @@ model RefereeSessionRequest {
   startTime String // shift the league enforces ("09:00")
   endTime   String
   message   String? @db.Text
+
+  // Per-GAME rate the booker offers (owner 2026-07-24: refs are paid by
+  // games officiated, not time; the shift is a scheduling estimate). Shown
+  // to the ref BEFORE accepting; accepting = agreeing to this rate.
+  offeredRatePerGame Decimal? @db.Decimal(10, 2)
+  // Stamped from offeredRatePerGame at accept — the agreement of record.
+  agreedRatePerGame  Decimal? @db.Decimal(10, 2)
 
   status       RefereeRequestStatus @default(PENDING)
   acceptedById String?
@@ -3588,6 +3611,55 @@ model CommunicationConsent {
 
 /// Audit log for every marketing/broadcast send (composer ships phase 3, the
 /// log exists from day one so nothing ever sends unrecorded).
+// Transactional email ledger (owner 2026-07-24, QA-403): every one-off
+// send (invites, confirmations, reminders) gets a row so "did the email go
+// out?" is a lookup, not a mystery. Bulk comms stay in MessageLog.
+model EmailLog {
+  id        String   @id @default(uuid())
+  to        String
+  subject   String
+  // Best-effort trigger tag, e.g. "staff-invite", "registration", "waiver"
+  kind      String?
+  status    String // SENT | FAILED
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([to, createdAt])
+  @@index([createdAt])
+}
+
+// Referee settlement (owner 2026-07-24): after a session day passes, the
+// per-referee tally of games officiated awaits LEAGUE confirmation; the
+// confirmed row is the settlement of record at the agreed per-game rate.
+enum RefereeSettlementStatus {
+  PENDING_CONFIRM
+  CONFIRMED
+}
+
+model RefereeSettlement {
+  id       String @id @default(uuid())
+  leagueId String
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  refereeUserId String
+  referee       User   @relation("RefereeSettlements", fields: [refereeUserId], references: [id], onDelete: Cascade)
+
+  sessionRequestId String?
+  sessionDate      DateTime
+  gamesCount       Int
+  ratePerGame      Decimal? @db.Decimal(10, 2)
+  total            Decimal? @db.Decimal(10, 2)
+
+  status      RefereeSettlementStatus @default(PENDING_CONFIRM)
+  confirmedById String?
+  confirmedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([leagueId, refereeUserId, sessionDate])
+  @@index([leagueId, status])
+}
+
 model MessageLog {
   id       String       @id @default(uuid())
   senderId String // user who triggered the send

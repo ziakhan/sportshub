@@ -137,6 +137,19 @@ export async function recomputeObligationStatus(db: any, obligationId: string) {
  * state that the UI already renders. Keep them in step with the obligation.
  */
 async function syncReferenceStatus(db: any, obligation: { referenceType: string; referenceId: string; status: string }) {
+  if (obligation.referenceType === "Offer" && obligation.status === "PAID") {
+    // Roster commitment (owner 2026-07-24): payment IS the commitment — a
+    // season fee flipping PAID may take the team to its cap. Best-effort,
+    // never blocks the payment path.
+    void (async () => {
+      const { notifyIfTeamFull } = await import("@/lib/teams/roster-commitment")
+      const offer = await db.offer.findUnique({
+        where: { id: obligation.referenceId },
+        select: { teamId: true },
+      })
+      if (offer?.teamId) await notifyIfTeamFull(offer.teamId)
+    })().catch((e: unknown) => console.error("roster-full check failed:", e))
+  }
   if (obligation.referenceType === "TryoutSignup" && obligation.status === "PAID") {
     await db.tryoutSignup.updateMany({
       where: { id: obligation.referenceId, status: { in: ["PENDING", "CONFIRMED"] } },

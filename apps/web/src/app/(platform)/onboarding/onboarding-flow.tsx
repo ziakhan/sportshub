@@ -175,6 +175,35 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
   )
 }
 
+// QA-106 ruling: operator roles (running clubs/leagues, officiating, training)
+// require an 18+ attestation at onboarding. Parent/Player/Staff are unchanged.
+const OPERATOR_ROLES = ["ClubOwner", "LeagueOwner", "Referee", "Trainer"]
+
+function AdultAttestationCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="border-ink-200 bg-court-50/60 flex items-start gap-2.5 rounded-xl border p-4 text-sm text-ink-700">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="border-ink-300 mt-0.5 h-4 w-4 rounded"
+      />
+      <span>
+        I confirm I am 18 years of age or older
+        <span className="text-ink-500 mt-0.5 block text-xs">
+          Operator roles (running clubs, leagues, or officiating) are for adults.
+        </span>
+      </span>
+    </label>
+  )
+}
+
 interface OnboardingFlowProps {
   userName: string
 }
@@ -182,6 +211,7 @@ interface OnboardingFlowProps {
 export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const [step, setStep] = useState<"role" | "profile">("role")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -201,18 +231,27 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
     setError(null)
 
-    // ClubOwner and Trainer skip step 2 — straight to the API, then their
-    // create flow (/clubs/create, /trainers/create)
-    if (selectedRole === "ClubOwner" || selectedRole === "Trainer") {
-      await submitOnboarding(selectedRole)
-      return
-    }
-
+    // ClubOwner and Trainer have no per-role profile form — they still stop
+    // at step 2, though, since operator roles need the 18+ attestation
+    // before we hand them off to their create flow (/clubs/create,
+    // /trainers/create).
     setStep("profile")
   }
 
   const handleProfileSubmit = async (profileData: ProfileData) => {
+    if (OPERATOR_ROLES.includes(selectedRole!) && !adultAttested) {
+      setError("Please confirm you are 18 years of age or older to continue.")
+      return
+    }
     await submitOnboarding(selectedRole!, profileData)
+  }
+
+  const handleOperatorContinue = async () => {
+    if (!adultAttested) {
+      setError("Please confirm you are 18 years of age or older to continue.")
+      return
+    }
+    await submitOnboarding(selectedRole!)
   }
 
   const submitOnboarding = async (role: string, profileData?: ProfileData) => {
@@ -226,6 +265,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         body: JSON.stringify({
           roles: [role],
           profileData: profileData || undefined,
+          adultAttested: OPERATOR_ROLES.includes(role) ? adultAttested : undefined,
         }),
       })
 
@@ -280,18 +320,56 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           />
         )}
         {selectedRole === "Referee" && (
-          <RefereeForm
-            onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="mt-6">
+              <RefereeForm
+                onSubmit={handleProfileSubmit}
+                onBack={() => setStep("role")}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </>
         )}
         {selectedRole === "LeagueOwner" && (
-          <LeagueOwnerForm
-            onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="mt-6">
+              <LeagueOwnerForm
+                onSubmit={handleProfileSubmit}
+                onBack={() => setStep("role")}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </>
+        )}
+        {(selectedRole === "ClubOwner" || selectedRole === "Trainer") && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-ink-900 text-xl font-semibold">
+                {selectedRole === "ClubOwner" ? "Before you create your club" : "Before you set up training"}
+              </h2>
+              <p className="text-ink-700 mt-1 text-sm">One quick confirmation before we continue.</p>
+            </div>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setStep("role")}
+                className="border-ink-200 rounded-xl border bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleOperatorContinue}
+                disabled={isSubmitting || !adultAttested}
+                className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-3 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Setting up..." : "Continue"}
+              </button>
+            </div>
+          </div>
         )}
 
         <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 2 — Complete your profile</p>

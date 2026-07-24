@@ -118,7 +118,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // ACCEPT — first-accept-wins guard via conditional update
     const won = await prisma.refereeSessionRequest.updateMany({
       where: { id: req.id, status: "PENDING" },
-      data: { status: "ACCEPTED", acceptedById: auth.userId, respondedAt: new Date() },
+      data: {
+        // The agreement of record: accepting = agreeing to the offered per-game rate.
+        agreedRatePerGame: (req as any).offeredRatePerGame ?? null, status: "ACCEPTED", acceptedById: auth.userId, respondedAt: new Date() },
     })
     if (won.count === 0) {
       return NextResponse.json({ error: "Another referee already took this day" }, { status: 409 })

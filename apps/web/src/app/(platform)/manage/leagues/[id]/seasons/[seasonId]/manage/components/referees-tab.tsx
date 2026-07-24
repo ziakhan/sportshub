@@ -58,6 +58,18 @@ export function RefereesTab({
   const [end, setEnd] = useState("18:00")
   const [target, setTarget] = useState("") // "" = broadcast
   const [message, setMessage] = useState("")
+  const [ratePerGame, setRatePerGame] = useState("")
+  const [settlements, setSettlements] = useState<
+    Array<{
+      id: string
+      refereeName: string
+      sessionDate: string
+      gamesCount: number
+      ratePerGame: number | null
+      total: number | null
+      status: string
+    }>
+  >([])
   const [growQ, setGrowQ] = useState("")
   const [growResults, setGrowResults] = useState<PoolReferee[]>([])
   const [busy, setBusy] = useState(false)
@@ -89,10 +101,18 @@ export function RefereesTab({
     setOffers(data.requests)
   }, [leagueId])
 
+  const loadSettlements = useCallback(async () => {
+    const res = await fetch(`/api/leagues/${leagueId}/referee-settlements`).catch(() => null)
+    if (!res?.ok) return
+    const data = await res.json()
+    setSettlements(data.settlements ?? [])
+  }, [leagueId])
+
   useEffect(() => {
     loadPool()
     loadOffers()
-  }, [loadPool, loadOffers])
+    void loadSettlements()
+  }, [loadPool, loadOffers, loadSettlements])
 
   const growSearch = async (q: string) => {
     setGrowQ(q)
@@ -138,6 +158,9 @@ export function RefereesTab({
           endTime: end,
           targetUserId: target || undefined,
           message: message.trim() || undefined,
+          // Per-game rate (owner 2026-07-24): refs are paid by games, not
+          // time — this is the rate they agree to by accepting.
+          offeredRatePerGame: ratePerGame ? Number(ratePerGame) : undefined,
         }),
       })
       const data = await res.json()
@@ -243,6 +266,16 @@ export function RefereesTab({
                 })}
             </select>
           </div>
+          <input
+            type="number"
+            min="0"
+            step="5"
+            value={ratePerGame}
+            onChange={(e) => setRatePerGame(e.target.value)}
+            placeholder="$/game"
+            className={`${inputClass} w-24`}
+            title="Per-game rate the referee agrees to by accepting"
+          />
           <input
             type="text"
             value={message}
@@ -370,6 +403,58 @@ export function RefereesTab({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Settlements (owner 2026-07-24): refs are paid per game officiated —
+          after a session day, confirm each tally to lock the settlement. */}
+      <div className="border-ink-100 mt-4 rounded-2xl border bg-white p-5">
+        <h3 className="text-ink-900 text-sm font-semibold">Referee settlements</h3>
+        <p className="text-ink-500 mt-1 text-xs">
+          Games are tallied per referee per session day. Double-check and confirm each row —
+          confirmation is the settlement of record at the agreed per-game rate.
+        </p>
+        {settlements.length === 0 ? (
+          <p className="text-ink-400 mt-3 text-sm">Nothing to settle yet.</p>
+        ) : (
+          <div className="mt-3 space-y-1.5">
+            {settlements.map((st) => (
+              <div
+                key={st.id}
+                className="border-ink-100 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm"
+              >
+                <span className="min-w-0">
+                  <span className="text-ink-900 font-medium">{st.refereeName}</span>
+                  <span className="text-ink-500 ml-2 text-xs">
+                    {new Date(st.sessionDate).toLocaleDateString("en-CA", { month: "short", day: "numeric", timeZone: "UTC" })}
+                    {" · "}
+                    {st.gamesCount} game{st.gamesCount === 1 ? "" : "s"}
+                    {st.ratePerGame != null ? ` × $${st.ratePerGame}` : " · no agreed rate"}
+                    {st.total != null ? ` = $${st.total}` : ""}
+                  </span>
+                </span>
+                {st.status === "CONFIRMED" ? (
+                  <span className="bg-court-50 text-court-700 rounded-full px-2 py-0.5 text-xs font-semibold">
+                    Confirmed
+                  </span>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      await fetch(`/api/leagues/${leagueId}/referee-settlements`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ settlementId: st.id }),
+                      })
+                      loadSettlements()
+                    }}
+                    className="text-play-700 text-xs font-semibold hover:underline"
+                  >
+                    Confirm
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

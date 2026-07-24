@@ -26,6 +26,9 @@ const updateTeamSchema = z.object({
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   season: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  // Roster commitment cap (owner 2026-07-24, QA-103). null = no cap / inherit.
+  maxPlayers: z.number().int().positive().nullable().optional(),
+  showRosterFill: z.boolean().nullable().optional(),
   staffToAdd: z.array(staffEntrySchema).optional(),
   staffToRemove: z.array(z.string().uuid()).optional(), // UserRole IDs to remove
 })

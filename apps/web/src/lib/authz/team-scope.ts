@@ -95,3 +95,32 @@ export async function canActOnTeam(
   })
   return !!role
 }
+
+/**
+ * Is this user a "club member" for the given team — any role scoped to the
+ * team or its tenant (owner, manager, staff, parent, player), or the
+ * parent/self-account of a player rostered on the team. Used to gate
+ * club-internal info (e.g. the practice schedule) on the public team page:
+ * the whole club is fine, the public never (QA-105).
+ */
+export async function isTeamMember(
+  userId: string,
+  tenantId: string,
+  teamId: string
+): Promise<boolean> {
+  const role = await prisma.userRole.findFirst({
+    where: { userId, OR: [{ tenantId }, { teamId }] },
+    select: { id: true },
+  })
+  if (role) return true
+
+  const rosterLink = await prisma.teamPlayer.findFirst({
+    where: {
+      teamId,
+      status: "ACTIVE",
+      player: { deletedAt: null, OR: [{ parentId: userId }, { userId }] },
+    },
+    select: { id: true },
+  })
+  return !!rosterLink
+}

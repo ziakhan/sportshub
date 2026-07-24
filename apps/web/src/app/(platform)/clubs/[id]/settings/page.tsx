@@ -13,6 +13,7 @@ interface ClubData {
   name: string
   slug: string
   timezone: string
+  showRosterFillDefault: boolean
   branding: {
     primaryColor: string
   } | null
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const [slug, setSlug] = useState("")
   const [timezone, setTimezone] = useState("America/New_York")
   const [primaryColor, setPrimaryColor] = useState("#1a73e8")
+  const [showRosterFillDefault, setShowRosterFillDefault] = useState(false)
 
   useEffect(() => {
     async function loadClub() {
@@ -45,6 +47,7 @@ export default function SettingsPage() {
         setSlug(data.club.slug)
         setTimezone(data.club.timezone || "America/New_York")
         setPrimaryColor(data.club.branding?.primaryColor || "#1a73e8")
+        setShowRosterFillDefault(!!data.club.showRosterFillDefault)
       } catch {
         setError("Failed to load club settings")
       } finally {
@@ -64,7 +67,7 @@ export default function SettingsPage() {
       const res = await fetch(`/api/clubs/${clubId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, timezone, primaryColor }),
+        body: JSON.stringify({ name, slug, timezone, primaryColor, showRosterFillDefault }),
       })
 
       if (!res.ok) {
@@ -195,6 +198,25 @@ export default function SettingsPage() {
                 placeholder="#1a73e8"
               />
             </div>
+          </div>
+
+          <div className="border-ink-100 border-t pt-5">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showRosterFillDefault"
+                checked={showRosterFillDefault}
+                onChange={(e) => setShowRosterFillDefault(e.target.checked)}
+                className="border-ink-200 text-play-700 focus:ring-play-500/20 h-4 w-4 rounded"
+              />
+              <label htmlFor="showRosterFillDefault" className="text-ink-700 text-sm">
+                Show team roster fill publicly (default for all teams)
+              </label>
+            </div>
+            <p className="text-ink-500 mt-1 text-xs">
+              Shows &quot;X of Y spots filled&quot; on public team pages. Teams can override this
+              individually.
+            </p>
           </div>
 
           <div className="pt-2">

@@ -62,6 +62,9 @@ const patchSchema = z.object({
   zipCode: z.string().max(20).optional().nullable(),
   contactEmail: z.string().max(200).optional().nullable(),
   website: z.string().max(300).optional().nullable(),
+  // Roster commitment cap (owner 2026-07-24, QA-103): club-wide default for
+  // whether the public team page shows "X of Y spots filled".
+  showRosterFillDefault: z.boolean().optional(),
   // Branding fields
   logoUrl: z.string().optional().nullable(),
   bannerUrl: z.string().optional().nullable(),
@@ -85,6 +88,7 @@ const TENANT_KEYS = [
   "zipCode",
   "contactEmail",
   "website",
+  "showRosterFillDefault",
 ] as const
 const BRANDING_KEYS = [
   "logoUrl",

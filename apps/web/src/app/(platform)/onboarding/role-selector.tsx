@@ -144,19 +144,29 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
   )
 }
 
+// QA-106 ruling: operator roles (running clubs/leagues, officiating, training)
+// require an 18+ attestation at onboarding. Parent/Player/Staff are unchanged.
+const OPERATOR_ROLES = ["ClubOwner", "LeagueOwner", "Referee", "Trainer"]
+
 interface RoleSelectorProps {
   userName: string
 }
 
 export function RoleSelector({ userName }: RoleSelectorProps) {
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const isOperatorRole = !!selectedRole && OPERATOR_ROLES.includes(selectedRole)
 
   const handleSubmit = async () => {
     if (!selectedRole) {
       setError("Please select a role to continue.")
+      return
+    }
+    if (isOperatorRole && !adultAttested) {
+      setError("Please confirm you are 18 years of age or older to continue.")
       return
     }
 
@@ -167,7 +177,10 @@ export function RoleSelector({ userName }: RoleSelectorProps) {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roles: [selectedRole] }),
+        body: JSON.stringify({
+          roles: [selectedRole],
+          adultAttested: isOperatorRole ? adultAttested : undefined,
+        }),
       })
 
       const data = await res.json()
@@ -234,6 +247,23 @@ export function RoleSelector({ userName }: RoleSelectorProps) {
         })}
       </div>
 
+      {isOperatorRole && (
+        <label className="border-ink-200 bg-court-50/60 mt-6 flex items-start gap-2.5 rounded-xl border p-4 text-sm text-ink-700">
+          <input
+            type="checkbox"
+            checked={adultAttested}
+            onChange={(e) => setAdultAttested(e.target.checked)}
+            className="border-ink-300 mt-0.5 h-4 w-4 rounded"
+          />
+          <span>
+            I confirm I am 18 years of age or older
+            <span className="text-ink-500 mt-0.5 block text-xs">
+              Operator roles (running clubs, leagues, or officiating) are for adults.
+            </span>
+          </span>
+        </label>
+      )}
+
       {error && (
         <div className="border-hoop-200 text-hoop-700 mt-6 rounded-lg border bg-red-50 p-3 text-sm">
           {error}
@@ -242,7 +272,7 @@ export function RoleSelector({ userName }: RoleSelectorProps) {
 
       <button
         onClick={handleSubmit}
-        disabled={isSubmitting || !selectedRole}
+        disabled={isSubmitting || !selectedRole || (isOperatorRole && !adultAttested)}
         className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 mt-8 w-full rounded-xl px-6 py-4 text-lg font-semibold text-white transition disabled:cursor-not-allowed"
       >
         {isSubmitting ? "Setting up your account..." : "Continue"}

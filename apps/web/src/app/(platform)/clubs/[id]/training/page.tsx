@@ -65,8 +65,11 @@ export default function ClubTrainingPage() {
     }
   }
 
-  const remove = async (id: string, title: string) => {
-    if (!confirm(`Delete "${title}"?`)) return
+  const remove = async (id: string, title: string, registrationCount: number) => {
+    const confirmed = confirm(
+      `Delete "${title}"? This permanently removes the program and its ${registrationCount} registration${registrationCount === 1 ? "" : "s"}. Every registered family is notified. Unpaid fees are cancelled automatically. If families already PAID through the platform, you must process their refunds. If you collected money outside the platform (cash/e-transfer), refunding those families is your responsibility — the platform takes no part in offline payments. This cannot be undone.`
+    )
+    if (!confirmed) return
     setBusyId(id)
     setError(null)
     try {
@@ -165,7 +168,7 @@ export default function ClubTrainingPage() {
                 </Button>
                 {s._count.signups === 0 && (
                   <button
-                    onClick={() => remove(s.id, s.title)}
+                    onClick={() => remove(s.id, s.title, s._count.signups)}
                     disabled={busyId === s.id}
                     className="hover:text-hoop-700 text-sm text-red-500"
                   >

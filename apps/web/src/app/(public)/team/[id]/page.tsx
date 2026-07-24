@@ -7,7 +7,9 @@ import { prisma } from "@youthbasketballhub/db"
 import { getTeamPublicData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
+import { isTeamMember } from "@/lib/authz/team-scope"
 import { formatSlotSummary } from "@/lib/teams/practices"
+import { rosterState } from "@/lib/teams/roster-commitment"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader, SmartBack } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
@@ -50,21 +52,31 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
     ? ((await getUnreadChatCounts(viewerId, [team.id])).get(team.id) ?? 0)
     : 0
 
-  // Practice days show publicly once staff have announced the schedule
-  const practiceInfo = await (prisma as any).team.findUnique({
-    where: { id: team.id },
-    select: {
-      practiceScheduleAnnouncedAt: true,
-      practiceSlots: {
-        select: { dayOfWeek: true, startTime: true },
-        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
-      },
-    },
-  })
+  // Practices are club-members-only (QA-105): staff, managers, parents,
+  // players, or the club owner/manager — never the general public. No teaser
+  // for non-members; the section simply doesn't render.
+  const isMember = viewerId ? await isTeamMember(viewerId, team.tenantId, team.id) : false
+  const practiceInfo = isMember
+    ? await (prisma as any).team.findUnique({
+        where: { id: team.id },
+        select: {
+          practiceScheduleAnnouncedAt: true,
+          practiceSlots: {
+            select: { dayOfWeek: true, startTime: true },
+            orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+          },
+        },
+      })
+    : null
   const practiceSummary =
     practiceInfo?.practiceScheduleAnnouncedAt && practiceInfo.practiceSlots.length > 0
       ? formatSlotSummary(practiceInfo.practiceSlots)
       : null
+
+  // Roster commitment cap (owner 2026-07-24, QA-103): public "X of Y spots
+  // filled" line, gated by the team/club showFill preference.
+  const roster = await rosterState(prisma, team.id)
+  const showRosterFillChip = !!roster?.showFill && roster.cap != null
 
   const primaryColor = team.tenant?.branding?.primaryColor ?? "#4f46e5"
   const completed = games.filter((g: any) => g.status === "COMPLETED" || g.status === "LIVE")
@@ -134,6 +146,11 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
         {practiceSummary && (
           <span className="bg-court-50 text-court-700 ring-court-200 rounded-full px-4 py-1.5 text-xs font-semibold ring-1">
             Practices: {practiceSummary}
+          </span>
+        )}
+        {showRosterFillChip && (
+          <span className="bg-ink-50 text-ink-700 ring-ink-200 rounded-full px-4 py-1.5 text-xs font-semibold ring-1">
+            Roster: {roster!.committed} of {roster!.cap} spots filled
           </span>
         )}
         {seasonInfo && (

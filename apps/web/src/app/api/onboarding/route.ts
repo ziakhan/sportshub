@@ -12,7 +12,14 @@ export const dynamic = "force-dynamic"
 const onboardingSchema = z.object({
   roles: z.array(z.enum(onboardingRoleEnum)).min(1, "Select at least one role"),
   profileData: profileDataSchema.optional(),
+  adultAttested: z.boolean().optional(),
 })
+
+// QA-106 ruling: operator roles run programs other people's kids show up
+// to — they're for adults. ClubOwner/Trainer have no per-role profile form
+// (they skip straight to their create flow), so this travels as a top-level
+// flag rather than inside profileData's discriminated union.
+const OPERATOR_ROLES = ["ClubOwner", "LeagueOwner", "Referee", "Trainer"] as const
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +30,18 @@ export async function POST(req: Request) {
     const userId = session.user.id
 
     const body = await req.json()
-    const { roles, profileData } = onboardingSchema.parse(body)
+    const { roles, profileData, adultAttested } = onboardingSchema.parse(body)
+
+    const requiresAdult = roles.some((r) => (OPERATOR_ROLES as readonly string[]).includes(r))
+    if (requiresAdult && !adultAttested) {
+      return NextResponse.json(
+        {
+          error:
+            "Please confirm you are 18 years of age or older — operator roles (running clubs, leagues, or officiating) are for adults.",
+        },
+        { status: 400 }
+      )
+    }
 
     // Find user in database
     let user = await prisma.user.findUnique({
@@ -168,9 +186,13 @@ export async function POST(req: Request) {
 
     // Mark user as onboarded. Preserve the original timestamp so this endpoint
     // is safe to call again when an existing user adds a role from settings.
+    // Same preservation for the adult attestation, once given.
     await prisma.user.update({
       where: { id: user.id },
-      data: { onboardedAt: user.onboardedAt ?? new Date() },
+      data: {
+        onboardedAt: user.onboardedAt ?? new Date(),
+        ...(adultAttested ? { adultAttestedAt: user.adultAttestedAt ?? new Date() } : {}),
+      },
     })
 
     // Determine next step based on selected roles

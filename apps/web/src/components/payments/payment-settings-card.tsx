@@ -133,6 +133,11 @@ export function PaymentSettingsCard({
                   </label>
                 ))}
               </div>
+              <p className="mt-3 text-xs text-ink-500">
+                Offline collection is between you and the family — the platform records but
+                can&apos;t refund offline payments, and takes no responsibility for offline
+                disputes.
+              </p>
             </>
           ) : (
             <p className="mt-2 rounded-md bg-ink-50 p-3 text-sm text-ink-600">

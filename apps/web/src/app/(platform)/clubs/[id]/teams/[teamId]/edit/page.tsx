@@ -164,6 +164,12 @@ export default function EditTeamPage() {
 
   const [tryoutList, setTryoutList] = useState<TeamTryout[]>([])
 
+  // Roster commitment cap (owner 2026-07-24, QA-103) — kept outside the
+  // zod-validated form (like staff) so an empty cap input maps cleanly to
+  // "no cap" instead of fighting number coercion.
+  const [maxPlayers, setMaxPlayers] = useState("")
+  const [showRosterFill, setShowRosterFill] = useState<"inherit" | "show" | "hide">("inherit")
+
   const {
     register,
     handleSubmit,
@@ -189,6 +195,10 @@ export default function EditTeamPage() {
         })
         setExistingStaff(team.staff || [])
         setTryoutList(team.tryouts || [])
+        setMaxPlayers(team.maxPlayers != null ? String(team.maxPlayers) : "")
+        setShowRosterFill(
+          team.showRosterFill === true ? "show" : team.showRosterFill === false ? "hide" : "inherit"
+        )
       } catch {
         setError("Failed to load team")
       } finally {
@@ -344,6 +354,9 @@ export default function EditTeamPage() {
         ageGroup: data.ageGroup,
         season: data.season || null,
         description: data.description || null,
+        maxPlayers: maxPlayers.trim() === "" ? null : Number(maxPlayers),
+        showRosterFill:
+          showRosterFill === "show" ? true : showRosterFill === "hide" ? false : null,
       }
       if (data.gender) payload.gender = data.gender
       if (staffToAddPayload.length > 0) payload.staffToAdd = staffToAddPayload
@@ -486,6 +499,45 @@ export default function EditTeamPage() {
                 className={inputCls}
                 placeholder="Team description..."
               />
+            </div>
+
+            <div>
+              <label htmlFor="maxPlayers" className="text-ink-700 block text-sm font-medium">
+                Roster cap (committed players)
+              </label>
+              <input
+                type="number"
+                id="maxPlayers"
+                min={1}
+                step={1}
+                value={maxPlayers}
+                onChange={(e) => setMaxPlayers(e.target.value)}
+                className={inputCls}
+                placeholder="No cap"
+              />
+              <p className="text-ink-500 mt-1 text-xs">
+                Counts PAID/committed players only. You can always send more offers than spots.
+                Families are told a spot is theirs when payment is made.
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="showRosterFill" className="text-ink-700 block text-sm font-medium">
+                Show roster fill publicly
+              </label>
+              <select
+                id="showRosterFill"
+                value={showRosterFill}
+                onChange={(e) => setShowRosterFill(e.target.value as typeof showRosterFill)}
+                className={inputCls}
+              >
+                <option value="inherit">Inherit club default</option>
+                <option value="show">Show</option>
+                <option value="hide">Hide</option>
+              </select>
+              <p className="text-ink-500 mt-1 text-xs">
+                Shows &quot;X of Y spots filled&quot; on the public team page.
+              </p>
             </div>
           </div>
         </Card>

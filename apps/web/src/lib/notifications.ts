@@ -42,6 +42,7 @@ export type NotificationType =
   // Player invitations (G3)
   | "player_invite"
   | "family_invite"
+  | "team_full"
   | "player_invite_accepted"
   | "player_invite_declined"
   | "player_invite_cancelled"
@@ -60,6 +61,7 @@ export type NotificationType =
   | "signup_received"
   | "signup_cancelled"
   | "registration_confirmed" // family-side confirmation (tryout/camp/HL)
+  | "registration_cancelled" // club deleted the program → every registered family
   | "tryout_unpublished"
   // Game changes
   | "game_cancelled"

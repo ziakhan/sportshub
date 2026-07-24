@@ -7,6 +7,7 @@ import { AnimatedNumber, Badge, Button } from "@/components/ui"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
 import { PublishButton } from "./publish-button"
+import { DeleteButton } from "./delete-button"
 import { TryoutsFilter } from "./tryouts-filter"
 
 interface TryoutListItem {
@@ -245,6 +246,11 @@ export default async function ClubTryoutsPage({
                       {!tryout.isPast && (
                         <PublishButton tryoutId={tryout.id} isPublished={tryout.isPublished} />
                       )}
+                      <DeleteButton
+                        tryoutId={tryout.id}
+                        title={tryout.title}
+                        registrationCount={tryout.signupStats.total}
+                      />
                     </div>
                   </div>
                 </div>

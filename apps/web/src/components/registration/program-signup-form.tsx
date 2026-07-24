@@ -210,7 +210,8 @@ export function ProgramSignupForm({
                 <>
                   Total <strong>{formatCurrency(success.total, currency)}</strong> — the club
                   accepts {methodsText(payment.offlineMethods)}; pay them directly and they&apos;ll
-                  mark it received.
+                  mark it received. Offline payments are arranged directly with the organizer — the
+                  platform can&apos;t refund them.
                 </>
               ) : (
                 <>
@@ -387,7 +388,7 @@ export function ProgramSignupForm({
           {payment.online
             ? "Pay online after registering — no charge until you do."
             : payment.offlineMethods.length > 0
-              ? `This organizer accepts ${methodsText(payment.offlineMethods)} — pay them directly after registering.`
+              ? `This organizer accepts ${methodsText(payment.offlineMethods)} — pay them directly after registering. Offline payments are arranged directly with the organizer — the platform can't refund them.`
               : "The organizer will contact you about payment after registering."}
         </p>
       ) : null}

@@ -93,13 +93,32 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  return transporter.sendMail({
-    from: FROM,
-    to,
-    subject,
-    html,
-    text: text || html.replace(/<[^>]*>/g, ""),
-  })
+  // QA-403 (owner 2026-07-24): EVERY transactional send gets an EmailLog row
+  // — "did the email go out?" must be a lookup, not a mystery. Logging is
+  // best-effort and never fails or delays the send result.
+  try {
+    const result = await transporter.sendMail({
+      from: FROM,
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]*>/g, ""),
+    })
+    logEmail(to, subject, "SENT", null)
+    return result
+  } catch (error) {
+    logEmail(to, subject, "FAILED", error instanceof Error ? error.message : String(error))
+    throw error
+  }
+}
+
+function logEmail(to: string, subject: string, status: "SENT" | "FAILED", error: string | null) {
+  // Lazy import avoids a prisma dependency for edge-safe callers of siteUrl.
+  import("@youthbasketballhub/db")
+    .then(({ prisma }) =>
+      (prisma as any).emailLog.create({ data: { to, subject, status, error } })
+    )
+    .catch((e) => console.error("EmailLog write failed:", e))
 }
 
 export async function sendMagicLinkEmail({
