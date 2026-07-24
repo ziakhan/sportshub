@@ -45,7 +45,18 @@ describe("middleware", () => {
     expect(response.status).toBe(200)
   })
 
-  it("301s club subdomains to the canonical path URL (seo-strategy §6c)", async () => {
+  it("301s club subdomain ROOT to the canonical club URL (seo-strategy §6c)", async () => {
+    vi.mocked(getToken).mockResolvedValue({ sub: "user-1" } as any)
+
+    const response = await middleware(
+      createRequest("https://warriors.sportshubone.com/", "warriors.sportshubone.com")
+    )
+
+    expect(response.status).toBe(301)
+    expect(response.headers.get("location")).toBe("http://localhost:3000/club/warriors")
+  })
+
+  it("302s club subdomain DEEP PATHS to the same path on the apex (owner repro 2026-07-25)", async () => {
     vi.mocked(getToken).mockResolvedValue({ sub: "user-1" } as any)
 
     const response = await middleware(
@@ -55,8 +66,8 @@ describe("middleware", () => {
       )
     )
 
-    expect(response.status).toBe(301)
-    expect(response.headers.get("location")).toBe("http://localhost:3000/club/warriors")
+    expect(response.status).toBe(302)
+    expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard")
   })
 
   it("does not treat reserved subdomains as clubs", async () => {
