@@ -214,6 +214,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="team" options={{ href: null }} />
       <Tabs.Screen name="referee" options={{ href: null, title: "Refereeing" }} />
       <Tabs.Screen name="operator" options={{ href: null, title: "Operations" }} />
+      <Tabs.Screen name="polls" options={{ href: null, title: "Polls" }} />
     </Tabs>
   )
 }

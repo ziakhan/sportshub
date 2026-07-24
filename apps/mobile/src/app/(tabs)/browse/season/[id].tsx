@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
-import { Card, EmptyState, Loading, SectionHeader } from "@/components/ui"
+import { Card, EmptyState, Loading, SectionHeader, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { palette, ui } from "@/lib/theme"
 
@@ -48,16 +49,31 @@ interface SeasonDetail {
 }
 
 function GameLine({ game }: { game: SeasonGame }) {
+  const live = game.status === "LIVE"
   const done = game.status === "COMPLETED"
   return (
-    <View style={styles.gameLine}>
+    <Pressable
+      style={({ pressed }) => [styles.gameLine, pressed && { backgroundColor: ui.surfaceSunken }]}
+      onPress={() => router.push(`/browse/game/${game.id}`)}
+    >
       <View style={{ flex: 1 }}>
+        <View style={styles.gameTop}>
+          <TonePill
+            tone={live ? "danger" : done ? "neutral" : "info"}
+            label={live ? "Live" : done ? "Final" : "Upcoming"}
+          />
+          {game.venue ? (
+            <Text style={styles.gameVenue} numberOfLines={1}>
+              {game.venue.name}
+            </Text>
+          ) : null}
+        </View>
         <Text style={styles.gameTeams} numberOfLines={1}>
           {game.homeTeam.name} vs {game.awayTeam.name}
         </Text>
         <Text style={styles.gameMeta}>
-          {done
-            ? `Final ${game.homeScore ?? 0}–${game.awayScore ?? 0}`
+          {done || live
+            ? `${game.homeScore ?? 0}–${game.awayScore ?? 0}`
             : new Date(game.scheduledAt).toLocaleString(undefined, {
                 weekday: "short",
                 month: "short",
@@ -65,10 +81,10 @@ function GameLine({ game }: { game: SeasonGame }) {
                 hour: "numeric",
                 minute: "2-digit",
               })}
-          {game.venue ? ` · ${game.venue.name}` : ""}
         </Text>
       </View>
-    </View>
+      <Ionicons name="chevron-forward" size={15} color={ui.textFaint} />
+    </Pressable>
   )
 }
 
@@ -125,7 +141,11 @@ export default function SeasonScreen() {
                 <Text style={[styles.standingsNum, styles.headText]}>PA</Text>
               </View>
               {division.rows.map((row, idx) => (
-                <View key={row.teamId} style={styles.standingsRow}>
+                <Pressable
+                  key={row.teamId}
+                  style={({ pressed }) => [styles.standingsRow, pressed && { backgroundColor: ui.surfaceSunken }]}
+                  onPress={() => router.push(`/team/${row.teamId}`)}
+                >
                   <Text style={[styles.standingsRank, idx === 0 && styles.leader]}>{idx + 1}</Text>
                   <Text style={[styles.standingsTeam, idx === 0 && styles.leader]} numberOfLines={1}>
                     {row.name}
@@ -134,7 +154,7 @@ export default function SeasonScreen() {
                   <Text style={styles.standingsNum}>{row.losses}</Text>
                   <Text style={styles.standingsNum}>{row.pointsFor}</Text>
                   <Text style={styles.standingsNum}>{row.pointsAgainst}</Text>
-                </View>
+                </Pressable>
               ))}
             </Card>
           </View>
@@ -195,7 +215,17 @@ const styles = StyleSheet.create({
   standingsTeam: { flex: 1, fontSize: 13, color: ui.text, fontWeight: "600" },
   standingsNum: { width: 32, fontSize: 13, color: ui.textMuted, textAlign: "right" },
   leader: { color: palette.gold[600] },
-  gameLine: { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 8 },
-  gameTeams: { fontSize: 13, fontWeight: "600", color: ui.text },
-  gameMeta: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
+  gameLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    gap: 8,
+    borderRadius: ui.radius.sm,
+    marginHorizontal: -6,
+    paddingHorizontal: 6,
+  },
+  gameTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 3 },
+  gameVenue: { flex: 1, fontSize: 11.5, color: ui.textFaint, textAlign: "right" },
+  gameTeams: { fontSize: 13.5, fontWeight: "700", color: ui.text },
+  gameMeta: { fontSize: 13, color: ui.textMuted, marginTop: 2, fontWeight: "700", fontVariant: ["tabular-nums"] },
 })

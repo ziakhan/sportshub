@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
 import {
   Avatar,
@@ -123,7 +124,10 @@ export default function TeamScreen() {
           }
           const noAnswer = Math.max(0, roster.length - going - out - maybe)
           return (
-            <Card key={`${item.kind}:${item.id}`}>
+            <Card
+              key={`${item.kind}:${item.id}`}
+              onPress={item.kind === "game" ? () => router.push(`/browse/game/${item.id}`) : undefined}
+            >
               <View style={styles.top}>
                 <Text style={styles.when}>
                   {new Date(item.at).toLocaleString(undefined, {
@@ -158,7 +162,16 @@ export default function TeamScreen() {
             <SectionHeader eyebrow="Team votes" title="Polls" accent="gold" />
             {polls.map((poll) => (
               <Card key={poll.id}>
-                {poll.title ? <Text style={styles.itemTitle}>{poll.title}</Text> : null}
+                {poll.title ? (
+                  <Pressable
+                    style={styles.pollTitleRow}
+                    onPress={() => router.push(`/polls/${poll.id}`)}
+                    hitSlop={4}
+                  >
+                    <Text style={styles.itemTitle}>{poll.title}</Text>
+                    <Ionicons name="chevron-forward" size={15} color={ui.textFaint} />
+                  </Pressable>
+                ) : null}
                 {poll.questions.map((q) => (
                   <PollBubble
                     key={q.id}
@@ -211,7 +224,8 @@ const styles = StyleSheet.create({
   teamName: { fontSize: 18, fontWeight: "800", color: ui.text },
   top: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   when: { fontSize: 12, fontWeight: "800", color: palette.play[700] },
-  itemTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginTop: 2 },
+  itemTitle: { fontSize: 15, fontWeight: "700", color: ui.text, marginTop: 2, flex: 1 },
+  pollTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
   meta: { fontSize: 12, color: ui.textMuted, marginTop: 1 },
   rollup: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
   footnote: { fontSize: 12, color: ui.textFaint, textAlign: "center", marginTop: 10 },

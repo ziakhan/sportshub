@@ -147,6 +147,7 @@ export default function ClubProfileScreen() {
                   left={<Monogram name={t.name} size={36} />}
                   text={t.name}
                   sub={[t.ageGroup, t.gender].filter(Boolean).join(" · ")}
+                  onPress={() => router.push(`/team/${t.id}`)}
                 />
               ))}
             </Card>

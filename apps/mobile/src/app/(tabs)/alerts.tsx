@@ -26,6 +26,8 @@ interface NotificationItem {
   title: string
   message: string
   link: string | null
+  referenceId: string | null
+  referenceType: string | null
   isRead: boolean
   createdAt: string
 }
@@ -74,6 +76,16 @@ export default function AlertsScreen() {
 
   /** Follow the link natively — one shared route map for bell + push taps. */
   function follow(item: NotificationItem) {
+    // Three-tier polls ruling (owner 2026-07-24): a poll notification's link
+    // is "/polls" (club/league) or "/teams/<id>/polls" (team) — neither
+    // carries the poll id, so route by referenceType instead. With a
+    // referenceId in hand, jump straight to that poll's detail/vote screen
+    // rather than stopping at the list.
+    if (item.referenceType === "Poll" || /^\/(teams\/[\w-]+\/)?polls\b/.test(item.link ?? "")) {
+      if (item.referenceId) router.push(`/polls/${item.referenceId}` as any)
+      else router.push("/polls" as any)
+      return
+    }
     const route = nativeRouteForLink(item.link)
     if (route) router.push(route as any)
   }

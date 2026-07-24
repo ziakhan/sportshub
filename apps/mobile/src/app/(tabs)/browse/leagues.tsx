@@ -43,7 +43,14 @@ export default function LeaguesScreen() {
             />
           }
           renderItem={({ item }) => (
-            <Card style={styles.cardSpacing}>
+            <Card
+              style={styles.cardSpacing}
+              onPress={
+                item.seasons[0]
+                  ? () => router.push(`/browse/season/${item.seasons[0].id}`)
+                  : undefined
+              }
+            >
               <View style={styles.leagueHead}>
                 <Monogram name={item.name} size={40} />
                 <Text style={[styles.leagueName, { flex: 1 }]} numberOfLines={2}>

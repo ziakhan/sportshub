@@ -9,9 +9,10 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
+import { Monogram, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { useRealtime } from "@/lib/realtime"
-import { palette, ui } from "@/lib/theme"
+import { fonts, tones, ui } from "@/lib/theme"
 
 /**
  * Home / Scores — live games, this week's finals, what's coming up.
@@ -58,32 +59,42 @@ function timeLabel(iso: string): string {
 function GameCard({ game }: { game: ScoreGame }) {
   const isLive = game.status === "LIVE"
   const isFinal = game.status === "COMPLETED"
+  const decided = isFinal
+  const homeWon = decided && (game.homeScore ?? 0) > (game.awayScore ?? 0)
+  const awayWon = decided && (game.awayScore ?? 0) > (game.homeScore ?? 0)
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}
       onPress={() => router.push(`/browse/game/${game.id}`)}
     >
       <View style={styles.cardHeader}>
-        {isLive ? (
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
-        ) : (
-          <Text style={styles.statusText}>{isFinal ? "FINAL" : timeLabel(game.scheduledAt)}</Text>
-        )}
-        {game.league ? <Text style={styles.leagueText}>{game.league}</Text> : null}
+        <TonePill
+          tone={isLive ? "danger" : isFinal ? "neutral" : "info"}
+          label={isLive ? "Live" : isFinal ? "Final" : timeLabel(game.scheduledAt)}
+        />
+        {game.league ? (
+          <Text style={styles.leagueText} numberOfLines={1}>
+            {game.league}
+          </Text>
+        ) : null}
       </View>
       {[
-        { team: game.homeTeam, score: game.homeScore },
-        { team: game.awayTeam, score: game.awayScore },
-      ].map(({ team, score }, i) => (
+        { team: game.homeTeam, score: game.homeScore, won: homeWon, lost: decided && !homeWon },
+        { team: game.awayTeam, score: game.awayScore, won: awayWon, lost: decided && !awayWon },
+      ].map(({ team, score, won, lost }, i) => (
         <View key={i} style={styles.teamRow}>
-          <View style={[styles.teamDot, { backgroundColor: team.color ?? ui.border }]} />
-          <Text style={styles.teamName} numberOfLines={1}>
+          <Monogram name={team.name} color={team.color} size={28} />
+          <Text
+            style={[styles.teamName, won && styles.teamNameWon, lost && styles.teamNameLost]}
+            numberOfLines={1}
+          >
             {team.name}
           </Text>
-          {isLive || isFinal ? <Text style={styles.score}>{score ?? 0}</Text> : null}
+          {isLive || isFinal ? (
+            <Text style={[styles.score, won && styles.scoreWon, lost && styles.scoreLost]}>
+              {score ?? 0}
+            </Text>
+          ) : null}
         </View>
       ))}
       {game.venue ? <Text style={styles.venue}>{game.venue}</Text> : null}
@@ -91,11 +102,22 @@ function GameCard({ game }: { game: ScoreGame }) {
   )
 }
 
-function Section({ title, games }: { title: string; games: ScoreGame[] }) {
+function Section({
+  title,
+  games,
+  accent,
+}: {
+  title: string
+  games: ScoreGame[]
+  accent: "danger" | "neutral" | "info"
+}) {
   if (games.length === 0) return null
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionBar}>
+        <View style={[styles.sectionDot, { backgroundColor: tones[accent].fg }]} />
+        <Text style={[styles.sectionTitle, { color: tones[accent].fg }]}>{title}</Text>
+      </View>
       {games.map((g) => (
         <GameCard key={g.id} game={g} />
       ))}
@@ -154,9 +176,9 @@ export default function ScoresScreen() {
         ) : null}
         {board ? (
           <>
-            <Section title="Live now" games={board.live} />
-            <Section title="This week’s finals" games={board.finals} />
-            <Section title="Coming up" games={board.upcoming} />
+            <Section title="Live now" games={board.live} accent="danger" />
+            <Section title="This week’s finals" games={board.finals} accent="neutral" />
+            <Section title="Coming up" games={board.upcoming} accent="info" />
             {board.live.length + board.finals.length + board.upcoming.length === 0 ? (
               <Text style={styles.empty}>No games this week.</Text>
             ) : null}
@@ -172,13 +194,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 16, gap: 8 },
   section: { marginBottom: 16 },
+  sectionBar: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
+  sectionDot: { width: 7, height: 7, borderRadius: 3.5 },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "700",
-    color: ui.textMuted,
+    fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 1,
-    marginBottom: 8,
   },
   card: {
     borderWidth: 1,
@@ -187,18 +209,24 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     backgroundColor: ui.surface,
-    gap: 6,
+    gap: 8,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  liveBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: ui.live },
-  liveText: { color: palette.court[700], fontWeight: "800", fontSize: 13 },
-  statusText: { color: ui.textMuted, fontSize: 13, fontWeight: "600" },
-  leagueText: { color: ui.textMuted, fontSize: 13 },
-  teamRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  teamDot: { width: 10, height: 10, borderRadius: 5 },
-  teamName: { flex: 1, fontSize: 16, fontWeight: "700", color: ui.text },
-  score: { fontSize: 22, fontWeight: "900", color: ui.text, minWidth: 40, textAlign: "right", fontVariant: ["tabular-nums"] },
-  venue: { fontSize: 13, color: ui.textMuted },
+  leagueText: { flex: 1, color: ui.textMuted, fontSize: 12.5, fontWeight: "600", textAlign: "right", marginLeft: 8 },
+  teamRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  teamName: { flex: 1, fontSize: 15.5, fontWeight: "600", color: ui.text },
+  teamNameWon: { fontWeight: "800", color: ui.text },
+  teamNameLost: { color: ui.textMuted },
+  score: {
+    fontSize: 24,
+    fontFamily: fonts.condensed,
+    color: ui.textMuted,
+    minWidth: 36,
+    textAlign: "right",
+    fontVariant: ["tabular-nums"],
+  },
+  scoreWon: { color: ui.text },
+  scoreLost: { color: ui.textFaint },
+  venue: { fontSize: 12.5, color: ui.textFaint, marginTop: 2 },
   empty: { textAlign: "center", color: ui.textMuted, marginTop: 48, fontSize: 15 },
 })

@@ -187,7 +187,11 @@ export default function HomeScreen() {
                       <Pressable
                         key={`${e.item.kind}:${e.item.id}`}
                         style={({ pressed }) => [styles.weekRow, pressed && { backgroundColor: ui.surfaceSunken }]}
-                        onPress={() => router.push("/calendar")}
+                        onPress={() =>
+                          e.item.kind === "game"
+                            ? router.push(`/browse/game/${e.item.id}`)
+                            : router.push("/calendar")
+                        }
                       >
                         <Text style={styles.weekTime}>{fmtTime(e.item.at)}</Text>
                         <View style={{ flex: 1, minWidth: 0 }}>

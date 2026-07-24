@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { EventCard } from "@/components/event-card"
 import {
-  Avatar,
   Card,
   EmptyState,
   ListRow,
@@ -140,7 +139,7 @@ export default function KidDetailScreen() {
       >
         <Card>
           <View style={styles.profileRow}>
-            <Avatar name={`${kid.firstName} ${kid.lastName}`} size={56} />
+            <Monogram name={`${kid.firstName} ${kid.lastName}`} size={56} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>
                 {kid.firstName} {kid.lastName}

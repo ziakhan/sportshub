@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { FlatList, StyleSheet, Text, View } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
-import { Avatar, Card, EmptyState, Loading } from "@/components/ui"
+import { Card, EmptyState, Loading, Monogram } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { ui } from "@/lib/theme"
 
@@ -60,7 +60,7 @@ export default function KidsScreen() {
           renderItem={({ item }) => (
             <Card style={styles.cardSpacing} onPress={() => router.push(`/kids/${item.id}`)}>
               <View style={styles.row}>
-                <Avatar name={`${item.firstName} ${item.lastName}`} size={40} />
+                <Monogram name={`${item.firstName} ${item.lastName}`} size={40} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>
                     {item.firstName} {item.lastName}
