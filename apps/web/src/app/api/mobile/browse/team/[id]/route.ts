@@ -157,13 +157,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               : "Staff",
     })),
     playerAverages,
+    // posts already carry a resolved coverUrl (one cover per game, everywhere
+    // — see resolveCoverUrl in queries/content, wired through getTeamPublicData).
     news: posts.map((p: any) => ({
       id: p.id,
       title: p.title,
       slug: p.slug,
       publishedAt: p.publishedAt,
       excerpt: p.body.replace(/\s+/g, " ").slice(0, 140),
-      coverUrl: p.media?.[0]?.url ?? p.media?.[0]?.posterUrl ?? null,
+      coverUrl: p.coverUrl,
       isRecap: p.kind === "RECAP_AI",
     })),
     standings: standingsSnippet,

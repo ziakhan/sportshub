@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { getPublicSeason } from "@/lib/queries/season"
 import { getSeasonStandings } from "@/lib/queries/standings"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
+import { resolveCoverUrl } from "@/lib/queries/content"
 import { socialLinks } from "@/lib/club-page/blocks"
 import { publicPlayerName } from "@/lib/privacy/names"
 
@@ -20,6 +21,12 @@ export const dynamic = "force-dynamic"
  * currency/gamesGuaranteed/playoffFormat`, `teams` (approved roster grouped
  * by division), `live` games, and `leaders` (scoring leaders). Existing
  * field names/shapes are unchanged.
+ *
+ * 2026-07-24 (news card sweep): additive `news` — the same league-tagged
+ * posts the web /league/[id] page's "League news" card grid shows, missing
+ * from this route before (the native season screen had no news section at
+ * all). coverUrl is resolved through resolveCoverUrl (one cover per game,
+ * everywhere) — never the raw SVG data-URI a recap post's own media stores.
  */
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -63,6 +70,32 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     ])
 
     const approvedTeams = (season.teamSubmissions ?? []).filter((t: any) => t.status === "APPROVED")
+
+    const leagueId = season.league?.id ?? null
+    const rawPosts = leagueId
+      ? await (prisma as any).post.findMany({
+          where: { status: "PUBLISHED", tags: { some: { leagueId } } },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            publishedAt: true,
+            kind: true,
+            media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
+            tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
+          },
+          orderBy: { publishedAt: "desc" },
+          take: 4,
+        })
+      : []
+    const news = rawPosts.map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      publishedAt: p.publishedAt,
+      coverUrl: resolveCoverUrl(p.tags, p.media),
+      isRecap: p.kind === "RECAP_AI",
+    }))
 
     return NextResponse.json({
       season: {
@@ -120,6 +153,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       upcoming,
       recent,
       live,
+      news,
     })
   } catch (error) {
     console.error("Mobile season error:", error)

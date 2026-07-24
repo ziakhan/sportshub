@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { formatTrainingSchedule } from "@/lib/training"
+import { resolveCoverUrl } from "@/lib/queries/content"
 
 /**
  * Public club profile — ONE source for the web /club/[slug] page's data
@@ -219,15 +220,27 @@ async function getGames(teamIds: string[]) {
 async function getClubNews(tenantId: string, teamIds: string[]) {
   const orTags: any[] = [{ tenantId }]
   if (teamIds.length) orTags.push({ teamId: { in: teamIds } })
-  return (prisma as any).post.findMany({
+  const posts = await (prisma as any).post.findMany({
     where: { status: "PUBLISHED", tags: { some: { OR: orTags } } },
     select: {
       id: true, title: true, slug: true, publishedAt: true,
       media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
+      // Separate, unfiltered-by-the-match tags lookup — finds THIS post's own
+      // game tag (if any) so resolveCoverUrl can swap in the one-source PNG
+      // cover instead of the SVG data-URI stashed in media (news card sweep
+      // 2026-07-24, same pattern as getPublicFeed).
+      tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
     },
     orderBy: { publishedAt: "desc" },
     take: 4,
   })
+  return posts.map((p: any) => ({
+    id: p.id,
+    title: p.title,
+    slug: p.slug,
+    publishedAt: p.publishedAt,
+    coverUrl: resolveCoverUrl(p.tags, p.media),
+  }))
 }
 
 export async function getClubProfile(

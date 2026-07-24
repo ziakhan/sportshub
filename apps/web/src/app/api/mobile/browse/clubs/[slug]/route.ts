@@ -162,12 +162,14 @@ export async function GET(_request: NextRequest, { params }: { params: { slug: s
         homeTeam: { name: g.homeTeam?.name ?? "" },
         awayTeam: { name: g.awayTeam?.name ?? "" },
       })),
+      // getClubProfile's news items already carry a resolved coverUrl (one
+      // cover per game, everywhere — see resolveCoverUrl in queries/content).
       news: news.map((p: any) => ({
         id: p.id,
         title: p.title,
         slug: p.slug,
         publishedAt: p.publishedAt,
-        coverUrl: p.media?.[0]?.posterUrl || (p.media?.[0]?.type === "IMAGE" ? p.media?.[0]?.url : null) || null,
+        coverUrl: p.coverUrl,
       })),
     })
   } catch (error) {

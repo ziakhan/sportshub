@@ -326,12 +326,8 @@ export default function ClubProfileScreen() {
             <>
               <SectionHeader eyebrow="Highlights" title="News" color={brand.ink} />
               {news.slice(0, 3).map((n) => (
-                <Pressable
-                  key={n.id}
-                  style={({ pressed }) => [styles.newsCard, pressed && { opacity: 0.85 }]}
-                  onPress={() => router.push(`/browse/article/${n.slug}`)}
-                >
-                  <CoverImage url={n.coverUrl} aspectRatio={16 / 8} style={styles.newsCover} icon="newspaper-outline" />
+                <Card key={n.id} style={styles.newsCard} onPress={() => router.push(`/browse/article/${n.slug}`)}>
+                  <CoverImage url={n.coverUrl} icon="newspaper-outline" />
                   <View style={styles.newsBody}>
                     <Text style={styles.newsTitle} numberOfLines={2}>
                       {n.title}
@@ -342,7 +338,7 @@ export default function ClubProfileScreen() {
                       </Text>
                     ) : null}
                   </View>
-                </Pressable>
+                </Card>
               ))}
             </>
           ) : null}
@@ -471,17 +467,10 @@ const styles = StyleSheet.create({
   reviewTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   reviewMeta: { fontSize: 11, color: ui.textFaint },
   reviewTitle: { fontSize: 14, fontWeight: "700", color: ui.text, marginTop: 2 },
-  newsCard: {
-    flexDirection: "row",
-    backgroundColor: ui.surface,
-    borderRadius: ui.radius.lg,
-    borderWidth: 1,
-    borderColor: ui.border,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  newsCover: { width: 96, height: 84 },
-  newsBody: { flex: 1, padding: 10, justifyContent: "center", gap: 4 },
-  newsTitle: { fontSize: 14, fontWeight: "700", color: ui.text, lineHeight: 18 },
+  // Full-bleed 16:9 cover cards (news law: news is ALWAYS a card, never a
+  // compact row) — cover bleeds to the card edge, padding lives on the body.
+  newsCard: { marginBottom: 10, padding: 0, overflow: "hidden" },
+  newsBody: { padding: 12, gap: 4 },
+  newsTitle: { fontSize: 15, fontWeight: "700", color: ui.text, lineHeight: 20 },
   newsDate: { fontSize: 11, color: ui.textFaint },
 })

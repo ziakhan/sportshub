@@ -5,6 +5,7 @@ import Ionicons from "@expo/vector-icons/Ionicons"
 import { SubHeader } from "@/components/top-bar"
 import {
   Card,
+  CoverImage,
   EmptyState,
   GameRow,
   HeroBand,
@@ -30,6 +31,15 @@ import { ui } from "@/lib/theme"
  */
 
 type SeasonGame = GameRowData
+
+interface NewsItem {
+  id: string
+  title: string
+  slug: string
+  publishedAt: string | null
+  coverUrl: string | null
+  isRecap: boolean
+}
 
 interface StandingsRow {
   teamId: string
@@ -84,6 +94,7 @@ interface SeasonDetail {
   upcoming: SeasonGame[]
   recent: SeasonGame[]
   live: SeasonGame[]
+  news: NewsItem[]
 }
 
 function pctLabel(pct: number): string {
@@ -132,7 +143,7 @@ export default function SeasonScreen() {
     )
   }
 
-  const { season, teams, standings, leaders, upcoming, recent, live } = data
+  const { season, teams, standings, leaders, upcoming, recent, live, news } = data
   const league = season.league
   const brand = brandTokens(league?.primaryColor)
   const isOpen = season.status === "REGISTRATION"
@@ -272,6 +283,30 @@ export default function SeasonScreen() {
                     </Card>
                   </View>
                 ))}
+            </>
+          ) : null}
+
+          {news.length > 0 ? (
+            <>
+              <SectionHeader eyebrow="Highlights" title="League news" color={brand.ink} />
+              {news.slice(0, 3).map((n) => (
+                <Card key={n.id} style={styles.newsCard} onPress={() => router.push(`/browse/article/${n.slug}`)}>
+                  <CoverImage url={n.coverUrl} icon="newspaper-outline" />
+                  <View style={styles.newsBody}>
+                    <View style={styles.newsMetaRow}>
+                      {n.isRecap ? <TonePill tone="gold" label="Game recap" /> : null}
+                      {n.publishedAt ? (
+                        <Text style={styles.newsDate}>
+                          {new Date(n.publishedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Text style={styles.newsTitle} numberOfLines={2}>
+                      {n.title}
+                    </Text>
+                  </View>
+                </Card>
+              ))}
             </>
           ) : null}
 
@@ -417,6 +452,13 @@ const styles = StyleSheet.create({
   standTeam: { flex: 1, fontSize: 13, color: ui.text, fontWeight: "600" },
   standNum: { width: 34, fontSize: 13, color: ui.textMuted, textAlign: "right" },
   standStrk: { width: 40, fontSize: 12, color: ui.textMuted, textAlign: "right", fontWeight: "700" },
+  // Full-bleed 16:9 cover cards (news law: news is ALWAYS a card) — cover
+  // bleeds to the card edge, padding lives on the body.
+  newsCard: { marginBottom: 10, padding: 0, overflow: "hidden" },
+  newsBody: { padding: 12, gap: 4 },
+  newsMetaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  newsTitle: { fontSize: 15, fontWeight: "700", color: ui.text, lineHeight: 20 },
+  newsDate: { fontSize: 11, color: ui.textFaint },
   teamRow: {
     flexDirection: "row",
     alignItems: "center",

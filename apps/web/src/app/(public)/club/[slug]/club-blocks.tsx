@@ -543,6 +543,10 @@ function NewsBlock({ d }: { d: ClubPageData }) {
 }
 
 function newsImage(post: any): string | null {
+  // getClubProfile resolves this per-post (one cover per game, everywhere) —
+  // fall back to the raw media shape only for callers that never went
+  // through that query.
+  if ("coverUrl" in post) return post.coverUrl
   const m = post.media?.[0]
   return m?.posterUrl || (m?.type === "IMAGE" ? m?.url : null)
 }
