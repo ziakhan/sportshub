@@ -14,10 +14,26 @@ import { apiBaseUrl } from "./api"
  * blip must not brick the app.
  */
 
+/**
+ * Binary version gate (owner 2026-07-25, VersionGate component): store BUILD
+ * numbers per platform, distinct from `minVersion` above. Zero fields mean
+ * the gate is server-disabled — see route doc-comment.
+ */
+export interface AppVersionConfig {
+  iosMinBuild: number
+  iosLatestBuild: number
+  androidMinBuild: number
+  androidLatestBuild: number
+  iosUpdateUrl: string
+  androidUpdateUrl: string
+  message: string
+}
+
 export interface MobileConfig {
   minVersion: string
   stripePublishableKey: string | null
   palette?: ThemePalette | null
+  appVersion?: AppVersionConfig
 }
 
 export function appVersion(): string {

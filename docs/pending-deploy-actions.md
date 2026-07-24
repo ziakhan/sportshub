@@ -853,3 +853,12 @@ new overdue nagging ships dark until scheduled (see #36 one-liner).
 - **Wave 2 (family accounts + handles + domains + SmartBack)**: deploy = normal box push; deploy.sh's prisma db push flags the new UNIQUE on User.handle as "data loss" — it is safe (new null column) but if deploy.sh fatals, run on box: `prisma db push --accept-data-loss` as sportshub with web.env, then re-run deploy.sh.
 - **AFTER wave-2 deploy, run ONCE on box**: `npx tsx scripts/backfill-user-handles.ts` (sportshub user, web.env sourced) — assigns default handles to existing users. Idempotent.
 - Crons: payment-reminders now also nags club-owed obligations when the owner enables the payment crons (#36 unchanged).
+
+## #40 — 2026-07-25: NATIVE BINARY VERSION GATE (shipped inert; owner-operated)
+Server-driven "update available / update required" for store builds. Set on box /etc/sportshub/web.env when needed (all optional; unset = gate off):
+- `MOBILE_IOS_MIN_BUILD` — builds BELOW this get the blocking "Update required" screen
+- `MOBILE_IOS_LATEST_BUILD` — builds below this get a dismissible "new version available" pill
+- `MOBILE_ANDROID_MIN_BUILD` / `MOBILE_ANDROID_LATEST_BUILD` — same for Android (NOTE: Android reads build-time versionCode, a known caveat until expo-application ships in a future binary)
+- `MOBILE_IOS_UPDATE_URL` (defaults to the TestFlight invite) / `MOBILE_ANDROID_UPDATE_URL`
+- `MOBILE_UPDATE_MESSAGE` — optional custom copy on the blocking screen
+Rebuild NOT needed after env change (route reads env at request time) — but the box service must restart to pick up web.env: `sudo systemctl restart sportshub-web`.
