@@ -137,7 +137,7 @@ Owner: auto-generating highlights is tricky — v1 is MANUAL with smart UI. Spec
 Problem: Club A is on-platform with rosters; opponent Club B is not. How does A score Saturday's game?
 
 **Answer: unclaimed opponent teams ("ghost teams") + claim-later merge — one club alone generates full game content.**
-1. Club A creates a lightweight opponent in seconds: name + optional color ("Scarborough Blues U12"). No roster, no account, flagged UNCLAIMED (same doctrine as the 188 imported UNCLAIMED Ontario clubs).
+1. **Search-first association (owner 2026-07-25):** creating an opponent STARTS with a club-directory search (including the 188 imported UNCLAIMED clubs). Pick the unclaimed club -> the ghost team is created UNDER that club (traceability + one-claim-gets-everything). Only if the club truly isn't in the directory does Club A create a minimal unclaimed club + team in one step.
 2. Scoring modes: FULL stats for A's own roster; opponent side defaults to TEAM TOTALS ONLY (score per quarter — one scorekeeper can run this alone, the GameChanger model). Optional quick guest roster (jersey # + first name) if they want opponent play-by-play.
 3. Everything downstream just works with ONE club signed up: score cards, POTG (A's players), stat lines, milestones, digests, predictions — the whole §12 content engine fires. This supersedes "exhibition between two signed clubs" as the cold-start unlock: ANY club alone = game content.
 4. Games vs ghosts are labeled "Exhibition · unverified opponent" — never pollute standings; single-scorekeeper truth stands as recorded.
@@ -145,3 +145,14 @@ Problem: Club A is on-platform with rosters; opponent Club B is not. How does A 
 6. Anti-abuse: rate-sane creation limits, claim disputes via existing club-claim review, ghost teams excluded from directories' main listings (searchable, labeled).
 
 Build shape (when approved): OpponentTeam-as-Team with tenantId null/ownerTenantId + claimedAt; scoring console "quick opponent" path; claim/merge admin flow. Effort: moderate — reuses claiming, scoring, cards.
+
+## 16. BUILD ORDER — social component (proposed 2026-07-25, owner to confirm)
+
+- **S0 Foundation (start immediately, small):** FeedEvent instrumentation web+native (recsys P0 — every week unlogged is signal lost) + auto-feed completeness (ALL org content feeds once at publish) + feed ranking CLASSES incl. the daily scores DIGEST card.
+- **S1 Cold-start engine:** ghost opponents w/ search-first club association (§15) + club exhibition scoring path + the §12 system-card generators (milestones, previews, standings-movement, weekly AI recaps). Outcome: one club alone lights up the feed.
+- **S2 Gamification core:** points economy + prediction cards + POTG voting + quizzes on poll infra + statuses/badges + leaderboards (handles-only for minors) + earned-Plus-for-a-month. Outcome: the daily habit loop.
+- **S3 Recsys v1:** hourly affinity job + heuristic ranking + query-time recent-signal boost (needs S0 data volume).
+- **S4 Monetization switch-on:** free-month trial mechanics + Plus/Premium gating via existing hasFeature() + points-taste unlocks + watermarking. PARALLEL BUSINESS TRACK from today: aggregator sales calls (VoPay/Zum Rails/Payper) -> e-transfer rail integration when picked.
+- **S5 Video (Premium anchor):** mixtape editor v1 (§14: upload/trim/merge/transitions/licensed music/server render) -> later event-time auto-clips; streaming per live-streaming-plan when ready.
+- **S6 Advertising:** local club-sold sponsor cards -> self-serve advertiser role once DAU proves audience.
+- **GATES before any public launch:** STRICT_SCREEN=true + ANTHROPIC_API_KEY on box (runbook #38) + ToS review + aggregator compliance/legal check.
