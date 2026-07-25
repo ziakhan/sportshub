@@ -156,3 +156,6 @@ Build shape (when approved): OpponentTeam-as-Team with tenantId null/ownerTenant
 - **S5 Video (Premium anchor):** mixtape editor v1 (§14: upload/trim/merge/transitions/licensed music/server render) -> later event-time auto-clips; streaming per live-streaming-plan when ready.
 - **S6 Advertising:** local club-sold sponsor cards -> self-serve advertiser role once DAU proves audience.
 - **GATES before any public launch:** STRICT_SCREEN=true + ANTHROPIC_API_KEY on box (runbook #38) + ToS review + aggregator compliance/legal check.
+
+### §12 addendum — expanded system-content inventory (2026-07-25)
+Added on owner request beyond the original list: comeback/upset cards, double-double & first-career cards, head-to-head history cards, clutch-finish cards, undefeated/perfect-week team cards, roster-milestone (100th club game), season countdown/tip-off cards, registration-opened cards, prediction-results ("you called it") cards, leaderboard-movement cards, streak-at-risk nudge cards, weekly club digest for club admins, anniversary/on-this-day cards (opt-in), new-club/new-team-joined-platform cards, waiver/RSVP utility nudges (bell-only, never feed).
