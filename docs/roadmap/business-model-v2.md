@@ -131,3 +131,17 @@ Owner: auto-generating highlights is tricky — v1 is MANUAL with smart UI. Spec
 - Output "MIXTAPES": server-side render (ffmpeg on box — on-device RN editing not viable), watermarked on free tier, HD/watermark-free = Plus/Premium; export/share as post or story (consent + Claude pre-screen apply to uploaded footage, existing rules).
 - Path to semi-auto later (realistic, NOT computer vision): scoring events already carry game-clock timestamps — once video and scoreboard clock are synced, "auto-clip ±8s around every basket by player X" is deterministic. Auto-highlights = event-time clipping, an enhancement of the same pipeline.
 - AI CONTENT PIPELINE (§12) is the living catalog — owner: keep detailed, enhance continuously.
+
+## 15. Ghost opponents — scoring before the other club signs up (owner Q 2026-07-25)
+
+Problem: Club A is on-platform with rosters; opponent Club B is not. How does A score Saturday's game?
+
+**Answer: unclaimed opponent teams ("ghost teams") + claim-later merge — one club alone generates full game content.**
+1. Club A creates a lightweight opponent in seconds: name + optional color ("Scarborough Blues U12"). No roster, no account, flagged UNCLAIMED (same doctrine as the 188 imported UNCLAIMED Ontario clubs).
+2. Scoring modes: FULL stats for A's own roster; opponent side defaults to TEAM TOTALS ONLY (score per quarter — one scorekeeper can run this alone, the GameChanger model). Optional quick guest roster (jersey # + first name) if they want opponent play-by-play.
+3. Everything downstream just works with ONE club signed up: score cards, POTG (A's players), stat lines, milestones, digests, predictions — the whole §12 content engine fires. This supersedes "exhibition between two signed clubs" as the cold-start unlock: ANY club alone = game content.
+4. Games vs ghosts are labeled "Exhibition · unverified opponent" — never pollute standings; single-scorekeeper truth stands as recorded.
+5. **Claim = growth loop**: the ghost team's public page is indexable; Club B's parents find their kid's game score on us, page says "Is this your club? Claim it." On signup, Club B searches, claims its ghost team(s) → history/games merge onto their real team; from then on both sides see the games natively. Mirrors the club-claiming v2 flow that already exists.
+6. Anti-abuse: rate-sane creation limits, claim disputes via existing club-claim review, ghost teams excluded from directories' main listings (searchable, labeled).
+
+Build shape (when approved): OpponentTeam-as-Team with tenantId null/ownerTenantId + claimedAt; scoring console "quick opponent" path; claim/merge admin flow. Effort: moderate — reuses claiming, scoring, cards.
