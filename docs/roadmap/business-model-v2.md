@@ -101,3 +101,24 @@ Phase B (first games, via exhibitions or first leagues): predictions, POTG votin
 - Phase 3 (learned ranker): only at millions of events; logistic/GBDT on logged features. Not a launch dependency.
 - Confidence: P0/P1 near-certain (plain SQL engineering); P2 high (pgvector mature); "TikTok-quality" claims honest-capped by data volume at our scale — affinity+recency gets ~90% of the felt personalization for a community this size.
 - Privacy: first-party only, no third-party trackers, kids' signals never leave the platform.
+
+## 12. Content catalog (owner ask 2026-07-25: who can create what)
+
+**System-generated (zero human effort — the feed's heartbeat):**
+- Score/final cards + stat lines — DEPRIORITIZED per owner: routine results collapse into ONE daily "Yesterday around your clubs" DIGEST card per viewer (expand to see all) instead of N cards flooding the feed. Big games (rivalry, playoff, upset, milestone) earn standalone cards.
+- POTG cards (standalone, Class A) · player MILESTONE cards (season high, 20+ pt game, 100th point, win streaks, first basket) · standings-movement cards ("Lords jump to 2nd") · matchup PREVIEW cards ("Sat: Lords vs Kings, 2nd vs 3rd") · MVP-race tracker · season wrap/records cards · registration-closing-soon + waitlist-open cards · AI weekly team recap + league week-in-review (Claude, existing recap pipeline).
+**Org-authored (clubs/leagues/teams; already gated + pre-screened):** photo/video posts, announcements (auto-feed), polls/surveys (3-tier ruling), QUIZZES (new: same poll infra, correct-answer variant), fundraiser/sponsor shoutouts, coach-recruiting posts.
+**Platform-authored (editorial + interest capture):** weekly power rankings, basketball trivia quizzes, prediction contests, top-plays-of-week (once clips), themed challenges.
+**Family/player-SHARED (never free-form, existing rule):** stat cards, POTG cards, clips (metered), season reels (paid).
+**Gamification cards:** prediction cards (pick winner — auto from schedule), POTG voting cards, leaderboard updates, badge-earned cards, streaks.
+**Quiz/survey authorship:** team staff (team scope), club admins, league admins, PLATFORM. Kids: answer/vote/predict only. Results: aggregates public by default, individual answers never public, org can restrict results to admins.
+
+## 13. REVISED family monetization (owner correction: not everything free)
+
+Principle updated: the NETWORK is free (follow, feed, chat, schedules, RSVP); CAPABILITIES are metered. Every new family gets ONE FREE MONTH of the full experience, then capabilities degrade to free tier without payment.
+
+- FREE: network + digests + voting/predictions + watermarked basic share cards + points economy (points can unlock single tastes of paid features).
+- **PLUS (~$7.99/mo family)**: premium card templates, watermark-free + HD downloads, Moments archive, extended stat history, priority in POTG galleries.
+- **PREMIUM (~$14.99/mo family)**: everything in Plus + VIDEO — live game streams + VOD replay (7+ days), AI-generated per-player highlights, season reels, manual clip tools. Benchmarks: TeamSnap $6-7 for chat+calendar only; BallerTV ~$30/mo for live games. Premium at half BallerTV with 10x scope = the wedge. Streaming cost basis ~$0.70/game (live-streaming-plan) keeps margin.
+- Non-live markets still get value: scorekeeper-recorded/phone-recorded games as VOD after the fact ("offline games access").
+- AI roadmap hooks: AI scoring assist, auto-highlights (owner: BallerTV-style signup per game as an alternative a-la-carte).
