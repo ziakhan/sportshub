@@ -122,3 +122,12 @@ Principle updated: the NETWORK is free (follow, feed, chat, schedules, RSVP); CA
 - **PREMIUM (~$14.99/mo family)**: everything in Plus + VIDEO — live game streams + VOD replay (7+ days), AI-generated per-player highlights, season reels, manual clip tools. Benchmarks: TeamSnap $6-7 for chat+calendar only; BallerTV ~$30/mo for live games. Premium at half BallerTV with 10x scope = the wedge. Streaming cost basis ~$0.70/game (live-streaming-plan) keeps margin.
 - Non-live markets still get value: scorekeeper-recorded/phone-recorded games as VOD after the fact ("offline games access").
 - AI roadmap hooks: AI scoring assist, auto-highlights (owner: BallerTV-style signup per game as an alternative a-la-carte).
+
+## 14. Video: mixtape editor v1 (owner ruling 2026-07-25 — auto-highlights deferred)
+
+Owner: auto-generating highlights is tricky — v1 is MANUAL with smart UI. Spec:
+- Source: uploaded phone recordings (pre-streaming era) and later VOD.
+- Editor: timeline scrubber, set start/end per clip, multi-clip list w/ reorder, simple transitions (cut/crossfade), music overlay — LICENSED/royalty-free library ONLY (never user-uploaded tracks: copyright takedowns would hit kid content; flag legal).
+- Output "MIXTAPES": server-side render (ffmpeg on box — on-device RN editing not viable), watermarked on free tier, HD/watermark-free = Plus/Premium; export/share as post or story (consent + Claude pre-screen apply to uploaded footage, existing rules).
+- Path to semi-auto later (realistic, NOT computer vision): scoring events already carry game-clock timestamps — once video and scoreboard clock are synced, "auto-clip ±8s around every basket by player X" is deterministic. Auto-highlights = event-time clipping, an enhancement of the same pipeline.
+- AI CONTENT PIPELINE (§12) is the living catalog — owner: keep detailed, enhance continuously.
