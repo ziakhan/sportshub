@@ -47,6 +47,7 @@ import { getServerSession } from "next-auth"
  *   1133 devices (M3 push: register / re-register moves account / revoke-own)
  *   1134 waivers (league CRUD / approval auto-send / tokenized sign / status / versioning)
  *   1135 coach scoping (team-scoped staff authz / tryout admin-only / finalize)
+ *   1136 family invitations (CHILD_LOGIN / GUARDIAN create, accept/decline, signup auto-attach)
  */
 
 export function actAs(userId: string | null): void {

@@ -54,6 +54,11 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/api/auth/signout", "POST")).toBe(true)
   })
 
+  it("keeps feed telemetry POSTs public (signed-out impressions count)", () => {
+    expect(isPublicPath("/api/feed/events", "POST")).toBe(true)
+    expect(isPublicPath("/api/feed/events", "GET")).toBe(true)
+  })
+
   it("never exposes unknown API namespaces", () => {
     expect(isPublicPath("/api/admin/users", "GET")).toBe(false)
     expect(isPublicPath("/api/offers", "GET")).toBe(false)

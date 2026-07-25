@@ -2492,6 +2492,11 @@ enum PostKind {
   ANNOUNCEMENT
   STAT_CARD // a player's own game stat-line card, shared to their profile
   PLAYER_OF_GAME // the POTG card (player-shared or the system final post)
+  // System-generated milestone card (business-model-v2 §12/§16 S1): player
+  // milestones (PostTag playerId+gameId) or team standings-movement
+  // (PostTag teamId+gameId, no playerId). Feed Class A — never collapsed
+  // into the routine-finals digest, same treatment as PLAYER_OF_GAME.
+  MILESTONE
 }
 
 enum PostStatus {
@@ -3460,6 +3465,25 @@ model PublicPageView {
   @@index([tenantId, createdAt])
   @@index([entityType, createdAt])
   @@index([source, createdAt])
+}
+
+/// Recsys S0 (business-model-v2.md §11/§16): raw interaction log for the feed
+/// and news surfaces, web + native, signed-in or anonymous. One row per
+/// client-batched event; Phase 1 heuristic ranking (UserAffinity) and later
+/// phases read from this table. No relations by design (PublicPageView
+/// precedent) — this is a high-volume append-only log, not a joined entity.
+model FeedEvent {
+  id     String  @id @default(uuid())
+  userId String? // null = anonymous (signed-out impression/tap)
+  postId String? // set when the item is a real Post; null for virtual cards
+  itemKey String // postId or a virtual-card key (e.g. digest date, milestone id)
+  eventType String // impression | dwell | tap | like | share | comment | hide
+  valueMs   Int? // dwell duration in ms
+  surface   String // web-feed | web-news | native-social | native-news | native-home
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([itemKey, eventType])
 }
 
 // ============================================

@@ -7,6 +7,7 @@ import {
   Card,
   CoverImage,
   EmptyState,
+  FollowPill,
   GameRow,
   HeroBand,
   HeroCrest,
@@ -19,6 +20,8 @@ import {
 } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { brandTokens } from "@/lib/brand"
+import { fetchFollowStatus, followTarget, unfollowTarget, type FollowState } from "@/lib/follows"
+import { useSession } from "@/lib/session"
 import { ui } from "@/lib/theme"
 
 /**
@@ -27,7 +30,9 @@ import { ui } from "@/lib/theme"
  * the team's CLUB branding color (a team has no color of its own), club link,
  * record + roster stat strip, then schedule, a standings snippet (native-only
  * addition — the web team page doesn't have this section), player averages,
- * team news, roster and coaching staff.
+ * team news, roster and coaching staff. Follow is wired (lib/follows.ts, same
+ * /api/follows routes the web FollowButton uses) — signed-in only, shown as a
+ * pill in the hero.
  *
  * Practices stay club-members-only (owner privacy ruling 2026-07-24) — never
  * a teaser; the API omits practiceSummary entirely for non-members.
@@ -114,9 +119,12 @@ function pctLabel(pct: number): string {
 
 export default function PublicTeamScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const { signedIn } = useSession()
   const [data, setData] = useState<TeamPublic | null>(null)
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [followState, setFollowState] = useState<FollowState>("NONE")
+  const [followBusy, setFollowBusy] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -131,11 +139,40 @@ export default function PublicTeamScreen() {
     void load()
   }, [load])
 
+  useEffect(() => {
+    if (!signedIn || !id) return
+    fetchFollowStatus({ teamId: id })
+      .then((res) => setFollowState(res.status))
+      .catch(() => {
+        // status check failed — leave the pill at NONE, next toggle retries
+      })
+  }, [signedIn, id])
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     await load()
     setRefreshing(false)
   }, [load])
+
+  const toggleFollow = useCallback(async () => {
+    if (!id || followBusy) return
+    const wasState = followState
+    const creating = wasState === "NONE"
+    setFollowBusy(true)
+    setFollowState(creating ? "ACTIVE" : "NONE") // optimistic; corrected below
+    try {
+      if (creating) {
+        const res = await followTarget({ teamId: id })
+        setFollowState(res.status)
+      } else {
+        await unfollowTarget({ teamId: id })
+      }
+    } catch {
+      setFollowState(wasState)
+    } finally {
+      setFollowBusy(false)
+    }
+  }, [id, followBusy, followState])
 
   if (error) {
     return (
@@ -198,6 +235,14 @@ export default function PublicTeamScreen() {
               </Text>
               <Ionicons name="chevron-forward" size={12} color={brand.onBrand} />
             </Pressable>
+          ) : null}
+          {signedIn ? (
+            <FollowPill
+              following={followState === "ACTIVE"}
+              onColor={brand.onBrand}
+              busy={followBusy}
+              onPress={toggleFollow}
+            />
           ) : null}
           <HeroStatRow stats={heroStats} onColor={brand.onBrand} />
         </HeroBand>

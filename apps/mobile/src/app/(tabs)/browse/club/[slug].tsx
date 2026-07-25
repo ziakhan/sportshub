@@ -7,6 +7,7 @@ import {
   Card,
   CoverImage,
   EmptyState,
+  FollowPill,
   GameRow,
   HeroBand,
   HeroCrest,
@@ -21,6 +22,8 @@ import {
 } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import { brandTokens } from "@/lib/brand"
+import { fetchFollowStatus, followTarget, unfollowTarget, type FollowState } from "@/lib/follows"
+import { useSession } from "@/lib/session"
 import { tones, ui, type Tone } from "@/lib/theme"
 
 /**
@@ -35,10 +38,10 @@ import { tones, ui, type Tone } from "@/lib/theme"
  *  - Sticky scroll-spy sub-nav: native is one continuous scroll — every
  *    section is already a short scroll away, no anchor jump needed.
  *  - "View programs" hero CTA / anchor buttons: same reason.
- *  - Follow / Claim actions: both are authenticated web flows (Claim opens
- *    a business-verification upload; Follow needs a POST endpoint this app
- *    doesn't have yet). Follower COUNT is shown read-only as a hero stat;
- *    wiring the action is a follow-up once a mobile follow API exists.
+ *  - Claim action: an authenticated business-verification upload flow, out
+ *    of scope here. Follow is wired (lib/follows.ts, same /api/follows
+ *    routes the web FollowButton uses) — signed-in only, shown as a pill in
+ *    the hero; follower count updates optimistically.
  *  - Trainer 1-on-1 interactive booking widget: a multi-step form, out of
  *    scope for this visual pass.
  *  - "Edit page" affordance: management-only, not part of anonymous browse.
@@ -111,13 +114,19 @@ interface ClubProfile {
 
 export default function ClubProfileScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
+  const { signedIn } = useSession()
   const [data, setData] = useState<ClubProfile | null>(null)
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [followState, setFollowState] = useState<FollowState>("NONE")
+  const [followBusy, setFollowBusy] = useState(false)
+  const [followerCount, setFollowerCount] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     try {
-      setData(await apiJson<ClubProfile>(`/api/mobile/browse/clubs/${slug}`))
+      const club = await apiJson<ClubProfile>(`/api/mobile/browse/clubs/${slug}`)
+      setData(club)
+      setFollowerCount(club.club.followerCount)
       setError(false)
     } catch {
       setError(true)
@@ -128,11 +137,44 @@ export default function ClubProfileScreen() {
     void load()
   }, [load])
 
+  useEffect(() => {
+    if (!signedIn || !data) return
+    fetchFollowStatus({ tenantId: data.club.id })
+      .then((res) => setFollowState(res.status))
+      .catch(() => {
+        // status check failed — leave the pill at NONE, next toggle retries
+      })
+  }, [signedIn, data?.club.id])
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     await load()
     setRefreshing(false)
   }, [load])
+
+  const toggleFollow = useCallback(async () => {
+    if (!data || followBusy) return
+    const wasState = followState
+    const wasCount = followerCount ?? data.club.followerCount
+    const creating = wasState === "NONE"
+    setFollowBusy(true)
+    setFollowState(creating ? "ACTIVE" : "NONE") // optimistic; corrected below
+    setFollowerCount(creating ? wasCount + 1 : Math.max(0, wasCount - 1))
+    try {
+      if (creating) {
+        const res = await followTarget({ tenantId: data.club.id })
+        setFollowState(res.status)
+        if (res.status !== "ACTIVE") setFollowerCount(wasCount) // PENDING doesn't count yet
+      } else {
+        await unfollowTarget({ tenantId: data.club.id })
+      }
+    } catch {
+      setFollowState(wasState)
+      setFollowerCount(wasCount)
+    } finally {
+      setFollowBusy(false)
+    }
+  }, [data, followBusy, followState, followerCount])
 
   if (error) {
     return (
@@ -155,12 +197,13 @@ export default function ClubProfileScreen() {
   const brand = brandTokens(club.primaryColor)
   const hasContact = !!(club.address || club.phoneNumber || club.contactEmail || club.website)
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")
+  const shownFollowerCount = followerCount ?? club.followerCount
 
   const heroStats = [
     { value: String(club.teams.length), label: club.teams.length === 1 ? "Team" : "Teams" },
     { value: String(programs.length), label: "Programs" },
     { value: String(club.staffCount ?? 0), label: "Staff" },
-    { value: String(club.followerCount), label: club.followerCount === 1 ? "Follower" : "Followers" },
+    { value: String(shownFollowerCount), label: shownFollowerCount === 1 ? "Follower" : "Followers" },
   ]
 
   const openMaps = () => {
@@ -207,6 +250,15 @@ export default function ClubProfileScreen() {
             <View style={styles.heroRatingChip}>
               <StarRating rating={rating.average} count={rating.count} size={13} />
             </View>
+          ) : null}
+          {signedIn && club.status !== "UNCLAIMED" ? (
+            <FollowPill
+              following={followState === "ACTIVE"}
+              pending={followState === "PENDING"}
+              onColor={brand.onBrand}
+              busy={followBusy}
+              onPress={toggleFollow}
+            />
           ) : null}
           <HeroStatRow stats={heroStats} onColor={brand.onBrand} />
         </HeroBand>

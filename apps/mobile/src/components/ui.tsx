@@ -353,6 +353,52 @@ export function HeroStatRow({
  * against any brand fill color (a same-hue tinted Monogram tile can vanish
  * against its own hero band). Web's `bg-white/95` crest treatment.
  */
+/**
+ * Follow/unfollow pill for club/team/league hero bands — native twin of
+ * web's follow-button.tsx (banner variant): white pill when not following,
+ * a translucent outline once active. Screens render it only when signed in
+ * (no anon redirect-to-sign-in flow on native yet) and own the follow state
+ * + optimistic toggle themselves via lib/follows.ts.
+ */
+export function FollowPill({
+  following,
+  pending = false,
+  onColor = "#ffffff",
+  busy = false,
+  onPress,
+}: {
+  following: boolean
+  /** Player follows can be request-gated; club/team/league are always instant. */
+  pending?: boolean
+  onColor?: string
+  busy?: boolean
+  onPress: () => void
+}) {
+  const dark = onColor === "#18181b"
+  const active = following || pending
+  const label = pending ? "Requested" : following ? "Following" : "Follow"
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={busy}
+      hitSlop={6}
+      style={({ pressed }) => [
+        styles.followPill,
+        active
+          ? {
+              backgroundColor: dark ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.18)",
+              borderColor: dark ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.45)",
+            }
+          : { backgroundColor: "#ffffff", borderColor: "#ffffff" },
+        (pressed || busy) && { opacity: 0.7 },
+      ]}
+    >
+      <Ionicons name={active ? "star" : "star-outline"} size={13} color={active ? onColor : "#18181b"} />
+      <Text style={[styles.followPillText, { color: active ? onColor : "#18181b" }]}>{label}</Text>
+    </Pressable>
+  )
+}
+
 export function HeroCrest({
   name,
   logoUrl,
@@ -714,6 +760,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  followPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginTop: 10,
+  },
+  followPillText: { fontSize: 12.5, fontWeight: "700" },
   heroStatRow: {
     flexDirection: "row",
     gap: 2,

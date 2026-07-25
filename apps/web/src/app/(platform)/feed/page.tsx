@@ -4,8 +4,10 @@ import Link from "next/link"
 import { authOptions } from "@/lib/auth"
 import { getSessionUserId, getUserTenants } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { getSocialFeed } from "@/lib/queries/feed"
+import { getFeedExtras, getFeedTargets, getSocialFeed, mergeFeedWithExtras } from "@/lib/queries/feed"
 import { FeedCard } from "@/components/social/feed-card"
+import { DigestCard } from "@/components/social/digest-card"
+import { PreviewCard } from "@/components/social/preview-card"
 import { StoriesRail } from "@/components/social/stories-rail"
 import { OrgComposer, type OrgOption } from "@/components/social/org-composer"
 import { FeedTabs } from "@/components/social/feed-tabs"
@@ -25,14 +27,17 @@ export default async function FeedPage() {
   const sessionInfo = await getSessionUserId()
   if (!sessionInfo) redirect("/sign-in?callbackUrl=/feed")
 
-  const [items, tenants, ownedLeagues] = await Promise.all([
-    getSocialFeed(sessionInfo.userId),
+  const targets = await getFeedTargets(sessionInfo.userId)
+  const [items, extras, tenants, ownedLeagues] = await Promise.all([
+    getSocialFeed(sessionInfo.userId, 30, targets),
+    getFeedExtras(sessionInfo.userId, targets),
     getUserTenants(),
     (prisma as any).league.findMany({
       where: { ownerId: sessionInfo.userId },
       select: { id: true, name: true },
     }),
   ])
+  const feedItems = mergeFeedWithExtras(items, extras)
 
   const orgs: OrgOption[] = [
     ...tenants
@@ -47,7 +52,7 @@ export default async function FeedPage() {
       <FeedTabs />
       <StoriesRail />
       <OrgComposer orgs={orgs} />
-      {items.length === 0 ? (
+      {feedItems.length === 0 ? (
         <div className="border-ink-300 rounded-2xl border border-dashed bg-white p-8 text-center">
           <p className="text-ink-900 text-sm font-semibold">Your feed is empty</p>
           <p className="text-ink-500 mt-1 text-sm">
@@ -62,7 +67,15 @@ export default async function FeedPage() {
           </Link>
         </div>
       ) : (
-        items.map((item) => <FeedCard key={`${item.id}-${item.repostedBy ?? "o"}`} item={item} />)
+        feedItems.map((item) =>
+          item.type === "digest" ? (
+            <DigestCard key={item.id} item={item} />
+          ) : item.type === "preview" ? (
+            <PreviewCard key={item.id} item={item} />
+          ) : (
+            <FeedCard key={`${item.id}-${item.repostedBy ?? "o"}`} item={item} />
+          )
+        )
       )}
     </div>
     </div>

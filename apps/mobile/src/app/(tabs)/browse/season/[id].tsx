@@ -7,6 +7,7 @@ import {
   Card,
   CoverImage,
   EmptyState,
+  FollowPill,
   GameRow,
   HeroBand,
   HeroCrest,
@@ -18,7 +19,9 @@ import {
 } from "@/components/ui"
 import { apiBaseUrl, apiJson } from "@/lib/api"
 import { brandTokens } from "@/lib/brand"
+import { fetchFollowStatus, followTarget, unfollowTarget, type FollowState } from "@/lib/follows"
 import { perkLabel } from "@/lib/perks"
+import { useSession } from "@/lib/session"
 import { ui } from "@/lib/theme"
 
 /**
@@ -27,7 +30,10 @@ import { ui } from "@/lib/theme"
  * league's own brand color, perks ("what's included"), scores & schedule,
  * standings per division (PCT + STRK columns, leader highlight — web
  * parity), league news, teams grouped by division, scoring leaders, and a
- * season-info + registration card. Anonymous.
+ * season-info + registration card. Follow is wired (lib/follows.ts, same
+ * /api/follows routes the web FollowButton's leagueId form uses) —
+ * signed-in only, shown as a pill in the hero. Screen itself stays browsable
+ * anonymous.
  */
 
 type SeasonGame = GameRowData
@@ -103,9 +109,12 @@ function pctLabel(pct: number): string {
 
 export default function SeasonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const { signedIn } = useSession()
   const [data, setData] = useState<SeasonDetail | null>(null)
   const [error, setError] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [followState, setFollowState] = useState<FollowState>("NONE")
+  const [followBusy, setFollowBusy] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -120,11 +129,42 @@ export default function SeasonScreen() {
     void load()
   }, [load])
 
+  const leagueId = data?.season.league?.id ?? null
+
+  useEffect(() => {
+    if (!signedIn || !leagueId) return
+    fetchFollowStatus({ leagueId })
+      .then((res) => setFollowState(res.status))
+      .catch(() => {
+        // status check failed — leave the pill at NONE, next toggle retries
+      })
+  }, [signedIn, leagueId])
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     await load()
     setRefreshing(false)
   }, [load])
+
+  const toggleFollow = useCallback(async () => {
+    if (!leagueId || followBusy) return
+    const wasState = followState
+    const creating = wasState === "NONE"
+    setFollowBusy(true)
+    setFollowState(creating ? "ACTIVE" : "NONE") // optimistic; corrected below
+    try {
+      if (creating) {
+        const res = await followTarget({ leagueId })
+        setFollowState(res.status)
+      } else {
+        await unfollowTarget({ leagueId })
+      }
+    } catch {
+      setFollowState(wasState)
+    } finally {
+      setFollowBusy(false)
+    }
+  }, [leagueId, followBusy, followState])
 
   if (error) {
     return (
@@ -194,6 +234,14 @@ export default function SeasonScreen() {
             <Text style={[styles.heroTagline, { color: brand.onBrand }]} numberOfLines={2}>
               {league.tagline}
             </Text>
+          ) : null}
+          {signedIn && leagueId ? (
+            <FollowPill
+              following={followState === "ACTIVE"}
+              onColor={brand.onBrand}
+              busy={followBusy}
+              onPress={toggleFollow}
+            />
           ) : null}
           <HeroStatRow stats={heroStats} onColor={brand.onBrand} />
         </HeroBand>
