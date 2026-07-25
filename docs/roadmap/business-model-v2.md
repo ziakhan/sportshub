@@ -63,3 +63,32 @@ Phase B (first games, via exhibitions or first leagues): predictions, POTG votin
 3. Points naming + earn/spend table sign-off (and relationship to the old Energy Pass experiment).
 4. Plus price point + what is IN Plus at launch vs later.
 5. Sponsor revenue split for club-sold slots.
+
+## 8. E-transfer aggregator mechanics (owner Q&A 2026-07-25)
+
+**Who does what:**
+- PARENT: taps "Pay $250 by e-transfer" on the obligation → receives an official Interac Request Money notification (email/bank app) naming the club → approves inside THEIR OWN banking app. Shares nothing: no IDs, no security questions (RFM auto-deposits). Confirmed VoPay mechanics: request embedded in our app, authorized through their bank, 250+ FIs, $25K/tx network limit.
+- CLUB: nothing manual. Sees the obligation flip PAID in real time, receives scheduled payouts (daily/weekly EFT) NET of our fee, with a statement (gross / fee / net) — feeds the existing accounting exports.
+- US: hold the master/trust integration with the provider; on webhook (payment completed, carries our reference id) auto-match to the obligation via the existing engine; run the ledger; instruct payouts.
+
+**How we take the 1.5% (his question):** NOT billed, NOT deducted by Interac. Interac moves the GROSS amount into the provider-held funds account; our platform ledger nets the fee at settlement — club payout = gross - 1.5%. Same net-settlement model Stripe uses; clubs see one clean statement line.
+
+**What it costs us:** provider pricing is volume-quoted (public pages confirm no list price). Industry ballpark pending sales calls: ~$0.50-1.50 per transaction flat + monthly platform/minimum fee + KYB onboarding. At 1.5% on an average $250 registration ($3.75 revenue) the flat cost leaves healthy margin at any realistic quote.
+
+**Compliance structure (flag for legal):** prefer the funds-in-provider-trust model (we instruct, never custody) — avoids SportsHub itself registering as an MSB with FINTRAC. Confirm with provider + a lawyer before launch.
+
+**Next step:** sales/pricing calls with VoPay + Zum Rails (+ Payper as third quote); owner on the call for the pricing negotiation.
+
+## 9. Gamification v2: statuses, leaderboards, earned Pro (owner 2026-07-25)
+
+- **Statuses/titles for bragging rights:** badge tiers earned by participation + prediction accuracy (e.g. Rookie → Regular → Analyst → Guru — names TBD w/ owner). Displayed by handle on comments/polls/predictions = credibility loop.
+- **Leaderboards:** weekly/season boards — best predictors, most active voices, per club and platform-wide. Minors: leaderboard shows handle only, respects socialVisibility; opt-out honored.
+- **Earned Pro:** top predictor/participant of the month earns Plus free for a month — status AND a taste of the paid tier (funnel, not substitute).
+- **Daily loop objective:** predict every game, vote POTG, streaks — habitual daily open = the advertiser-value engine.
+- Guardrails unchanged: no cash value, no wager mechanics, platform-goods rewards only.
+
+## 10. Advertiser role (later phase, after engagement proof)
+
+- Self-serve ADVERTISER account type: sports gear, trainers, physio, orthotics, mouthguards, merch — sponsored LISTINGS that render as native feed cards with a clear "Sponsored" label. No banners, no programmatic exchanges, no third-party trackers.
+- Quality gates: category allowlist (youth-appropriate only), creative approval, geo/interest targeting from first-party signals only.
+- Sequencing: local club-sold sponsors first (§5), self-serve advertiser marketplace once DAU proves the audience; premium CPMs justified by parent demographic + brand-safe environment.
