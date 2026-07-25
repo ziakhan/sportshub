@@ -92,3 +92,12 @@ Phase B (first games, via exhibitions or first leagues): predictions, POTG votin
 - Self-serve ADVERTISER account type: sports gear, trainers, physio, orthotics, mouthguards, merch — sponsored LISTINGS that render as native feed cards with a clear "Sponsored" label. No banners, no programmatic exchanges, no third-party trackers.
 - Quality gates: category allowlist (youth-appropriate only), creative approval, geo/interest targeting from first-party signals only.
 - Sequencing: local club-sold sponsors first (§5), self-serve advertiser marketplace once DAU proves the audience; premium CPMs justified by parent demographic + brand-safe environment.
+
+## 11. Recommendation feed — architecture (owner Q&A 2026-07-25)
+
+- Phase 0 (build first, days): FeedEvent capture — {userId, postId, type: impression|dwellMs|tap|like|comment|share|follow_after|hide, surface, ts}; client batches (flush every 10s/on-blur) to POST /api/feed/events; same schema web+native (parity law). Indexes (userId,ts),(postId,type).
+- Phase 1 (heuristic, ~1 wk, NO model training): score = recencyDecay x sourceAffinity x engagementVelocity x qualityPrior. UserAffinity(user,source) materialized HOURLY by cron on the box (weighted decayed interaction counts: share 5, comment 4, like 3, dwell>10s 1). Query-time boost from the user's LAST-HOUR events so likes/follows reflect on the very next feed refresh; heavier aggregates within the hour.
+- Phase 2 (embeddings, weeks): pgvector extension in Postgres (owner said PostGIS — the right tool is pgvector). Post embeddings via off-the-shelf embedding API; user vector = decayed mean of engaged-post vectors, recomputed hourly; cosine similarity becomes a ranking feature → discovery beyond follows. Still NO training.
+- Phase 3 (learned ranker): only at millions of events; logistic/GBDT on logged features. Not a launch dependency.
+- Confidence: P0/P1 near-certain (plain SQL engineering); P2 high (pgvector mature); "TikTok-quality" claims honest-capped by data volume at our scale — affinity+recency gets ~90% of the felt personalization for a community this size.
+- Privacy: first-party only, no third-party trackers, kids' signals never leave the platform.
