@@ -1,10 +1,13 @@
 # Youth Basketball Hub - Project Context
 
-## ⛔ PRODUCTION PUSH POLICY — NO EXCEPTIONS
-**NEVER push to production without the owner's explicit approval, given in the current session for the specific push.**
-- `git push origin master` auto-deploys to Vercel production — pushing IS deploying. Do not push (including reverts, docs-only commits, or "small fixes") until the owner says to.
-- Neon production DB: no schema pushes, SQL, or seeds without the same explicit approval.
-- Local commits are always fine. Work locally, verify on the dev server, and wait for the owner's go-ahead to ship.
+## ⛔ PRODUCTION DEPLOY POLICY — NO EXCEPTIONS
+**Git pushes are ALLOWED for everyone. Production DEPLOYS require the owner's (Zia's) explicit approval, given in the current session for the specific deploy.**
+- Committing and pushing to GitHub (`git push origin ...`) deploys NOTHING and never needs approval — Vercel CI/CD was disconnected 2026-07-24 (`vercel.json` `git.deploymentEnabled:false`), so GitHub is a plain code mirror. QA docs, bug reports, fixes, and work-in-progress branches: push freely.
+- What DOES need the owner's explicit go-ahead, every time:
+  - Running the box deploy script (`ssh sh 'sudo /opt/sportshub/scripts/deploy/oracle-box/deploy.sh'`) — that is the production deploy.
+  - EAS OTA publishes and app-store builds/submits.
+  - Any schema push, SQL, or seed against the box DB or Neon (local DB is always fine).
+  - Re-enabling Vercel git deployments.
 - Blanket approval does not carry over between sessions or tasks; ask each time.
 
 ## 💸 SUBAGENT MODEL TIERING — NO UNTIERED FAN-OUTS
