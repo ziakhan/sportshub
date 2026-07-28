@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native"
+import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import {
   Card,
@@ -150,16 +151,22 @@ export default function RefereeScreen() {
           />
         ) : null}
         {myGames.map((g) => (
-          <Card key={`${g.kind}:${g.id}`}>
-            <Text style={styles.window}>
-              {new Date(g.at).toLocaleString(undefined, {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </Text>
+          <Card
+            key={`${g.kind}:${g.id}`}
+            onPress={g.kind === "game" ? () => router.push(`/browse/game/${g.id}`) : undefined}
+          >
+            <View style={styles.top}>
+              <TonePill tone="positive" label="Assigned" />
+              <Text style={styles.window}>
+                {new Date(g.at).toLocaleString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </View>
             <Text style={styles.title}>{g.title}</Text>
             {g.location ? <Text style={styles.meta}>{g.location}</Text> : null}
           </Card>

@@ -1,21 +1,25 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
+  FlatList,
   Image,
   Pressable,
   RefreshControl,
-  ScrollView,
   Share,
   StyleSheet,
   Text,
   TextInput,
   View,
+  type ViewToken,
 } from "react-native"
 import { router } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { TopBar } from "@/components/top-bar"
 import { CoverImage } from "@/components/ui"
 import { StoriesRail } from "@/components/stories-rail"
+import { DigestCard, type DigestFeedItem } from "@/components/digest-card"
+import { PreviewCard, type PreviewFeedItem } from "@/components/preview-card"
 import { apiBaseUrl, apiJson } from "@/lib/api"
+import { logFeedEvent } from "@/lib/feed-telemetry"
 import { useSession } from "@/lib/session"
 import { fonts, palette, ui } from "@/lib/theme"
 
@@ -23,10 +27,14 @@ import { fonts, palette, ui } from "@/lib/theme"
  * Social feed — native twin of web /feed (native-parity-v2 P1). Same items
  * from the same query (GET /api/feed): system score cards, recaps, player
  * card posts, org posts, reposts. Reactions, comments (text, with report),
- * repost + native share on PUBLIC posts.
+ * repost + native share on PUBLIC posts. Also renders the virtual digest/
+ * preview cards from `extras` (business-model-v2 §12/§16 S1) — a SEPARATE
+ * response field so an older bundle that only reads `items` never sees
+ * (and never crashes on) a non-Post-shaped row.
  */
 
 interface FeedItem {
+  type: "post"
   id: string
   kind: string
   title: string
@@ -53,6 +61,19 @@ interface CommentRow {
   mine: boolean
   authorName: string
 }
+interface FeedExtras {
+  digest: DigestFeedItem[]
+  previews: PreviewFeedItem[]
+}
+type FeedRenderItem = FeedItem | DigestFeedItem | PreviewFeedItem
+
+/** Mirrors apps/web/src/lib/queries/feed.ts mergeFeedWithExtras — native
+ * can't import server code, so this stays a tiny hand-kept twin. */
+function mergeFeedWithExtras(items: FeedItem[], extras: FeedExtras): FeedRenderItem[] {
+  const all: FeedRenderItem[] = [...items, ...extras.digest, ...extras.previews]
+  const sortKey = (r: FeedRenderItem) => (r.type === "post" ? (r.repostedAt ?? r.publishedAt ?? "") : r.sortAt)
+  return all.sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
+}
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "🔥", "🏀"] as const
 
@@ -64,7 +85,11 @@ const CHIP: Record<string, { label: string; bg: string; fg: string }> = {
   ARTICLE: { label: "📰 Club post", bg: "#f7f7f8", fg: "#5e5e6e" },
   PHOTO_SET: { label: "📷 Photos", bg: "#fef3ee", fg: "#bc2711" },
   VIDEO: { label: "🎥 Video", bg: "#fef3ee", fg: "#bc2711" },
+  // Player milestone default — overridden to the standings variant below
+  // when the post has no player tag (team-level "jump to 2nd" card).
+  MILESTONE: { label: "🏅 Milestone", bg: "#fffbeb", fg: "#b45309" },
 }
+const STANDINGS_CHIP = { label: "📈 Standings", bg: "#f0fdf0", fg: "#15803d" }
 
 function timeAgo(iso: string | null): string {
   if (!iso) return ""
@@ -88,7 +113,9 @@ function FeedCard({ item }: { item: FeedItem }) {
 
   const chip = item.isSystemFinal
     ? { label: "🏁 Final score", bg: "#f0fdf0", fg: "#15803d" }
-    : CHIP[item.kind]
+    : item.kind === "MILESTONE" && !item.playerName
+      ? STANDINGS_CHIP // team-tagged standings-movement card, no player tag
+      : CHIP[item.kind]
   const authorLabel = item.authorName ?? "SportsHub One"
   const href = item.gameId ? `/browse/game/${item.gameId}` : `/browse/article/${item.slug}`
 
@@ -97,6 +124,9 @@ function FeedCard({ item }: { item: FeedItem }) {
     const had = myEmojis.includes(emoji)
     setMyEmojis((m) => (had ? m.filter((e) => e !== emoji) : [...m, emoji]))
     setReactionCount((n) => n + (had ? -1 : 1))
+    if (!had) {
+      logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "like", surface: "native-social" })
+    }
     try {
       const data = await apiJson<{ reactions: Array<{ count: number }>; mine: string[] }>(
         `/api/posts/${item.id}/reactions`,
@@ -133,6 +163,7 @@ function FeedCard({ item }: { item: FeedItem }) {
       })
       setComments((c) => [...(c ?? []), data.comment])
       setCommentCount((n) => n + 1)
+      logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "comment", surface: "native-social" })
     } catch {
       /* dropped */
     }
@@ -142,6 +173,9 @@ function FeedCard({ item }: { item: FeedItem }) {
     const next = !reposted
     setReposted(next)
     setRepostCount((n) => n + (next ? 1 : -1))
+    if (next) {
+      logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "share", surface: "native-social" })
+    }
     try {
       await apiJson(`/api/posts/${item.id}/repost`, { method: next ? "POST" : "DELETE" })
     } catch {
@@ -151,11 +185,16 @@ function FeedCard({ item }: { item: FeedItem }) {
   }
 
   const shareOut = () => {
+    logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "share", surface: "native-social" })
     const img = item.cardImage ? `${apiBaseUrl()}${item.cardImage}` : null
     void Share.share({
       message: `${item.title} — ${apiBaseUrl()}${item.gameId ? `/live/${item.gameId}` : `/news/${item.slug}`}`,
       url: img ?? `${apiBaseUrl()}/news/${item.slug}`,
     })
+  }
+
+  const logTap = () => {
+    logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "tap", surface: "native-social" })
   }
 
   return (
@@ -180,7 +219,7 @@ function FeedCard({ item }: { item: FeedItem }) {
           </View>
         ) : null}
       </View>
-      <Pressable onPress={() => router.push(href as any)}>
+      <Pressable onPress={() => { logTap(); router.push(href as any) }}>
         <Text style={styles.title}>{item.title}</Text>
         {item.body && item.kind !== "STAT_CARD" && item.kind !== "PLAYER_OF_GAME" ? (
           <Text style={styles.body} numberOfLines={3}>{item.body}</Text>
@@ -271,21 +310,51 @@ export default function SocialScreen() {
   const { signedIn } = useSession()
   const [mode, setMode] = useState<"feed" | "mine">("feed")
   const [items, setItems] = useState<FeedItem[] | null>(null)
+  // Virtual digest/preview cards (business-model-v2 §16 S1) — only the main
+  // feed has these; /api/feed/mine has no `extras` field at all.
+  const [extras, setExtras] = useState<FeedExtras>({ digest: [], previews: [] })
   const [refreshing, setRefreshing] = useState(false)
+  // Impression/dwell tracking (recsys S0): per-key visible-since timestamps,
+  // keyed the same as FlatList's keyExtractor below. postId is null for
+  // virtual digest/preview rows — itemKey (the item's own id) still logs.
+  const visibleSince = useRef<Map<string, { since: number; postId: string | null; itemKey: string }>>(
+    new Map()
+  )
 
   const load = useCallback(async () => {
     try {
-      const data = await apiJson<{ items: FeedItem[] }>(mode === "mine" ? "/api/feed/mine" : "/api/feed")
+      const data = await apiJson<{ items: FeedItem[]; extras?: FeedExtras }>(
+        mode === "mine" ? "/api/feed/mine" : "/api/feed"
+      )
       setItems(data.items)
+      setExtras(data.extras ?? { digest: [], previews: [] })
     } catch {
       setItems([])
+      setExtras({ digest: [], previews: [] })
     }
   }, [mode])
 
+  const feedItems = items === null ? null : mergeFeedWithExtras(items, mode === "mine" ? { digest: [], previews: [] } : extras)
+
+  const flushVisibleDwell = useCallback(() => {
+    const now = Date.now()
+    for (const { since, postId, itemKey } of visibleSince.current.values()) {
+      const valueMs = now - since
+      if (valueMs >= 500) {
+        logFeedEvent({ itemKey, postId, eventType: "dwell", valueMs, surface: "native-social" })
+      }
+    }
+    visibleSince.current.clear()
+  }, [])
+
   useEffect(() => {
+    flushVisibleDwell()
     setItems(null)
     if (signedIn) void load()
-  }, [signedIn, load])
+  }, [signedIn, load, flushVisibleDwell])
+
+  // Dwell for whatever's still on screen when the tab/screen goes away.
+  useEffect(() => flushVisibleDwell, [flushVisibleDwell])
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -293,27 +362,71 @@ export default function SocialScreen() {
     setRefreshing(false)
   }, [load])
 
+  const onViewableItemsChanged = useRef(
+    ({ changed }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+      const now = Date.now()
+      for (const v of changed) {
+        // Virtual digest/preview rows carry `id` too (the FeedEvent schema
+        // anticipates this: itemKey is "postId or a virtual-card key") —
+        // only `postId` is null for them, so the impression still logs.
+        const feedItem = v.item as FeedRenderItem | undefined
+        if (!feedItem?.id || v.key == null) continue
+        const postId = feedItem.type === "post" ? feedItem.id : null
+        const key = String(v.key)
+        if (v.isViewable) {
+          if (!visibleSince.current.has(key)) {
+            visibleSince.current.set(key, { since: now, postId, itemKey: feedItem.id })
+            logFeedEvent({ itemKey: feedItem.id, postId, eventType: "impression", surface: "native-social" })
+          }
+        } else {
+          const entry = visibleSince.current.get(key)
+          if (entry) {
+            visibleSince.current.delete(key)
+            const valueMs = now - entry.since
+            if (valueMs >= 500) {
+              logFeedEvent({ itemKey: entry.itemKey, postId: entry.postId, eventType: "dwell", valueMs, surface: "native-social" })
+            }
+          }
+        }
+      }
+    }
+  ).current
+  // 50% visible for a full second before it counts as seen — same bar as web.
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50, minimumViewTime: 1000 }).current
+
   return (
     <View style={styles.root}>
       <TopBar />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {!signedIn ? (
+      {!signedIn ? (
+        <View style={styles.content}>
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Sign in for your feed</Text>
             <Text style={styles.emptyBody}>
               Finals, recaps, and shared player moments from the teams and players you follow.
             </Text>
           </View>
-        ) : (
-          <>
-            <StoriesRail />
-            {items === null ? (
+        </View>
+      ) : (
+        <FlatList
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.content}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          data={feedItems ?? []}
+          keyExtractor={(item) => (item.type === "post" ? `${item.id}-${item.repostedBy ?? "o"}` : item.id)}
+          renderItem={({ item }) =>
+            item.type === "digest" ? (
+              <DigestCard item={item} />
+            ) : item.type === "preview" ? (
+              <PreviewCard item={item} />
+            ) : (
+              <FeedCard item={item} />
+            )
+          }
+          ListHeaderComponent={<StoriesRail />}
+          ListEmptyComponent={
+            items === null ? (
               <Text style={styles.emptyBody}>Loading your feed…</Text>
-            ) : items.length === 0 ? (
+            ) : (
               <View style={styles.empty}>
                 <Text style={styles.emptyTitle}>Your feed is empty</Text>
                 <Text style={styles.emptyBody}>
@@ -321,12 +434,12 @@ export default function SocialScreen() {
                   moments here.
                 </Text>
               </View>
-            ) : (
-              items.map((item) => <FeedCard key={`${item.id}-${item.repostedBy ?? "o"}`} item={item} />)
-            )}
-          </>
-        )}
-      </ScrollView>
+            )
+          }
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+        />
+      )}
 
       {/* Social's OWN bottom bar (web ruling: Feed · My posts · Site) */}
       <View style={styles.socialBar}>

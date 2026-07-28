@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
-import { Button } from "@/components/ui"
+import { Button, SmartBack } from "@/components/ui"
 
 const PencilIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -179,12 +178,7 @@ export default function TournamentManagePage() {
     <div className="p-6 md:p-8 max-w-5xl mx-auto">
       {/* Back link */}
       <div className="mb-6">
-        <Link
-          href={`/clubs/${clubId}/tournaments`}
-          className="text-sm text-play-700 hover:underline"
-        >
-          &larr; Back to Tournaments
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/tournaments`} fallbackLabel="Tournaments" className="-ml-1" />
       </div>
 
       {/* Header */}
@@ -393,11 +387,13 @@ export default function TournamentManagePage() {
                 className="flex items-center justify-between rounded-md bg-court-50 px-3 py-2"
               >
                 <div>
-                  <span className="font-medium text-ink-900">{v.name}</span>
-                  {v.address && (
-                    <span className="ml-2 text-xs text-ink-500">{v.address}</span>
+                  {/* QA-406: rows rendered blank — the API returns the venue
+                      NESTED ({ venue: { name } }), not flat. */}
+                  <span className="font-medium text-ink-900">{v.venue?.name ?? v.name}</span>
+                  {(v.venue?.address ?? v.address) && (
+                    <span className="ml-2 text-xs text-ink-500">{v.venue?.address ?? v.address}</span>
                   )}
-                  <span className="ml-2 text-xs text-ink-400">{v.city}</span>
+                  <span className="ml-2 text-xs text-ink-400">{v.venue?.city ?? v.city}</span>
                 </div>
                 <button
                   onClick={() => removeVenue(v.id)}

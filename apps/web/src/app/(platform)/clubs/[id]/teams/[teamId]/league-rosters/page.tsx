@@ -1,8 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { evaluateRosterEdit } from "@/lib/seasons/roster-policy"
-import { Button } from "@/components/ui"
+import { Button, SmartBack } from "@/components/ui"
 import { LeagueRosterManager } from "./league-roster-manager"
 
 /**
@@ -172,12 +171,11 @@ export default async function LeagueRostersPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
-          className="text-play-700 text-sm hover:underline"
-        >
-          &larr; Back to Team Dashboard
-        </Link>
+        <SmartBack
+          fallback={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
+          fallbackLabel="Team Dashboard"
+          className="-ml-1"
+        />
       </div>
 
       <div className="reveal mb-6 flex flex-wrap items-center justify-between gap-3">

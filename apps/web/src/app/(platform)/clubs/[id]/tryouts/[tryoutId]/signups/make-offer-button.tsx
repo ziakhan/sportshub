@@ -1,12 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   OfferComposer,
   packagePayload,
   type OfferPackageDraft,
 } from "@/components/offers/offer-composer"
+
+interface RosterState {
+  committed: number
+  provisional: number
+  cap: number | null
+  isFull: boolean
+  openOffers: number
+}
 
 /**
  * Per-signup offer modal. The composer builds 1..4 package options — one
@@ -36,7 +44,26 @@ export function MakeOfferButton({
   const [packages, setPackages] = useState<OfferPackageDraft[]>([])
   const [message, setMessage] = useState("")
   const [expiresInDays, setExpiresInDays] = useState("7")
+  const [rosterState, setRosterState] = useState<RosterState | null>(null)
   const router = useRouter()
+
+  // Roster commitment context (owner 2026-07-24, QA-103): let staff see the
+  // cap and how many offers are already out before they send one more.
+  useEffect(() => {
+    if (!showForm) return
+    let cancelled = false
+    fetch(`/api/teams/${teamId}/roster-state`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setRosterState(data)
+      })
+      .catch(() => {
+        if (!cancelled) setRosterState(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [showForm, teamId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,6 +127,22 @@ export function MakeOfferButton({
         <p className="text-ink-500 mb-4 text-sm">
           {playerName} → {teamName}
         </p>
+
+        {rosterState && rosterState.cap != null && (
+          <div className="border-ink-100 bg-ink-50 mb-4 rounded-xl border px-3 py-2 text-xs text-ink-600">
+            <p>
+              Committed {rosterState.committed} / cap {rosterState.cap} &middot;{" "}
+              {rosterState.openOffers} offers out
+            </p>
+            {rosterState.openOffers + rosterState.committed >= rosterState.cap && (
+              <p className="mt-1.5 text-amber-700">
+                You&apos;re offering beyond your roster cap. That&apos;s fine (declines happen),
+                but use the message below to tell families how you&apos;ll handle it. Spots are
+                committed by payment, first come first served.
+              </p>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <OfferComposer clubId={clubId} packages={packages} onChange={setPackages} />

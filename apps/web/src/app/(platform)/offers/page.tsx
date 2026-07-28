@@ -29,6 +29,10 @@ interface Offer {
   chosenOptionId?: string | null
   installments: number
   practiceSessions: number
+  gamesMin: number | null
+  gamesMax: number | null
+  programDescription: string | null
+  customItems: string[]
   includesBall: boolean
   includesBag: boolean
   includesShoes: boolean
@@ -129,6 +133,15 @@ export default function OffersPage() {
               <div className="space-y-4">
                 {pendingOffers.map((offer, index) => {
                   const isExpired = new Date(offer.expiresAt) < new Date()
+                  // Games are the headline (owner ruling 2026-07-24, refines QA-211).
+                  const gamesLabel =
+                    offer.gamesMin == null && offer.gamesMax == null
+                      ? null
+                      : offer.gamesMin != null &&
+                          offer.gamesMax != null &&
+                          offer.gamesMin !== offer.gamesMax
+                        ? `${offer.gamesMin}-${offer.gamesMax} games`
+                        : `${offer.gamesMin ?? offer.gamesMax} games`
 
                   return (
                     <div
@@ -168,12 +181,22 @@ export default function OffersPage() {
                               <div className="text-play-700 text-xs font-semibold">
                                 {offer.options!.length} package options
                               </div>
+                              {gamesLabel && (
+                                <div className="text-ink-700 mt-1 text-sm font-semibold">
+                                  {gamesLabel}
+                                </div>
+                              )}
                             </>
                           ) : (
                             <>
                               <div className="font-condensed text-ink-950 text-2xl font-bold">
                                 {formatCurrency(offer.seasonFee, offer.team.tenant.currency)}
                               </div>
+                              {gamesLabel && (
+                                <div className="text-ink-700 text-sm font-semibold">
+                                  {gamesLabel}
+                                </div>
+                              )}
                               {offer.chosenOptionId &&
                                 (() => {
                                   const chosenLabel = offer.options?.find(
@@ -194,6 +217,10 @@ export default function OffersPage() {
                           )}
                         </div>
                       </div>
+
+                      {offer.programDescription && (
+                        <p className="text-ink-500 mt-2 text-sm">{offer.programDescription}</p>
+                      )}
 
                       {/* What's included */}
                       {(offer.options?.length ?? 0) > 1 && !offer.chosenOptionId ? (
@@ -229,6 +256,7 @@ export default function OffersPage() {
                           offer.includesShoes && "Shoes",
                           offer.includesBall && "Basketball",
                           offer.includesBag && "Bag",
+                          ...(offer.customItems ?? []),
                         ].filter(Boolean)
                         return items.length > 0 || offer.practiceSessions > 0 ? (
                           <div className="border-play-200 bg-play-50 mt-3 rounded-xl border p-3">

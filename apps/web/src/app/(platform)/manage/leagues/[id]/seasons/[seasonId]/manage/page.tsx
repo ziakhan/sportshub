@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { Button, Badge, toneForStatus } from "@/components/ui"
+import { Button, Badge, SmartBack, toneForStatus } from "@/components/ui"
 import { OverviewTab } from "./components/overview-tab"
 import { DivisionsTab } from "./components/divisions-tab"
 import { VenuesTab } from "./components/venues-tab"
@@ -198,12 +198,7 @@ export default function LeagueManagePage() {
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       {/* Header */}
       <div className="mb-6">
-        <Link
-          href={`/manage/leagues/${leagueId}`}
-          className="text-play-700 text-sm font-medium hover:underline"
-        >
-          &larr; Back to {league.name}
-        </Link>
+        <SmartBack fallback={`/manage/leagues/${leagueId}`} fallbackLabel={league.name} className="-ml-1" />
         <Link
           href={`/manage/leagues/${leagueId}/seasons/${seasonId}/waivers`}
           className="text-play-700 float-right text-sm font-medium hover:underline"

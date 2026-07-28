@@ -27,20 +27,35 @@ function formatTime12(startTime: string): string {
   return `${hour12}:${String(m).padStart(2, "0")} ${suffix}`
 }
 
+/** "Mondays & Wednesdays" / "Mondays, Wednesdays & Fridays". */
+function joinDayNames(days: number[]): string {
+  const names = [...days].sort((a, b) => a - b).map((d) => `${DAY_NAMES[d]}s`)
+  if (names.length <= 1) return names.join("")
+  return `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`
+}
+
 /**
  * "Sat Feb 7, 10:00 AM" (one-time) or
- * "Tuesdays 6:00 PM · Jan 6 – Mar 30" (recurring).
+ * "Tuesdays 6:00 PM · Jan 6 – Mar 30" (recurring, single day) or
+ * "Mondays & Wednesdays 6:00 PM · Jan 6 – Mar 30" (recurring, multi-day —
+ * QA-203: daysOfWeek wins over dayOfWeek when more than one is set).
  */
 export function formatTrainingSchedule(session: {
   scheduleType: string
   startAt?: Date | string | null
   dayOfWeek?: number | null
+  daysOfWeek?: number[] | null
   startTime?: string | null
   startDate?: Date | string | null
   endDate?: Date | string | null
 }): string {
   if (session.scheduleType === "RECURRING") {
-    const day = session.dayOfWeek != null ? `${DAY_NAMES[session.dayOfWeek]}s` : "Weekly"
+    const day =
+      session.daysOfWeek && session.daysOfWeek.length > 1
+        ? joinDayNames(session.daysOfWeek)
+        : session.dayOfWeek != null
+          ? `${DAY_NAMES[session.dayOfWeek]}s`
+          : "Weekly"
     const time = session.startTime ? ` ${formatTime12(session.startTime)}` : ""
     const range =
       session.startDate && session.endDate

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import Link from "next/link"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
+import { SmartBack } from "@/components/ui"
 
 export default function TournamentDetailSubmitPage() {
   const params = useParams()
@@ -73,12 +73,7 @@ export default function TournamentDetailSubmitPage() {
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-8">
       <div className="mb-6">
-        <Link
-          href="/browse-tournaments"
-          className="text-play-700 text-sm font-medium hover:underline"
-        >
-          &larr; Back to Tournaments
-        </Link>
+        <SmartBack fallback="/browse-tournaments" fallbackLabel="Tournaments" className="-ml-1" />
       </div>
 
       {message && (

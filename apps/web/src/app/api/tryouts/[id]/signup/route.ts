@@ -151,7 +151,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const isFree = Number(tryout.fee) === 0
     const status = isFree ? "CONFIRMED" : "PENDING"
 
-    const results = await prisma.$transaction(async (tx: any) => {
+    const results = await prisma.$transaction(
+      async (tx: any) => {
+        // QA-007: the pre-transaction capacity check is advisory only — two
+        // concurrent signups could both pass it. This SERIALIZABLE re-check
+        // is the authoritative gate; Postgres aborts one of two racers.
+        if (tryout.maxParticipants) {
+          const activeNow = await tx.tryoutSignup.count({
+            where: { tryoutId: params.id, status: { not: "CANCELLED" } },
+          })
+          if (activeNow + entries.length > tryout.maxParticipants) throw new Error("CAPACITY_FULL")
+        }
       const created: Array<{ playerId: string; signupId: string; playerName: string }> = []
       for (const entry of entries) {
         const player = playerById.get(entry.playerId)!
@@ -191,8 +201,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         })
         created.push({ playerId: player.id, signupId: signup.id, playerName })
       }
-      return created
-    })
+        return created
+      },
+      { isolationLevel: "Serializable" }
+    )
 
     // Notify the club that new signups arrived.
     const staff = await prisma.userRole.findMany({
@@ -279,6 +291,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof Error && error.message === "CAPACITY_FULL") {
+      return NextResponse.json({ error: "This tryout is full" }, { status: 400 })
+    }
+    if ((error as any)?.code === "P2034") {
+      // Serialization conflict: another registration landed first.
+      return NextResponse.json(
+        { error: "Registrations are moving fast — please try again." },
+        { status: 409 }
+      )
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid input", details: error.errors }, { status: 400 })
     }

@@ -215,7 +215,9 @@ export function ObligationsTable({
                                 {" "}
                                 This organization also accepts:{" "}
                                 {o.offlineMethods.map((m) => METHOD_LABEL[m] ?? m).join(", ")} —
-                                pay them directly and they&apos;ll record it here.
+                                pay them directly and they&apos;ll record it here. Offline payments
+                                are arranged directly with the organizer — the platform can&apos;t
+                                refund them.
                               </>
                             ) : null}
                           </p>

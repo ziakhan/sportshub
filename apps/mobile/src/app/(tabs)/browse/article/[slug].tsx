@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { ScrollView, StyleSheet, Text, View } from "react-native"
-import { useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { Card, CoverImage, EmptyState, Loading, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
@@ -18,7 +18,7 @@ interface Article {
   tags: Array<{
     team: { id: string; name: string } | null
     tenant: { id: string; name: string; slug: string } | null
-    league: { id: string; name: string } | null
+    league: { id: string; name: string; seasons: Array<{ id: string }> } | null
   }>
 }
 
@@ -54,10 +54,24 @@ export default function ArticleScreen() {
     post.media?.find((m) => m.type === "IMAGE")?.url ??
     post.media?.find((m) => m.posterUrl)?.posterUrl ??
     null
-  const tagLine = post.tags
-    .map((t) => t.team?.name ?? t.tenant?.name ?? t.league?.name)
-    .filter(Boolean)
-    .join(" · ")
+  // Team and club tags route natively; league tags go to that league's
+  // latest season (web pattern: league -> seasons[0]) — plain text only
+  // when a league tag somehow has no season yet.
+  const tagChips = post.tags
+    .map((t) => {
+      const label = t.team?.name ?? t.tenant?.name ?? t.league?.name
+      if (!label) return null
+      const leagueSeasonId = t.league?.seasons?.[0]?.id
+      const onPress = t.team
+        ? () => router.push(`/browse/team/${t.team!.id}`)
+        : t.tenant
+          ? () => router.push(`/browse/club/${t.tenant!.slug}`)
+          : leagueSeasonId
+            ? () => router.push(`/browse/season/${leagueSeasonId}`)
+            : undefined
+      return { label, onPress }
+    })
+    .filter((t): t is { label: string; onPress: (() => void) | undefined } => !!t)
 
   return (
     <View style={styles.root}>
@@ -76,7 +90,22 @@ export default function ArticleScreen() {
           ) : null}
         </View>
         <Text style={styles.title}>{post.title}</Text>
-        {tagLine ? <Text style={styles.tagLine}>{tagLine}</Text> : null}
+        {tagChips.length > 0 ? (
+          <View style={styles.tagRow}>
+            {tagChips.map((t, i) => (
+              <View key={`${t.label}:${i}`} style={styles.tagChipWrap}>
+                {i > 0 ? <Text style={styles.tagLine}>· </Text> : null}
+                <Text
+                  style={[styles.tagLine, t.onPress && styles.tagLink]}
+                  onPress={t.onPress}
+                  suppressHighlighting={!t.onPress}
+                >
+                  {t.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {hero ? <CoverImage url={hero} style={styles.hero} /> : null}
         <Card>
           <Text style={styles.body}>{post.body}</Text>
@@ -93,7 +122,10 @@ const styles = StyleSheet.create({
   head: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   date: { fontSize: 12, color: ui.textFaint },
   title: { fontSize: 22, fontWeight: "800", color: ui.text, letterSpacing: -0.4, lineHeight: 28 },
-  tagLine: { fontSize: 13, color: ui.primaryInk, fontWeight: "600" },
+  tagRow: { flexDirection: "row", flexWrap: "wrap" },
+  tagChipWrap: { flexDirection: "row", alignItems: "center" },
+  tagLine: { fontSize: 13, color: ui.textMuted, fontWeight: "600" },
+  tagLink: { color: ui.primaryInk, textDecorationLine: "underline" },
   hero: { borderRadius: ui.radius.lg },
   body: { fontSize: 15, color: ui.text, lineHeight: 23 },
 })

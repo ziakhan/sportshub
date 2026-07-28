@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { ProfileData } from "@/lib/validations/onboarding"
 import { ParentForm } from "./forms/parent-form"
@@ -175,13 +175,169 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
   )
 }
 
+// QA-106 ruling: operator roles (running clubs/leagues, officiating, training)
+// require an 18+ attestation at onboarding. Parent/Player/Staff are unchanged.
+const OPERATOR_ROLES = ["ClubOwner", "LeagueOwner", "Referee", "Trainer"]
+
+function AdultAttestationCheckbox({
+  checked,
+  onChange,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label className="border-ink-200 bg-court-50/60 flex items-start gap-2.5 rounded-xl border p-4 text-sm text-ink-700">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="border-ink-300 mt-0.5 h-4 w-4 rounded"
+      />
+      <span>
+        I confirm I am 18 years of age or older
+        <span className="text-ink-500 mt-0.5 block text-xs">
+          Operator roles (running clubs, leagues, or officiating) are for adults.
+        </span>
+      </span>
+    </label>
+  )
+}
+
+// QA-209: every account already gets a generated default handle reserved at
+// signup (settings-only until now, via /api/account/handle). This is a
+// light, non-blocking step — Continue tries to save an edited handle but
+// always moves on even if that fails or nothing changed, so onboarding never
+// stalls on it.
+const secondaryButtonClass =
+  "rounded-xl border border-ink-200 bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
+const primaryButtonClass =
+  "flex-1 rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-play-700 disabled:cursor-not-allowed disabled:bg-ink-400"
+
+function HandleStep({ onContinue, onBack }: { onContinue: () => void; onBack: () => void }) {
+  const [handle, setHandle] = useState<string | null>(null)
+  const [draft, setDraft] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch("/api/account/handle")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setHandle(data?.handle ?? null)
+        setDraft(data?.handle ?? "")
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const saveAndContinue = async () => {
+    setError(null)
+    const trimmed = draft.trim().toLowerCase()
+    if (!trimmed || trimmed === handle) {
+      onContinue()
+      return
+    }
+    setBusy(true)
+    try {
+      const res = await fetch("/api/account/handle", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ handle: trimmed }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || "Couldn't save that handle")
+        setBusy(false)
+        return
+      }
+      onContinue()
+    } catch {
+      setError("Network error. Please try again.")
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-ink-900 text-xl font-semibold">Pick your handle</h2>
+        <p className="text-ink-700 mt-1 text-sm">
+          This is your name across SportsHub. We reserved the default below for you at sign-up.
+          Keep it, or make it your own.
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="text-ink-500 text-sm">Loading…</p>
+      ) : (
+        <div>
+          <div className="border-ink-200 focus-within:border-play-500 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
+            <span className="text-ink-400 text-sm">@</span>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value.toLowerCase())}
+              className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
+              placeholder="yourname"
+              maxLength={20}
+            />
+          </div>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          <p className="text-ink-500 mt-2 text-xs">
+            Skipping keeps your default handle{handle ? ` (@${handle})` : ""}.
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <button type="button" onClick={onBack} className={secondaryButtonClass}>
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onContinue}
+          className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
+        >
+          Skip for now
+        </button>
+        <button
+          type="button"
+          onClick={saveAndContinue}
+          disabled={busy || loading}
+          className={primaryButtonClass}
+        >
+          {busy ? "Saving…" : "Continue"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// QA-209(b/c): Parent-role copy-only callouts surfaced during onboarding —
+// no links, non-blocking, additive to the existing ParentForm.
+function ParentInfoCallouts() {
+  return (
+    <div className="mb-6 space-y-3">
+      <div className="border-ink-200 bg-court-50/60 rounded-xl border p-4 text-sm text-ink-700">
+        Adding your kids next? You can also give a 13+ child their own login later from their
+        profile page.
+      </div>
+      <div className="border-ink-200 bg-court-50/60 rounded-xl border p-4 text-sm text-ink-700">
+        Player profiles are private by default. You approve who follows your kids.
+      </div>
+    </div>
+  )
+}
+
 interface OnboardingFlowProps {
   userName: string
 }
 
 export function OnboardingFlow({ userName }: OnboardingFlowProps) {
-  const [step, setStep] = useState<"role" | "profile">("role")
+  const [step, setStep] = useState<"role" | "handle" | "profile">("role")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
+  const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -201,18 +357,25 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
     setError(null)
 
-    // ClubOwner and Trainer skip step 2 — straight to the API, then their
-    // create flow (/clubs/create, /trainers/create)
-    if (selectedRole === "ClubOwner" || selectedRole === "Trainer") {
-      await submitOnboarding(selectedRole)
-      return
-    }
-
-    setStep("profile")
+    // QA-209: a light handle-pick step sits between role selection and the
+    // per-role profile form for every role.
+    setStep("handle")
   }
 
   const handleProfileSubmit = async (profileData: ProfileData) => {
+    if (OPERATOR_ROLES.includes(selectedRole!) && !adultAttested) {
+      setError("Please confirm you are 18 years of age or older to continue.")
+      return
+    }
     await submitOnboarding(selectedRole!, profileData)
+  }
+
+  const handleOperatorContinue = async () => {
+    if (!adultAttested) {
+      setError("Please confirm you are 18 years of age or older to continue.")
+      return
+    }
+    await submitOnboarding(selectedRole!)
   }
 
   const submitOnboarding = async (role: string, profileData?: ProfileData) => {
@@ -226,6 +389,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         body: JSON.stringify({
           roles: [role],
           profileData: profileData || undefined,
+          adultAttested: OPERATOR_ROLES.includes(role) ? adultAttested : undefined,
         }),
       })
 
@@ -249,6 +413,15 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     }
   }
 
+  if (step === "handle" && selectedRole) {
+    return (
+      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
+        <HandleStep onContinue={() => setStep("profile")} onBack={() => setStep("role")} />
+        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 3: Pick your handle</p>
+      </div>
+    )
+  }
+
   if (step === "profile" && selectedRole) {
     return (
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
@@ -259,42 +432,83 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         )}
 
         {selectedRole === "Parent" && (
-          <ParentForm
-            onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <ParentInfoCallouts />
+            <ParentForm
+              onSubmit={handleProfileSubmit}
+              onBack={() => setStep("handle")}
+              isSubmitting={isSubmitting}
+            />
+          </>
         )}
         {selectedRole === "Player" && (
           <PlayerForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
+            onBack={() => setStep("handle")}
             isSubmitting={isSubmitting}
           />
         )}
         {selectedRole === "Staff" && (
           <StaffForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
+            onBack={() => setStep("handle")}
             isSubmitting={isSubmitting}
           />
         )}
         {selectedRole === "Referee" && (
-          <RefereeForm
-            onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="mt-6">
+              <RefereeForm
+                onSubmit={handleProfileSubmit}
+                onBack={() => setStep("handle")}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </>
         )}
         {selectedRole === "LeagueOwner" && (
-          <LeagueOwnerForm
-            onSubmit={handleProfileSubmit}
-            onBack={() => setStep("role")}
-            isSubmitting={isSubmitting}
-          />
+          <>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="mt-6">
+              <LeagueOwnerForm
+                onSubmit={handleProfileSubmit}
+                onBack={() => setStep("handle")}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </>
+        )}
+        {(selectedRole === "ClubOwner" || selectedRole === "Trainer") && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-ink-900 text-xl font-semibold">
+                {selectedRole === "ClubOwner" ? "Before you create your club" : "Before you set up training"}
+              </h2>
+              <p className="text-ink-700 mt-1 text-sm">One quick confirmation before we continue.</p>
+            </div>
+            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setStep("handle")}
+                className="border-ink-200 rounded-xl border bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleOperatorContinue}
+                disabled={isSubmitting || !adultAttested}
+                className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-3 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Setting up..." : "Continue"}
+              </button>
+            </div>
+          </div>
         )}
 
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 2 — Complete your profile</p>
+        <p className="text-ink-500 mt-4 text-center text-sm">Step 3 of 3: Complete your profile</p>
       </div>
     )
   }
@@ -363,7 +577,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         {isSubmitting ? "Setting up your account..." : "Continue"}
       </button>
 
-      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 2 — Choose your role</p>
+      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 3: Choose your role</p>
     </div>
   )
 }

@@ -68,7 +68,10 @@ export default function BrowseHubScreen() {
                       : undefined
                   }
                 >
-                  <CoverImage url={n.coverUrl} icon="newspaper-outline" />
+                  {/* imageUrl, not coverUrl — the native-safe absolute PNG the
+                      home API already resolves (coverUrl may be an SVG
+                      data-URI expo-image can't decode). */}
+                  <CoverImage url={n.imageUrl} icon="newspaper-outline" />
                   <View style={styles.newsBody}>
                     <Text style={styles.newsTitle} numberOfLines={2}>
                       {n.title}

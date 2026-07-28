@@ -8,6 +8,8 @@ import { canScoreGame } from "@/lib/scoring/authz"
 import { foldEvents, totalRebounds, type FoldEvent } from "@/lib/scoring/fold"
 import { sendEmail, appBaseUrl } from "@/lib/email"
 import { upsertGameRecap } from "@/lib/content/recap-service"
+import { detectAndPublishMilestones } from "@/lib/content/milestones"
+import { detectAndPublishStandingsMovement } from "@/lib/content/standings-movement"
 import { advancePlayoffs } from "@/lib/playoffs/generate"
 import { notifyMany } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
@@ -305,6 +307,24 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     } catch (postErr) {
       console.error("Final post failed:", postErr)
+    }
+
+    // MILESTONE cards (business-model-v2 §12/§16 S1): player season-highs,
+    // firsts, career-100, scoring streaks — detected from the PlayerStat
+    // rows just written above. Best-effort, never blocks the whistle.
+    try {
+      await detectAndPublishMilestones(params.id)
+    } catch (milestoneErr) {
+      console.error("Milestone detection failed:", milestoneErr)
+    }
+
+    // Standings-movement MILESTONE card ("Lords jump to 2nd in U12 East") —
+    // rank before/after this game's result, division-scoped. No-ops outside
+    // a league season (exhibition/ghost games). Best-effort.
+    try {
+      await detectAndPublishStandingsMovement(params.id)
+    } catch (standingsErr) {
+      console.error("Standings-movement detection failed:", standingsErr)
     }
 
     // Distribute the scoresheet — club managers of BOTH teams + the league

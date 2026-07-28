@@ -58,7 +58,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           select: {
             firstName: true,
             lastName: true,
-            refereeProfile: { select: { certificationLevel: true, standardFee: true, gamesRefereed: true, signoffPinHash: true } },
+            refereeProfile: {
+              select: {
+                certificationLevel: true,
+                standardFee: true,
+                gamesRefereed: true,
+                signoffPinHash: true,
+                certificationDocUrl: true,
+                certificationVerifiedAt: true,
+              },
+            },
             refereeAvailabilities: date
               ? { where: { date: new Date(`${date}T00:00:00.000Z`) }, select: { startTime: true, endTime: true } }
               : { where: { id: "none" }, select: { startTime: true, endTime: true } },
@@ -76,6 +85,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         fee: u.refereeProfile?.standardFee ? Number(u.refereeProfile.standardFee) : null,
         gamesRefereed: u.refereeProfile?.gamesRefereed ?? 0,
         hasPin: !!u.refereeProfile?.signoffPinHash,
+        // QA-208: flags only — the doc itself (data URL, up to ~2MB) never
+        // goes into this list payload.
+        hasCertDoc: !!u.refereeProfile?.certificationDocUrl,
+        certVerified: !!u.refereeProfile?.certificationVerifiedAt,
         inPool,
         // "available" declared + covers · "partial" declared other hours ·
         // "unknown" hasn't said — still contactable, Uber-style
@@ -102,7 +115,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           id: true,
           firstName: true,
           lastName: true,
-          refereeProfile: { select: { certificationLevel: true, standardFee: true, gamesRefereed: true, signoffPinHash: true } },
+          refereeProfile: {
+            select: {
+              certificationLevel: true,
+              standardFee: true,
+              gamesRefereed: true,
+              signoffPinHash: true,
+              certificationDocUrl: true,
+              certificationVerifiedAt: true,
+            },
+          },
           refereeAvailabilities: date
             ? { where: { date: new Date(`${date}T00:00:00.000Z`) }, select: { startTime: true, endTime: true } }
             : { where: { id: "none" }, select: { startTime: true, endTime: true } },
@@ -172,6 +194,45 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("League referee remove error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+const verifySchema = z.object({ userId: z.string() })
+
+/**
+ * PATCH — QA-208: league-owner/manager stamps a referee's uploaded
+ * certification as verified. Requires a document on file; no-op review of
+ * content itself (that's the human step) — this just records who/when.
+ */
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const auth = await getSessionUserId()
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const ctx = await requireLeagueSide(auth.userId, auth.isPlatformAdmin, params.id)
+    if (ctx.error) return ctx.error
+
+    const parsed = verifySchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return NextResponse.json({ error: "userId is required" }, { status: 400 })
+
+    const profile = await prisma.refereeProfile.findUnique({
+      where: { userId: parsed.data.userId },
+      select: { certificationDocUrl: true },
+    })
+    if (!profile?.certificationDocUrl) {
+      return NextResponse.json(
+        { error: "This referee has no certification document on file" },
+        { status: 400 }
+      )
+    }
+
+    await prisma.refereeProfile.update({
+      where: { userId: parsed.data.userId },
+      data: { certificationVerifiedAt: new Date(), certificationVerifiedById: auth.userId },
+    })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Referee cert verify error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -19,6 +19,8 @@ interface Props {
   userName: string
   userEmail: string
   userInitials: string
+  /** Profile photo — falls back to the initials badge when null/unset. */
+  avatarUrl?: string | null
   shape: NavShape
 }
 
@@ -61,9 +63,10 @@ const ICONS = {
   account: ic("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M4 21a8 8 0 0 1 16 0"),
   whistle: ic("M15 13a6 6 0 1 1-6-6h6zM15 7l6-3-2 6"),
   plus: ic("M12 5v14M5 12h14"),
+  poll: ic("M4 20V10M12 20V4M20 20v-7"),
 }
 
-export function AccountMenu({ userName, userEmail, userInitials, shape }: Props) {
+export function AccountMenu({ userName, userEmail, userInitials, avatarUrl, shape }: Props) {
   // One panel at a time: the bell dropdown and the badge menu share this
   // state so opening one always closes the other.
   const [panel, setPanel] = useState<"account" | "bell" | null>(null)
@@ -101,7 +104,11 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
         aria-expanded={open}
         className="bg-play-600 hover:bg-play-700 relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white transition"
       >
-        {userInitials}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          userInitials
+        )}
       </button>
 
       {open && (
@@ -148,6 +155,9 @@ export function AccountMenu({ userName, userEmail, userInitials, shape }: Props)
             )}
             <Row href="/messages" onClick={close} icon={ICONS.chat}>
               Chat
+            </Row>
+            <Row href="/polls" onClick={close} icon={ICONS.poll}>
+              Polls
             </Row>
             {/* No Notifications row: the bell beside the badge IS the inbox
                 (owner 2026-07-21 — having both was redundant). */}

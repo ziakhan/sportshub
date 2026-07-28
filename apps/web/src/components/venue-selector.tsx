@@ -355,6 +355,16 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
             </div>
           )}
 
+          {/* QA-005: never fail silently — when the Google layer is dead
+              (missing key, blocked script, restriction error) say so instead
+              of letting "no results" read as an empty directory. */}
+          {!googleLoaded && query.length >= 2 && (
+            <div className="border-b border-gray-50 bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
+              Map search unavailable right now — you can still pick an existing venue or add one
+              manually below.
+            </div>
+          )}
+
           {/* Google Places */}
           {googlePredictions.length > 0 && (
             <div>

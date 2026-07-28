@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
-import { Button } from "@/components/ui"
+import { SmartBack } from "@/components/ui"
 import { CheckInList } from "./check-in-list"
 
 export default async function TryoutCheckInPage({
@@ -43,18 +43,11 @@ export default async function TryoutCheckInPage({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4">
-        <Button
-          href={`/clubs/${params.id}/tryouts/${params.tryoutId}/signups`}
-          variant="subtle"
-          size="sm"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          }
-        >
-          Back to Signups
-        </Button>
+        <SmartBack
+          fallback={`/clubs/${params.id}/tryouts/${params.tryoutId}/signups`}
+          fallbackLabel="Signups"
+          className="-ml-1"
+        />
       </div>
 
       <div className="mb-4">

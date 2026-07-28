@@ -1,9 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useRealtime } from "@/lib/realtime/use-realtime"
+import { SmartBack } from "@/components/ui"
 
 /**
  * Direct-message thread (owner 2026-07-15) — 1:1 inside a team context.
@@ -126,12 +126,7 @@ export default function DmThreadPage() {
           </h1>
           {convo?.teamName && <p className="text-ink-500 truncate text-xs">{convo.teamName}</p>}
         </div>
-        <Link
-          href="/messages"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-xl border px-3 py-1.5 text-xs font-semibold"
-        >
-          All chats
-        </Link>
+        <SmartBack fallback="/messages" fallbackLabel="Messages" className="shrink-0" />
       </div>
 
       <div className="border-ink-100 flex-1 space-y-2 overflow-y-auto rounded-2xl border bg-white p-4">

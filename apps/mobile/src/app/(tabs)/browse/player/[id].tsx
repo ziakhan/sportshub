@@ -130,7 +130,7 @@ export default function PlayerScreen() {
           {data.team ? (
             <Pressable
               style={({ pressed }) => [styles.teamRow, pressed && { backgroundColor: ui.surfaceSunken }]}
-              onPress={() => router.push(`/team/${data.team!.id}`)}
+              onPress={() => router.push(`/browse/team/${data.team!.id}`)}
             >
               <Monogram name={data.team.name} size={32} />
               <View style={{ flex: 1 }}>

@@ -6,17 +6,30 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
-const createTemplateSchema = z.object({
-  name: z.string().min(1).max(100),
-  seasonFee: z.number().min(0),
-  installments: z.number().min(1).max(12).default(1),
-  practiceSessions: z.number().min(0).default(0),
-  includesBall: z.boolean().default(false),
-  includesBag: z.boolean().default(false),
-  includesShoes: z.boolean().default(false),
-  includesUniform: z.boolean().default(false),
-  includesTracksuit: z.boolean().default(false),
-})
+const createTemplateSchema = z
+  .object({
+    name: z.string().min(1).max(100),
+    seasonFee: z.number().min(0),
+    installments: z.number().min(1).max(12).default(1),
+    practiceSessions: z.number().min(0).default(0),
+    // Games are the headline (owner ruling 2026-07-24, refines QA-211).
+    gamesMin: z.number().int().min(0).max(200).optional(),
+    gamesMax: z.number().int().min(0).max(200).optional(),
+    // Program structure is prose, not checkboxes.
+    programDescription: z.string().trim().max(2000).optional(),
+    // Custom extras beyond the fixed gear checklist.
+    customItems: z.array(z.string().trim().min(1).max(60)).max(12).default([]),
+    includesBall: z.boolean().default(false),
+    includesBag: z.boolean().default(false),
+    includesShoes: z.boolean().default(false),
+    includesUniform: z.boolean().default(false),
+    includesTracksuit: z.boolean().default(false),
+  })
+  .refine(
+    (data) =>
+      data.gamesMin === undefined || data.gamesMax === undefined || data.gamesMin <= data.gamesMax,
+    { message: "Games (from) must be less than or equal to games (to)", path: ["gamesMin"] }
+  )
 
 async function verifyClubAccess(clubId: string, userId: string, requireAdmin: boolean) {
   const allowedRoles = requireAdmin

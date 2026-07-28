@@ -145,7 +145,9 @@ export const getCompletionChecklist = cache(async function getCompletionChecklis
         group: CLUB_GROUP,
         label: "Brand your club",
         hint: "Add a logo and set your team colors.",
-        href: primaryTenantId ? `${base}/settings` : "/clubs/create",
+        // QA-405: Customize is the visual brand editor (logo + all three
+        // colors, live preview) — Settings only has the primary color.
+        href: primaryTenantId ? `${base}/customize` : "/clubs/create",
         done: !!club?.branded,
       },
       {

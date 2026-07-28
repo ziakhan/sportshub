@@ -17,7 +17,7 @@ export const LEGAL = {
   legalEmail: brandEmail("legal"),
   supportEmail: brandEmail("support"),
   /** Bump when a policy materially changes. */
-  effectiveDate: "July 21, 2026",
+  effectiveDate: "July 23, 2026",
   /** Age below which a parent/guardian must register and consent (COPPA-style). */
   minorAge: 13,
 } as const

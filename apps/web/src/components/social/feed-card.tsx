@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { cn } from "@/components/ui/cn"
 import type { FeedItem } from "@/lib/queries/feed"
+import { logFeedEvent } from "@/lib/feed-telemetry"
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "🔥", "🏀"] as const
 
@@ -45,7 +46,11 @@ const KIND_CHIP: Record<string, { label: string; cls: string }> = {
   ARTICLE: { label: "📰 Club post", cls: "bg-ink-50 text-ink-600 ring-ink-200" },
   PHOTO_SET: { label: "📷 Photos", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
   VIDEO: { label: "🎥 Video", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
+  // Player milestone default — overridden to the standings variant below
+  // when the post has no player tag (team-level "jump to 2nd" card).
+  MILESTONE: { label: "🏅 Milestone", cls: "bg-gold-50 text-gold-700 ring-gold-200" },
 }
+const STANDINGS_CHIP = { label: "📈 Standings", cls: "bg-court-50 text-court-700 ring-court-200" }
 
 const AVATAR_BG = ["bg-play-600", "bg-court-600", "bg-hoop-600", "bg-gold-500", "bg-ink-700"]
 
@@ -84,9 +89,61 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const [sent, setSent] = useState(false)
   const [dragY, setDragY] = useState(0)
   const dragStart = { y: 0 }
+  const articleRef = useRef<HTMLElement>(null)
+
+  // Impression + dwell logging (recsys S0): a card counts as "seen" once
+  // >=50% of it has been in the viewport for a full second; dwell time is
+  // the span it stayed visible, logged when it scrolls out or unmounts.
+  useEffect(() => {
+    const el = articleRef.current
+    if (!el || typeof IntersectionObserver === "undefined") return
+    let visibleSince: number | null = null
+    let impressionTimer: ReturnType<typeof setTimeout> | null = null
+    let impressionFired = false
+
+    const logDwell = () => {
+      if (visibleSince === null) return
+      const valueMs = Date.now() - visibleSince
+      visibleSince = null
+      if (valueMs >= 500) {
+        logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "dwell", valueMs, surface: "web-feed" })
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          if (visibleSince === null) visibleSince = Date.now()
+          if (!impressionFired && !impressionTimer) {
+            impressionTimer = setTimeout(() => {
+              impressionFired = true
+              impressionTimer = null
+              logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "impression", surface: "web-feed" })
+            }, 1000)
+          }
+        } else {
+          if (impressionTimer) {
+            clearTimeout(impressionTimer)
+            impressionTimer = null
+          }
+          logDwell()
+        }
+      },
+      { threshold: [0, 0.5] }
+    )
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      if (impressionTimer) clearTimeout(impressionTimer)
+      logDwell()
+    }
+  }, [item.id])
 
   const href =
-    item.kind === "STAT_CARD" || item.kind === "PLAYER_OF_GAME" || item.kind === "ANNOUNCEMENT"
+    item.kind === "STAT_CARD" ||
+    item.kind === "PLAYER_OF_GAME" ||
+    item.kind === "ANNOUNCEMENT" ||
+    item.kind === "MILESTONE"
       ? item.gameId
         ? `/live/${item.gameId}`
         : `/news/${item.slug}`
@@ -97,6 +154,9 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
     const had = myEmojis.includes(emoji)
     setMyEmojis((m) => (had ? m.filter((e) => e !== emoji) : [...m, emoji]))
     setReactionCount((c) => c + (had ? -1 : 1))
+    if (!had) {
+      logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "like", surface: "web-feed" })
+    }
     try {
       const res = await fetch(`/api/posts/${item.id}/reactions`, {
         method: "POST",
@@ -141,6 +201,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
         const data = await res.json()
         setComments((c) => [...(c ?? []), data.comment])
         setCommentCount((n) => n + 1)
+        logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "comment", surface: "web-feed" })
       }
     } catch {
       /* dropped comment shows on next open */
@@ -162,6 +223,9 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
     const next = !reposted
     setReposted(next)
     setRepostCount((c) => c + (next ? 1 : -1))
+    if (next) {
+      logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "share", surface: "web-feed" })
+    }
     const res = await fetch(`/api/posts/${item.id}/repost`, { method: next ? "POST" : "DELETE" })
     if (!res.ok) {
       setReposted(!next)
@@ -218,10 +282,17 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
           sharedPostId: item.id,
         }),
       })
-      if (res.ok) setSent(true)
+      if (res.ok) {
+        setSent(true)
+        logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "share", surface: "web-feed" })
+      }
     } catch {
       /* leave picker open */
     }
+  }
+
+  const logTap = () => {
+    logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "tap", surface: "web-feed" })
   }
 
   const saveCaption = async () => {
@@ -244,11 +315,16 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const authorLabel = item.authorName ?? "SportsHub One"
   const chip = item.isSystemFinal
     ? { label: "🏁 Final score", cls: "bg-court-50 text-court-700 ring-court-200" }
-    : KIND_CHIP[item.kind]
+    : item.kind === "MILESTONE" && !item.playerName
+      ? STANDINGS_CHIP // team-tagged standings-movement card, no player tag
+      : KIND_CHIP[item.kind]
   const avatarCls = AVATAR_BG[(authorLabel.charCodeAt(0) + authorLabel.length) % AVATAR_BG.length]
 
   return (
-    <article className="ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.55)] ring-1">
+    <article
+      ref={articleRef}
+      className="ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.55)] ring-1"
+    >
       {item.repostedBy && (
         <p className="text-ink-500 bg-ink-50/70 border-ink-100 flex items-center gap-1.5 border-b px-4 py-1.5 text-xs font-semibold">
           <Ic d={IC.repeat} className="h-3.5 w-3.5" /> {item.repostedBy} reposted
@@ -312,7 +388,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
         </span>
       </div>
 
-      <Link href={href} className="block px-4 pt-1.5">
+      <Link href={href} onClick={logTap} className="block px-4 pt-1.5">
         <h3 className="text-ink-950 text-[15px] font-bold leading-snug">{item.title}</h3>
         {caption.trim() && !editing && (
           <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{caption}</p>
@@ -340,7 +416,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       )}
 
       {(item.cardImage || (item.mediaUrl && item.mediaType === "IMAGE")) && (
-        <Link href={href} className="mt-2.5 block">
+        <Link href={href} onClick={logTap} className="mt-2.5 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.cardImage ?? item.mediaUrl!}
@@ -469,7 +545,14 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
               ["email", "Email", "#6366f1", () => { window.location.href = `mailto:?subject=${encodeURIComponent(item.title)}&body=${encodeURIComponent(window.location.origin + href)}` }],
               ["more", "More…", "#0f172a", () => void shareOutside()],
             ] as Array<[string, string, string, () => void]>).map(([kind, label, color, fn]) => (
-              <button key={label} onClick={fn} className="flex w-[72px] shrink-0 flex-col items-center gap-1">
+              <button
+                key={label}
+                onClick={() => {
+                  logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "share", surface: "web-feed" })
+                  fn()
+                }}
+                className="flex w-[72px] shrink-0 flex-col items-center gap-1"
+              >
                 <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: color }}>
                   {kind === "instagram" ? (
                     <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="#fff" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="#fff" stroke="none"/></svg>

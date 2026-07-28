@@ -6,7 +6,7 @@ import { StatusBar } from "expo-status-bar"
 import { StripeProvider } from "@stripe/stripe-react-native"
 import { SessionProvider, useSession } from "@/lib/session"
 import { ThemeProvider } from "@/lib/theme-context"
-import { useMobileConfig } from "@/lib/config"
+import { useMobileConfig, type AppVersionConfig } from "@/lib/config"
 import { routePushResponses } from "@/lib/push"
 import { ui } from "@/lib/theme"
 import {
@@ -23,6 +23,8 @@ import {
   WorkSans_700Bold,
 } from "@expo-google-fonts/work-sans"
 import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold } from "@expo-google-fonts/barlow-condensed"
+import { UpdateBanner } from "@/components/update-banner"
+import { VersionGate } from "@/components/version-gate"
 
 SplashScreen.preventAutoHideAsync()
 
@@ -53,7 +55,7 @@ function ForcedUpgrade({ minVersion }: { minVersion: string }) {
  * the top bar or a gated action. Push taps deep-link once the navigator
  * is mounted.
  */
-function RootNavigator() {
+function RootNavigator({ appVersion }: { appVersion?: AppVersionConfig | null }) {
   const { isLoading } = useSession()
   // The same brand fonts the web loads via next/font (native-parity-v2 P0):
   // typography was the single biggest looks-different gap.
@@ -97,6 +99,8 @@ function RootNavigator() {
         <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
         <Stack.Screen name="sign-up" options={{ presentation: "modal" }} />
       </Stack>
+      <UpdateBanner />
+      <VersionGate appVersion={appVersion} />
     </>
   )
 }
@@ -118,7 +122,7 @@ export default function RootLayout() {
     <ThemeProvider palette={config?.palette}>
       <MaybeStripe pk={config?.stripePublishableKey ?? null}>
         <SessionProvider>
-          <RootNavigator />
+          <RootNavigator appVersion={config?.appVersion} />
         </SessionProvider>
       </MaybeStripe>
     </ThemeProvider>

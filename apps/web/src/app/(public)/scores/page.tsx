@@ -3,7 +3,7 @@ import { format, isSameDay } from "date-fns"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { getViewerScope } from "@/lib/privacy/participants"
+import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
 import { Badge, ScoreCard, SectionHeader } from "@/components/ui"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 
@@ -95,14 +95,8 @@ export default async function ScoresPage({
   const weekAhead = new Date(now.getTime() + 7 * 86400_000)
   const seasonWhere = seasonFilter ? { seasonId: seasonFilter } : {}
 
-  const [scope, followedTeams, leagues, live, finals, upcoming] = await Promise.all([
-    getViewerScope(viewerId),
-    viewerId
-      ? (prisma as any).follow.findMany({
-          where: { userId: viewerId, teamId: { not: null } },
-          select: { teamId: true },
-        })
-      : [],
+  const [myTeamIds, leagues, live, finals, upcoming] = await Promise.all([
+    getYourGameTeamIds(viewerId),
     (prisma as any).league.findMany({
       where: { seasons: { some: { games: { some: {} } } } },
       select: {
@@ -137,11 +131,8 @@ export default async function ScoresPage({
   ])
 
   // "Your games" pinned first (your kids' teams, your roles, your follows)
-  const myTeamIds = new Set<string>(scope.teamIds)
-  for (const f of followedTeams) myTeamIds.add(f.teamId)
-  const isMine = (g: any) => myTeamIds.has(g.homeTeamId) || myTeamIds.has(g.awayTeamId)
   const all = [...live, ...upcoming, ...finals]
-  const myGames = viewerId ? all.filter(isMine) : []
+  const myGames = pickYourGames(all, myTeamIds)
   const myGameIds = new Set(myGames.map((g: any) => g.id))
   const notMine = (list: any[]) => list.filter((g) => !myGameIds.has(g.id))
 

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { getPublicFeed } from "@/lib/queries/content"
 import { NewsCard, SectionHeader } from "@/components/ui"
+import { NewsCardTelemetry } from "./news-card-telemetry"
 
 export const dynamic = "force-dynamic"
 
@@ -37,15 +38,20 @@ export default async function NewsIndexPage() {
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <NewsCard
+            <NewsCardTelemetry
               key={`${item.type}-${item.id}`}
-              title={item.title}
-              excerpt={item.excerpt}
-              coverUrl={item.coverUrl}
-              dateLabel={format(new Date(item.dateISO), "MMM d, yyyy")}
-              author={item.author ?? undefined}
-              href={item.href ?? undefined}
-            />
+              itemKey={`${item.type}:${item.id}`}
+              postId={item.type === "post" ? item.id : null}
+            >
+              <NewsCard
+                title={item.title}
+                excerpt={item.excerpt}
+                coverUrl={item.coverUrl}
+                dateLabel={format(new Date(item.dateISO), "MMM d, yyyy")}
+                author={item.author ?? undefined}
+                href={item.href ?? undefined}
+              />
+            </NewsCardTelemetry>
           ))}
         </div>
       )}

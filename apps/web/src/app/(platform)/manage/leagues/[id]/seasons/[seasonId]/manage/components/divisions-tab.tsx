@@ -244,6 +244,10 @@ export function DivisionsTab({
               <option value="3">Tier 3</option>
             </select>
           </div>
+          <p className="text-ink-400 text-xs">
+            Tier groups divisions by competitive level — Tier 1 is the top bracket. Used for
+            seeding and standings grouping.
+          </p>
           <input
             type="number"
             min="1"

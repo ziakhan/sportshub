@@ -13,6 +13,7 @@ import {
   PanelHeader,
   Badge,
   DateTimePicker,
+  SmartBack,
   type BadgeTone,
 } from "@/components/ui"
 
@@ -234,12 +235,7 @@ function LeagueDashboard() {
       style={brandStyle(league.primaryColor || "#4f46e5")}
     >
       <div className="mb-2">
-        <Link
-          href="/manage/leagues"
-          className="text-[color:var(--brand-ink)] text-sm font-medium hover:underline"
-        >
-          &larr; Back to Leagues
-        </Link>
+        <SmartBack fallback="/manage/leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>
 
       <div className="reveal border-ink-100 shadow-soft rounded-[28px] border bg-white p-6 sm:p-8">
@@ -278,6 +274,9 @@ function LeagueDashboard() {
             </Button>
             <Button href={`/manage/leagues/${leagueId}/waivers`} variant="subtle" icon={BTN_ICONS.pen}>
               Waivers
+            </Button>
+            <Button href={`/manage/leagues/${leagueId}/polls`} variant="subtle" icon={BTN_ICONS.poll}>
+              Polls
             </Button>
             <Button
               onClick={() => setShowCreate((v) => !v)}
@@ -593,6 +592,11 @@ const BTN_ICONS: Record<string, React.ReactNode> = {
   pen: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  poll: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 20V10M12 20V4M20 20v-7" strokeLinecap="round" />
     </svg>
   ),
 }

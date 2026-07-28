@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
-import { Badge, Button, toneForStatus } from "@/components/ui"
+import { Badge, Button, SmartBack, toneForStatus } from "@/components/ui"
 
 interface UserRole {
   id: string
@@ -127,12 +126,7 @@ export default function AdminUsersPage() {
             <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">User management</h1>
             <p className="text-ink-500 text-sm">{total} total users</p>
           </div>
-          <Link
-            href="/dashboard"
-            className="text-play-600 hover:text-play-700 text-sm font-semibold"
-          >
-            ← Back to Dashboard
-          </Link>
+          <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" />
         </div>
       </div>
 

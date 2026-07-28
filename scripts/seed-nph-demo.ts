@@ -365,11 +365,15 @@ function buildGameEvents(opts: {
       playerId: e.playerId ?? null,
       made: e.made ?? null,
       period: e.period ?? null,
+      clockSeconds: e.clockSeconds ?? null,
       sequence: ++seq,
       clientEventId: `nphdemo-${gameId.slice(0, 8)}-${seq}`,
       metadata: e.metadata ?? undefined,
       timestamp: new Date(startAt.getTime() + seq * 18_000),
     })
+  // 10-minute quarters (GAME_LENGTH_MINUTES/4) — clockSeconds counts down
+  // within each period so play-by-play reads like a real broadcast feed.
+  const PERIOD_SECONDS = 600
 
   push({ eventType: "ATTENDANCE", teamId: homeTeamId, metadata: { presentIds: homeRoster, absentIds: [] } })
   push({ eventType: "ATTENDANCE", teamId: awayTeamId, metadata: { presentIds: awayRoster, absentIds: [] } })
@@ -386,40 +390,46 @@ function buildGameEvents(opts: {
   }
 
   for (let q = 1; q <= lastPeriod; q++) {
-    push({ eventType: "PERIOD_START", period: q })
+    push({ eventType: "PERIOD_START", period: q, clockSeconds: PERIOD_SECONDS })
     const plays = pace + Math.floor(rnd() * 6)
+    // Countdown clock for this quarter — decrements a little more than the
+    // even split each play so it reliably reaches ~0 before PERIOD_END
+    // without going negative (clamped).
+    let clock = PERIOD_SECONDS
+    const step = Math.max(6, Math.floor(PERIOD_SECONDS / (plays + 2)))
     for (let i = 0; i < plays; i++) {
+      clock = Math.max(2, clock - step - Math.floor(rnd() * 8))
       const team = rnd() < homeEdge ? homeTeamId : awayTeamId
       const opp = team === homeTeamId ? awayTeamId : homeTeamId
       const shooter = weighted(team)
       const r = rnd()
       if (r < 0.5) {
         const made = rnd() < 0.5
-        push({ eventType: "SCORE_2PT", teamId: team, playerId: shooter, made, period: q })
+        push({ eventType: "SCORE_2PT", teamId: team, playerId: shooter, made, period: q, clockSeconds: clock })
         if (made && rnd() < 0.55) {
-          push({ eventType: "ASSIST", teamId: team, playerId: pick(onFloor[team].filter((x) => x !== shooter)), period: q })
+          push({ eventType: "ASSIST", teamId: team, playerId: pick(onFloor[team].filter((x) => x !== shooter)), period: q, clockSeconds: clock })
         }
         if (!made) {
           const offensive = rnd() < 0.25
-          push({ eventType: "REBOUND", teamId: offensive ? team : opp, playerId: pick(onFloor[offensive ? team : opp]), period: q, metadata: { offensive } })
+          push({ eventType: "REBOUND", teamId: offensive ? team : opp, playerId: pick(onFloor[offensive ? team : opp]), period: q, clockSeconds: clock, metadata: { offensive } })
         }
       } else if (r < 0.64) {
         const made = rnd() < 0.33
-        push({ eventType: "SCORE_3PT", teamId: team, playerId: shooter, made, period: q })
-        if (!made) push({ eventType: "REBOUND", teamId: opp, playerId: pick(onFloor[opp]), period: q, metadata: { offensive: false } })
+        push({ eventType: "SCORE_3PT", teamId: team, playerId: shooter, made, period: q, clockSeconds: clock })
+        if (!made) push({ eventType: "REBOUND", teamId: opp, playerId: pick(onFloor[opp]), period: q, clockSeconds: clock, metadata: { offensive: false } })
       } else if (r < 0.74) {
-        push({ eventType: "FOUL", teamId: opp, playerId: pick(onFloor[opp]), period: q })
-        push({ eventType: "SCORE_FT", teamId: team, playerId: shooter, made: rnd() < 0.66, period: q })
-        push({ eventType: "SCORE_FT", teamId: team, playerId: shooter, made: rnd() < 0.66, period: q })
+        push({ eventType: "FOUL", teamId: opp, playerId: pick(onFloor[opp]), period: q, clockSeconds: clock })
+        push({ eventType: "SCORE_FT", teamId: team, playerId: shooter, made: rnd() < 0.66, period: q, clockSeconds: clock })
+        push({ eventType: "SCORE_FT", teamId: team, playerId: shooter, made: rnd() < 0.66, period: q, clockSeconds: clock })
       } else if (r < 0.84) {
-        push({ eventType: "TURNOVER", teamId: team, playerId: shooter, period: q })
-        if (rnd() < 0.5) push({ eventType: "STEAL", teamId: opp, playerId: pick(onFloor[opp]), period: q })
+        push({ eventType: "TURNOVER", teamId: team, playerId: shooter, period: q, clockSeconds: clock })
+        if (rnd() < 0.5) push({ eventType: "STEAL", teamId: opp, playerId: pick(onFloor[opp]), period: q, clockSeconds: clock })
       } else if (r < 0.92) {
-        push({ eventType: "FOUL", teamId: team, playerId: shooter, period: q })
+        push({ eventType: "FOUL", teamId: team, playerId: shooter, period: q, clockSeconds: clock })
       } else if (r < 0.97) {
-        push({ eventType: "BLOCK", teamId: opp, playerId: pick(onFloor[opp]), period: q })
+        push({ eventType: "BLOCK", teamId: opp, playerId: pick(onFloor[opp]), period: q, clockSeconds: clock })
       } else {
-        push({ eventType: "STEAL", teamId: team, playerId: shooter, period: q })
+        push({ eventType: "STEAL", teamId: team, playerId: shooter, period: q, clockSeconds: clock })
       }
     }
     for (const [teamId, roster] of [
@@ -433,10 +443,11 @@ function buildGameEvents(opts: {
         const inP = bench[Math.floor(rnd() * bench.length)]
         const outP = five[2 + ((q + s) % 3)]
         onFloor[teamId] = five.map((x) => (x === outP ? inP : x))
-        push({ eventType: "SUBSTITUTION", teamId, period: q, metadata: { inPlayerId: inP, outPlayerId: outP } })
+        clock = Math.max(1, clock - 15)
+        push({ eventType: "SUBSTITUTION", teamId, period: q, clockSeconds: clock, metadata: { inPlayerId: inP, outPlayerId: outP } })
       }
     }
-    if (q < lastPeriod || lastPeriod === 4) push({ eventType: "PERIOD_END", period: q })
+    if (q < lastPeriod || lastPeriod === 4) push({ eventType: "PERIOD_END", period: q, clockSeconds: 0 })
   }
   return events
 }

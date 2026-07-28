@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { useParams } from "next/navigation"
-import { Badge, Button, PanelHeader } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack } from "@/components/ui"
 
 /**
  * "Start next season" wizard (docs/season-continuity-plan.md §2).
@@ -437,12 +436,11 @@ export default function NextSeasonWizardPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={`/clubs/${clubId}/teams/${oldTeamId}/dashboard`}
-          className="text-ink-500 hover:text-ink-700 mb-2 inline-flex items-center text-sm"
-        >
-          &larr; Back to {data.team.name}
-        </Link>
+        <SmartBack
+          fallback={`/clubs/${clubId}/teams/${oldTeamId}/dashboard`}
+          fallbackLabel={data.team.name}
+          className="-ml-1 mb-1"
+        />
         <h2 className="font-condensed text-ink-950 flex items-center gap-2.5 text-2xl font-bold uppercase tracking-wide">
           <span className="h-6 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
           Start next season

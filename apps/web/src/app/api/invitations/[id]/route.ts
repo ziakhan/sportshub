@@ -73,7 +73,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (invitation.type === "INVITE") {
       // Only the invited user can accept/decline
       if (invitation.invitedUserId !== user.id) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        return NextResponse.json(
+          {
+            error: `This invitation was sent to ${invitation.invitedEmail} — sign in with that email to accept.`,
+          },
+          { status: 403 }
+        )
       }
     } else {
       // REQUEST — only club owner/manager or PlatformAdmin can accept/decline

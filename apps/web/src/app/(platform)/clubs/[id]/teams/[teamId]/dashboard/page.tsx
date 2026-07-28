@@ -7,7 +7,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { getTeamRoster } from "@/lib/teams/roster"
 import { getActiveSeasonInvolvement, lifecycleLockReason } from "@/lib/teams/lifecycle"
-import { Badge, Button, PanelHeader, StatTile, toneForStatus } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack, StatTile, toneForStatus } from "@/components/ui"
 import { ArchivedTeamBanner, TeamSeasonActions } from "./team-season-actions"
 
 interface StaffMember {
@@ -167,9 +167,7 @@ export default async function TeamDashboardPage({
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
-        <Link href={`/clubs/${clubId}/teams`} className="text-play-700 text-sm hover:underline">
-          &larr; Back to Teams
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/teams`} fallbackLabel="Teams" className="-ml-1" />
         <Button href={`/team/${teamId}`} variant="subtle" size="sm">
           View public page &rarr;
         </Button>

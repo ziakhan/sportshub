@@ -4,6 +4,8 @@ import { formatTrainingSchedule, trainingSortDate } from "@/lib/training"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getRegistrationViewer, type ProgramKind } from "@/lib/registration/viewer"
 import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
+import { getPublicTryout } from "@/lib/queries/tryout"
+import { getPublicTraining } from "@/lib/queries/training"
 
 export const dynamic = "force-dynamic"
 
@@ -45,11 +47,12 @@ export async function GET(
     } as const
 
     if (params.type === "tryout") {
-      const t = await prisma.tryout.findFirst({
-        where: { id: params.id, isPublished: true, isPublic: true },
-        include: { tenant: tenantSelect, _count: { select: { signups: { where: ACTIVE_SIGNUPS } } } },
-      })
-      if (!t) return NextResponse.json({ error: "Not found" }, { status: 404 })
+      // One-source doctrine (2026-07-24): getPublicTryout is shared with the
+      // public /tryout/[id] page's fetch — this route keeps its own,
+      // stricter isPublic gate (a native deep link should never surface a
+      // club-internal-only tryout that the marketplace page also hides).
+      const t = await getPublicTryout(params.id)
+      if (!t || !t.isPublished || !t.isPublic) return NextResponse.json({ error: "Not found" }, { status: 404 })
       const viewer = await viewerFor({
         kind: "tryout",
         programId: t.id,
@@ -112,8 +115,8 @@ export async function GET(
           endDate: c.endDate,
           schedule: `${c.dailyStartTime}–${c.dailyEndTime} daily`,
           location: c.location,
-          fee: Number(c.weeklyFee),
-          feeUnit: "per week",
+          fee: c.scheduleKind === "CONSECUTIVE" ? Number(c.weeklyFee) : Number(c.pricePerSession ?? 0),
+          feeUnit: c.scheduleKind === "CONSECUTIVE" ? "per week" : "per session",
           currency: c.tenant?.currency ?? "CAD",
           clubName: c.tenant?.name ?? "",
           clubSlug: c.tenant?.slug ?? "",
@@ -121,6 +124,11 @@ export async function GET(
           maxParticipants: c.maxParticipants,
           numberOfWeeks: c.numberOfWeeks,
           fullCampFee: c.fullCampFee != null ? Number(c.fullCampFee) : null,
+          // Program flexibility (owner 2026-07-24) — additive; native update
+          // to render session-date chips comes later.
+          scheduleKind: c.scheduleKind,
+          daysOfWeek: c.daysOfWeek,
+          pricePerSession: c.pricePerSession != null ? Number(c.pricePerSession) : null,
           registration: { kind: "player-weeks", endpoint: `/api/camps/${c.id}/signup` },
         },
       })
@@ -201,14 +209,9 @@ export async function GET(
     }
 
     if (params.type === "training") {
-      const s = await (prisma as any).trainingSession.findFirst({
-        where: { id: params.id, isPublished: true },
-        include: {
-          tenant: tenantSelect,
-          venue: { select: { name: true } },
-          _count: { select: { signups: { where: ACTIVE_SIGNUPS } } },
-        },
-      })
+      // One-source doctrine (2026-07-24): shared with the public
+      // /training/[id] page's fetch.
+      const s = await getPublicTraining(params.id)
       if (!s) return NextResponse.json({ error: "Not found" }, { status: 404 })
       const viewer = await viewerFor({
         kind: "training",

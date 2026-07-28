@@ -2,7 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
-import { Badge, Button, PanelHeader, type BadgeTone } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack, type BadgeTone } from "@/components/ui"
 import { programLifecycle } from "@/lib/lifecycle"
 import { formatCurrency } from "@/lib/countries"
 
@@ -127,9 +127,7 @@ export default async function CampSignupsPage({
   return (
     <div>
       <div className="mb-6">
-        <Button href={`/clubs/${params.id}/camps`} variant="subtle" size="sm" icon={ICONS.back}>
-          Back to Camps
-        </Button>
+        <SmartBack fallback={`/clubs/${params.id}/camps`} fallbackLabel="Camps" className="-ml-1" />
       </div>
 
       {/* Header */}

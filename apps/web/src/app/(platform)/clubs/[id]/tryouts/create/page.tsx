@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
@@ -93,6 +93,8 @@ function CreateTryoutForm() {
     },
   })
 
+  const [publishOnCreate, setPublishOnCreate] = useState(false)
+
   const onSubmit = async (data: CreateTryoutFormData) => {
     if (!selectedTeamId) {
       setError("Please select a team")
@@ -113,6 +115,7 @@ function CreateTryoutForm() {
         scheduledAt: new Date(data.scheduledAt).toISOString(),
         fee: data.fee,
         isPublic: data.isPublic,
+        publish: publishOnCreate,
         tenantId: clubId,
         teamId: selectedTeamId,
       }
@@ -195,12 +198,7 @@ function CreateTryoutForm() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={`/clubs/${clubId}/tryouts`}
-          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; Back to Tryouts
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/tryouts`} fallbackLabel="Tryouts" className="-ml-1 mb-1" />
         <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
           Create Tryout
         </h2>
@@ -426,8 +424,21 @@ function CreateTryoutForm() {
             <Button variant="subtle" href={`/clubs/${clubId}/tryouts`}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !selectedTeamId} className="flex-1">
-              {isSubmitting ? "Creating..." : "Create Tryout"}
+            <Button
+              type="submit"
+              variant="subtle"
+              disabled={isSubmitting || !selectedTeamId}
+              onClick={() => setPublishOnCreate(false)}
+            >
+              {isSubmitting && !publishOnCreate ? "Saving..." : "Save draft"}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !selectedTeamId}
+              className="flex-1"
+              onClick={() => setPublishOnCreate(true)}
+            >
+              {isSubmitting && publishOnCreate ? "Publishing..." : "Create & publish"}
             </Button>
           </div>
         </form>

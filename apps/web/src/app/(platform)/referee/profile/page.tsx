@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { SignoffPinCard } from "@/components/scoring/signoff-pin-card"
+import { CertificationUploadField } from "@/components/referee/certification-upload-field"
+import { SmartBack } from "@/components/ui"
 
 const refereeProfileSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]),
@@ -25,6 +27,8 @@ export default function RefereeProfilePage() {
   // "Become a referee" flow — submitting creates the profile and grants the
   // Referee role. When true, it edits the existing profile.
   const [hasProfile, setHasProfile] = useState(false)
+  const [certDocUrl, setCertDocUrl] = useState<string | null>(null)
+  const [certVerifiedAt, setCertVerifiedAt] = useState<string | null>(null)
   const router = useRouter()
   const labelClass = "block text-sm font-medium text-ink-700"
   const inputClass =
@@ -51,6 +55,8 @@ export default function RefereeProfilePage() {
             standardFee: Number(data.standardFee) || 0,
             availableRegions: (data.availableRegions || []).join(", "),
           })
+          setCertDocUrl(data.certificationDocUrl ?? null)
+          setCertVerifiedAt(data.certificationVerifiedAt ?? null)
         }
       } catch {
         setError("Failed to load profile")
@@ -76,6 +82,7 @@ export default function RefereeProfilePage() {
             .split(",")
             .map((r) => r.trim())
             .filter(Boolean),
+          certificationDocUrl: certDocUrl,
         }),
       })
 
@@ -83,6 +90,10 @@ export default function RefereeProfilePage() {
         const errorData = await res.json()
         throw new Error(errorData.error || "Failed to update profile")
       }
+
+      const saved = await res.json()
+      setCertDocUrl(saved.certificationDocUrl ?? null)
+      setCertVerifiedAt(saved.certificationVerifiedAt ?? null)
 
       setSuccess(true)
       if (!hasProfile) {
@@ -109,9 +120,7 @@ export default function RefereeProfilePage() {
   return (
     <div className="mx-auto max-w-xl">
       <div className="mb-6">
-        <Link href="/dashboard" className="text-ink-500 hover:text-ink-700 text-sm">
-          &larr; Back to Dashboard
-        </Link>
+        <SmartBack fallback="/dashboard" fallbackLabel="Dashboard" className="-ml-1" />
       </div>
 
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">
@@ -140,9 +149,22 @@ export default function RefereeProfilePage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label htmlFor="certificationLevel" className={labelClass}>
-              Certification Level <span className="text-red-500">*</span>
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="certificationLevel" className={labelClass}>
+                Certification Level <span className="text-red-500">*</span>
+              </label>
+              {certVerifiedAt ? (
+                <span className="bg-court-50 text-court-700 rounded-full px-2 py-0.5 text-xs font-semibold">
+                  Verified
+                </span>
+              ) : certDocUrl ? (
+                <span className="bg-ink-50 text-ink-600 rounded-full px-2 py-0.5 text-xs font-semibold">
+                  Cert on file
+                </span>
+              ) : (
+                <span className="text-ink-400 text-xs">Self-declared</span>
+              )}
+            </div>
             <select
               {...register("certificationLevel")}
               id="certificationLevel"
@@ -156,6 +178,15 @@ export default function RefereeProfilePage() {
             {errors.certificationLevel && (
               <p className="mt-1 text-sm text-red-600">{errors.certificationLevel.message}</p>
             )}
+          </div>
+
+          <div>
+            <CertificationUploadField
+              label="Upload your certification (PDF or image)"
+              value={certDocUrl}
+              onChange={setCertDocUrl}
+              hint="A photo or PDF of your officiating certification. Leagues can see it's on file and verify it."
+            />
           </div>
 
           <div>

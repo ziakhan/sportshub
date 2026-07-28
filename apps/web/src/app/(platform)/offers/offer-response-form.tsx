@@ -401,7 +401,7 @@ export function OfferResponseForm({
         )}
         {payInfo && !online && fee > 0 && (
           <p className="text-ink-500 rounded-xl bg-ink-50 px-3 py-2 text-xs">
-            This club collects payment offline — accepting reserves the spot; the club will arrange your {money(fee, currency)} fee.
+            This club collects payment offline — heads up: your spot is not held until payment is made. The club will arrange your {money(fee, currency)} fee; paying is what commits your place.
           </p>
         )}
 

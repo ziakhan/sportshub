@@ -8,12 +8,14 @@ import { formatCurrency } from "@/lib/countries"
 import { getPublicSeason } from "@/lib/queries/season"
 import { getSeasonStandings } from "@/lib/queries/standings"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
+import { resolveCoverUrl } from "@/lib/queries/content"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
 import { Badge, Card, NewsCard, ScoreCard, SectionHeader, SmartBack, StandingsTable } from "@/components/ui"
 import { socialLinks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
+import { perkLabel } from "@/lib/leagues/perks"
 
 export const dynamic = "force-dynamic"
 
@@ -54,6 +56,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
           tagline: true,
           primaryColor: true,
           socials: true,
+          perks: true,
+          perksNote: true,
         },
       })
     : null
@@ -62,7 +66,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   const viewerId = (session?.user as any)?.id ?? null
 
   const now = new Date()
-  const [standings, leaders, liveGames, recentGames, upcomingGames, posts, scope, leagueFollowed] =
+  const [standings, leaders, liveGames, recentGames, upcomingGames, rawPosts, scope, leagueFollowed] =
     await Promise.all([
       getSeasonStandings(params.id),
       getSeasonLeaders(params.id, 5),
@@ -95,6 +99,9 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
               publishedAt: true,
               kind: true,
               media: { select: { type: true, url: true, posterUrl: true }, orderBy: { sortOrder: "asc" as const }, take: 1 },
+              // Separate gameId-filtered tags lookup — see resolveCoverUrl
+              // (news card sweep 2026-07-24): one cover per game, everywhere.
+              tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
             },
             orderBy: { publishedAt: "desc" },
             take: 4,
@@ -107,6 +114,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
             .then((f: any) => !!f)
         : false,
     ])
+
+  const posts = rawPosts.map((p: any) => ({ ...p, coverUrl: resolveCoverUrl(p.tags, p.media) }))
 
   const participant = leagueId ? isParticipant(scope, { leagueId }) : false
   const approvedTeams = (season.teamSubmissions ?? []).filter((t: any) => t.status === "APPROVED")
@@ -265,6 +274,30 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         </div>
       </header>
 
+      {(brand?.perks?.length > 0 || brand?.perksNote) && (
+        <section className="border-ink-100 shadow-soft mb-10 rounded-3xl border bg-white p-6 sm:p-7">
+          <SectionHeader title="What's included" accent="play" className="mb-4" />
+          {brand?.perksNote && (
+            <p className="text-ink-600 mb-4 max-w-3xl text-sm leading-relaxed">{brand.perksNote}</p>
+          )}
+          {brand?.perks?.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {brand.perks.map((entry: string) => (
+                <span
+                  key={entry}
+                  className="bg-court-50 text-court-800 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-3.5 w-3.5">
+                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {perkLabel(entry)}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-10 lg:col-span-2">
           {(liveGames.length > 0 || recentGames.length > 0 || upcomingGames.length > 0) && (
@@ -366,7 +399,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                     key={p.id}
                     title={p.title}
                     excerpt={p.body.replace(/\s+/g, " ").slice(0, 140)}
-                    coverUrl={p.media?.[0]?.url ?? p.media?.[0]?.posterUrl ?? null}
+                    coverUrl={p.coverUrl}
                     dateLabel={p.publishedAt ? format(new Date(p.publishedAt), "MMM d, yyyy") : ""}
                     author={p.kind === "RECAP_AI" ? "Game recap" : p.kind === "VIDEO" ? "Highlights" : undefined}
                     href={`/news/${p.slug}`}

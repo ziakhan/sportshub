@@ -1,7 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import type { ReactNode } from "react"
-import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack, toneForStatus } from "@/components/ui"
 import { MakeOfferButton } from "./make-offer-button"
 import { BulkOfferButton } from "./bulk-offer-button"
 
@@ -97,14 +97,7 @@ export default async function TryoutSignupsPage({
   return (
     <div>
       <div className="mb-6">
-        <Button
-          href={`/clubs/${params.id}/tryouts`}
-          variant="subtle"
-          size="sm"
-          icon={ICONS.back}
-        >
-          Back to Tryouts
-        </Button>
+        <SmartBack fallback={`/clubs/${params.id}/tryouts`} fallbackLabel="Tryouts" className="-ml-1" />
       </div>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">

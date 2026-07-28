@@ -66,6 +66,8 @@ const PUBLIC_PAGE_PREFIXES = [
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
 const PUBLIC_API_READ_PREFIXES = [
+  // Caddy on-demand-TLS ask (localhost caller, no session possible)
+  "/api/domains/check",
   // One-click unsubscribe must work signed-out (CASL); token-authenticated.
   "/api/comms/unsubscribe",
   // Public tournament browsing (/events) — GET-only; ?mine + mutations stay guarded.
@@ -121,6 +123,10 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   // Waiver e-signature POST — the emailed token IS the auth (parents sign
   // without an account; the route validates the token itself)
   "/api/waivers/sign",
+  // Feed telemetry POST (recsys S0, business-model-v2.md §11/§16) — signed-out
+  // impressions/taps still count (userId null); the route itself resolves an
+  // optional session rather than requiring one.
+  "/api/feed/events",
 ] as const
 
 /** Dev-only utilities — never public in production. */

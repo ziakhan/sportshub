@@ -10,7 +10,25 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
   const season = await (prisma as any).season.findUnique({
     where: { id },
     include: {
-      league: { select: { id: true, name: true, description: true, ownerId: true } },
+      league: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          ownerId: true,
+          perks: true,
+          perksNote: true,
+          // Additive (native league/season screen rebuild, 2026-07-25) — the
+          // web page's branded hero fetches these via a second query; folding
+          // them in here means the mobile route (the other caller) gets them
+          // for free with no shape change for existing fields.
+          logoUrl: true,
+          bannerUrl: true,
+          tagline: true,
+          primaryColor: true,
+          socials: true,
+        },
+      },
       divisions: { orderBy: { ageGroup: "asc" } },
       teamSubmissions: {
         include: {

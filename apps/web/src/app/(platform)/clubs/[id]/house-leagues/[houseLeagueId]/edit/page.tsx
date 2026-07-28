@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
@@ -65,6 +64,7 @@ export default function EditHouseLeaguePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetails, setErrorDetails] = useState<string[] | null>(null)
   const [league, setLeague] = useState<LoadedHouseLeague | null>(null)
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([])
   const [selectedDays, setSelectedDays] = useState<string[]>([])
@@ -169,6 +169,7 @@ export default function EditHouseLeaguePage() {
 
     setIsSubmitting(true)
     setError(null)
+    setErrorDetails(null)
 
     try {
       const payload: Record<string, unknown> = {
@@ -209,6 +210,13 @@ export default function EditHouseLeaguePage() {
         try {
           const errorData = await res.json()
           errorMsg = errorData.error || errorMsg
+          if (Array.isArray(errorData.details)) {
+            setErrorDetails(
+              errorData.details
+                .slice(0, 5)
+                .map((d: { path: (string | number)[]; message: string }) => `${d.path.join(".")}: ${d.message}`)
+            )
+          }
         } catch {
           // Response wasn't JSON
         }
@@ -234,12 +242,7 @@ export default function EditHouseLeaguePage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <Link
-          href={listHref}
-          className="mb-2 inline-flex items-center text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; Back to House Leagues
-        </Link>
+        <SmartBack fallback={listHref} fallbackLabel="House Leagues" className="-ml-1 mb-1" />
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide">
             Edit House League Program
@@ -280,6 +283,13 @@ export default function EditHouseLeaguePage() {
             {error && (
               <div className="rounded-xl border border-hoop-200 bg-hoop-50 p-3 text-sm text-hoop-700">
                 {error}
+                {errorDetails && errorDetails.length > 0 && (
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {errorDetails.map((d, i) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

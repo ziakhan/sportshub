@@ -10,7 +10,10 @@ export async function login(page, base, email, password) {
     await page.press('input[type="password"]', "Enter")
     await posted
     for (let i = 0; i < 10; i++) {
-      const s = await page.evaluate(() => fetch("/api/auth/session").then((r) => r.json()).catch(() => null))
+      // evaluate can die mid-redirect after a successful login — treat as retryable
+      const s = await page
+        .evaluate(() => fetch("/api/auth/session").then((r) => r.json()).catch(() => null))
+        .catch(() => null)
       if (s?.user) return true
       await page.waitForTimeout(1000)
     }

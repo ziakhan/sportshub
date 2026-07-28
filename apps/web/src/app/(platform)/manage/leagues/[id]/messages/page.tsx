@@ -5,9 +5,9 @@
 
 import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { MessageComposer } from "@/components/comms/message-composer"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -34,12 +34,7 @@ export default async function LeagueMessagesPage({ params }: { params: { id: str
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6">
-        <Link
-          href={`/manage/leagues/${params.id}`}
-          className="text-play-700 text-sm font-medium hover:underline"
-        >
-          &larr; Back to league
-        </Link>
+        <SmartBack fallback={`/manage/leagues/${params.id}`} fallbackLabel="League" className="-ml-1 mb-1" />
         <h1 className="text-ink-950 mt-1 text-xl font-bold">Messages</h1>
         <p className="text-ink-500 text-sm">
           Remind clubs from past seasons of {league.name} that registration is open. Recipients

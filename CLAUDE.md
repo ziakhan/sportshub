@@ -1,10 +1,13 @@
 # Youth Basketball Hub - Project Context
 
-## ⛔ PRODUCTION PUSH POLICY — NO EXCEPTIONS
-**NEVER push to production without the owner's explicit approval, given in the current session for the specific push.**
-- `git push origin master` auto-deploys to Vercel production — pushing IS deploying. Do not push (including reverts, docs-only commits, or "small fixes") until the owner says to.
-- Neon production DB: no schema pushes, SQL, or seeds without the same explicit approval.
-- Local commits are always fine. Work locally, verify on the dev server, and wait for the owner's go-ahead to ship.
+## ⛔ PRODUCTION DEPLOY POLICY — NO EXCEPTIONS
+**Git pushes are ALLOWED for everyone. Production DEPLOYS require the owner's (Zia's) explicit approval, given in the current session for the specific deploy.**
+- Committing and pushing to GitHub (`git push origin ...`) deploys NOTHING and never needs approval — Vercel CI/CD was disconnected 2026-07-24 (`vercel.json` `git.deploymentEnabled:false`), so GitHub is a plain code mirror. QA docs, bug reports, fixes, and work-in-progress branches: push freely.
+- What DOES need the owner's explicit go-ahead, every time:
+  - Running the box deploy script (`ssh sh 'sudo /opt/sportshub/scripts/deploy/oracle-box/deploy.sh'`) — that is the production deploy.
+  - EAS OTA publishes and app-store builds/submits.
+  - Any schema push, SQL, or seed against the box DB or Neon (local DB is always fine).
+  - Re-enabling Vercel git deployments.
 - Blanket approval does not carry over between sessions or tasks; ask each time.
 
 ## 💸 SUBAGENT MODEL TIERING — NO UNTIERED FAN-OUTS
@@ -14,6 +17,13 @@
 - Top model (Fable) is reserved for a small named set — adversarial verification, judge/synthesis, security review, genuinely subtle reasoning — and it **reviews** cheap agents' output rather than doing the bulk work itself.
 - Tie-break by scale: for a **single** subtle task, "in doubt → Fable" (owner's standing rule). For a **fan-out (>3 agents)**, uncertainty resolves DOWN a tier — the expensive model checks the result instead.
 - Any run projected to put >1M tokens on the top model needs the owner's explicit OK first.
+
+## 🔒 PLATFORM PARITY LAW (owner, 2026-07-24 — PERMANENT)
+- **One data source per surface**: every API consumed by the native apps MUST serve from the SAME shared query module (`lib/queries/*`) as the web page showing the same data. New endpoints NEVER hand-roll prisma shaping that duplicates a web query. New features ship the shared module FIRST, then both consumers.
+- **Design parity**: web, mobile web, iOS, Android share the same design concepts — headers/eyebrows, filters, chips, badges, colors, ratings — as close as native idioms allow. A screen existing on one surface at richer fidelity than another is a bug.
+- **Back navigation is history-first, never static**: back controls return the user to where they CAME FROM (history), falling back to the hierarchical parent only on cold entry (web: SmartBack component; native: router.back() with fallback). Static "Back to <parent>" links are forbidden.
+- **News is ALWAYS a card** (owner 2026-07-25): cover image + kind chip + title + date — every surface (news tab, feed, social, club/team/season pages, web and native). Never a list row with an icon.
+- **Server never leads the client**: mobile API changes are additive; never remove/rename fields fielded bundles read.
 
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)

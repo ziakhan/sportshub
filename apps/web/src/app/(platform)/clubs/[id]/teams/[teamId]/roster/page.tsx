@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
-import { Badge, PanelHeader } from "@/components/ui"
+import { Badge, PanelHeader, SmartBack } from "@/components/ui"
 import { FinalizeButton } from "./finalize-button"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
@@ -170,12 +170,11 @@ export default async function TeamRosterPage({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
-          className="text-ink-500 hover:text-ink-900 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-        >
-          &larr; Back to Team Dashboard
-        </Link>
+        <SmartBack
+          fallback={`/clubs/${params.id}/teams/${params.teamId}/dashboard`}
+          fallbackLabel="Team Dashboard"
+          className="-ml-1"
+        />
       </div>
 
       <div className="reveal mb-6 flex flex-wrap items-center justify-between gap-3">

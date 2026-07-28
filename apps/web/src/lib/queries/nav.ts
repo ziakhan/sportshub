@@ -39,6 +39,9 @@ export const OPERATOR_ROLES = new Set([
   "Referee",
   "Scorekeeper",
   "PlatformAdmin",
+  // QA-001: added with the Trainer tenant type (2026-07-21) but missed here —
+  // trainers had NO door back to their workspace from the public site.
+  "Trainer",
 ])
 
 const MAX_MY = 5

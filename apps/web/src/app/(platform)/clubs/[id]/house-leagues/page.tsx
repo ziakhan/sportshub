@@ -35,14 +35,18 @@ export default function ClubHouseLeaguesPage() {
   const [loading, setLoading] = useState(true)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const refresh = () => {
     fetch(`/api/house-leagues?tenantId=${clubId}`)
       .then((res) => res.json())
       .then((data) => setLeagues(data.leagues || []))
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [clubId])
+  }
+
+  useEffect(refresh, [clubId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePublish = async (id: string, publish: boolean) => {
     setTogglingId(id)
@@ -77,6 +81,29 @@ export default function ClubHouseLeaguesPage() {
     }
   }
 
+  const deleteLeague = async (league: HouseLeague) => {
+    const count = league._count.signups
+    const confirmed = window.confirm(
+      `Delete "${league.name}"? This permanently removes the program and its ${count} registration${count === 1 ? "" : "s"}. Every registered family is notified. Unpaid fees are cancelled automatically. If families already PAID through the platform, you must process their refunds. If you collected money outside the platform (cash/e-transfer), refunding those families is your responsibility — the platform takes no part in offline payments. This cannot be undone.`
+    )
+    if (!confirmed) return
+
+    setDeletingId(league.id)
+    setError(null)
+    try {
+      const res = await fetch(`/api/house-leagues/${league.id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Couldn't delete the program.")
+      }
+      refresh()
+    } catch (e: any) {
+      setError(e?.message || "Couldn't delete the program.")
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   if (loading) return <div className="text-ink-500 py-12 text-center">Loading...</div>
 
   return (
@@ -93,6 +120,12 @@ export default function ClubHouseLeaguesPage() {
           Create Program
         </Link>
       </div>
+
+      {error && (
+        <div className="border-hoop-200 text-hoop-700 mb-4 rounded-lg border bg-red-50 p-3 text-sm">
+          {error}
+        </div>
+      )}
 
       {leagues.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-12 text-center shadow-soft">
@@ -208,6 +241,14 @@ export default function ClubHouseLeaguesPage() {
                         {togglingId === league.id ? "..." : "Unpublish"}
                       </Button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => deleteLeague(league)}
+                      disabled={deletingId === league.id}
+                      className="text-sm text-red-500 hover:text-hoop-700 disabled:opacity-50"
+                    >
+                      {deletingId === league.id ? "..." : "Delete"}
+                    </button>
                   </div>
                 </div>
               </div>

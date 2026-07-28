@@ -15,6 +15,7 @@ const createTryoutSchema = z.object({
   description: z.string().optional(),
   ageGroup: z.string(),
   agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
+  publish: z.boolean().optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   location: z.string().min(3),
   venueId: z.string().uuid().nullable().optional(),
@@ -68,7 +69,8 @@ export async function POST(request: NextRequest) {
       scheduledAt: new Date(validatedData.scheduledAt),
       fee: validatedData.fee,
       isPublic: validatedData.isPublic,
-      isPublished: false,
+      // QA-104: "Save & publish" creates live directly; default stays draft.
+      isPublished: validatedData.publish === true,
       tenantId: validatedData.tenantId,
     }
     if (validatedData.description) createData.description = validatedData.description

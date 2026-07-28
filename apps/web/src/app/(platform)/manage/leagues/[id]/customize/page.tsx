@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { LeagueBrandEditor } from "./league-brand-editor"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -15,6 +16,7 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
     select: {
       id: true, name: true, ownerId: true, description: true,
       logoUrl: true, bannerUrl: true, tagline: true, primaryColor: true, socials: true,
+      perks: true, perksNote: true,
       seasons: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true } },
     },
   })
@@ -35,12 +37,7 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link
-            href={`/manage/leagues/${params.id}`}
-            className="text-play-700 text-sm font-medium hover:underline"
-          >
-            &larr; Back to league
-          </Link>
+          <SmartBack fallback={`/manage/leagues/${params.id}`} fallbackLabel="League" className="-ml-1 mb-1" />
           <h1 className="text-ink-950 mt-1 text-xl font-bold">Customize your league page</h1>
           <p className="text-ink-500 text-sm">
             Brand the public page for {league.name}. Standings, scores, and leaders are shown
@@ -67,6 +64,8 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
           tagline: league.tagline ?? "",
           primaryColor: league.primaryColor ?? "#1d4ed8",
           socials: (league.socials as any) ?? {},
+          perks: (league.perks as any) ?? [],
+          perksNote: league.perksNote ?? "",
         }}
       />
     </div>

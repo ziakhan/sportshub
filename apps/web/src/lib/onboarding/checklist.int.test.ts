@@ -103,7 +103,7 @@ describe("getCompletionChecklist — club owner journey", () => {
     expect(c.percent).toBe(40)
 
     expect(step(c.steps, "club-team").href).toBe(`/clubs/${club.tenantId}/teams/create`)
-    expect(step(c.steps, "club-brand").href).toBe(`/clubs/${club.tenantId}/settings`)
+    expect(step(c.steps, "club-brand").href).toBe(`/clubs/${club.tenantId}/customize`)
   })
 
   it("shows 'Create your club' undone for a fresh, unscoped ClubOwner (post-signup)", async () => {

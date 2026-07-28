@@ -9,6 +9,7 @@ import {
   createOfferForPlayer,
   offerPackageSchema,
   resolveOfferTerms,
+  getTemplateProgramFields,
   OfferCreationError,
 } from "@/lib/offers/create-offer"
 import { audit } from "@/lib/audit"
@@ -109,6 +110,14 @@ export async function POST(request: NextRequest) {
     } = data.options[0]
       terms = firstTerms
       templateId = sourceTemplateId ?? null
+      // Games/program description/custom items are offer-level (one set for
+      // the whole offer, not per-package) — pull them from option 1's source
+      // template, the same "first option is the pending-display snapshot"
+      // rule the fee/gear columns above already follow.
+      if (templateId) {
+        const programFields = await getTemplateProgramFields(prisma, team.tenantId, templateId)
+        if (programFields) Object.assign(terms, programFields)
+      }
     } else {
       const resolved = await resolveOfferTerms(prisma, {
         tenantId: team.tenantId,

@@ -2,7 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { format } from "date-fns"
 import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
-import { Badge, Button, PanelHeader, type BadgeTone } from "@/components/ui"
+import { Badge, Button, PanelHeader, SmartBack, type BadgeTone } from "@/components/ui"
 import { programLifecycle } from "@/lib/lifecycle"
 
 interface HouseLeagueSignupRow {
@@ -112,14 +112,11 @@ export default async function HouseLeagueSignupsPage({
   return (
     <div>
       <div className="mb-6">
-        <Button
-          href={`/clubs/${params.id}/house-leagues`}
-          variant="subtle"
-          size="sm"
-          icon={ICONS.back}
-        >
-          Back to House Leagues
-        </Button>
+        <SmartBack
+          fallback={`/clubs/${params.id}/house-leagues`}
+          fallbackLabel="House Leagues"
+          className="-ml-1"
+        />
       </div>
 
       {/* Header */}

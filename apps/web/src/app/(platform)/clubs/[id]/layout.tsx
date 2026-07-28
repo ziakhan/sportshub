@@ -1,12 +1,12 @@
 import { prisma } from "@youthbasketballhub/db"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
-import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { brandStyle } from "@/lib/club-page/brand"
 import { coachedTeams } from "@/lib/authz/team-scope"
 import { ClubTabs } from "./club-tabs"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
+import { SmartBack } from "@/components/ui"
 
 async function getClubAccess(clubId: string, userId: string, userRoles: string[]) {
   // PlatformAdmin can access any club
@@ -131,6 +131,7 @@ export default async function ClubLayout({
           { label: "Tournaments", href: `/clubs/${params.id}/tournaments` },
           { label: "Payments", href: `/clubs/${params.id}/payments` },
           { label: "Accounting", href: `/clubs/${params.id}/accounting` },
+          { label: "Polls", href: `/clubs/${params.id}/polls` },
           { label: "Staff", href: `/clubs/${params.id}/staff` },
           { label: "Customize page", href: `/clubs/${params.id}/customize` },
           { label: "Messages", href: `/clubs/${params.id}/messages` },
@@ -155,12 +156,11 @@ export default async function ClubLayout({
               aria-hidden
             />
             <div>
-              <Link
-                href="/dashboard"
-                className="text-ink-500 hover:text-ink-700 mb-1.5 inline-flex items-center text-sm"
-              >
-                &larr; Back to Dashboard
-              </Link>
+              <SmartBack
+                fallback="/dashboard"
+                fallbackLabel="Dashboard"
+                className="-ml-1 mb-1"
+              />
               <h1 className="font-condensed text-ink-950 text-2xl font-bold uppercase tracking-wide md:text-3xl">
                 {club.name}
               </h1>

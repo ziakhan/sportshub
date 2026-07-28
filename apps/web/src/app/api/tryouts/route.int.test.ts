@@ -95,3 +95,63 @@ describe("POST /api/tryouts — creation authz (integration)", () => {
     expect(res.status).toBe(403)
   })
 })
+
+/**
+ * QA-007 — capacity must hold under CONCURRENT signups: the pre-transaction
+ * check is advisory; the serializable in-transaction re-check is the gate.
+ */
+describe("QA-007 concurrent capacity", () => {
+  it("two simultaneous signups for the last spot: exactly one wins", async () => {
+    const { POST: signupPost } = await import("./[id]/signup/route")
+    const { NextRequest } = await import("next/server")
+
+    // Fresh tryout with ONE spot, age group wide open.
+    actAs(ownerId)
+    const created = await (
+      await createTryout({ title: "Race Tryout", ageGroup: "U18", maxParticipants: 1, publish: true })
+    ).json()
+    const tryoutId = created.id ?? created.tryout?.id
+
+    const famA = await createParentWithChildren(world.ctx, { children: [{ age: 12 }] })
+    const famB = await createParentWithChildren(world.ctx, { children: [{ age: 12 }] })
+
+    const fire = (parentUserId: string, playerId: string) => {
+      actAs(parentUserId)
+      return signupPost(
+        new NextRequest(`http://localhost:3000/api/tryouts/${tryoutId}/signup`, {
+          method: "POST",
+          body: JSON.stringify({ registrations: [{ playerId }] }),
+          headers: { "Content-Type": "application/json" },
+        }),
+        { params: { id: tryoutId } }
+      )
+    }
+
+    // actAs is per-call global — serialize the SETUP but keep the two route
+    // invocations racing inside the same event-loop turn.
+    actAs(famA.parent.id)
+    const reqA = signupPost(
+      new NextRequest(`http://localhost:3000/api/tryouts/${tryoutId}/signup`, {
+        method: "POST",
+        body: JSON.stringify({ registrations: [{ playerId: famA.players[0].id }] }),
+        headers: { "Content-Type": "application/json" },
+      }),
+      { params: { id: tryoutId } }
+    )
+    actAs(famB.parent.id)
+    const reqB = fire(famB.parent.id, famB.players[0].id)
+
+    const [resA, resB] = await Promise.all([reqA, reqB])
+    const statuses = [resA.status, resB.status].sort()
+
+    // Exactly one 201; the loser gets capacity-full (400) or a serialization
+    // conflict (409) — never a second 201.
+    expect(statuses[0]).toBe(201)
+    expect([400, 409]).toContain(statuses[1])
+
+    const count = await prisma.tryoutSignup.count({
+      where: { tryoutId, status: { not: "CANCELLED" } },
+    })
+    expect(count).toBe(1)
+  })
+})

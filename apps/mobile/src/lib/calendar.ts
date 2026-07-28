@@ -38,6 +38,8 @@ export interface CalItem {
   location: string | null
   detail: string | null
   eventType?: string | null
+  /** Practices/events only — lets the detail screen link out to the venue page. */
+  venueId?: string | null
 }
 
 export interface MyCalendar {

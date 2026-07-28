@@ -63,11 +63,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // covers accounts whose email matched but were never attached.
     if (invitation.invitedUserId) {
       if (invitation.invitedUserId !== userId) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        return NextResponse.json(
+          {
+            error: `This invitation was sent to ${invitation.invitedEmail} — sign in with that email to accept.`,
+          },
+          { status: 403 }
+        )
       }
     } else {
       if (invitation.invitedEmail.toLowerCase() !== user.email.toLowerCase()) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+        return NextResponse.json(
+          {
+            error: `This invitation was sent to ${invitation.invitedEmail} — sign in with that email to accept.`,
+          },
+          { status: 403 }
+        )
       }
       await prisma.playerInvitation.update({
         where: { id: invitation.id },

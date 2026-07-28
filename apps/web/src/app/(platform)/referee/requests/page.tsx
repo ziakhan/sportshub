@@ -13,6 +13,7 @@ interface InboxRequest {
   seasonLabel: string
   window: string
   message: string | null
+  offeredRatePerGame: number | null
   status: string
   broadcast: boolean
   mine: boolean
@@ -140,6 +141,11 @@ export default function RefereeRequestsPage() {
                   <div>
                     <span className="text-ink-900 text-sm font-semibold">
                       {r.leagueName} · {format(new Date(r.date), "EEE, MMM d")} · {r.window}
+                    {r.offeredRatePerGame != null && (
+                      <span className="text-court-700 ml-2 font-semibold">
+                        ${r.offeredRatePerGame}/game
+                      </span>
+                    )}
                     </span>
                     <span className="text-ink-400 ml-2 text-xs">
                       {r.seasonLabel}
@@ -169,6 +175,12 @@ export default function RefereeRequestsPage() {
                   </div>
                 </div>
                 {r.message && <p className="text-ink-600 mt-1 text-sm">“{r.message}”</p>}
+                {r.offeredRatePerGame != null && (
+                  <p className="text-ink-400 mt-1 text-xs">
+                    Paid per game officiated — accepting means agreeing to this rate. Games are
+                    tallied after the session and confirmed by the league before settlement.
+                  </p>
+                )}
               </div>
             ))}
           </div>

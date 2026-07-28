@@ -8,11 +8,13 @@ interface UserMenuProps {
   userName: string
   userEmail: string
   userInitials: string
+  /** Profile photo — falls back to the initials circle when null/unset. */
+  avatarUrl?: string | null
   /** Context links above Profile Settings (e.g. My Hub / My Players on public pages). */
   extraLinks?: Array<{ href: string; label: string }>
 }
 
-export function UserMenu({ userName, userEmail, userInitials, extraLinks }: UserMenuProps) {
+export function UserMenu({ userName, userEmail, userInitials, avatarUrl, extraLinks }: UserMenuProps) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -40,9 +42,17 @@ export function UserMenu({ userName, userEmail, userInitials, extraLinks }: User
         className="border-ink-200 hover:bg-ink-50 flex items-center gap-2 rounded-2xl border bg-white py-1 pl-1 pr-3 text-sm transition"
         aria-label="Open user menu"
       >
-        <div className="bg-hoop-500 flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold text-white">
-          {userInitials}
-        </div>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-8 w-8 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="bg-hoop-500 flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold text-white">
+            {userInitials}
+          </div>
+        )}
         <span className="text-ink-800 hidden font-medium md:inline">{userName}</span>
         <svg
           className={`text-ink-400 h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}

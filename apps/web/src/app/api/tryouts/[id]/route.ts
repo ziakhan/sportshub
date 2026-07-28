@@ -3,9 +3,12 @@ import { authOptions } from "@/lib/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { notifyMany } from "@/lib/notifications"
+import { notifyMany, notifySafe } from "@/lib/notifications"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { isClubAdmin, canActOnTeam } from "@/lib/authz/team-scope"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
+import { cancelObligationIfUnpaid } from "@/lib/payments/obligations"
+import { sendEmail, escapeHtml, transactionalFooter } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -263,5 +266,104 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const message = error instanceof Error ? error.message : "Internal server error"
     return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+/**
+ * Delete a tryout
+ * DELETE /api/tryouts/[id]
+ *
+ * Owner ruling 2026-07-24 (QA-204): deletion is a club-admin action available
+ * even when families are registered — the consequences are handled here
+ * rather than the row being locked to drafts. Unpaid fees are cancelled,
+ * every affected family is told, and the row (and its signups, via cascade)
+ * is removed. Paid platform obligations are left for the club to refund
+ * explicitly — see the email copy below.
+ */
+export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const auth = await getSessionUserId()
+    if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const tryout = await prisma.tryout.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        tenantId: true,
+        title: true,
+        tenant: { select: { name: true } },
+      },
+    })
+    if (!tryout) {
+      return NextResponse.json({ error: "Tryout not found" }, { status: 404 })
+    }
+    if (!(await isClubAdmin(auth.userId, tryout.tenantId))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const cancelledSignups = await prisma.$transaction(async (tx: any) => {
+      const signups = await tx.tryoutSignup.findMany({
+        where: { tryoutId: params.id, status: { not: "CANCELLED" } },
+        select: {
+          id: true,
+          userId: true,
+          playerName: true,
+          user: { select: { email: true } },
+        },
+      })
+
+      for (const signup of signups) {
+        await cancelObligationIfUnpaid(tx, "TryoutSignup", signup.id)
+      }
+
+      await tx.tryout.delete({ where: { id: params.id } })
+
+      return signups
+    })
+
+    // Best-effort family notice — one bell + one email per parent, deduped
+    // (a parent can have more than one player signed up for the tryout).
+    const byParent = new Map<string, { email: string | null; players: string[] }>()
+    for (const signup of cancelledSignups) {
+      const entry: { email: string | null; players: string[] } = byParent.get(signup.userId) ?? {
+        email: signup.user?.email ?? null,
+        players: [],
+      }
+      entry.players.push(signup.playerName)
+      byParent.set(signup.userId, entry)
+    }
+
+    for (const [userId, { email, players }] of byParent) {
+      await notifySafe({
+        userId,
+        type: "registration_cancelled",
+        title: "Registration Cancelled",
+        message: `"${tryout.title}" has been cancelled by the club. Any unpaid fee${players.length > 1 ? "s" : ""} for ${players.join(", ")} ${players.length > 1 ? "have" : "has"} been cancelled.`,
+        link: "/payments",
+        referenceId: tryout.id,
+        referenceType: "Tryout",
+      })
+      if (email) {
+        try {
+          await sendEmail({
+            to: email,
+            subject: `Cancelled — ${tryout.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <p><strong>${escapeHtml(tryout.title)}</strong> has been cancelled by the club.</p>
+                <p>If you paid through the platform, the club will process your refund. If you paid the club directly (cash or e-transfer), please contact the club about your refund — the platform is not responsible for offline payments.</p>
+                ${transactionalFooter(tryout.tenant?.name)}
+              </div>`,
+          })
+        } catch (mailErr) {
+          console.error("Tryout delete email failed:", email, mailErr)
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, cancelledSignups: cancelledSignups.length })
+  } catch (error) {
+    console.error("Delete tryout error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -1,4 +1,3 @@
-import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import Link from "next/link"
@@ -9,35 +8,16 @@ import { Badge, Card, SmartBack } from "@/components/ui"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { VenueLink } from "@/components/venues/venue-link"
+import { getPublicTryout } from "@/lib/queries/tryout"
 
 async function getTryout(id: string) {
-  const tryout = await prisma.tryout.findUnique({
-    where: { id },
-    include: {
-      tenant: { include: { branding: true } },
-      team: { select: { name: true, ageGroup: true, gender: true } },
-      venue: { select: { id: true, name: true } },
-      _count: {
-        select: { signups: { where: { status: { not: "CANCELLED" } } } },
-      },
-    },
-  })
+  const tryout = await getPublicTryout(id)
   if (!tryout || !tryout.isPublished) return null
-  return { ...tryout, fee: Number(tryout.fee) }
+  return tryout
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
-  const tryout = await prisma.tryout.findUnique({
-    where: { id: params.id },
-    select: {
-      title: true,
-      description: true,
-      location: true,
-      scheduledAt: true,
-      isPublished: true,
-      tenant: { select: { name: true, city: true } },
-    },
-  })
+  const tryout = await getPublicTryout(params.id)
   if (!tryout?.isPublished) return { title: "Tryout not found" }
   const when = format(tryout.scheduledAt, "MMM d, yyyy")
   return {

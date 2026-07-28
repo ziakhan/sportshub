@@ -8,6 +8,7 @@ import {
   type SeasonStatLine,
 } from "@/lib/stats/season"
 import type { MediaConsentValue } from "@/lib/privacy/names"
+import { resolveCoverUrl } from "@/lib/queries/content"
 
 /**
  * Season stats assembly (plan §7): pulls PlayerStat lines from COMPLETED
@@ -431,7 +432,7 @@ export const getTeamPublicData = cache(async (teamId: string) => {
     orderBy: { createdAt: "asc" },
   })
 
-  const posts = await (prisma as any).post.findMany({
+  const rawPosts = await (prisma as any).post.findMany({
     where: { status: "PUBLISHED", tags: { some: { teamId } } },
     select: {
       id: true,
@@ -445,10 +446,14 @@ export const getTeamPublicData = cache(async (teamId: string) => {
         orderBy: { sortOrder: "asc" },
         take: 1,
       },
+      // Separate gameId-filtered tags lookup — see resolveCoverUrl (news
+      // card sweep 2026-07-24): one cover per game, everywhere.
+      tags: { where: { gameId: { not: null } }, select: { gameId: true }, take: 1 },
     },
     orderBy: { publishedAt: "desc" },
     take: 6,
   })
+  const posts = rawPosts.map((p: any) => ({ ...p, coverUrl: resolveCoverUrl(p.tags, p.media) }))
 
   return { team, games, record: { wins, losses, ties }, playerAverages, posts, staff }
 })

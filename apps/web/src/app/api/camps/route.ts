@@ -9,30 +9,44 @@ import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 export const dynamic = "force-dynamic"
 
-const createSchema = z.object({
-  tenantId: z.string(),
-  name: z.string().min(3).max(200),
-  description: z.string().optional(),
-  details: z.string().optional(),
-  campType: z.enum(["MARCH_BREAK", "HOLIDAY", "SUMMER", "WEEKLY"]),
-  ageGroup: z.string(),
-  agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
-  gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-  dailyStartTime: z.string(),
-  dailyEndTime: z.string(),
-  location: z.string().min(3),
-  venueId: z.string().uuid().nullable().optional(),
-  numberOfWeeks: z.number().min(1).default(1),
-  weeklyFee: z.number().min(0),
-  fullCampFee: z.number().min(0).optional(),
-  maxParticipants: z.number().optional(),
-  includesLunch: z.boolean().default(false),
-  includesSnacks: z.boolean().default(false),
-  includesJersey: z.boolean().default(false),
-  includesBall: z.boolean().default(false),
-})
+const createSchema = z
+  .object({
+    tenantId: z.string(),
+    name: z.string().min(3).max(200),
+    description: z.string().optional(),
+    details: z.string().optional(),
+    campType: z.enum(["MARCH_BREAK", "HOLIDAY", "SUMMER", "WEEKLY"]),
+    ageGroup: z.string(),
+    agePolicy: z.enum(["STRICT", "PREFERRED", "OPEN"]).optional(),
+    gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+    dailyStartTime: z.string(),
+    dailyEndTime: z.string(),
+    location: z.string().min(3),
+    venueId: z.string().uuid().nullable().optional(),
+    numberOfWeeks: z.number().min(1).default(1),
+    weeklyFee: z.number().min(0),
+    fullCampFee: z.number().min(0).optional(),
+    // Schedule model (owner 2026-07-24): CONSECUTIVE keeps weeks/weeklyFee
+    // above; DAILY/WEEKDAY_PATTERN sell individual sessions instead.
+    scheduleKind: z.enum(["CONSECUTIVE", "DAILY", "WEEKDAY_PATTERN"]).default("CONSECUTIVE"),
+    daysOfWeek: z.array(z.number().int().min(0).max(6)).default([]),
+    pricePerSession: z.number().min(0).optional(),
+    maxParticipants: z.number().optional(),
+    includesLunch: z.boolean().default(false),
+    includesSnacks: z.boolean().default(false),
+    includesJersey: z.boolean().default(false),
+    includesBall: z.boolean().default(false),
+  })
+  .refine((d) => d.scheduleKind !== "WEEKDAY_PATTERN" || d.daysOfWeek.length > 0, {
+    message: "Pick at least one weekday for a weekly pattern camp",
+    path: ["daysOfWeek"],
+  })
+  .refine((d) => d.scheduleKind === "CONSECUTIVE" || (d.pricePerSession ?? 0) > 0, {
+    message: "Set a per-session price",
+    path: ["pricePerSession"],
+  })
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,6 +92,9 @@ export async function POST(request: NextRequest) {
         numberOfWeeks: data.numberOfWeeks,
         weeklyFee: data.weeklyFee,
         fullCampFee: data.fullCampFee ?? null,
+        scheduleKind: data.scheduleKind,
+        daysOfWeek: data.scheduleKind === "WEEKDAY_PATTERN" ? data.daysOfWeek : [],
+        pricePerSession: data.scheduleKind !== "CONSECUTIVE" ? (data.pricePerSession ?? null) : null,
         maxParticipants: data.maxParticipants || null,
         includesLunch: data.includesLunch,
         includesSnacks: data.includesSnacks,
@@ -131,6 +148,7 @@ export async function GET(request: NextRequest) {
           ...c,
           weeklyFee: Number(c.weeklyFee),
           fullCampFee: c.fullCampFee ? Number(c.fullCampFee) : null,
+          pricePerSession: c.pricePerSession != null ? Number(c.pricePerSession) : null,
         })),
       })
     }
@@ -171,6 +189,7 @@ export async function GET(request: NextRequest) {
         ...c,
         weeklyFee: Number(c.weeklyFee),
         fullCampFee: c.fullCampFee ? Number(c.fullCampFee) : null,
+        pricePerSession: c.pricePerSession != null ? Number(c.pricePerSession) : null,
       })),
     })
   } catch (error) {

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
 import { getAllPrograms } from "@/lib/queries/programs"
+import { getClubsDirectory } from "@/lib/queries/directory-clubs"
+import { getLeaguesDirectory } from "@/lib/queries/directory-leagues"
 import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
@@ -11,6 +13,13 @@ export const dynamic = "force-dynamic"
  * Browse hub in one anonymous round trip (audit v2 §3): featured clubs,
  * active leagues, latest news, next programs. The web homepage's public
  * sections, native-shaped.
+ *
+ * Clubs/leagues subsections now share getClubsDirectory()/getLeaguesDirectory()
+ * with the web /club and /leagues pages (2026-07-24 drift fix) instead of
+ * hand-rolling their own prisma — this route used to skip the test-world
+ * exclusion the directory applies, and its league query missed any league
+ * whose only season wasn't REGISTRATION/IN_PROGRESS at fetch time. Response
+ * shape kept backward-compatible (additive only).
  */
 export async function GET() {
   try {
@@ -22,44 +31,25 @@ export async function GET() {
       prisma.team.count(),
       prisma.tryout.count({ where: { isPublished: true, isPublic: true } }),
     ])
-    const [clubs, leagues, news, programs] = await Promise.all([
-      prisma.tenant.findMany({
-        where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          city: true,
-          state: true,
-          branding: { select: { primaryColor: true, logoUrl: true } },
-          _count: { select: { teams: true } },
-        },
-        orderBy: { teams: { _count: "desc" } },
-        take: 6,
-      }),
-      (prisma as any).league.findMany({
-        where: { seasons: { some: { status: { in: ["REGISTRATION", "IN_PROGRESS"] } } } },
-        select: {
-          id: true,
-          name: true,
-          seasons: {
-            where: { status: { in: ["REGISTRATION", "IN_PROGRESS"] } },
-            orderBy: { createdAt: "desc" },
-            select: {
-              id: true,
-              label: true,
-              status: true,
-              _count: { select: { teamSubmissions: true } },
-            },
-            take: 2,
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 6,
-      }),
+    const [clubsDirectory, leaguesDirectory, news, programs] = await Promise.all([
+      getClubsDirectory(),
+      getLeaguesDirectory(),
       getPublicFeed(6),
       getAllPrograms(),
     ])
+
+    // Top clubs by team count (the home widget's original ordering) — merge
+    // the directory's featured/regular split back into one list first since
+    // "featured" isn't a home-widget concept, just top clubs overall.
+    const clubs = [...clubsDirectory.featured, ...clubsDirectory.clubs]
+      .sort((a, b) => b._count.teams - a._count.teams)
+      .slice(0, 6)
+
+    // Active leagues only (registration open or underway) — the home
+    // widget's original scope, narrower than the full directory.
+    const leagues = leaguesDirectory
+      .filter((l) => l.season.status === "REGISTRATION" || l.season.status === "IN_PROGRESS")
+      .slice(0, 6)
 
     // RN can't render the web's inline-SVG matchup covers — map each game
     // recap to its PNG score card instead (same art, native-safe).
@@ -83,7 +73,7 @@ export async function GET() {
     return NextResponse.json({
       scoreboard,
       stats: { totalClubs, totalTeams, totalTryouts },
-      clubs: clubs.map((c: any) => ({
+      clubs: clubs.map((c) => ({
         id: c.id,
         slug: c.slug,
         name: c.name,
@@ -92,16 +82,29 @@ export async function GET() {
         teamCount: c._count.teams,
         primaryColor: c.branding?.primaryColor ?? null,
         logoUrl: c.branding?.logoUrl ?? null,
+        // Additive (2026-07-24 five-tab parity pass): the SAME published-review
+        // rating the web /club page and native Clubs/Programs screens show.
+        rating: c.rating ? { average: c.rating.average, count: c.rating.count } : null,
       })),
-      leagues: leagues.map((l: any) => ({
+      leagues: leagues.map((l) => ({
         id: l.id,
         name: l.name,
-        seasons: l.seasons.map((s: any) => ({
-          id: s.id,
-          name: s.label,
-          status: s.status,
-          teamCount: s._count.teamSubmissions,
-        })),
+        // Kept as an array (old shape) — always the one latest active season.
+        seasons: [
+          {
+            id: l.season.id,
+            name: l.season.label,
+            status: l.season.status,
+            teamCount: l.season.teamCount,
+            // Additive: matches the richer directory fields the web /leagues
+            // page and native Leagues screen already show.
+            divisionCount: l.season.divisionCount,
+          },
+        ],
+        // Additive
+        description: l.description,
+        completedGames: l.completedGames,
+        liveGames: l.liveGames,
       })),
       news: newsWithImages,
       programs: programs.slice(0, 6),

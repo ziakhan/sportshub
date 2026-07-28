@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react"
-import { FlatList, StyleSheet, Text, View } from "react-native"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { FlatList, StyleSheet, Text, View, type ViewToken } from "react-native"
 import { router } from "expo-router"
 import { SubHeader } from "@/components/top-bar"
 import { Card, CoverImage, EmptyState, Loading, TonePill } from "@/components/ui"
 import { apiJson } from "@/lib/api"
 import type { FeedItem } from "@/lib/browse"
+import { logFeedEvent } from "@/lib/feed-telemetry"
 import { ui } from "@/lib/theme"
 
 /**
@@ -28,9 +29,38 @@ export default function NewsScreen() {
     void load()
   }, [load])
 
+  // Impression logging (recsys S0): 50% visible for a full second, once per
+  // key — matches web /news's IntersectionObserver bar.
+  const impressed = useRef<Set<string>>(new Set())
+  const onViewableItemsChanged = useRef(
+    ({ changed }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+      for (const v of changed) {
+        if (!v.isViewable || v.key == null) continue
+        const key = String(v.key)
+        if (impressed.current.has(key)) continue
+        const newsItem = v.item as FeedItem | undefined
+        if (!newsItem) continue
+        impressed.current.add(key)
+        logFeedEvent({
+          itemKey: key,
+          postId: newsItem.type === "post" ? newsItem.id : null,
+          eventType: "impression",
+          surface: "native-news",
+        })
+      }
+    }
+  ).current
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50, minimumViewTime: 1000 }).current
+
   return (
     <View style={styles.root}>
-      <SubHeader title="News & recaps" />
+      <SubHeader backHome title="News & recaps" />
+      <View style={styles.intro}>
+        <Text style={styles.introEyebrow}>Around the hub</Text>
+        <Text style={styles.introBody}>
+          Every scored game gets a story — plus announcements from clubs and leagues.
+        </Text>
+      </View>
       {items === null ? (
         <Loading />
       ) : (
@@ -39,6 +69,8 @@ export default function NewsScreen() {
           contentContainerStyle={styles.listContent}
           data={items}
           keyExtractor={(n) => `${n.type}:${n.id}`}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
           ListEmptyComponent={
             <EmptyState
               icon="newspaper-outline"
@@ -51,7 +83,19 @@ export default function NewsScreen() {
             return (
               <Card
                 style={styles.newsCard}
-                onPress={slug ? () => router.push(`/browse/article/${slug}`) : undefined}
+                onPress={
+                  slug
+                    ? () => {
+                        logFeedEvent({
+                          itemKey: `${item.type}:${item.id}`,
+                          postId: item.type === "post" ? item.id : null,
+                          eventType: "tap",
+                          surface: "native-news",
+                        })
+                        router.push(`/browse/article/${slug}`)
+                      }
+                    : undefined
+                }
               >
                 <CoverImage url={item.coverUrl} icon="newspaper-outline" />
                 <View style={styles.body}>
@@ -90,6 +134,24 @@ export default function NewsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: ui.background },
+  // Web SectionHeader twin ("Around the hub" eyebrow + description) — page
+  // header copy parity (five-tab visual-parity pass 2026-07-24).
+  intro: {
+    padding: 12,
+    paddingBottom: 14,
+    gap: 4,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: ui.border,
+  },
+  introEyebrow: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: ui.primary,
+    textTransform: "uppercase",
+    letterSpacing: 1.4,
+  },
+  introBody: { fontSize: 12.5, color: ui.textMuted, lineHeight: 17 },
   list: { flex: 1 },
   listContent: { padding: 12, paddingBottom: 32 },
   // Cover bleeds to the card edge — padding lives on the text block instead

@@ -9,6 +9,12 @@
 const RULES: Array<{ re: RegExp; to: (m: RegExpExecArray) => string }> = [
   { re: /^\/messages\/dm\/([\w-]+)/, to: (m) => `/chat/dm/${m[1]}` },
   { re: /^\/teams\/([\w-]+)\/chat/, to: (m) => `/chat/${m[1]}` },
+  // Three-tier polls (owner 2026-07-24): team/club/league poll notifications
+  // all land on the aggregate native polls list — the alerts screen jumps
+  // straight to the poll detail when it has a referenceId, this is just the
+  // link-only fallback (e.g. a future push tap).
+  { re: /^\/teams\/([\w-]+)\/polls/, to: () => "/polls" },
+  { re: /^\/polls/, to: () => "/polls" },
   { re: /^\/offers\/([\w-]+)/, to: (m) => `/offers/${m[1]}` },
   { re: /^\/live\/([\w-]+)/, to: (m) => `/browse/game/${m[1]}` },
   { re: /^\/players\/([\w-]+)/, to: (m) => `/kids/${m[1]}` },

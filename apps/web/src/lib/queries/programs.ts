@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { getClubRatings } from "@/lib/queries/club-ratings"
 import { formatTrainingSchedule, trainingSortDate, trainingTypeLabel } from "@/lib/training"
+import { campScheduleText } from "@/lib/registration/camp-schedule"
 import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
 
 /**
@@ -153,6 +154,7 @@ export async function getAllPrograms(): Promise<EventItem[]> {
   }
 
   for (const c of camps) {
+    const campIsConsecutive = c.scheduleKind === "CONSECUTIVE"
     items.push({
       id: c.id,
       type: "camp",
@@ -164,11 +166,14 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       startDate: c.startDate.toISOString(),
       endDate: c.endDate.toISOString(),
       location: c.location,
-      fee: Number(c.weeklyFee),
+      fee: campIsConsecutive ? Number(c.weeklyFee) : Number(c.pricePerSession ?? 0),
       currency: c.tenant?.currency || "CAD",
       primaryColor: c.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${c._count.signups}${c.maxParticipants ? `/${c.maxParticipants}` : ""} registered`,
-      extra: `${TYPE_LABELS[c.campType] || c.campType} • ${c.numberOfWeeks} week${c.numberOfWeeks !== 1 ? "s" : ""}`,
+      extra: campIsConsecutive
+        ? `${TYPE_LABELS[c.campType] || c.campType} • ${c.numberOfWeeks} week${c.numberOfWeeks !== 1 ? "s" : ""}`
+        : `${TYPE_LABELS[c.campType] || c.campType} • ${campScheduleText(c)}`,
+      feeUnit: campIsConsecutive ? undefined : "per session",
       href: `/camp/${c.id}`,
       clubRating: ratingOf(c.tenantId)?.average,
       clubReviewCount: ratingOf(c.tenantId)?.count,

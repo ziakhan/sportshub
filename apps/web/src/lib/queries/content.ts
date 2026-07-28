@@ -27,6 +27,26 @@ function coverOf(media: Array<{ type: string; url: string; posterUrl: string | n
   return video?.posterUrl ?? null
 }
 
+/**
+ * ONE cover image per game, on every surface (owner 2026-07-23 ruling, news
+ * card sweep 2026-07-24): a post tagged to a game always uses the branded
+ * PNG /api/live/[gameId]/cover, never the generated SVG data-URI that lives
+ * in that post's own Post.media row (buildMatchupCover) — native Image
+ * can't decode an SVG data-URI, so that fallback must never reach a client.
+ * Any caller that queries posts for a news list should pull `tags` with a
+ * SEPARATE `{ gameId: { not: null } }`-filtered sub-select (not the relation
+ * used to match posts in `where`) and run the result through this helper —
+ * the one place the mapping is defined.
+ */
+export function resolveCoverUrl(
+  tags: Array<{ gameId?: string | null }> | null | undefined,
+  media: Array<{ type: string; url: string; posterUrl: string | null }> | null | undefined
+): string | null {
+  const gameId = tags?.find((t) => t.gameId)?.gameId
+  if (gameId) return `${appBaseUrl()}/api/live/${gameId}/cover?v=5`
+  return coverOf(media ?? [])
+}
+
 function excerptOf(body: string, len = 180): string {
   const clean = body.replace(/\s+/g, " ").trim()
   return clean.length > len ? `${clean.slice(0, len - 1)}…` : clean
@@ -80,12 +100,7 @@ export const getPublicFeed = cache(async (limit = 12): Promise<FeedItem[]> => {
       dateISO: new Date(p.publishedAt ?? Date.now()).toISOString(),
       href: `/news/${p.slug}`,
       author: p.kind === "RECAP_AI" ? "Game recap" : p.kind === "VIDEO" ? "Highlights" : null,
-      // ONE image per game on EVERY surface (owner 2026-07-23): game posts
-      // use the PNG /cover on web and app alike — the SVG originals stay in
-      // the DB but never reach a client list again.
-      coverUrl: p.tags?.[0]?.gameId
-        ? `${appBaseUrl()}/api/live/${p.tags[0].gameId}/cover?v=5`
-        : coverOf(p.media ?? []),
+      coverUrl: resolveCoverUrl(p.tags, p.media),
     })),
     ...announcements.map((a: any): FeedItem => ({
       id: a.id,

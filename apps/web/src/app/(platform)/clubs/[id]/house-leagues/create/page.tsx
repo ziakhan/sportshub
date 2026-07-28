@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
@@ -16,6 +16,7 @@ export default function CreateHouseLeaguePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errorDetails, setErrorDetails] = useState<string[] | null>(null)
 
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -58,6 +59,7 @@ export default function CreateHouseLeaguePage() {
 
     setIsSubmitting(true)
     setError(null)
+    setErrorDetails(null)
 
     try {
       const res = await fetch("/api/house-leagues", {
@@ -90,6 +92,13 @@ export default function CreateHouseLeaguePage() {
 
       if (!res.ok) {
         const data = await res.json()
+        if (Array.isArray(data.details)) {
+          setErrorDetails(
+            data.details
+              .slice(0, 5)
+              .map((d: { path: (string | number)[]; message: string }) => `${d.path.join(".")}: ${d.message}`)
+          )
+        }
         throw new Error(data.error || "Failed to create")
       }
 
@@ -104,16 +113,23 @@ export default function CreateHouseLeaguePage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href={`/clubs/${clubId}/house-leagues`} className="text-sm text-play-700 hover:underline">
-          &larr; Back to House Leagues
-        </Link>
+        <SmartBack fallback={`/clubs/${clubId}/house-leagues`} fallbackLabel="House Leagues" className="-ml-1" />
       </div>
 
       <div className="mx-auto max-w-2xl">
         <h2 className="text-xl font-bold text-ink-900 mb-6">Create House League Program</h2>
 
         {error && (
-          <div className="mb-4 rounded-md bg-hoop-50 p-3 text-sm text-hoop-700 border border-hoop-200">{error}</div>
+          <div className="mb-4 rounded-md bg-hoop-50 p-3 text-sm text-hoop-700 border border-hoop-200">
+            {error}
+            {errorDetails && errorDetails.length > 0 && (
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                {errorDetails.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">

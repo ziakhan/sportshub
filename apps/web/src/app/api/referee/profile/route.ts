@@ -5,16 +5,27 @@ import { z } from "zod"
 
 export const dynamic = "force-dynamic"
 
+// QA-208: same capped data-URL shape as ClubClaim.proofDocumentUrl, plus a
+// PDF alternative (certifications are commonly PDFs, not just photos).
+const certificationDocUrl = z
+  .string()
+  .regex(/^data:(image\/(webp|jpeg|png)|application\/pdf);base64,[A-Za-z0-9+/=]+$/)
+  .max(2_000_000)
+  .nullable()
+  .optional()
+
 const updateRefereeSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]).optional(),
   standardFee: z.number().min(0).optional(),
   availableRegions: z.array(z.string()).optional(),
+  certificationDocUrl,
 })
 
 const createRefereeSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]),
   standardFee: z.number().min(0),
   availableRegions: z.array(z.string()).min(1),
+  certificationDocUrl,
 })
 
 /**
@@ -51,11 +62,14 @@ export async function POST(req: Request) {
           certificationLevel: data.certificationLevel,
           standardFee: data.standardFee,
           availableRegions: data.availableRegions.map((r) => r.trim()).filter(Boolean),
+          certificationDocUrl: data.certificationDocUrl ?? null,
         },
         select: {
           certificationLevel: true,
           standardFee: true,
           availableRegions: true,
+          certificationDocUrl: true,
+          certificationVerifiedAt: true,
         },
       })
       const hasRole = await tx.userRole.findFirst({
@@ -102,6 +116,8 @@ export async function GET() {
       availableRegions: true,
       gamesRefereed: true,
       averageRating: true,
+      certificationDocUrl: true,
+      certificationVerifiedAt: true,
     },
   })
 
@@ -132,13 +148,34 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
+    const existing = await prisma.refereeProfile.findUnique({
+      where: { userId: user.id },
+      select: { certificationDocUrl: true },
+    })
+
+    const updateData: typeof data & {
+      certificationVerifiedAt?: null
+      certificationVerifiedById?: null
+    } = { ...data }
+    // A new or removed document invalidates any prior verification — it was
+    // stamped against the old file, not this one.
+    if (
+      data.certificationDocUrl !== undefined &&
+      data.certificationDocUrl !== existing?.certificationDocUrl
+    ) {
+      updateData.certificationVerifiedAt = null
+      updateData.certificationVerifiedById = null
+    }
+
     const profile = await prisma.refereeProfile.update({
       where: { userId: user.id },
-      data,
+      data: updateData,
       select: {
         certificationLevel: true,
         standardFee: true,
         availableRegions: true,
+        certificationDocUrl: true,
+        certificationVerifiedAt: true,
       },
     })
 

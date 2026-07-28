@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
-import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, SmartBack } from "@/components/ui"
 import RemovePlayerButton from "../../remove-player-button"
 import { ClaimHandleCard } from "@/components/players/claim-handle-card"
 import { FamilyCard } from "@/components/players/family-card"
@@ -110,9 +109,7 @@ export default function EditPlayerPage() {
     <div className="p-6 md:p-8">
       <div className="mx-auto max-w-xl">
         <div className="mb-6">
-          <Link href="/players" className="text-ink-500 hover:text-ink-700 text-sm">
-            &larr; Back to Players
-          </Link>
+          <SmartBack fallback="/players" fallbackLabel="Players" className="-ml-1" />
         </div>
 
         <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]">

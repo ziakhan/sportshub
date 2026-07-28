@@ -4,6 +4,7 @@ import { ensureObligation } from "@/lib/payments/obligations"
 import { scheduleInstallments } from "@/lib/payments/installments"
 import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent } from "@/lib/comms/consent"
+import { rosterState } from "@/lib/teams/roster-commitment"
 
 /**
  * Offer response domain service — accept/decline with roster formation.
@@ -122,6 +123,17 @@ async function notifyClubOfResponse(
  */
 export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInput) {
   validateAcceptInput(offer, data)
+
+  // Roster commitment cap (owner 2026-07-24): offers may exceed the cap on
+  // purpose, but once COMMITTED players (paid/free) fill it, accepting into
+  // the team stops — the spot race is over.
+  const capState = await rosterState(prisma, offer.teamId)
+  if (capState?.isFull) {
+    throw new OfferResponseError(
+      `${capState.team.name} has filled its committed roster — contact the club about waitlist options.`,
+      "TEAM_FULL"
+    )
+  }
 
   // The route already snapshots the chosen option onto the offer columns; we
   // read the chosen option only for its PLAN (deposit + installment terms).

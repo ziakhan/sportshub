@@ -39,6 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       select: {
         id: true,
         startTime: true,
+        offeredRatePerGame: true,
         endTime: true,
         message: true,
         status: true,
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         sessionLabel: r.sessionDay.session.label,
         seasonLabel: r.sessionDay.session.season.label,
         window: `${r.startTime}–${r.endTime}`,
+        offeredRatePerGame: r.offeredRatePerGame != null ? Number(r.offeredRatePerGame) : null,
         message: r.message,
         status: r.status,
         target: r.targetUser
@@ -84,6 +86,8 @@ const createSchema = z.object({
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
   targetUserId: z.string().optional(), // omitted → broadcast to the pool
   message: z.string().trim().max(1000).optional(),
+  // Per-GAME rate the league offers (owner 2026-07-24) — shown pre-accept.
+  offeredRatePerGame: z.number().min(0).max(10000).optional(),
 })
 
 /**
@@ -159,6 +163,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const created = await prisma.refereeSessionRequest.create({
       data: {
+        offeredRatePerGame: parsed.data.offeredRatePerGame ?? null,
         leagueId: params.id,
         sessionDayId: day.id,
         targetUserId: data.targetUserId ?? null,

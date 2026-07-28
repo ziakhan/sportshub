@@ -11,8 +11,10 @@ import { z } from "zod"
 
 export const registrationEntrySchema = z.object({
   playerId: z.string(),
-  /** Camps only: which weeks (1-based). */
+  /** Camps only: which weeks (1-based). CONSECUTIVE schedule. */
   weekNumbers: z.array(z.number().int().min(1)).min(1).optional(),
+  /** Camps only: which session dates (ISO). DAILY/WEEKDAY_PATTERN schedule. */
+  sessionDates: z.array(z.string().datetime()).min(1).optional(),
 })
 
 export const signupPayloadSchema = z.object({
@@ -30,6 +32,8 @@ export interface RegistrationEntry {
   weekNumbers: number[] | null
   /** Count for pricing/back-compat; weekNumbers.length when weeks are explicit. */
   weeksCount: number | null
+  /** DAILY/WEEKDAY_PATTERN camps: which session dates (ISO), or null. */
+  sessionDates: string[] | null
 }
 
 /** Normalize either payload shape to a list of per-kid entries. */
@@ -39,6 +43,7 @@ export function normalizeRegistrations(data: z.infer<typeof signupPayloadSchema>
       playerId: r.playerId,
       weekNumbers: r.weekNumbers ?? null,
       weeksCount: r.weekNumbers?.length ?? null,
+      sessionDates: r.sessionDates ?? null,
     }))
   }
   if (data.playerId) {
@@ -47,6 +52,7 @@ export function normalizeRegistrations(data: z.infer<typeof signupPayloadSchema>
         playerId: data.playerId,
         weekNumbers: null,
         weeksCount: data.weeksSelected ?? null,
+        sessionDates: null,
       },
     ]
   }

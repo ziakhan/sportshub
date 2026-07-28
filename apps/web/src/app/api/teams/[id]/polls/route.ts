@@ -5,6 +5,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { notifyMany } from "@/lib/notifications"
 import { getChatMembers, getChatMembership } from "@/lib/teams/chat-access"
 import { pollInclude, serializePoll } from "@/lib/teams/polls"
+import { relayPollToTeamChat } from "@/lib/polls/chat-relay"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,9 @@ export const dynamic = "force-dynamic"
  * staff (club owners/managers + team Staff/TeamManager) create, close and
  * delete; staff + rostered families vote and see aggregate results. Staff
  * additionally see who picked what.
+ *
+ * Three-tier polls ruling (owner 2026-07-24, QA-207): creating a poll here
+ * also relays it into the team's own chat as a message bubble.
  */
 
 const createPollSchema = z.object({
@@ -109,6 +113,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         referenceId: poll.id,
         referenceType: "Poll",
       })
+    }
+
+    // QA-207: hub-created polls also land in the team chat — the same
+    // TeamMessage mechanism chat quick-polls already use. Best-effort: a
+    // chat-post hiccup never blocks the poll itself from being created.
+    try {
+      await relayPollToTeamChat({
+        pollId: poll.id,
+        teamId: membership.teamId,
+        teamName: membership.teamName,
+        tenantId: membership.tenantId,
+        senderId: auth.userId,
+        body: poll.title,
+      })
+    } catch (relayError) {
+      console.error("Poll chat relay failed:", relayError)
     }
 
     return NextResponse.json({ poll: serializePoll(poll, auth.userId, true) }, { status: 201 })

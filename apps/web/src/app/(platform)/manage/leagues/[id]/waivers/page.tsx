@@ -1,9 +1,9 @@
 import { prisma } from "@youthbasketballhub/db"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { WAIVER_TEMPLATES } from "@/lib/waivers/templates"
 import { WaiversManager } from "@/components/waivers/waivers-manager"
+import { SmartBack } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -44,12 +44,7 @@ export default async function LeagueWaiversPage({ params }: { params: { id: stri
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
       <div>
-        <Link
-          href={`/manage/leagues/${params.id}`}
-          className="text-sm text-ink-500 hover:text-ink-700"
-        >
-          &larr; {league.name}
-        </Link>
+        <SmartBack fallback={`/manage/leagues/${params.id}`} fallbackLabel={league.name} className="-ml-1" />
         <h1 className="mt-1 text-xl font-bold text-ink-900 md:text-2xl">Waivers</h1>
         <p className="mt-1 text-sm text-ink-500">
           Required waivers are emailed automatically to every parent on a team&apos;s
