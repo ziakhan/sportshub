@@ -31,6 +31,7 @@ import { foldEvents, totalRebounds } from "../apps/web/src/lib/scoring/fold"
 import { upsertGameRecap } from "../apps/web/src/lib/content/recap-service"
 import { loadSchedulerInput } from "../apps/web/src/lib/scheduler/load"
 import { generateSchedule } from "../apps/web/src/lib/scheduler/generate"
+import { WAIVER_TEMPLATES } from "../apps/web/src/lib/waivers/templates"
 
 // Deterministic recaps: force the template engine even if a key is present.
 // Re-run scripts/backfill-recaps.ts with ANTHROPIC_API_KEY for AI prose.
@@ -2026,12 +2027,41 @@ async function seed() {
       tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
     },
   })
+  // NPH's own venues (owner 2026-07-29). Court counts default to 2 and the
+  // non-UTM addresses are placeholders — owner edits or dictates real ones.
+  const showcaseVenueDefs = [
+    { name: "The Playground Burlington", address: "Burlington, ON", city: "Burlington" },
+    { name: "Six Park East", address: "Toronto, ON", city: "Toronto" },
+    { name: "UTM — University of Toronto Mississauga", address: "3359 Mississauga Rd", city: "Mississauga" },
+  ]
+  const showcaseVenues: Array<{ id: string; courtIds: string[] }> = []
+  for (const v of showcaseVenueDefs) {
+    let venue = await p.venue.findFirst({ where: { name: v.name }, select: { id: true } })
+    if (!venue) venue = await p.venue.create({ data: { ...v, state: "ON", country: "CA" }, select: { id: true } })
+    const courtIds: string[] = []
+    for (let c = 1; c <= 2; c++) {
+      let court = await p.court.findFirst({ where: { venueId: venue.id, name: `Court ${c}` }, select: { id: true } })
+      if (!court) court = await p.court.create({ data: { venueId: venue.id, name: `Court ${c}`, displayOrder: c }, select: { id: true } })
+      courtIds.push(court.id)
+    }
+    for (let dow = 0; dow <= 6; dow++) {
+      const weekend = dow === 0 || dow === 6
+      await p.venueHours.upsert({
+        where: { venueId_dayOfWeek: { venueId: venue.id, dayOfWeek: dow } },
+        create: { venueId: venue.id, dayOfWeek: dow, openTime: weekend ? "08:00" : VENUE_WEEKDAY_HOURS.open, closeTime: weekend ? "20:00" : VENUE_WEEKDAY_HOURS.close },
+        update: {},
+      })
+    }
+    showcaseVenues.push({ id: venue.id, courtIds })
+  }
+
   // Weekend sessions on NPH's REAL published U15 dates + the two finals
   // weekends (phase PLAYOFF). Venue allocations included so the Venues and
   // Sessions tabs are fully set up; game generation itself is deliberately
   // NOT run. (Per-division weekend variance in their tables is a scheduling
   // concern — skipped along with schedule generation.)
-  for (const v of venues) {
+  const showcaseAllVenues = [...showcaseVenues, ...venues]
+  for (const v of showcaseAllVenues) {
     await p.seasonVenue.upsert({
       where: { seasonId_venueId: { seasonId: showcaseSeason.id, venueId: v.id } },
       create: { seasonId: showcaseSeason.id, venueId: v.id, courtsAvailable: v.courtIds.length },
@@ -2057,7 +2087,7 @@ async function seed() {
         data: { sessionId: session.id, date: new Date(Date.UTC(y, m, d)) },
         select: { id: true },
       })
-      for (const v of venues) {
+      for (const v of showcaseAllVenues) {
         const dayVenue = await p.seasonSessionDayVenue.create({
           data: { dayId: day.id, venueId: v.id, startTime: "08:00", endTime: "20:00" },
           select: { id: true },
@@ -2097,6 +2127,18 @@ async function seed() {
         "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
       ].join("\n\n"),
       required: true,
+    },
+  })
+  // Parent-facing waiver from the product's built-in Ontario template —
+  // required, so roster approval auto-emails every rostered parent a signing
+  // link and the season Signing-status grid fills in (the waiver demo beat).
+  const rowans = WAIVER_TEMPLATES.find((t) => t.key === "concussion-code-on")!
+  await p.waiverDocument.create({
+    data: {
+      leagueId: showcaseLeague.id,
+      title: rowans.title, body: rowans.body(SHOWCASE_LEAGUE),
+      type: rowans.type, province: rowans.province,
+      annualRenewal: rowans.annualRenewal, required: true,
     },
   })
 
