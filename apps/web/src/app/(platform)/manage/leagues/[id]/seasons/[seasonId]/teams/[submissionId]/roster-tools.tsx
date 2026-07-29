@@ -144,7 +144,7 @@ export function RosterTools({
       {canOverride && (
         <div>
           <button onClick={openEditor} className="text-play-700 text-xs font-semibold hover:underline">
-            {editOpen ? "Close roster editor" : "Edit roster (league override, audited)"}
+            {editOpen ? "Close roster editor" : "Edit roster"}
           </button>
           {editOpen && (
             <div className="border-ink-100 mt-2 rounded-xl border p-3">
@@ -153,8 +153,8 @@ export function RosterTools({
               ) : (
                 <>
                   <p className="text-ink-500 mb-2 text-xs">
-                    Tick the players who belong on the submitted roster — the club is notified of
-                    league overrides.
+                    Tick the players who belong on the submitted roster. League edits are
+                    audited and the club is notified automatically.
                   </p>
                   <div className="grid max-h-56 gap-1 overflow-y-auto sm:grid-cols-2">
                     {players.map((p) => (

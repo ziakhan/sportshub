@@ -134,7 +134,7 @@ export default async function LeagueClubDetailPage({
     <div className="mx-auto max-w-5xl space-y-5 p-4 md:p-6">
       <div>
         <SmartBack
-          fallback={`/manage/leagues/${params.id}/seasons/${params.seasonId}/manage`}
+          fallback={`/manage/leagues/${params.id}/seasons/${params.seasonId}/manage?tab=clubs`}
           fallbackLabel={`${season.league.name} · ${season.label}`}
           className="-ml-1"
         />

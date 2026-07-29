@@ -2244,11 +2244,24 @@ async function seed() {
     data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U15-T1").id, teamId: titansU15.id, status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE },
     select: { id: true },
   })
-  await p.seasonRoster.create({
+  const titansU15Roster = await p.seasonRoster.create({
     data: {
       seasonId: showcaseSeason.id, teamSubmissionId: titansU15Sub.id, isLocked: true,
       submittedAt: new Date(now.getTime() - days(6)), lockedAt: new Date(now.getTime() - days(4)),
       players: { create: rosterCreate(titansU15.roster) },
+    },
+    select: { id: true },
+  })
+  // Live approval beat for the demo (owner 2026-07-29: nothing in the sim
+  // had requested a change, so the approve flow never showed): the club
+  // asks to swap in a call-up — PENDING on the team page + Overview.
+  await p.rosterChangeRequest.create({
+    data: {
+      rosterId: titansU15Roster.id,
+      requestedById: titans.ownerId,
+      message: "Wei is out 4 to 6 weeks (ankle). Requesting to call up guard Marcus Lee from our U14 group for Sessions 2 and 3.",
+      status: "PENDING",
+      createdAt: new Date(now.getTime() - days(1)),
     },
   })
   const titansDeposit = await p.paymentObligation.create({

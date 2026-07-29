@@ -45,6 +45,10 @@ export function WaiverStatusView({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Collapsed by default (owner 2026-07-29: full rosters for every club was
+  // an unreadable wall) — each team is a summary row that expands on demand.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [onlyMissing, setOnlyMissing] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -119,6 +123,14 @@ export function WaiverStatusView({
           <Badge tone={data.totals.outstanding > 0 ? "warning" : "neutral"}>
             {data.totals.outstanding} outstanding
           </Badge>
+          <button
+            onClick={() => setOnlyMissing((v) => !v)}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+              onlyMissing ? "bg-gold-100 text-gold-700" : "bg-ink-50 text-ink-500 hover:bg-ink-100"
+            }`}
+          >
+            Only missing
+          </button>
         </div>
         <Button
           variant="subtle"
@@ -139,66 +151,94 @@ export function WaiverStatusView({
         </div>
       ) : null}
 
-      {data.teams.map((team) => (
-        <div key={team.submissionId} className="overflow-hidden rounded-xl border border-ink-200 bg-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 bg-ink-50/60 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-ink-900">{team.teamName}</p>
-              {team.complete ? (
-                <Badge tone="court">All signed</Badge>
-              ) : (
-                <Badge tone="warning">Missing signatures</Badge>
+      {data.teams
+        .filter((team) => !onlyMissing || !team.complete)
+        .map((team) => {
+          const totalCells = team.players.length * data.waivers.length
+          const signedCells = team.players.reduce(
+            (a, p) => a + p.waivers.filter((w) => w.signed).length,
+            0
+          )
+          const isOpen = expanded.has(team.submissionId)
+          return (
+            <div
+              key={team.submissionId}
+              className="overflow-hidden rounded-xl border border-ink-200 bg-white"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                <button
+                  onClick={() =>
+                    setExpanded((prev) => {
+                      const next = new Set(prev)
+                      if (next.has(team.submissionId)) next.delete(team.submissionId)
+                      else next.add(team.submissionId)
+                      return next
+                    })
+                  }
+                  className="flex min-w-0 items-center gap-2 text-left"
+                >
+                  <span className="text-ink-400 text-xs">{isOpen ? "▾" : "▸"}</span>
+                  <span className="font-semibold text-ink-900">{team.teamName}</span>
+                  {team.complete ? (
+                    <Badge tone="court">All signed</Badge>
+                  ) : (
+                    <Badge tone="warning">
+                      {signedCells}/{totalCells} signed
+                    </Badge>
+                  )}
+                </button>
+                <Button
+                  variant="subtle"
+                  disabled={busy !== null || team.complete}
+                  onClick={() => resend(team.submissionId)}
+                >
+                  {busy === team.submissionId ? "Sending..." : "Re-send"}
+                </Button>
+              </div>
+              {isOpen && (
+                <div className="overflow-x-auto border-t border-ink-100">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs uppercase tracking-wide text-ink-400">
+                        <th className="px-4 py-2 font-semibold">Player</th>
+                        {data.waivers.map((w) => (
+                          <th key={w.id} className="px-4 py-2 font-semibold">
+                            {w.title}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {team.players.map((p) => (
+                        <tr key={p.playerId} className="border-t border-ink-50">
+                          <td className="px-4 py-2.5">
+                            <p className="font-medium text-ink-800">{p.name}</p>
+                            {p.parentEmail ? (
+                              <p className="text-xs text-ink-400">{p.parentEmail}</p>
+                            ) : (
+                              <p className="text-xs text-red-500">No parent email on file</p>
+                            )}
+                          </td>
+                          {p.waivers.map((w) => (
+                            <td key={w.waiverId} className="px-4 py-2.5">
+                              {w.signed ? (
+                                <span className="text-court-700" title={w.signerName ?? undefined}>
+                                  ✓ {w.signerName}
+                                </span>
+                              ) : (
+                                <span className="text-amber-600">Pending</span>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-            <Button
-              variant="subtle"
-              disabled={busy !== null || team.complete}
-              onClick={() => resend(team.submissionId)}
-            >
-              {busy === team.submissionId ? "Sending..." : "Re-send"}
-            </Button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-ink-400">
-                  <th className="px-4 py-2 font-semibold">Player</th>
-                  {data.waivers.map((w) => (
-                    <th key={w.id} className="px-4 py-2 font-semibold">
-                      {w.title}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {team.players.map((p) => (
-                  <tr key={p.playerId} className="border-t border-ink-50">
-                    <td className="px-4 py-2.5">
-                      <p className="font-medium text-ink-800">{p.name}</p>
-                      {p.parentEmail ? (
-                        <p className="text-xs text-ink-400">{p.parentEmail}</p>
-                      ) : (
-                        <p className="text-xs text-red-500">No parent email on file</p>
-                      )}
-                    </td>
-                    {p.waivers.map((w) => (
-                      <td key={w.waiverId} className="px-4 py-2.5">
-                        {w.signed ? (
-                          <span className="text-court-700" title={w.signerName ?? undefined}>
-                            ✓ {w.signerName}
-                          </span>
-                        ) : (
-                          <span className="text-amber-600">Pending</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ))}
+          )
+        })}
     </div>
   )
 }

@@ -14,6 +14,7 @@ import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
 import { ClubsTab } from "./components/clubs-tab"
 import { NeedsAttention } from "./components/needs-attention"
+import { SeasonReport } from "./components/season-report"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
 import { PlayoffsTab } from "./components/playoffs-tab"
@@ -53,6 +54,19 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"]
 
+// Two-level nav (owner 2026-07-29: "reorganize the long menus — settings on
+// one page with tabs underneath"). Twelve flat tabs become five sections;
+// section click lands on its first tab, sub-tabs appear when a section has
+// more than one. Keys are unchanged so ?tab= deep links keep working.
+const TAB_GROUPS: Array<{ label: string; tabs: TabKey[] }> = [
+  { label: "Overview", tabs: ["overview"] },
+  { label: "Registration", tabs: ["clubs", "teams"] },
+  { label: "Season setup", tabs: ["divisions", "venues", "sessions", "scheduling", "tiebreakers"] },
+  { label: "Games", tabs: ["schedule", "standings", "playoffs"] },
+  { label: "Referees", tabs: ["referees"] },
+]
+const TAB_LABEL = Object.fromEntries(TABS.map((t) => [t.key, t.label])) as Record<TabKey, string>
+
 export default function LeagueManagePage() {
   const params = useParams()
   const leagueId = params?.id as string
@@ -64,6 +78,20 @@ export default function LeagueManagePage() {
   const [schedulingGroups, setSchedulingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
+
+  // Tab state lives in the URL (owner 2026-07-29: back from a team page must
+  // land on the Teams tab, not Overview). replaceState keeps history clean;
+  // the query restores the tab on back-navigation and enables deep links.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab")
+    if (t && TABS.some((x) => x.key === t)) setActiveTab(t as TabKey)
+  }, [])
+  const selectTab = (t: TabKey) => {
+    setActiveTab(t)
+    const url = new URL(window.location.href)
+    url.searchParams.set("tab", t)
+    window.history.replaceState(null, "", url)
+  }
 
   // Scheduling settings form (populated by fetchAll, edited in the Scheduling tab)
   const [schedSettings, setSchedSettings] = useState<SchedSettings>({
@@ -133,6 +161,14 @@ export default function LeagueManagePage() {
   }, [leagueId]) // eslint-disable-line
 
   const handleStatusChange = async (newStatus: string) => {
+    // One click here changes the season for every club — confirm (found
+    // 2026-07-29 when an automated test stray-clicked "Close Registration").
+    if (
+      !window.confirm(
+        `Move the season to "${STATUS_LABELS[newStatus] ?? newStatus}"? Clubs see this immediately.`
+      )
+    )
+      return
     const res = await fetch(`/api/seasons/${seasonId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -238,35 +274,57 @@ export default function LeagueManagePage() {
         )}
       </div>
 
-      {/* Tab nav */}
-      <div
-        role="tablist"
-        aria-label="Season sections"
-        className="reveal border-ink-100 mb-6 flex flex-wrap gap-1 overflow-x-auto border-b"
-        style={{ animationDelay: "80ms" }}
-      >
-        {TABS.map((tab) => {
-          const selected = activeTab === tab.key
+      {/* Two-level tab nav: sections, then the section's tabs */}
+      <div className="reveal mb-6" style={{ animationDelay: "80ms" }}>
+        <div
+          role="tablist"
+          aria-label="Season sections"
+          className="border-ink-100 flex flex-wrap gap-1 overflow-x-auto border-b"
+        >
+          {TAB_GROUPS.map((group) => {
+            const selected = group.tabs.includes(activeTab)
+            return (
+              <button
+                key={group.label}
+                role="tab"
+                aria-selected={selected}
+                onClick={() => selectTab(group.tabs[0])}
+                className={`relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  selected ? "text-play-600" : "text-ink-500 hover:text-ink-800"
+                }`}
+              >
+                {group.label}
+                {selected && (
+                  <span
+                    className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full"
+                    aria-hidden
+                  />
+                )}
+              </button>
+            )
+          })}
+        </div>
+        {(() => {
+          const group = TAB_GROUPS.find((g) => g.tabs.includes(activeTab))
+          if (!group || group.tabs.length < 2) return null
           return (
-            <button
-              key={tab.key}
-              role="tab"
-              aria-selected={selected}
-              onClick={() => setActiveTab(tab.key)}
-              className={`relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
-                selected ? "text-play-600" : "text-ink-500 hover:text-ink-800"
-              }`}
-            >
-              {tab.label}
-              {selected && (
-                <span
-                  className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full"
-                  aria-hidden
-                />
-              )}
-            </button>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {group.tabs.map((key) => (
+                <button
+                  key={key}
+                  onClick={() => selectTab(key)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    activeTab === key
+                      ? "bg-play-600 text-white"
+                      : "bg-ink-50 text-ink-600 hover:bg-ink-100"
+                  }`}
+                >
+                  {TAB_LABEL[key]}
+                </button>
+              ))}
+            </div>
           )
-        })}
+        })()}
       </div>
 
       <div key={activeTab} role="tabpanel" className="reveal">
@@ -275,9 +333,10 @@ export default function LeagueManagePage() {
             leagueId={leagueId}
             seasonId={seasonId}
             league={league}
-            onGoToTab={(t) => setActiveTab(t as TabKey)}
+            onGoToTab={(t) => selectTab(t as TabKey)}
           />
         )}
+        {activeTab === "overview" && <SeasonReport leagueId={leagueId} seasonId={seasonId} />}
         {activeTab === "overview" && (
           <OverviewTab
             league={league}
