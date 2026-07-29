@@ -12,6 +12,8 @@ import { RefereesTab } from "./components/referees-tab"
 import { SchedulingTab } from "./components/scheduling-tab"
 import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
+import { ClubsTab } from "./components/clubs-tab"
+import { NeedsAttention } from "./components/needs-attention"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
 import { PlayoffsTab } from "./components/playoffs-tab"
@@ -42,6 +44,7 @@ const TABS = [
   { key: "scheduling", label: "Scheduling" },
   { key: "tiebreakers", label: "Tiebreakers" },
   { key: "teams", label: "Teams" },
+  { key: "clubs", label: "Clubs" },
   { key: "referees", label: "Referees" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
@@ -268,6 +271,14 @@ export default function LeagueManagePage() {
 
       <div key={activeTab} role="tabpanel" className="reveal">
         {activeTab === "overview" && (
+          <NeedsAttention
+            leagueId={leagueId}
+            seasonId={seasonId}
+            league={league}
+            onGoToTab={(t) => setActiveTab(t as TabKey)}
+          />
+        )}
+        {activeTab === "overview" && (
           <OverviewTab
             league={league}
             divisions={divisions}
@@ -301,6 +312,9 @@ export default function LeagueManagePage() {
         )}
         {activeTab === "teams" && (
           <TeamsTab seasonId={seasonId} leagueId={leagueId} league={league} refresh={fetchAll} />
+        )}
+        {activeTab === "clubs" && (
+          <ClubsTab seasonId={seasonId} leagueId={leagueId} league={league} />
         )}
         {activeTab === "referees" && (
           <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />

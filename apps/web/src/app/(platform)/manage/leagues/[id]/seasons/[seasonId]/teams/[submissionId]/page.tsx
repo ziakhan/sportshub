@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { Badge, SmartBack, toneForStatus } from "@/components/ui"
 import { SubmissionActions } from "./submission-actions"
+import { RosterTools } from "./roster-tools"
 
 export const dynamic = "force-dynamic"
 
@@ -307,24 +308,29 @@ export default async function LeagueTeamDetailPage({
         )}
       </div>
 
-      {/* Roster change requests */}
-      {(submission.roster?.changeRequests ?? []).length > 0 && (
-        <div className={panel}>
-          <h2 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">
-            Roster change requests
-          </h2>
-          {submission.roster.changeRequests.map((cr: any) => (
-            <p key={cr.id} className="text-ink-700 mb-1 text-sm">
-              <Badge tone={toneForStatus(cr.status)}>{cr.status.toLowerCase()}</Badge>{" "}
-              {fmtDate(cr.createdAt)} — {cr.requestedBy.firstName} {cr.requestedBy.lastName}
-              {cr.message ? `: ${cr.message}` : ""}
-            </p>
-          ))}
-          <p className="text-ink-400 mt-1 text-xs">
-            Pending requests are approved from the Teams tab&apos;s request queue.
-          </p>
-        </div>
-      )}
+      {/* Roster changes — requests actionable + audited override, IN PLACE
+          (owner 2026-07-29: no more bouncing to the Teams-tab queue) */}
+      <div className={panel}>
+        <h2 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">
+          Roster changes
+        </h2>
+        <RosterTools
+          seasonId={params.seasonId}
+          submissionId={submission.id}
+          teamId={submission.team.id}
+          canOverride={submission.status === "APPROVED"}
+          requests={(submission.roster?.changeRequests ?? []).map((cr: any) => ({
+            id: cr.id,
+            status: cr.status,
+            message: cr.message ?? "",
+            createdAt: String(cr.createdAt),
+            requestedBy: `${cr.requestedBy.firstName} ${cr.requestedBy.lastName}`,
+          }))}
+        />
+        {(submission.roster?.changeRequests ?? []).length === 0 && (
+          <p className="text-ink-500 text-sm">No change requests from the club.</p>
+        )}
+      </div>
 
       {/* Games */}
       <div className={panel}>
