@@ -251,3 +251,39 @@ credentials cheat sheet on completion.
 | `coach-<club>-gr<N>@` (e.g. `coach-lords-gr9@`) | Head coach per team (32) |
 | `ref-mike@` `ref-sarah@` `ref-james@` `ref-priya@` | Referees, PIN 1234 |
 | `parent-<club>-NN@` | ~300 generated background parents (never needed) |
+
+## 11. Showcase 2026-27 application world + league directory (added 2026-07-29)
+Owner-approved extension mirroring NPH's REAL fall/winter announcement
+(docs/research/nph-fall-winter-2026-alignment.md — the sales demo for NPH).
+
+**NPH Showcase League · season "2026-27"** (REGISTRATION): $3,990 team fee,
+gamesGuaranteed 12 (their 10+2 format), Oct 10 → Mar 21, 10 divisions (U13/
+U15/U17/U19 Boys × Tier 1/2 + High School Girls + Elementary Girls), their
+registration T&C seeded as a required league e-sign document.
+
+**Application pipeline in every state (the owner-nph@ dashboard demo):**
+| Team | State |
+|---|---|
+| Scarborough Titans U15 | APPROVED · roster submitted+LOCKED · 50% deposit ($1,995) recorded, balance due 2 wks before tip-off |
+| Scarborough Titans U17 | PENDING review · roster submitted |
+| Mississauga Monarchs U15 | APPROVED · entry fee OVERDUE (aging visible) |
+| West United Prep U17 | REJECTED |
+| Etobicoke Edge U15 | NOT applied — full roster ready; `owner-edge@` applies LIVE (the 3-clicks-vs-Jotform beat) |
+
+New logins: `owner-titans@` (established club) · `owner-edge@` (fresh club) ·
+`parent-titans-NN@`/`parent-edge-NN@` background parents · `league-directory@`
+(holds the name-only directory leagues).
+
+**Name-only leagues** ("just a name" — owner 2026-07-29): NPA Canada, WNPA
+Canada, NPH D1 (owned by owner-nph@) + Toronto directory: OBL, National
+Junior/Senior Circuit, Hoop City, Toronto Big League, Phoenix League, OSBA,
+JUEL, CYBL (owned by league-directory@). Each has ONE DRAFT "2026-27" season —
+deliberate: the shared directory query requires a season, and a nullable
+season would break old fielded app bundles (additive-only rule).
+
+**Rules encoded:** demo content is authored ONLY by @sportshub.demo accounts
+(keeps the wipe surgical — owner principle 2026-07-29). Manual tester
+accounts survive resets; their data inside demo entities is accepted
+collateral. `--purge-manual-leagues` additionally deletes leagues owned by
+non-demo accounts (accounts + clubs untouched) — verified: deletes the
+league, keeps the owner's account.
