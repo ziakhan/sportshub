@@ -2004,19 +2004,70 @@ async function seed() {
     },
   })
   await p.userRole.create({ data: { userId: nph.id, role: "LeagueOwner", leagueId: showcaseLeague.id } })
-  const showcaseStart = new Date(now.getFullYear(), 9, 10) // Oct 10
+  // Real published 2026-27 dates (northpolehoops.com/showcase/): girls tip
+  // off Oct 3, Tier 1 Finals close Mar 6-14. Fully configured season —
+  // everything EXCEPT schedule generation (not enough teams yet, owner
+  // 2026-07-29). Dates deliberately hardcoded to NPH's announcement.
+  const showcaseStart = new Date(Date.UTC(2026, 9, 3))
   const showcaseSeason = await p.season.create({
     data: {
       leagueId: showcaseLeague.id, label: SHOWCASE_SEASON, status: "REGISTRATION",
       type: "FALL_WINTER",
-      registrationDeadline: new Date(now.getTime() + days(60)),
-      startDate: showcaseStart, endDate: new Date(now.getFullYear() + 1, 2, 21),
+      registrationDeadline: new Date(Date.UTC(2026, 9, 1)),
+      startDate: showcaseStart, endDate: new Date(Date.UTC(2027, 2, 14)),
+      ageGroupCutoffDate: new Date(Date.UTC(2026, 11, 31)), // U-age as of Dec 31
       teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
       gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
+      targetGamesPerSession: 2, // 5 sessions × 2 + finals weekend × 2 = 10+2
       gameSlotMinutes: GAME_SLOT_MINUTES, gameLengthMinutes: GAME_LENGTH_MINUTES,
+      idealGamesPerDayPerTeam: 1,
+      defaultVenueOpenTime: "08:00", defaultVenueCloseTime: "20:00",
       rosterChangePolicy: "REQUEST_ONLY",
+      tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
     },
   })
+  // Weekend sessions on NPH's REAL published U15 dates + the two finals
+  // weekends (phase PLAYOFF). Venue allocations included so the Venues and
+  // Sessions tabs are fully set up; game generation itself is deliberately
+  // NOT run. (Per-division weekend variance in their tables is a scheduling
+  // concern — skipped along with schedule generation.)
+  for (const v of venues) {
+    await p.seasonVenue.upsert({
+      where: { seasonId_venueId: { seasonId: showcaseSeason.id, venueId: v.id } },
+      create: { seasonId: showcaseSeason.id, venueId: v.id, courtsAvailable: v.courtIds.length },
+      update: {},
+    })
+  }
+  const SHOWCASE_SESSIONS: Array<{ label: string; phase: "REGULAR" | "PLAYOFF"; dates: [number, number, number][] }> = [
+    { label: "Session 1 · Oct 24-25", phase: "REGULAR", dates: [[2026, 9, 24], [2026, 9, 25]] },
+    { label: "Session 2 · Nov 21-22", phase: "REGULAR", dates: [[2026, 10, 21], [2026, 10, 22]] },
+    { label: "Session 3 · Dec 19-20", phase: "REGULAR", dates: [[2026, 11, 19], [2026, 11, 20]] },
+    { label: "Session 4 · Jan 9-10", phase: "REGULAR", dates: [[2027, 0, 9], [2027, 0, 10]] },
+    { label: "Session 5 · Feb 6-7", phase: "REGULAR", dates: [[2027, 1, 6], [2027, 1, 7]] },
+    { label: "Tier 2 Finals · Feb 27-28", phase: "PLAYOFF", dates: [[2027, 1, 27], [2027, 1, 28]] },
+    { label: "Tier 1 Finals · Mar 6-7", phase: "PLAYOFF", dates: [[2027, 2, 6], [2027, 2, 7]] },
+  ]
+  for (const s of SHOWCASE_SESSIONS) {
+    const session = await p.seasonSession.create({
+      data: { seasonId: showcaseSeason.id, label: s.label, phase: s.phase, targetGamesPerTeam: 2 },
+      select: { id: true },
+    })
+    for (const [y, m, d] of s.dates) {
+      const day = await p.seasonSessionDay.create({
+        data: { sessionId: session.id, date: new Date(Date.UTC(y, m, d)) },
+        select: { id: true },
+      })
+      for (const v of venues) {
+        const dayVenue = await p.seasonSessionDayVenue.create({
+          data: { dayId: day.id, venueId: v.id, startTime: "08:00", endTime: "20:00" },
+          select: { id: true },
+        })
+        for (const courtId of v.courtIds) {
+          await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId } })
+        }
+      }
+    }
+  }
   // Real NPH division sheet, demo-sized: boys age groups × Tier 1/2 + girls
   const showcaseDivisions = new Map<string, any>()
   for (const age of ["U13", "U15", "U17", "U19"]) {
