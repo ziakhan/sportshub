@@ -25,6 +25,7 @@
  *   npx tsx scripts/seed-nph-demo.ts [flags]
  */
 
+import { readFileSync } from "fs"
 import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
 import { foldEvents, totalRebounds } from "../apps/web/src/lib/scoring/fold"
@@ -918,7 +919,7 @@ async function seed() {
 
       // One-click league submit → frozen, locked roster
       const submission = await p.teamSubmission.create({
-        data: { seasonId: winterSeason.id, divisionId: winterDivisions.get(grade).id, teamId: team.id, status: "APPROVED" },
+        data: { seasonId: winterSeason.id, divisionId: winterDivisions.get(grade).id, teamId: team.id, status: "APPROVED", paymentStatus: "PAID_MANUAL" },
         select: { id: true },
       })
       const rosterRows = await p.teamPlayer.findMany({ where: { teamId: team.id }, select: { playerId: true, jerseyNumber: true } })
@@ -1285,11 +1286,19 @@ async function seed() {
     2
   )
 
-  // 3 clubs already submitted fall squads (summer roster carries over)
-  for (const club of CLUBS.filter((c) => c.spring === "submitted")) {
-    const row = clubRows.get(club.key)!
-    const sourceGrade = club.grades.includes(9) ? 9 : 10
-    const source = teams.find((t) => t.clubKey === club.key && t.grade === sourceGrade)!
+  // Scheduler-ready fall field (owner 2026-07-29): 8 teams — 4 per grade
+  // division — APPROVED with LOCKED rosters and PAID entry fees, so NPH can
+  // close registration and run schedule generation LIVE in the demo (the
+  // summer league already shows the generated end state). Recruiting clubs'
+  // fall entries here use their OTHER grade, so the tryout story still holds.
+  const FALL_READY: Array<[string, number]> = [
+    ["force", 9], ["monarchs", 9], ["kings", 9], ["lions", 9],
+    ["west", 10], ["cityabove", 10], ["polaris", 10], ["crown", 10],
+  ]
+  for (const [clubKey, sourceGrade] of FALL_READY) {
+    const club = CLUBS.find((c) => c.key === clubKey)!
+    const row = clubRows.get(clubKey)!
+    const source = teams.find((t) => t.clubKey === clubKey && t.grade === sourceGrade)!
     const team = await p.team.create({
       data: { tenantId: row.id, name: `${club.name} Fall Grade ${sourceGrade}`, ageGroup: `Grade ${sourceGrade}`, gender: "MALE", season: SPRING_SEASON, description: MARKER },
       select: { id: true },
@@ -1298,14 +1307,37 @@ async function seed() {
       await p.teamPlayer.create({ data: { teamId: team.id, playerId: source.roster[i], jerseyNumber: 4 + i, status: "ACTIVE" } })
     }
     const submission = await p.teamSubmission.create({
-      data: { seasonId: springSeason.id, divisionId: springDivisions.get(sourceGrade).id, teamId: team.id, status: "PENDING" },
+      data: {
+        seasonId: springSeason.id, divisionId: springDivisions.get(sourceGrade).id, teamId: team.id,
+        status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE, paymentStatus: "PAID_MANUAL",
+      },
       select: { id: true },
     })
     await p.seasonRoster.create({
       data: {
-        seasonId: springSeason.id, teamSubmissionId: submission.id, isLocked: false,
-        submittedAt: new Date(now.getTime() - days(2)),
+        seasonId: springSeason.id, teamSubmissionId: submission.id, isLocked: true,
+        submittedAt: new Date(now.getTime() - days(9)),
+        lockedAt: new Date(now.getTime() - days(7)),
         players: { create: source.roster.map((playerId, i) => ({ playerId, jerseyNumber: 4 + i })) },
+      },
+    })
+    const fallFeeObligation = await p.paymentObligation.create({
+      data: {
+        payerTenantId: row.id, payeeLeagueId: springLeague.id,
+        referenceType: "TeamSubmission", referenceId: submission.id,
+        description: `${SPRING_LEAGUE} team entry — ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
+        amount: LEAGUE_TEAM_FEE, status: "PAID",
+      },
+      select: { id: true },
+    })
+    await p.payment.create({
+      data: {
+        obligationId: fallFeeObligation.id,
+        amount: LEAGUE_TEAM_FEE, currency: "CAD",
+        status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
+        payeeId: nph.id, recordedById: nph.id,
+        description: `${SPRING_LEAGUE} team entry — ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
+        createdAt: new Date(now.getTime() - days(6)),
       },
     })
   }
@@ -2115,32 +2147,36 @@ async function seed() {
   }
   // Their registration T&C as a league e-sign document — replaces NPH's
   // Jotform signature box + Google Drive rules PDF (real terms verbatim-ish)
-  await p.waiverDocument.create({
+  const tcBody = [
+    "A 50% non-refundable deposit is required to secure your team's spot in the league.",
+    "Full payment is due no later than two (2) weeks prior to the season tip-off.",
+    "No refunds will be issued for deposits or league registration fees.",
+    "Forfeiting a scheduled game will result in a $500 service fee.",
+    "Schedule changes are not permitted once published, except for emergencies.",
+    "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
+  ].join("\n\n")
+  const tcDoc = await p.waiverDocument.create({
     data: {
       leagueId: showcaseLeague.id,
       title: "NPH League Registration Terms & Conditions",
-      body: [
-        "A 50% non-refundable deposit is required to secure your team's spot in the league.",
-        "Full payment is due no later than two (2) weeks prior to the season tip-off.",
-        "No refunds will be issued for deposits or league registration fees.",
-        "Forfeiting a scheduled game will result in a $500 service fee.",
-        "Schedule changes are not permitted once published, except for emergencies.",
-        "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
-      ].join("\n\n"),
+      body: tcBody,
       required: true,
     },
+    select: { id: true },
   })
   // Parent-facing waiver from the product's built-in Ontario template —
   // required, so roster approval auto-emails every rostered parent a signing
   // link and the season Signing-status grid fills in (the waiver demo beat).
   const rowans = WAIVER_TEMPLATES.find((t) => t.key === "concussion-code-on")!
-  await p.waiverDocument.create({
+  const rowansBody = rowans.body(SHOWCASE_LEAGUE)
+  const rowansDoc = await p.waiverDocument.create({
     data: {
       leagueId: showcaseLeague.id,
-      title: rowans.title, body: rowans.body(SHOWCASE_LEAGUE),
+      title: rowans.title, body: rowansBody,
       type: rowans.type, province: rowans.province,
       annualRenewal: rowans.annualRenewal, required: true,
     },
+    select: { id: true },
   })
 
   // Showcase demo clubs (fall/winter only — no summer entanglement)
@@ -2154,17 +2190,22 @@ async function seed() {
     await p.userRole.create({ data: { userId: owner.id, role: "ClubOwner", tenantId: tenant.id } })
     return { id: tenant.id, ownerId: owner.id }
   }
-  // Complete roster from scratch: 10 kids, each with their own parent login
+  // Complete roster from scratch: 10 kids, each with their own parent login.
+  // Roster entries carry the parent identity so the waiver-mix seeding below
+  // can write sign requests/signatures without re-querying.
   const mkRosteredTeam = async (tenantId: string, clubKey: string, teamName: string, ageGroup: string, birthYear: number) => {
     const team = await p.team.create({
       data: { tenantId, name: teamName, ageGroup, gender: "MALE", season: SHOWCASE_SEASON, description: MARKER },
       select: { id: true },
     })
-    const roster: Array<{ playerId: string; jerseyNumber: number }> = []
+    const roster: Array<{ playerId: string; jerseyNumber: number; parentEmail: string; parentName: string }> = []
     for (let i = 0; i < 10; i++) {
       const seq = (parentSeqByClub.get(clubKey) ?? 0) + 1
       parentSeqByClub.set(clubKey, seq)
-      const parent = await mkUser(`parent-${clubKey}-${String(seq).padStart(2, "0")}@${EMAIL_DOMAIN}`, pick(ADULT_NAMES), pick(LAST_NAMES))
+      const parentEmail = `parent-${clubKey}-${String(seq).padStart(2, "0")}@${EMAIL_DOMAIN}`
+      const parentFirst = pick(ADULT_NAMES)
+      const parentLast = pick(LAST_NAMES)
+      const parent = await mkUser(parentEmail, parentFirst, parentLast)
       await p.userRole.create({ data: { userId: parent.id, role: "Parent" } })
       const player = await p.player.create({
         data: {
@@ -2177,10 +2218,17 @@ async function seed() {
         select: { id: true },
       })
       await p.teamPlayer.create({ data: { teamId: team.id, playerId: player.id, jerseyNumber: 4 + i, status: "ACTIVE" } })
-      roster.push({ playerId: player.id, jerseyNumber: 4 + i })
+      roster.push({
+        playerId: player.id,
+        jerseyNumber: 4 + i,
+        parentEmail,
+        parentName: `${parentFirst} ${parentLast}`,
+      })
     }
     return { id: team.id, roster }
   }
+  const rosterCreate = (roster: Array<{ playerId: string; jerseyNumber: number }>) =>
+    roster.map((r) => ({ playerId: r.playerId, jerseyNumber: r.jerseyNumber }))
 
   // Club A — Scarborough Titans, established: U15 APPROVED w/ locked roster
   // + 50% deposit recorded (their real payment model); U17 PENDING review
@@ -2195,7 +2243,7 @@ async function seed() {
     data: {
       seasonId: showcaseSeason.id, teamSubmissionId: titansU15Sub.id, isLocked: true,
       submittedAt: new Date(now.getTime() - days(6)), lockedAt: new Date(now.getTime() - days(4)),
-      players: { create: titansU15.roster },
+      players: { create: rosterCreate(titansU15.roster) },
     },
   })
   const titansDeposit = await p.paymentObligation.create({
@@ -2222,7 +2270,7 @@ async function seed() {
     select: { id: true },
   })
   await p.seasonRoster.create({
-    data: { seasonId: showcaseSeason.id, teamSubmissionId: titansU17Sub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(1)), players: { create: titansU17.roster } },
+    data: { seasonId: showcaseSeason.id, teamSubmissionId: titansU17Sub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(1)), players: { create: rosterCreate(titansU17.roster) } },
   })
 
   // Club B — Etobicoke Edge: onboarded, roster READY, NOT applied.
@@ -2239,7 +2287,11 @@ async function seed() {
       data: { tenantId: row.id, name: teamName, ageGroup, gender: "MALE", season: SHOWCASE_SEASON, description: MARKER },
       select: { id: true },
     })
-    const roster = source.roster.map((playerId, i) => ({ playerId, jerseyNumber: 4 + i }))
+    const roster = source.roster.map((playerId, i) => ({
+      playerId,
+      jerseyNumber: 4 + i,
+      parentId: source.rosterParents[i],
+    }))
     for (const r of roster) {
       await p.teamPlayer.create({ data: { teamId: team.id, playerId: r.playerId, jerseyNumber: r.jerseyNumber, status: "ACTIVE" } })
     }
@@ -2251,7 +2303,7 @@ async function seed() {
     select: { id: true },
   })
   await p.seasonRoster.create({
-    data: { seasonId: showcaseSeason.id, teamSubmissionId: monarchsSub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(9)), players: { create: monarchsFW.roster } },
+    data: { seasonId: showcaseSeason.id, teamSubmissionId: monarchsSub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(9)), players: { create: rosterCreate(monarchsFW.roster) } },
   })
   await p.paymentObligation.create({
     data: {
@@ -2266,7 +2318,129 @@ async function seed() {
   await p.teamSubmission.create({
     data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U17-T2").id, teamId: westFW.id, status: "REJECTED" },
   })
+
+  // Realistic waiver state on the approved rosters (owner 2026-07-29): some
+  // parents signed, some emailed-but-pending, some untouched — the signing
+  // grid and team-page waiver columns must show a believable mix.
+  const SIGNATURE_PNG =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+  const seedWaiverState = async (
+    entries: Array<{ playerId: string; parentEmail: string; parentName: string }>,
+    signedBothThrough: number, // entries [0, N) sign BOTH documents
+    rowanOnlyThrough: number // entries [N, M) sign only Rowan's Law
+  ) => {
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i]
+      const sentAt = new Date(now.getTime() - days(4))
+      for (const [doc, body, annual] of [
+        [tcDoc, tcBody, false],
+        [rowansDoc, rowansBody, true],
+      ] as Array<[{ id: string }, string, boolean]>) {
+        const signs = i < signedBothThrough || (annual && i < rowanOnlyThrough)
+        await p.waiverSignRequest.create({
+          data: {
+            waiverId: doc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
+            emailedTo: e.parentEmail,
+            tokenHash: `nphdemo-${doc.id.slice(0, 8)}-${e.playerId}`,
+            expiresAt: new Date(now.getTime() + days(30)),
+            consumedAt: signs ? new Date(sentAt.getTime() + days(1)) : null,
+            createdAt: sentAt,
+          },
+        })
+        if (signs) {
+          await p.waiverSignature.create({
+            data: {
+              waiverId: doc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
+              waiverVersion: 1, bodySnapshot: body,
+              signerName: e.parentName, relationship: "Parent/Guardian",
+              signatureData: SIGNATURE_PNG,
+              signedAt: new Date(sentAt.getTime() + days(1)),
+              validUntil: annual ? new Date(sentAt.getTime() + days(366)) : null,
+            },
+          })
+        }
+      }
+    }
+  }
+  await seedWaiverState(titansU15.roster, 6, 8) // 6 signed both · 2 Rowan-only · 2 pending
+  const monarchsParentRows = await p.user.findMany({
+    where: { id: { in: monarchsFW.roster.map((r: any) => r.parentId) } },
+    select: { id: true, email: true, firstName: true, lastName: true },
+  })
+  const monarchsParentById = new Map(monarchsParentRows.map((u: any) => [u.id, u]))
+  await seedWaiverState(
+    monarchsFW.roster.map((r: any) => {
+      const u = monarchsParentById.get(r.parentId)
+      return {
+        playerId: r.playerId,
+        parentEmail: u?.email ?? `parent-monarchs@${EMAIL_DOMAIN}`,
+        parentName: u ? `${u.firstName} ${u.lastName}` : "Parent",
+      }
+    }),
+    4, 4 // 4 signed both · 6 emailed, still pending
+  )
+
+  // Referee pool on the Showcase league (Referees tab must not be empty)
+  for (const refId of refIds) {
+    await p.leagueReferee.create({ data: { leagueId: showcaseLeague.id, userId: refId } })
+  }
+
+  // League-wide poll (three-tier polls: league scope, never chat-relayed)
+  // with votes from Titans parents — shows on their home pages.
+  const showcasePoll = await p.poll.create({
+    data: {
+      leagueId: showcaseLeague.id,
+      createdById: nph.id,
+      title: "Championship Weekend planning",
+      description: "Help us shape the Tier 1 finals weekend — two quick questions.",
+      status: "OPEN",
+      questions: {
+        create: [
+          {
+            prompt: "Which finals format do you prefer for Championship Weekend?",
+            order: 0,
+            options: {
+              create: [
+                { label: "Single elimination", order: 0 },
+                { label: "Best-of-3 series", order: 1 },
+                { label: "Round robin + final", order: 2 },
+              ],
+            },
+          },
+          {
+            prompt: "Preferred first tip-off time on session Saturdays?",
+            order: 1,
+            options: {
+              create: [
+                { label: "8:00 AM", order: 0 },
+                { label: "9:00 AM", order: 1 },
+                { label: "10:00 AM", order: 2 },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    select: { id: true, questions: { select: { id: true, options: { select: { id: true }, orderBy: { order: "asc" } } }, orderBy: { order: "asc" } } },
+  })
+  const titansParentRows = await p.user.findMany({
+    where: { email: { in: titansU15.roster.map((r: any) => r.parentEmail) } },
+    select: { id: true },
+  })
+  for (let i = 0; i < titansParentRows.length; i++) {
+    const [q1, q2] = showcasePoll.questions
+    await p.pollVote.create({
+      data: { questionId: q1.id, optionId: q1.options[i % 5 === 0 ? 1 : i % 3 === 0 ? 2 : 0].id, userId: titansParentRows[i].id },
+    })
+    if (i % 4 !== 3) {
+      await p.pollVote.create({
+        data: { questionId: q2.id, optionId: q2.options[i % 2 === 0 ? 1 : 2].id, userId: titansParentRows[i].id },
+      })
+    }
+  }
+
   console.log("✓ Showcase 2026-27: 10 divisions, T&C doc, apps APPROVED+deposit / PENDING / APPROVED+overdue / REJECTED, Edge ready to apply live")
+  console.log("✓ Showcase extras: waiver mix (signed/sent/pending), ref pool, league poll w/ votes")
 
   // ── Name-only leagues: NPH shells + the Toronto directory ─────────────
   const mkShellLeague = async (ownerId: string, name: string, description: string) => {
@@ -2278,6 +2452,20 @@ async function seed() {
   const dirHolder = await mkUser(`league-directory@${EMAIL_DOMAIN}`, "Dana", "Registry")
   for (const [name, desc] of DIRECTORY_LEAGUES) await mkShellLeague(dirHolder.id, name, desc)
   console.log(`✓ Name-only leagues: ${NPH_SHELL_LEAGUES.length} NPH shells + ${DIRECTORY_LEAGUES.length} Toronto directory entries (DRAFT 2026-27)`)
+
+  // NPH's real branding on every NPH-owned league (owner 2026-07-29):
+  // square mark from northpolehoops.com (black basketball + red maple leaf,
+  // committed as scripts/demo-assets data URL) + their Canadian-red accent.
+  const nphLogo = readFileSync(new URL("./demo-assets/nph-logo.dataurl.txt", import.meta.url), "utf8").trim()
+  await p.league.updateMany({
+    where: { ownerId: nph.id },
+    data: {
+      logoUrl: nphLogo,
+      primaryColor: "#d7282f",
+      tagline: "A pathway for Canadian basketball to the next level",
+    },
+  })
+  console.log("✓ NPH branding applied to all NPH-owned leagues (logo + #d7282f + tagline)")
 
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
@@ -2316,7 +2504,10 @@ function printCheatSheet() {
     "   · owner-nph → Showcase League 2026-27 (REGISTRATION): applications in",
     "     every state — Titans U15 approved w/ 50% deposit paid, Titans U17",
     "     pending, Monarchs approved + entry fee OVERDUE, West Utd rejected;",
-    "     T&C e-sign doc on the league (their real terms)",
+    "     T&C + Rowan's Law e-sign docs w/ realistic signed/sent/pending mix;",
+    "     league poll w/ parent votes; NPH logo + red branding",
+    "   · owner-nph → Fall League: 8 teams approved+locked+paid (4 per grade)",
+    "     — close registration and RUN SCHEDULE GENERATION live",
     "   · owner-edge → Etobicoke Edge U15 roster ready → submit to Showcase",
     "     live (the NPH pitch: apply in 3 clicks, no Jotform, no email)",
     "   · /leagues directory: OBL, Circuits, Hoop City, Big League, Phoenix,",

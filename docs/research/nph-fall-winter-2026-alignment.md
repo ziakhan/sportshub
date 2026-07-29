@@ -69,6 +69,7 @@ Extend the demo seed (or a sibling seed `scripts/seed-nph-fallwinter.ts`) under 
 - ⛔ Local seed only; box reseed = owner-approved deploy step.
 
 ## 5. Open items
+- **G4 — League OPERATOR layer (owner question 2026-07-29):** NPH runs many leagues (Summer, Fall, Showcase, NPA, WNPA, D1) and today every League row duplicates branding/description/waivers/venues/referee pools. Proposal: an `Organization` entity above League (like Tenant is for clubs) holding name, logo, colors, tagline, socials, description boilerplate, waiver templates, venue list, referee pool — leagues inherit with per-league override; league pages show "Run by NPH" linking an operator profile page listing all their leagues. Inheritance candidates ranked: branding (logo/colors/socials — inherit unless overridden) > waiver documents (T&C is operator-level policy, duplicating per league is real pain) > referee pool + venues (share by default) > description (league-specific with an operator boilerplate block). Demo currently fakes this with a `league.updateMany` on ownerId — the real build is schema + UI. Size: medium.
 - G1 build decision (custom application questions on season registration) — recommend building before a real NPH pitch, not needed for first internal demo.
 - G2: deposit/balance schedule on `TeamSubmission` (reuse installment math) — small, high pitch value ("we automate your 50%-deposit chase").
 - Whether to model NPA/WNPA "Canada vs USA" split (skip for demo; Canada only).
