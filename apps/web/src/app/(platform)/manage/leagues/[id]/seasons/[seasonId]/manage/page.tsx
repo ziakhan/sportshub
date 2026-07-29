@@ -300,7 +300,7 @@ export default function LeagueManagePage() {
           <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
         )}
         {activeTab === "teams" && (
-          <TeamsTab seasonId={seasonId} league={league} refresh={fetchAll} />
+          <TeamsTab seasonId={seasonId} leagueId={leagueId} league={league} refresh={fetchAll} />
         )}
         {activeTab === "referees" && (
           <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />

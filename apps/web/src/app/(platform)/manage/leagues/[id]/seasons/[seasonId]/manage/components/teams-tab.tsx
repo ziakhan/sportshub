@@ -10,10 +10,12 @@ import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
 
 export function TeamsTab({
   seasonId,
+  leagueId,
   league,
   refresh,
 }: {
   seasonId: string
+  leagueId: string
   league: any
   refresh: () => void
 }) {
@@ -35,33 +37,6 @@ export function TeamsTab({
       // Previously silent: a 403/500 looked like success (gap-audit P1 #20)
       const data = await res.json().catch(() => ({}))
       window.alert(data.error || "Couldn't update the team's status")
-      return
-    }
-    refresh()
-  }
-
-  const withdrawTeam = async (leagueTeamId: string) => {
-    if (
-      !window.confirm(
-        "Withdraws the team from the season — future games are cancelled and opponents notified."
-      )
-    )
-      return
-    await updateTeamStatus(leagueTeamId, "WITHDRAWN")
-  }
-
-  const updateTeamPayment = async (
-    leagueTeamId: string,
-    paymentStatus: "UNPAID" | "PAID_MANUAL" | "WAIVED"
-  ) => {
-    const res = await fetch(`/api/seasons/${seasonId}/teams/${leagueTeamId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentStatus }),
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      window.alert(data.error || "Couldn't update the payment status")
       return
     }
     refresh()
@@ -162,28 +137,28 @@ export function TeamsTab({
               PAID_STRIPE: "paid (stripe)",
               WAIVED: "waived",
             }
+            // One-row layout (owner 2026-07-29: actions were wrapping to a
+            // second line). The row keeps only triage — badges + Approve/
+            // Reject for pending teams; withdraw + payment actions live on
+            // the team detail page behind "Details".
             return (
               <div
                 key={t.id}
-                className="border-court-100 bg-court-50 hover:border-court-200 mb-2 flex items-center justify-between rounded-xl border px-3 py-2 transition-colors"
+                className="border-court-100 bg-court-50 hover:border-court-200 mb-2 flex items-center justify-between gap-3 rounded-xl border px-3 py-2 transition-colors"
               >
-                <div>
-                  {(t.team as any)?.id ? (
-                    <Link
-                      href={`/team/${(t.team as any).id}`}
-                      className="text-ink-900 hover:text-play-600 font-medium transition-colors"
-                    >
-                      {t.team.name}
-                    </Link>
-                  ) : (
-                    <span className="text-ink-900 font-medium">{t.team.name}</span>
-                  )}
+                <div className="min-w-0 flex-1 truncate">
+                  <Link
+                    href={`/manage/leagues/${leagueId}/seasons/${seasonId}/teams/${t.id}`}
+                    className="text-ink-900 hover:text-play-600 font-medium transition-colors"
+                  >
+                    {t.team.name}
+                  </Link>
                   <span className="text-ink-500 ml-2 text-xs">{t.team.tenant?.name}</span>
                   {t.division && (
-                    <span className="text-play-700 ml-2 text-xs">{t.division.name}</span>
+                    <span className="text-play-700 ml-2 hidden text-xs sm:inline">{t.division.name}</span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={toneForStatus(t.status)}>{t.status.toLowerCase()}</Badge>
                   <Badge tone={paid ? "success" : "warning"}>
                     {paymentLabel[t.paymentStatus ?? "UNPAID"] ?? "unpaid"}
@@ -203,30 +178,12 @@ export function TeamsTab({
                       </Button>
                     </>
                   )}
-                  {(t.status === "PENDING" || t.status === "APPROVED") && (
-                    <Button size="sm" variant="subtle" onClick={() => withdrawTeam(t.id)}>
-                      Withdraw
-                    </Button>
-                  )}
-                  {!paid ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        tone="court"
-                        onClick={() => updateTeamPayment(t.id, "PAID_MANUAL")}
-                      >
-                        Mark paid
-                      </Button>
-                      <Button size="sm" variant="subtle" onClick={() => updateTeamPayment(t.id, "WAIVED")}>
-                        Waive
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="sm" variant="subtle" onClick={() => updateTeamPayment(t.id, "UNPAID")}>
-                      Mark unpaid
-                    </Button>
-                  )}
+                  <Link
+                    href={`/manage/leagues/${leagueId}/seasons/${seasonId}/teams/${t.id}`}
+                    className="text-play-600 hover:text-play-700 whitespace-nowrap text-xs font-semibold"
+                  >
+                    Details &rarr;
+                  </Link>
                 </div>
               </div>
             )

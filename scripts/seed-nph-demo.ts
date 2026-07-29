@@ -585,10 +585,11 @@ async function seed() {
           openTime: weekend ? VENUE_WEEKEND_HOURS.open : VENUE_WEEKDAY_HOURS.open,
           closeTime: weekend ? VENUE_WEEKEND_HOURS.close : VENUE_WEEKDAY_HOURS.close,
         },
-        update: {
-          openTime: weekend ? VENUE_WEEKEND_HOURS.open : VENUE_WEEKDAY_HOURS.open,
-          closeTime: weekend ? VENUE_WEEKEND_HOURS.close : VENUE_WEEKDAY_HOURS.close,
-        },
+        // Seed provides DEFAULTS only — venues are a global registry and
+        // owner edits must survive reseeds (owner 2026-07-29). Season-level
+        // scheduling windows live on SeasonVenueHours, which the reset DOES
+        // rebuild with the rest of the demo world.
+        update: {},
       })
     }
     venues.push({ id: venue.id, courtIds })

@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 export default async function PublicTeamPage({ params }: { params: { id: string } }) {
   const data = await getTeamPublicData(params.id)
   if (!data) notFound()
-  const { team, games, record, playerAverages, posts, staff } = data
+  const { team, games, record, playerAverages, posts, staff, registrations } = data
 
   const session = await getServerSession(authOptions)
   const viewerId = (session?.user as any)?.id ?? null
@@ -88,6 +88,11 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
     team.players.map((tp: any) => [tp.player.id, playerDisplayName(tp.player, participant)])
   )
   const seasonInfo = games.find((g: any) => g.season)?.season ?? null
+  // Registered seasons with no games yet (pre-season) still get a clickable
+  // chip (owner 2026-07-29: the season on a team page was dead text).
+  const registrationChips = ((registrations as any[]) ?? []).filter(
+    (r: any) => r.season && r.season.id !== seasonInfo?.id
+  )
 
   return (
     <div className="container mx-auto px-4 py-10 sm:px-6">
@@ -161,6 +166,16 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
             {seasonInfo.league.name} {seasonInfo.label} &rarr;
           </Link>
         )}
+        {registrationChips.map((r: any) => (
+          <Link
+            key={r.season.id}
+            href={`/league/${r.season.id}`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            {r.season.league.name} {r.season.label}
+            {r.status === "PENDING" ? " (pending)" : ""} &rarr;
+          </Link>
+        ))}
         {team.tenant && (
           <Link
             href={`/club/${team.tenant.slug}`}

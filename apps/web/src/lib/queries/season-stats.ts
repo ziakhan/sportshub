@@ -357,6 +357,26 @@ export const getTeamPublicData = cache(async (teamId: string) => {
   })
   if (!team) return null
 
+  // Season registrations (owner 2026-07-29): a registered team with no
+  // games yet must still link to its league season — deriving the season
+  // only from games left pre-season teams with dead, unclickable text.
+  // Additive field; native may adopt it later (never narrow).
+  const registrations = await (prisma as any).teamSubmission.findMany({
+    where: { teamId, status: { in: ["APPROVED", "PENDING"] } },
+    select: {
+      status: true,
+      season: {
+        select: {
+          id: true,
+          label: true,
+          status: true,
+          league: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
   const games = await (prisma as any).game.findMany({
     where: { OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
     select: {
@@ -455,5 +475,5 @@ export const getTeamPublicData = cache(async (teamId: string) => {
   })
   const posts = rawPosts.map((p: any) => ({ ...p, coverUrl: resolveCoverUrl(p.tags, p.media) }))
 
-  return { team, games, record: { wins, losses, ties }, playerAverages, posts, staff }
+  return { team, games, record: { wins, losses, ties }, playerAverages, posts, staff, registrations }
 })
