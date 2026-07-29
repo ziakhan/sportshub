@@ -2155,12 +2155,17 @@ async function seed() {
     "Schedule changes are not permitted once published, except for emergencies.",
     "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
   ].join("\n\n")
-  const tcDoc = await p.waiverDocument.create({
+  // required:false ON PURPOSE (owner caught this 2026-07-29): this is a
+  // CLUB-facing commercial agreement — parents must never be asked to sign
+  // it, and required league waivers auto-email parents on roster approval.
+  // The proper home is a club-level signature at season entry (audience
+  // field + ClubSeasonEntry — docs/roadmap/league-operator-orgs.md).
+  await p.waiverDocument.create({
     data: {
       leagueId: showcaseLeague.id,
-      title: "NPH League Registration Terms & Conditions",
+      title: "NPH League Registration Terms & Conditions (club agreement)",
       body: tcBody,
-      required: true,
+      required: false,
     },
     select: { id: true },
   })
@@ -2324,45 +2329,41 @@ async function seed() {
   // grid and team-page waiver columns must show a believable mix.
   const SIGNATURE_PNG =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+  // Parent waiver mix = Rowan's Law ONLY — the club T&C above is never a
+  // per-player parent document (owner 2026-07-29).
   const seedWaiverState = async (
     entries: Array<{ playerId: string; parentEmail: string; parentName: string }>,
-    signedBothThrough: number, // entries [0, N) sign BOTH documents
-    rowanOnlyThrough: number // entries [N, M) sign only Rowan's Law
+    signedThrough: number // entries [0, N) have signed; the rest are emailed-pending
   ) => {
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i]
       const sentAt = new Date(now.getTime() - days(4))
-      for (const [doc, body, annual] of [
-        [tcDoc, tcBody, false],
-        [rowansDoc, rowansBody, true],
-      ] as Array<[{ id: string }, string, boolean]>) {
-        const signs = i < signedBothThrough || (annual && i < rowanOnlyThrough)
-        await p.waiverSignRequest.create({
+      const signs = i < signedThrough
+      await p.waiverSignRequest.create({
+        data: {
+          waiverId: rowansDoc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
+          emailedTo: e.parentEmail,
+          tokenHash: `nphdemo-${rowansDoc.id.slice(0, 8)}-${e.playerId}`,
+          expiresAt: new Date(now.getTime() + days(30)),
+          consumedAt: signs ? new Date(sentAt.getTime() + days(1)) : null,
+          createdAt: sentAt,
+        },
+      })
+      if (signs) {
+        await p.waiverSignature.create({
           data: {
-            waiverId: doc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
-            emailedTo: e.parentEmail,
-            tokenHash: `nphdemo-${doc.id.slice(0, 8)}-${e.playerId}`,
-            expiresAt: new Date(now.getTime() + days(30)),
-            consumedAt: signs ? new Date(sentAt.getTime() + days(1)) : null,
-            createdAt: sentAt,
+            waiverId: rowansDoc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
+            waiverVersion: 1, bodySnapshot: rowansBody,
+            signerName: e.parentName, relationship: "Parent/Guardian",
+            signatureData: SIGNATURE_PNG,
+            signedAt: new Date(sentAt.getTime() + days(1)),
+            validUntil: new Date(sentAt.getTime() + days(366)),
           },
         })
-        if (signs) {
-          await p.waiverSignature.create({
-            data: {
-              waiverId: doc.id, playerId: e.playerId, seasonId: showcaseSeason.id,
-              waiverVersion: 1, bodySnapshot: body,
-              signerName: e.parentName, relationship: "Parent/Guardian",
-              signatureData: SIGNATURE_PNG,
-              signedAt: new Date(sentAt.getTime() + days(1)),
-              validUntil: annual ? new Date(sentAt.getTime() + days(366)) : null,
-            },
-          })
-        }
       }
     }
   }
-  await seedWaiverState(titansU15.roster, 6, 8) // 6 signed both · 2 Rowan-only · 2 pending
+  await seedWaiverState(titansU15.roster, 7) // 7 signed · 3 emailed-pending
   const monarchsParentRows = await p.user.findMany({
     where: { id: { in: monarchsFW.roster.map((r: any) => r.parentId) } },
     select: { id: true, email: true, firstName: true, lastName: true },
@@ -2377,7 +2378,7 @@ async function seed() {
         parentName: u ? `${u.firstName} ${u.lastName}` : "Parent",
       }
     }),
-    4, 4 // 4 signed both · 6 emailed, still pending
+    4 // 4 signed · 6 emailed, still pending
   )
 
   // Referee pool on the Showcase league (Referees tab must not be empty)
@@ -2504,7 +2505,8 @@ function printCheatSheet() {
     "   · owner-nph → Showcase League 2026-27 (REGISTRATION): applications in",
     "     every state — Titans U15 approved w/ 50% deposit paid, Titans U17",
     "     pending, Monarchs approved + entry fee OVERDUE, West Utd rejected;",
-    "     T&C + Rowan's Law e-sign docs w/ realistic signed/sent/pending mix;",
+    "     Rowan's Law parent waiver w/ realistic signed/pending mix; club T&C",
+    "     stored as a club-level agreement (not parent-signed);",
     "     league poll w/ parent votes; NPH logo + red branding",
     "   · owner-nph → Fall League: 8 teams approved+locked+paid (4 per grade)",
     "     — close registration and RUN SCHEDULE GENERATION live",
