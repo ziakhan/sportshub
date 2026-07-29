@@ -17,6 +17,9 @@
  *   --wipe          wipe only, no reseed
  *   --report        list test-noise candidates (users/tenants/leagues), no writes
  *   --scrub-noise   delete what --report lists (run --report first!)
+ *   --purge-manual-leagues  also delete leagues owned by NON-demo accounts
+ *                   (owner 2026-07-29: curated directory only; manual USER
+ *                   accounts and clubs are left alone)
  *   --yes-prod      REQUIRED when DATABASE_URL is not localhost
  *
  *   npx tsx scripts/seed-nph-demo.ts [flags]
@@ -42,6 +45,38 @@ const WINTER_LEAGUE = "NPH Summer League"
 const WINTER_SEASON = "Summer 2026"
 const SPRING_LEAGUE = "NPH Fall League"
 const SPRING_SEASON = "Fall 2026"
+// NPH Showcase League 2026-27 — mirrors NPH's real announced fall/winter
+// structure (docs/research/nph-fall-winter-2026-alignment.md): $3,990/team,
+// 10-game season + 2 guaranteed playoff games Oct–Mar, tiered divisions,
+// application pipeline in every state for the league-side demo.
+const SHOWCASE_LEAGUE = "NPH Showcase League"
+const SHOWCASE_SEASON = "2026-27"
+// Name-only leagues (owner 2026-07-29: "just as a name") — one DRAFT
+// placeholder season each so the one-source directory query surfaces them
+// on web AND native without a nullable-season API change (old fielded
+// bundles read season fields; server never leads the client).
+const NPH_SHELL_LEAGUES: Array<[string, string]> = [
+  ["NPA Canada", "National Preparatory Association — Canada's top prep basketball circuit."],
+  ["WNPA Canada", "Women's National Preparatory Association — elite girls prep basketball."],
+  ["NPH D1", "NPH D1 — Academy, Scholastic and Junior divisions."],
+]
+const DIRECTORY_LEAGUES: Array<[string, string]> = [
+  ["Ontario Basketball League (OBL)", "Ontario Basketball's provincial club league."],
+  ["National Junior Circuit", "Junior club basketball circuit — Toronto & GTA."],
+  ["National Senior Circuit", "Senior club basketball circuit — Toronto & GTA."],
+  ["Hoop City League", "Toronto community basketball league."],
+  ["Toronto Big League", "GTA club basketball league."],
+  ["Phoenix League", "Toronto youth basketball league."],
+  ["OSBA — Ontario Scholastic Basketball Association", "Ontario's elite high-school prep league."],
+  ["JUEL — Junior Elite League", "Ontario's provincial girls development league."],
+  ["CYBL — Canadian Youth Basketball League", "GTA youth league — spring and winter seasons."],
+]
+// Fall/winter-only demo clubs (owner 2026-07-29): A = established, applied
+// with complete rosters; B = freshly onboarded, roster ready, applies LIVE.
+const SHOWCASE_CLUBS = [
+  { key: "titans", name: "Scarborough Titans", slug: "scarborough-titans", city: "Scarborough", color: "#0e7490", create: true },
+  { key: "edge", name: "Etobicoke Edge", slug: "etobicoke-edge", city: "Etobicoke", color: "#65a30d", create: true },
+]
 // ════════════════════════════════════════════════════════════════════════
 // OWNER KNOBS — hand-edit these (and the CLUBS list below) to shape the
 // demo world, then re-run the seeder (~30s). Everything downstream derives.
@@ -296,7 +331,9 @@ async function wipeDemoWorld() {
   for (const name of [
     WINTER_LEAGUE,
     SPRING_LEAGUE,
-    "NPH Showcase League",
+    SHOWCASE_LEAGUE,
+    ...NPH_SHELL_LEAGUES.map(([n]) => n),
+    ...DIRECTORY_LEAGUES.map(([n]) => n),
     "NPH Spring Circuit",
     "Ontario Youth Basketball League",
   ]) {
@@ -322,7 +359,7 @@ async function wipeDemoWorld() {
   await p.team.deleteMany({ where: { description: "SHOWCASE_SEED" } })
   await deleteUsersDeep(userIds)
 
-  for (const club of CLUBS) {
+  for (const club of [...CLUBS, ...SHOWCASE_CLUBS] as Array<{ slug: string; create?: boolean }>) {
     const tenant = await p.tenant.findUnique({ where: { slug: club.slug }, select: { id: true } })
     if (!tenant) continue
     await p.tryout.deleteMany({ where: { tenantId: tenant.id } })
@@ -339,6 +376,29 @@ async function wipeDemoWorld() {
     }
   }
   console.log("✓ demo world wiped (adopted tenants restored to UNCLAIMED)")
+}
+
+// ── Manual-league purge (owner 2026-07-29) ──────────────────────────────
+// Deletes leagues whose owner is NOT a demo account, so the curated
+// directory is the only league surface. Manual user accounts and clubs are
+// deliberately untouched — losses are limited to the leagues themselves
+// (seasons, games, league-tagged posts, entry-fee obligations).
+async function purgeManualLeagues() {
+  const leagues = await p.league.findMany({ select: { id: true, name: true, ownerId: true } })
+  const owners = await p.user.findMany({
+    where: { id: { in: [...new Set(leagues.map((l: any) => l.ownerId))] } },
+    select: { id: true, email: true },
+  })
+  const emailById = new Map<string, string>(owners.map((o: any) => [o.id, o.email]))
+  let purged = 0
+  for (const l of leagues) {
+    const email = emailById.get(l.ownerId) ?? "(deleted user)"
+    if (email.endsWith(`@${EMAIL_DOMAIN}`)) continue
+    console.log(`  ✗ purging manual league: ${l.name} (owner ${email})`)
+    await deleteLeagueDeep(l.id)
+    purged++
+  }
+  console.log(`✓ purged ${purged} manually-created league(s)`)
 }
 
 // ── Game event stream (proven showcase generator) ───────────────────────
@@ -1932,6 +1992,199 @@ async function seed() {
   })
   console.log(`✓ Team events: Lords photo day + NPH Media Day across ${g9SummerTeams.length} G9 teams`)
 
+  // ── NPH Showcase League 2026-27: the fall/winter APPLICATION world ────
+  // (docs/research/nph-fall-winter-2026-alignment.md §4 — owner 2026-07-29)
+  const showcaseLeague = await p.league.create({
+    data: {
+      name: SHOWCASE_LEAGUE,
+      description:
+        "Canada's premier youth club league, Grades 5-12. 10-game season plus 2 guaranteed playoff games, championships and awards. Weekend sessions October through March, Durham to Kitchener-Waterloo and Niagara.",
+      ownerId: nph.id, statDepth: "STANDARD", periodType: "QUARTERS",
+      perks: ["Guaranteed games", "Championships & awards", "Live stats & standings", "Media coverage"],
+    },
+  })
+  await p.userRole.create({ data: { userId: nph.id, role: "LeagueOwner", leagueId: showcaseLeague.id } })
+  const showcaseStart = new Date(now.getFullYear(), 9, 10) // Oct 10
+  const showcaseSeason = await p.season.create({
+    data: {
+      leagueId: showcaseLeague.id, label: SHOWCASE_SEASON, status: "REGISTRATION",
+      type: "FALL_WINTER",
+      registrationDeadline: new Date(now.getTime() + days(60)),
+      startDate: showcaseStart, endDate: new Date(now.getFullYear() + 1, 2, 21),
+      teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
+      gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
+      gameSlotMinutes: GAME_SLOT_MINUTES, gameLengthMinutes: GAME_LENGTH_MINUTES,
+      rosterChangePolicy: "REQUEST_ONLY",
+    },
+  })
+  // Real NPH division sheet, demo-sized: boys age groups × Tier 1/2 + girls
+  const showcaseDivisions = new Map<string, any>()
+  for (const age of ["U13", "U15", "U17", "U19"]) {
+    for (const tier of [1, 2]) {
+      showcaseDivisions.set(`${age}-T${tier}`, await p.division.create({
+        data: { seasonId: showcaseSeason.id, name: `${age} Boys · Tier ${tier}`, ageGroup: age, gender: "MALE", tier },
+      }))
+    }
+  }
+  for (const [gName, gAge] of [["High School Girls", "U19"], ["Elementary Girls", "U12"]] as const) {
+    showcaseDivisions.set(gName, await p.division.create({
+      data: { seasonId: showcaseSeason.id, name: gName, ageGroup: gAge, gender: "FEMALE", tier: 1 },
+    }))
+  }
+  // Their registration T&C as a league e-sign document — replaces NPH's
+  // Jotform signature box + Google Drive rules PDF (real terms verbatim-ish)
+  await p.waiverDocument.create({
+    data: {
+      leagueId: showcaseLeague.id,
+      title: "NPH League Registration Terms & Conditions",
+      body: [
+        "A 50% non-refundable deposit is required to secure your team's spot in the league.",
+        "Full payment is due no later than two (2) weeks prior to the season tip-off.",
+        "No refunds will be issued for deposits or league registration fees.",
+        "Forfeiting a scheduled game will result in a $500 service fee.",
+        "Schedule changes are not permitted once published, except for emergencies.",
+        "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
+      ].join("\n\n"),
+      required: true,
+    },
+  })
+
+  // Showcase demo clubs (fall/winter only — no summer entanglement)
+  const mkShowcaseClub = async (cfg: (typeof SHOWCASE_CLUBS)[number]) => {
+    const tenant = await p.tenant.create({
+      data: { slug: cfg.slug, name: cfg.name, status: "ACTIVE", city: cfg.city, state: "ON", country: "CA", currency: "CAD", timezone: "America/Toronto" },
+      select: { id: true },
+    })
+    await p.tenantBranding.create({ data: { tenantId: tenant.id, primaryColor: cfg.color } })
+    const owner = await mkUser(`owner-${cfg.key}@${EMAIL_DOMAIN}`, pick(ADULT_NAMES), pick(LAST_NAMES), { city: cfg.city })
+    await p.userRole.create({ data: { userId: owner.id, role: "ClubOwner", tenantId: tenant.id } })
+    return { id: tenant.id, ownerId: owner.id }
+  }
+  // Complete roster from scratch: 10 kids, each with their own parent login
+  const mkRosteredTeam = async (tenantId: string, clubKey: string, teamName: string, ageGroup: string, birthYear: number) => {
+    const team = await p.team.create({
+      data: { tenantId, name: teamName, ageGroup, gender: "MALE", season: SHOWCASE_SEASON, description: MARKER },
+      select: { id: true },
+    })
+    const roster: Array<{ playerId: string; jerseyNumber: number }> = []
+    for (let i = 0; i < 10; i++) {
+      const seq = (parentSeqByClub.get(clubKey) ?? 0) + 1
+      parentSeqByClub.set(clubKey, seq)
+      const parent = await mkUser(`parent-${clubKey}-${String(seq).padStart(2, "0")}@${EMAIL_DOMAIN}`, pick(ADULT_NAMES), pick(LAST_NAMES))
+      await p.userRole.create({ data: { userId: parent.id, role: "Parent" } })
+      const player = await p.player.create({
+        data: {
+          firstName: pick(BOY_NAMES), lastName: pick(LAST_NAMES),
+          dateOfBirth: new Date(Date.UTC(birthYear, Math.floor(rnd() * 12), 1 + Math.floor(rnd() * 28))),
+          gender: "MALE", isMinor: true, parentId: parent.id,
+          position: pick(["Guard", "Guard", "Forward", "Forward", "Center"]),
+          mediaConsent: rnd() < 0.5 ? "GRANTED" : "UNSET",
+        },
+        select: { id: true },
+      })
+      await p.teamPlayer.create({ data: { teamId: team.id, playerId: player.id, jerseyNumber: 4 + i, status: "ACTIVE" } })
+      roster.push({ playerId: player.id, jerseyNumber: 4 + i })
+    }
+    return { id: team.id, roster }
+  }
+
+  // Club A — Scarborough Titans, established: U15 APPROVED w/ locked roster
+  // + 50% deposit recorded (their real payment model); U17 PENDING review
+  const titans = await mkShowcaseClub(SHOWCASE_CLUBS[0])
+  const titansU15 = await mkRosteredTeam(titans.id, "titans", "Scarborough Titans U15", "U15", 2012)
+  const titansU17 = await mkRosteredTeam(titans.id, "titans", "Scarborough Titans U17", "U17", 2010)
+  const titansU15Sub = await p.teamSubmission.create({
+    data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U15-T1").id, teamId: titansU15.id, status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE },
+    select: { id: true },
+  })
+  await p.seasonRoster.create({
+    data: {
+      seasonId: showcaseSeason.id, teamSubmissionId: titansU15Sub.id, isLocked: true,
+      submittedAt: new Date(now.getTime() - days(6)), lockedAt: new Date(now.getTime() - days(4)),
+      players: { create: titansU15.roster },
+    },
+  })
+  const titansDeposit = await p.paymentObligation.create({
+    data: {
+      payerTenantId: titans.id, payeeLeagueId: showcaseLeague.id,
+      referenceType: "TeamSubmission", referenceId: titansU15Sub.id,
+      description: `${SHOWCASE_LEAGUE} team entry — Scarborough Titans U15 (${SHOWCASE_SEASON})`,
+      amount: LEAGUE_TEAM_FEE, status: "PARTIALLY_PAID",
+      dueDate: new Date(showcaseStart.getTime() - days(14)), // balance: 2 wks before tip-off
+    },
+    select: { id: true },
+  })
+  await p.payment.create({
+    data: {
+      obligationId: titansDeposit.id, amount: LEAGUE_TEAM_FEE / 2, currency: "CAD",
+      status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
+      payeeId: nph.id, recordedById: nph.id,
+      description: `50% deposit — Scarborough Titans U15 (${SHOWCASE_SEASON})`,
+      createdAt: new Date(now.getTime() - days(4)),
+    },
+  })
+  const titansU17Sub = await p.teamSubmission.create({
+    data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U17-T1").id, teamId: titansU17.id, status: "PENDING" },
+    select: { id: true },
+  })
+  await p.seasonRoster.create({
+    data: { seasonId: showcaseSeason.id, teamSubmissionId: titansU17Sub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(1)), players: { create: titansU17.roster } },
+  })
+
+  // Club B — Etobicoke Edge: onboarded, roster READY, NOT applied.
+  // The live walk-through club: owner-edge applies on stage in 3 clicks.
+  const edge = await mkShowcaseClub(SHOWCASE_CLUBS[1])
+  await mkRosteredTeam(edge.id, "edge", "Etobicoke Edge U15", "U15", 2012)
+
+  // Extra pipeline states from summer clubs (rosters carry over):
+  // Monarchs APPROVED but entry fee OVERDUE; West United REJECTED.
+  const mkCarryTeam = async (clubKey: string, grade: number, teamName: string, ageGroup: string) => {
+    const row = clubRows.get(clubKey)!
+    const source = teams.find((t) => t.clubKey === clubKey && t.grade === grade)!
+    const team = await p.team.create({
+      data: { tenantId: row.id, name: teamName, ageGroup, gender: "MALE", season: SHOWCASE_SEASON, description: MARKER },
+      select: { id: true },
+    })
+    const roster = source.roster.map((playerId, i) => ({ playerId, jerseyNumber: 4 + i }))
+    for (const r of roster) {
+      await p.teamPlayer.create({ data: { teamId: team.id, playerId: r.playerId, jerseyNumber: r.jerseyNumber, status: "ACTIVE" } })
+    }
+    return { id: team.id, tenantId: row.id, roster }
+  }
+  const monarchsFW = await mkCarryTeam("monarchs", 9, "Mississauga Monarchs U15", "U15")
+  const monarchsSub = await p.teamSubmission.create({
+    data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U15-T2").id, teamId: monarchsFW.id, status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE },
+    select: { id: true },
+  })
+  await p.seasonRoster.create({
+    data: { seasonId: showcaseSeason.id, teamSubmissionId: monarchsSub.id, isLocked: false, submittedAt: new Date(now.getTime() - days(9)), players: { create: monarchsFW.roster } },
+  })
+  await p.paymentObligation.create({
+    data: {
+      payerTenantId: monarchsFW.tenantId, payeeLeagueId: showcaseLeague.id,
+      referenceType: "TeamSubmission", referenceId: monarchsSub.id,
+      description: `${SHOWCASE_LEAGUE} team entry — Mississauga Monarchs U15 (${SHOWCASE_SEASON})`,
+      amount: LEAGUE_TEAM_FEE, status: "PENDING",
+      dueDate: new Date(now.getTime() - days(6)), // OVERDUE — deposit never arrived
+    },
+  })
+  const westFW = await mkCarryTeam("west", 11, "West United Prep U17", "U17")
+  await p.teamSubmission.create({
+    data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U17-T2").id, teamId: westFW.id, status: "REJECTED" },
+  })
+  console.log("✓ Showcase 2026-27: 10 divisions, T&C doc, apps APPROVED+deposit / PENDING / APPROVED+overdue / REJECTED, Edge ready to apply live")
+
+  // ── Name-only leagues: NPH shells + the Toronto directory ─────────────
+  const mkShellLeague = async (ownerId: string, name: string, description: string) => {
+    const league = await p.league.create({ data: { name, description, ownerId }, select: { id: true } })
+    await p.userRole.create({ data: { userId: ownerId, role: "LeagueOwner", leagueId: league.id } })
+    await p.season.create({ data: { leagueId: league.id, label: "2026-27", status: "DRAFT", type: "FALL_WINTER" } })
+  }
+  for (const [name, desc] of NPH_SHELL_LEAGUES) await mkShellLeague(nph.id, name, desc)
+  const dirHolder = await mkUser(`league-directory@${EMAIL_DOMAIN}`, "Dana", "Registry")
+  for (const [name, desc] of DIRECTORY_LEAGUES) await mkShellLeague(dirHolder.id, name, desc)
+  console.log(`✓ Name-only leagues: ${NPH_SHELL_LEAGUES.length} NPH shells + ${DIRECTORY_LEAGUES.length} Toronto directory entries (DRAFT 2026-27)`)
+
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
 
@@ -1949,6 +2202,9 @@ function printCheatSheet() {
     "──────────────────────────────────────────────────────────────────",
     " Club owners:",
     ...CLUBS.map((c) => `   owner-${c.key}@${EMAIL_DOMAIN}`.padEnd(42) + c.name + (c.featured ? " ⭐featured" : "")),
+    " Showcase 2026-27 clubs:",
+    `   owner-titans@${EMAIL_DOMAIN}`.padEnd(42) + "Scarborough Titans (U15 ✓approved+deposit · U17 pending)",
+    `   owner-edge@${EMAIL_DOMAIN}`.padEnd(42) + "Etobicoke Edge (roster ready — APPLY LIVE)",
     "──────────────────────────────────────────────────────────────────",
     " Coaches: coach-<club>-gr<N>@ (e.g. coach-lords-gr9@sportshub.demo)",
     ` Referees: ${REFS.map((r) => `${r[2]}@`).join(" · ")}  (PIN 1234)`,
@@ -1963,6 +2219,14 @@ function printCheatSheet() {
     "     Availability: broadcast offer to accept live (auto-assigns games)",
     "   · parent → Dashboard → Polls (Lords G9): tournament poll, 9 families",
     "     voted, parent votes live; coach-lords-gr9 sees who picked what",
+    "   · owner-nph → Showcase League 2026-27 (REGISTRATION): applications in",
+    "     every state — Titans U15 approved w/ 50% deposit paid, Titans U17",
+    "     pending, Monarchs approved + entry fee OVERDUE, West Utd rejected;",
+    "     T&C e-sign doc on the league (their real terms)",
+    "   · owner-edge → Etobicoke Edge U15 roster ready → submit to Showcase",
+    "     live (the NPH pitch: apply in 3 clicks, no Jotform, no email)",
+    "   · /leagues directory: OBL, Circuits, Hoop City, Big League, Phoenix,",
+    "     OSBA, JUEL, CYBL as name-only entries (+ NPA/WNPA/D1 under NPH)",
     "══════════════════════════════════════════════════════════════════",
   ]
   console.log(lines.join("\n"))
@@ -1983,6 +2247,7 @@ async function main() {
 
   console.log("— NPH DEMO SEEDER — (docs/nph-demo-seed-plan.md)")
   await wipeDemoWorld()
+  if (args.includes("--purge-manual-leagues")) await purgeManualLeagues()
   if (args.includes("--wipe")) return
 
   const t0 = Date.now()
