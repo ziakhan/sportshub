@@ -13,18 +13,25 @@ A season is a pipeline: **Set up → Open registration → Review & approve → 
 - **Outputs** (standings, reports) are views, clearly separated from work.
 - **Every gated action shows its unlock path** ("Generate schedule — blocked: registration still open; 1 team pending review").
 
-## 2. Proposed structure (5 tabs, one Settings home)
+## 2. Proposed structure — FLAT, no submenus (owner ruling 2026-07-30)
+**Owner rule, adopted:** submenus hide things; only combine what is genuinely setup-related (Settings — the one grouping label everyone understands); every job gets a flat, self-describing top-level label. No second-level navigation ANYWHERE — within a tab, content is stacked visible sections on one scrollable page (anchors if long), never sub-tabs.
 
-| Tab | Contents | Notes |
-|---|---|---|
-| **Overview** | Needs-attention + Season report (exist) + **NEW Season checklist** (§3) | The "what next" home |
-| **Registration** | Clubs (entries) · Teams (applications) | Pure work surface — settings moved out |
-| **Schedule** | Sessions & venues · Capacity planner · Generate & review | Rename of "Games"; sessions/venues MOVE here — they exist only to feed scheduling. Capacity math explained inline (§5) |
-| **Standings & playoffs** | Standings (view) · Playoff brackets (work) | Outputs + post-season ops together; playoff *settings* move to Settings |
-| **Referees** | pool, shifts, settlements | unchanged |
-| **⚙ Settings** (single page, anchored sections) | **Basics** (label, dates, deadline, fee, deposit %) · **Registration** (application questions, club agreement pointer, planned-teams policy) · **Game format** (periods, lengths, slot width) · **Rules** (playoff min-games, guest players, roster-change policy, tiebreakers) · **Divisions** (structure — see §4) | Everything decidable-in-advance in ONE scrollable place with helper text. Divisions arguably setup-not-settings; keeping the editor here ends the "where do I configure X" hunt |
+Flat row: **Overview · Clubs · Teams · Schedule · Standings · Playoffs · Referees · ⚙ Settings**
 
-Migration is cheap: tabs are keys in one client page; `?tab=` deep links get a redirect map.
+| Tab | Contents (stacked sections, all visible) |
+|---|---|
+| **Overview** | Needs-attention · Season checklist (§3) · Season report |
+| **Clubs** | entries (approve/decline, applications) · club blast · per-club rollups |
+| **Teams** | applications triage · roster-change queue + policy |
+| **Schedule** | capacity math IN WORDS at top · sessions & venues (editable) · generate & review |
+| **Standings** | standings view (output) |
+| **Playoffs** | brackets/ops (settings live in Settings›Rules) |
+| **Referees** | pool · shifts · settlements |
+| **⚙ Settings** | ONE scrollable page: Basics (label/dates/deadline/fee/deposit) · Registration (questions, club agreement) · Game format (periods/lengths/slots) · Rules (playoff min-games, guests, roster policy, tiebreakers) · Divisions (structured editor §4) |
+
+Diagnosis correction: the original 12-tab overload was a MISCLASSIFICATION problem (five tabs were settings pretending to be jobs), not a hierarchy problem — grouping into submenus treated the symptom and hid the cure. Future tabs must be recurring JOBS with self-describing names; decisions → Settings, outputs → Overview/views; row stays ≤9.
+
+Migration: tab keys become flat; `?tab=` redirect map (divisions/venues/sessions/scheduling/tiebreakers→settings anchors, clubs/teams unchanged, schedule→schedule, standings/playoffs split, regsettings→settings#registration).
 
 ## 3. The Season checklist (mistake-proofing engine)
 An ordered, always-visible list on Overview; each step = done ✓ / actionable → / **blocked (with the reason and a link to the unblocking step)**. Derived from data, no stored state:
