@@ -870,7 +870,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Box demo world: reseed (`reseed-demo.sh --purge-manual-leagues`) picks up the composed seed names automatically.
 - No raw SQL, no cron, no env.
 
-## #42 — 2026-07-30: LEAGUE CONSOLE TUNE-UP (owner feedback round) — local, NOT deployed
+## #42 — 2026-07-30: LEAGUE CONSOLE TUNE-UP — ✅ DEPLOYED TO BOX (sha 697fca0, owner-approved; both new columns verified on box DB, site 200). NEON still pending.
 - Settings status strip + importance order · compact registration w/ balance-due-days · editable sessions w/ per-session court selection + preferred order · schedule mode question (session-by-session vs whole season) + readiness banner + session-scoped preview/commit · org in sidebar nav.
 - Schema additive (deploy.sh db push covers, no data loss): `Season.balanceDueDaysBeforeStart Int?`, `SeasonSessionDayVenueCourt.order Int @default(0)`. Neon: same push whenever synced.
 - No backfill needed (legacy court rows at order 0 keep old scheduling behavior). No raw SQL, no cron, no env.
