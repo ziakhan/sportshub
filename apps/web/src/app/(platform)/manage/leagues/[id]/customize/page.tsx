@@ -16,6 +16,7 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
     select: {
       id: true, name: true, ownerId: true, description: true,
       logoUrl: true, bannerUrl: true, tagline: true, primaryColor: true, socials: true,
+      organization: { select: { id: true, name: true } },
       perks: true, perksNote: true,
       seasons: { orderBy: { createdAt: "desc" }, take: 1, select: { id: true } },
     },
@@ -43,6 +44,16 @@ export default async function CustomizeLeaguePage({ params }: { params: { id: st
             Brand the public page for {league.name}. Standings, scores, and leaders are shown
             automatically.
           </p>
+          {league.organization && (
+            <p className="border-gold-100 bg-gold-50 text-ink-700 mt-2 max-w-xl rounded-lg border px-3 py-2 text-xs">
+              This league is run by <span className="font-semibold">{league.organization.name}</span>.
+              Fields left EMPTY here inherit the organization&apos;s branding automatically — set a
+              field only to override it for this league.{" "}
+              <Link href={`/manage/org/${league.organization.id}`} className="text-play-600 font-semibold hover:underline">
+                Organization settings &rarr;
+              </Link>
+            </p>
+          )}
         </div>
         {latestSeason && (
           <Link

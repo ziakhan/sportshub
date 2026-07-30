@@ -13,6 +13,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     const league = await (prisma as any).league.findUnique({
       where: { id: params.id },
       include: {
+        organization: { select: { id: true, name: true, slug: true } },
         seasons: {
           orderBy: { createdAt: "desc" },
           include: {

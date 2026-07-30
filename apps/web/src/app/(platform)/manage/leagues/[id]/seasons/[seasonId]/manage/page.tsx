@@ -13,6 +13,8 @@ import { SchedulingTab } from "./components/scheduling-tab"
 import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
 import { ClubsTab } from "./components/clubs-tab"
+import { RegistrationSettingsTab } from "./components/registration-settings-tab"
+import { GameDayPolicies } from "./components/game-day-policies"
 import { NeedsAttention } from "./components/needs-attention"
 import { SeasonReport } from "./components/season-report"
 import { ScheduleTab } from "./components/schedule-tab"
@@ -46,6 +48,7 @@ const TABS = [
   { key: "tiebreakers", label: "Tiebreakers" },
   { key: "teams", label: "Teams" },
   { key: "clubs", label: "Clubs" },
+  { key: "regsettings", label: "Registration settings" },
   { key: "referees", label: "Referees" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
@@ -60,7 +63,7 @@ type TabKey = (typeof TABS)[number]["key"]
 // more than one. Keys are unchanged so ?tab= deep links keep working.
 const TAB_GROUPS: Array<{ label: string; tabs: TabKey[] }> = [
   { label: "Overview", tabs: ["overview"] },
-  { label: "Registration", tabs: ["clubs", "teams"] },
+  { label: "Registration", tabs: ["clubs", "teams", "regsettings"] },
   { label: "Season setup", tabs: ["divisions", "venues", "sessions", "scheduling", "tiebreakers"] },
   { label: "Games", tabs: ["schedule", "standings", "playoffs"] },
   { label: "Referees", tabs: ["referees"] },
@@ -375,6 +378,9 @@ export default function LeagueManagePage() {
         {activeTab === "clubs" && (
           <ClubsTab seasonId={seasonId} leagueId={leagueId} league={league} />
         )}
+        {activeTab === "regsettings" && (
+          <RegistrationSettingsTab league={league} patchSeason={patchSeason} />
+        )}
         {activeTab === "referees" && (
           <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />
         )}
@@ -389,6 +395,9 @@ export default function LeagueManagePage() {
             patchSeason={patchSeason}
             refresh={fetchAll}
           />
+        )}
+        {activeTab === "scheduling" && (
+          <GameDayPolicies league={league} patchSeason={patchSeason} />
         )}
         {activeTab === "tiebreakers" && (
           <TiebreakersTab league={league} patchSeason={patchSeason} />

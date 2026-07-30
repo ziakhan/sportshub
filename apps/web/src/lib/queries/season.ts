@@ -66,13 +66,20 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
   // branding wears its Organization's — applied HERE so every consumer
   // (web hero, mobile route) inherits identically. League overrides win.
   const org = season.league?.organization ?? null
+  // primaryColor has a schema DEFAULT (#1a73e8) so it is never null — the
+  // default counts as "not set" for inheritance purposes.
+  const LEAGUE_COLOR_DEFAULT = "#1a73e8"
+  const ownColor =
+    season.league?.primaryColor && season.league.primaryColor !== LEAGUE_COLOR_DEFAULT
+      ? season.league.primaryColor
+      : null
   const league = season.league
     ? {
         ...season.league,
         logoUrl: season.league.logoUrl ?? org?.logoUrl ?? null,
         bannerUrl: season.league.bannerUrl ?? org?.bannerUrl ?? null,
         tagline: season.league.tagline ?? org?.tagline ?? null,
-        primaryColor: season.league.primaryColor ?? org?.primaryColor ?? null,
+        primaryColor: ownColor ?? org?.primaryColor ?? season.league.primaryColor,
         socials: season.league.socials ?? org?.socials ?? null,
         organization: org ? { id: org.id, name: org.name, slug: org.slug } : null,
       }

@@ -37,6 +37,7 @@ interface League {
   ownerId: string
   seasons: Season[]
   primaryColor?: string | null
+  organization?: { id: string; name: string; slug: string } | null
   statDepth?: string
   gameClockMode?: string
   periodType?: string
@@ -280,6 +281,11 @@ function LeagueDashboard() {
             <Button href={`/manage/leagues/${leagueId}/customize`} variant="subtle" icon={BTN_ICONS.sliders}>
               Customize page
             </Button>
+            {league?.organization && (
+              <Button href={`/manage/org/${league.organization.id}`} variant="subtle" icon={BTN_ICONS.sliders}>
+                Organization
+              </Button>
+            )}
             <Button href={`/manage/leagues/${leagueId}/payments`} variant="subtle" icon={BTN_ICONS.card}>
               Payments
             </Button>
