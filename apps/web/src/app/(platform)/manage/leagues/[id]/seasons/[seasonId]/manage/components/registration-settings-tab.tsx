@@ -1,13 +1,15 @@
 "use client"
 
+import Link from "next/link"
+import { useParams } from "next/navigation"
 import { useState } from "react"
 import { PanelHeader, Button } from "@/components/ui"
-import { panelClass } from "./types"
+import { inputClass, panelClass } from "./types"
 
 /**
- * Registration › Settings (owner 2026-07-29: "why are the onboarding
- * questions in the Playoffs tab?" — they aren't anymore). Everything about
- * HOW clubs enter this season lives here, fully explained.
+ * Settings › Registration — compact, checkbox-driven (owner 2026-07-30:
+ * "two settings taking half a page… nobody wants to read"). Explanations
+ * live in one short line under each control, not paragraphs.
  */
 export function RegistrationSettingsTab({
   league,
@@ -16,8 +18,15 @@ export function RegistrationSettingsTab({
   league: any
   patchSeason: (body: Record<string, any>) => Promise<void>
 }) {
+  const params = useParams()
+  const leagueId = params?.id as string
+
+  const [depositOn, setDepositOn] = useState<boolean>(league?.depositPct != null)
   const [depositDraft, setDepositDraft] = useState<string>(
-    league?.depositPct != null ? String(league.depositPct) : ""
+    league?.depositPct != null ? String(league.depositPct) : "50"
+  )
+  const [balanceDays, setBalanceDays] = useState<string>(
+    String(league?.balanceDueDaysBeforeStart ?? 14)
   )
   const [questionsDraft, setQuestionsDraft] = useState<string>(
     Array.isArray(league?.applicationQuestions) ? league.applicationQuestions.join("\n") : ""
@@ -30,7 +39,8 @@ export function RegistrationSettingsTab({
     setSaved(false)
     try {
       await patchSeason({
-        depositPct: depositDraft === "" ? null : Number(depositDraft),
+        depositPct: depositOn && depositDraft !== "" ? Number(depositDraft) : null,
+        balanceDueDaysBeforeStart: balanceDays === "" ? null : Number(balanceDays),
         applicationQuestions: questionsDraft
           .split("\n")
           .map((q) => q.trim())
@@ -44,57 +54,73 @@ export function RegistrationSettingsTab({
 
   return (
     <div className={`reveal ${panelClass}`}>
-      <PanelHeader title="Registration settings" />
-
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-ink-900 text-sm font-semibold">Entry-fee deposit</h3>
-          <p className="text-ink-500 mt-0.5 max-w-2xl text-sm">
-            When set, an approved team owes this percentage of the team fee right away and the
-            remaining balance 14 days before the season starts. Teams that have paid the deposit
-            show a gold &quot;deposit paid&quot; badge; a missed balance date shows red
-            &quot;overdue&quot;. Leave empty to ask for the full fee with no schedule.
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              value={depositDraft}
-              onChange={(e) => setDepositDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
-              inputMode="numeric"
-              aria-label="Deposit percentage"
-              className="border-ink-200 w-20 rounded-lg border px-3 py-2 text-sm"
-            />
-            <span className="text-ink-500 text-sm">% of the team fee, due at approval</span>
+      <PanelHeader
+        title="Registration"
+        action={
+          <div className="flex items-center gap-3">
+            {saved && <span className="text-court-700 text-sm font-medium">✓ Saved</span>}
+            <Button size="sm" disabled={busy} onClick={save}>
+              {busy ? "Saving…" : "Save"}
+            </Button>
           </div>
-        </div>
+        }
+      />
+
+      <div className="space-y-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={depositOn}
+            onChange={(e) => setDepositOn(e.target.checked)}
+          />
+          <span className="text-ink-900 font-medium">Deposit required</span>
+          {depositOn && (
+            <span className="flex items-center gap-1.5">
+              <input
+                value={depositDraft}
+                onChange={(e) => setDepositDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                inputMode="numeric"
+                aria-label="Deposit percentage"
+                className={inputClass + " w-16"}
+              />
+              <span className="text-ink-500">% of the team fee, due at approval</span>
+            </span>
+          )}
+        </label>
+
+        <label className="flex items-center gap-1.5 text-sm">
+          <span className="text-ink-900 font-medium">Remaining balance due</span>
+          <input
+            value={balanceDays}
+            onChange={(e) => setBalanceDays(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            inputMode="numeric"
+            aria-label="Balance due days before start"
+            className={inputClass + " w-16"}
+          />
+          <span className="text-ink-500">days before the season starts</span>
+        </label>
+        <p className="text-ink-400 -mt-2 text-xs">
+          Paid deposits show a gold badge; a missed balance date shows red &quot;overdue&quot;.
+        </p>
 
         <div>
-          <h3 className="text-ink-900 text-sm font-semibold">Club application questions</h3>
-          <p className="text-ink-500 mt-0.5 max-w-2xl text-sm">
-            Asked ONCE per club when it enters the season (never per team). Write one question
-            per line — each line becomes its own answer box on the club&apos;s entry form, and
-            the answers appear on the Clubs tab under each entry&apos;s Application.
-          </p>
+          <p className="text-ink-900 text-sm font-medium">Club application questions</p>
           <textarea
             value={questionsDraft}
             onChange={(e) => setQuestionsDraft(e.target.value)}
-            rows={4}
-            placeholder={"Brief synopsis of your team and top prospects\nWhy do you want to join this league?\nProgram vision — goals over the next 1, 3 and 5 years"}
-            className="border-ink-200 mt-2 w-full max-w-2xl rounded-lg border px-3 py-2 text-sm"
+            rows={3}
+            placeholder={"One question per line, e.g.\nWhy do you want to join this league?"}
+            className="border-ink-200 mt-1 w-full max-w-2xl rounded-lg border px-3 py-2 text-sm"
           />
-        </div>
-
-        <div className="border-ink-100 rounded-xl border border-dashed p-3">
-          <p className="text-ink-500 text-xs">
-            The club agreement (terms clubs sign when entering) is a waiver document with the
-            &quot;club official&quot; audience — manage it under the league&apos;s Waivers page.
-            Parent waivers are separate and go out automatically when teams are approved.
+          <p className="text-ink-400 mt-0.5 text-xs">
+            Asked once per club at entry; answers appear on the Clubs tab. The club agreement
+            itself lives on the{" "}
+            <Link href={`/manage/leagues/${leagueId}/waivers`} className="text-play-600 hover:underline">
+              Waivers page
+            </Link>
+            .
           </p>
         </div>
-
-        {saved && <p className="text-court-700 text-sm font-medium">✓ Saved</p>}
-        <Button disabled={busy} onClick={save}>
-          {busy ? "Saving…" : "Save registration settings"}
-        </Button>
       </div>
     </div>
   )

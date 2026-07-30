@@ -127,6 +127,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "playoffMinGames",
       "allowGuestPlayers",
       "depositPct",
+      "balanceDueDaysBeforeStart",
       "applicationQuestions",
       "schedulingPhilosophy",
       "allowCrossDivisionScheduling",

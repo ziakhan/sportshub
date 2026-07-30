@@ -23,6 +23,8 @@ export interface SchedulerSlot {
   dayId: string
   dayVenueId: string
   courtId: string
+  /** Preferred fill order within the day-venue (0 = first choice). */
+  courtOrder: number
   venueId: string
   startAt: Date
   endAt: Date
@@ -73,7 +75,7 @@ export interface SchedulerInput {
         venueId: string
         startTime: string | null
         endTime: string | null
-        courts: Array<{ id: string }>
+        courts: Array<{ id: string; order?: number }>
       }>
     }>
   }>
@@ -83,6 +85,14 @@ export interface SchedulerInput {
    * This is how the owner squeezes divisions into the sessions they fit in.
    */
   sessionUnitFilter?: Record<string, string[]>
+  /**
+   * Session-by-session mode (owner 2026-07-30): only these sessions produce
+   * slots, per-team demand scales to their session targets, and
+   * `existingGames` seeds matchup/count state so matchups rotate and
+   * guarantees accumulate across separately-scheduled sessions.
+   */
+  restrictToSessionIds?: string[]
+  existingGames?: Array<{ homeTeamId: string; awayTeamId: string }>
 }
 
 export interface ProposedGame {
@@ -146,8 +156,12 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
   const fallbackOpen = parseHHMM(input.defaultVenueOpenTime) ?? { h: 9, m: 0 }
   const fallbackClose = parseHHMM(input.defaultVenueCloseTime) ?? { h: 20, m: 0 }
 
+  const restrict = input.restrictToSessionIds?.length
+    ? new Set(input.restrictToSessionIds)
+    : null
   for (const s of input.sessions) {
     if (s.phase !== "REGULAR") continue
+    if (restrict && !restrict.has(s.id)) continue
     for (const d of s.days) {
       for (const dv of d.dayVenues) {
         const open = parseHHMM(dv.startTime) ?? fallbackOpen
@@ -159,7 +173,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
         const windowMinutes = (dayEnd.getTime() - dayStart.getTime()) / 60000
         const slotsPerCourt = Math.floor(windowMinutes / input.gameSlotMinutes)
 
-        for (const court of dv.courts) {
+        for (const [courtIdx, court] of dv.courts.entries()) {
           for (let i = 0; i < slotsPerCourt; i++) {
             const startAt = new Date(dayStart.getTime() + i * input.gameSlotMinutes * 60000)
             const endAt = new Date(startAt.getTime() + input.gameSlotMinutes * 60000)
@@ -168,6 +182,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
               dayId: d.id,
               dayVenueId: dv.id,
               courtId: court.id,
+              courtOrder: court.order ?? courtIdx,
               venueId: dv.venueId,
               startAt,
               endAt,
@@ -177,7 +192,21 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
       }
     }
   }
-  slots.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
+  // Day by day chronologically; within a day the PREFERRED court's whole
+  // timeline comes first, so games pack onto court 1 and only overflow to
+  // court 2 when needed (owner 2026-07-30). Same-order courts (legacy rows,
+  // order 0 everywhere) degrade to the old pure-time sort.
+  const dayKey = (d: Date) => {
+    const c = new Date(d)
+    c.setHours(0, 0, 0, 0)
+    return c.getTime()
+  }
+  slots.sort(
+    (a, b) =>
+      dayKey(a.startAt) - dayKey(b.startAt) ||
+      a.courtOrder - b.courtOrder ||
+      a.startAt.getTime() - b.startAt.getTime()
+  )
   return slots
 }
 
@@ -299,7 +328,27 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     })
   }
 
-  // Build all pairings across all units
+  // Session-by-session mode: per-team demand for THIS run is the restricted
+  // sessions' share of the season, mirroring the capacity report's math.
+  const regularSessions = input.sessions.filter((s) => s.phase === "REGULAR")
+  const restricted = (input.restrictToSessionIds ?? []).filter((sid) =>
+    regularSessions.some((s) => s.id === sid)
+  )
+  const fallbackPerTeam =
+    regularSessions.length > 0
+      ? Math.ceil(input.gamesGuaranteed / regularSessions.length)
+      : input.gamesGuaranteed
+  const sessionTeamCap =
+    restricted.length > 0
+      ? restricted.reduce((sum, sid) => {
+          const s = regularSessions.find((x) => x.id === sid)
+          return sum + (s?.targetGamesPerTeam ?? fallbackPerTeam)
+        }, 0)
+      : null
+
+  // Build all pairings across all units — always the FULL season's pool so
+  // matchup rotation stays fair, then subtract games already committed in
+  // other sessions (session-by-session mode).
   const pairingPool: Pairing[] = []
   for (const u of units) {
     if (!unitAllowedSomewhere(u.key)) {
@@ -308,12 +357,28 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     }
     pairingPool.push(...buildPairings(u, input.gamesGuaranteed))
   }
+  const preplayedByPair: Record<string, number> = {}
+  for (const g of input.existingGames ?? []) {
+    const pk = pairKey(g.homeTeamId, g.awayTeamId)
+    preplayedByPair[pk] = (preplayedByPair[pk] ?? 0) + 1
+  }
+  if (Object.keys(preplayedByPair).length > 0) {
+    const consume = { ...preplayedByPair }
+    for (let i = pairingPool.length - 1; i >= 0; i--) {
+      const pk = pairKey(pairingPool[i].homeTeamId, pairingPool[i].awayTeamId)
+      if ((consume[pk] ?? 0) > 0) {
+        consume[pk]! -= 1
+        pairingPool.splice(i, 1)
+      }
+    }
+  }
 
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
   const teamBookings: Record<string, Array<{ start: Date; end: Date; dayId: string }>> = {}
   const courtBookings: Record<string, Array<{ start: Date; end: Date }>> = {}
-  const playedPairCount: Record<string, number> = {}
+  // Seed matchup history so opponent-diversity scoring sees prior sessions.
+  const playedPairCount: Record<string, number> = { ...preplayedByPair }
 
   const games: ProposedGame[] = []
   // Remaining pairings: Map from pair key → array (ordered) of Pairing objects
@@ -360,6 +425,15 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       return { score: -Infinity, blockReason: "away team busy" }
     if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt))
       return { score: -Infinity, blockReason: "court busy" }
+
+    // Hard (session-by-session): a team never exceeds this run's session
+    // share — the rest of its season schedules with later sessions.
+    if (sessionTeamCap !== null) {
+      if ((teamGameCount[homeTeamId] ?? 0) >= sessionTeamCap)
+        return { score: -Infinity, blockReason: "home team at session target" }
+      if ((teamGameCount[awayTeamId] ?? 0) >= sessionTeamCap)
+        return { score: -Infinity, blockReason: "away team at session target" }
+    }
 
     let score = 0
 
@@ -454,19 +528,33 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   const courtMinutesUsed = games.length * slotMinutes
   const slotsUsed = games.length
 
-  // Warnings: teams under their guarantee
+  // Warnings: teams under their target — the session share in
+  // session-by-session mode, the full guarantee otherwise.
+  const perTeamTarget = sessionTeamCap ?? input.gamesGuaranteed
   for (const u of units) {
     for (const t of u.teams) {
       const count = teamGameCount[t.teamId] ?? 0
-      if (count < input.gamesGuaranteed) {
-        warnings.push(`${u.label}: ${t.name} has ${count} games (target ${input.gamesGuaranteed}).`)
+      if (count < perTeamTarget) {
+        warnings.push(`${u.label}: ${t.name} has ${count} games (target ${perTeamTarget}).`)
       }
     }
   }
 
+  // In session-by-session mode most of the pool intentionally waits for
+  // later sessions — only pairings whose teams are still under this run's
+  // target genuinely failed to place.
+  const failedToPlace =
+    sessionTeamCap === null
+      ? remaining
+      : remaining.filter(
+          (p) =>
+            (teamGameCount[p.homeTeamId] ?? 0) < sessionTeamCap &&
+            (teamGameCount[p.awayTeamId] ?? 0) < sessionTeamCap
+        )
+
   return {
     games,
-    unscheduled: remaining.map((p) => ({
+    unscheduled: failedToPlace.map((p) => ({
       unitKey: p.unitKey,
       homeTeamId: p.homeTeamId,
       awayTeamId: p.awayTeamId,

@@ -46,6 +46,7 @@ export async function PATCH(
         teamFee: true,
         startDate: true,
         depositPct: true,
+        balanceDueDaysBeforeStart: true,
         label: true,
         league: { select: { ownerId: true, name: true, currency: true } },
       },
@@ -154,10 +155,12 @@ export async function PATCH(
       // Approval is what creates the club→league team-fee debt (B1 in
       // docs/payments-design.md) — the league is the merchant here.
       if (approving && season.teamFee !== null) {
-        // Deposit schedule (owner 2026-07-29): balance is due 14 days before
-        // tip-off — the dueDate drives the existing overdue aging/nags.
+        // Deposit schedule (owner 2026-07-29): balance is due N days before
+        // tip-off (a setting since 2026-07-30, default 14) — the dueDate
+        // drives the existing overdue aging/nags.
+        const balanceDays = (season as any).balanceDueDaysBeforeStart ?? 14
         const balanceDue = season.startDate
-          ? new Date(new Date(season.startDate).getTime() - 14 * 86400_000)
+          ? new Date(new Date(season.startDate).getTime() - balanceDays * 86400_000)
           : null
         await ensureObligation(tx, {
           payerTenantId: submission.team.tenantId,
@@ -166,7 +169,7 @@ export async function PATCH(
           referenceId: submission.id,
           description:
             season.depositPct != null
-              ? `Team fee — ${season.league.name} ${season.label} (${submission.team.name}) · ${season.depositPct}% deposit due now, balance 14 days before tip-off`
+              ? `Team fee — ${season.league.name} ${season.label} (${submission.team.name}) · ${season.depositPct}% deposit due now, balance ${balanceDays} days before tip-off`
               : `Team fee — ${season.league.name} ${season.label} (${submission.team.name})`,
           amount: Number(season.teamFee),
           currency: season.league.currency,

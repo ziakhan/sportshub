@@ -15,6 +15,7 @@ import {
 interface SidebarProps {
   roles: string[]
   tenants?: NavTenant[]
+  organizations?: Array<{ id: string; name: string }>
   userName: string
   userInitials: string
   primaryRole: string
@@ -23,6 +24,7 @@ interface SidebarProps {
 export function Sidebar({
   roles,
   tenants = [],
+  organizations = [],
   userName,
   userInitials,
   primaryRole,
@@ -31,7 +33,7 @@ export function Sidebar({
   // Workspace-only chrome (owner 2026-07-15): on personal pages (/calendar,
   // /messages, /account…) even operators get the clean two-nav layout.
   if (!isWorkspacePath(pathname)) return null
-  const sections = buildNavSections({ roles, tenants })
+  const sections = buildNavSections({ roles, tenants, organizations })
 
   return (
     <aside className="border-ink-100 hidden w-[268px] flex-shrink-0 border-r bg-[#fcfcfc] lg:flex lg:flex-col">

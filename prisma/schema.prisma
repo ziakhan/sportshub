@@ -1391,9 +1391,12 @@ model Season {
   // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
   playoffMinGames Int?
   // Deposit-then-balance team fees (owner 2026-07-29, NPH terms): deposit %
-  // due at approval, balance due 14 days before season start. Null = full
+  // due at approval, balance due N days before season start. Null = full
   // payment, no schedule.
   depositPct Int?
+  // When the remaining balance is due, in days before startDate (owner
+  // 2026-07-30: make the hardcoded 14 a setting). Null = 14.
+  balanceDueDaysBeforeStart Int?
   // Club-entry application questions (two-level registration): array of
   // strings, asked ONCE per club on their season entry — never per team.
   applicationQuestions Json?
@@ -1805,6 +1808,10 @@ model SeasonSessionDayVenueCourt {
 
   courtId String
   court   Court  @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  // Preferred fill order (0 = first choice): the scheduler packs games onto
+  // low-order courts and overflows to the rest (owner 2026-07-30).
+  order Int @default(0)
 
   @@unique([dayVenueId, courtId])
   @@index([dayVenueId])

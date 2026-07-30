@@ -17,9 +17,10 @@ import {
 interface MobileNavProps {
   roles: string[]
   tenants: Array<Pick<NavTenant, "id" | "name" | "slug" | "role">>
+  organizations?: Array<{ id: string; name: string }>
 }
 
-export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
+export function MobileNav({ roles, tenants = [], organizations = [] }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
 
@@ -44,7 +45,7 @@ export function MobileNav({ roles, tenants = [] }: MobileNavProps) {
   // inside the management area — personal pages stay two-nav clean.
   if (!isWorkspacePath(pathname)) return null
 
-  const sections = buildNavSections({ roles, tenants, homeLabel: "Overview" })
+  const sections = buildNavSections({ roles, tenants, organizations, homeLabel: "Overview" })
 
   return (
     <>

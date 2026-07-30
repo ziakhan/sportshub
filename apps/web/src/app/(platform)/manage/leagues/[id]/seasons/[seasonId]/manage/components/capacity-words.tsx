@@ -3,17 +3,20 @@
 import { useEffect, useState } from "react"
 
 /**
- * Capacity math IN WORDS (IA redesign §5.3) — sits at the very top of the
- * Schedule tab, before any buttons: "you need N slots, sessions provide M,
- * ✓/✗" in plain sentences, so the planner numbers below have context.
+ * Schedule readiness — answers ONE question in plain words at the top of
+ * the Schedule tab (owner 2026-07-30): "can you generate the season's
+ * schedule right now?" ✓ yes, or ✗ with exactly what's in the way.
+ * Regular-season sessions only; playoff weekends are separate machinery.
  */
-export function CapacityWords({
+export function ScheduleReadiness({
   seasonId,
   league,
+  divisions,
   scheduleGamesCount,
 }: {
   seasonId: string
   league: any
+  divisions: any[]
   scheduleGamesCount: number
 }) {
   const [cap, setCap] = useState<{ needed: number; provided: number; sessions: number } | null>(
@@ -25,7 +28,7 @@ export function CapacityWords({
     fetch(`/api/seasons/${seasonId}/schedule/capacity`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!alive || !data?.sessions?.length) return
+        if (!alive || !data?.sessions) return
         const sessions: any[] = data.sessions
         setCap({
           needed: sessions.reduce((sum, s) => sum + (s.gamesNeededAll ?? 0), 0),
@@ -39,45 +42,59 @@ export function CapacityWords({
     }
   }, [seasonId, scheduleGamesCount])
 
-  if (!cap) return null
+  const status: string = league?.leagueStatus ?? "DRAFT"
+  const finalized = ["FINALIZED", "IN_PROGRESS", "COMPLETED"].includes(status)
+  const thinDivisions = divisions.filter((d: any) => (d._count?.teams ?? 0) < 2)
 
-  const approvedTeams = (league?.teams ?? []).filter((t: any) => t.status === "APPROVED").length
-  const games = league?.gamesGuaranteed
-  const fits = cap.provided >= cap.needed
-  const spare = cap.provided - cap.needed
+  const blockers: string[] = []
+  if (!finalized)
+    blockers.push(
+      status === "REGISTRATION_CLOSED"
+        ? "the season isn't finalized yet (finalize from the checklist on Overview)"
+        : "registration is still open — close and finalize first (checklist on Overview)"
+    )
+  if (thinDivisions.length > 0)
+    blockers.push(
+      `${thinDivisions.map((d: any) => d.name).join(", ")} ${thinDivisions.length === 1 ? "has" : "have"} fewer than 2 teams`
+    )
+  if (cap && cap.needed > 0 && cap.provided < cap.needed)
+    blockers.push(
+      `your sessions provide ${cap.provided} game slots but ${cap.needed} are needed — add days or courts below`
+    )
+  if (cap && cap.sessions === 0) blockers.push("no regular-season sessions exist yet")
+
+  const ready = blockers.length === 0 && cap !== null
+  if (!cap && blockers.length === 0) return null // still loading
 
   return (
     <div
-      className={`reveal mb-6 rounded-2xl border p-4 ${
-        fits ? "border-court-200 bg-court-50" : "border-hoop-200 bg-hoop-50"
+      className={`reveal rounded-2xl border p-4 ${
+        ready ? "border-court-200 bg-court-50" : "border-amber-200 bg-amber-50"
       }`}
     >
-      <p className="text-ink-900 text-sm">
-        <span className="mr-1.5">{fits ? "✓" : "✗"}</span>
-        You need <span className="font-bold">{cap.needed} game slots</span>
-        {approvedTeams > 0 && games ? (
+      {ready ? (
+        <p className="text-ink-900 text-sm">
+          <span className="text-court-700 font-bold">✓ You can generate the season&apos;s
+          schedule.</span>{" "}
           <span className="text-ink-600">
-            {" "}
-            ({approvedTeams} approved teams × {games} games each, two teams per game)
+            Your {cap!.sessions} regular-season session{cap!.sessions === 1 ? "" : "s"} provide{" "}
+            {cap!.provided} game slots for the {cap!.needed} needed
+            {scheduleGamesCount > 0
+              ? ` · ${scheduleGamesCount} game${scheduleGamesCount === 1 ? "" : "s"} committed so far`
+              : ""}
+            .
           </span>
-        ) : null}
-        . Your {cap.sessions} session{cap.sessions === 1 ? "" : "s"} currently provide{" "}
-        <span className="font-bold">{cap.provided}</span>.{" "}
-        {fits ? (
-          <span className="text-court-700 font-semibold">
-            That fits{spare > 0 ? ` with ${spare} slot${spare === 1 ? "" : "s"} to spare` : " exactly"}.
-          </span>
-        ) : (
-          <span className="text-hoop-700 font-semibold">
-            You are {-spare} slot{spare === -1 ? "" : "s"} short — add session days, courts or
-            venues below.
-          </span>
-        )}
-      </p>
-      <p className="text-ink-500 mt-1 text-xs">
-        The per-session breakdown further down shows where the slots come from and lets you
-        leave a division out of a session.
-      </p>
+        </p>
+      ) : (
+        <div className="text-sm">
+          <p className="text-amber-800 font-bold">✗ Not ready to generate the full schedule yet:</p>
+          <ul className="text-amber-700 mt-1 list-inside list-disc space-y-0.5 text-xs">
+            {blockers.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

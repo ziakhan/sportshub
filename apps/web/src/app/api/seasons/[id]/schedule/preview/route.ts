@@ -11,6 +11,9 @@ const previewSchema = z.object({
   // sessionId → unit keys that session hosts (capacity planning); a session
   // absent from the map hosts any unit.
   sessionUnits: z.record(z.array(z.string())).optional(),
+  // Session-by-session mode: only schedule these sessions; committed games
+  // elsewhere seed matchup rotation and count toward guarantees.
+  sessionIds: z.array(z.string()).optional(),
 })
 
 /**
@@ -32,13 +35,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const body = await request.json().catch(() => ({}))
-    const { sessionUnits } = previewSchema.parse(body ?? {})
+    const { sessionUnits, sessionIds } = previewSchema.parse(body ?? {})
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot preview", errors }, { status: 422 })
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
+    if (sessionIds && sessionIds.length > 0) {
+      input.restrictToSessionIds = sessionIds
+      // Games elsewhere in the season stand — a commit would only replace
+      // SCHEDULED games inside the restricted sessions.
+      input.existingGames = await (prisma as any).game.findMany({
+        where: {
+          seasonId: params.id,
+          phase: "REGULAR",
+          status: { not: "CANCELLED" },
+          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED" },
+        },
+        select: { homeTeamId: true, awayTeamId: true },
+      })
+    }
 
     const result = generateSchedule(input)
 

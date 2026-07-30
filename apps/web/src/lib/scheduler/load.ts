@@ -30,7 +30,9 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
             include: {
               dayVenues: {
                 include: {
-                  courts: { select: { courtId: true } },
+                  // Preferred fill order (owner 2026-07-30): court 1 packs
+                  // first, the rest are overflow.
+                  courts: { select: { courtId: true, order: true }, orderBy: { order: "asc" } },
                 },
               },
             },
@@ -91,7 +93,7 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
           venueId: dv.venueId,
           startTime: dv.startTime ?? null,
           endTime: dv.endTime ?? null,
-          courts: (dv.courts ?? []).map((c: any) => ({ id: c.courtId })),
+          courts: (dv.courts ?? []).map((c: any) => ({ id: c.courtId, order: c.order ?? 0 })),
         })),
       })),
     })),

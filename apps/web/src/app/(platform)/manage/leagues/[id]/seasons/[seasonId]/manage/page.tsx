@@ -11,7 +11,7 @@ import { TeamsTab } from "./components/teams-tab"
 import { ClubsTab } from "./components/clubs-tab"
 import { NeedsAttention } from "./components/needs-attention"
 import { SeasonReport } from "./components/season-report"
-import { CapacityWords } from "./components/capacity-words"
+import { ScheduleReadiness } from "./components/capacity-words"
 import { SessionsTab } from "./components/sessions-tab"
 import { VenuesTab } from "./components/venues-tab"
 import { ScheduleTab } from "./components/schedule-tab"
@@ -311,9 +311,10 @@ export default function LeagueManagePage() {
 
         {activeTab === "schedule" && (
           <div className="space-y-6">
-            <CapacityWords
+            <ScheduleReadiness
               seasonId={seasonId}
               league={league}
+              divisions={divisions}
               scheduleGamesCount={scheduleGames.length}
             />
             <SessionsTab
@@ -326,6 +327,7 @@ export default function LeagueManagePage() {
             <ScheduleTab
               seasonId={seasonId}
               league={league}
+              sessions={sessions}
               scheduleGames={scheduleGames}
               refresh={fetchAll}
             />

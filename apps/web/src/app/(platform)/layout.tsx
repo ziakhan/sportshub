@@ -94,6 +94,17 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     teams: teamsByTenant.get(tenant.id) ?? [],
   }))
 
+  // Organizations reachable via the user's leagues — a first-class nav entry
+  // for league owners (owner 2026-07-30: org settings weren't navigable).
+  let organizations: Array<{ id: string; name: string }> = []
+  if (roles.includes("LeagueOwner") || roles.includes("LeagueManager")) {
+    organizations = await (prisma as any).organization.findMany({
+      where: { leagues: { some: { ownerId: dbUser.id } } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    })
+  }
+
   const checklist = await getCompletionChecklist(dbUser as any)
 
   const impersonating = isImpersonating()
@@ -119,7 +130,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                 OPERATOR-ONLY (§5.6.8): parents/coaches on /calendar,
                 /messages, /account etc. get the plain top bar + bottom tabs
                 they already know (owner bug 2026-07-15). */}
-            {shape.isOperator && <MobileNav roles={roles} tenants={tenants} />}
+            {shape.isOperator && (
+              <MobileNav roles={roles} tenants={tenants} organizations={organizations} />
+            )}
             <Link
               href="/"
               className={
@@ -210,6 +223,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <Sidebar
             roles={roles}
             tenants={tenants}
+            organizations={organizations}
             userName={userName}
             userInitials={userInitials}
             primaryRole={primaryRole}

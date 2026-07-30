@@ -869,3 +869,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - **AFTER box deploy, run ONCE on box**: `npx tsx scripts/backfill-division-names.ts` (sportshub user, web.env sourced) — recomposes Division.name to the uniform "U15 Boys · Tier 1" shape. Idempotent, display-only. Team names intentionally untouched (legacy until a club edits the team).
 - Box demo world: reseed (`reseed-demo.sh --purge-manual-leagues`) picks up the composed seed names automatically.
 - No raw SQL, no cron, no env.
+
+## #42 — 2026-07-30: LEAGUE CONSOLE TUNE-UP (owner feedback round) — local, NOT deployed
+- Settings status strip + importance order · compact registration w/ balance-due-days · editable sessions w/ per-session court selection + preferred order · schedule mode question (session-by-session vs whole season) + readiness banner + session-scoped preview/commit · org in sidebar nav.
+- Schema additive (deploy.sh db push covers, no data loss): `Season.balanceDueDaysBeforeStart Int?`, `SeasonSessionDayVenueCourt.order Int @default(0)`. Neon: same push whenever synced.
+- No backfill needed (legacy court rows at order 0 keep old scheduling behavior). No raw SQL, no cron, no env.

@@ -9,18 +9,12 @@ import { RulesSettings } from "./rules-settings"
 import { DivisionsTab } from "./divisions-tab"
 
 /**
- * ⚙ Settings — the ONE place decisions live (IA redesign 2026-07-30, owner
- * ruling: "settings should be in one place"). One scrollable page, stacked
- * visible sections with anchors; no sub-tabs. Work surfaces (Clubs, Teams,
- * Schedule…) stay tabs; everything you decide once is here.
+ * ⚙ Settings — ONE page, ordered by importance, with a per-section status
+ * strip up top (owner 2026-07-30: "long page is confusing — what's good,
+ * what's not, what matters first?"). ✓ = configured, ! = needs attention,
+ * ○ = optional and untouched. The chips double as jump links.
  */
-const SECTIONS = [
-  { id: "basics", label: "Basics" },
-  { id: "registration", label: "Registration" },
-  { id: "game-format", label: "Game format & scheduling" },
-  { id: "rules", label: "Rules" },
-  { id: "divisions", label: "Divisions" },
-]
+type SectionState = "ok" | "attention" | "optional"
 
 export function SettingsTab({
   seasonId,
@@ -41,46 +35,107 @@ export function SettingsTab({
   patchSeason: (body: Record<string, any>) => Promise<void>
   refresh: () => void
 }) {
+  const sections: Array<{ id: string; label: string; state: SectionState; hint: string }> = [
+    {
+      id: "basics",
+      label: "Basics",
+      state:
+        league?.startDate && league?.endDate && league?.teamFee != null ? "ok" : "attention",
+      hint:
+        league?.startDate && league?.endDate && league?.teamFee != null
+          ? "Dates and fee set"
+          : "Dates or fee missing",
+    },
+    {
+      id: "divisions",
+      label: "Divisions",
+      state: divisions.length > 0 ? "ok" : "attention",
+      hint: divisions.length > 0 ? `${divisions.length} created` : "None yet",
+    },
+    {
+      id: "registration",
+      label: "Registration",
+      state:
+        league?.depositPct != null ||
+        (Array.isArray(league?.applicationQuestions) && league.applicationQuestions.length > 0)
+          ? "ok"
+          : "optional",
+      hint:
+        league?.depositPct != null
+          ? `${league.depositPct}% deposit`
+          : "Optional — full fee, no questions",
+    },
+    {
+      id: "game-format",
+      label: "Game format",
+      state: league?.gamesGuaranteed && league?.periodLengthMinutes ? "ok" : "attention",
+      hint:
+        league?.gamesGuaranteed && league?.periodLengthMinutes
+          ? "Set"
+          : "Needed before finalizing",
+    },
+    {
+      id: "rules",
+      label: "Rules",
+      state:
+        Array.isArray(league?.tiebreakerOrder) && league.tiebreakerOrder.length > 0
+          ? "ok"
+          : "attention",
+      hint:
+        Array.isArray(league?.tiebreakerOrder) && league.tiebreakerOrder.length > 0
+          ? "Tiebreakers set"
+          : "Tiebreakers needed before finalizing",
+    },
+  ]
+
+  const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+
   return (
-    <div className="space-y-8">
-      {/* Jump row — anchors on one page, never sub-navigation */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="text-ink-400 font-semibold uppercase tracking-wide">Jump to</span>
-        {SECTIONS.map((s) => (
-          <a
+    <div className="space-y-6">
+      {/* Status strip — what's good, what's not, in importance order */}
+      <div className="flex flex-wrap gap-2">
+        {sections.map((s) => (
+          <button
             key={s.id}
-            href={`#${s.id}`}
-            onClick={(e) => {
-              e.preventDefault()
-              document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth" })
-            }}
-            className="text-play-700 hover:text-play-800 font-medium hover:underline"
+            onClick={() => jump(s.id)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              s.state === "ok"
+                ? "border-court-200 bg-court-50 text-court-700 hover:border-court-300"
+                : s.state === "attention"
+                  ? "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300"
+                  : "border-ink-200 bg-white text-ink-500 hover:border-ink-300"
+            }`}
+            title={s.hint}
           >
+            <span>{s.state === "ok" ? "✓" : s.state === "attention" ? "!" : "○"}</span>
             {s.label}
-          </a>
+            <span className="hidden font-normal sm:inline">· {s.hint}</span>
+          </button>
         ))}
       </div>
 
       <section id="basics" className="scroll-mt-24">
-        <SectionHeading n={1} title="Basics" sub="Season dates, deadline and entry fee." />
+        <SectionHeading n={1} title="Basics" state={sections[0].state} />
         <BasicsSettings league={league} patchSeason={patchSeason} />
       </section>
 
-      <section id="registration" className="scroll-mt-24">
-        <SectionHeading
-          n={2}
-          title="Registration"
-          sub="How clubs enter this season — deposit, application questions, club agreement."
+      <section id="divisions" className="scroll-mt-24">
+        <SectionHeading n={2} title="Divisions" state={sections[1].state} />
+        <DivisionsTab
+          seasonId={seasonId}
+          divisions={divisions}
+          seasonStatus={league?.leagueStatus}
+          refresh={refresh}
         />
+      </section>
+
+      <section id="registration" className="scroll-mt-24">
+        <SectionHeading n={3} title="Registration" state={sections[2].state} />
         <RegistrationSettingsTab league={league} patchSeason={patchSeason} />
       </section>
 
       <section id="game-format" className="scroll-mt-24">
-        <SectionHeading
-          n={3}
-          title="Game format & scheduling"
-          sub="Periods, lengths, slots, and how the scheduler fills your sessions."
-        />
+        <SectionHeading n={4} title="Game format & scheduling" state={sections[3].state} />
         <SchedulingTab
           seasonId={seasonId}
           league={league}
@@ -94,39 +149,29 @@ export function SettingsTab({
       </section>
 
       <section id="rules" className="scroll-mt-24">
-        <SectionHeading
-          n={4}
-          title="Rules"
-          sub="Playoff eligibility and format, guest players, tiebreakers."
-        />
+        <SectionHeading n={5} title="Rules" state={sections[4].state} />
         <RulesSettings league={league} patchSeason={patchSeason} />
-      </section>
-
-      <section id="divisions" className="scroll-mt-24">
-        <SectionHeading
-          n={5}
-          title="Divisions"
-          sub="The brackets teams compete in. Names are composed from age, gender and tier."
-        />
-        <DivisionsTab
-          seasonId={seasonId}
-          divisions={divisions}
-          seasonStatus={league?.leagueStatus}
-          refresh={refresh}
-        />
       </section>
     </div>
   )
 }
 
-function SectionHeading({ n, title, sub }: { n: number; title: string; sub: string }) {
+function SectionHeading({ n, title, state }: { n: number; title: string; state: SectionState }) {
   return (
-    <div className="mb-3">
-      <h2 className="font-condensed text-ink-950 text-xl font-bold uppercase tracking-wide">
-        <span className="text-ink-300 mr-2">{n}.</span>
+    <div className="mb-2 flex items-center gap-2">
+      <h2 className="font-condensed text-ink-950 text-lg font-bold uppercase tracking-wide">
+        <span className="text-ink-300 mr-1.5">{n}.</span>
         {title}
       </h2>
-      <p className="text-ink-500 mt-0.5 text-sm">{sub}</p>
+      {state === "ok" ? (
+        <span className="text-court-600 text-sm font-bold">✓</span>
+      ) : state === "attention" ? (
+        <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+          needs attention
+        </span>
+      ) : (
+        <span className="text-ink-400 text-[10px] font-semibold uppercase">optional</span>
+      )}
     </div>
   )
 }
@@ -169,7 +214,17 @@ function BasicsSettings({
 
   return (
     <div className={`reveal ${panelClass}`}>
-      <PanelHeader title="Season basics" />
+      <PanelHeader
+        title="Season basics"
+        action={
+          <div className="flex items-center gap-3">
+            {saved && <span className="text-court-700 text-sm font-medium">✓ Saved</span>}
+            <Button size="sm" onClick={save} disabled={busy}>
+              {busy ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        }
+      />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label className="text-ink-700 mb-1 block text-xs font-medium">Season label</label>
@@ -205,16 +260,7 @@ function BasicsSettings({
             placeholder="e.g. 3990"
             className={inputClass + " w-full"}
           />
-          <p className="text-ink-400 mt-0.5 text-[10px]">
-            Charged per approved team. The deposit split is under Registration below.
-          </p>
         </div>
-      </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Button size="sm" onClick={save} disabled={busy}>
-          {busy ? "Saving…" : "Save basics"}
-        </Button>
-        {saved && <p className="text-court-700 text-sm font-medium">✓ Saved</p>}
       </div>
     </div>
   )

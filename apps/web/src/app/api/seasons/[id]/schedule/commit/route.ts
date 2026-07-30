@@ -12,10 +12,13 @@ import { appBaseUrl } from "@/lib/email"
 export const dynamic = "force-dynamic"
 
 const commitSchema = z.object({
-  // If true, wipe existing REGULAR games for this season first.
+  // If true, wipe existing REGULAR games first — scoped to `sessionIds`
+  // when session-by-session mode is on.
   replaceExisting: z.boolean().default(true),
   // sessionId → unit keys that session hosts (must match the previewed plan).
   sessionUnits: z.record(z.array(z.string())).optional(),
+  // Session-by-session mode: only schedule + replace these sessions.
+  sessionIds: z.array(z.string()).optional(),
 })
 
 /**
@@ -43,25 +46,43 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { replaceExisting, sessionUnits } = commitSchema.parse(body)
+    const { replaceExisting, sessionUnits, sessionIds } = commitSchema.parse(body)
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot commit", errors }, { status: 422 })
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
+    const scoped = !!(sessionIds && sessionIds.length > 0)
+    if (scoped) {
+      input.restrictToSessionIds = sessionIds
+      // Everything that survives this commit seeds matchup rotation +
+      // per-team counts: games outside the restricted sessions, plus
+      // non-SCHEDULED (played/live) games inside them.
+      input.existingGames = await (prisma as any).game.findMany({
+        where: {
+          seasonId: params.id,
+          phase: "REGULAR",
+          status: { not: "CANCELLED" },
+          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED" },
+        },
+        select: { homeTeamId: true, awayTeamId: true },
+      })
+    }
 
     const result = generateSchedule(input)
 
     const writeCounts = await (prisma as any).$transaction(async (tx: any) => {
       let removed = 0
       if (replaceExisting) {
-        // Only wipe games that haven't started or transitioned beyond SCHEDULED
+        // Only wipe games that haven't started or transitioned beyond
+        // SCHEDULED — and only in the targeted sessions when scoped.
         const del = await tx.game.deleteMany({
           where: {
             seasonId: params.id,
             phase: "REGULAR",
             status: "SCHEDULED",
+            ...(scoped ? { sessionId: { in: sessionIds } } : {}),
           },
         })
         removed = del.count

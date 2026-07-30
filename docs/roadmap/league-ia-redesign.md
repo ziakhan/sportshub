@@ -100,3 +100,16 @@ Owner said "resume the league IA redesign" in the fresh session; v2 rulings abov
 - No hard server-side gate on close-with-pending: UI gate + explicit override, server unchanged (an override-capable gate server-side would be a no-op).
 
 **Verification:** tsc clean · eslint clean · unit suite: no new failures (9 pre-existing, confirmed on clean tree) · integration suite + Playwright walkthrough: see session notes.
+
+## 9. Tune-up round — 2026-07-30 evening (owner walkthrough feedback, all built)
+Owner verdict on v1 of the build: Settings page too long/undifferentiated · Schedule tab confusing, no clear "can I generate?" signal, no whole-season-vs-session-by-session choice · sessions not editable and silently absorbing every court · registration = two settings drowning in text · org not navigable.
+
+**Shipped:**
+1. **Settings v2** — status strip up top (✓ configured / ! needs attention / ○ optional, chips double as jump links), sections reordered by importance (Basics → Divisions → Registration → Game format → Rules), prose cut to one-line hints.
+2. **Registration compact** — "Deposit required" checkbox + %, and a NEW "remaining balance due N days before start" setting (`Season.balanceDueDaysBeforeStart`, default 14; wired into the approval-time obligation dueDate + description).
+3. **Sessions editable + per-session courts** — sessions API grew PATCH (label/days/venues replace) and a `venues: [{venueId, courtIds}]` selection; the UI has Edit per session and a court picker where selected courts carry a preferred order (up/down). Sessions list shows "Venue: Court 1 → Court 2" and badges PLAYOFF-phase sessions.
+4. **Court-preference scheduling** — `SeasonSessionDayVenueCourt.order` (additive); scheduler sorts slots day-by-day, preferred court's timeline first, so games pack court 1 and overflow down the list (legacy order-0 rows keep the old pure-time sort).
+5. **Schedule tab v2** — readiness banner answers "can you generate the season right now?" in words (status + capacity + thin divisions); then THE mode question: "Session by session (most leagues)" vs "Whole season at once". Session mode: session chips (committed count/empty), capacity card scoped to the chosen session, preview/commit scoped via new `sessionIds` on preview/commit APIs — commit only replaces SCHEDULED games in that session, and the generator seeds from committed games elsewhere (matchups rotate, per-team demand = the session's share; verified: 8-team Fall league previews 8 games per session, not 48).
+6. **Org navigable** — league owners get their Organization(s) as first-class sidebar/drawer entries (platform layout queries orgs via owned leagues).
+
+**Verified:** tsc/lint clean · scheduler unit 34/34 · int 363/363 · unit: zero new failures · Playwright 13/14 + screenshot proof of the 14th (cold-compile race) — `scripts/demo/verify-league-tuneup.mjs`, shots /tmp/league-tuneup-verify.

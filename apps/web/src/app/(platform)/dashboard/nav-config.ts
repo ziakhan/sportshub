@@ -75,6 +75,9 @@ export interface NavTenant {
 export interface BuildNavSectionsInput {
   roles: string[]
   tenants?: NavTenant[]
+  /** Organizations reachable via the user's leagues (owner 2026-07-30:
+   * org settings must be navigable, not buried behind a league). */
+  organizations?: Array<{ id: string; name: string }>
   /** Label for the top-level workspace-overview link. */
   homeLabel?: string
 }
@@ -163,6 +166,7 @@ function staffWorkspace(tenant: NavTenant): NavWorkspace {
 export function buildNavSections({
   roles,
   tenants = [],
+  organizations = [],
   homeLabel = "Overview",
 }: BuildNavSectionsInput): NavSection[] {
   const hasRole = (role: string) => roles.includes(role)
@@ -266,6 +270,13 @@ export function buildNavSections({
       label: "League",
       items: [
         { label: "My Leagues", href: "/manage/leagues", icon: "star" },
+        // Org branding/settings sit ABOVE leagues — reachable from the nav,
+        // not only by drilling into a league (owner 2026-07-30).
+        ...organizations.map((org) => ({
+          label: org.name || "Organization",
+          href: `/manage/org/${org.id}`,
+          icon: "settings" as const,
+        })),
         { label: "Score games", href: "/score", icon: "play" },
       ],
     })

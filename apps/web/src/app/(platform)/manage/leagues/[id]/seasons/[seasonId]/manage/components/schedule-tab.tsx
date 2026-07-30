@@ -25,17 +25,47 @@ interface CapacitySession {
   maxTeamsSupportable: number
 }
 
+/**
+ * Generate & review (owner 2026-07-30 tune-up): the FIRST question is the
+ * mode — schedule session by session (what most leagues do) or the whole
+ * season at once. Session mode scopes preview/commit to one session;
+ * committed games elsewhere are never touched and seed matchup rotation.
+ */
 export function ScheduleTab({
   seasonId,
   league,
+  sessions,
   scheduleGames,
   refresh,
 }: {
   seasonId: string
   league: any
+  sessions: any[]
   scheduleGames: any[]
   refresh: () => void
 }) {
+  const regularSessions = useMemo(
+    () => sessions.filter((s: any) => (s.phase ?? "REGULAR") === "REGULAR"),
+    [sessions]
+  )
+  const committedBySession = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const g of scheduleGames) {
+      if (g.sessionId) map.set(g.sessionId, (map.get(g.sessionId) ?? 0) + 1)
+    }
+    return map
+  }, [scheduleGames])
+
+  const [mode, setMode] = useState<"session" | "season">("session")
+  // Default to the first session that has nothing committed yet.
+  const [selectedSessionId, setSelectedSessionId] = useState<string>("")
+  useEffect(() => {
+    if (selectedSessionId && regularSessions.some((s: any) => s.id === selectedSessionId)) return
+    const firstEmpty = regularSessions.find((s: any) => !committedBySession.get(s.id))
+    setSelectedSessionId(firstEmpty?.id ?? regularSessions[0]?.id ?? "")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regularSessions, committedBySession])
+
   const [preview, setPreview] = useState<{
     games: any[]
     unscheduled: any[]
@@ -58,7 +88,10 @@ export function ScheduleTab({
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setCapacity(data?.sessions ?? null))
       .catch(() => setCapacity(null))
-  }, [seasonId])
+  }, [seasonId, sessions.length])
+
+  // Scope: session mode targets exactly the selected session.
+  const scopeSessionIds = mode === "session" && selectedSessionId ? [selectedSessionId] : undefined
 
   // sessionId → included unit keys, only for sessions where something is
   // excluded (untouched sessions host everything).
@@ -92,7 +125,7 @@ export function ScheduleTab({
     const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionUnits }),
+      body: JSON.stringify({ sessionUnits, sessionIds: scopeSessionIds }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -106,14 +139,23 @@ export function ScheduleTab({
     setPreviewLoading(false)
   }
 
+  const selectedSession = regularSessions.find((s: any) => s.id === selectedSessionId)
   const commitSchedule = async () => {
-    if (!confirm("Commit this schedule? Existing SCHEDULED games will be replaced.")) return
+    const what =
+      mode === "session"
+        ? `Commit the schedule for "${selectedSession?.label || "this session"}"? Its existing SCHEDULED games are replaced; other sessions are untouched.`
+        : "Commit the whole season's schedule? ALL existing SCHEDULED games are replaced."
+    if (!confirm(what)) return
     setCommitting(true)
     setScheduleError(null)
     const res = await fetch(`/api/seasons/${seasonId}/schedule/commit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ replaceExisting: true, sessionUnits }),
+      body: JSON.stringify({
+        replaceExisting: true,
+        sessionUnits,
+        sessionIds: scopeSessionIds,
+      }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -198,47 +240,118 @@ export function ScheduleTab({
     setOpenGameId(null)
   }
 
+  const canCommit = ["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
+  const visibleCapacity =
+    mode === "session" && capacity
+      ? capacity.filter((s) => s.sessionId === selectedSessionId)
+      : capacity
+
   return (
     <div className="space-y-6">
       <div className={`reveal ${panelClass}`}>
-        <PanelHeader
-          title="Schedule"
-          action={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={runPreview} disabled={previewLoading}>
-                {previewLoading ? "Running…" : "Preview schedule"}
-              </Button>
-              <span
-                title={
-                  !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
-                    ? "Finalize the season before committing"
-                    : ""
-                }
-              >
-                <Button
-                  size="sm"
-                  tone="court"
-                  onClick={commitSchedule}
-                  disabled={
-                    committing ||
-                    !["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
-                  }
-                >
-                  {committing ? "Committing…" : "Commit schedule"}
-                </Button>
-              </span>
-              {scheduleGames.length > 0 && (
-                <Button size="sm" variant="secondary" tone="hoop" onClick={wipeSchedule}>
-                  Delete all
-                </Button>
-              )}
+        <PanelHeader title="Generate the schedule" />
+
+        {/* THE first question: how do you want to schedule? */}
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => { setMode("session"); setPreview(null) }}
+            aria-pressed={mode === "session"}
+            className={`rounded-xl border p-3 text-left transition-colors ${
+              mode === "session" ? "border-play-500 bg-play-50" : "border-ink-200 hover:border-ink-300"
+            }`}
+          >
+            <p className="text-ink-900 text-sm font-semibold">
+              Session by session
+              <Badge className="ml-2" tone="play">
+                Most leagues
+              </Badge>
+            </p>
+            <p className="text-ink-500 mt-0.5 text-xs">
+              Schedule one game weekend at a time, as registrations settle. Other sessions are
+              never touched.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("season"); setPreview(null) }}
+            aria-pressed={mode === "season"}
+            className={`rounded-xl border p-3 text-left transition-colors ${
+              mode === "season" ? "border-play-500 bg-play-50" : "border-ink-200 hover:border-ink-300"
+            }`}
+          >
+            <p className="text-ink-900 text-sm font-semibold">Whole season at once</p>
+            <p className="text-ink-500 mt-0.5 text-xs">
+              Fill every session in one pass. Replaces ALL games that haven&apos;t been played
+              yet.
+            </p>
+          </button>
+        </div>
+
+        {/* Session picker (session mode) */}
+        {mode === "session" && (
+          <div className="mb-4">
+            <p className="text-ink-700 mb-1.5 text-xs font-semibold">Which session?</p>
+            <div className="flex flex-wrap gap-1.5">
+              {regularSessions.map((s: any) => {
+                const committed = committedBySession.get(s.id) ?? 0
+                const selected = selectedSessionId === s.id
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => { setSelectedSessionId(s.id); setPreview(null) }}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      selected
+                        ? "border-play-500 bg-play-600 text-white"
+                        : committed > 0
+                          ? "border-court-200 bg-court-50 text-court-700 hover:border-court-300"
+                          : "border-ink-200 bg-white text-ink-600 hover:border-ink-300"
+                    }`}
+                  >
+                    {s.label || "Session"}
+                    {committed > 0 ? ` · ${committed} ✓` : " · empty"}
+                  </button>
+                )
+              })}
             </div>
-          }
-        />
-        <p className="text-ink-500 -mt-2 mb-4 text-xs">
-          Preview the scheduler&apos;s proposal, then commit to persist games. Season must
-          be finalized before you can commit.
-        </p>
+            {regularSessions.length === 0 && (
+              <p className="text-ink-500 text-sm">No regular-season sessions yet — add one above.</p>
+            )}
+          </div>
+        )}
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={runPreview}
+            disabled={previewLoading || (mode === "session" && !selectedSessionId)}
+          >
+            {previewLoading
+              ? "Running…"
+              : mode === "session"
+                ? `Preview ${selectedSession?.label || "session"}`
+                : "Preview whole season"}
+          </Button>
+          <span title={!canCommit ? "Finalize the season before committing" : ""}>
+            <Button
+              size="sm"
+              tone="court"
+              onClick={commitSchedule}
+              disabled={committing || !canCommit || (mode === "session" && !selectedSessionId)}
+            >
+              {committing
+                ? "Committing…"
+                : mode === "session"
+                  ? "Commit this session"
+                  : "Commit whole season"}
+            </Button>
+          </span>
+          {scheduleGames.length > 0 && (
+            <Button size="sm" variant="secondary" tone="hoop" onClick={wipeSchedule}>
+              Delete all
+            </Button>
+          )}
+        </div>
 
         {scheduleError && (
           <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-3 rounded-xl border px-3 py-2 text-xs">
@@ -246,16 +359,16 @@ export function ScheduleTab({
           </div>
         )}
 
-        {capacity && capacity.length > 0 && (
+        {visibleCapacity && visibleCapacity.length > 0 && (
           <div className="mb-6 space-y-3">
             <div>
-              <PanelHeader title="Capacity planner" />
+              <PanelHeader title={mode === "session" ? "This session's capacity" : "Capacity planner"} />
               <p className="text-ink-500 -mt-2 text-xs">
-                What each session can hold vs what your divisions need. Untick a division to
-                leave it out of a session — the preview and commit follow this plan.
+                Slots this session can hold vs the games your divisions need. Untick a division
+                to leave it out — preview and commit follow this plan.
               </p>
             </div>
-            {capacity.map((s) => {
+            {visibleCapacity.map((s) => {
               const ex = excluded[s.sessionId] ?? new Set<string>()
               const includedDemand = s.units
                 .filter((u) => !ex.has(u.unitKey))
@@ -306,10 +419,6 @@ export function ScheduleTab({
                       )
                     })}
                   </div>
-                  <p className="text-ink-500 mt-1.5 text-[11px]">
-                    This session can carry up to {s.maxTeamsSupportable} teams at {s.gamesPerTeam}{" "}
-                    game{s.gamesPerTeam === 1 ? "" : "s"} each.
-                  </p>
                 </div>
               )
             })}
