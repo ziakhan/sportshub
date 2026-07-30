@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { seasonDefaultsSchema } from "@/lib/org/season-defaults"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,8 @@ const patchSchema = z.object({
     .optional(),
   // Upload-lite: small data URL, same pattern as club branding
   logoUrl: z.string().max(300_000).nullable().optional(),
+  // Org season rulebook (Phase A) — leagues inherit any field they leave unset
+  seasonDefaults: seasonDefaultsSchema.nullable().optional(),
 })
 
 /** May this user manage the operator? Platform admin, or they own/manage a league under it. */
@@ -50,6 +53,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       primaryColor: true,
       tagline: true,
       description: true,
+      seasonDefaults: true,
       leagues: { select: { id: true, name: true, logoUrl: true, primaryColor: true } },
     },
   })

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { SmartBack } from "@/components/ui"
 import { OrgEditor } from "./org-editor"
+import { SeasonDefaultsEditor } from "./season-defaults-editor"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ export default async function OrgSettingsPage({ params }: { params: { id: string
       primaryColor: true,
       tagline: true,
       description: true,
+      seasonDefaults: true,
       leagues: { select: { id: true, name: true, logoUrl: true, primaryColor: true, tagline: true }, orderBy: { name: "asc" } },
     },
   })
@@ -80,6 +82,14 @@ export default async function OrgSettingsPage({ params }: { params: { id: string
           logoUrl: org.logoUrl ?? null,
         }}
       />
+
+      <div className="mt-6">
+        <SeasonDefaultsEditor
+          orgId={org.id}
+          orgName={org.name}
+          initial={(org.seasonDefaults as Record<string, any> | null) ?? null}
+        />
+      </div>
 
       <div className="border-ink-100 shadow-soft mt-6 rounded-2xl border bg-white p-5">
         <h2 className="text-ink-900 text-sm font-bold uppercase tracking-wide">

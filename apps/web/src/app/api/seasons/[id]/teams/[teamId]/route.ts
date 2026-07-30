@@ -6,6 +6,7 @@ import { notifyMany } from "@/lib/notifications"
 import { isSeasonLocked } from "@/lib/seasons/season-lock"
 import { cancelObligationIfUnpaid, ensureObligation } from "@/lib/payments/obligations"
 import { sendWaiversForApprovedSubmission } from "@/lib/waivers/auto-send"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 export const dynamic = "force-dynamic"
 
@@ -48,12 +49,24 @@ export async function PATCH(
         depositPct: true,
         balanceDueDaysBeforeStart: true,
         label: true,
-        league: { select: { ownerId: true, name: true, currency: true } },
+        league: {
+          select: {
+            ownerId: true,
+            name: true,
+            currency: true,
+            organization: { select: { seasonDefaults: true } },
+          },
+        },
       },
     })
     if (!season) {
       return NextResponse.json({ error: "League not found" }, { status: 404 })
     }
+    // Money fields resolve season → org rulebook → system (Phase A).
+    const { values: feeConfig } = effectiveSeasonConfig(
+      { ...season, teamFee: season.teamFee != null ? Number(season.teamFee) : null },
+      (season.league as any)?.organization?.seasonDefaults
+    )
 
     const hasLeagueManagerAccess = await prisma.userRole.findFirst({
       where: {
@@ -154,11 +167,13 @@ export async function PATCH(
       })
       // Approval is what creates the club→league team-fee debt (B1 in
       // docs/payments-design.md) — the league is the merchant here.
-      if (approving && season.teamFee !== null) {
+      if (approving && feeConfig.teamFee != null) {
         // Deposit schedule (owner 2026-07-29): balance is due N days before
-        // tip-off (a setting since 2026-07-30, default 14) — the dueDate
-        // drives the existing overdue aging/nags.
-        const balanceDays = (season as any).balanceDueDaysBeforeStart ?? 14
+        // tip-off. All money fields resolve season → org rulebook → system
+        // (Phase A) so an org-level fee/deposit applies without per-league
+        // re-entry.
+        const balanceDays = (feeConfig.balanceDueDaysBeforeStart as number) ?? 14
+        const depositPct = feeConfig.depositPct as number | null
         const balanceDue = season.startDate
           ? new Date(new Date(season.startDate).getTime() - balanceDays * 86400_000)
           : null
@@ -168,10 +183,10 @@ export async function PATCH(
           referenceType: "TeamSubmission",
           referenceId: submission.id,
           description:
-            season.depositPct != null
-              ? `Team fee — ${season.league.name} ${season.label} (${submission.team.name}) · ${season.depositPct}% deposit due now, balance ${balanceDays} days before tip-off`
+            depositPct != null
+              ? `Team fee — ${season.league.name} ${season.label} (${submission.team.name}) · ${depositPct}% deposit due now, balance ${balanceDays} days before tip-off`
               : `Team fee — ${season.league.name} ${season.label} (${submission.team.name})`,
-          amount: Number(season.teamFee),
+          amount: Number(feeConfig.teamFee),
           currency: season.league.currency,
           dueDate: balanceDue,
         })

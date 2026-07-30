@@ -1,5 +1,6 @@
 import { cache } from "./request-cache"
 import { prisma } from "@youthbasketballhub/db"
+import { applyEffectiveConfig } from "@/lib/org/season-defaults"
 
 /**
  * Public season detail (league, divisions, team submissions, counts).
@@ -37,6 +38,7 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
               tagline: true,
               primaryColor: true,
               socials: true,
+              seasonDefaults: true,
             },
           },
         },
@@ -85,10 +87,19 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
       }
     : season.league
 
+  // Season-config inheritance (Phase A, same pattern as branding above):
+  // resolve season → org seasonDefaults → system here, so EVERY consumer
+  // (console, public page, mobile route) reads effective values with no
+  // shape change. configSources says where each value came from — the
+  // settings UI renders "Inherited from <org>" off it.
+  const resolved = applyEffectiveConfig(
+    { ...season, teamFee: season.teamFee ? Number(season.teamFee) : null },
+    org?.seasonDefaults
+  )
+
   return {
-    ...season,
+    ...resolved,
     league,
-    teamFee: season.teamFee ? Number(season.teamFee) : null,
     teamSubmissions: await attachFeeProgress(season),
   }
 })

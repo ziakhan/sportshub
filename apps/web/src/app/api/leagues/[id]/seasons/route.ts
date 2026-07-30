@@ -14,10 +14,13 @@ const createSeasonSchema = z.object({
   ageGroupCutoffDate: z.string().datetime().optional(),
   teamFee: z.number().min(0).optional(),
   gamesGuaranteed: z.number().min(1).optional(),
-  targetGamesPerSession: z.number().min(1).default(1),
-  gameSlotMinutes: z.number().min(30).max(180).default(90),
-  gameLengthMinutes: z.number().min(10).max(120).default(40),
-  gamePeriods: z.enum(["HALVES", "QUARTERS"]).default("HALVES"),
+  // No defaults here (Phase A): a field the caller omits stays NULL so the
+  // season inherits the org's rulebook (effectiveSeasonConfig) instead of
+  // freezing a system default as a fake override.
+  targetGamesPerSession: z.number().min(1).optional(),
+  gameSlotMinutes: z.number().min(30).max(180).optional(),
+  gameLengthMinutes: z.number().min(10).max(120).optional(),
+  gamePeriods: z.enum(["HALVES", "QUARTERS"]).optional(),
 })
 
 /**
@@ -77,10 +80,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         ageGroupCutoffDate: data.ageGroupCutoffDate ? new Date(data.ageGroupCutoffDate) : null,
         teamFee: data.teamFee ?? null,
         gamesGuaranteed: data.gamesGuaranteed ?? null,
-        targetGamesPerSession: data.targetGamesPerSession,
-        gameSlotMinutes: data.gameSlotMinutes,
-        gameLengthMinutes: data.gameLengthMinutes,
-        gamePeriods: data.gamePeriods,
+        targetGamesPerSession: data.targetGamesPerSession ?? null,
+        gameSlotMinutes: data.gameSlotMinutes ?? null,
+        gameLengthMinutes: data.gameLengthMinutes ?? null,
+        gamePeriods: data.gamePeriods ?? null,
         status: "DRAFT",
       },
     })

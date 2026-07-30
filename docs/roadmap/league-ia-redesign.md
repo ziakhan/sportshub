@@ -113,3 +113,11 @@ Owner verdict on v1 of the build: Settings page too long/undifferentiated · Sch
 6. **Org navigable** — league owners get their Organization(s) as first-class sidebar/drawer entries (platform layout queries orgs via owned leagues).
 
 **Verified:** tsc/lint clean · scheduler unit 34/34 · int 363/363 · unit: zero new failures · Playwright 13/14 + screenshot proof of the 14th (cold-compile race) — `scripts/demo/verify-league-tuneup.mjs`, shots /tmp/league-tuneup-verify.
+
+## 10. Build log — Phase A (org season defaults) SHIPPED 2026-07-31 (local)
+Approved plan (Schedule Studio rebuild) Phase A: the org rulebook, built first.
+- Schema: `Organization.seasonDefaults Json` + Season "unset semantics" (gameSlotMinutes/gameLengthMinutes/gamePeriods/idealGamesPerDayPerTeam/defaultVenueOpen-CloseTime/schedulingPhilosophy/allowGuestPlayers now nullable; null = inherit). Season-create API no longer freezes system defaults into new rows.
+- `lib/org/season-defaults.ts`: zod shape + `effectiveSeasonConfig` (season → org → system w/ provenance map) + `applyEffectiveConfig`. Consumers: getPublicSeason (console/public/mobile see effective values + `configSources`), scheduler load.ts, approval-time fee obligation (teamFee/depositPct/balanceDueDays all inheritable), guests gate.
+- Org settings UI: "Season defaults" editor (cycle dates · games & format · money · rules · registration). League Settings: fully-inherited sections render read-only summaries ("Inherited from NPH · Override for this league"), overridden sections get the gold "Overrides org defaults · Reset to organization" bar; status strip gains the "Inherited ✓" state. Season create form prefills org cycle dates.
+- Verified: tsc/lint clean · resolver unit 7/7 · int suite 366/366 (new seed 1137: provenance via season GET, approval obligation from org money defaults, scheduler on effective config) · Playwright 9/9 (verify-org-defaults.mjs; screenshots /tmp/org-defaults-verify) — org save → override bars → Reset→inherited summary → Override reopens form.
+- Next per approved plan: P0 studio foundations (conflicts helper, isLocked enforcement, draft/publish layer, swap+validate endpoints, fairness cycle-tiering, division-at-approval fixes).

@@ -874,3 +874,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Settings status strip + importance order · compact registration w/ balance-due-days · editable sessions w/ per-session court selection + preferred order · schedule mode question (session-by-session vs whole season) + readiness banner + session-scoped preview/commit · org in sidebar nav.
 - Schema additive (deploy.sh db push covers, no data loss): `Season.balanceDueDaysBeforeStart Int?`, `SeasonSessionDayVenueCourt.order Int @default(0)`. Neon: same push whenever synced.
 - No backfill needed (legacy court rows at order 0 keep old scheduling behavior). No raw SQL, no cron, no env.
+
+## #43 — 2026-07-31: ORG SEASON DEFAULTS (Phase A of Schedule Studio plan) — local, NOT deployed
+- Org rulebook: Organization.seasonDefaults (Json, additive) + Season policy fields made NULLABLE (gameSlotMinutes, gameLengthMinutes, gamePeriods, idealGamesPerDayPerTeam, defaultVenueOpenTime, defaultVenueCloseTime, schedulingPhilosophy, allowGuestPlayers — dropping DB defaults; existing rows keep values, no data loss).
+- deploy.sh db push covers it. Neon: same push when synced. No backfill, no cron, no env.
+- Behavior note: NEW seasons created after this leave format fields null → inherit org defaults (or system defaults when no org). Existing seasons unchanged (values become explicit overrides).

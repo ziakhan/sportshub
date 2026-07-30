@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import type { SchedulerInput, SchedulerPhilosophy } from "./generate"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 /**
  * Load a Season + its substrate and shape it as SchedulerInput.
@@ -44,6 +45,9 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
           divisions: { select: { divisionId: true } },
         },
       },
+      league: {
+        select: { organization: { select: { seasonDefaults: true } } },
+      },
     },
   })) as any
 
@@ -52,19 +56,26 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
     return { input: null, errors }
   }
 
-  if (!season.gamesGuaranteed) {
+  // Season → org rulebook → system (Phase A): the scheduler runs off the
+  // same effective config every other surface reads.
+  const { values: cfg } = effectiveSeasonConfig(
+    season,
+    season.league?.organization?.seasonDefaults
+  )
+
+  if (!cfg.gamesGuaranteed) {
     errors.push("gamesGuaranteed must be set before generating a schedule")
   }
 
   const input: SchedulerInput = {
-    gamesGuaranteed: season.gamesGuaranteed ?? 0,
-    gameSlotMinutes: season.gameSlotMinutes ?? 90,
-    gameLengthMinutes: season.gameLengthMinutes ?? 40,
-    idealGamesPerDayPerTeam: season.idealGamesPerDayPerTeam ?? 1,
-    schedulingPhilosophy: (season.schedulingPhilosophy ?? "FAMILY_FRIENDLY") as SchedulerPhilosophy,
+    gamesGuaranteed: (cfg.gamesGuaranteed as number) ?? 0,
+    gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
+    gameLengthMinutes: (cfg.gameLengthMinutes as number) ?? 40,
+    idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 1,
+    schedulingPhilosophy: (cfg.schedulingPhilosophy ?? "FAMILY_FRIENDLY") as SchedulerPhilosophy,
     allowCrossDivisionScheduling: !!season.allowCrossDivisionScheduling,
-    defaultVenueOpenTime: season.defaultVenueOpenTime ?? "09:00",
-    defaultVenueCloseTime: season.defaultVenueCloseTime ?? "20:00",
+    defaultVenueOpenTime: (cfg.defaultVenueOpenTime as string) ?? "09:00",
+    defaultVenueCloseTime: (cfg.defaultVenueCloseTime as string) ?? "20:00",
     divisions: (season.divisions ?? []).map((d: any) => ({
       id: d.id,
       name: d.name,

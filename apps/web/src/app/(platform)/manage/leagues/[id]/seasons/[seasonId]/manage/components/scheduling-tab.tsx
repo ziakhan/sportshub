@@ -26,6 +26,10 @@ export function SchedulingTab({
   setSchedSettings,
   patchSeason,
   refresh,
+  // Org inheritance (Phase A): when the format settings are inherited (and
+  // summarized above), hide the philosophy + settings panels — groups and
+  // cross-division stay, they're genuinely per-league.
+  hideFormatSettings = false,
 }: {
   seasonId: string
   league: any
@@ -35,6 +39,7 @@ export function SchedulingTab({
   setSchedSettings: React.Dispatch<React.SetStateAction<SchedSettings>>
   patchSeason: (body: Record<string, any>) => Promise<void>
   refresh: () => void
+  hideFormatSettings?: boolean
 }) {
   // Scheduling group form
   const [newGroupName, setNewGroupName] = useState("")
@@ -114,6 +119,7 @@ export function SchedulingTab({
       <div className={`reveal ${panelClass}`}>
         <PanelHeader title="Scheduling approach" />
         <div className="space-y-4">
+          {!hideFormatSettings && (
           <div>
             <label className="text-ink-700 mb-2 block text-xs font-medium">Philosophy</label>
             <div className="space-y-2">
@@ -153,6 +159,7 @@ export function SchedulingTab({
               ))}
             </div>
           </div>
+          )}
 
           <label className="border-ink-200 hover:border-ink-300 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition">
             <input
@@ -315,6 +322,7 @@ export function SchedulingTab({
       </div>
 
       {/* Scheduling Settings */}
+      {!hideFormatSettings && (
       <div className={`reveal ${panelClass}`} style={{ animationDelay: "140ms" }}>
         <PanelHeader
           title="Scheduling Settings"
@@ -487,6 +495,7 @@ export function SchedulingTab({
         </div>
 
       </div>
+      )}
     </div>
   )
 }

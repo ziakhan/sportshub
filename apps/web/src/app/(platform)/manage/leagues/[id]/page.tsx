@@ -136,6 +136,15 @@ function LeagueDashboard() {
     if (res.ok) {
       const data = await res.json()
       setLeague(data)
+      // Org cycle dates prefill (Phase A): a new season under an org starts
+      // with the organization's current cycle — editable, but never retyped.
+      const d = (data.organization as any)?.seasonDefaults
+      if (d) {
+        if (d.cycleStartDate) setStartDate((prev: string) => prev || String(d.cycleStartDate).slice(0, 10))
+        if (d.cycleEndDate) setEndDate((prev: string) => prev || String(d.cycleEndDate).slice(0, 10))
+        if (d.cycleRegistrationDeadline)
+          setRegistrationDeadline((prev: string) => prev || String(d.cycleRegistrationDeadline).slice(0, 10))
+      }
     }
     setLoading(false)
   }

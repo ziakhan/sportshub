@@ -1288,6 +1288,10 @@ model Organization {
   tagline      String?
   socials      Json?
   description  String? @db.Text
+  // Org-wide season rulebook (Phase A): zod-validated shape in
+  // lib/org/season-defaults.ts. Leagues/seasons inherit any field they leave
+  // unset; a season's explicit value is a deliberate override.
+  seasonDefaults Json?
 
   leagues League[]
 
@@ -1365,19 +1369,23 @@ model Season {
   teamFee  Decimal? @db.Decimal(10, 2)
   currency String   @default("CAD")
 
-  gameSlotMinutes     Int    @default(90)
-  gameLengthMinutes   Int    @default(40)
-  gamePeriods         String @default("HALVES")
+  // Org-inheritable policy (league-ia-redesign plan, Phase A): null = inherit
+  // the Organization's seasonDefaults, else the system default — resolved by
+  // lib/org/season-defaults.ts effectiveSeasonConfig. Explicit values are
+  // deliberate per-season overrides.
+  gameSlotMinutes     Int?
+  gameLengthMinutes   Int?
+  gamePeriods         String?
   periodLengthMinutes Int?
 
   gamesGuaranteed         Int?
   targetGamesPerSession   Int?
-  idealGamesPerDayPerTeam Int  @default(1)
+  idealGamesPerDayPerTeam Int?
 
-  defaultVenueOpenTime  String @default("09:00")
-  defaultVenueCloseTime String @default("20:00")
+  defaultVenueOpenTime  String?
+  defaultVenueCloseTime String?
 
-  schedulingPhilosophy         SchedulingPhilosophy @default(FAMILY_FRIENDLY)
+  schedulingPhilosophy         SchedulingPhilosophy?
   allowCrossDivisionScheduling Boolean              @default(false)
 
   tiebreakerOrder     String[]  @default([])
@@ -1401,7 +1409,8 @@ model Season {
   // strings, asked ONCE per club on their season entry — never per team.
   applicationQuestions Json?
   // Game-day guest players (name+jersey, no account) — league can forbid.
-  allowGuestPlayers Boolean @default(true)
+  // null = inherit org default (system default: allowed).
+  allowGuestPlayers Boolean?
 
   divisions          Division[]
   teamSubmissions    TeamSubmission[]

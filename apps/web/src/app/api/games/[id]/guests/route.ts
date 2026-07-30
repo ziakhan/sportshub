@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { canScoreGame } from "@/lib/scoring/authz"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 export const dynamic = "force-dynamic"
 
@@ -41,11 +42,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         awayTeamId: true,
         seasonId: true,
         status: true,
-        season: { select: { id: true, allowGuestPlayers: true, leagueId: true } },
+        season: {
+          select: {
+            id: true,
+            allowGuestPlayers: true,
+            leagueId: true,
+            league: { select: { organization: { select: { seasonDefaults: true } } } },
+          },
+        },
       },
     })
     if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 })
-    if (game.season && game.season.allowGuestPlayers === false) {
+    // Season override → org rulebook → system default (allowed) — Phase A.
+    const guestsAllowed = game.season
+      ? effectiveSeasonConfig(game.season, (game.season as any).league?.organization?.seasonDefaults)
+          .values.allowGuestPlayers !== false
+      : true
+    if (!guestsAllowed) {
       return NextResponse.json(
         { error: "This league does not allow guest players" },
         { status: 403 }
