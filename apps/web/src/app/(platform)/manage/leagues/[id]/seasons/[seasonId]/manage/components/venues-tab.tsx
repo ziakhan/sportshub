@@ -72,6 +72,15 @@ export function VenuesTab({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <a
+                    href={`/venues/${v.venue.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ink-500 hover:text-ink-700 text-xs font-semibold"
+                    title="The shared venue page — address, posted hours, all activity"
+                  >
+                    Venue page ↗
+                  </a>
                   <button
                     onClick={() => setExpandedVenueId(expanded ? null : v.id)}
                     className="text-play-700 hover:text-play-800 text-xs font-semibold"

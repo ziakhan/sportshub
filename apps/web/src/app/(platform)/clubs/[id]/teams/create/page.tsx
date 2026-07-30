@@ -7,9 +7,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { DateTimePicker, SmartBack } from "@/components/ui"
+import { composeTeamName, TEAM_NAME_SUFFIXES } from "@/lib/teams/naming"
 
+// Derived naming (league-ia-redesign §4): the club picks age group (+ an
+// optional suffix when it fields two teams in one bracket) — the team's
+// name is composed from the club's short name, never typed.
 const createTeamSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100),
   ageGroup: z.string().min(1, "Select an age group"),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   season: z.string().optional(),
@@ -119,15 +122,31 @@ export default function CreateTeamPage() {
     Array<{ dayOfWeek: number; startTime: string; durationMinutes: number; location: string }>
   >([])
 
+  // Derived team name: club short name + age group (+ picked suffix)
+  const [clubName, setClubName] = useState("")
+  const [clubShortName, setClubShortName] = useState<string | null>(null)
+  const [nameSuffix, setNameSuffix] = useState("")
+
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CreateTeamFormData>({
     resolver: zodResolver(createTeamSchema),
   })
+  const watchedAgeGroup = watch("ageGroup")
+  const namePreview =
+    watchedAgeGroup && (clubName || clubShortName)
+      ? composeTeamName({
+          clubName,
+          shortName: clubShortName,
+          ageGroup: watchedAgeGroup,
+          suffix: nameSuffix,
+        })
+      : null
 
-  // Fetch available staff on mount
+  // Fetch available staff + the club's naming prefix on mount
   useEffect(() => {
     async function fetchStaff() {
       try {
@@ -142,7 +161,20 @@ export default function CreateTeamPage() {
         setLoadingStaff(false)
       }
     }
+    async function fetchClub() {
+      try {
+        const res = await fetch(`/api/clubs/${clubId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setClubName(data.club?.name ?? "")
+          setClubShortName(data.club?.shortName ?? null)
+        }
+      } catch {
+        // Preview degrades to age group only
+      }
+    }
     fetchStaff()
+    fetchClub()
   }, [clubId])
 
   const hasHeadCoach =
@@ -254,7 +286,9 @@ export default function CreateTeamPage() {
 
     try {
       const payload: Record<string, unknown> = {
-        name: data.name,
+        // No name — the server composes it from the club's short name +
+        // age group + picked suffix (derived naming, nobody types names).
+        nameSuffix: nameSuffix || undefined,
         ageGroup: data.ageGroup,
         tenantId: clubId,
         season: data.season || undefined,
@@ -288,8 +322,9 @@ export default function CreateTeamPage() {
         throw new Error(errorMsg)
       }
 
+      const created = await res.json().catch(() => null)
       setCreatedTeam({
-        name: data.name,
+        name: created?.name ?? namePreview ?? data.ageGroup,
         ageGroup: data.ageGroup,
         staffCount: staffAssignments.length + staffInvites.length,
       })
@@ -383,20 +418,6 @@ export default function CreateTeamPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="text-ink-700 block text-sm font-medium">
-                Team Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                {...register("name")}
-                type="text"
-                id="name"
-                className="border-ink-200 focus:border-play-500 focus:ring-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-1"
-                placeholder="Warriors U12"
-              />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-            </div>
-
-            <div>
               <label htmlFor="ageGroup" className="text-ink-700 block text-sm font-medium">
                 Age Group <span className="text-red-500">*</span>
               </label>
@@ -415,6 +436,37 @@ export default function CreateTeamPage() {
               {errors.ageGroup && (
                 <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
               )}
+            </div>
+
+            <div>
+              <span className="text-ink-700 block text-sm font-medium">Suffix</span>
+              <p className="text-ink-500 mt-0.5 text-xs">
+                Only needed when you field more than one team in the same age group.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {["", ...TEAM_NAME_SUFFIXES].map((s) => (
+                  <button
+                    key={s || "none"}
+                    type="button"
+                    onClick={() => setNameSuffix(s)}
+                    aria-pressed={nameSuffix === s}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      nameSuffix === s
+                        ? "bg-play-600 text-white"
+                        : "bg-ink-50 text-ink-600 hover:bg-ink-100"
+                    }`}
+                  >
+                    {s || "None"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-ink-100 bg-ink-50/60 rounded-xl border border-dashed px-3 py-2">
+              <p className="text-ink-500 text-xs">Team name (written for you)</p>
+              <p className="text-ink-900 text-sm font-semibold">
+                {namePreview ?? "Pick an age group above"}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

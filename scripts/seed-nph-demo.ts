@@ -697,7 +697,8 @@ async function seed() {
   const winterDivisions = new Map<number, any>()
   for (const g of GRADE_LIST) {
     winterDivisions.set(g, await p.division.create({
-      data: { seasonId: winterSeason.id, name: `Grade ${g}`, ageGroup: `Grade ${g}`, gender: "MALE" },
+      // Derived naming (league-ia-redesign §4): composed, same shape everywhere
+      data: { seasonId: winterSeason.id, name: `Grade ${g} Boys · Tier 1`, ageGroup: `Grade ${g}`, gender: "MALE" },
     }))
   }
 
@@ -1291,7 +1292,7 @@ async function seed() {
   const springDivisions = new Map<number, any>()
   for (const g of [9, 10]) {
     springDivisions.set(g, await p.division.create({
-      data: { seasonId: springSeason.id, name: `Grade ${g}`, ageGroup: `Grade ${g}`, gender: "MALE" },
+      data: { seasonId: springSeason.id, name: `Grade ${g} Boys · Tier 1`, ageGroup: `Grade ${g}`, gender: "MALE" },
     }))
   }
   // Monthly sessions Oct–Mar (one weekend a month), venue allocations included
@@ -2228,7 +2229,8 @@ async function seed() {
   }
   for (const [gName, gAge] of [["High School Girls", "U19"], ["Elementary Girls", "U12"]] as const) {
     showcaseDivisions.set(gName, await p.division.create({
-      data: { seasonId: showcaseSeason.id, name: gName, ageGroup: gAge, gender: "FEMALE", tier: 1 },
+      // Derived name; the map keeps the sheet's colloquial key for lookups
+      data: { seasonId: showcaseSeason.id, name: `${gAge} Girls · Tier 1`, ageGroup: gAge, gender: "FEMALE", tier: 1 },
     }))
   }
   // Their registration T&C as a league e-sign document — replaces NPH's

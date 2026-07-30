@@ -72,7 +72,7 @@ export function RegistrationSettingsTab({
           <p className="text-ink-500 mt-0.5 max-w-2xl text-sm">
             Asked ONCE per club when it enters the season (never per team). Write one question
             per line — each line becomes its own answer box on the club&apos;s entry form, and
-            the answers appear under Registration &rsaquo; Clubs &rsaquo; Application.
+            the answers appear on the Clubs tab under each entry&apos;s Application.
           </p>
           <textarea
             value={questionsDraft}

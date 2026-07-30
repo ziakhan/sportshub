@@ -7,6 +7,7 @@ import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
 import { isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
+import { composeTeamName } from "@/lib/teams/naming"
 
 export const dynamic = "force-dynamic"
 
@@ -31,7 +32,11 @@ const practiceSlotSchema = z.object({
 })
 
 const createTeamSchema = z.object({
-  name: z.string().min(3).max(100),
+  // Derived naming (league-ia-redesign §4): when name is omitted it is
+  // composed as "{club shortName} {ageGroup} {suffix?}" — clubs pick
+  // structure, nobody types team names. Explicit name = legacy callers only.
+  name: z.string().min(3).max(100).optional(),
+  nameSuffix: z.string().trim().max(20).optional(),
   ageGroup: z.string(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   season: z.string().optional(),
@@ -85,6 +90,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "A team can have at most one Head Coach" }, { status: 400 })
     }
 
+    // Compose the display name unless a legacy caller typed one.
+    let teamName = validatedData.name
+    if (!teamName) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: validatedData.tenantId },
+        select: { name: true, shortName: true },
+      })
+      if (!tenant) {
+        return NextResponse.json({ error: "Club not found" }, { status: 404 })
+      }
+      teamName = composeTeamName({
+        clubName: tenant.name,
+        shortName: (tenant as any).shortName,
+        ageGroup: validatedData.ageGroup,
+        suffix: validatedData.nameSuffix,
+      })
+    }
+    // Two teams with one name would be indistinguishable everywhere — ask
+    // for a suffix pick instead.
+    const clash = await prisma.team.findFirst({
+      where: { tenantId: validatedData.tenantId, name: teamName },
+      select: { id: true },
+    })
+    if (clash) {
+      return NextResponse.json(
+        {
+          error: `You already have a team called "${teamName}". Pick a suffix (Blue, White, 2…) to tell them apart.`,
+          code: "NAME_TAKEN",
+        },
+        { status: 409 }
+      )
+    }
+
     // Collected during the transaction, delivered after it commits.
     const staffInviteEmails: Array<{ email: string; roleLabel: string; invitationId: string }> = []
 
@@ -93,7 +131,8 @@ export async function POST(request: NextRequest) {
       // 1. Create the team
       const team = await tx.team.create({
         data: {
-          name: validatedData.name,
+          name: teamName,
+          nameSuffix: validatedData.nameSuffix ?? null,
           ageGroup: validatedData.ageGroup,
           gender: validatedData.gender,
           season: validatedData.season,

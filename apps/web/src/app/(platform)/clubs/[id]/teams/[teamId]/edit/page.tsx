@@ -15,9 +15,12 @@ import {
   toneForStatus,
   type BadgeTone,
 } from "@/components/ui"
+import { composeTeamName, TEAM_NAME_SUFFIXES } from "@/lib/teams/naming"
 
+// Derived naming (league-ia-redesign §4): the name is composed from the
+// club's short name + age group + picked suffix — no typed team names.
+// Saving a legacy-named team recomposes it (legacy names live until touched).
 const editTeamSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").max(100),
   ageGroup: z.string().min(1, "Select an age group"),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   season: z.string().optional(),
@@ -178,10 +181,17 @@ export default function EditTeamPage() {
   const [maxPlayers, setMaxPlayers] = useState("")
   const [showRosterFill, setShowRosterFill] = useState<"inherit" | "show" | "hide">("inherit")
 
+  // Derived team name: club short name + age group (+ picked suffix)
+  const [currentName, setCurrentName] = useState("")
+  const [nameSuffix, setNameSuffix] = useState("")
+  const [clubName, setClubName] = useState("")
+  const [clubShortName, setClubShortName] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<EditTeamFormData>({
     resolver: zodResolver(editTeamSchema),
@@ -195,12 +205,13 @@ export default function EditTeamPage() {
         if (!res.ok) throw new Error("Failed to load team")
         const team = await res.json()
         reset({
-          name: team.name,
           ageGroup: team.ageGroup,
           gender: team.gender || undefined,
           season: team.season || "",
           description: team.description || "",
         })
+        setCurrentName(team.name || "")
+        setNameSuffix(team.nameSuffix || "")
         setExistingStaff(team.staff || [])
         setTryoutList(team.tryouts || [])
         setMaxPlayers(team.maxPlayers != null ? String(team.maxPlayers) : "")
@@ -216,7 +227,7 @@ export default function EditTeamPage() {
     load()
   }, [teamId, reset])
 
-  // Fetch available staff
+  // Fetch available staff + the club's naming prefix
   useEffect(() => {
     async function fetchStaff() {
       try {
@@ -231,8 +242,32 @@ export default function EditTeamPage() {
         setLoadingStaff(false)
       }
     }
+    async function fetchClub() {
+      try {
+        const res = await fetch(`/api/clubs/${clubId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setClubName(data.club?.name ?? "")
+          setClubShortName(data.club?.shortName ?? null)
+        }
+      } catch {
+        // Preview degrades to the stored name
+      }
+    }
     fetchStaff()
+    fetchClub()
   }, [clubId])
+
+  const watchedAgeGroup = watch("ageGroup")
+  const namePreview =
+    watchedAgeGroup && (clubName || clubShortName)
+      ? composeTeamName({
+          clubName,
+          shortName: clubShortName,
+          ageGroup: watchedAgeGroup,
+          suffix: nameSuffix,
+        })
+      : currentName
 
   // Compute active staff (existing minus removed)
   const activeExistingStaff = existingStaff.filter((s) => !staffToRemove.includes(s.id))
@@ -358,7 +393,8 @@ export default function EditTeamPage() {
 
     try {
       const payload: Record<string, unknown> = {
-        name: data.name,
+        // No name — the server recomposes it from ageGroup + suffix.
+        nameSuffix: nameSuffix || null,
         ageGroup: data.ageGroup,
         season: data.season || null,
         description: data.description || null,
@@ -390,6 +426,7 @@ export default function EditTeamPage() {
       const updatedTeam = await res.json()
 
       // Refresh state with updated team data
+      if (updatedTeam.name) setCurrentName(updatedTeam.name)
       setExistingStaff(updatedTeam.staff || [])
       setStaffToRemove([])
       setStaffAssignments([])
@@ -440,14 +477,6 @@ export default function EditTeamPage() {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="text-ink-700 block text-sm font-medium">
-                Team Name <span className="text-red-500">*</span>
-              </label>
-              <input {...register("name")} type="text" id="name" className={inputCls} />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-            </div>
-
-            <div>
               <label htmlFor="ageGroup" className="text-ink-700 block text-sm font-medium">
                 Age Group <span className="text-red-500">*</span>
               </label>
@@ -461,6 +490,40 @@ export default function EditTeamPage() {
               </select>
               {errors.ageGroup && (
                 <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
+              )}
+            </div>
+
+            <div>
+              <span className="text-ink-700 block text-sm font-medium">Suffix</span>
+              <p className="text-ink-500 mt-0.5 text-xs">
+                Only needed when you field more than one team in the same age group.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {["", ...TEAM_NAME_SUFFIXES].map((s) => (
+                  <button
+                    key={s || "none"}
+                    type="button"
+                    onClick={() => setNameSuffix(s)}
+                    aria-pressed={nameSuffix === s}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      nameSuffix === s
+                        ? "bg-play-600 text-white"
+                        : "bg-ink-50 text-ink-600 hover:bg-ink-100"
+                    }`}
+                  >
+                    {s || "None"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-ink-100 bg-ink-50/60 rounded-xl border border-dashed px-3 py-2">
+              <p className="text-ink-500 text-xs">Team name (written for you)</p>
+              <p className="text-ink-900 text-sm font-semibold">{namePreview || currentName}</p>
+              {currentName && namePreview !== currentName && (
+                <p className="text-ink-400 mt-0.5 text-xs">
+                  Currently &quot;{currentName}&quot; — saving renames it.
+                </p>
               )}
             </div>
 

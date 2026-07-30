@@ -486,57 +486,6 @@ export function SchedulingTab({
           </div>
         </div>
 
-        {/* Playoff settings */}
-        <div className="border-ink-100 mt-5 border-t pt-4">
-          <p className="text-ink-600 mb-3 text-xs font-medium">
-            Playoffs (optional — can be set later)
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-ink-700 mb-1 block text-xs font-medium">Playoff format</label>
-              <select
-                value={league.playoffFormat || ""}
-                onChange={async (e) => {
-                  await checkedFetch(`/api/seasons/${seasonId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ playoffFormat: e.target.value || null }),
-                  })
-                  refresh()
-                }}
-                className={inputClass + " w-full"}
-              >
-                <option value="">None / TBD</option>
-                <option value="SINGLE_ELIMINATION">Single Elimination</option>
-                <option value="DOUBLE_ELIMINATION">Double Elimination</option>
-                <option value="ROUND_ROBIN">Round Robin</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-ink-700 mb-1 block text-xs font-medium">
-                Teams advancing to playoffs
-              </label>
-              <input
-                type="number"
-                min="2"
-                max="64"
-                defaultValue={league.playoffTeams || ""}
-                placeholder="e.g. 8"
-                onBlur={async (e) => {
-                  await checkedFetch(`/api/seasons/${seasonId}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      playoffTeams: e.target.value ? parseInt(e.target.value) : null,
-                    }),
-                  })
-                  refresh()
-                }}
-                className={inputClass + " w-full"}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )

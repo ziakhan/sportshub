@@ -25,6 +25,10 @@ vi.mock("@youthbasketballhub/db", () => ({
     tenant: {
       findUnique: vi.fn(),
     },
+    team: {
+      // Derived-naming duplicate guard — no clash in these tests
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
     $transaction: vi.fn(),
   },
 }))

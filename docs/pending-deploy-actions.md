@@ -862,3 +862,10 @@ Server-driven "update available / update required" for store builds. Set on box 
 - `MOBILE_IOS_UPDATE_URL` (defaults to the TestFlight invite) / `MOBILE_ANDROID_UPDATE_URL`
 - `MOBILE_UPDATE_MESSAGE` — optional custom copy on the blocking screen
 Rebuild NOT needed after env change (route reads env at request time) — but the box service must restart to pick up web.env: `sudo systemctl restart sportshub-web`.
+
+## #41 — 2026-07-30: LEAGUE IA REDESIGN + DERIVED NAMING (local only — NOT deployed)
+- Code: flat 8-tab season console (Overview · Clubs · Teams · Schedule · Standings · Playoffs · Referees · Settings), one-page Settings, Season checklist owns all status buttons, derived division/team naming (lib/teams/naming.ts).
+- Schema additive (deploy.sh db push covers, no data loss): `Tenant.shortName`, `Team.nameSuffix` — both nullable. Also needs NEON push when Neon is next synced (pending list: one push covers #24–#33 + this).
+- **AFTER box deploy, run ONCE on box**: `npx tsx scripts/backfill-division-names.ts` (sportshub user, web.env sourced) — recomposes Division.name to the uniform "U15 Boys · Tier 1" shape. Idempotent, display-only. Team names intentionally untouched (legacy until a club edits the team).
+- Box demo world: reseed (`reseed-demo.sh --purge-manual-leagues`) picks up the composed seed names automatically.
+- No raw SQL, no cron, no env.

@@ -45,7 +45,7 @@ export function StandingsTab({ seasonId }: { seasonId: string }) {
         />
         <p className="text-ink-500 mb-4 text-xs">
           Computed on read from completed games. Ties are broken in the order
-          configured in the Tiebreakers tab.
+          configured under Settings &rsaquo; Rules.
         </p>
 
         {standingsLoading && standings.length === 0 ? (

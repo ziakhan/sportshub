@@ -16,29 +16,9 @@ interface Props {
   seasonId: string
   divisions: any[]
   seasonStatus: string
-  league?: any
-  patchSeason: (body: Record<string, any>) => Promise<void>
 }
 
-export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSeason }: Props) {
-  // Season rules (owner 2026-07-29): playoff eligibility threshold + guest
-  // players toggle live here, next to the playoff machinery they govern.
-  const [minGamesDraft, setMinGamesDraft] = useState<string>(
-    league?.playoffMinGames != null ? String(league.playoffMinGames) : ""
-  )
-
-  const [rulesBusy, setRulesBusy] = useState(false)
-  const saveRules = async () => {
-    setRulesBusy(true)
-    try {
-      await patchSeason({
-        playoffMinGames: minGamesDraft === "" ? null : Number(minGamesDraft),
-      })
-    } finally {
-      setRulesBusy(false)
-    }
-  }
-
+export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
   const [brackets, setBrackets] = useState<any[]>([])
   const [divisionId, setDivisionId] = useState("")
   const [qualifying, setQualifying] = useState("")
@@ -129,36 +109,6 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSe
 
   return (
     <div className="space-y-6">
-      {/* Season rules */}
-      <div className="border-ink-100 shadow-soft mb-4 rounded-2xl border bg-white p-4">
-        <h3 className="text-ink-900 text-sm font-bold uppercase tracking-wide">Playoff eligibility</h3>
-        <div className="mt-2 flex flex-wrap items-end gap-3">
-          <div>
-            <label className="text-ink-600 mb-1 block text-xs font-medium">
-              Minimum games played to be playoff-eligible (leave empty for no rule)
-            </label>
-            <input
-              value={minGamesDraft}
-              onChange={(e) => setMinGamesDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
-              placeholder="e.g. 5"
-              inputMode="numeric"
-              className="border-ink-200 w-24 rounded-lg border px-2 py-1.5 text-sm"
-            />
-          </div>
-          <button
-            onClick={saveRules}
-            disabled={rulesBusy}
-            className="bg-play-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            Save
-          </button>
-        </div>
-        <p className="text-ink-400 mt-2 text-xs">
-          Eligibility is computed automatically from the scorekeeper&apos;s attendance roll call
-          across completed games. You can overrule any player from their team page — every
-          ruling requires a written note.
-        </p>
-      </div>
       {/* Existing brackets */}
       {brackets.map((bracket) => {
         const rounds = new Map<number, any[]>()
@@ -247,7 +197,8 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSe
           <div className="space-y-4">
             <p className="text-ink-500 text-xs">
               Pick a division and how many teams qualify — you&apos;ll only be offered formats
-              that work for that number. Seeds come from the current standings.
+              that work for that number. Seeds come from the current standings. Eligibility
+              rules (minimum games played) live under Settings &rsaquo; Rules.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-3">

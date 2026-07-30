@@ -31,6 +31,7 @@ export default function SettingsPage() {
 
   // Form fields
   const [name, setName] = useState("")
+  const [shortName, setShortName] = useState("")
   const [slug, setSlug] = useState("")
   const [timezone, setTimezone] = useState("America/New_York")
   const [primaryColor, setPrimaryColor] = useState("#1a73e8")
@@ -44,6 +45,7 @@ export default function SettingsPage() {
         const data = await res.json()
         setClub(data.club)
         setName(data.club.name)
+        setShortName(data.club.shortName || "")
         setSlug(data.club.slug)
         setTimezone(data.club.timezone || "America/New_York")
         setPrimaryColor(data.club.branding?.primaryColor || "#1a73e8")
@@ -67,7 +69,14 @@ export default function SettingsPage() {
       const res = await fetch(`/api/clubs/${clubId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, timezone, primaryColor, showRosterFillDefault }),
+        body: JSON.stringify({
+          name,
+          shortName: shortName.trim(),
+          slug,
+          timezone,
+          primaryColor,
+          showRosterFillDefault,
+        }),
       })
 
       if (!res.ok) {
@@ -136,6 +145,23 @@ export default function SettingsPage() {
               required
               className={inputCls}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink-700">
+              Short Name
+            </label>
+            <input
+              type="text"
+              value={shortName}
+              onChange={(e) => setShortName(e.target.value)}
+              placeholder={name}
+              className={inputCls}
+            />
+            <p className="text-ink-400 mt-1 text-xs">
+              Team names are built from this, e.g. &quot;{(shortName.trim() || name || "Your club")}{" "}
+              U15 Blue&quot;. Leave empty to use the full club name.
+            </p>
           </div>
 
           <div>

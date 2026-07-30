@@ -3,11 +3,13 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
+import { composeDivisionName } from "@/lib/teams/naming"
 
 export const dynamic = "force-dynamic"
 
+// Derived naming (league-ia-redesign §4): identity is ageGroup + gender +
+// tier; the display name is ALWAYS composed. A typed `name` is ignored.
 const createDivisionSchema = z.object({
-  name: z.string().min(1).max(100),
   ageGroup: z.string().min(1),
   gender: z.enum(["MALE", "FEMALE", "COED"]).optional(),
   tier: z.number().min(1).default(1),
@@ -38,10 +40,33 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const body = await request.json()
     const data = createDivisionSchema.parse(body)
 
+    // Same structure twice = a duplicate bracket, guaranteed confusion.
+    const duplicate = await prisma.division.findFirst({
+      where: {
+        seasonId: params.id,
+        ageGroup: data.ageGroup,
+        gender: data.gender || null,
+        tier: data.tier,
+      },
+      select: { id: true },
+    })
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: `${composeDivisionName({ ageGroup: data.ageGroup, gender: data.gender, tier: data.tier })} already exists in this season.`,
+        },
+        { status: 409 }
+      )
+    }
+
     const division = await prisma.division.create({
       data: {
         seasonId: params.id,
-        name: data.name,
+        name: composeDivisionName({
+          ageGroup: data.ageGroup,
+          gender: data.gender,
+          tier: data.tier,
+        }),
         ageGroup: data.ageGroup,
         gender: data.gender || null,
         tier: data.tier,
@@ -63,7 +88,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 const updateDivisionSchema = z.object({
-  name: z.string().trim().min(1).max(100).optional(),
   ageGroup: z.string().min(1).optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   tier: z.number().min(1).optional(),
@@ -95,20 +119,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const division = await prisma.division.findUnique({
       where: { id: divisionId },
-      select: { seasonId: true },
+      select: { seasonId: true, ageGroup: true, gender: true, tier: true },
     })
     if (!division || division.seasonId !== params.id) {
       return NextResponse.json({ error: "Division not found" }, { status: 404 })
     }
 
-    // Renaming is cosmetic and allowed at any season status (see season-lock.ts);
-    // the structural shape (age group, gender, tier, capacity) locks with the season.
-    const wantsStructuralChange =
-      data.ageGroup !== undefined ||
-      data.gender !== undefined ||
-      data.tier !== undefined ||
-      data.maxTeams !== undefined
-    if (wantsStructuralChange && isSeasonLocked(season.status)) {
+    // Names are derived, so every remaining edit is structural — all of it
+    // locks with the season.
+    if (isSeasonLocked(season.status)) {
       return NextResponse.json(
         { error: SEASON_LOCKED_MESSAGE, status: season.status },
         { status: 409 }
@@ -116,13 +135,25 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const updateData: Record<string, unknown> = {}
-    if (data.name !== undefined) updateData.name = data.name
     if (data.ageGroup !== undefined) updateData.ageGroup = data.ageGroup
     if (data.gender !== undefined) updateData.gender = data.gender
     if (data.tier !== undefined) updateData.tier = data.tier
     if (data.maxTeams !== undefined) updateData.maxTeams = data.maxTeams
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 })
+    }
+
+    // Identity changed → recompose the display name (never typed).
+    if (
+      data.ageGroup !== undefined ||
+      data.gender !== undefined ||
+      data.tier !== undefined
+    ) {
+      updateData.name = composeDivisionName({
+        ageGroup: data.ageGroup ?? division.ageGroup,
+        gender: data.gender !== undefined ? data.gender : (division.gender as any),
+        tier: data.tier ?? division.tier,
+      })
     }
 
     const updated = await prisma.division.update({

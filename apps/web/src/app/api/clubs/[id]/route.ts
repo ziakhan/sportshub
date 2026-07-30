@@ -47,6 +47,9 @@ const blockSchema = z.object({
 const patchSchema = z.object({
   // Tenant fields
   name: z.string().min(1).max(120).optional(),
+  // Derived team naming (league-ia-redesign §4): the prefix of every
+  // composed team name. Empty string clears it (fall back to full name).
+  shortName: z.string().trim().max(60).optional().nullable(),
   slug: z
     .string()
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and dashes")
@@ -78,6 +81,7 @@ const patchSchema = z.object({
 
 const TENANT_KEYS = [
   "name",
+  "shortName",
   "slug",
   "timezone",
   "description",
@@ -126,6 +130,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const data = patchSchema.parse(await request.json())
+    if (data.shortName === "") data.shortName = null
 
     // Slug uniqueness (exclude self)
     if (data.slug) {

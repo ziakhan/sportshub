@@ -266,6 +266,9 @@ model Tenant {
   type                   TenantType @default(CLUB)
   reviewInviteOverride   String? // null = inherit platform reviewInvitePolicy
   name                   String
+  // Set once on club settings; every derived team name starts with it
+  // ("Burlington Force" → "Burlington Force U15 Blue"). null = full name.
+  shortName              String?
   description            String?   @db.Text
   phoneNumber            String?
   contactEmail           String?
@@ -413,6 +416,10 @@ model Team {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   name        String
+  // Derived naming (league-ia-redesign §4): name = composed from the club's
+  // shortName + ageGroup (+ picked suffix) by lib/teams/naming.ts. The column
+  // stays authoritative for display; legacy typed names persist until edited.
+  nameSuffix  String? // picked (Blue/White/2…), never typed
   ageGroup    String // U10, U12, U14, etc.
   gender      Gender?
   season      String? // "Spring 2026"

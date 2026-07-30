@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { notify } from "@/lib/notifications"
+import { composeTeamName } from "@/lib/teams/naming"
 
 export const dynamic = "force-dynamic"
 
@@ -22,6 +23,9 @@ const staffEntrySchema = z
 
 const updateTeamSchema = z.object({
   name: z.string().min(3).max(100).optional(),
+  // Picked suffix (Blue/White/2…) — with ageGroup it recomposes the derived
+  // name; null clears it (league-ia-redesign §4).
+  nameSuffix: z.string().trim().max(20).nullable().optional(),
   ageGroup: z.string().optional(),
   gender: z.enum(["MALE", "FEMALE", "COED"]).nullable().optional(),
   season: z.string().nullable().optional(),
@@ -111,7 +115,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     const team = await prisma.team.findUnique({
       where: { id: params.id },
-      select: { id: true, tenantId: true, name: true },
+      select: {
+        id: true,
+        tenantId: true,
+        name: true,
+        ageGroup: true,
+        nameSuffix: true,
+        tenant: { select: { name: true, shortName: true } },
+      },
     })
 
     if (!team) {
@@ -137,6 +148,33 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const validatedData = updateTeamSchema.parse(body)
 
     const { staffToAdd, staffToRemove, ...teamData } = validatedData
+
+    // Structure changed without an explicit (legacy) name → recompose the
+    // derived name from club shortName + ageGroup + suffix.
+    if (
+      teamData.name === undefined &&
+      (teamData.ageGroup !== undefined || teamData.nameSuffix !== undefined)
+    ) {
+      teamData.name = composeTeamName({
+        clubName: team.tenant.name,
+        shortName: team.tenant.shortName,
+        ageGroup: teamData.ageGroup ?? team.ageGroup,
+        suffix: teamData.nameSuffix !== undefined ? teamData.nameSuffix : team.nameSuffix,
+      })
+      const clash = await prisma.team.findFirst({
+        where: { tenantId: team.tenantId, name: teamData.name, id: { not: team.id } },
+        select: { id: true },
+      })
+      if (clash) {
+        return NextResponse.json(
+          {
+            error: `You already have a team called "${teamData.name}". Pick a different suffix to tell them apart.`,
+            code: "NAME_TAKEN",
+          },
+          { status: 409 }
+        )
+      }
+    }
 
     // Collected during the transaction, delivered after it commits (mirrors
     // POST /api/teams — the edit path previously created the invitation +

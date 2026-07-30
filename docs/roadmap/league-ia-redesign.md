@@ -1,7 +1,7 @@
 # League Console IA Redesign — the honest audit (2026-07-30)
 
 > Owner verdict on the current console: "honestly this is getting messy… settings should be in one place… Games is not a clear tab… standings don't belong under games… naming is inconsistent… people should never enter things that will be duplicated."
-> Status: **PROPOSAL — nothing built.** This is the blueprint for the fresh session. Companion state: memory file `project_league_ops_2026_07_29.md`.
+> Status: **BUILT 2026-07-30 (local; box deploy pending — runbook #41).** §8 is the build log. Companion state: memory file `project_league_ops_2026_07_29.md`.
 
 ## 0. Why it got messy (honest diagnosis)
 The 12 tabs accreted one per feature as features shipped. The five section headers added 2026-07-29 were a *grouping of what existed*, not a design: "Games" is a junk-drawer label; settings ended up in THREE places (Registration›Settings, Playoffs›eligibility, Scheduling›game-day policies) because each rule was parked "near its feature"; Standings sat under Games because data-wise standings derive from games — but a commissioner experiences standings as an *output to monitor*, not a place to work. The root mistake: organizing by DATA TYPE instead of by the operator's JOB and the season's PHASE.
@@ -82,3 +82,21 @@ Schema: `Tenant.shortName String?`, `Team.nameSuffix String?`; composer in `lib/
 3. Derived naming (composer + division editor + team create/edit + shortName/suffix + backfill) — **M-L**, touches club-side too.
 4. Venue row editability + capacity words on Schedule tab — **S-M**.
 Recommend shipping 1+2 together (the "it finally makes sense" moment), then 3, then 4.
+
+## 8. Build log — 2026-07-30: ALL FOUR PHASES BUILT (local, one pass)
+Owner said "resume the league IA redesign" in the fresh session; v2 rulings above were treated as the sign-off. Everything below is local + pushed to GitHub only — box deploy pending owner approval (runbook #41).
+
+**Shipped:**
+1. **Flat nav** (§2) — 8 tabs exactly as ruled; two-level TAB_GROUPS deleted. Legacy `?tab=` keys remap (divisions→Settings#divisions, scheduling→Settings#game-format, tiebreakers→Settings#rules, regsettings→Settings#registration, venues/sessions→Schedule) with smooth-scroll to the section anchor; in-app links only ever used clubs/teams, which are unchanged.
+2. **⚙ Settings one page** (§2) — stacked visible sections w/ jump row: Basics (new — label/dates/deadline/fee, editable in-console for the first time) · Registration (deposit + questions) · Game format & scheduling (settings grid + philosophy + groups) · Rules (playoff eligibility + format/teams-advancing + guests + tiebreakers) · Divisions.
+3. **Season checklist** (§3) — `season-checklist.tsx` on Overview; 12 derived steps, each done/actionable/blocked-with-reason; ALL status buttons moved here (header button deleted; other tabs get a subtle "Season checklist" link). Close-registration gate: pending reviews block the primary button, "Close anyway" override stays. Finalize preflight renders inline in its step. Old OverviewTab slimmed to the COMPLETED close-out card.
+4. **Derived naming** (§4) — `lib/teams/naming.ts` (AGE_GROUPS, TEAM_NAME_SUFFIXES, composeDivisionName, composeTeamName). Schema: `Tenant.shortName`, `Team.nameSuffix` (pushed local). Division POST/PATCH compose the name server-side and reject duplicate structure (409); the editor is pickers-only w/ live name preview. Team create/edit forms lost the name input — age group + suffix chips + "Team name (written for you)" preview; APIs compose from club shortName (fallback full name) and 409 on collisions with a suffix hint. Club settings gained Short Name. `scripts/backfill-division-names.ts` recomposes existing division names (ran locally: 8/16 rewritten); team names stay legacy until touched (ruling). NPH seed updated to composed division names.
+5. **Fix list** (§5) — venue rows: added "Venue page ↗" link (edit-in-place already existed); capacity math in words at the top of Schedule (`capacity-words.tsx`: "You need N slots … sessions provide M ✓/✗"); Standings/Registration copy now points at Settings › Rules.
+
+**Deviations from the blueprint (deliberate):**
+- Checklist step order follows the real state machine: Finalize comes BEFORE "Schedule generated" (§3 listed schedule at 8, finalize at 9 — but commit requires FINALIZED). Blueprint's blockers all shown on the schedule step.
+- Roster-change policy stayed with the queue on Teams (§2 listed it in both places; the Teams row won).
+- Sessions & venues live on the Schedule tab per the §2 table (the §2 migration line said settings anchors — the table won).
+- No hard server-side gate on close-with-pending: UI gate + explicit override, server unchanged (an override-capable gate server-side would be a no-op).
+
+**Verification:** tsc clean · eslint clean · unit suite: no new failures (9 pre-existing, confirmed on clean tree) · integration suite + Playwright walkthrough: see session notes.

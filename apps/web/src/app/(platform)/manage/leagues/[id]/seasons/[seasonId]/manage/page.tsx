@@ -4,32 +4,22 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Button, Badge, SmartBack, toneForStatus } from "@/components/ui"
-import { OverviewTab } from "./components/overview-tab"
-import { DivisionsTab } from "./components/divisions-tab"
-import { VenuesTab } from "./components/venues-tab"
-import { SessionsTab } from "./components/sessions-tab"
+import { SeasonCloseOut } from "./components/overview-tab"
+import { SeasonChecklist } from "./components/season-checklist"
 import { RefereesTab } from "./components/referees-tab"
-import { SchedulingTab } from "./components/scheduling-tab"
-import { TiebreakersTab } from "./components/tiebreakers-tab"
 import { TeamsTab } from "./components/teams-tab"
 import { ClubsTab } from "./components/clubs-tab"
-import { RegistrationSettingsTab } from "./components/registration-settings-tab"
-import { GameDayPolicies } from "./components/game-day-policies"
 import { NeedsAttention } from "./components/needs-attention"
 import { SeasonReport } from "./components/season-report"
+import { CapacityWords } from "./components/capacity-words"
+import { SessionsTab } from "./components/sessions-tab"
+import { VenuesTab } from "./components/venues-tab"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
 import { PlayoffsTab } from "./components/playoffs-tab"
+import { SettingsTab } from "./components/settings-tab"
 import type { SchedSettings } from "./components/types"
 
-const STATUS_FLOW = [
-  "DRAFT",
-  "REGISTRATION",
-  "REGISTRATION_CLOSED",
-  "FINALIZED",
-  "IN_PROGRESS",
-  "COMPLETED",
-]
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
   REGISTRATION: "Open for Registration",
@@ -39,36 +29,31 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: "Completed",
 }
 
+// FLAT nav, no submenus (owner ruling 2026-07-30, league-ia-redesign.md §2):
+// every tab is a recurring job with a self-describing name; Settings is the
+// one grouping label; outputs (Standings) are their own clearly-named views.
 const TABS = [
   { key: "overview", label: "Overview" },
-  { key: "divisions", label: "Divisions" },
-  { key: "venues", label: "Venues" },
-  { key: "sessions", label: "Sessions" },
-  { key: "scheduling", label: "Scheduling" },
-  { key: "tiebreakers", label: "Tiebreakers" },
-  { key: "teams", label: "Teams" },
   { key: "clubs", label: "Clubs" },
-  { key: "regsettings", label: "Registration settings" },
-  { key: "referees", label: "Referees" },
+  { key: "teams", label: "Teams" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
   { key: "playoffs", label: "Playoffs" },
+  { key: "referees", label: "Referees" },
+  { key: "settings", label: "⚙ Settings" },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
 
-// Two-level nav (owner 2026-07-29: "reorganize the long menus — settings on
-// one page with tabs underneath"). Twelve flat tabs become five sections;
-// section click lands on its first tab, sub-tabs appear when a section has
-// more than one. Keys are unchanged so ?tab= deep links keep working.
-const TAB_GROUPS: Array<{ label: string; tabs: TabKey[] }> = [
-  { label: "Overview", tabs: ["overview"] },
-  { label: "Registration", tabs: ["clubs", "teams", "regsettings"] },
-  { label: "Season setup", tabs: ["divisions", "venues", "sessions", "scheduling", "tiebreakers"] },
-  { label: "Games", tabs: ["schedule", "standings", "playoffs"] },
-  { label: "Referees", tabs: ["referees"] },
-]
-const TAB_LABEL = Object.fromEntries(TABS.map((t) => [t.key, t.label])) as Record<TabKey, string>
+// Old bookmarks/deep-links from the 13-tab era land on the right new home.
+const LEGACY_TABS: Record<string, { tab: TabKey; anchor?: string }> = {
+  divisions: { tab: "settings", anchor: "divisions" },
+  venues: { tab: "schedule" },
+  sessions: { tab: "schedule" },
+  scheduling: { tab: "settings", anchor: "game-format" },
+  tiebreakers: { tab: "settings", anchor: "rules" },
+  regsettings: { tab: "settings", anchor: "registration" },
+}
 
 export default function LeagueManagePage() {
   const params = useParams()
@@ -81,22 +66,44 @@ export default function LeagueManagePage() {
   const [schedulingGroups, setSchedulingGroups] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
+  const [pendingAnchor, setPendingAnchor] = useState<string | null>(null)
 
   // Tab state lives in the URL (owner 2026-07-29: back from a team page must
   // land on the Teams tab, not Overview). replaceState keeps history clean;
   // the query restores the tab on back-navigation and enables deep links.
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab")
-    if (t && TABS.some((x) => x.key === t)) setActiveTab(t as TabKey)
+    if (!t) return
+    if (TABS.some((x) => x.key === t)) {
+      setActiveTab(t as TabKey)
+    } else if (LEGACY_TABS[t]) {
+      const { tab, anchor } = LEGACY_TABS[t]
+      setActiveTab(tab)
+      if (anchor) setPendingAnchor(anchor)
+      const url = new URL(window.location.href)
+      url.searchParams.set("tab", tab)
+      window.history.replaceState(null, "", url)
+    }
   }, [])
-  const selectTab = (t: TabKey) => {
+  const selectTab = (t: TabKey, anchor?: string) => {
     setActiveTab(t)
+    setPendingAnchor(anchor ?? null)
     const url = new URL(window.location.href)
     url.searchParams.set("tab", t)
     window.history.replaceState(null, "", url)
   }
+  // Scroll to a Settings section once the tab's content is on screen.
+  useEffect(() => {
+    if (!pendingAnchor || loading) return
+    const id = pendingAnchor
+    const raf = requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
+      setPendingAnchor(null)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [pendingAnchor, activeTab, loading])
 
-  // Scheduling settings form (populated by fetchAll, edited in the Scheduling tab)
+  // Scheduling settings form (populated by fetchAll, edited under Settings)
   const [schedSettings, setSchedSettings] = useState<SchedSettings>({
     gamesGuaranteed: "",
     gamesPerSession: "1",
@@ -201,41 +208,6 @@ export default function LeagueManagePage() {
   if (loading) return <div className="text-ink-500 p-6 py-12 text-center">Loading...</div>
   if (!league) return <div className="text-ink-500 p-6 py-12 text-center">League not found.</div>
 
-  const currentIdx = STATUS_FLOW.indexOf(league.leagueStatus)
-  const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null
-  const allTeams = league.teams || []
-
-  const sessionHasUsableDay = (s: any) =>
-    (s.days ?? []).some((d: any) =>
-      (d.dayVenues ?? []).some((dv: any) => (dv.courts ?? []).length > 0)
-    )
-  const sessionsAllUsable =
-    sessions.length > 0 && sessions.every((s: any) => sessionHasUsableDay(s))
-
-  const preflightChecks =
-    nextStatus === "FINALIZED"
-      ? [
-          { label: "At least one division created", ok: divisions.length > 0 },
-          { label: "At least one game session scheduled", ok: sessions.length > 0 },
-          {
-            label: "Every session has a day with venue + court",
-            ok: sessionsAllUsable,
-          },
-          { label: "At least one venue assigned", ok: venues.length > 0 },
-          {
-            label: "No teams pending approval",
-            ok: allTeams.filter((t: any) => t.status === "PENDING").length === 0,
-          },
-          { label: "Max games per season defined", ok: !!league.gamesGuaranteed },
-          { label: "Period / half length defined", ok: !!league.periodLengthMinutes },
-          {
-            label: "Tiebreaker order configured",
-            ok: Array.isArray(league.tiebreakerOrder) && league.tiebreakerOrder.length > 0,
-          },
-        ]
-      : null
-  const canFinalize = !preflightChecks || preflightChecks.every((c) => c.ok)
-
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-8">
       {/* Header */}
@@ -259,44 +231,35 @@ export default function LeagueManagePage() {
             {STATUS_LABELS[league.leagueStatus]}
           </Badge>
         </div>
-        {nextStatus && (
-          <Button
-            onClick={() => handleStatusChange(nextStatus)}
-            disabled={nextStatus === "FINALIZED" && !canFinalize}
-          >
-            {nextStatus === "REGISTRATION"
-              ? "Open Registration"
-              : nextStatus === "REGISTRATION_CLOSED"
-                ? "Close Registration"
-                : nextStatus === "FINALIZED"
-                  ? "Finalize Season"
-                  : nextStatus === "IN_PROGRESS"
-                    ? "Start Season"
-                    : "Mark Completed"}
+        {/* Status-advance buttons live ONLY in the Season checklist (§3) —
+            the old header button was one stray click from disaster. */}
+        {activeTab !== "overview" && league.leagueStatus !== "COMPLETED" && (
+          <Button variant="subtle" size="sm" onClick={() => selectTab("overview")}>
+            Season checklist
           </Button>
         )}
       </div>
 
-      {/* Two-level tab nav: sections, then the section's tabs */}
+      {/* Flat tab row — every job visible, nothing nested */}
       <div className="reveal mb-6" style={{ animationDelay: "80ms" }}>
         <div
           role="tablist"
           aria-label="Season sections"
           className="border-ink-100 flex flex-wrap gap-1 overflow-x-auto border-b"
         >
-          {TAB_GROUPS.map((group) => {
-            const selected = group.tabs.includes(activeTab)
+          {TABS.map((t) => {
+            const selected = activeTab === t.key
             return (
               <button
-                key={group.label}
+                key={t.key}
                 role="tab"
                 aria-selected={selected}
-                onClick={() => selectTab(group.tabs[0])}
+                onClick={() => selectTab(t.key)}
                 className={`relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
                   selected ? "text-play-600" : "text-ink-500 hover:text-ink-800"
                 }`}
               >
-                {group.label}
+                {t.label}
                 {selected && (
                   <span
                     className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full"
@@ -307,85 +270,82 @@ export default function LeagueManagePage() {
             )
           })}
         </div>
-        {(() => {
-          const group = TAB_GROUPS.find((g) => g.tabs.includes(activeTab))
-          if (!group || group.tabs.length < 2) return null
-          return (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {group.tabs.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => selectTab(key)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    activeTab === key
-                      ? "bg-play-600 text-white"
-                      : "bg-ink-50 text-ink-600 hover:bg-ink-100"
-                  }`}
-                >
-                  {TAB_LABEL[key]}
-                </button>
-              ))}
-            </div>
-          )
-        })()}
       </div>
 
       <div key={activeTab} role="tabpanel" className="reveal">
         {activeTab === "overview" && (
-          <NeedsAttention
-            leagueId={leagueId}
-            seasonId={seasonId}
-            league={league}
-            onGoToTab={(t) => selectTab(t as TabKey)}
-          />
-        )}
-        {activeTab === "overview" && <SeasonReport leagueId={leagueId} seasonId={seasonId} />}
-        {activeTab === "overview" && (
-          <OverviewTab
-            league={league}
-            divisions={divisions}
-            sessions={sessions}
-            venues={venues}
-            preflightChecks={preflightChecks}
-            canFinalize={canFinalize}
-            finalizeErrors={finalizeErrors}
-            finalizeWarnings={finalizeWarnings}
-          />
+          <>
+            <SeasonCloseOut
+              league={league}
+              divisions={divisions}
+              onGoToStandings={() => selectTab("standings")}
+            />
+            <NeedsAttention
+              leagueId={leagueId}
+              seasonId={seasonId}
+              league={league}
+              onGoToTab={(t) => selectTab(t as TabKey)}
+            />
+            <SeasonChecklist
+              seasonId={seasonId}
+              league={league}
+              divisions={divisions}
+              sessions={sessions}
+              venues={venues}
+              scheduleGames={scheduleGames}
+              finalizeErrors={finalizeErrors}
+              finalizeWarnings={finalizeWarnings}
+              onGoToTab={(t, anchor) => selectTab(t as TabKey, anchor)}
+              onStatusChange={handleStatusChange}
+            />
+            <SeasonReport leagueId={leagueId} seasonId={seasonId} />
+          </>
         )}
 
-        {activeTab === "divisions" && (
-          <DivisionsTab
-            seasonId={seasonId}
-            divisions={divisions}
-            seasonStatus={league?.leagueStatus}
-            refresh={fetchAll}
-          />
-        )}
-        {activeTab === "sessions" && (
-          <SessionsTab
-            seasonId={seasonId}
-            sessions={sessions}
-            seasonStatus={league?.leagueStatus}
-            refresh={fetchAll}
-          />
-        )}
-        {activeTab === "venues" && (
-          <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
+        {activeTab === "clubs" && (
+          <ClubsTab seasonId={seasonId} leagueId={leagueId} league={league} />
         )}
         {activeTab === "teams" && (
           <TeamsTab seasonId={seasonId} leagueId={leagueId} league={league} refresh={fetchAll} />
         )}
-        {activeTab === "clubs" && (
-          <ClubsTab seasonId={seasonId} leagueId={leagueId} league={league} />
+
+        {activeTab === "schedule" && (
+          <div className="space-y-6">
+            <CapacityWords
+              seasonId={seasonId}
+              league={league}
+              scheduleGamesCount={scheduleGames.length}
+            />
+            <SessionsTab
+              seasonId={seasonId}
+              sessions={sessions}
+              seasonStatus={league?.leagueStatus}
+              refresh={fetchAll}
+            />
+            <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
+            <ScheduleTab
+              seasonId={seasonId}
+              league={league}
+              scheduleGames={scheduleGames}
+              refresh={fetchAll}
+            />
+          </div>
         )}
-        {activeTab === "regsettings" && (
-          <RegistrationSettingsTab league={league} patchSeason={patchSeason} />
+
+        {activeTab === "standings" && <StandingsTab seasonId={seasonId} />}
+        {activeTab === "playoffs" && (
+          <PlayoffsTab
+            seasonId={seasonId}
+            divisions={divisions}
+            seasonStatus={league?.leagueStatus}
+          />
         )}
         {activeTab === "referees" && (
           <RefereesTab leagueId={leagueId} sessions={sessions} refresh={fetchAll} />
         )}
-        {activeTab === "scheduling" && (
-          <SchedulingTab
+
+        {activeTab === "settings" && (
+          <SettingsTab
             seasonId={seasonId}
             league={league}
             divisions={divisions}
@@ -394,30 +354,6 @@ export default function LeagueManagePage() {
             setSchedSettings={setSchedSettings}
             patchSeason={patchSeason}
             refresh={fetchAll}
-          />
-        )}
-        {activeTab === "scheduling" && (
-          <GameDayPolicies league={league} patchSeason={patchSeason} />
-        )}
-        {activeTab === "tiebreakers" && (
-          <TiebreakersTab league={league} patchSeason={patchSeason} />
-        )}
-        {activeTab === "schedule" && (
-          <ScheduleTab
-            seasonId={seasonId}
-            league={league}
-            scheduleGames={scheduleGames}
-            refresh={fetchAll}
-          />
-        )}
-        {activeTab === "standings" && <StandingsTab seasonId={seasonId} />}
-        {activeTab === "playoffs" && (
-          <PlayoffsTab
-            seasonId={seasonId}
-            divisions={divisions}
-            league={league}
-            patchSeason={patchSeason}
-            seasonStatus={league?.leagueStatus}
           />
         )}
       </div>
