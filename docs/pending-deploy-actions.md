@@ -875,7 +875,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Schema additive (deploy.sh db push covers, no data loss): `Season.balanceDueDaysBeforeStart Int?`, `SeasonSessionDayVenueCourt.order Int @default(0)`. Neon: same push whenever synced.
 - No backfill needed (legacy court rows at order 0 keep old scheduling behavior). No raw SQL, no cron, no env.
 
-## #43 — 2026-07-31: ORG SEASON DEFAULTS (Phase A of Schedule Studio plan) — local, NOT deployed
+## #43 — 2026-07-31: ORG SEASON DEFAULTS (Phase A) — ✅ DEPLOYED TO BOX (sha 9ac40ac, owner-approved; seasonDefaults column + nullable Season fields verified on box DB, site 200). NEON still pending.
 - Org rulebook: Organization.seasonDefaults (Json, additive) + Season policy fields made NULLABLE (gameSlotMinutes, gameLengthMinutes, gamePeriods, idealGamesPerDayPerTeam, defaultVenueOpenTime, defaultVenueCloseTime, schedulingPhilosophy, allowGuestPlayers — dropping DB defaults; existing rows keep values, no data loss).
 - deploy.sh db push covers it. Neon: same push when synced. No backfill, no cron, no env.
 - Behavior note: NEW seasons created after this leave format fields null → inherit org defaults (or system defaults when no org). Existing seasons unchanged (values become explicit overrides).
