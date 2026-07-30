@@ -27,6 +27,18 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
           tagline: true,
           primaryColor: true,
           socials: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logoUrl: true,
+              bannerUrl: true,
+              tagline: true,
+              primaryColor: true,
+              socials: true,
+            },
+          },
         },
       },
       divisions: { orderBy: { ageGroup: "asc" } },
@@ -50,12 +62,61 @@ export const getPublicSeason = cache(async (id: string): Promise<any | null> => 
 
   if (!season) return null
 
+  // Operator inheritance (owner 2026-07-29): a league without its own
+  // branding wears its Organization's — applied HERE so every consumer
+  // (web hero, mobile route) inherits identically. League overrides win.
+  const org = season.league?.organization ?? null
+  const league = season.league
+    ? {
+        ...season.league,
+        logoUrl: season.league.logoUrl ?? org?.logoUrl ?? null,
+        bannerUrl: season.league.bannerUrl ?? org?.bannerUrl ?? null,
+        tagline: season.league.tagline ?? org?.tagline ?? null,
+        primaryColor: season.league.primaryColor ?? org?.primaryColor ?? null,
+        socials: season.league.socials ?? org?.socials ?? null,
+        organization: org ? { id: org.id, name: org.name, slug: org.slug } : null,
+      }
+    : season.league
+
   return {
     ...season,
+    league,
     teamFee: season.teamFee ? Number(season.teamFee) : null,
-    teamSubmissions: season.teamSubmissions.map((t: any) => ({
-      ...t,
-      registrationFee: t.registrationFee ? Number(t.registrationFee) : null,
-    })),
+    teamSubmissions: await attachFeeProgress(season),
   }
 })
+
+/**
+ * Fee progress per submission (owner 2026-07-29 deposit schedules): how much
+ * of the entry fee has actually arrived, so badges can say "deposit paid"
+ * instead of a flat lying "unpaid". Additive fields on each submission:
+ * feeAmount, feePaid, feeOverdue.
+ */
+async function attachFeeProgress(season: any) {
+  const ids = season.teamSubmissions.map((t: any) => t.id)
+  const obligations = ids.length
+    ? await (prisma as any).paymentObligation.findMany({
+        where: { referenceType: "TeamSubmission", referenceId: { in: ids } },
+        select: {
+          referenceId: true,
+          amount: true,
+          status: true,
+          dueDate: true,
+          payments: { where: { status: "SUCCEEDED" }, select: { amount: true } },
+        },
+      })
+    : []
+  const byId = new Map(obligations.map((o: any) => [o.referenceId, o]))
+  const now = Date.now()
+  return season.teamSubmissions.map((t: any) => {
+    const o: any = byId.get(t.id)
+    const feePaid = o ? o.payments.reduce((a: number, pm: any) => a + Number(pm.amount), 0) : 0
+    return {
+      ...t,
+      registrationFee: t.registrationFee ? Number(t.registrationFee) : null,
+      feeAmount: o ? Number(o.amount) : null,
+      feePaid,
+      feeOverdue: !!(o && o.status !== "PAID" && o.dueDate && new Date(o.dueDate).getTime() < now),
+    }
+  })
+}

@@ -26,6 +26,7 @@ const PUBLIC_PAGE_PREFIXES = [
   "/tournament",
   "/events",
   "/league",
+  "/org", // league-operator public profile (2026-07-29)
   "/leagues",
   "/invitations",
   "/player-invitations",

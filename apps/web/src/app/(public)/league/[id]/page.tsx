@@ -46,7 +46,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   if (!season) notFound()
   const leagueId = season.league?.id
   const leagueName = season.league?.name
-  const brand: any = leagueId
+  const rawBrand: any = leagueId
     ? await (prisma as any).league.findUnique({
         where: { id: leagueId },
         select: {
@@ -61,6 +61,19 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         },
       })
     : null
+  // Operator inheritance: getPublicSeason already resolved league-or-org
+  // branding — overlay it so a league with no branding of its own wears NPH's.
+  const brand: any = rawBrand
+    ? {
+        ...rawBrand,
+        logoUrl: season.league?.logoUrl ?? rawBrand.logoUrl,
+        bannerUrl: season.league?.bannerUrl ?? rawBrand.bannerUrl,
+        tagline: season.league?.tagline ?? rawBrand.tagline,
+        primaryColor: season.league?.primaryColor ?? rawBrand.primaryColor,
+        socials: season.league?.socials ?? rawBrand.socials,
+      }
+    : null
+  const runBy = season.league?.organization ?? null
 
   const session = await getServerSession(authOptions).catch(() => null)
   const viewerId = (session?.user as any)?.id ?? null
@@ -227,6 +240,22 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <span className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
                     {season.label}
                   </span>
+                )}
+                {isOpen && !deadlinePassed && (
+                  <Link
+                    href={`/seasons/${season.id}/enter`}
+                    className="bg-white/90 text-ink-900 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide transition hover:bg-white"
+                  >
+                    Enter as a club &rarr;
+                  </Link>
+                )}
+                {runBy && (
+                  <Link
+                    href={`/org/${runBy.slug}`}
+                    className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur transition hover:bg-white/25"
+                  >
+                    Run by {runBy.name} &rarr;
+                  </Link>
                 )}
               </div>
             </div>

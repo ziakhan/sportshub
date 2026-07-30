@@ -1,6 +1,8 @@
 # League Operators (Organizations) + Two-Level Season Registration
 
-> Status: **DESIGN — owner-committed 2026-07-29** ("this league owner thing is good, we have to build it for sure"). Not started.
+> Status: **V1 SHIPPED 2026-07-29 night** (owner: "go ahead and finish them"). Decisions taken (owner delegated): deposit attaches at TEAM approval; over-plan submissions allowed (approval is the gate, Entries view flags planned-vs-submitted); operator page public day one.
+> Shipped: Organization + branding inheritance (resolved in getPublicSeason so web+mobile inherit identically) + /org/[slug] + "Run by" chip · WaiverDocument.audience (CLUB_OFFICIAL signed at entry; parent flows audience-scoped) · ClubSeasonEntry (planned teams, application answers from Season.applicationQuestions, typed signature) + club Enter form (/seasons/[id]/enter + public-page link) + league Entries panel w/ approve/decline · deposit schedules (Season.depositPct, balance due start-14d, deposit-paid badges) · season clone ("Renew" deep-copy) · season-scoped club blasts.
+> Still open: OrgAdmin role wiring into league authz (enum/column only), TeamSubmission.entryId linkage + entry-required enforcement mode, org staff management UI.
 > Companions: docs/research/nph-fall-winter-2026-alignment.md (G1 questions, G2 deposits, G4 = this doc).
 
 ## 1. Owner rulings (2026-07-29)

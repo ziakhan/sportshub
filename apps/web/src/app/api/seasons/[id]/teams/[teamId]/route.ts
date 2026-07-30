@@ -44,6 +44,8 @@ export async function PATCH(
         leagueId: true,
         status: true,
         teamFee: true,
+        startDate: true,
+        depositPct: true,
         label: true,
         league: { select: { ownerId: true, name: true, currency: true } },
       },
@@ -152,14 +154,23 @@ export async function PATCH(
       // Approval is what creates the club→league team-fee debt (B1 in
       // docs/payments-design.md) — the league is the merchant here.
       if (approving && season.teamFee !== null) {
+        // Deposit schedule (owner 2026-07-29): balance is due 14 days before
+        // tip-off — the dueDate drives the existing overdue aging/nags.
+        const balanceDue = season.startDate
+          ? new Date(new Date(season.startDate).getTime() - 14 * 86400_000)
+          : null
         await ensureObligation(tx, {
           payerTenantId: submission.team.tenantId,
           payeeLeagueId: season.leagueId,
           referenceType: "TeamSubmission",
           referenceId: submission.id,
-          description: `Team fee — ${season.league.name} ${season.label} (${submission.team.name})`,
+          description:
+            season.depositPct != null
+              ? `Team fee — ${season.league.name} ${season.label} (${submission.team.name}) · ${season.depositPct}% deposit due now, balance 14 days before tip-off`
+              : `Team fee — ${season.league.name} ${season.label} (${submission.team.name})`,
           amount: Number(season.teamFee),
           currency: season.league.currency,
+          dueDate: balanceDue,
         })
       }
       // A withdrawing team's unpaid fee dies with the submission; paid fees

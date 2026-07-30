@@ -27,7 +27,7 @@ export async function getOutstandingRequiredWaivers({
   playerId: string
 }): Promise<OutstandingWaiver[]> {
   const waivers = await (prisma as any).waiverDocument.findMany({
-    where: { tenantId, active: true, required: true },
+    where: { tenantId, active: true, required: true, audience: "PARENT" },
     select: {
       id: true,
       title: true,

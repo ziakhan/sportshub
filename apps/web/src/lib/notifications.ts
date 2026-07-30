@@ -53,6 +53,7 @@ export type NotificationType =
   // League / season
   | "league_registration_status"
   | "team_submitted"
+  | "league_announcement"
   | "submission_request" // coach asks club to register a team (2026-07-15)
   | "submission_request_decided"
   | "roster_change_decided" // league decided a structured roster change

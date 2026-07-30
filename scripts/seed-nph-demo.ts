@@ -360,6 +360,7 @@ async function wipeDemoWorld() {
   await p.team.deleteMany({ where: { description: MARKER } })
   await p.team.deleteMany({ where: { description: "SHOWCASE_SEED" } })
   await deleteUsersDeep(userIds)
+  await p.organization.deleteMany({ where: { slug: "north-pole-hoops" } })
 
   for (const club of [...CLUBS, ...SHOWCASE_CLUBS] as Array<{ slug: string; create?: boolean }>) {
     const tenant = await p.tenant.findUnique({ where: { slug: club.slug }, select: { id: true } })
@@ -690,6 +691,7 @@ async function seed() {
       tiebreakersLockedAt: now,
       // Playoff eligibility rule (owner 2026-07-29): min 5 games played
       playoffMinGames: 5,
+      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
     },
   })
   const winterDivisions = new Map<number, any>()
@@ -1275,6 +1277,7 @@ async function seed() {
       startDate: fallStart, endDate: new Date(now.getFullYear() + 1, 2, 28), // end of March
       teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
       gamesGuaranteed: FALL_GAMES_PER_TEAM,
+      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
       gameSlotMinutes: GAME_SLOT_MINUTES,
       gameLengthMinutes: GAME_LENGTH_MINUTES,
       idealGamesPerDayPerTeam: 1,
@@ -2128,6 +2131,13 @@ async function seed() {
       ageGroupCutoffDate: new Date(Date.UTC(2026, 11, 31)), // U-age as of Dec 31
       teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
       gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
+      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
+      // Their real application questions — asked ONCE per club at entry
+      applicationQuestions: [
+        "Brief synopsis of your team and top prospects",
+        "Why do you want to join this league?",
+        "Program vision — goals over the next 1, 3 and 5 years",
+      ],
       targetGamesPerSession: 2, // 5 sessions × 2 + finals weekend × 2 = 10+2
       gameSlotMinutes: GAME_SLOT_MINUTES, gameLengthMinutes: GAME_LENGTH_MINUTES,
       idealGamesPerDayPerTeam: 1,
@@ -2231,17 +2241,15 @@ async function seed() {
     "Schedule changes are not permitted once published, except for emergencies.",
     "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
   ].join("\n\n")
-  // required:false ON PURPOSE (owner caught this 2026-07-29): this is a
-  // CLUB-facing commercial agreement — parents must never be asked to sign
-  // it, and required league waivers auto-email parents on roster approval.
-  // The proper home is a club-level signature at season entry (audience
-  // field + ClubSeasonEntry — docs/roadmap/league-operator-orgs.md).
+  // CLUB_OFFICIAL audience (owner 2026-07-29): signed once by the club on
+  // its season ENTRY — parent flows are audience-scoped and never see it.
   await p.waiverDocument.create({
     data: {
       leagueId: showcaseLeague.id,
-      title: "NPH League Registration Terms & Conditions (club agreement)",
+      title: "NPH League Registration Terms & Conditions",
       body: tcBody,
-      required: false,
+      required: true,
+      audience: "CLUB_OFFICIAL",
     },
     select: { id: true },
   })
@@ -2316,6 +2324,27 @@ async function seed() {
   const titans = await mkShowcaseClub(SHOWCASE_CLUBS[0])
   const titansU15 = await mkRosteredTeam(titans.id, "titans", "Scarborough Titans U15", "U15", 2012)
   const titansU17 = await mkRosteredTeam(titans.id, "titans", "Scarborough Titans U17", "U17", 2010)
+  // Level-1 entry: Titans committed as a CLUB (2 teams planned), answered
+  // the application once, and their official signed the T&C.
+  const titansOwnerUser = await p.user.findUnique({ where: { id: titans.ownerId }, select: { firstName: true, lastName: true } })
+  await p.clubSeasonEntry.create({
+    data: {
+      seasonId: showcaseSeason.id,
+      tenantId: titans.id,
+      status: "APPROVED",
+      plannedTeams: 2,
+      planNote: "1x U15 Boys Tier 1, 1x U17 Boys Tier 1",
+      answers: {
+        "Brief synopsis of your team and top prospects": "Scarborough-based program, 6 years running. U15 group won the city championship; PG Wei Ali and F Darius Robinson are Div-1 prospects.",
+        "Why do you want to join this league?": "Our families want a season with guaranteed games, real refs and published stats. Showcase League is the standard in the GTA.",
+        "Program vision — goals over the next 1, 3 and 5 years": "Year 1: compete in Tier 1. Year 3: field teams U13 through U19. Year 5: a girls program and a permanent home gym.",
+      },
+      signedById: titans.ownerId,
+      signatureName: `${titansOwnerUser.firstName} ${titansOwnerUser.lastName}`,
+      signedAt: new Date(now.getTime() - days(7)),
+      createdAt: new Date(now.getTime() - days(7)),
+    },
+  })
   const titansU15Sub = await p.teamSubmission.create({
     data: { seasonId: showcaseSeason.id, divisionId: showcaseDivisions.get("U15-T1").id, teamId: titansU15.id, status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE },
     select: { id: true },
@@ -2547,15 +2576,25 @@ async function seed() {
   // square mark from northpolehoops.com (black basketball + red maple leaf,
   // committed as scripts/demo-assets data URL) + their Canadian-red accent.
   const nphLogo = readFileSync(new URL("./demo-assets/nph-logo.dataurl.txt", import.meta.url), "utf8").trim()
-  await p.league.updateMany({
-    where: { ownerId: nph.id },
+  // Organization layer (owner 2026-07-29): branding lives ONCE on the
+  // operator; leagues inherit (league fields stay null = inheritance demo).
+  const nphOrg = await p.organization.create({
     data: {
+      name: "North Pole Hoops",
+      slug: "north-pole-hoops",
       logoUrl: nphLogo,
       primaryColor: "#d7282f",
       tagline: "A pathway for Canadian basketball to the next level",
+      description:
+        "North Pole Hoops provides a pathway for Canadian basketball to the next level, from elementary school to the pros — leagues, showcases, scouting and media.",
     },
+    select: { id: true },
   })
-  console.log("✓ NPH branding applied to all NPH-owned leagues (logo + #d7282f + tagline)")
+  await p.league.updateMany({
+    where: { ownerId: nph.id },
+    data: { organizationId: nphOrg.id },
+  })
+  console.log("✓ NPH Organization created — 6 leagues linked, branding inherited (league fields null)")
 
   return { teams: teams.length, completed: completedGameIds.length, live: liveGameIds.length }
 }
@@ -2599,8 +2638,11 @@ function printCheatSheet() {
     "     league poll w/ parent votes; NPH logo + red branding",
     "   · owner-nph → Fall League: 8 teams approved+locked+paid (4 per grade)",
     "     — close registration and RUN SCHEDULE GENERATION live",
-    "   · owner-edge → Etobicoke Edge U15 roster ready → submit to Showcase",
-    "     live (the NPH pitch: apply in 3 clicks, no Jotform, no email)",
+    "   · owner-edge → TWO-LEVEL demo: /league page → Enter as a club →",
+    "     application questions + planned teams + SIGN the T&C → owner-nph",
+    "     approves entry (Clubs tab) → Edge registers its U15 team",
+    "   · Titans entry APPROVED w/ answers + signed T&C (Clubs tab → Application)",
+    "   · league page hero: branding INHERITED from /org/north-pole-hoops",
     "   · /leagues directory: OBL, Circuits, Hoop City, Big League, Phoenix,",
     "     OSBA, JUEL, CYBL as name-only entries (+ NPA/WNPA/D1 under NPH)",
     "══════════════════════════════════════════════════════════════════",

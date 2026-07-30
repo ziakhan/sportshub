@@ -47,7 +47,7 @@ export async function sendWaiverReminders(
 
   for (const season of seasons) {
     const waivers = await (prisma as any).waiverDocument.findMany({
-      where: { leagueId: season.leagueId, active: true, required: true },
+      where: { leagueId: season.leagueId, active: true, required: true, audience: "PARENT" },
       select: { id: true, title: true, version: true },
     })
     if (waivers.length === 0) continue

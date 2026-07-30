@@ -183,6 +183,23 @@ function LeagueDashboard() {
     router.replace(`/manage/leagues/${leagueId}`)
   }
 
+  // One-click renewal (owner 2026-07-29: league names persist, seasons
+  // renew): deep server-side clone — setup only, never teams/games.
+  const [renewing, setRenewing] = useState<string | null>(null)
+  const renewSeason = async (seasonId: string, label: string) => {
+    if (!window.confirm(`Renew "${label}" for next year? Divisions, venues, session pattern and rules are copied into a new DRAFT season — no teams or games.`)) return
+    setRenewing(seasonId)
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/clone`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't renew the season")
+      router.push(`/manage/leagues/${leagueId}/seasons/${data.id}/manage`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't renew the season")
+      setRenewing(null)
+    }
+  }
+
   const handleCreateSeason = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -469,6 +486,18 @@ function LeagueDashboard() {
                         </p>
                       )}
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        renewSeason(season.id, season.label)
+                      }}
+                      disabled={renewing === season.id}
+                      className="text-play-600 hover:bg-play-50 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold disabled:opacity-50"
+                      title="Copy this season's full setup (divisions, venues, session pattern, rules) into a new DRAFT season one year later"
+                    >
+                      {renewing === season.id ? "Renewing…" : "Renew ↻"}
+                    </button>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     <div className="bg-ink-50 rounded-xl p-3">

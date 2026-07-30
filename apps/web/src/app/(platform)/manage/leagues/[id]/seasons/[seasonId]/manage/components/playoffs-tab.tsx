@@ -26,12 +26,23 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSe
   const [minGamesDraft, setMinGamesDraft] = useState<string>(
     league?.playoffMinGames != null ? String(league.playoffMinGames) : ""
   )
+  const [depositDraft, setDepositDraft] = useState<string>(
+    league?.depositPct != null ? String(league.depositPct) : ""
+  )
+  const [questionsDraft, setQuestionsDraft] = useState<string>(
+    Array.isArray(league?.applicationQuestions) ? league.applicationQuestions.join("\n") : ""
+  )
   const [rulesBusy, setRulesBusy] = useState(false)
   const saveRules = async () => {
     setRulesBusy(true)
     try {
       await patchSeason({
         playoffMinGames: minGamesDraft === "" ? null : Number(minGamesDraft),
+        depositPct: depositDraft === "" ? null : Number(depositDraft),
+        applicationQuestions: questionsDraft
+          .split("\n")
+          .map((q) => q.trim())
+          .filter(Boolean),
       })
     } finally {
       setRulesBusy(false)
@@ -151,6 +162,18 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSe
               className="border-ink-200 w-24 rounded-lg border px-2 py-1.5 text-sm"
             />
           </div>
+          <div>
+            <label className="text-ink-600 mb-1 block text-xs font-medium">
+              Entry-fee deposit % (due at approval; balance 14 days before tip-off)
+            </label>
+            <input
+              value={depositDraft}
+              onChange={(e) => setDepositDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              placeholder="off"
+              inputMode="numeric"
+              className="border-ink-200 w-24 rounded-lg border px-2 py-1.5 text-sm"
+            />
+          </div>
           <button
             onClick={saveRules}
             disabled={rulesBusy}
@@ -168,9 +191,21 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSe
             Allow game-day guest players (flagged, never in official stats)
           </label>
         </div>
+        <div className="mt-3">
+          <label className="text-ink-600 mb-1 block text-xs font-medium">
+            Club application questions (one per line — asked once per club at season entry)
+          </label>
+          <textarea
+            value={questionsDraft}
+            onChange={(e) => setQuestionsDraft(e.target.value)}
+            rows={3}
+            placeholder={"Brief synopsis of your program\nWhy do you want to join this league?"}
+            className="border-ink-200 w-full max-w-2xl rounded-lg border px-2 py-1.5 text-sm"
+          />
+        </div>
         <p className="text-ink-400 mt-2 text-xs">
           Eligibility is computed from the scorekeeper&apos;s attendance roll call; you can
-          override any player from their team page, with a note.
+          override any player from their team page, with a note. Save applies all rules.
         </p>
       </div>
       {/* Existing brackets */}

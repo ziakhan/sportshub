@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const waivers = await (prisma as any).waiverDocument.findMany({
-      where: { leagueId: season.leagueId, active: true, required: true },
+      where: { leagueId: season.leagueId, active: true, required: true, audience: "PARENT" },
       select: { id: true, title: true, type: true, version: true, annualRenewal: true },
       orderBy: { createdAt: "asc" },
     })

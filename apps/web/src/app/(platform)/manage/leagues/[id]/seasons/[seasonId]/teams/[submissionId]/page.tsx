@@ -146,7 +146,7 @@ export default async function LeagueTeamDetailPage({
 
   // Per-player status for every required league waiver (signed / sent / not sent)
   const waivers = await (prisma as any).waiverDocument.findMany({
-    where: { leagueId: params.id, active: true, required: true },
+    where: { leagueId: params.id, active: true, required: true, audience: "PARENT" },
     select: { id: true, title: true, annualRenewal: true },
     orderBy: { createdAt: "asc" },
   })
@@ -242,8 +242,24 @@ export default async function LeagueTeamDetailPage({
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <h1 className="text-ink-900 text-xl font-bold md:text-2xl">{submission.team.name}</h1>
           <Badge tone={toneForStatus(submission.status)}>{submission.status.toLowerCase()}</Badge>
-          <Badge tone={["PAID_MANUAL", "PAID_STRIPE", "WAIVED"].includes(submission.paymentStatus) ? "success" : overdue ? "danger" : "warning"}>
-            {submission.paymentStatus === "UNPAID" && overdue ? "overdue" : submission.paymentStatus.replace("_", " ").toLowerCase()}
+          <Badge
+            tone={
+              ["PAID_MANUAL", "PAID_STRIPE", "WAIVED"].includes(submission.paymentStatus)
+                ? "success"
+                : overdue
+                  ? "danger"
+                  : paidTotal > 0
+                    ? "gold"
+                    : "warning"
+            }
+          >
+            {["PAID_MANUAL", "PAID_STRIPE", "WAIVED"].includes(submission.paymentStatus)
+              ? submission.paymentStatus.replace("_", " ").toLowerCase()
+              : overdue
+                ? "overdue"
+                : paidTotal > 0
+                  ? "deposit paid"
+                  : "unpaid"}
           </Badge>
         </div>
         <p className="text-ink-500 mt-1 text-sm">

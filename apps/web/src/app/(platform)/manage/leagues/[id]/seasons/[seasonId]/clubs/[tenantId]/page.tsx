@@ -100,7 +100,7 @@ export default async function LeagueClubDetailPage({
 
   // Waiver progress: required league waivers across this club's rostered players
   const requiredWaivers = await (prisma as any).waiverDocument.count({
-    where: { leagueId: params.id, active: true, required: true },
+    where: { leagueId: params.id, active: true, required: true, audience: "PARENT" },
   })
   // Approved teams only — waivers are requested on approval, so pending
   // teams' players would inflate the denominator vs the Overview counts.
@@ -112,7 +112,7 @@ export default async function LeagueClubDetailPage({
       ? await (prisma as any).waiverSignature.count({
           where: {
             playerId: { in: playerIds },
-            waiver: { leagueId: params.id, active: true, required: true },
+            waiver: { leagueId: params.id, active: true, required: true, audience: "PARENT" },
             OR: [{ validUntil: null }, { validUntil: { gt: now } }],
           },
         })

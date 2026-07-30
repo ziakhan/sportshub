@@ -50,7 +50,7 @@ export async function sendManualWaiverReminder(opts: {
     seasonLabel = season.label
     seasonId = season.id
     waivers = await (prisma as any).waiverDocument.findMany({
-      where: { leagueId: season.leagueId, active: true, required: true },
+      where: { leagueId: season.leagueId, active: true, required: true, audience: "PARENT" },
       select: { id: true, title: true, version: true },
     })
   } else if (opts.tenantId) {
@@ -61,7 +61,7 @@ export async function sendManualWaiverReminder(opts: {
     if (!tenant) return { sent: 0, waiverTitles: [] }
     orgName = tenant.name
     waivers = await (prisma as any).waiverDocument.findMany({
-      where: { tenantId: opts.tenantId, active: true, required: true },
+      where: { tenantId: opts.tenantId, active: true, required: true, audience: "PARENT" },
       select: { id: true, title: true, version: true },
     })
   }

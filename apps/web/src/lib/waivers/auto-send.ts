@@ -67,6 +67,7 @@ export async function sendWaiversForApprovedSubmission(
       leagueId: submission.season.leagueId,
       active: true,
       required: true,
+      audience: "PARENT",
     },
     select: { id: true, title: true, version: true },
   })

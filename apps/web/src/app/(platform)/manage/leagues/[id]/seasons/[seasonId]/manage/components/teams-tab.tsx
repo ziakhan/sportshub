@@ -131,8 +131,11 @@ export function TeamsTab({
         ) : (
           filteredTeams.map((t: any) => {
             const paid = isPaid(t)
+            // Deposit-aware label (owner 2026-07-29): money partially in is
+            // "deposit paid", not a lying "unpaid".
+            const depositIn = !paid && (t.feePaid ?? 0) > 0
             const paymentLabel: Record<string, string> = {
-              UNPAID: "unpaid",
+              UNPAID: depositIn ? "deposit paid" : t.feeOverdue ? "overdue" : "unpaid",
               PAID_MANUAL: "paid",
               PAID_STRIPE: "paid (stripe)",
               WAIVED: "waived",
@@ -160,7 +163,7 @@ export function TeamsTab({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={toneForStatus(t.status)}>{t.status.toLowerCase()}</Badge>
-                  <Badge tone={paid ? "success" : "warning"}>
+                  <Badge tone={paid ? "success" : t.feeOverdue ? "danger" : depositIn ? "gold" : "warning"}>
                     {paymentLabel[t.paymentStatus ?? "UNPAID"] ?? "unpaid"}
                   </Badge>
                   {t.status === "PENDING" && (

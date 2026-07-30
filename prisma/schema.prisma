@@ -305,6 +305,7 @@ model Tenant {
   features          TenantFeatures?
   teams             Team[]
   staff             UserRole[]
+  clubSeasonEntries ClubSeasonEntry[]
   tryouts           Tryout[]
   practices         Practice[]
   venues            Venue[]
@@ -1267,11 +1268,33 @@ enum OfferStatus {
 // LEAGUES, SEASONS & GAMES
 // ============================================
 
+// League OPERATOR (owner 2026-07-29 committed: "we have to build it"):
+// NPH runs many leagues — identity lives here once, leagues inherit
+// branding unless they override. docs/roadmap/league-operator-orgs.md.
+model Organization {
+  id           String  @id @default(uuid())
+  name         String
+  slug         String  @unique
+  logoUrl      String? @db.Text
+  bannerUrl    String? @db.Text
+  primaryColor String?
+  tagline      String?
+  socials      Json?
+  description  String? @db.Text
+
+  leagues League[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model League {
   id              String  @id @default(uuid())
   name            String
   description     String? @db.Text
   ownerId         String
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
   currency        String  @default("CAD")
   stripeAccountId String? @unique
 
@@ -1360,6 +1383,13 @@ model Season {
   // Playoff eligibility (owner 2026-07-29): minimum games played (from the
   // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
   playoffMinGames Int?
+  // Deposit-then-balance team fees (owner 2026-07-29, NPH terms): deposit %
+  // due at approval, balance due 14 days before season start. Null = full
+  // payment, no schedule.
+  depositPct Int?
+  // Club-entry application questions (two-level registration): array of
+  // strings, asked ONCE per club on their season entry — never per team.
+  applicationQuestions Json?
   // Game-day guest players (name+jersey, no account) — league can forbid.
   allowGuestPlayers Boolean @default(true)
 
@@ -1378,6 +1408,7 @@ model Season {
   waiverSignRequests WaiverSignRequest[]
   waiverSignatures   WaiverSignature[]
   playoffEligibilityOverrides PlayoffEligibilityOverride[]
+  clubEntries                 ClubSeasonEntry[]
 
   @@unique([leagueId, label])
   @@index([leagueId])
@@ -1420,6 +1451,45 @@ model Division {
   schedulingGroups SchedulingGroupDivision[]
 
   @@index([seasonId])
+}
+
+// Level-1 registration (owner 2026-07-29): the CLUB commits to a season —
+// application answers, planned team counts (capacity planning), and the
+// club official's signature on the league's CLUB_OFFICIAL agreement.
+// Team submissions are level 2. Optional layer v1 (not enforced).
+model ClubSeasonEntry {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  status       EntryStatus @default(SUBMITTED)
+  plannedTeams Int?
+  planNote     String?     @db.Text
+  answers      Json?
+
+  signedById    String?
+  signatureName String?
+  signedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([seasonId, tenantId])
+  @@index([seasonId, status])
+}
+
+enum WaiverAudience {
+  PARENT
+  CLUB_OFFICIAL
+}
+
+enum EntryStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
 }
 
 model TeamSubmission {
@@ -3864,6 +3934,10 @@ model WaiverDocument {
   body     String     @db.Text
   type     WaiverType @default(CUSTOM)
   province String     @default("ON")
+  // Who signs (owner 2026-07-29): PARENT docs flow to families on roster
+  // approval; CLUB_OFFICIAL docs are signed once by the club on its season
+  // entry and are NEVER emailed to parents.
+  audience WaiverAudience @default(PARENT)
 
   // Rowan's Law-style yearly re-acknowledgment: signatures expire 12 months out
   annualRenewal Boolean @default(false)
