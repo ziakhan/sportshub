@@ -14,6 +14,20 @@ const patchSchema = z.object({
   playerIds: z.array(z.string()).min(1, "Select at least one player"),
 })
 
+// League edits are REMOVE-ONLY with a reason per player (owner 2026-07-29):
+// the league can take players off a roster (rulings, errors) but can never
+// add — additions must come from the club via a change request.
+const leagueRemovalSchema = z.object({
+  removals: z
+    .array(
+      z.object({
+        playerId: z.string(),
+        reason: z.string().trim().min(3, "Each removal needs a reason the club will understand"),
+      })
+    )
+    .min(1, "Nothing to remove"),
+})
+
 async function loadSubmission(seasonId: string, submissionId: string) {
   return prisma.teamSubmission.findFirst({
     where: { id: submissionId, seasonId },
@@ -103,18 +117,69 @@ export async function PATCH(
       }
     }
 
-    const parsed = patchSchema.safeParse(await request.json().catch(() => null))
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.errors[0]?.message ?? "Invalid input" },
-        { status: 400 }
+    const rawBody = await request.json().catch(() => null)
+
+    // League side: only the removals shape is accepted — a playerIds set
+    // that ADDS anyone is structurally impossible through this door.
+    let removalDetails: Array<{ playerId: string; reason: string; name?: string }> = []
+    let effectivePlayerIds: string[]
+    if (leagueOverride) {
+      const parsedRemovals = leagueRemovalSchema.safeParse(rawBody)
+      if (!parsedRemovals.success) {
+        return NextResponse.json(
+          {
+            error:
+              parsedRemovals.error.errors[0]?.message ??
+              "League edits are remove-only: send removals with reasons. Additions come from club change requests.",
+          },
+          { status: 400 }
+        )
+      }
+      const currentRows = await (prisma as any).seasonRosterPlayer.findMany({
+        where: { rosterId: submission.roster.id },
+        select: { playerId: true },
+      })
+      const currentIds = new Set<string>(currentRows.map((r: any) => r.playerId))
+      for (const r of parsedRemovals.data.removals) {
+        if (!currentIds.has(r.playerId)) {
+          return NextResponse.json(
+            { error: "One of the removals is not on the current roster" },
+            { status: 400 }
+          )
+        }
+      }
+      removalDetails = parsedRemovals.data.removals
+      const removeSet = new Set(removalDetails.map((r) => r.playerId))
+      effectivePlayerIds = [...currentIds].filter((id) => !removeSet.has(id))
+      if (effectivePlayerIds.length === 0) {
+        return NextResponse.json(
+          { error: "A league edit cannot empty the roster — withdraw the team instead" },
+          { status: 400 }
+        )
+      }
+      const removedPlayers = await (prisma as any).player.findMany({
+        where: { id: { in: removalDetails.map((r) => r.playerId) } },
+        select: { id: true, firstName: true, lastName: true },
+      })
+      const nameById = new Map(
+        removedPlayers.map((pl: any) => [pl.id, `${pl.firstName} ${pl.lastName}`])
       )
+      removalDetails = removalDetails.map((r) => ({ ...r, name: (nameById.get(r.playerId) as string) ?? "Player" }))
+    } else {
+      const parsed = patchSchema.safeParse(rawBody)
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: parsed.error.errors[0]?.message ?? "Invalid input" },
+          { status: 400 }
+        )
+      }
+      effectivePlayerIds = parsed.data.playerIds
     }
 
     const selection = await resolveRosterSelection({
       seasonId: params.id,
       teamId: submission.teamId,
-      playerIds: parsed.data.playerIds,
+      playerIds: effectivePlayerIds,
     })
     if (!selection.ok) {
       return NextResponse.json(
@@ -150,11 +215,16 @@ export async function PATCH(
           select: { userId: true },
         })
         if (clubOwner) {
+          // The reasons ARE the message (owner 2026-07-29): the club must
+          // understand exactly who was removed and why.
+          const reasonLines = removalDetails
+            .map((r) => `${r.name} — ${r.reason}`)
+            .join("; ")
           await notify(tx, {
             userId: clubOwner.userId,
             type: "roster_updated",
-            title: "League edited your roster",
-            message: `${submission.season.league.name} updated ${submission.team.name}'s ${submission.season.label} roster (${selection.players.length} players).`,
+            title: `League removed ${removalDetails.length} player${removalDetails.length === 1 ? "" : "s"} from ${submission.team.name}`,
+            message: `${submission.season.league.name} (${submission.season.label}): ${reasonLines}`,
             link: `/clubs/${submission.team.tenantId}/teams/${submission.teamId}/league-rosters`,
             referenceId: submission.roster.id,
             referenceType: "SeasonRoster",
@@ -185,6 +255,9 @@ export async function PATCH(
         seasonLabel: submission.season.label,
         playerCount: selection.players.length,
         playerIds: selection.players.map((p) => p.playerId),
+        ...(removalDetails.length > 0
+          ? { removals: removalDetails.map((r) => ({ playerId: r.playerId, name: r.name, reason: r.reason })) }
+          : {}),
       },
       request,
     })

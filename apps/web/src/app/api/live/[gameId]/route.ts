@@ -143,6 +143,21 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
           jerseyNumber: p.jerseyNumber != null ? String(p.jerseyNumber) : null,
         }))
       )
+      // Game-day guests: flagged by name, box-score only — their lines fold
+      // from events but never enter PlayerStat/season aggregates.
+      const guestRows = await (prisma as any).gameGuestPlayer.findMany({
+        where: { gameId: params.gameId },
+        select: { id: true, teamId: true, displayName: true, jerseyNumber: true },
+      })
+      for (const g of guestRows) {
+        players.push({
+          playerId: g.id,
+          teamId: g.teamId,
+          name: g.displayName,
+          jerseyNumber: g.jerseyNumber != null ? String(g.jerseyNumber) : null,
+          guest: true,
+        } as any)
+      }
 
       // W–L record + division rank for the hero (row order IS the ranking)
       if (game.seasonId) {

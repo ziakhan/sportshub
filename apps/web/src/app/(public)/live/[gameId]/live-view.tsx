@@ -237,14 +237,17 @@ export function LiveView({ gameId }: { gameId: string }) {
   const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
   const shortName = (pid: string) => {
     const name = nameOf(pid) || ""
+    // Game-day guests carry a flag, not a name suffix — label AFTER the
+    // abbreviation so "Marcus Lee" never mangles into "Marcus (."
+    const guestTag = (byId.get(pid) as any)?.guest ? " (Guest)" : ""
     const parts = name.split(" ")
-    if (parts.length < 2) return parts[0] || "—"
+    if (parts.length < 2) return (parts[0] || "—") + guestTag
     // Privacy-abbreviated names ("Cameron K.") arrive pre-shortened — never
     // initial them again. Compression matches the privacy form (owner
     // 2026-07-16): FIRST name + last initial, "Aiden M.", never "A. Mensah".
     const last = parts[parts.length - 1]
-    if (/^[A-Z]\.?$/.test(last)) return name
-    return `${parts[0]} ${last[0]}.`
+    if (/^[A-Z]\.?$/.test(last)) return name + guestTag
+    return `${parts[0]} ${last[0]}.${guestTag}`
   }
 
   // Youth team names run long ("Burlington Force Grade 10") — the score

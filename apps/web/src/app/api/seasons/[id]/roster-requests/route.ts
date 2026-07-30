@@ -53,6 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             isLocked: true,
             teamSubmission: {
               select: {
+                id: true,
                 team: { select: { id: true, name: true, tenant: { select: { name: true } } } },
               },
             },
@@ -96,6 +97,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         resolutionNote: r.resolutionNote,
         requestedBy: `${r.requestedBy.firstName ?? ""} ${r.requestedBy.lastName ?? ""}`.trim(),
         teamName: r.roster.teamSubmission.team.name,
+        teamId: r.roster.teamSubmission.team.id,
+        submissionId: r.roster.teamSubmission.id,
         clubName: r.roster.teamSubmission.team.tenant.name,
         rosterLocked: r.roster.isLocked,
       })),

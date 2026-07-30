@@ -100,6 +100,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         season: {
           select: {
             label: true,
+            allowGuestPlayers: true,
             league: {
               select: {
                 id: true,
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ canScore: true })
     }
 
-    const [homeRoster, awayRoster, rsvpNotGoing, refereeRoles, events] = await Promise.all([
+    const [homeRoster, awayRoster, rsvpNotGoing, refereeRoles, events, guestRows] = await Promise.all([
       rosterForTeam(game.seasonId, game.homeTeamId),
       rosterForTeam(game.seasonId, game.awayTeamId),
       getGameRsvpAbsentees(params.id),
@@ -157,7 +158,25 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           metadata: true,
         },
       }),
+      (prisma as any).gameGuestPlayer.findMany({
+        where: { gameId: params.id },
+        select: { id: true, teamId: true, displayName: true, jerseyNumber: true },
+        orderBy: { createdAt: "asc" },
+      }),
     ])
+
+    // Game-day guests (owner 2026-07-29): merged into the rosters so every
+    // console surface (roll call, lineups, subs, play buttons) just works.
+    // The " (Guest)" suffix is the flag — no client changes required.
+    const guestEntry = (g: any) => ({
+      playerId: g.id,
+      name: `${g.displayName} (Guest)`,
+      jerseyNumber: g.jerseyNumber != null ? String(g.jerseyNumber) : null,
+    })
+    for (const g of guestRows) {
+      if (g.teamId === game.homeTeamId) homeRoster.push(guestEntry(g))
+      else if (g.teamId === game.awayTeamId) awayRoster.push(guestEntry(g))
+    }
 
     const league = game.season?.league ?? null
     return NextResponse.json({
@@ -180,6 +199,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         periodType: league?.periodType ?? "QUARTERS",
         periodMinutes: league?.periodMinutes ?? 10,
         requireRefereeApproval: league?.requireRefereeApproval ?? false,
+        allowGuests: game.season ? (game.season as any).allowGuestPlayers !== false : true,
       },
       rosters: { home: homeRoster, away: awayRoster },
       // Rostered players whose family RSVP'd Not going — the console

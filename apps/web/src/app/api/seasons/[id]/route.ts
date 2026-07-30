@@ -124,6 +124,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "defaultVenueCloseTime",
       "playoffFormat",
       "playoffTeams",
+      "playoffMinGames",
+      "allowGuestPlayers",
       "schedulingPhilosophy",
       "allowCrossDivisionScheduling",
       "tiebreakerOrder",

@@ -437,8 +437,22 @@ function buildGameEvents(opts: {
   // within each period so play-by-play reads like a real broadcast feed.
   const PERIOD_SECONDS = 600
 
-  push({ eventType: "ATTENDANCE", teamId: homeTeamId, metadata: { presentIds: homeRoster, absentIds: [] } })
-  push({ eventType: "ATTENDANCE", teamId: awayTeamId, metadata: { presentIds: awayRoster, absentIds: [] } })
+  // Attendance variance (owner 2026-07-29, playoff-eligibility demo): most
+  // games a bench kid or two is away — GP counts then show a real spread.
+  const takeAttendance = (roster: string[]) => {
+    const absent = new Set<string>()
+    // never the first five (starters keep the lineup math simple)
+    for (let i = 5; i < roster.length; i++) {
+      // last bench slot = the chronically-away kid (~half the games) so the
+      // eligibility badges show a real ineligible case, not just green
+      if (rnd() < (i === roster.length - 1 ? 0.55 : 0.14)) absent.add(roster[i])
+    }
+    return { present: roster.filter((r) => !absent.has(r)), absent: [...absent] }
+  }
+  const homeAtt = takeAttendance(homeRoster)
+  const awayAtt = takeAttendance(awayRoster)
+  push({ eventType: "ATTENDANCE", teamId: homeTeamId, metadata: { presentIds: homeAtt.present, absentIds: homeAtt.absent } })
+  push({ eventType: "ATTENDANCE", teamId: awayTeamId, metadata: { presentIds: awayAtt.present, absentIds: awayAtt.absent } })
   push({ eventType: "LINEUP", teamId: homeTeamId, metadata: { playerIds: homeRoster.slice(0, 5) } })
   push({ eventType: "LINEUP", teamId: awayTeamId, metadata: { playerIds: awayRoster.slice(0, 5) } })
 
@@ -495,8 +509,8 @@ function buildGameEvents(opts: {
       }
     }
     for (const [teamId, roster] of [
-      [homeTeamId, homeRoster],
-      [awayTeamId, awayRoster],
+      [homeTeamId, homeAtt.present],
+      [awayTeamId, awayAtt.present],
     ] as const) {
       for (let s = 0; s < 2; s++) {
         const five = onFloor[teamId]
@@ -674,6 +688,8 @@ async function seed() {
       rosterChangePolicy: "REQUEST_ONLY", // locked rosters need commissioner approval
       tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
       tiebreakersLockedAt: now,
+      // Playoff eligibility rule (owner 2026-07-29): min 5 games played
+      playoffMinGames: 5,
     },
   })
   const winterDivisions = new Map<number, any>()
@@ -2025,6 +2041,66 @@ async function seed() {
     },
   })
   console.log(`✓ Team events: Lords photo day + NPH Media Day across ${g9SummerTeams.length} G9 teams`)
+
+  // Playoff-eligibility demo (owner 2026-07-29): the chronically-absent
+  // Force G10 bench kid is ruled ELIGIBLE by the commissioner with a note —
+  // the badge shows "* league ruling" while Lords' equivalent stays red.
+  const forceG10Summer = teams.find((t) => t.clubKey === "force" && t.grade === 10)!
+  await p.playoffEligibilityOverride.create({
+    data: {
+      seasonId: winterSeason.id,
+      playerId: forceG10Summer.roster[forceG10Summer.roster.length - 1],
+      eligible: true,
+      note: "Injury exemption — missed Weeks 2-4 with a broken wrist; approved by the league July 20.",
+      setById: nph.id,
+    },
+  })
+  // Game-day guest demo: a pickup on one LIVE game's home bench, flagged
+  // "(Guest)" in the console and box score, excluded from official stats.
+  const guestGame = await p.game.findFirst({
+    where: { seasonId: winterSeason.id, status: "LIVE" },
+    select: { id: true, homeTeamId: true },
+  })
+  if (guestGame) {
+    const guestRow = await p.gameGuestPlayer.create({
+      data: {
+        gameId: guestGame.id,
+        teamId: guestGame.homeTeamId,
+        displayName: "Marcus Lee",
+        jerseyNumber: 21,
+        addedById: nph.id,
+      },
+      select: { id: true },
+    })
+    // A few plays so the live box score folds a flagged guest line
+    const maxSeq = await p.gameEvent.aggregate({ where: { gameId: guestGame.id }, _max: { sequence: true } })
+    let gseq = (maxSeq._max.sequence ?? 0) + 1
+    const guestPlays: Array<[string, boolean | null]> = [
+      ["SCORE_2PT", true],
+      ["REBOUND", null],
+      ["SCORE_2PT", false],
+      ["SCORE_3PT", true],
+    ]
+    for (const [eventType, made] of guestPlays) {
+      await p.gameEvent.create({
+        data: {
+          gameId: guestGame.id,
+          eventType,
+          teamId: guestGame.homeTeamId,
+          playerId: guestRow.id,
+          made,
+          period: 2,
+          clockSeconds: Math.max(5, 300 - gseq * 10),
+          sequence: gseq,
+          clientEventId: `nphdemo-guest-${guestGame.id.slice(0, 6)}-${gseq}`,
+          metadata: eventType === "REBOUND" ? { offensive: false } : undefined,
+          timestamp: new Date(now.getTime() - 10 * 60_000 + gseq * 1000),
+        },
+      })
+      gseq++
+    }
+  }
+  console.log("✓ Eligibility override example (Force G10) + live-game guest (Marcus Lee)")
 
   // ── NPH Showcase League 2026-27: the fall/winter APPLICATION world ────
   // (docs/research/nph-fall-winter-2026-alignment.md §4 — owner 2026-07-29)

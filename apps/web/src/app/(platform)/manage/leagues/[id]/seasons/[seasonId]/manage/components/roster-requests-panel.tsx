@@ -3,10 +3,15 @@
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
+import {
+  RosterChangeReviewDialog,
+  type RosterChangePreview,
+} from "@/components/roster-change-review"
 import { inputClass, panelClass } from "./types"
 
 interface RosterRequest {
   id: string
+  teamId?: string
   message: string
   additions?: string[]
   removals?: string[]
@@ -43,6 +48,45 @@ export function RosterRequestsPanel({
   const [deadlineDraft, setDeadlineDraft] = useState(deadline ? deadline.slice(0, 10) : "")
   const [savingPolicy, setSavingPolicy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [dialog, setDialog] = useState<{ preview: RosterChangePreview; requestId: string } | null>(
+    null
+  )
+
+  // Review-before-approve (owner 2026-07-29): fetch the team's current
+  // roster, show in/out + the final roster, THEN commit.
+  const openReview = async (r: RosterRequest) => {
+    let current: string[] = []
+    if (r.teamId) {
+      const res = await fetch(`/api/seasons/${seasonId}/roster-preview?teamId=${r.teamId}`).catch(
+        () => null
+      )
+      if (res?.ok) {
+        const data = await res.json()
+        const nameById = new Map(
+          (data.players ?? []).map((p: any) => [p.playerId, p.name as string])
+        )
+        current = (data.submission?.currentPlayerIds ?? [])
+          .map((id: string) => nameById.get(id))
+          .filter(Boolean) as string[]
+      }
+    }
+    const structured = (r.additions?.length ?? 0) + (r.removals?.length ?? 0) > 0
+    const removeSet = new Set(r.removals ?? [])
+    setDialog({
+      requestId: r.id,
+      preview: {
+        title: `Approve roster change — ${r.teamName}`,
+        subtitle: r.message || null,
+        additions: r.additions ?? [],
+        removals: (r.removals ?? []).map((name) => ({ name })),
+        finalRoster: structured
+          ? [...current.filter((n) => !removeSet.has(n)), ...(r.additions ?? [])]
+          : current,
+        unlockOnly: !structured,
+        confirmLabel: "Approve change",
+      },
+    })
+  }
 
   const loadRequests = useCallback(async () => {
     const res = await fetch(`/api/seasons/${seasonId}/roster-requests?status=PENDING`).catch(
@@ -60,15 +104,6 @@ export function RosterRequestsPanel({
   const resolve = async (requestId: string, action: "approve" | "deny") => {
     const target = requests.find((r) => r.id === requestId)
     const structured = (target?.additions?.length ?? 0) + (target?.removals?.length ?? 0) > 0
-    if (
-      action === "approve" &&
-      !window.confirm(
-        structured
-          ? "Approve this roster change? The listed adds/removes are applied to the locked roster immediately."
-          : "Approve this roster change? The team's roster unlocks until the club saves its changes, then locks again."
-      )
-    )
-      return
     setBusy(requestId)
     setMessage(null)
     try {
@@ -213,10 +248,10 @@ export function RosterRequestsPanel({
                 <Button
                   size="sm"
                   tone="court"
-                  onClick={() => resolve(r.id, "approve")}
+                  onClick={() => openReview(r)}
                   disabled={busy === r.id}
                 >
-                  Approve
+                  Review &amp; approve
                 </Button>
                 <Button
                   size="sm"
@@ -231,6 +266,18 @@ export function RosterRequestsPanel({
             </div>
           ))}
         </div>
+      )}
+      {dialog && (
+        <RosterChangeReviewDialog
+          preview={dialog.preview}
+          busy={busy === dialog.requestId}
+          onConfirm={async () => {
+            const id = dialog.requestId
+            setDialog(null)
+            await resolve(id, "approve")
+          }}
+          onCancel={() => setDialog(null)}
+        />
       )}
     </div>
   )

@@ -406,6 +406,8 @@ export default function LeagueManagePage() {
           <PlayoffsTab
             seasonId={seasonId}
             divisions={divisions}
+            league={league}
+            patchSeason={patchSeason}
             seasonStatus={league?.leagueStatus}
           />
         )}

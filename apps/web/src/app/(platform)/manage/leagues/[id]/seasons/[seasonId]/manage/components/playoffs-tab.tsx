@@ -16,9 +16,35 @@ interface Props {
   seasonId: string
   divisions: any[]
   seasonStatus: string
+  league?: any
+  patchSeason: (body: Record<string, any>) => Promise<void>
 }
 
-export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
+export function PlayoffsTab({ seasonId, divisions, seasonStatus, league, patchSeason }: Props) {
+  // Season rules (owner 2026-07-29): playoff eligibility threshold + guest
+  // players toggle live here, next to the playoff machinery they govern.
+  const [minGamesDraft, setMinGamesDraft] = useState<string>(
+    league?.playoffMinGames != null ? String(league.playoffMinGames) : ""
+  )
+  const [rulesBusy, setRulesBusy] = useState(false)
+  const saveRules = async () => {
+    setRulesBusy(true)
+    try {
+      await patchSeason({
+        playoffMinGames: minGamesDraft === "" ? null : Number(minGamesDraft),
+      })
+    } finally {
+      setRulesBusy(false)
+    }
+  }
+  const toggleGuests = async () => {
+    setRulesBusy(true)
+    try {
+      await patchSeason({ allowGuestPlayers: !(league?.allowGuestPlayers !== false) })
+    } finally {
+      setRulesBusy(false)
+    }
+  }
   const [brackets, setBrackets] = useState<any[]>([])
   const [divisionId, setDivisionId] = useState("")
   const [qualifying, setQualifying] = useState("")
@@ -109,6 +135,44 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Season rules */}
+      <div className="border-ink-100 shadow-soft mb-4 rounded-2xl border bg-white p-4">
+        <h3 className="text-ink-900 text-sm font-bold uppercase tracking-wide">Season rules</h3>
+        <div className="mt-2 flex flex-wrap items-end gap-3">
+          <div>
+            <label className="text-ink-600 mb-1 block text-xs font-medium">
+              Minimum games played for playoff eligibility
+            </label>
+            <input
+              value={minGamesDraft}
+              onChange={(e) => setMinGamesDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              placeholder="off"
+              inputMode="numeric"
+              className="border-ink-200 w-24 rounded-lg border px-2 py-1.5 text-sm"
+            />
+          </div>
+          <button
+            onClick={saveRules}
+            disabled={rulesBusy}
+            className="bg-play-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            Save
+          </button>
+          <label className="ml-2 flex items-center gap-2 text-sm text-ink-700">
+            <input
+              type="checkbox"
+              checked={league?.allowGuestPlayers !== false}
+              onChange={toggleGuests}
+              disabled={rulesBusy}
+            />
+            Allow game-day guest players (flagged, never in official stats)
+          </label>
+        </div>
+        <p className="text-ink-400 mt-2 text-xs">
+          Eligibility is computed from the scorekeeper&apos;s attendance roll call; you can
+          override any player from their team page, with a note.
+        </p>
+      </div>
       {/* Existing brackets */}
       {brackets.map((bracket) => {
         const rounds = new Map<number, any[]>()

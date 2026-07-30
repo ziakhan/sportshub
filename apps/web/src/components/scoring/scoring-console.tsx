@@ -36,6 +36,7 @@ interface Bootstrap {
     periodType: "QUARTERS" | "HALVES"
     periodMinutes: number
     requireRefereeApproval: boolean
+    allowGuests?: boolean
   }
   rosters: { home: RosterEntry[]; away: RosterEntry[] }
   /** Players whose family RSVP'd Not going — pre-marked absent in roll call */
@@ -155,6 +156,53 @@ export function ScoringConsole({
   // Pre-game roll call: absent players can't start or sub in, show as
   // ABSENT on the sheet, and won't count a game played in season stats.
   const [pregameStep, setPregameStep] = useState<"attendance" | "starters">("attendance")
+  // Game-day guest entry (owner 2026-07-29) — name+jersey, this game only
+  const [guestForm, setGuestForm] = useState<{ key: "home" | "away"; name: string; jersey: string } | null>(null)
+  const [guestBusy, setGuestBusy] = useState(false)
+  const [guestError, setGuestError] = useState<string | null>(null)
+  const addGuest = async (key: "home" | "away") => {
+    if (!boot || !guestForm) return
+    setGuestBusy(true)
+    setGuestError(null)
+    try {
+      const teamId = key === "home" ? boot.game.homeTeam.id : boot.game.awayTeam.id
+      const res = await scoreFetch(`/api/games/${gameId}/guests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamId,
+          displayName: guestForm.name.trim(),
+          jerseyNumber: guestForm.jersey ? Number(guestForm.jersey) : null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't add the guest")
+      setBoot((prev) =>
+        prev
+          ? {
+              ...prev,
+              rosters: {
+                ...prev.rosters,
+                [key]: [
+                  ...prev.rosters[key],
+                  {
+                    playerId: data.guest.id,
+                    name: `${data.guest.displayName} (Guest)`,
+                    jerseyNumber:
+                      data.guest.jerseyNumber != null ? String(data.guest.jerseyNumber) : null,
+                  },
+                ],
+              },
+            }
+          : prev
+      )
+      setGuestForm(null)
+    } catch (e) {
+      setGuestError(e instanceof Error ? e.message : "Couldn't add the guest")
+    } finally {
+      setGuestBusy(false)
+    }
+  }
   const [absentees, setAbsentees] = useState<{ home: Set<string>; away: Set<string> }>({
     home: new Set(),
     away: new Set(),
@@ -699,6 +747,49 @@ export function ScoringConsole({
             <p className="text-ink-600 col-span-3 text-sm">No roster found for this team.</p>
           )}
         </div>
+        {/* Game-day pickup (owner 2026-07-29): name + jersey, THIS game only.
+            Flagged "(Guest)" everywhere; never enters official season stats.
+            Clubs should still register the player properly. */}
+        {config.allowGuests !== false && (
+          <div className="mt-3">
+            {guestForm?.key === key ? (
+              <div className="border-ink-200 flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2">
+                <input
+                  autoFocus
+                  value={guestForm.name}
+                  onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })}
+                  placeholder="Guest name"
+                  className="border-ink-200 min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-sm"
+                />
+                <input
+                  value={guestForm.jersey}
+                  onChange={(e) => setGuestForm({ ...guestForm, jersey: e.target.value.replace(/\D/g, "").slice(0, 2) })}
+                  placeholder="#"
+                  inputMode="numeric"
+                  className="border-ink-200 w-14 rounded-lg border px-2 py-1.5 text-sm"
+                />
+                <button
+                  onClick={() => addGuest(key)}
+                  disabled={guestBusy || guestForm.name.trim().length < 2}
+                  className="bg-court-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {guestBusy ? "Adding…" : "Add"}
+                </button>
+                <button onClick={() => setGuestForm(null)} className="text-ink-500 px-1 text-sm">
+                  Cancel
+                </button>
+                {guestError && <p className="text-hoop-600 w-full text-xs">{guestError}</p>}
+              </div>
+            ) : (
+              <button
+                onClick={() => setGuestForm({ key, name: "", jersey: "" })}
+                className="text-ink-500 hover:text-ink-800 text-xs font-semibold"
+              >
+                + Add guest player (this game only — not on the roster)
+              </button>
+            )}
+          </div>
+        )}
       </div>
     )
     return (

@@ -874,6 +874,7 @@ model Player {
   // Relationships
   teams               TeamPlayer[]
   stats               PlayerStat[]
+  playoffEligibilityOverrides PlayoffEligibilityOverride[]
   offers              Offer[]
   familyInvitations   FamilyInvitation[]
   houseLeagueSignups  HouseLeagueSignup[]
@@ -1356,6 +1357,11 @@ model Season {
 
   playoffFormat String?
   playoffTeams  Int?
+  // Playoff eligibility (owner 2026-07-29): minimum games played (from the
+  // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
+  playoffMinGames Int?
+  // Game-day guest players (name+jersey, no account) — league can forbid.
+  allowGuestPlayers Boolean @default(true)
 
   divisions          Division[]
   teamSubmissions    TeamSubmission[]
@@ -1371,6 +1377,7 @@ model Season {
   reviewInvites      ReviewInvite[]
   waiverSignRequests WaiverSignRequest[]
   waiverSignatures   WaiverSignature[]
+  playoffEligibilityOverrides PlayoffEligibilityOverride[]
 
   @@unique([leagueId, label])
   @@index([leagueId])
@@ -1538,6 +1545,46 @@ model SeasonRosterPlayer {
   @@unique([rosterId, playerId])
   @@index([rosterId])
   @@index([playerId])
+}
+
+// Commissioner ruling on a player's playoff eligibility, overriding the
+// games-played math (owner 2026-07-29). Note is REQUIRED — the audit trail
+// is the point ("injury exemption — league approved").
+model PlayoffEligibilityOverride {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  eligible Boolean
+  note     String  @db.Text
+  setById  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([seasonId, playerId])
+  @@index([seasonId])
+}
+
+// Game-day pickup player (owner 2026-07-29): name + jersey only, ONE game,
+// no account/roster/email — flagged everywhere, excluded from official
+// season stats until linked to a real Player (linkedPlayerId, later).
+model GameGuestPlayer {
+  id     String @id @default(uuid())
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  teamId       String
+  displayName  String
+  jerseyNumber Int?
+  addedById    String?
+  linkedPlayerId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([gameId])
 }
 
 model SeasonSession {
@@ -1761,6 +1808,8 @@ model SeasonTeamBlackout {
 
 model Game {
   id String @id @default(uuid())
+
+  guestPlayers GameGuestPlayer[]
 
   seasonId String?
   season   Season? @relation(fields: [seasonId], references: [id])

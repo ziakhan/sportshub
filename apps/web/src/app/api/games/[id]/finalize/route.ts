@@ -240,11 +240,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             : {}),
         },
       })
-      // Recompute-from-scratch semantics: stats rows mirror the fold exactly
+      // Recompute-from-scratch semantics: stats rows mirror the fold exactly.
+      // Guest players (GameGuestPlayer ids in events) are EXCLUDED from
+      // official PlayerStat rows (owner 2026-07-29: flagged, box-score only,
+      // no season aggregates until linked) — and their ids have no Player FK.
+      const realPlayers = new Set(
+        (
+          await tx.player.findMany({
+            where: { id: { in: lines.map((l) => l.playerId) } },
+            select: { id: true },
+          })
+        ).map((p: any) => p.id)
+      )
+      const statLines = lines.filter((l) => realPlayers.has(l.playerId))
       await tx.playerStat.deleteMany({ where: { gameId: params.id } })
-      if (lines.length > 0) {
+      if (statLines.length > 0) {
         await tx.playerStat.createMany({
-          data: lines.map((l) => ({
+          data: statLines.map((l) => ({
             gameId: params.id,
             playerId: l.playerId,
             points: l.points,

@@ -15,6 +15,13 @@
 4. **Roster editing, one story:** the duplicate "Override a team's roster" tool was REMOVED from the Teams-tab panel; each team page now owns "Edit roster" (audited, club auto-notified) plus in-place Approve/Deny of that team's change requests. The Teams-tab panel remains as policy + cross-team queue only. The "audit" wording the owner flagged was this override tool; nothing was club-requested in the sim — the demo now seeds a real PENDING request (Titans U15 call-up) so the approve beat is visible on Overview and the team page.
 5. **Analytics v1:** Overview gains a per-club **Season report** (teams/approved/players/fees received/outstanding/overdue, linked to club pages + league accounting) on top of the needs-attention tiles.
 
+## 2b. Shipped in the FOLLOW-UP round (owner 'go', 2026-07-29 night) 🔧
+6. **Review-before-approve everywhere:** roster change requests approve through a dialog showing who comes in, who goes out, and the final roster (team page AND queue); message-only legacy requests get an explicit "approval unlocks one edit" notice.
+7. **League Edit Roster = remove-only with reasons:** no Add button, per-player "Remove…" collects a required reason, one review dialog commits; the reasons go to the club verbatim (notification) and into the audit record. API structurally rejects league additions.
+8. **Playoff eligibility:** `Season.playoffMinGames` (Playoffs tab "Season rules"), GP column computed from scorekeeper ATTENDANCE roll calls (completed games), automatic eligible/not-eligible badges, commissioner override with required note (audited, clearable). Demo: summer min=5, one genuine ineligible kid per team tail, one Force G10 injury-exemption ruling.
+9. **Game-day guest players:** "+ Add guest" in the console roll call (name+jersey, one game), season toggle to forbid, flagged "(Guest)" in console/live box/play-by-play, EXCLUDED from PlayerStat/season aggregates at finalize (link-to-real-player = future), seeded live-game example (Marcus Lee).
+10. **Already-existing, verified:** league notifications for new team applications (`team_submitted`) and roster change requests (`roster_change_requested`) — no build needed.
+
 ## 3. Still missing / should be able to do 🔴 (prioritized)
 1. **Two-level registration + operator layer** — committed design, docs/roadmap/league-operator-orgs.md (club entries w/ planned team counts, application questions, club-signed T&C, Organization branding inheritance, OrgAdmin).
 2. **Deposit schedules on team fees (G2)** — no partial-payment state; Titans' paid deposit still badges "unpaid".

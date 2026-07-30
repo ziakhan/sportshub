@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { Badge, SmartBack, toneForStatus } from "@/components/ui"
 import { SubmissionActions } from "./submission-actions"
 import { RosterTools } from "./roster-tools"
+import { EligibilityAction } from "./eligibility-action"
+import { getGamesPlayed, computeEligibility } from "@/lib/seasons/games-played"
 
 export const dynamic = "force-dynamic"
 
@@ -38,6 +40,7 @@ export default async function LeagueTeamDetailPage({
           label: true,
           teamFee: true,
           currency: true,
+          playoffMinGames: true,
           league: { select: { id: true, name: true, ownerId: true } },
         },
       },
@@ -77,6 +80,8 @@ export default async function LeagueTeamDetailPage({
               id: true,
               status: true,
               message: true,
+              additions: true,
+              removals: true,
               createdAt: true,
               requestedBy: { select: { firstName: true, lastName: true } },
             },
@@ -108,6 +113,36 @@ export default async function LeagueTeamDetailPage({
   const rosterRows: Array<{ jerseyNumber: number | null; player: any }> =
     submission.roster?.players?.length ? submission.roster.players : submission.team.players
   const playerIds = rosterRows.map((r) => r.player.id)
+
+  // Games played (from scorekeeper attendance) + playoff eligibility
+  const gamesPlayed = await getGamesPlayed(params.seasonId, submission.team.id)
+  const overrideRows = await (prisma as any).playoffEligibilityOverride.findMany({
+    where: { seasonId: params.seasonId, playerId: { in: playerIds } },
+    select: { playerId: true, eligible: true, note: true },
+  })
+  const eligibility = computeEligibility(
+    playerIds,
+    gamesPlayed,
+    submission.season.playoffMinGames ?? null,
+    new Map(overrideRows.map((o: any) => [o.playerId, { eligible: o.eligible, note: o.note }]))
+  )
+
+  // Change-request player ids -> names (requests store raw playerId arrays)
+  const requestPlayerIds = (submission.roster?.changeRequests ?? []).flatMap((cr: any) => [
+    ...(Array.isArray(cr.additions) ? cr.additions : []),
+    ...(Array.isArray(cr.removals) ? cr.removals : []),
+  ])
+  const requestPlayers = requestPlayerIds.length
+    ? await (prisma as any).player.findMany({
+        where: { id: { in: requestPlayerIds } },
+        select: { id: true, firstName: true, lastName: true },
+      })
+    : []
+  const requestName = new Map(
+    requestPlayers.map((pl: any) => [pl.id, `${pl.firstName} ${pl.lastName}`])
+  )
+  const toNames = (ids: unknown) =>
+    Array.isArray(ids) ? ids.map((id) => (requestName.get(id) as string) ?? "Unknown player") : []
 
   // Per-player status for every required league waiver (signed / sent / not sent)
   const waivers = await (prisma as any).waiverDocument.findMany({
@@ -263,6 +298,10 @@ export default async function LeagueTeamDetailPage({
                 <th className="py-1.5 pr-2">Player</th>
                 <th className="py-1.5 pr-2">Age</th>
                 <th className="py-1.5 pr-2">Position</th>
+                <th className="py-1.5 pr-2" title="Games played — from the scorekeeper's attendance roll call (completed games)">GP</th>
+                {submission.season.playoffMinGames != null && (
+                  <th className="py-1.5 pr-2">Playoffs</th>
+                )}
                 {waivers.map((w: any) => (
                   <th key={w.id} className="py-1.5 pr-2">
                     {w.title.length > 26 ? `${w.title.slice(0, 26)}…` : w.title}
@@ -279,6 +318,20 @@ export default async function LeagueTeamDetailPage({
                   </td>
                   <td className="text-ink-500 py-1.5 pr-2">{age(r.player.dateOfBirth) ?? "—"}</td>
                   <td className="text-ink-500 py-1.5 pr-2">{r.player.position ?? "—"}</td>
+                  <td className="text-ink-700 py-1.5 pr-2 font-medium">
+                    {eligibility.get(r.player.id)?.gamesPlayed ?? 0}
+                  </td>
+                  {submission.season.playoffMinGames != null && (
+                    <td className="py-1.5 pr-2">
+                      <EligibilityAction
+                        seasonId={params.seasonId}
+                        playerId={r.player.id}
+                        playerName={`${r.player.firstName} ${r.player.lastName}`}
+                        row={eligibility.get(r.player.id)!}
+                        minGames={submission.season.playoffMinGames}
+                      />
+                    </td>
+                  )}
                   {waivers.map((w: any) => {
                     const key = `${w.id}:${r.player.id}`
                     const state = signedSet.has(key) ? "signed" : sentSet.has(key) ? "sent" : "not sent"
@@ -317,14 +370,20 @@ export default async function LeagueTeamDetailPage({
         <RosterTools
           seasonId={params.seasonId}
           submissionId={submission.id}
-          teamId={submission.team.id}
-          canOverride={submission.status === "APPROVED"}
+          canEdit={submission.status === "APPROVED"}
+          roster={rosterRows.map((r) => ({
+            playerId: r.player.id,
+            name: `${r.player.firstName} ${r.player.lastName}`,
+            jerseyNumber: r.jerseyNumber,
+          }))}
           requests={(submission.roster?.changeRequests ?? []).map((cr: any) => ({
             id: cr.id,
             status: cr.status,
             message: cr.message ?? "",
             createdAt: String(cr.createdAt),
             requestedBy: `${cr.requestedBy.firstName} ${cr.requestedBy.lastName}`,
+            additionNames: toNames(cr.additions),
+            removalNames: toNames(cr.removals),
           }))}
         />
         {(submission.roster?.changeRequests ?? []).length === 0 && (
