@@ -106,7 +106,6 @@ export default function LeagueManagePage() {
   // Scheduling settings form (populated by fetchAll, edited under Settings)
   const [schedSettings, setSchedSettings] = useState<SchedSettings>({
     gamesGuaranteed: "",
-    gamesPerSession: "1",
     gameLengthMinutes: "40",
     gameSlotMinutes: "90",
     gamePeriods: "HALVES",
@@ -143,12 +142,10 @@ export default function LeagueManagePage() {
       ownerId: seasonData.league?.ownerId,
       leagueStatus: seasonData.status,
       teams: seasonData.teamSubmissions,
-      gamesPerSession: seasonData.targetGamesPerSession,
     }
     setLeague(leagueData)
     setSchedSettings({
       gamesGuaranteed: leagueData.gamesGuaranteed?.toString() ?? "",
-      gamesPerSession: leagueData.gamesPerSession?.toString() ?? "1",
       gameLengthMinutes: leagueData.gameLengthMinutes?.toString() ?? "40",
       gameSlotMinutes: leagueData.gameSlotMinutes?.toString() ?? "90",
       gamePeriods: leagueData.gamePeriods ?? "HALVES",

@@ -30,6 +30,7 @@ export function SchedulingTab({
   // summarized above), hide the philosophy + settings panels — groups and
   // cross-division stay, they're genuinely per-league.
   hideFormatSettings = false,
+  sessionCount,
 }: {
   seasonId: string
   league: any
@@ -40,6 +41,8 @@ export function SchedulingTab({
   patchSeason: (body: Record<string, any>) => Promise<void>
   refresh: () => void
   hideFormatSettings?: boolean
+  /** REGULAR session count — the derived games-per-session line needs it. */
+  sessionCount?: number
 }) {
   // Scheduling group form
   const [newGroupName, setNewGroupName] = useState("")
@@ -59,7 +62,6 @@ export function SchedulingTab({
         gamesGuaranteed: schedSettings.gamesGuaranteed
           ? parseInt(schedSettings.gamesGuaranteed)
           : null,
-        targetGamesPerSession: parseInt(schedSettings.gamesPerSession) || 1,
         gameLengthMinutes: parseInt(schedSettings.gameLengthMinutes) || 40,
         gameSlotMinutes: parseInt(schedSettings.gameSlotMinutes) || 90,
         gamePeriods: schedSettings.gamePeriods,
@@ -351,19 +353,31 @@ export function SchedulingTab({
               className={inputClass + " w-full"}
             />
           </div>
-          {/* Games per session */}
+          {/* Games per session — DERIVED, never typed (owner 2026-07-31:
+              "20 games, 1 per session, but there aren't 20 sessions" — the
+              old input was dead config the scheduler ignored) */}
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-medium">
               Games per session per team
             </label>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={schedSettings.gamesPerSession}
-              onChange={(e) => setSchedSettings((s) => ({ ...s, gamesPerSession: e.target.value }))}
-              className={inputClass + " w-full"}
-            />
+            <div className="border-ink-100 bg-ink-50/60 rounded-xl border border-dashed px-3 py-2 text-sm">
+              {(() => {
+                const g = parseInt(schedSettings.gamesGuaranteed) || 0
+                const s = sessionCount ?? 0
+                if (!g || !s) return <span className="text-ink-400">Set games + sessions first</span>
+                return (
+                  <span className="text-ink-800">
+                    ≈ {Math.ceil(g / s)}{" "}
+                    <span className="text-ink-400 text-xs">
+                      ({g} games ÷ {s} session{s === 1 ? "" : "s"})
+                    </span>
+                  </span>
+                )
+              })()}
+            </div>
+            <p className="text-ink-400 mt-0.5 text-[10px]">
+              Derived. Override per session in the session editor if a weekend differs.
+            </p>
           </div>
           {/* Ideal games per day */}
           <div>

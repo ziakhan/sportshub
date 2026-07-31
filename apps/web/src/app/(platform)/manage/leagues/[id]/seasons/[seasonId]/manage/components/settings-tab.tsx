@@ -345,6 +345,7 @@ export function SettingsTab({
           patchSeason={patchSeason}
           refresh={refresh}
           hideFormatSettings={showsSummary("game-format")}
+          sessionCount={league?._count?.sessions ?? undefined}
         />
         </section>
       )

@@ -399,6 +399,9 @@ describe("generateSchedule — scheduling philosophy", () => {
       courts: 1,
       open: "09:00",
       close: "12:00",
+      // Above the fixture default so the (now hard) per-day cap never binds
+      // here — this test isolates the philosophy scoring, not the cap.
+      idealGamesPerDayPerTeam: 3,
       schedulingPhilosophy,
     })
 
@@ -415,5 +418,48 @@ describe("generateSchedule — scheduling philosophy", () => {
     const family = generateSchedule(philosophyInput("FAMILY_FRIENDLY"))
     const spread = generateSchedule(philosophyInput("SPREAD_DAYS"))
     expect(teamDayCount(family.games)).toBeLessThan(teamDayCount(spread.games))
+  })
+})
+
+// ---------- per-day cap (owner 2026-07-31: a weekend session = one game
+// Saturday, one Sunday when idealGamesPerDayPerTeam is 1) ----------
+
+describe("generateSchedule — idealGamesPerDayPerTeam as a hard cap", () => {
+  it("ideal=1 over a 2-day span gives each team at most one game per day", () => {
+    const result = generateSchedule(
+      makeInput({
+        teams: 4,
+        gamesGuaranteed: 2,
+        days: 2,
+        courts: 2,
+        idealGamesPerDayPerTeam: 1,
+      })
+    )
+    expect(result.games).toHaveLength(4)
+    const perTeamDay: Record<string, number> = {}
+    for (const g of result.games) {
+      for (const t of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${t}|${g.dayId}`
+        perTeamDay[k] = (perTeamDay[k] ?? 0) + 1
+      }
+    }
+    for (const count of Object.values(perTeamDay)) expect(count).toBe(1)
+  })
+
+  it("relaxed pass fills games the cap would otherwise strand on a single-day span", () => {
+    const result = generateSchedule(
+      makeInput({
+        teams: 4,
+        gamesGuaranteed: 2,
+        days: 1,
+        courts: 2,
+        open: "09:00",
+        close: "17:00",
+        idealGamesPerDayPerTeam: 1,
+      })
+    )
+    // One day can't honor 1 game/day for 2 games/team — filling wins.
+    expect(result.games).toHaveLength(4)
+    expectNoDoubleBookings(result.games, 60)
   })
 })

@@ -1,6 +1,5 @@
 export type SchedSettings = {
   gamesGuaranteed: string
-  gamesPerSession: string
   gameLengthMinutes: string
   gameSlotMinutes: string
   gamePeriods: string

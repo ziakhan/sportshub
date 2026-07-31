@@ -16,6 +16,12 @@ interface VenueSelection {
   venueId: string
   courtIds: string[] // in PREFERRED order — first court fills first
 }
+interface SessionInitial {
+  label: string
+  days: DayDraft[]
+  venues: VenueSelection[]
+  targetGamesPerTeam: number | null
+}
 
 /**
  * Sessions (owner 2026-07-30 tune-up): fully editable, and every session
@@ -109,6 +115,7 @@ export function SessionsTab({
                   venueId: v.venueId,
                   courtIds: (v.courts ?? []).map((c: any) => c.id),
                 })),
+                targetGamesPerTeam: s.targetGamesPerTeam ?? null,
               }}
               onCancel={() => setEditingId(null)}
               onSave={(payload) => save(s.id, payload)}
@@ -121,6 +128,11 @@ export function SessionsTab({
               <div className="flex items-center justify-between gap-2">
                 <span className="text-ink-900 font-medium">
                   {s.label || "Session"}
+                  {s.targetGamesPerTeam != null && (
+                    <span className="text-ink-400 ml-2 text-xs font-normal">
+                      {s.targetGamesPerTeam} game{s.targetGamesPerTeam === 1 ? "" : "s"}/team
+                    </span>
+                  )}
                   {s.phase === "PLAYOFF" && (
                     <Badge className="ml-2" tone="gold">
                       Playoffs
@@ -204,7 +216,7 @@ function SessionForm({
   onCancel,
 }: {
   seasonVenues: any[]
-  initial: { label: string; days: DayDraft[]; venues: VenueSelection[] } | null
+  initial: SessionInitial | null
   onSave: (payload: any) => Promise<boolean> | boolean
   onCancel: () => void
 }) {
@@ -213,6 +225,9 @@ function SessionForm({
     initial?.days?.length ? initial.days : [{ date: "", startTime: "09:00", endTime: "17:00" }]
   )
   const [selections, setSelections] = useState<VenueSelection[]>(initial?.venues ?? [])
+  const [gamesPerTeam, setGamesPerTeam] = useState<string>(
+    initial?.targetGamesPerTeam != null ? String(initial.targetGamesPerTeam) : ""
+  )
   const [busy, setBusy] = useState(false)
 
   // Picking a date defaults the window to the first selected venue's hours
@@ -289,6 +304,7 @@ function SessionForm({
           endTime: d.endTime,
         })),
         venues: selections,
+        targetGamesPerTeam: gamesPerTeam === "" ? null : parseInt(gamesPerTeam),
       })
     } finally {
       setBusy(false)
@@ -297,13 +313,26 @@ function SessionForm({
 
   return (
     <div className="border-play-200 bg-play-50/40 mb-2 space-y-3 rounded-xl border p-3">
-      <input
-        type="text"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        placeholder="Label (e.g. Week 1, October)"
-        className={inputClass + " w-full"}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Label (e.g. Weekend 1, October)"
+          className={inputClass + " min-w-48 flex-1"}
+        />
+        <label className="text-ink-600 flex items-center gap-1.5 text-xs">
+          Games per team this session
+          <input
+            value={gamesPerTeam}
+            onChange={(e) => setGamesPerTeam(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            inputMode="numeric"
+            placeholder="auto"
+            className={inputClass + " w-16"}
+            title="Blank = derived from the season's games ÷ sessions"
+          />
+        </label>
+      </div>
 
       <div className="space-y-1.5">
         {days.map((day, idx) => (

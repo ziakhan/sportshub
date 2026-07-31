@@ -24,6 +24,10 @@ const createSessionSchema = z.object({
   label: z.string().optional(),
   days: z.array(sessionDaySchema).min(1),
   venues: z.array(sessionVenueSchema).optional(),
+  // Per-session games-per-team override (owner 2026-07-31): the season
+  // derives games/session from guaranteed ÷ sessions; a session that
+  // differs (finals weekend, single-day) sets its own number here.
+  targetGamesPerTeam: z.number().int().min(1).max(10).nullable().optional(),
   // Legacy shape (pre-2026-07-30 callers): one venue, all its courts.
   venueId: z.string().optional(),
 })
@@ -32,6 +36,7 @@ const updateSessionSchema = z.object({
   label: z.string().nullable().optional(),
   days: z.array(sessionDaySchema).min(1).optional(),
   venues: z.array(sessionVenueSchema).optional(),
+  targetGamesPerTeam: z.number().int().min(1).max(10).nullable().optional(),
 })
 
 async function authorize(seasonId: string) {
@@ -118,6 +123,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           seasonId: params.id,
           label: data.label || null,
           phase: "REGULAR",
+          targetGamesPerTeam: data.targetGamesPerTeam ?? null,
         },
       })
       await createDays(tx, seasonSession.id, data.days, plan)
@@ -161,10 +167,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const data = updateSessionSchema.parse(body)
 
     await prisma.$transaction(async (tx: any) => {
-      if (data.label !== undefined) {
+      if (data.label !== undefined || data.targetGamesPerTeam !== undefined) {
         await tx.seasonSession.update({
           where: { id: sessionId },
-          data: { label: data.label || null },
+          data: {
+            ...(data.label !== undefined ? { label: data.label || null } : {}),
+            ...(data.targetGamesPerTeam !== undefined
+              ? { targetGamesPerTeam: data.targetGamesPerTeam }
+              : {}),
+          },
         })
       }
       if (data.days) {
@@ -232,6 +243,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: s.id,
         label: s.label,
         phase: s.phase,
+        targetGamesPerTeam: s.targetGamesPerTeam ?? null,
         leagueId: params.id,
         venueId: firstDayVenue?.venueId ?? null,
         venue: firstDayVenue?.venue ?? null,

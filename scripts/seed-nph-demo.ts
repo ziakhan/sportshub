@@ -85,7 +85,7 @@ const SHOWCASE_CLUBS = [
 // ════════════════════════════════════════════════════════════════════════
 const LEAGUE_TEAM_FEE = 3990 // real NPH SL per-team fee (docs/research)
 const SUMMER_GAMES_PER_TEAM = 20 // 2 per weekend × 10 weekends (season runs to end of August)
-const FALL_GAMES_PER_TEAM = 12 // monthly sessions Oct–Mar
+// Fall inherits the org rulebook's 10 games across 5 weekend sessions (2/session)
 const GAME_SLOT_MINUTES = 90 // scheduler slot width (warmup + game + buffer)
 const GAME_LENGTH_MINUTES = 40 // actual playing time (4 × 10-min quarters)
 // Club offer packages (CAD) — deliberately simple (owner call 2026-07-07):
@@ -1302,14 +1302,22 @@ async function seed() {
       data: { seasonId: springSeason.id, name: `Grade ${g} Boys · Tier 1`, ageGroup: `Grade ${g}`, gender: "MALE" },
     }))
   }
-  // Monthly sessions Oct–Mar (one weekend a month), venue allocations included
+  // The NPH norm (owner 2026-07-31): 5 weekend sessions, Sat+Sun each —
+  // 10 games ÷ 5 sessions derives 2 games per team per weekend.
   const fallBase = Math.round((fallStart.getTime() - now.getTime()) / 86400_000)
+  const nextSaturday = (offset: number) => {
+    const d = new Date(now.getTime() + days(offset))
+    return offset + ((6 - d.getDay() + 7) % 7)
+  }
   await buildSessions(
     springSeason.id,
-    Array.from({ length: 6 }, (_, m) => ({
-      label: ["October", "November", "December", "January", "February", "March"][m],
-      dayOffsets: [fallBase + m * 30 + 7, fallBase + m * 30 + 8],
-    })),
+    Array.from({ length: 5 }, (_, m) => {
+      const sat = nextSaturday(fallBase + m * 30 + 7)
+      return {
+        label: ["October", "November", "December", "January", "February"][m],
+        dayOffsets: [sat, sat + 1],
+      }
+    }),
     2
   )
 
@@ -2140,7 +2148,6 @@ async function seed() {
       // Fee, deposit, format, tiebreakers, application questions: ALL
       // inherited from the NPH org rulebook (fields left null on purpose —
       // this is the flagship "configuration is reading" demo, Phase A).
-      targetGamesPerSession: 2, // 5 sessions × 2 + finals weekend × 2 = 10+2
       rosterChangePolicy: "REQUEST_ONLY",
     },
   })
@@ -2593,7 +2600,7 @@ async function seed() {
         cycleStartDate: "2026-10-03T00:00:00.000Z",
         cycleEndDate: "2027-03-14T00:00:00.000Z",
         cycleRegistrationDeadline: "2026-10-01T00:00:00.000Z",
-        gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
+        gamesGuaranteed: 10, // NPH norm (owner 2026-07-31): 10 regular-season games — playoffs are separate brackets
         gamePeriods: "QUARTERS",
         periodLengthMinutes: 10,
         gameLengthMinutes: GAME_LENGTH_MINUTES,

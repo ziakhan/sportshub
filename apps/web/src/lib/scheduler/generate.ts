@@ -345,6 +345,15 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
           return sum + (s?.targetGamesPerTeam ?? fallbackPerTeam)
         }, 0)
       : null
+  // EVERY session caps each team at its share (owner 2026-07-31: a
+  // whole-season pass used to pour all 10 of a team's games into weekend 1 —
+  // soft penalties never stopped the greedy fill; the seed even worked
+  // around it with staged passes). 2/weekend means 2/weekend.
+  const perSessionCap = new Map<string, number>(
+    regularSessions.map((s) => [s.id, s.targetGamesPerTeam ?? fallbackPerTeam])
+  )
+  const teamSessionCount: Record<string, number> = {}
+  const sessionKey = (sessionId: string, teamId: string) => `${sessionId}|${teamId}`
 
   // Build all pairings across all units — always the FULL season's pool so
   // matchup rotation stays fair, then subtract games already committed in
@@ -404,7 +413,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
 
   const scoreCandidate = (
     pairing: Pairing,
-    slot: SchedulerSlot
+    slot: SchedulerSlot,
+    relaxDayCap = false
   ): { score: number; blockReason?: string } => {
     const { homeTeamId, awayTeamId } = pairing
     if (homeTeamId === awayTeamId) return { score: -Infinity, blockReason: "same team" }
@@ -435,6 +445,30 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
         return { score: -Infinity, blockReason: "away team at session target" }
     }
 
+    // Hard (always): per-session share — spread across the season instead
+    // of packing the earliest weekend.
+    const capHere = perSessionCap.get(slot.sessionId)
+    if (capHere !== undefined) {
+      if ((teamSessionCount[sessionKey(slot.sessionId, homeTeamId)] ?? 0) >= capHere)
+        return { score: -Infinity, blockReason: "home team at this session's share" }
+      if ((teamSessionCount[sessionKey(slot.sessionId, awayTeamId)] ?? 0) >= capHere)
+        return { score: -Infinity, blockReason: "away team at this session's share" }
+    }
+
+    // Per-day limit. Hard in the first pass (a weekend session with the
+    // ideal at 1 = one game Saturday, one Sunday — slots are day-major, so
+    // a soft penalty can never stop day 1 from absorbing everything); the
+    // relaxed pass lifts it rather than leave games unplaced when a
+    // session genuinely can't spread (single-day finals weekend).
+    const homeDayCount = teamGamesOnDay(homeTeamId, slot.dayId)
+    const awayDayCount = teamGamesOnDay(awayTeamId, slot.dayId)
+    if (!relaxDayCap) {
+      if (homeDayCount >= input.idealGamesPerDayPerTeam)
+        return { score: -Infinity, blockReason: "home team at daily limit" }
+      if (awayDayCount >= input.idealGamesPerDayPerTeam)
+        return { score: -Infinity, blockReason: "away team at daily limit" }
+    }
+
     let score = 0
 
     // Soft: prefer teams still under their gamesGuaranteed
@@ -445,9 +479,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     if (homeCount >= input.gamesGuaranteed) score -= 20
     if (awayCount >= input.gamesGuaranteed) score -= 20
 
-    // Soft: respect idealGamesPerDayPerTeam
-    const homeDayCount = teamGamesOnDay(homeTeamId, slot.dayId)
-    const awayDayCount = teamGamesOnDay(awayTeamId, slot.dayId)
+    // Soft (relaxed pass only reaches this over-limit): still discourage
     if (homeDayCount >= input.idealGamesPerDayPerTeam) score -= 5
     if (awayDayCount >= input.idealGamesPerDayPerTeam) score -= 5
 
@@ -480,17 +512,17 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return { score }
   }
 
-  for (const slot of slots) {
+  const placeInto = (slot: SchedulerSlot, relaxDayCap: boolean): boolean => {
     let bestIdx = -1
     let bestScore = -Infinity
     for (let i = 0; i < remaining.length; i++) {
-      const cand = scoreCandidate(remaining[i], slot)
+      const cand = scoreCandidate(remaining[i], slot, relaxDayCap)
       if (cand.score > bestScore) {
         bestScore = cand.score
         bestIdx = i
       }
     }
-    if (bestIdx === -1 || bestScore === -Infinity) continue
+    if (bestIdx === -1 || bestScore === -Infinity) return false
 
     const pairing = remaining.splice(bestIdx, 1)[0]
     games.push({
@@ -517,9 +549,25 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     ]
     const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
     playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
+    for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
+      const sk = sessionKey(slot.sessionId, id)
+      teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
+    }
     courtLastUnit[slot.courtId] = { endMs: slot.endAt.getTime(), unitKey: pairing.unitKey }
     const dvKey = `${slot.dayVenueId}|${pairing.unitKey}`
     dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
+    return true
+  }
+
+  const openSlots: SchedulerSlot[] = []
+  for (const slot of slots) {
+    if (!placeInto(slot, false)) openSlots.push(slot)
+  }
+  // Relaxed pass: the per-day ideal is honored when the session has room to
+  // spread; when it doesn't, filling the game beats leaving it unplaced.
+  for (const slot of openSlots) {
+    if (remaining.length === 0) break
+    placeInto(slot, true)
   }
 
   // Utilization
