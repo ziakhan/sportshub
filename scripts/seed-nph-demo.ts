@@ -765,16 +765,16 @@ async function seed() {
   const summerSessions = await buildSessions(
     winterSeason.id,
     [
-      { label: "Week 1", dayOffsets: [lastSaturday - 28, lastSaturday - 27] },
-      { label: "Week 2", dayOffsets: [lastSaturday - 21, lastSaturday - 20] },
-      { label: "Week 3", dayOffsets: [lastSaturday - 14, lastSaturday - 13] },
-      { label: "Week 4", dayOffsets: [lastSaturday - 7, lastSaturday - 6] },
-      { label: "Week 5", dayOffsets: [0, lastSaturday + 7] }, // today + next Saturday
-      { label: "Week 6", dayOffsets: [lastSaturday + 14, lastSaturday + 15] },
-      { label: "Week 7", dayOffsets: [lastSaturday + 21, lastSaturday + 22] },
-      { label: "Week 8", dayOffsets: [lastSaturday + 28, lastSaturday + 29] },
-      { label: "Week 9", dayOffsets: [lastSaturday + 35, lastSaturday + 36] },
-      { label: "Week 10", dayOffsets: [lastSaturday + 42, lastSaturday + 43] },
+      { label: "Weekend 1", dayOffsets: [lastSaturday - 28, lastSaturday - 27] },
+      { label: "Weekend 2", dayOffsets: [lastSaturday - 21, lastSaturday - 20] },
+      { label: "Weekend 3", dayOffsets: [lastSaturday - 14, lastSaturday - 13] },
+      { label: "Weekend 4", dayOffsets: [lastSaturday - 7, lastSaturday - 6] },
+      { label: "Weekend 5", dayOffsets: [0, lastSaturday + 7] }, // today + next Saturday
+      { label: "Weekend 6", dayOffsets: [lastSaturday + 14, lastSaturday + 15] },
+      { label: "Weekend 7", dayOffsets: [lastSaturday + 21, lastSaturday + 22] },
+      { label: "Weekend 8", dayOffsets: [lastSaturday + 28, lastSaturday + 29] },
+      { label: "Weekend 9", dayOffsets: [lastSaturday + 35, lastSaturday + 36] },
+      { label: "Weekend 10", dayOffsets: [lastSaturday + 42, lastSaturday + 43] },
     ],
     2
   )
@@ -1010,9 +1010,9 @@ async function seed() {
   // past sessions): 8 games/team across the four played weekends, Week 5 as
   // two single-day passes (1 game/team today, 1 next Saturday), then weeks
   // 6-10 in one future pass (2/team/weekend through end of August).
-  const week5Id = summerSessions.find((s) => s.label === "Week 5")!.id
+  const week5Id = summerSessions.find((s) => s.label === "Weekend 5")!.id
   const futureWeekIds = new Set(
-    summerSessions.filter((s) => /Week (6|7|8|9|10)$/.test(s.label)).map((s) => s.id)
+    summerSessions.filter((s) => /Weekend (6|7|8|9|10)$/.test(s.label)).map((s) => s.id)
   )
   const week5Session = schedInput.sessions.find((s: any) => s.id === week5Id)!
   const playedPass = generateSchedule({
@@ -1169,7 +1169,7 @@ async function seed() {
     await p.leagueReferee.create({ data: { leagueId: winterLeague.id, userId: refId } })
   }
   const week5SatDay = await p.seasonSessionDay.findFirst({
-    where: { sessionId: summerSessions.find((s) => s.label === "Week 5")!.id, date: { gt: now } },
+    where: { sessionId: summerSessions.find((s) => s.label === "Weekend 5")!.id, date: { gt: now } },
     orderBy: { date: "asc" },
     select: { id: true, date: true },
   })

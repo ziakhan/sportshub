@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
+import { TeamCheck } from "./team-check"
 
 interface CapacityUnit {
   unitKey: string
@@ -245,6 +246,12 @@ export function ScheduleTab({
     mode === "session" && capacity
       ? capacity.filter((s) => s.sessionId === selectedSessionId)
       : capacity
+  // Session mode shows ONLY the selected session's games (owner 2026-07-31:
+  // "after you create the schedule for a week, you should only see that week")
+  const visibleGames =
+    mode === "session" && selectedSessionId
+      ? scheduleGames.filter((g: any) => g.sessionId === selectedSessionId)
+      : scheduleGames
 
   return (
     <div className="space-y-6">
@@ -488,24 +495,49 @@ export function ScheduleTab({
           </div>
         )}
 
+        {/* Per-team verification — checkmarks first, grid second */}
+        <div className="mb-4">
+          <TeamCheck
+            league={league}
+            scheduleGames={scheduleGames}
+            sessionFilterId={mode === "session" ? selectedSessionId : null}
+            sessionLabel={mode === "session" ? selectedSession?.label ?? null : null}
+          />
+        </div>
+
         <ManualGameAdd seasonId={seasonId} league={league} refresh={refresh} />
 
         <div>
           <PanelHeader
-            title="Committed games"
+            title={
+              mode === "session" && selectedSession
+                ? `Games in ${selectedSession.label || "this session"}`
+                : "Committed games"
+            }
             action={
               <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                {scheduleGames.length}
+                {visibleGames.length}
+                {mode === "session" && visibleGames.length !== scheduleGames.length
+                  ? ` of ${scheduleGames.length}`
+                  : ""}
               </span>
             }
           />
-          {scheduleGames.length === 0 ? (
+          {mode === "session" && selectedSession && scheduleGames.length > visibleGames.length && (
+            <p className="text-ink-400 -mt-1 mb-2 text-xs">
+              Showing only {selectedSession.label || "this session"} — switch to &quot;Whole
+              season&quot; above to see everything.
+            </p>
+          )}
+          {visibleGames.length === 0 ? (
             <p className="text-ink-500 text-sm">
-              No games committed yet. Preview then commit once the season is finalized.
+              {scheduleGames.length === 0
+                ? "No games committed yet. Preview then commit once the season is finalized."
+                : "No games in this session yet."}
             </p>
           ) : (
             <div className="space-y-2">
-              {scheduleGames.map((g: any, i: number) => {
+              {visibleGames.map((g: any, i: number) => {
                 const open = openGameId === g.id
                 return (
                   <div
