@@ -330,11 +330,14 @@ describe("generateSchedule — core", () => {
     const result = generateSchedule(input)
     expect(result.games).toHaveLength(2)
     expect(result.unscheduled).toHaveLength(18)
+    // Diagnostics (owner 2026-08-01): reasons name the actual blocker and
+    // the fix, not a generic shrug. Here every court hour is consumed.
     for (const u of result.unscheduled) {
-      expect(u.reason).toBe("no remaining slot satisfies hard constraints")
+      expect(u.reason).toMatch(/add a court|court time|add court time/i)
     }
-    // All four teams are under their guarantee
-    expect(result.warnings).toHaveLength(4)
+    // All four teams under their guarantee + the summary diagnosis line
+    expect(result.warnings.filter((w) => w.includes("target"))).toHaveLength(4)
+    expect(result.warnings.some((w) => w.includes("could not be placed"))).toBe(true)
     expectNoDoubleBookings(result.games, input.gameSlotMinutes)
   })
 

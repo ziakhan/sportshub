@@ -918,13 +918,50 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     (p) => repairCount(p.homeTeamId) < repairTarget && repairCount(p.awayTeamId) < repairTarget
   )
 
+  // Diagnose every failure in plain words (owner 2026-08-01: "exactly what
+  // to fix, what the issue might be"). Re-score the pairing against every
+  // slot and translate the dominant blockers into an operator action.
+  const ADVICE: Record<string, string> = {
+    "court busy": "every court is booked at those times — add a court to the sessions or extend their hours",
+    "home team busy": "a team is already playing at every open time — add court time on other days",
+    "away team busy": "a team is already playing at every open time — add court time on other days",
+    "home team at this session's share": "the teams already play their full share those weekends — raise a session's games-per-team or add a session",
+    "away team at this session's share": "the teams already play their full share those weekends — raise a session's games-per-team or add a session",
+    "home team at session target": "the teams already play their full share this session — schedule the remaining sessions or add one",
+    "away team at session target": "the teams already play their full share this session — schedule the remaining sessions or add one",
+    "home team at daily limit": "the teams are at their games-per-day limit on every open day — raise it in Game format or add another day",
+    "away team at daily limit": "the teams are at their games-per-day limit on every open day — raise it in Game format or add another day",
+    "rematch within the same session": "these teams already meet in every session that has room — add a session so the rematch lands elsewhere",
+    "rematch before all first meetings": "first-time matchups are scheduled ahead of rematches — schedule the remaining sessions first",
+    "unit not included in this session": "their division is unticked in every session with room — include it in a session's capacity plan",
+    "no slots": "the sessions have no open court time at all — add venues, courts, or hours",
+  }
+  const diagnose = (pairing: Pairing): string => {
+    const tally = new Map<string, number>()
+    for (const slot of slots) {
+      const cand = scoreCandidate(pairing, slot)
+      if (cand.score !== -Infinity) return "space exists — a different variation may place it (try Shuffle)"
+      tally.set(cand.blockReason ?? "unknown", (tally.get(cand.blockReason ?? "unknown") ?? 0) + 1)
+    }
+    if (tally.size === 0) return ADVICE["no slots"]
+    const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0][0]
+    return ADVICE[top] ?? top
+  }
+  const failureReasons = failedToPlace.map((p) => diagnose(p))
+  if (failedToPlace.length > 0) {
+    const topAdvice = [...new Set(failureReasons)].slice(0, 2)
+    warnings.push(
+      `${failedToPlace.length} game${failedToPlace.length === 1 ? "" : "s"} could not be placed: ${topAdvice.join("; also: ")}`
+    )
+  }
+
   return {
     games,
-    unscheduled: failedToPlace.map((p) => ({
+    unscheduled: failedToPlace.map((p, i) => ({
       unitKey: p.unitKey,
       homeTeamId: p.homeTeamId,
       awayTeamId: p.awayTeamId,
-      reason: "no remaining slot satisfies hard constraints",
+      reason: failureReasons[i],
     })),
     warnings,
     utilization: {

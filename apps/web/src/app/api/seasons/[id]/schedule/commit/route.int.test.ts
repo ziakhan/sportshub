@@ -181,7 +181,7 @@ describe("schedule commit → publish — draft layer + fan-out (integration)", 
       select: { id: true, scheduledAt: true, courtId: true },
     })
     expect(after.length).toBe(kept.length)
-    const afterById = new Map(after.map((g: any) => [g.id, g]))
+    const afterById = new Map<string, any>(after.map((g: any) => [g.id, g]))
     for (const g of kept) {
       const now = afterById.get(g.id)
       expect(now.scheduledAt.getTime()).toBe(g.scheduledAt.getTime())

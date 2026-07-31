@@ -209,3 +209,9 @@ Owner: "one team drops out of 10 — minimize the changes so people aren't affec
 - **The chain for a dropout**: withdraw (existing G4 cascade cancels future games + notifies opponents) → callout appears → fill → publish. Team added late / make-up session after a snow-out: same mechanism (under-guarantee teams + new capacity).
 - Receipts: int test (kept games byte-identical, removed=0) · Fall e2e: 100 games → Burlington Force withdraws (10 cancelled) → fill: **90 untouched, 0 moved, 5 added**, every team back to 10, no new same-session rematches. int 373/373, unit 312/312.
 - Open policy decision (owner): a withdrawn team's PLAYED games currently stay in standings; common alternatives = expunge if <half season played, or forfeit-out remaining. Also: refunds/fee handling on dropout unchanged (existing overdue/accounting flows).
+
+## 23. 2026-08-01 — descriptive scheduling failures (owner: "exactly what to fix")
+- Every unplaced pairing is now DIAGNOSED: the engine re-scores it against every slot, tallies the hard blockers, and translates the dominant one into an operator action — e.g. "every court is booked at those times — add a court to the sessions or extend their hours", "the teams already play their full share those weekends — raise a session's games-per-team or add a session", "these teams already meet in every session that has room — add a session so the rematch lands elsewhere". 13 mapped reasons; a season-level summary warning leads with the top fixes ("18 games could not be placed: …; also: …").
+- Preview UI already renders both (warnings list + per-pairing reasons under "couldn't be placed") — no UI change needed.
+- Box reseeded on owner request: canonical 4 demo venues restored; verified ON BOX with default venues — whole-season preview 100 games / 0 unscheduled.
+- Suite 41/41 (slot-exhaustion test re-pinned to diagnostic strings), int 373/373, unit 312/312.
