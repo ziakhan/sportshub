@@ -79,6 +79,9 @@ export function ScheduleTab({
   // Shuffle rolls deterministic variations. Commit sends the SAME number,
   // so what you previewed is exactly what gets saved.
   const [shuffle, setShuffle] = useState(0)
+  // Fill-the-gaps preview active (dropout/late-add recovery): existing games
+  // are ALL survivors; the preview holds only the additions.
+  const [fillPreview, setFillPreview] = useState(false)
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
   const [capacity, setCapacity] = useState<CapacitySession[] | null>(null)
@@ -129,6 +132,7 @@ export function ScheduleTab({
   }
 
   const runPreview = async (shuffleOverride?: number) => {
+    setFillPreview(false)
     const attempt = shuffleOverride ?? shuffle
     if (shuffleOverride !== undefined) setShuffle(shuffleOverride)
     setPreviewLoading(true)
@@ -290,16 +294,82 @@ export function ScheduleTab({
     refresh()
   }
 
+  // Minimal-disruption recovery (owner 2026-08-01): teams end up under
+  // their guarantee when one drops out (their games cancel), a team is
+  // added late, or a make-up session is created. Fill the gaps ADDS games
+  // only — nobody's existing schedule moves.
+  const gapTeams = useMemo(() => {
+    const target: number = league?.gamesGuaranteed ?? 0
+    if (!target || scheduleGames.length === 0) return []
+    const counts = new Map<string, number>()
+    for (const g of scheduleGames) {
+      if (g.status === "CANCELLED") continue
+      for (const id of [g.homeTeamId, g.awayTeamId]) counts.set(id, (counts.get(id) ?? 0) + 1)
+    }
+    return ((league?.teams ?? []) as any[])
+      .filter((t) => t.status === "APPROVED")
+      .filter((t) => (counts.get(t.team.id) ?? 0) < target)
+      .map((t) => ({ id: t.team.id, name: t.team.name, count: counts.get(t.team.id) ?? 0 }))
+  }, [league, scheduleGames])
+
+  const previewGaps = async () => {
+    setFillPreview(true)
+    setPreviewLoading(true)
+    setScheduleError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fillGapsOnly: true }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(err?.error || "Preview failed")
+      setPreview(null)
+    } else {
+      setPreview(await res.json())
+    }
+    setPreviewLoading(false)
+  }
+
+  const commitGaps = async () => {
+    if (
+      !confirm(
+        "Add ONLY the missing games? Nobody's existing schedule changes — the new games are saved as drafts until you publish."
+      )
+    )
+      return
+    setCommitting(true)
+    setScheduleError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/schedule/commit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fillGapsOnly: true }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(
+        Array.isArray(err?.errors) ? err.errors.join("; ") : err?.error || "Commit failed"
+      )
+    } else {
+      setPreview(null)
+      setFillPreview(false)
+    }
+    setCommitting(false)
+    refresh()
+  }
+
   // Preview mode feeds Team check the WOULD-BE schedule (owner 2026-07-31:
   // "you should be able to see the games of the teams in preview mode"):
   // games a commit would keep + the previewed proposals.
   const teamCheckGames = useMemo(() => {
     if (!preview) return scheduleGames
-    const survivors = scheduleGames.filter((g: any) =>
-      mode === "session" && selectedSessionId
-        ? !(g.sessionId === selectedSessionId && g.status === "SCHEDULED")
-        : g.status !== "SCHEDULED"
-    )
+    const survivors = fillPreview
+      ? scheduleGames
+      : scheduleGames.filter((g: any) =>
+          mode === "session" && selectedSessionId
+            ? !(g.sessionId === selectedSessionId && g.status === "SCHEDULED")
+            : g.status !== "SCHEDULED"
+        )
     const proposed = preview.games.map((g: any, i: number) => ({
       ...g,
       id: `preview-${i}`,
@@ -308,7 +378,7 @@ export function ScheduleTab({
       awayTeam: { name: g.awayTeamName },
     }))
     return [...survivors, ...proposed]
-  }, [preview, scheduleGames, mode, selectedSessionId])
+  }, [preview, scheduleGames, mode, selectedSessionId, fillPreview])
   const visibleCapacity =
     mode === "session" && capacity
       ? capacity.filter((s) => s.sessionId === selectedSessionId)
@@ -448,6 +518,37 @@ export function ScheduleTab({
             </Button>
           )}
         </div>
+
+        {gapTeams.length > 0 && (
+          <div className="border-amber-200 bg-amber-50 mb-4 rounded-xl border px-3 py-2.5">
+            <p className="text-amber-900 text-xs font-semibold">
+              {gapTeams.length} team{gapTeams.length === 1 ? " is" : "s are"} below the{" "}
+              {league?.gamesGuaranteed}-game guarantee
+              {" — "}
+              <span className="font-normal">
+                usually a dropout, a late-added team, or a new make-up session.
+              </span>
+            </p>
+            <p className="text-amber-800 mt-0.5 text-[11px]">
+              {gapTeams
+                .slice(0, 4)
+                .map((t) => `${t.name} (${t.count})`)
+                .join(" · ")}
+              {gapTeams.length > 4 ? ` · +${gapTeams.length - 4} more` : ""}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={previewGaps} disabled={previewLoading}>
+                {previewLoading && fillPreview ? "Running…" : "Preview the fix"}
+              </Button>
+              <Button size="sm" tone="court" onClick={commitGaps} disabled={committing || !canCommit}>
+                Add ONLY the missing games
+              </Button>
+              <span className="text-amber-700 text-[11px]">
+                Nobody&apos;s existing games move.
+              </span>
+            </div>
+          </div>
+        )}
 
         {draftCount > 0 && (
           <div className="border-gold-200 bg-gold-50 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2">

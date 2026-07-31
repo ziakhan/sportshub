@@ -20,6 +20,11 @@ const commitSchema = z.object({
   // variation; N rolls a different deterministic variation. The UI passes
   // the SAME number it previewed with, so commit writes what was shown.
   varietyShuffle: z.number().int().min(0).max(999).optional(),
+  // Minimal-disruption recovery (owner 2026-08-01): don't touch ANY existing
+  // game — treat the whole current schedule as fixed and only ADD games for
+  // teams under their guarantee (dropout make-ups, late-added teams,
+  // make-up sessions). Ignores sessionIds; replaceExisting is forced off.
+  fillGapsOnly: z.boolean().default(false),
 })
 
 /**
@@ -47,7 +52,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { replaceExisting, sessionUnits, sessionIds, varietyShuffle } = commitSchema.parse(body)
+    const parsed = commitSchema.parse(body)
+    const { sessionUnits, varietyShuffle, fillGapsOnly } = parsed
+    const replaceExisting = fillGapsOnly ? false : parsed.replaceExisting
+    const sessionIds = fillGapsOnly ? undefined : parsed.sessionIds
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
@@ -70,7 +78,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           status: { not: "CANCELLED" },
           NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED", isLocked: false },
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true, sessionId: true },
+      })
+    } else if (fillGapsOnly) {
+      // Every current game is FIXED — the run may only add.
+      input.existingGames = await (prisma as any).game.findMany({
+        where: { seasonId: params.id, phase: "REGULAR", status: { not: "CANCELLED" } },
+        select: {
+          homeTeamId: true,
+          awayTeamId: true,
+          scheduledAt: true,
+          courtId: true,
+          sessionId: true,
+        },
       })
     } else {
       // Whole-season runs replace only un-played games — played/live ones
@@ -84,7 +104,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
             { status: "SCHEDULED", isLocked: true },
           ],
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true, sessionId: true },
       })
     }
 

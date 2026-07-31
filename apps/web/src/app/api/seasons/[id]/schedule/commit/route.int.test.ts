@@ -152,6 +152,43 @@ describe("schedule commit → publish — draft layer + fan-out (integration)", 
     expect(unlocked).toBeGreaterThan(0)
   })
 
+  it("fill-gaps mode adds games WITHOUT touching a single existing one (dropout recovery)", async () => {
+    actAs(leagueOwnerId)
+    // Snapshot the current schedule, then delete two games (simulating the
+    // cancellation cascade of a dropout / make-up need).
+    const before = await (prisma as any).game.findMany({
+      where: { seasonId, status: "SCHEDULED" },
+      select: { id: true, scheduledAt: true, courtId: true, homeTeamId: true, awayTeamId: true },
+      orderBy: { scheduledAt: "asc" },
+    })
+    expect(before.length).toBeGreaterThan(2)
+    const removed = before.slice(-2)
+    await (prisma as any).game.deleteMany({ where: { id: { in: removed.map((g: any) => g.id) } } })
+    const kept = before.slice(0, -2)
+
+    const res = await POST(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/commit`, { fillGapsOnly: true }),
+      { params: { id: seasonId } }
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.removed).toBe(0) // NOTHING deleted
+    expect(body.created).toBeGreaterThan(0)
+
+    // Every kept game is byte-identical — same id, same time, same court.
+    const after = await (prisma as any).game.findMany({
+      where: { id: { in: kept.map((g: any) => g.id) } },
+      select: { id: true, scheduledAt: true, courtId: true },
+    })
+    expect(after.length).toBe(kept.length)
+    const afterById = new Map(after.map((g: any) => [g.id, g]))
+    for (const g of kept) {
+      const now = afterById.get(g.id)
+      expect(now.scheduledAt.getTime()).toBe(g.scheduledAt.getTime())
+      expect(now.courtId).toBe(g.courtId)
+    }
+  })
+
   it("non-owner cannot commit or publish", async () => {
     actAs(clubOwnerId)
     const commit = await POST(
