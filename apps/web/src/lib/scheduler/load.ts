@@ -115,5 +115,39 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
     })),
   }
 
+  // Shared venues (owner 2026-07-31): leagues each get their own windows,
+  // but when a second league lands on the same courts by mistake, we don't
+  // double-book and we don't hard-stop — other leagues' games become busy
+  // bookings the generator schedules AROUND, and the capacity card says how
+  // many slots they took so the operator can add hours or courts.
+  const courtIds = [
+    ...new Set(
+      input.sessions.flatMap((s) =>
+        s.days.flatMap((d) => d.dayVenues.flatMap((dv) => dv.courts.map((c) => c.id)))
+      )
+    ),
+  ]
+  const dayDates = input.sessions.flatMap((s) => s.days.map((d) => new Date(d.date).getTime()))
+  if (courtIds.length > 0 && dayDates.length > 0) {
+    const from = new Date(Math.min(...dayDates) - 24 * 3600_000)
+    const to = new Date(Math.max(...dayDates) + 48 * 3600_000)
+    const busyGames = await (prisma as any).game.findMany({
+      where: {
+        courtId: { in: courtIds },
+        OR: [{ seasonId: null }, { seasonId: { not: seasonId } }],
+        status: { not: "CANCELLED" },
+        scheduledAt: { gte: from, lte: to },
+      },
+      select: { courtId: true, scheduledAt: true, duration: true },
+    })
+    if (busyGames.length > 0) {
+      input.busyCourtBookings = busyGames.map((g: any) => ({
+        courtId: g.courtId,
+        start: new Date(g.scheduledAt).toISOString(),
+        end: new Date(new Date(g.scheduledAt).getTime() + (g.duration ?? 90) * 60000).toISOString(),
+      }))
+    }
+  }
+
   return { input, errors }
 }

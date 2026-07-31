@@ -19,6 +19,7 @@ interface CapacitySession {
   days: number
   courts: number
   slotsTotal: number
+  blockedByOthers?: number
   gamesPerTeam: number
   units: CapacityUnit[]
   gamesNeededAll: number
@@ -492,6 +493,11 @@ export function ScheduleTab({
                         <span className="text-court-700">{spare} spare</span>
                       ) : (
                         <span className="text-hoop-700">{-spare} short</span>
+                      )}
+                      {(s.blockedByOthers ?? 0) > 0 && (
+                        <span className="text-amber-700">
+                          {" "}· {s.blockedByOthers} taken by other leagues
+                        </span>
                       )}
                     </p>
                   </div>

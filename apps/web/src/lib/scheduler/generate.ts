@@ -101,6 +101,12 @@ export interface SchedulerInput {
    * seasons get different rotations.
    */
   varietySeed?: number
+  /**
+   * Court time already taken by OTHER leagues/seasons at shared venues
+   * (owner 2026-07-31): hard bookings the generator schedules around —
+   * never a double-booking, never a hard stop.
+   */
+  busyCourtBookings?: Array<{ courtId: string; start: string; end: string }>
 }
 
 export interface ProposedGame {
@@ -405,6 +411,27 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   const teamGameCount: Record<string, number> = {}
   const teamBookings: Record<string, Array<{ start: Date; end: Date; dayId: string }>> = {}
   const courtBookings: Record<string, Array<{ start: Date; end: Date }>> = {}
+  // Other leagues' games at shared venues occupy their courts outright.
+  for (const b of input.busyCourtBookings ?? []) {
+    courtBookings[b.courtId] = [
+      ...(courtBookings[b.courtId] ?? []),
+      { start: new Date(b.start), end: new Date(b.end) },
+    ]
+  }
+  {
+    const blocked = slots.filter((slot) =>
+      (input.busyCourtBookings ?? []).some(
+        (b) =>
+          b.courtId === slot.courtId &&
+          overlaps(new Date(b.start), new Date(b.end), slot.startAt, slot.endAt)
+      )
+    ).length
+    if (blocked > 0) {
+      warnings.push(
+        `${blocked} slot${blocked === 1 ? " is" : "s are"} already booked by other leagues at shared venues — scheduled around them.`
+      )
+    }
+  }
   // Seed matchup history so opponent-diversity scoring sees prior sessions.
   const playedPairCount: Record<string, number> = { ...preplayedByPair }
 

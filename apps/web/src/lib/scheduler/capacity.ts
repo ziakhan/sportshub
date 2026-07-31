@@ -30,6 +30,9 @@ export interface SessionCapacityReport {
   days: number
   courts: number
   slotsTotal: number
+  /** Slots lost to OTHER leagues' games at shared venues (already excluded
+   *  from slotsTotal) — surfaced so the operator knows why supply shrank. */
+  blockedByOthers: number
   gamesPerTeam: number
   units: UnitDemand[]
   /** Total demand if EVERY unit is scheduled in this session. */
@@ -47,8 +50,20 @@ export function computeSessionCapacity(input: SchedulerInput): SessionCapacityRe
   const fallbackPerTeam =
     regular.length > 0 ? Math.ceil(input.gamesGuaranteed / regular.length) : input.gamesGuaranteed
 
+  const busy = (input.busyCourtBookings ?? []).map((b) => ({
+    courtId: b.courtId,
+    start: new Date(b.start),
+    end: new Date(b.end),
+  }))
+  const isBlocked = (slot: { courtId: string; startAt: Date; endAt: Date }) =>
+    busy.some(
+      (b) => b.courtId === slot.courtId && b.start < slot.endAt && slot.startAt < b.end
+    )
+
   return regular.map((s) => {
-    const sessionSlots = slots.filter((slot) => slot.sessionId === s.id)
+    const allSessionSlots = slots.filter((slot) => slot.sessionId === s.id)
+    const sessionSlots = allSessionSlots.filter((slot) => !isBlocked(slot))
+    const blockedByOthers = allSessionSlots.length - sessionSlots.length
     const gamesPerTeam = s.targetGamesPerTeam ?? fallbackPerTeam
     const unitDemands: UnitDemand[] = units.map((u: SchedulerUnit) => ({
       unitKey: u.key,
@@ -65,6 +80,7 @@ export function computeSessionCapacity(input: SchedulerInput): SessionCapacityRe
       days: s.days.length,
       courts: courtIds.size,
       slotsTotal: sessionSlots.length,
+      blockedByOthers,
       gamesPerTeam,
       units: unitDemands,
       gamesNeededAll,

@@ -173,3 +173,9 @@ Owner round: research NPH league sizes; "not everybody gets a 9 am game all the 
 ## 17. 2026-07-31 — Shuffle: operator-facing variations (owner: "give them an option to randomize")
 - Regenerating the SAME season reproduces the same plan by design (preview must equal commit; support/debugging; no uncoordinated randomness across leagues). The variation lever is now explicit: **Shuffle** button next to Preview rolls deterministic variation #1, #2, … (`varietyShuffle` param → seed offset); a chip shows the active variation with reset. Commit sends the same number the preview used — the plan shown is the plan saved.
 - Receipt (API, Fall 20-team world): standard preview ×2 identical · variation 1 ≠ standard · variation 1 ×2 identical · variation 2 ≠ variation 1.
+
+## 18. 2026-07-31 — shared venues: schedule around other leagues, never double-book
+Owner ruling: leagues manage their own windows; when a second league lands on the same courts by mistake → most flexible handling, not a hard stop.
+- **Engine**: `busyCourtBookings` on SchedulerInput — other leagues'/seasons' games (any status but CANCELLED, drafts included, plus season-less games) on this season's courts within its date range become hard court bookings the generator schedules AROUND. loadSchedulerInput queries them automatically, so preview/commit/capacity all see the same picture.
+- **Awareness, both places**: generator warning "N slots already booked by other leagues at shared venues — scheduled around them"; capacity card excludes them from supply and shows an amber "· N taken by other leagues" so a squeezed operator knows to add hours or courts.
+- Receipt (planted a foreign game on Fall's Oct 10 court, 9:00–10:30): warning fired · 0 games placed in the occupied window · October capacity 96→95 with blockedByOthers 1 · all 100 games still placed. Scheduler suite 39/39 (new pinned test), int 368/368.

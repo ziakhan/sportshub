@@ -484,6 +484,37 @@ describe("generateSchedule — seeded variety + time-of-day rotation", () => {
   })
 })
 
+// ---------- shared venues (owner 2026-07-31: schedule AROUND other
+// leagues' games, warn, never double-book) ----------
+
+describe("generateSchedule — busyCourtBookings (shared venues)", () => {
+  it("never places a game on court time another league booked, and says so", () => {
+    // 1 court, 09:00-12:00 (60-min slots: 9, 10, 11). Another league holds
+    // 09:00-10:30 — that blocks the 9:00 AND the overlapping 10:00 slot, so
+    // our only game lands at 11:00 with a warning, never on top of them.
+    const input = makeInput({
+      teams: 2,
+      gamesGuaranteed: 1,
+      days: 1,
+      courts: 1,
+      open: "09:00",
+      close: "12:00",
+    })
+    const day = input.sessions[0].days[0].date
+    input.busyCourtBookings = [
+      {
+        courtId: input.sessions[0].days[0].dayVenues[0].courts[0].id,
+        start: atLocalTime(day, "09:00").toISOString(),
+        end: atLocalTime(day, "10:30").toISOString(),
+      },
+    ]
+    const result = generateSchedule(input)
+    expect(result.games).toHaveLength(1)
+    expect(new Date(result.games[0].scheduledAt).getHours()).toBe(11)
+    expect(result.warnings.some((w) => w.includes("booked by other leagues"))).toBe(true)
+  })
+})
+
 // ---------- per-day cap (owner 2026-07-31: a weekend session = one game
 // Saturday, one Sunday when idealGamesPerDayPerTeam is 1) ----------
 
