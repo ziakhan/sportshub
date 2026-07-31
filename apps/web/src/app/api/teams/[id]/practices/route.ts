@@ -13,6 +13,7 @@ import { getRsvpsForItems } from "@/lib/rsvp"
 import type { RsvpItemType } from "@/lib/rsvp-shared"
 import { intraOrgConflictMessage } from "@/lib/venues/conflicts"
 import { appBaseUrl } from "@/lib/email"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
               OR: [{ homeTeamId: params.id }, { awayTeamId: params.id }],
               scheduledAt: { gte: from, lte: to },
               status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
+              ...PUBLISHED_GAME,
             },
             select: {
               id: true,

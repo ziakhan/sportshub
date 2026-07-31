@@ -72,6 +72,7 @@ beforeAll(async () => {
     (
       await prisma.game.create({
         data: {
+          publishedAt: new Date(),
           seasonId: season.id,
           homeTeamId: teamA,
           awayTeamId: submissionB.teamId,
@@ -162,6 +163,7 @@ describe("PATCH/DELETE /api/games/[id] (integration)", () => {
 
     const game = await prisma.game.create({
       data: {
+        publishedAt: new Date(),
         seasonId,
         homeTeamId: teamAId,
         awayTeamId,

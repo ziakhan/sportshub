@@ -6,9 +6,21 @@ export const dynamic = "force-dynamic"
 
 /**
  * GET /api/seasons/[id]/schedule — list existing Game rows for the season.
+ * Operator console endpoint: includes DRAFT games (publishedAt null), so it
+ * requires the league owner or a platform admin.
  */
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const sessionInfo = await getSessionUserId()
+    if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const season = await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { league: { select: { ownerId: true } } },
+    })
+    if (!season) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
     const games = await (prisma as any).game.findMany({
       where: { seasonId: params.id },
       include: {

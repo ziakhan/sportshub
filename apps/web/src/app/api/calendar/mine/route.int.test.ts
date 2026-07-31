@@ -74,6 +74,7 @@ beforeAll(async () => {
   gameABId = (
     await (prisma as any).game.create({
       data: {
+        publishedAt: new Date(),
         homeTeamId: teamAId,
         awayTeamId: teamBId,
         scheduledAt: new Date(Date.now() + 72 * HOUR),

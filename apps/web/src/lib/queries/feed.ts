@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
 import { appBaseUrl } from "@/lib/email"
 import { dateInTz } from "@/lib/calendar/timezone"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /** Image URLs leave the server ABSOLUTE (bug 2026-07-25): native app bundles
  * historically mishandled relative /api/live paths — absolute URLs render on
@@ -508,6 +509,7 @@ export async function getFeedExtras(userId: string, targetsIn?: FeedTargets): Pr
       where: {
         status: "SCHEDULED",
         scheduledAt: { gte: now, lte: previewEnd },
+        ...PUBLISHED_GAME,
         OR: [{ homeTeamId: { in: teamIdList } }, { awayTeamId: { in: teamIdList } }],
       },
       select: {

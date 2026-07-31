@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
 import { Badge, ScoreCard, SectionHeader } from "@/components/ui"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -123,7 +124,7 @@ export default async function ScoresPage({
       take: 36,
     }),
     (prisma as any).game.findMany({
-      where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead }, ...seasonWhere },
+      where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead }, ...PUBLISHED_GAME, ...seasonWhere },
       select: gameSelect,
       orderBy: { scheduledAt: "asc" },
       take: 24,

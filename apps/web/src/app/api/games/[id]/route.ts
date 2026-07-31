@@ -279,12 +279,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       await advancePlayoffs(params.id)
     }
 
-    // G8 notifications — compare against the pre-update row
+    // G8 notifications — compare against the pre-update row. DRAFT games
+    // (publishedAt null) notify nobody: the operator is still planning, and
+    // families only ever hear about games after the schedule is published.
+    const isPublished = !!game.publishedAt
     const becameInactive =
+      isPublished &&
       data.status !== undefined &&
       ["CANCELLED", "POSTPONED"].includes(data.status) &&
       game.status !== data.status
-    const becameDefaulted = data.status === "DEFAULTED" && game.status !== "DEFAULTED"
+    const becameDefaulted =
+      isPublished && data.status === "DEFAULTED" && game.status !== "DEFAULTED"
     const timeChanged =
       data.scheduledAt !== undefined &&
       new Date(data.scheduledAt).getTime() !== new Date(game.scheduledAt).getTime()
@@ -349,7 +354,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         game.id,
         leagueName
       )
-    } else if ((timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
+    } else if (isPublished && (timeChanged || placeChanged) && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)) {
       const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
       await notifyGameAudience(
         game,
@@ -412,7 +417,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       },
     })
 
-    if (game.status !== "CANCELLED") {
+    if (game.status !== "CANCELLED" && !!game.publishedAt) {
       const audienceUserIds = await getGameAudienceUserIds(game.homeTeamId, game.awayTeamId)
       await notifyGameAudience(
         game,

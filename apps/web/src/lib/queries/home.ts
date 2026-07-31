@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { cache } from "./request-cache"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /**
  * "Your teams" rail (plan §3 signed-in state): the viewer's followed teams
@@ -102,7 +103,7 @@ export const getYourTeams = cache(async (userId: string): Promise<YourTeamCard[]
       },
     }),
     (prisma as any).game.findMany({
-      where: { status: "SCHEDULED", scheduledAt: { gte: now }, OR: teamOr },
+      where: { status: "SCHEDULED", scheduledAt: { gte: now }, ...PUBLISHED_GAME, OR: teamOr },
       orderBy: { scheduledAt: "asc" },
       take: 300,
       select: {

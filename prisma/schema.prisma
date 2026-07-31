@@ -1934,6 +1934,11 @@ model Game {
   duration    Int        @default(90)
   status      GameStatus @default(SCHEDULED)
 
+  // Draft/publish layer (Schedule Studio P0, owner 2026-07-31): null = DRAFT,
+  // visible only in the operator console. Publishing stamps the timestamp and
+  // sends the one schedule fanout — commits and edits before that are silent.
+  publishedAt DateTime?
+
   homeScore Int?
   awayScore Int?
 

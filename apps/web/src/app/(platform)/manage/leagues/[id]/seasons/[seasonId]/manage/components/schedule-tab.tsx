@@ -84,12 +84,15 @@ export function ScheduleTab({
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
 
+  // Recompute whenever the sessions substrate changes AT ALL (owner
+  // 2026-07-31: editing a session's courts/hours must refresh capacity —
+  // depending on .length missed every edit that didn't add/remove one).
   useEffect(() => {
     fetch(`/api/seasons/${seasonId}/schedule/capacity`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setCapacity(data?.sessions ?? null))
       .catch(() => setCapacity(null))
-  }, [seasonId, sessions.length])
+  }, [seasonId, sessions])
 
   // Scope: session mode targets exactly the selected session.
   const scopeSessionIds = mode === "session" && selectedSessionId ? [selectedSessionId] : undefined
@@ -143,9 +146,10 @@ export function ScheduleTab({
   const selectedSession = regularSessions.find((s: any) => s.id === selectedSessionId)
   const commitSchedule = async () => {
     const what =
-      mode === "session"
-        ? `Commit the schedule for "${selectedSession?.label || "this session"}"? Its existing SCHEDULED games are replaced; other sessions are untouched.`
-        : "Commit the whole season's schedule? ALL existing SCHEDULED games are replaced."
+      (mode === "session"
+        ? `Save the schedule for "${selectedSession?.label || "this session"}"? Its existing un-played games are replaced; other sessions are untouched.`
+        : "Save the whole season's schedule? ALL existing un-played games are replaced.") +
+      "\n\nSaved as a DRAFT — clubs and families see nothing until you publish."
     if (!confirm(what)) return
     setCommitting(true)
     setScheduleError(null)
@@ -242,6 +246,48 @@ export function ScheduleTab({
   }
 
   const canCommit = ["FINALIZED", "IN_PROGRESS"].includes(league.leagueStatus)
+  const draftCount = useMemo(
+    () => scheduleGames.filter((g: any) => !g.publishedAt).length,
+    [scheduleGames]
+  )
+  const [publishing, setPublishing] = useState(false)
+  const publishSchedule = async () => {
+    if (
+      !confirm(
+        `Publish the schedule? ${draftCount} draft game${draftCount === 1 ? "" : "s"} go live — clubs and families get ONE notification pointing at their team calendar.`
+      )
+    )
+      return
+    setPublishing(true)
+    setScheduleError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/schedule/publish`, { method: "POST" })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      setScheduleError(err?.error || "Publish failed")
+    }
+    setPublishing(false)
+    refresh()
+  }
+
+  // Preview mode feeds Team check the WOULD-BE schedule (owner 2026-07-31:
+  // "you should be able to see the games of the teams in preview mode"):
+  // games a commit would keep + the previewed proposals.
+  const teamCheckGames = useMemo(() => {
+    if (!preview) return scheduleGames
+    const survivors = scheduleGames.filter((g: any) =>
+      mode === "session" && selectedSessionId
+        ? !(g.sessionId === selectedSessionId && g.status === "SCHEDULED")
+        : g.status !== "SCHEDULED"
+    )
+    const proposed = preview.games.map((g: any, i: number) => ({
+      ...g,
+      id: `preview-${i}`,
+      status: "PREVIEW",
+      homeTeam: { name: g.homeTeamName },
+      awayTeam: { name: g.awayTeamName },
+    }))
+    return [...survivors, ...proposed]
+  }, [preview, scheduleGames, mode, selectedSessionId])
   const visibleCapacity =
     mode === "session" && capacity
       ? capacity.filter((s) => s.sessionId === selectedSessionId)
@@ -359,6 +405,18 @@ export function ScheduleTab({
             </Button>
           )}
         </div>
+
+        {draftCount > 0 && (
+          <div className="border-gold-200 bg-gold-50 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2">
+            <p className="text-gold-700 text-xs font-semibold">
+              {draftCount} draft game{draftCount === 1 ? "" : "s"} — visible only to you until
+              you publish. Review below, re-run sessions freely, then publish once.
+            </p>
+            <Button size="sm" onClick={publishSchedule} disabled={publishing}>
+              {publishing ? "Publishing…" : `Publish schedule · ${draftCount} new`}
+            </Button>
+          </div>
+        )}
 
         {scheduleError && (
           <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-3 rounded-xl border px-3 py-2 text-xs">
@@ -495,13 +553,15 @@ export function ScheduleTab({
           </div>
         )}
 
-        {/* Per-team verification — checkmarks first, grid second */}
+        {/* Per-team verification — checkmarks first, grid second. While a
+            preview is open it shows the WOULD-BE schedule. */}
         <div className="mb-4">
           <TeamCheck
             league={league}
-            scheduleGames={scheduleGames}
+            scheduleGames={teamCheckGames}
             sessionFilterId={mode === "session" ? selectedSessionId : null}
             sessionLabel={mode === "session" ? selectedSession?.label ?? null : null}
+            previewing={!!preview}
           />
         </div>
 
@@ -567,6 +627,7 @@ export function ScheduleTab({
                         {g.isLocked && (
                           <span className="text-ink-500 text-[10px]">🔒</span>
                         )}
+                        {!g.publishedAt && <Badge tone="gold">Draft</Badge>}
                         <Badge tone={toneForStatus(g.status)}>{g.status}</Badge>
                         <span className="text-ink-400 text-[10px]">
                           {open ? "▴" : "▾"}

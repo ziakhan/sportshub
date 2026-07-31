@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { getMyPrograms } from "@/lib/programs/staff"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export interface DashboardData {
   roles: string[]
@@ -667,6 +668,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
               OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
               scheduledAt: { gte: new Date() },
               status: "SCHEDULED",
+              ...PUBLISHED_GAME,
             },
             include: {
               homeTeam: { select: { name: true } },

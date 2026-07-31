@@ -131,6 +131,7 @@ export async function generatePlayoffs(input: {
           homeTeamId: homeId, // higher seed hosts (bracketPairs puts it first)
           awayTeamId: awayId,
           scheduledAt: slotTime(plan, 1, m.round === 1 ? round1.indexOf(m) : m.slot),
+          publishedAt: new Date(),
           playoffRound: m.round,
           playoffSlot: m.slot,
         },
@@ -239,6 +240,7 @@ export async function advancePlayoffs(gameId: string): Promise<{ created: number
           homeTeamId: homeId,
           awayTeamId: awayId,
           scheduledAt: slotTime(plan, m.round, m.slot),
+          publishedAt: new Date(),
           playoffRound: m.round,
           playoffSlot: m.slot,
         },

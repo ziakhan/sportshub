@@ -2707,6 +2707,21 @@ async function main() {
 
   const t0 = Date.now()
   const result = await seed()
+  // Seeded games are the LIVE demo world, not drafts — stamp them published.
+  // Scoped to demo-owned leagues so a box reseed never silently publishes a
+  // real operator's in-progress drafts. (The Fall league stays gameless so
+  // commit→draft→publish demos on stage.)
+  const demoOwners = await p.user.findMany({
+    where: { email: { endsWith: `@${EMAIL_DOMAIN}` } },
+    select: { id: true },
+  })
+  await p.game.updateMany({
+    where: {
+      publishedAt: null,
+      season: { league: { ownerId: { in: demoOwners.map((u) => u.id) } } },
+    },
+    data: { publishedAt: new Date() },
+  })
   console.log(`\n✓ world built in ${Math.round((Date.now() - t0) / 1000)}s — ${result.teams} teams, ${result.completed} completed, ${result.live} live`)
   printCheatSheet()
 }

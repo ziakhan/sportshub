@@ -6,6 +6,7 @@ import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { resolveCoverUrl } from "@/lib/queries/content"
 import { socialLinks } from "@/lib/club-page/blocks"
 import { publicPlayerName } from "@/lib/privacy/names"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -50,13 +51,13 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     } as const
     const [upcoming, recent, live] = await Promise.all([
       prisma.game.findMany({
-        where: { seasonId: params.id, scheduledAt: { gte: now }, status: { not: "CANCELLED" } },
+        where: { seasonId: params.id, scheduledAt: { gte: now }, status: { not: "CANCELLED" }, ...PUBLISHED_GAME },
         select: gameSelect,
         orderBy: { scheduledAt: "asc" },
         take: 15,
       }),
       prisma.game.findMany({
-        where: { seasonId: params.id, scheduledAt: { lt: now } },
+        where: { seasonId: params.id, scheduledAt: { lt: now }, ...PUBLISHED_GAME },
         select: gameSelect,
         orderBy: { scheduledAt: "desc" },
         take: 15,

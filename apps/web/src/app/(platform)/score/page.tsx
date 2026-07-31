@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { format } from "date-fns"
 import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -49,7 +50,7 @@ export default async function ScoreListPage() {
     where: {
       OR: [
         { status: "LIVE" },
-        { status: "SCHEDULED", scheduledAt: { gte: windowStart, lte: windowEnd } },
+        { status: "SCHEDULED", scheduledAt: { gte: windowStart, lte: windowEnd }, ...PUBLISHED_GAME },
       ],
       AND: [
         {

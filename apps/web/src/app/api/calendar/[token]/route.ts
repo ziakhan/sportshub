@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { buildIcs, type CalendarEvent } from "@/lib/calendar/ics"
 import { getMemberTeamIds } from "@/lib/teams/chat-access"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -81,6 +82,7 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
           OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
           scheduledAt: { gte: weekBack, lte: horizon },
           status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
+          ...PUBLISHED_GAME,
         },
         select: {
           id: true,
@@ -98,6 +100,7 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
           id: { in: refereeGameIds },
           scheduledAt: { gte: weekBack, lte: horizon },
           status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
+          ...PUBLISHED_GAME,
         },
         select: {
           id: true,

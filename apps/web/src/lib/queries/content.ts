@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { appBaseUrl } from "@/lib/email"
 import { cache } from "./request-cache"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /**
  * Public content queries (plan §3/§6): the news feed (published posts +
@@ -180,7 +181,7 @@ export const getScoreboardGames = cache(async (): Promise<ScoreboardGame[]> => {
       take: 8,
     }),
     (prisma as any).game.findMany({
-      where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead } },
+      where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead }, ...PUBLISHED_GAME },
       select: gameSelect,
       orderBy: { scheduledAt: "asc" },
       take: 6,

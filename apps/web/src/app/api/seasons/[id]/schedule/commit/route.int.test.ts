@@ -3,13 +3,15 @@ import { prisma } from "@youthbasketballhub/db"
 import { buildWorld, destroyWorld, type BuiltWorld } from "@youthbasketballhub/test-worlds"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { POST } from "./route"
+import { POST as PUBLISH } from "../publish/route"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
 /**
- * L2 — schedule commit fan-out (owner storyline 2026-07-07): committing a
- * session schedule must reach every team's full circle — club managers get
- * one club-level bell; team staff + rostered families get a bell (+email)
+ * L2 — draft/publish schedule flow (owner 2026-07-31): committing saves a
+ * DRAFT and notifies NOBODY — the operator can re-run sessions freely.
+ * Publishing stamps the drafts and fans out once: club managers get one
+ * club-level bell; team staff + rostered families get a bell (+email)
  * pointing at the team calendar. Nobody is double-belled.
  */
 
@@ -60,8 +62,8 @@ const bells = (userId: string) =>
     select: { link: true, message: true },
   })
 
-describe("POST /api/seasons/[id]/schedule/commit — notification fan-out (integration)", () => {
-  it("commits games and notifies club managers, team circle; no double-bell", async () => {
+describe("schedule commit → publish — draft layer + fan-out (integration)", () => {
+  it("commit saves DRAFTS and notifies nobody", async () => {
     actAs(leagueOwnerId)
     const res = await POST(
       jsonRequest(`/api/seasons/${seasonId}/schedule/commit`, { replaceExisting: true }),
@@ -70,6 +72,34 @@ describe("POST /api/seasons/[id]/schedule/commit — notification fan-out (integ
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.created).toBeGreaterThan(0)
+    expect(body.draftCount).toBe(body.created)
+
+    // Every committed game is a draft (publishedAt null)
+    const drafts = await (prisma as any).game.count({
+      where: { seasonId, publishedAt: null },
+    })
+    expect(drafts).toBe(body.created)
+
+    // Silence: nobody heard about a draft
+    expect(await bells(clubOwnerId)).toHaveLength(0)
+    expect(await bells(parentId)).toHaveLength(0)
+  })
+
+  it("publish stamps the drafts and fans out once — club + team circle, no double-bell", async () => {
+    actAs(leagueOwnerId)
+    const res = await PUBLISH(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/publish`, {}),
+      { params: { id: seasonId } }
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.published).toBeGreaterThan(0)
+
+    // No drafts remain
+    const drafts = await (prisma as any).game.count({
+      where: { seasonId, publishedAt: null },
+    })
+    expect(drafts).toBe(0)
 
     // Club-level: feeder club's owner got exactly ONE bell (not one per team)
     const clubBells = await bells(clubOwnerId)
@@ -89,12 +119,26 @@ describe("POST /api/seasons/[id]/schedule/commit — notification fan-out (integ
     expect(games).toBeGreaterThan(0)
   })
 
-  it("non-owner cannot commit", async () => {
+  it("publishing again with no drafts is a 400", async () => {
+    actAs(leagueOwnerId)
+    const res = await PUBLISH(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/publish`, {}),
+      { params: { id: seasonId } }
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it("non-owner cannot commit or publish", async () => {
     actAs(clubOwnerId)
-    const res = await POST(
+    const commit = await POST(
       jsonRequest(`/api/seasons/${seasonId}/schedule/commit`, { replaceExisting: true }),
       { params: { id: seasonId } }
     )
-    expect(res.status).toBe(403)
+    expect(commit.status).toBe(403)
+    const publish = await PUBLISH(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/publish`, {}),
+      { params: { id: seasonId } }
+    )
+    expect(publish.status).toBe(403)
   })
 })

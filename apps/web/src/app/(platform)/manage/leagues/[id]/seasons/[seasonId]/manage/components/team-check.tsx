@@ -16,12 +16,15 @@ export function TeamCheck({
   scheduleGames,
   sessionFilterId,
   sessionLabel,
+  previewing = false,
 }: {
   league: any
   scheduleGames: any[]
   /** When set (session-by-session mode), counts split into session + season. */
   sessionFilterId?: string | null
   sessionLabel?: string | null
+  /** True while an unsaved preview is folded into scheduleGames. */
+  previewing?: boolean
 }) {
   const [openTeamId, setOpenTeamId] = useState<string | null>(null)
 
@@ -73,6 +76,13 @@ export function TeamCheck({
           )
         }
       />
+      {previewing && (
+        <div className="border-play-200 bg-play-50 -mt-1 mb-3 rounded-xl border px-3 py-1.5">
+          <p className="text-play-700 text-xs font-semibold">
+            Showing the preview — nothing is saved yet. Commit to keep this plan.
+          </p>
+        </div>
+      )}
       <p className="text-ink-500 -mt-2 mb-3 text-xs">
         Click a team to see its schedule — when they play, who they play, and where.
       </p>
@@ -146,7 +156,14 @@ export function TeamCheck({
                               {g.venue?.name ?? "—"}
                               {g.court?.name ? ` · ${g.court.name}` : ""}
                             </span>
-                            <Badge tone={toneForStatus(g.status)}>{g.status.toLowerCase()}</Badge>
+                            {g.status === "PREVIEW" ? (
+                              <Badge tone="play">preview</Badge>
+                            ) : (
+                              <>
+                                {!g.publishedAt && <Badge tone="gold">draft</Badge>}
+                                <Badge tone={toneForStatus(g.status)}>{g.status.toLowerCase()}</Badge>
+                              </>
+                            )}
                           </li>
                         )
                       })}

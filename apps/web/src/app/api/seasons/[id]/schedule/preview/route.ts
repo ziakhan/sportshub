@@ -59,15 +59,32 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const result = generateSchedule(input)
 
-    // Enrich output with team names so UI can render without extra lookups
+    // Enrich output with team/venue/court names so UI (incl. Team check's
+    // preview mode) can render "when · who · where" without extra lookups.
     const teamNameById = new Map<string, string>()
     for (const d of input.divisions) for (const t of d.teams) teamNameById.set(t.teamId, t.name)
+    const venueIds = [...new Set(result.games.map((g) => g.venueId))]
+    const courtIds = [...new Set(result.games.map((g) => g.courtId))]
+    const [venues, courts] = await Promise.all([
+      (prisma as any).venue.findMany({
+        where: { id: { in: venueIds } },
+        select: { id: true, name: true },
+      }),
+      (prisma as any).court.findMany({
+        where: { id: { in: courtIds } },
+        select: { id: true, name: true },
+      }),
+    ])
+    const venueNameById = new Map(venues.map((v: any) => [v.id, v.name]))
+    const courtNameById = new Map(courts.map((c: any) => [c.id, c.name]))
 
     return NextResponse.json({
       games: result.games.map((g) => ({
         ...g,
         homeTeamName: teamNameById.get(g.homeTeamId) ?? g.homeTeamId,
         awayTeamName: teamNameById.get(g.awayTeamId) ?? g.awayTeamId,
+        venue: g.venueId ? { name: venueNameById.get(g.venueId) ?? null } : null,
+        court: g.courtId ? { name: courtNameById.get(g.courtId) ?? null } : null,
       })),
       unscheduled: result.unscheduled.map((u) => ({
         ...u,

@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import type { RsvpStatus } from "@/lib/rsvp-shared"
 import { getRsvpsForItems } from "@/lib/rsvp"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /**
  * My Calendar (docs/roadmap/my-calendar-plan.md) — ONE cross-team feed per
@@ -164,6 +165,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         ],
         scheduledAt: { gte: from, lte: to },
         status: { in: ["SCHEDULED", "LIVE", "COMPLETED"] },
+        ...PUBLISHED_GAME,
       },
       select: {
         id: true,

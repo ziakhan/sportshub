@@ -16,6 +16,7 @@ import { socialLinks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -96,7 +97,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         take: 6,
       }),
       (prisma as any).game.findMany({
-        where: { seasonId: params.id, status: "SCHEDULED", scheduledAt: { gte: now } },
+        where: { seasonId: params.id, status: "SCHEDULED", scheduledAt: { gte: now }, ...PUBLISHED_GAME },
         select: gameCardSelect,
         orderBy: { scheduledAt: "asc" },
         take: 4,

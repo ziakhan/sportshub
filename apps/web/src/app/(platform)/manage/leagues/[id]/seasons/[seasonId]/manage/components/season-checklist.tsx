@@ -370,6 +370,28 @@ export function SeasonChecklist({
     action: scheduleDone ? undefined : jump("schedule", undefined, "Open scheduler"),
   })
 
+  // Draft → publish (owner 2026-07-31): committing saves drafts only the
+  // operator sees; publishing is the moment clubs and families hear.
+  const draftGames = scheduleGames.filter((g: any) => !g.publishedAt).length
+  const publishedGames = scheduleGames.length - draftGames
+  steps.push({
+    key: "publish",
+    title: "Schedule published",
+    state:
+      scheduleGames.length > 0 && draftGames === 0
+        ? "done"
+        : draftGames > 0
+          ? "action"
+          : "todo",
+    detail:
+      scheduleGames.length === 0
+        ? "Comes after games are committed (step above)."
+        : draftGames === 0
+          ? `${publishedGames} game${publishedGames === 1 ? "" : "s"} live for clubs and families`
+          : `${draftGames} draft game${draftGames === 1 ? "" : "s"} only you can see — publishing sends one notification per team circle.`,
+    action: draftGames > 0 ? jump("schedule", undefined, "Review & publish") : undefined,
+  })
+
   steps.push({
     key: "start",
     title: "Season underway",

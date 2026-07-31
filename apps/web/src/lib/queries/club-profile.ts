@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { formatTrainingSchedule } from "@/lib/training"
 import { resolveCoverUrl } from "@/lib/queries/content"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /**
  * Public club profile — ONE source for the web /club/[slug] page's data
@@ -204,6 +205,7 @@ async function getGames(teamIds: string[]) {
       where: {
         status: { in: ["SCHEDULED", "LIVE"] },
         scheduledAt: { gte: now },
+        ...PUBLISHED_GAME,
         OR: [{ homeTeamId: { in: teamIds } }, { awayTeamId: { in: teamIds } }],
       },
       select: {

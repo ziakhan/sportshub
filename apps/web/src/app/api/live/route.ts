@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -82,7 +83,7 @@ export async function GET() {
         take: 36,
       }),
       (prisma as any).game.findMany({
-        where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead } },
+        where: { status: "SCHEDULED", scheduledAt: { gte: now, lte: weekAhead }, ...PUBLISHED_GAME },
         select: gameSelect,
         orderBy: { scheduledAt: "asc" },
         take: 24,

@@ -904,3 +904,10 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Engine: per-session share hard-blocked in ALL modes (whole-season no longer packs weekend 1); idealGamesPerDayPerTeam = hard cap w/ relaxed 2nd pass (Sat+Sun split). Dead Season.targetGamesPerSession removed from console; Session.targetGamesPerTeam editable per session (sessions API GET/POST/PATCH).
 - Seed: org rulebook gamesGuaranteed 10; Fall = 5 real-Saturday weekend sessions (October–February). Deploy MUST be followed by box reseed (`reseed-demo.sh --purge-manual-leagues`) — the new world shape is required for the demo story.
 - No schema change. Neon unaffected. Verified local: scheduler 36/36, int 366/366, e2e receipt 40 games/10 per team/2 per session/1 per day.
+
+## #50 — 2026-07-31: DRAFT→PUBLISH SCHEDULE LAYER (Schedule Studio P0 slice) — local, NOT deployed
+- `Game.publishedAt DateTime?` (SCHEMA — box needs `prisma db push` + `npx tsx scripts/backfill-publish-games.ts` sets publishedAt=createdAt for pre-existing games BEFORE traffic).
+- Commit now saves DRAFTS silently (fanout REMOVED from commit); new `POST /api/seasons/[id]/schedule/publish` stamps drafts + sends the one club/team-circle fanout; game PATCH/DELETE notifications gate on published; playoff-generated games auto-publish.
+- 16 public/family surfaces filter drafts via `lib/games/visibility.ts` PUBLISHED_GAME (scores, league page, ICS calendar, mobile browse, live ticker, team page/calendar, dashboards, RSVP sweep, my-calendar, feeds, club profile, score picker). Console schedule GET now owner/admin-only (was UNAUTHENTICATED).
+- UI: gold draft banner + "Publish schedule · N new", Draft badges, checklist step 10 "Schedule published", TeamCheck preview mode (preview games visible per team pre-commit), capacity card refetches on every session edit (was length-only dep).
+- Deploy order on box: push GitHub → deploy.sh → `prisma db push` → backfill script → reseed demo (`--purge-manual-leagues`).

@@ -5,6 +5,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
 import { getTeamRoster } from "@/lib/teams/roster"
 import { SmartBack } from "@/components/ui"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
 
@@ -37,6 +38,7 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
         OR: [{ homeTeamId: params.teamId }, { awayTeamId: params.teamId }],
         scheduledAt: { gte: now },
         status: { not: "CANCELLED" },
+        ...PUBLISHED_GAME,
       },
       select: {
         id: true,

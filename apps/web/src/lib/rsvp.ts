@@ -3,6 +3,7 @@ import { notify, notifyMany } from "@/lib/notifications"
 import { getTeamStaffUserIds } from "@/lib/teams/chat-access"
 import { formatPracticeDate } from "@/lib/teams/practices"
 import { rsvpKey, type RsvpItemType, type RsvpStatus } from "@/lib/rsvp-shared"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 /**
  * RSVP + attendance for calendar items (docs/feature-backlog.md spec).
@@ -184,7 +185,7 @@ export async function sendRsvpReminders(now = new Date()): Promise<{ reminded: n
       take: 500,
     }),
     (prisma as any).game.findMany({
-      where: { scheduledAt: window, status: "SCHEDULED" },
+      where: { scheduledAt: window, status: "SCHEDULED", ...PUBLISHED_GAME },
       select: {
         id: true,
         homeTeamId: true,
