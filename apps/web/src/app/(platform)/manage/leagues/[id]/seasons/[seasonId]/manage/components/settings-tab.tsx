@@ -191,11 +191,21 @@ export function SettingsTab({
 
   const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
 
+  // Org-linked leagues put the org-governed (inherited/resettable) sections
+  // FIRST, season-specific ones after (owner 2026-07-31: "grouped up on
+  // top… additional settings at the bottom").
+  const orderIds = orgName
+    ? ["registration", "game-format", "rules", "basics", "divisions"]
+    : ["basics", "divisions", "registration", "game-format", "rules"]
+  const orderedSections = orderIds
+    .map((id) => sections.find((s) => s.id === id))
+    .filter(Boolean) as typeof sections
+
   return (
     <div className="space-y-6">
       {/* Status strip — what's good, what's not, in importance order */}
       <div className="flex flex-wrap gap-2">
-        {sections.map((s) => (
+        {orderedSections.map((s) => (
           <button
             key={s.id}
             onClick={() => jump(s.id)}
@@ -223,23 +233,54 @@ export function SettingsTab({
         ))}
       </div>
 
-      <section id="basics" className="scroll-mt-24">
-        <SectionHeading n={1} title="Basics" state={sections[0].state} />
-        <BasicsSettings league={league} patchSeason={patchSeason} />
-      </section>
+      {orgName && (
+        <p className="text-ink-500 -mb-2 text-xs font-semibold uppercase tracking-wide">
+          {orgName} rulebook — inherited; override only where this league differs
+        </p>
+      )}
 
-      <section id="divisions" className="scroll-mt-24">
-        <SectionHeading n={2} title="Divisions" state={sections[1].state} />
-        <DivisionsTab
-          seasonId={seasonId}
-          divisions={divisions}
-          seasonStatus={league?.leagueStatus}
-          refresh={refresh}
-        />
-      </section>
+      {orderIds.map((id, idx) => sectionBody(id, idx + 1))}
+    </div>
+  )
 
-      <section id="registration" className="scroll-mt-24">
-        <SectionHeading n={3} title="Registration" state={sections[2].state} />
+  // The five section bodies, rendered in `orderIds` order with running
+  // numbers; the "This season only" divider precedes the first
+  // season-specific section on org-linked leagues.
+  function sectionBody(id: string, n: number) {
+    const state = sections.find((s) => s.id === id)!.state
+    const divider =
+      orgName && id === "basics" ? (
+        <p className="text-ink-500 -mb-2 mt-2 text-xs font-semibold uppercase tracking-wide">
+          This season only
+        </p>
+      ) : null
+
+    if (id === "basics")
+      return (
+        <div key={id} className="space-y-6">
+          {divider}
+          <section id="basics" className="scroll-mt-24">
+            <SectionHeading n={n} title="Basics" state={state} />
+            <BasicsSettings league={league} patchSeason={patchSeason} />
+          </section>
+        </div>
+      )
+    if (id === "divisions")
+      return (
+        <section key={id} id="divisions" className="scroll-mt-24">
+          <SectionHeading n={n} title="Divisions" state={state} />
+          <DivisionsTab
+            seasonId={seasonId}
+            divisions={divisions}
+            seasonStatus={league?.leagueStatus}
+            refresh={refresh}
+          />
+        </section>
+      )
+    if (id === "registration")
+      return (
+        <section key={id} id="registration" className="scroll-mt-24">
+          <SectionHeading n={n} title="Registration" state={state} />
         {showsSummary("registration") ? (
           <InheritedSummary
             orgName={orgName!}
@@ -257,10 +298,12 @@ export function SettingsTab({
             <RegistrationSettingsTab league={league} patchSeason={patchSeason} />
           </>
         )}
-      </section>
-
-      <section id="game-format" className="scroll-mt-24">
-        <SectionHeading n={4} title="Game format & scheduling" state={sections[3].state} />
+        </section>
+      )
+    if (id === "game-format")
+      return (
+        <section key={id} id="game-format" className="scroll-mt-24">
+          <SectionHeading n={n} title="Game format & scheduling" state={state} />
         {showsSummary("game-format") ? (
           <InheritedSummary
             orgName={orgName!}
@@ -288,10 +331,11 @@ export function SettingsTab({
           refresh={refresh}
           hideFormatSettings={showsSummary("game-format")}
         />
-      </section>
-
-      <section id="rules" className="scroll-mt-24">
-        <SectionHeading n={5} title="Rules" state={sections[4].state} />
+        </section>
+      )
+    return (
+      <section key={id} id="rules" className="scroll-mt-24">
+        <SectionHeading n={n} title="Rules" state={state} />
         {showsSummary("rules") ? (
           <InheritedSummary
             orgName={orgName!}
@@ -314,8 +358,8 @@ export function SettingsTab({
           </>
         )}
       </section>
-    </div>
-  )
+    )
+  }
 }
 
 /** Read-only inherited section: configuration as reading, not entering. */

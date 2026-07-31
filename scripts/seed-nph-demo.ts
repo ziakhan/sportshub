@@ -2592,6 +2592,13 @@ async function seed() {
           "Brief synopsis of your team and top prospects",
           "Why do you want to join this league?",
           "Program vision — goals over the next 1, 3 and 5 years",
+          // Structured question (owner 2026-07-31): typed input, not a text line
+          {
+            label: "How many seasons has your program competed at Tier 1?",
+            type: "single",
+            options: ["First season", "1-2 seasons", "3+ seasons"],
+            required: true,
+          },
         ],
       },
     },

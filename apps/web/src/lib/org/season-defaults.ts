@@ -1,4 +1,7 @@
 import { z } from "zod"
+// Relative (not "@/") import: the demo seed reaches this module through
+// lib/scheduler/load.ts without the app's path alias.
+import { applicationQuestionsSchema } from "../registration/questions"
 
 /**
  * Org-level season defaults (league-ia-redesign plan, Phase A).
@@ -39,8 +42,8 @@ export const seasonDefaultsSchema = z
     playoffMinGames: z.number().int().min(1).max(99).nullable().optional(),
     playoffFormat: z.string().nullable().optional(),
     playoffTeams: z.number().int().min(2).max(64).nullable().optional(),
-    // Registration (live-inherited)
-    applicationQuestions: z.array(z.string()).nullable().optional(),
+    // Registration (live-inherited) — legacy strings or structured objects
+    applicationQuestions: applicationQuestionsSchema.nullable().optional(),
   })
   .strict()
 

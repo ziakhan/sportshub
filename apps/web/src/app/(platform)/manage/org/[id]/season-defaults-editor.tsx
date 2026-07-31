@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
+import { QuestionBuilder } from "@/components/question-builder"
+import { normalizeQuestions, type ApplicationQuestion } from "@/lib/registration/questions"
 
 const inputCls =
   "rounded-lg border border-ink-200 px-2 py-1.5 text-sm text-ink-900 focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
@@ -59,8 +61,8 @@ export function SeasonDefaultsEditor({
   )
   const [minGames, setMinGames] = useState(num(d.playoffMinGames))
   // Registration
-  const [questions, setQuestions] = useState<string>(
-    Array.isArray(d.applicationQuestions) ? d.applicationQuestions.join("\n") : ""
+  const [questions, setQuestions] = useState<ApplicationQuestion[]>(
+    normalizeQuestions(d.applicationQuestions)
   )
 
   const [busy, setBusy] = useState(false)
@@ -88,9 +90,10 @@ export function SeasonDefaultsEditor({
           tiebreakerOrder: tiebreakers.length > 0 ? tiebreakers : null,
           allowGuestPlayers: guests === "" ? null : guests === "yes",
           playoffMinGames: minGames ? parseInt(minGames) : null,
-          applicationQuestions: questions.trim()
-            ? questions.split("\n").map((q) => q.trim()).filter(Boolean)
-            : null,
+          applicationQuestions: (() => {
+            const filled = questions.filter((q) => q.label.trim())
+            return filled.length > 0 ? filled : null
+          })(),
         },
       }
       const res = await fetch(`/api/organizations/${orgId}`, {
@@ -252,15 +255,10 @@ export function SeasonDefaultsEditor({
         <h3 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">
           Registration
         </h3>
-        <label className="text-ink-600 mb-0.5 block text-xs">
-          Club application questions (one per line)
-        </label>
-        <textarea
-          value={questions}
-          onChange={(e) => setQuestions(e.target.value)}
-          rows={3}
-          className="border-ink-200 w-full max-w-2xl rounded-lg border px-3 py-2 text-sm"
-        />
+        <p className="text-ink-600 mb-1.5 text-xs">Club application questions</p>
+        <div className="max-w-2xl">
+          <QuestionBuilder value={questions} onChange={setQuestions} />
+        </div>
       </section>
 
       {message && (

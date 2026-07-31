@@ -104,13 +104,24 @@ export default async function OrgSettingsPage({ params }: { params: { id: string
             const overridden = !!(l.logoUrl || (l.primaryColor && l.primaryColor !== "#1a73e8") || l.tagline)
             return (
               <div key={l.id} className="bg-court-50 flex items-center justify-between rounded-lg px-3 py-2 text-sm">
-                <span className="text-ink-800 font-medium">{l.name}</span>
+                {/* The league NAME goes to the real league hub (seasons and
+                    all) — the customize page is a side room, not the door
+                    (owner 2026-07-31: org → league was a dead end). */}
+                <Link
+                  href={`/manage/leagues/${l.id}`}
+                  className="text-ink-800 hover:text-play-700 font-medium transition-colors"
+                >
+                  {l.name}
+                </Link>
                 <span className="flex items-center gap-3">
                   <span className={overridden ? "text-gold-600 text-xs font-semibold" : "text-ink-400 text-xs"}>
                     {overridden ? "branding overridden" : "inherits organization branding"}
                   </span>
-                  <Link href={`/manage/leagues/${l.id}/customize`} className="text-play-600 text-xs font-semibold hover:underline">
-                    Customize &rarr;
+                  <Link href={`/manage/leagues/${l.id}`} className="text-play-600 text-xs font-semibold hover:underline">
+                    Open league &rarr;
+                  </Link>
+                  <Link href={`/manage/leagues/${l.id}/customize`} className="text-ink-400 hover:text-ink-600 text-xs hover:underline">
+                    Branding
                   </Link>
                 </span>
               </div>

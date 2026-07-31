@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { SmartBack } from "@/components/ui"
 import { EntryForm } from "./entry-form"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 export const dynamic = "force-dynamic"
 
@@ -25,10 +26,17 @@ export default async function SeasonEnterPage({ params }: { params: { seasonId: 
       depositPct: true,
       applicationQuestions: true,
       leagueId: true,
-      league: { select: { name: true } },
+      league: {
+        select: { name: true, organization: { select: { seasonDefaults: true } } },
+      },
     },
   })
   if (!season) notFound()
+  // Questions may live on the org rulebook (Phase A) — resolve before render.
+  const { values: cfg } = effectiveSeasonConfig(
+    season,
+    season.league?.organization?.seasonDefaults
+  )
 
   const operatorRoles = await prisma.userRole.findMany({
     where: { userId: user.id, role: { in: ["ClubOwner", "ClubManager"] }, tenantId: { not: null } },
@@ -84,7 +92,7 @@ export default async function SeasonEnterPage({ params }: { params: { seasonId: 
           seasonId={season.id}
           tenants={tenants}
           existing={existing}
-          questions={Array.isArray(season.applicationQuestions) ? season.applicationQuestions : []}
+          questions={Array.isArray(cfg.applicationQuestions) ? (cfg.applicationQuestions as unknown[]) : []}
           agreement={clubDoc}
         />
       )}

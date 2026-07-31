@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { notify } from "@/lib/notifications"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 export const dynamic = "force-dynamic"
 
@@ -10,7 +11,10 @@ const postSchema = z.object({
   tenantId: z.string(),
   plannedTeams: z.number().int().min(1).max(50),
   planNote: z.string().trim().max(1000).optional(),
-  answers: z.record(z.string().max(2000)).optional(),
+  // string = text/single answers · string[] = multi-choice answers
+  answers: z
+    .record(z.union([z.string().max(2000), z.array(z.string().max(200)).max(20)]))
+    .optional(),
   signatureName: z.string().trim().max(120).optional(),
 })
 
@@ -114,7 +118,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const season = await (prisma as any).season.findUnique({
       where: { id: params.id },
-      select: { leagueId: true, applicationQuestions: true, league: { select: { ownerId: true } } },
+      select: {
+        leagueId: true,
+        applicationQuestions: true,
+        league: {
+          select: { ownerId: true, organization: { select: { seasonDefaults: true } } },
+        },
+      },
     })
     if (!season) return NextResponse.json({ error: "Season not found" }, { status: 404 })
     const allowed =
@@ -141,7 +151,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       },
       orderBy: { createdAt: "asc" },
     })
-    return NextResponse.json({ entries, questions: season.applicationQuestions ?? [] })
+    // Questions may live on the org rulebook (Phase A) — return effective.
+    const { values: cfg } = effectiveSeasonConfig(
+      season,
+      season.league?.organization?.seasonDefaults
+    )
+    return NextResponse.json({ entries, questions: cfg.applicationQuestions ?? [] })
   } catch (error) {
     console.error("Entries list error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

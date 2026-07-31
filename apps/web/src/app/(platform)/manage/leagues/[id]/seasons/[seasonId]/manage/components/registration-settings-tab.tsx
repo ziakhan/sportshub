@@ -5,6 +5,8 @@ import { useParams } from "next/navigation"
 import { useState } from "react"
 import { PanelHeader, Button } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
+import { QuestionBuilder } from "@/components/question-builder"
+import { normalizeQuestions, type ApplicationQuestion } from "@/lib/registration/questions"
 
 /**
  * Settings › Registration — compact, checkbox-driven (owner 2026-07-30:
@@ -28,8 +30,8 @@ export function RegistrationSettingsTab({
   const [balanceDays, setBalanceDays] = useState<string>(
     String(league?.balanceDueDaysBeforeStart ?? 14)
   )
-  const [questionsDraft, setQuestionsDraft] = useState<string>(
-    Array.isArray(league?.applicationQuestions) ? league.applicationQuestions.join("\n") : ""
+  const [questions, setQuestions] = useState<ApplicationQuestion[]>(
+    normalizeQuestions(league?.applicationQuestions)
   )
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -41,10 +43,7 @@ export function RegistrationSettingsTab({
       await patchSeason({
         depositPct: depositOn && depositDraft !== "" ? Number(depositDraft) : null,
         balanceDueDaysBeforeStart: balanceDays === "" ? null : Number(balanceDays),
-        applicationQuestions: questionsDraft
-          .split("\n")
-          .map((q) => q.trim())
-          .filter(Boolean),
+        applicationQuestions: questions.filter((q) => q.label.trim()),
       })
       setSaved(true)
     } finally {
@@ -104,15 +103,11 @@ export function RegistrationSettingsTab({
         </p>
 
         <div>
-          <p className="text-ink-900 text-sm font-medium">Club application questions</p>
-          <textarea
-            value={questionsDraft}
-            onChange={(e) => setQuestionsDraft(e.target.value)}
-            rows={3}
-            placeholder={"One question per line, e.g.\nWhy do you want to join this league?"}
-            className="border-ink-200 mt-1 w-full max-w-2xl rounded-lg border px-3 py-2 text-sm"
-          />
-          <p className="text-ink-400 mt-0.5 text-xs">
+          <p className="text-ink-900 mb-1.5 text-sm font-medium">Club application questions</p>
+          <div className="max-w-2xl">
+            <QuestionBuilder value={questions} onChange={setQuestions} />
+          </div>
+          <p className="text-ink-400 mt-1.5 text-xs">
             Asked once per club at entry; answers appear on the Clubs tab. The club agreement
             itself lives on the{" "}
             <Link href={`/manage/leagues/${leagueId}/waivers`} className="text-play-600 hover:underline">

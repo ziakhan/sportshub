@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
 import { panelClass } from "./types"
+import { answerToText, normalizeQuestions } from "@/lib/registration/questions"
 
 /**
  * Clubs view (owner 2026-07-29): the Teams tab groups by team — this groups
@@ -37,7 +38,7 @@ export function ClubsTab({
   // Level-1 club entries (two-level registration): who committed, planned
   // team counts vs actual submissions, answers, agreement signature.
   const [entries, setEntries] = useState<any[]>([])
-  const [questions, setQuestions] = useState<string[]>([])
+  const [questions, setQuestions] = useState<unknown[]>([])
   const [entryOpen, setEntryOpen] = useState<string | null>(null)
   const [entryBusy, setEntryBusy] = useState<string | null>(null)
   const loadEntries = async () => {
@@ -177,10 +178,10 @@ export function ClubsTab({
               </div>
               {entryOpen === e.id && (
                 <div className="bg-court-50 mt-2 rounded-lg p-3 text-sm">
-                  {questions.map((q) => (
-                    <p key={q} className="text-ink-700 mb-1.5">
-                      <span className="text-ink-400 block text-xs">{q}</span>
-                      {e.answers?.[q] ?? "—"}
+                  {normalizeQuestions(questions).map((q) => (
+                    <p key={q.label} className="text-ink-700 mb-1.5">
+                      <span className="text-ink-400 block text-xs">{q.label}</span>
+                      {answerToText(e.answers?.[q.label])}
                     </p>
                   ))}
                   {e.planNote && (

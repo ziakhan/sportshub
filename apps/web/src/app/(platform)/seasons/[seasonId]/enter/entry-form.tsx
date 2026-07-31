@@ -3,27 +3,34 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui"
+import {
+  answerMissing,
+  normalizeQuestions,
+  type ApplicationQuestion,
+} from "@/lib/registration/questions"
 
 export function EntryForm({
   seasonId,
   tenants,
   existing,
-  questions,
+  questions: rawQuestions,
   agreement,
 }: {
   seasonId: string
   tenants: Array<{ id: string; name: string }>
   existing: Array<{ tenantId: string; status: string }>
-  questions: string[]
+  /** Legacy strings or structured question objects — normalized below. */
+  questions: unknown[]
   agreement: { id: string; title: string; body: string } | null
 }) {
+  const questions = normalizeQuestions(rawQuestions)
   const router = useRouter()
   const entered = new Map(existing.map((e) => [e.tenantId, e.status]))
   const available = tenants.filter((t) => !entered.has(t.id))
   const [tenantId, setTenantId] = useState(available[0]?.id ?? "")
   const [planned, setPlanned] = useState("1")
   const [planNote, setPlanNote] = useState("")
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({})
   const [signature, setSignature] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +74,7 @@ export function EntryForm({
     )
   }
 
-  const missingAnswers = questions.some((q) => !(answers[q] ?? "").trim())
+  const missingAnswers = questions.some((q) => answerMissing(q, answers[q.label]))
   const needsSignature = !!agreement && signature.trim().length < 3
 
   return (
@@ -122,15 +129,12 @@ export function EntryForm({
             </p>
           </div>
           {questions.map((q) => (
-            <div key={q}>
-              <label className="text-ink-600 mb-1 block text-xs font-medium">{q}</label>
-              <textarea
-                value={answers[q] ?? ""}
-                onChange={(e) => setAnswers({ ...answers, [q]: e.target.value })}
-                rows={3}
-                className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
-              />
-            </div>
+            <QuestionField
+              key={q.label}
+              question={q}
+              value={answers[q.label]}
+              onChange={(v) => setAnswers({ ...answers, [q.label]: v })}
+            />
           ))}
           {agreement && (
             <div className="border-ink-100 rounded-xl border p-3">
@@ -158,12 +162,97 @@ export function EntryForm({
           </Button>
           {(missingAnswers || needsSignature) && (
             <p className="text-ink-400 text-xs">
-              {missingAnswers ? "Answer every question. " : ""}
+              {missingAnswers ? "Answer every required question. " : ""}
               {needsSignature ? "The agreement must be signed to enter." : ""}
             </p>
           )}
         </>
       )}
+    </div>
+  )
+}
+
+/** Renders one application question by its defined input type. */
+function QuestionField({
+  question,
+  value,
+  onChange,
+}: {
+  question: ApplicationQuestion
+  value: string | string[] | undefined
+  onChange: (v: string | string[]) => void
+}) {
+  const label = (
+    <label className="text-ink-600 mb-1 block text-xs font-medium">
+      {question.label}
+      {!question.required && <span className="text-ink-400 ml-1 font-normal">(optional)</span>}
+    </label>
+  )
+  if (question.type === "single") {
+    return (
+      <div>
+        {label}
+        <div className="space-y-1">
+          {question.options.map((opt) => (
+            <label key={opt} className="text-ink-700 flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name={question.label}
+                checked={value === opt}
+                onChange={() => onChange(opt)}
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (question.type === "multi") {
+    const selected = Array.isArray(value) ? value : []
+    return (
+      <div>
+        {label}
+        <div className="space-y-1">
+          {question.options.map((opt) => (
+            <label key={opt} className="text-ink-700 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={selected.includes(opt)}
+                onChange={(e) =>
+                  onChange(
+                    e.target.checked ? [...selected, opt] : selected.filter((o) => o !== opt)
+                  )
+                }
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  if (question.type === "text") {
+    return (
+      <div>
+        {label}
+        <input
+          value={typeof value === "string" ? value : ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
+        />
+      </div>
+    )
+  }
+  return (
+    <div>
+      {label}
+      <textarea
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+        rows={3}
+        className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
+      />
     </div>
   )
 }
