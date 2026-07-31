@@ -891,3 +891,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Also live from #45 batch: settings grouped rulebook-first, structured application questions, org→league nav.
 - CI: deploy.yml (Vercel leftover) REMOVED — GitHub is a mirror only; 9 stale unit tests fixed → suite 305/305 green → push-failure emails stop.
 - Seed purge hardened (offers/games against demo teams deleted before teams — box reseed had crashed mid-purge on Offer FK).
+
+## #47 — 2026-07-31: CI FULLY GREEN (first time since ≥Jul 6) — no deploy needed (tests/workflows only)
+- All three jobs pass on 5444747: unit Test+TypeCheck (db-mocked layout test), Integration (Postgres), E2E gate (all 10 phase runners — fixtures repaired for 18+ attestation, STRICT age policy, derived division naming, club-scoped offer templates). Unit job's database-less Build step removed (E2E job builds vs real Postgres). deploy.yml (Vercel leftover) deleted → push-failure emails END.
+- Box at 918144d runs identical app code; test-only commits ride along on the next deploy.
