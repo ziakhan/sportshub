@@ -2118,8 +2118,8 @@ async function seed() {
     data: {
       leagueId: showcaseLeague.id, label: SHOWCASE_SEASON, status: "REGISTRATION",
       type: "FALL_WINTER",
-      registrationDeadline: new Date(Date.UTC(2026, 9, 1)),
-      startDate: showcaseStart, endDate: new Date(Date.UTC(2027, 2, 14)),
+      // Dates INHERITED from the NPH org cycle (owner 2026-07-31) — the
+      // cycle values equal this season's real window, so nothing is typed.
       ageGroupCutoffDate: new Date(Date.UTC(2026, 11, 31)), // U-age as of Dec 31
       // Fee, deposit, format, tiebreakers, application questions: ALL
       // inherited from the NPH org rulebook (fields left null on purpose —

@@ -51,6 +51,11 @@ export type OrgSeasonDefaults = z.infer<typeof seasonDefaultsSchema>
 
 /** Final fallbacks — the values the schema used to hardcode as DB defaults. */
 export const SYSTEM_DEFAULTS = {
+  // Season window (owner 2026-07-31: dates + price inherit like everything
+  // else — org key names differ, see ORG_KEY)
+  startDate: null as string | Date | null,
+  endDate: null as string | Date | null,
+  registrationDeadline: null as string | Date | null,
   gamesGuaranteed: null as number | null,
   gamePeriods: "HALVES" as string,
   periodLengthMinutes: null as number | null,
@@ -73,6 +78,13 @@ export const SYSTEM_DEFAULTS = {
 
 /** The live-inherited policy fields, in resolution order. */
 export const POLICY_FIELDS = Object.keys(SYSTEM_DEFAULTS) as Array<keyof typeof SYSTEM_DEFAULTS>
+
+/** Season column → org-defaults key, where the names differ. */
+const ORG_KEY: Partial<Record<keyof typeof SYSTEM_DEFAULTS, keyof OrgSeasonDefaults>> = {
+  startDate: "cycleStartDate",
+  endDate: "cycleEndDate",
+  registrationDeadline: "cycleRegistrationDeadline",
+}
 
 export type ConfigSource = "season" | "org" | "system"
 
@@ -107,7 +119,7 @@ export function effectiveSeasonConfig(
   const sources: Record<string, ConfigSource> = {}
   for (const field of POLICY_FIELDS) {
     const seasonValue = season[field]
-    const orgValue = (org as Record<string, unknown>)[field]
+    const orgValue = (org as Record<string, unknown>)[ORG_KEY[field] ?? field]
     if (isSet(seasonValue)) {
       values[field] = seasonValue
       sources[field] = "season"

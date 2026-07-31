@@ -59,6 +59,27 @@ describe("effectiveSeasonConfig", () => {
     expect(values.gameSlotMinutes).toBe(90)
   })
 
+  it("season dates inherit from the org cycle keys (owner 2026-07-31)", () => {
+    const { values, sources } = effectiveSeasonConfig(
+      { startDate: null, endDate: null, registrationDeadline: null },
+      {
+        cycleStartDate: "2026-10-03T00:00:00.000Z",
+        cycleEndDate: "2027-03-14T00:00:00.000Z",
+        cycleRegistrationDeadline: "2026-10-01T00:00:00.000Z",
+      }
+    )
+    expect(values.startDate).toBe("2026-10-03T00:00:00.000Z")
+    expect(sources.startDate).toBe("org")
+    expect(sources.registrationDeadline).toBe("org")
+    // a season with its own dates keeps them
+    const own = effectiveSeasonConfig(
+      { startDate: "2026-11-01T00:00:00.000Z" },
+      { cycleStartDate: "2026-10-03T00:00:00.000Z" }
+    )
+    expect(own.values.startDate).toBe("2026-11-01T00:00:00.000Z")
+    expect(own.sources.startDate).toBe("season")
+  })
+
   it("no org at all → pure system defaults", () => {
     const { values, sources } = effectiveSeasonConfig({}, null)
     expect(values.gamePeriods).toBe("HALVES")

@@ -174,8 +174,9 @@ export async function PATCH(
         // re-entry.
         const balanceDays = (feeConfig.balanceDueDaysBeforeStart as number) ?? 14
         const depositPct = feeConfig.depositPct as number | null
-        const balanceDue = season.startDate
-          ? new Date(new Date(season.startDate).getTime() - balanceDays * 86400_000)
+        // startDate may itself be inherited from the org cycle (Phase A)
+        const balanceDue = feeConfig.startDate
+          ? new Date(new Date(feeConfig.startDate as any).getTime() - balanceDays * 86400_000)
           : null
         await ensureObligation(tx, {
           payerTenantId: submission.team.tenantId,

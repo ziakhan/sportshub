@@ -128,3 +128,10 @@ Approved plan (Schedule Studio rebuild) Phase A: the org rulebook, built first.
 3. **Org → league navigation**: org page league rows now link to the real league hub (/manage/leagues/[id], name + "Open league →"); Customize demoted to a small "Branding" link.
 - Bug class closed while testing: TWO more raw applicationQuestions readers (club entry page + entries GET) now resolve season→org→system — an org-defined question set reaches the entry form and the application viewer.
 - Verified: tsc/lint clean · int 366/366 · lib unit 251/251 · Playwright 8/8 (scripts/demo/verify-owner-feedback-3.mjs, shots /tmp/feedback3-verify).
+
+## 12. 2026-07-31 late — dates + fee join the rulebook (owner: "why not inherited?")
+- Season start/end/registration-deadline are now LIVE-inherited from the org cycle (resolver ORG_KEY maps startDate→cycleStartDate etc.); season PATCH accepts explicit nulls to reset dates to inheritance. Team fee moved OUT of Basics into the Registration section (it was already inheritable — the UI misplaced it; summary line now leads "$3,990 team fee · 50% deposit…").
+- Basics = label (always season's own) + season-window summary "Inherited from NPH · Override" (or full date pickers when overridden); saving the label never freezes inherited dates. Status chip: "Basics · Dates inherited from NPH".
+- Effective dates wired into every LOGIC/DISPLAY reader found: submit-team deadline gate, approval balance-due (uses effective startDate), getLeaguesDirectory (covers web /leagues + mobile browse leagues), mobile season detail (already via getPublicSeason). Season-create prefill removed (copying would freeze overrides; empty = inherit).
+- Seed: Showcase drops its typed dates (equal to the org cycle) → Basics inherits end-to-end. UTC-midnight date display bug fixed (format in UTC).
+- Verified: tsc/lint clean · resolver unit 8/8 · int 366/366 · Playwright checks + screenshot (Basics "Season window … Inherited from North Pole Hoops", fee in Registration, chip "Dates inherited").

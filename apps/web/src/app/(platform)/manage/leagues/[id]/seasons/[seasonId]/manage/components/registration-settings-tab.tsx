@@ -23,6 +23,9 @@ export function RegistrationSettingsTab({
   const params = useParams()
   const leagueId = params?.id as string
 
+  const [teamFee, setTeamFee] = useState<string>(
+    league?.teamFee != null ? String(league.teamFee) : ""
+  )
   const [depositOn, setDepositOn] = useState<boolean>(league?.depositPct != null)
   const [depositDraft, setDepositDraft] = useState<string>(
     league?.depositPct != null ? String(league.depositPct) : "50"
@@ -41,6 +44,7 @@ export function RegistrationSettingsTab({
     setSaved(false)
     try {
       await patchSeason({
+        teamFee: teamFee === "" ? null : parseFloat(teamFee),
         depositPct: depositOn && depositDraft !== "" ? Number(depositDraft) : null,
         balanceDueDaysBeforeStart: balanceDays === "" ? null : Number(balanceDays),
         applicationQuestions: questions.filter((q) => q.label.trim()),
@@ -66,6 +70,18 @@ export function RegistrationSettingsTab({
       />
 
       <div className="space-y-4">
+        <label className="flex items-center gap-1.5 text-sm">
+          <span className="text-ink-900 font-medium">Team entry fee $</span>
+          <input
+            value={teamFee}
+            onChange={(e) => setTeamFee(e.target.value.replace(/[^\d.]/g, ""))}
+            inputMode="decimal"
+            aria-label="Team entry fee"
+            className={inputClass + " w-24"}
+          />
+          <span className="text-ink-500">per approved team</span>
+        </label>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

@@ -24,7 +24,13 @@ type SectionState = "ok" | "attention" | "optional" | "inherited"
 
 /** Which season columns belong to each overridable section (for reset). */
 const SECTION_FIELDS: Record<string, Record<string, unknown>> = {
-  registration: { depositPct: null, balanceDueDaysBeforeStart: null, applicationQuestions: [] },
+  basics: { startDate: null, endDate: null, registrationDeadline: null },
+  registration: {
+    teamFee: null,
+    depositPct: null,
+    balanceDueDaysBeforeStart: null,
+    applicationQuestions: [],
+  },
   "game-format": {
     gamesGuaranteed: null,
     gamePeriods: null,
@@ -86,6 +92,7 @@ export function SettingsTab({
   const [overriding, setOverriding] = useState<Record<string, boolean>>({})
 
   const src = {
+    basics: orgName ? sectionSource(sources, "basics") : null,
     registration: orgName ? sectionSource(sources, "registration") : null,
     "game-format": orgName ? sectionSource(sources, "game-format") : null,
     rules: orgName ? sectionSource(sources, "rules") : null,
@@ -101,14 +108,13 @@ export function SettingsTab({
     {
       id: "basics",
       label: "Basics",
-      state:
-        league?.startDate && league?.endDate && league?.teamFee != null ? "ok" : "attention",
+      state: stateFor("basics", league?.startDate && league?.endDate ? "ok" : "attention"),
       hint:
-        league?.startDate && league?.endDate && league?.teamFee != null
-          ? sources?.teamFee === "org"
-            ? "Dates set · fee inherited"
-            : "Dates and fee set"
-          : "Dates or fee missing",
+        src.basics === "org"
+          ? `Dates inherited from ${orgName}`
+          : league?.startDate && league?.endDate
+            ? "Dates set"
+            : "Dates missing",
     },
     {
       id: "divisions",
@@ -261,7 +267,14 @@ export function SettingsTab({
           {divider}
           <section id="basics" className="scroll-mt-24">
             <SectionHeading n={n} title="Basics" state={state} />
-            <BasicsSettings league={league} patchSeason={patchSeason} />
+            {!showsSummary("basics") && overrideBar("basics")}
+            <BasicsSettings
+              league={league}
+              patchSeason={patchSeason}
+              datesInherited={showsSummary("basics")}
+              orgName={orgName}
+              onOverrideDates={() => setOverriding((p) => ({ ...p, basics: true }))}
+            />
           </section>
         </div>
       )
@@ -285,9 +298,11 @@ export function SettingsTab({
           <InheritedSummary
             orgName={orgName!}
             lines={[
-              league?.depositPct != null
-                ? `${league.depositPct}% deposit · balance ${league.balanceDueDaysBeforeStart ?? 14} days before start`
-                : "Full fee at approval, no deposit",
+              `${league?.teamFee != null ? `$${Number(league.teamFee).toLocaleString()} team fee · ` : ""}${
+                league?.depositPct != null
+                  ? `${league.depositPct}% deposit · balance ${league.balanceDueDaysBeforeStart ?? 14} days before start`
+                  : "full fee at approval, no deposit"
+              }`,
               `${Array.isArray(league?.applicationQuestions) ? league.applicationQuestions.length : 0} club application question${(league?.applicationQuestions?.length ?? 0) === 1 ? "" : "s"}`,
             ]}
             onOverride={() => setOverriding((p) => ({ ...p, registration: true }))}
@@ -421,22 +436,40 @@ function SectionHeading({ n, title, state }: { n: number; title: string; state: 
   )
 }
 
-/** Season basics — previously only editable from the league page's season form. */
+/**
+ * Season basics — label is always the season's own; the dates inherit the
+ * org cycle until overridden (owner 2026-07-31: "why are the dates not
+ * inherited?"). The fee lives in Registration with the rest of the money.
+ */
 function BasicsSettings({
   league,
   patchSeason,
+  datesInherited = false,
+  orgName,
+  onOverrideDates,
 }: {
   league: any
   patchSeason: (body: Record<string, any>) => Promise<void>
+  datesInherited?: boolean
+  orgName?: string | null
+  onOverrideDates?: () => void
 }) {
   const toDateInput = (v: string | null | undefined) => (v ? String(v).slice(0, 10) : "")
+  // Date-only values are stored as UTC midnight — format in UTC or Toronto
+  // renders the previous day.
+  const fmt = (v: string | null | undefined) =>
+    v
+      ? new Date(v).toLocaleDateString("en-CA", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          timeZone: "UTC",
+        })
+      : "—"
   const [label, setLabel] = useState<string>(league?.label ?? "")
   const [startDate, setStartDate] = useState<string>(toDateInput(league?.startDate))
   const [endDate, setEndDate] = useState<string>(toDateInput(league?.endDate))
   const [deadline, setDeadline] = useState<string>(toDateInput(league?.registrationDeadline))
-  const [teamFee, setTeamFee] = useState<string>(
-    league?.teamFee != null ? String(league.teamFee) : ""
-  )
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -446,10 +479,13 @@ function BasicsSettings({
     try {
       const body: Record<string, any> = {}
       if (label.trim()) body.label = label.trim()
-      if (startDate) body.startDate = new Date(startDate).toISOString()
-      if (endDate) body.endDate = new Date(endDate).toISOString()
-      if (deadline) body.registrationDeadline = new Date(deadline).toISOString()
-      body.teamFee = teamFee === "" ? undefined : parseFloat(teamFee)
+      // Inherited dates are never written back — saving the label must not
+      // freeze the org cycle into overrides.
+      if (!datesInherited) {
+        if (startDate) body.startDate = new Date(startDate).toISOString()
+        if (endDate) body.endDate = new Date(endDate).toISOString()
+        if (deadline) body.registrationDeadline = new Date(deadline).toISOString()
+      }
       await patchSeason(body)
       setSaved(true)
     } finally {
@@ -480,32 +516,43 @@ function BasicsSettings({
             className={inputClass + " w-full"}
           />
         </div>
-        <div>
-          <label className="text-ink-700 mb-1 block text-xs font-medium">Start date</label>
-          <DateTimePicker mode="date" value={startDate} onChange={setStartDate} className="w-full" />
-        </div>
-        <div>
-          <label className="text-ink-700 mb-1 block text-xs font-medium">End date</label>
-          <DateTimePicker mode="date" value={endDate} onChange={setEndDate} className="w-full" />
-        </div>
-        <div>
-          <label className="text-ink-700 mb-1 block text-xs font-medium">
-            Registration deadline
-          </label>
-          <DateTimePicker mode="date" value={deadline} onChange={setDeadline} className="w-full" />
-        </div>
-        <div>
-          <label className="text-ink-700 mb-1 block text-xs font-medium">Team entry fee ($)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={teamFee}
-            onChange={(e) => setTeamFee(e.target.value)}
-            placeholder="e.g. 3990"
-            className={inputClass + " w-full"}
-          />
-        </div>
+        {datesInherited ? (
+          <div className="sm:col-span-1 lg:col-span-2">
+            <label className="text-ink-700 mb-1 block text-xs font-medium">Season window</label>
+            <div className="border-play-100 bg-play-50/40 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
+              <p className="text-ink-800 text-sm">
+                {fmt(league?.startDate)} – {fmt(league?.endDate)} · registration closes{" "}
+                {fmt(league?.registrationDeadline)}
+                <span className="text-ink-400 block text-xs">
+                  Inherited from {orgName} — changes there apply here automatically.
+                </span>
+              </p>
+              <button
+                onClick={onOverrideDates}
+                className="border-ink-200 text-ink-700 hover:border-play-300 hover:text-play-700 shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition"
+              >
+                Override
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className="text-ink-700 mb-1 block text-xs font-medium">Start date</label>
+              <DateTimePicker mode="date" value={startDate} onChange={setStartDate} className="w-full" />
+            </div>
+            <div>
+              <label className="text-ink-700 mb-1 block text-xs font-medium">End date</label>
+              <DateTimePicker mode="date" value={endDate} onChange={setEndDate} className="w-full" />
+            </div>
+            <div>
+              <label className="text-ink-700 mb-1 block text-xs font-medium">
+                Registration deadline
+              </label>
+              <DateTimePicker mode="date" value={deadline} onChange={setDeadline} className="w-full" />
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

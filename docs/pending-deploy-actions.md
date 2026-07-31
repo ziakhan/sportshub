@@ -884,5 +884,5 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Owner report: org defaults empty / season settings unchanged. Fix: NPH seed now carries the full org rulebook; Showcase+Fall seasons inherit (null fields), Summer keeps deliberate overrides. Finalize preflight + standings tiebreakers now resolve effective config (inheriting seasons can finalize; org tiebreakers apply).
 - Box verified: org seasonDefaults present, Showcase teamFee NULL (inheriting), site 200. Reseed regenerated demo ids (old season URLs are stale). Neon unchanged/pending.
 
-## #45 — 2026-07-31: SETTINGS GROUPING + STRUCTURED QUESTIONS + ORG NAV — local, NOT deployed
+## #45 — 2026-07-31: SETTINGS GROUPING + STRUCTURED QUESTIONS + ORG NAV + DATES/FEE INHERITANCE — local, NOT deployed
 - No schema change (questions ride the existing Json columns; legacy strings normalize). Reseed recommended after deploy (seed adds a single-choice demo question): reseed-demo.sh --purge-manual-leagues. No cron, no env.

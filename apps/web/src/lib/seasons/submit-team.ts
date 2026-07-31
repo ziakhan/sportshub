@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { canSubmitTeams, SUBMIT_CLOSED_MESSAGE } from "@/lib/seasons/season-lock"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 import { resolveRosterSelection } from "@/lib/seasons/roster-selection"
 import { notifyMany } from "@/lib/notifications"
 
@@ -34,7 +35,14 @@ export async function submitTeamToSeason(input: {
       registrationDeadline: true,
       teamFee: true,
       label: true,
-      league: { select: { id: true, name: true, ownerId: true } },
+      league: {
+        select: {
+          id: true,
+          name: true,
+          ownerId: true,
+          organization: { select: { seasonDefaults: true } },
+        },
+      },
     } as any,
   })) as any
   if (!season) return { ok: false, status: 404, error: "League not found" }
@@ -42,7 +50,12 @@ export async function submitTeamToSeason(input: {
   if (!canSubmitTeams(season.status)) {
     return { ok: false, status: 400, error: SUBMIT_CLOSED_MESSAGE, code: "SEASON_NOT_OPEN" }
   }
-  if (season.registrationDeadline && new Date(season.registrationDeadline) < new Date()) {
+  // The deadline may be inherited from the org cycle (Phase A).
+  const { values: cfg } = effectiveSeasonConfig(
+    season,
+    season.league?.organization?.seasonDefaults
+  )
+  if (cfg.registrationDeadline && new Date(cfg.registrationDeadline as any) < new Date()) {
     return { ok: false, status: 400, error: "Registration deadline has passed" }
   }
 

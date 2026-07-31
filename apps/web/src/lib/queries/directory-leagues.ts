@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 /**
  * Public leagues directory — ONE source for the web /leagues page and the
@@ -50,6 +51,7 @@ export async function getLeaguesDirectory(): Promise<DirectoryLeague[]> {
       name: true,
       description: true,
       perks: true,
+      organization: { select: { seasonDefaults: true } },
       seasons: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -76,6 +78,8 @@ export async function getLeaguesDirectory(): Promise<DirectoryLeague[]> {
       .filter((l: any) => l.seasons.length > 0)
       .map(async (l: any) => {
         const season = l.seasons[0]
+        // Dates may be inherited from the org cycle (Phase A)
+        const { values: cfg } = effectiveSeasonConfig(season, l.organization?.seasonDefaults)
         const [completedGames, liveGames] = await Promise.all([
           (prisma as any).game.count({ where: { seasonId: season.id, status: "COMPLETED" } }),
           (prisma as any).game.count({ where: { seasonId: season.id, status: "LIVE" } }),
@@ -89,8 +93,8 @@ export async function getLeaguesDirectory(): Promise<DirectoryLeague[]> {
             id: season.id,
             label: season.label,
             status: season.status,
-            startDate: season.startDate,
-            endDate: season.endDate,
+            startDate: cfg.startDate as any,
+            endDate: cfg.endDate as any,
             teamCount: season._count.teamSubmissions,
             divisionCount: season._count.divisions,
           },

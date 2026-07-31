@@ -139,9 +139,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (body[field] !== undefined) update[field] = body[field]
     }
     if (body.teamFee !== undefined) update.teamFee = body.teamFee
-    if (body.startDate) update.startDate = new Date(body.startDate)
-    if (body.endDate) update.endDate = new Date(body.endDate)
-    if (body.registrationDeadline) update.registrationDeadline = new Date(body.registrationDeadline)
+    // Explicit null clears a date back to inheriting the org cycle (Phase A)
+    if (body.startDate !== undefined)
+      update.startDate = body.startDate ? new Date(body.startDate) : null
+    if (body.endDate !== undefined) update.endDate = body.endDate ? new Date(body.endDate) : null
+    if (body.registrationDeadline !== undefined)
+      update.registrationDeadline = body.registrationDeadline
+        ? new Date(body.registrationDeadline)
+        : null
     if (body.rosterChangeDeadline !== undefined) {
       update.rosterChangeDeadline = body.rosterChangeDeadline
         ? new Date(body.rosterChangeDeadline)
