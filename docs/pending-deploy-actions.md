@@ -911,3 +911,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - 16 public/family surfaces filter drafts via `lib/games/visibility.ts` PUBLISHED_GAME (scores, league page, ICS calendar, mobile browse, live ticker, team page/calendar, dashboards, RSVP sweep, my-calendar, feeds, club profile, score picker). Console schedule GET now owner/admin-only (was UNAUTHENTICATED).
 - UI: gold draft banner + "Publish schedule · N new", Draft badges, checklist step 10 "Schedule published", TeamCheck preview mode (preview games visible per team pre-commit), capacity card refetches on every session edit (was length-only dep).
 - Deploy order on box: push GitHub → deploy.sh → `prisma db push` → backfill script → reseed demo (`--purge-manual-leagues`).
+
+## #51 — 2026-07-31: VENUE/COURT/SESSION FLOW — ✅ DEPLOYED TO BOX (sha f37f188)
+- One-step venue setup (auto-created courts + hours + propagate-to-sessions), "used by X of Y sessions" + propagate endpoint, cascade on remove, session form defaults ON, supply-first panel order. No schema change; no reseed needed.
+- Also live from this morning's chain: #49 (10/5/2 scheduler spread) + #50 (draft→publish layer; column + backfill applied via psql, demo reseeded 320/320 published).
