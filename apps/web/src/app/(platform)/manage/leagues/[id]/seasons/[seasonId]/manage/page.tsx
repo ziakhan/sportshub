@@ -314,13 +314,16 @@ export default function LeagueManagePage() {
               divisions={divisions}
               scheduleGamesCount={scheduleGames.length}
             />
+            {/* Supply before demand (owner 2026-07-31): venues + courts
+                first, then the sessions that consume them. */}
+            <VenuesTab seasonId={seasonId} venues={venues} sessions={sessions} refresh={fetchAll} />
             <SessionsTab
               seasonId={seasonId}
               sessions={sessions}
+              venues={venues}
               seasonStatus={league?.leagueStatus}
               refresh={fetchAll}
             />
-            <VenuesTab seasonId={seasonId} venues={venues} refresh={fetchAll} />
             <ScheduleTab
               seasonId={seasonId}
               league={league}

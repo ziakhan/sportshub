@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { format } from "date-fns"
 import { Button, PanelHeader, DateTimePicker, Badge } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
@@ -31,29 +31,23 @@ interface SessionInitial {
 export function SessionsTab({
   seasonId,
   sessions,
+  venues,
   seasonStatus,
   refresh,
 }: {
   seasonId: string
   sessions: any[]
+  /** Season venues from the page's shared fetch — one source with VenuesTab
+   *  (a private fetch here could fail once on a cold compile and leave the
+   *  form venue-less forever). */
+  venues: any[]
   seasonStatus?: string
   refresh: () => void
 }) {
   const locked = LOCKED_STATUSES.includes(seasonStatus ?? "")
-  const [seasonVenues, setSeasonVenues] = useState<any[]>([])
+  const seasonVenues = venues
   const [editingId, setEditingId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    fetch(`/api/seasons/${seasonId}/venues`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => alive && setSeasonVenues(data?.venues ?? []))
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [seasonId, sessions.length])
 
   const save = async (sessionId: string | null, payload: any) => {
     const res = await fetch(
@@ -193,8 +187,18 @@ export function SessionsTab({
         )}
         {creating && (
           <SessionForm
+            // Remount if venues arrive after the form opened, so defaults land.
+            key={`create-${seasonVenues.length}`}
             seasonVenues={seasonVenues}
             initial={null}
+            // New sessions start with EVERY season venue and its default
+            // courts already on (owner 2026-07-31) — trim, don't build up.
+            defaultSelections={seasonVenues.map((sv: any) => ({
+              venueId: sv.venue.id,
+              courtIds: (sv.venue.courtList ?? [])
+                .slice(0, sv.courtsAvailable ?? undefined)
+                .map((c: any) => c.id),
+            }))}
             onCancel={() => setCreating(false)}
             onSave={(payload) => save(null, payload)}
           />
@@ -212,11 +216,13 @@ export function SessionsTab({
 function SessionForm({
   seasonVenues,
   initial,
+  defaultSelections,
   onSave,
   onCancel,
 }: {
   seasonVenues: any[]
   initial: SessionInitial | null
+  defaultSelections?: VenueSelection[]
   onSave: (payload: any) => Promise<boolean> | boolean
   onCancel: () => void
 }) {
@@ -224,7 +230,9 @@ function SessionForm({
   const [days, setDays] = useState<DayDraft[]>(
     initial?.days?.length ? initial.days : [{ date: "", startTime: "09:00", endTime: "17:00" }]
   )
-  const [selections, setSelections] = useState<VenueSelection[]>(initial?.venues ?? [])
+  const [selections, setSelections] = useState<VenueSelection[]>(
+    initial?.venues ?? defaultSelections ?? []
+  )
   const [gamesPerTeam, setGamesPerTeam] = useState<string>(
     initial?.targetGamesPerTeam != null ? String(initial.targetGamesPerTeam) : ""
   )
@@ -358,17 +366,21 @@ function SessionForm({
         >
           + Add another day
         </button>
+        <p className="text-ink-400 text-[11px]">
+          Hours prefill from the venue&apos;s scheduling hours when you pick a date — adjust a
+          day only if your booking differs.
+        </p>
       </div>
 
       {/* Venues & courts this session uses, in preferred fill order */}
       <div>
         <p className="text-ink-700 text-xs font-semibold">Where do games run?</p>
         <p className="text-ink-400 mb-1.5 text-[11px]">
-          Pick the courts this session uses. Games fill the first court, then overflow down the
-          list.
+          The season&apos;s courts start ON — untick what this session doesn&apos;t have. Games
+          fill the first court, then overflow down the list.
         </p>
         {seasonVenues.length === 0 ? (
-          <p className="text-ink-500 text-xs">Add a venue to the season first (below).</p>
+          <p className="text-ink-500 text-xs">Add a venue to the season first (above).</p>
         ) : (
           <div className="space-y-1.5">
             {seasonVenues.map((sv: any) => {
