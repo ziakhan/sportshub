@@ -916,5 +916,5 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - One-step venue setup (auto-created courts + hours + propagate-to-sessions), "used by X of Y sessions" + propagate endpoint, cascade on remove, session form defaults ON, supply-first panel order. No schema change; no reseed needed.
 - Also live from this morning's chain: #49 (10/5/2 scheduler spread) + #50 (draft→publish layer; column + backfill applied via psql, demo reseeded 320/320 published).
 
-## #52 — 2026-07-31: SCHEDULER ROTATION + VARIETY + REPAIR + 20-TEAM DEMO — local (d6db376), NOT deployed
+## #52 — 2026-07-31: SCHEDULER ROTATION + VARIETY + REPAIR + SHUFFLE + SHARED VENUES + 20-TEAM DEMO — ✅ DEPLOYED (box 59cbbe1) + reseeded (Fall 10+10 teams verified)
 - Time-of-day rotation, per-season rematch variety (varietySeed), repair pass (100/100 games), whole-season existingGames seeding. Demo Fall = 20 teams (10/division). No schema change. Deploy MUST be followed by box reseed (new world shape).
