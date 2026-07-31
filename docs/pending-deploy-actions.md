@@ -922,3 +922,6 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 ## #53 — 2026-08-01 overnight: SCHEDULE STUDIO P0 FOUNDATIONS — ✅ DEPLOYED (box 062af00) + one-time SQL ran (189 legacy SCHEDULED games unlocked; remaining isLocked rows are COMPLETED games, inert)
 - conflicts helper (cross-league court checks on manual moves) · isLocked=pinned (commit unlocked, regen preserves pinned, PATCH 409) · swap + validate endpoints · hard play-everyone-before-repeats · division guards (approve/delete/preflight) · D-004 ref calendar + W-001 stat casing.
 - Deploy steps: push→deploy.sh, then ONE-TIME SQL on box: `UPDATE "Game" SET "isLocked" = false WHERE status = 'SCHEDULED' AND "isLocked" = true;` (old commits locked every game; new semantics = pinned). Reseed optional (no world-shape change).
+
+## #54 — 2026-08-01: SCHEDULER FIX TRAIN — ✅ DEPLOYED (box 3823ac5)
+- 4bfeccc (whole-season 87/13 stranding fix) + b3b681f (same-session rematch law + spacing + repair ladder) + 3823ac5 (Fill the gaps recovery). No schema change, no reseed.
