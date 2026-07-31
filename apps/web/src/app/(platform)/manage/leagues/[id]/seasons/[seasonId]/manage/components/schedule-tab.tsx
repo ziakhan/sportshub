@@ -74,6 +74,10 @@ export function ScheduleTab({
     utilization: any
   } | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  // Variation number (owner 2026-07-31): 0 = the season's standard plan;
+  // Shuffle rolls deterministic variations. Commit sends the SAME number,
+  // so what you previewed is exactly what gets saved.
+  const [shuffle, setShuffle] = useState(0)
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
   const [capacity, setCapacity] = useState<CapacitySession[] | null>(null)
@@ -123,13 +127,19 @@ export function ScheduleTab({
     setPreview(null) // stale against the new plan
   }
 
-  const runPreview = async () => {
+  const runPreview = async (shuffleOverride?: number) => {
+    const attempt = shuffleOverride ?? shuffle
+    if (shuffleOverride !== undefined) setShuffle(shuffleOverride)
     setPreviewLoading(true)
     setScheduleError(null)
     const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionUnits, sessionIds: scopeSessionIds }),
+      body: JSON.stringify({
+        sessionUnits,
+        sessionIds: scopeSessionIds,
+        varietyShuffle: attempt || undefined,
+      }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -160,6 +170,7 @@ export function ScheduleTab({
         replaceExisting: true,
         sessionUnits,
         sessionIds: scopeSessionIds,
+        varietyShuffle: shuffle || undefined,
       }),
     })
     if (!res.ok) {
@@ -376,7 +387,7 @@ export function ScheduleTab({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Button
             size="sm"
-            onClick={runPreview}
+            onClick={() => runPreview()}
             disabled={previewLoading || (mode === "session" && !selectedSessionId)}
           >
             {previewLoading
@@ -385,6 +396,28 @@ export function ScheduleTab({
                 ? `Preview ${selectedSession?.label || "session"}`
                 : "Preview whole season"}
           </Button>
+          <span title="Roll a different matchup/time variation — previewing and committing keep the exact variation shown">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => runPreview(shuffle + 1)}
+              disabled={previewLoading || (mode === "session" && !selectedSessionId)}
+            >
+              Shuffle
+            </Button>
+          </span>
+          {shuffle > 0 && (
+            <span className="bg-play-100 text-play-700 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+              Variation #{shuffle}
+              <button
+                onClick={() => runPreview(0)}
+                className="hover:text-play-900 underline decoration-dotted"
+                title="Back to the season's standard plan"
+              >
+                reset
+              </button>
+            </span>
+          )}
           <span title={!canCommit ? "Finalize the season before committing" : ""}>
             <Button
               size="sm"

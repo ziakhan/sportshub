@@ -14,6 +14,10 @@ const previewSchema = z.object({
   // Session-by-session mode: only schedule these sessions; committed games
   // elsewhere seed matchup rotation and count toward guarantees.
   sessionIds: z.array(z.string()).optional(),
+  // Shuffle attempt (owner 2026-07-31): 0/absent = the season's standard
+  // variation; N rolls a different deterministic variation. The UI passes
+  // the SAME number it previewed with, so commit writes what was shown.
+  varietyShuffle: z.number().int().min(0).max(999).optional(),
 })
 
 /**
@@ -35,11 +39,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const body = await request.json().catch(() => ({}))
-    const { sessionUnits, sessionIds } = previewSchema.parse(body ?? {})
+    const { sessionUnits, sessionIds, varietyShuffle } = previewSchema.parse(body ?? {})
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot preview", errors }, { status: 422 })
+    }
+    if (varietyShuffle) {
+      input.varietySeed = ((input.varietySeed ?? 0) + varietyShuffle * 131) % 9973
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     if (sessionIds && sessionIds.length > 0) {

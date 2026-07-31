@@ -16,6 +16,10 @@ const commitSchema = z.object({
   sessionUnits: z.record(z.array(z.string())).optional(),
   // Session-by-session mode: only schedule + replace these sessions.
   sessionIds: z.array(z.string()).optional(),
+  // Shuffle attempt (owner 2026-07-31): 0/absent = the season's standard
+  // variation; N rolls a different deterministic variation. The UI passes
+  // the SAME number it previewed with, so commit writes what was shown.
+  varietyShuffle: z.number().int().min(0).max(999).optional(),
 })
 
 /**
@@ -43,11 +47,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const body = await request.json().catch(() => ({}))
-    const { replaceExisting, sessionUnits, sessionIds } = commitSchema.parse(body)
+    const { replaceExisting, sessionUnits, sessionIds, varietyShuffle } = commitSchema.parse(body)
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {
       return NextResponse.json({ error: "Cannot commit", errors }, { status: 422 })
+    }
+    if (varietyShuffle) {
+      input.varietySeed = ((input.varietySeed ?? 0) + varietyShuffle * 131) % 9973
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     const scoped = !!(sessionIds && sessionIds.length > 0)
