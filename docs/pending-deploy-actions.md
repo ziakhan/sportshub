@@ -895,3 +895,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 ## #47 — 2026-07-31: CI FULLY GREEN (first time since ≥Jul 6) — no deploy needed (tests/workflows only)
 - All three jobs pass on 5444747: unit Test+TypeCheck (db-mocked layout test), Integration (Postgres), E2E gate (all 10 phase runners — fixtures repaired for 18+ attestation, STRICT age policy, derived division naming, club-scoped offer templates). Unit job's database-less Build step removed (E2E job builds vs real Postgres). deploy.yml (Vercel leftover) deleted → push-failure emails END.
 - Box at 918144d runs identical app code; test-only commits ride along on the next deploy.
+
+## #48 — 2026-07-31: TEAM CHECK + SESSION-SCOPED VIEW + BOX TZ — ✅ DEPLOYED (sha 8963eac) + reseeded
+- TeamCheck verification panel (per-team checkmarks, games vs target, click→ schedule) · committed list scoped to selected session · Summer sessions "Weekend N".
+- **BOX ENV CHANGE: TZ=America/Toronto added to /etc/sportshub/web.env** (box OS runs UTC; scheduler slot math is local-time → games generated at 5 a.m. Toronto). Any future box rebuild must keep TZ set. Verified post-reseed: Summer games at 9:00 a.m. Toronto.
