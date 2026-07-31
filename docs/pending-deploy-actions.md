@@ -925,3 +925,6 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 
 ## #54 — 2026-08-01: SCHEDULER FIX TRAIN — ✅ DEPLOYED (box 3823ac5)
 - 4bfeccc (whole-season 87/13 stranding fix) + b3b681f (same-session rematch law + spacing + repair ladder) + 3823ac5 (Fill the gaps recovery). No schema change, no reseed.
+
+## #55 — 2026-08-01: SCHEDULER ARCHITECTURE TRAIN — ✅ DEPLOYED (box 96e76ff)
+- cfa8d6b (failure diagnostics w/ exact fixes) + 4f47e10 (trade-offs ≠ errors panel) + 9992505 (augmenting-chain relocation — concessions eliminated on the seeded world) + 96e76ff (two-phase placement: courts-are-just-slots, gap shaping, court rotation, venue-major, same-gym cohesion + FAIRNESS REPORT api+panel). No schema change, no reseed.
