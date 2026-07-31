@@ -413,6 +413,13 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     }
   }
 
+  // Rematch shaping state (owner 2026-08-01): a pair NEVER meets twice in
+  // one session (2-team divisions excepted — they only have each other),
+  // and rematches are pushed as far from the first meeting as possible.
+  const unitSizeByKey = new Map(units.map((u) => [u.key, u.teams.length]))
+  const pairSessionMet = new Set<string>()
+  const pairLastMet: Record<string, number> = {}
+
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
   const teamBookings: Record<string, Array<{ start: Date; end: Date; dateKey: string }>> = {}
@@ -444,6 +451,11 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
         const sk = sessionKey(g.sessionId, id)
         teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
       }
+      pairSessionMet.add(`${g.sessionId}|${pairKey(g.homeTeamId, g.awayTeamId)}`)
+    }
+    if (g.scheduledAt) {
+      const pk = pairKey(g.homeTeamId, g.awayTeamId)
+      pairLastMet[pk] = Math.max(pairLastMet[pk] ?? 0, new Date(g.scheduledAt).getTime())
     }
   }
   {
@@ -550,7 +562,14 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   const scoreCandidate = (
     pairing: Pairing,
     slot: SchedulerSlot,
-    relaxDayCap = false
+    relaxDayCap = false,
+    lastResort = false,
+    // The repair pass orders candidates fewest-meetings-first itself, so the
+    // cycle gate below would only re-create dead ends there (2026-08-01:
+    // 87/13). The MAIN passes keep it hard — including the relaxed one
+    // (lifting it there let cycle-2 rematches starve a team's unmet
+    // first meetings).
+    inRepair = false
   ): { score: number; blockReason?: string } => {
     const { homeTeamId, awayTeamId } = pairing
     if (homeTeamId === awayTeamId) return { score: -Infinity, blockReason: "same team" }
@@ -581,10 +600,12 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
         return { score: -Infinity, blockReason: "away team at session target" }
     }
 
-    // Hard (always): per-session share — spread across the season instead
-    // of packing the earliest weekend.
+    // Hard (always, except the repair pass's last resort — one extra game
+    // in a weekend beats a team ending the season short): per-session
+    // share — spread across the season instead of packing the earliest
+    // weekend.
     const capHere = perSessionCap.get(slot.sessionId)
-    if (capHere !== undefined) {
+    if (capHere !== undefined && !lastResort) {
       if ((teamSessionCount[sessionKey(slot.sessionId, homeTeamId)] ?? 0) >= capHere)
         return { score: -Infinity, blockReason: "home team at this session's share" }
       if ((teamSessionCount[sessionKey(slot.sessionId, awayTeamId)] ?? 0) >= capHere)
@@ -624,15 +645,31 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const timesPlayed = playedPairCount[pKey] ?? 0
     score -= timesPlayed * 3
 
-    // Hard (strict pass only): never a rematch while a first meeting (or
+    if (timesPlayed > 0) {
+      // HARD, every pass (owner 2026-08-01): the same matchup never happens
+      // twice within one session. Only a 2-team division is exempt — those
+      // teams have nobody else to play.
+      if (
+        !lastResort &&
+        (unitSizeByKey.get(pairing.unitKey) ?? 99) > 2 &&
+        pairSessionMet.has(`${slot.sessionId}|${pKey}`)
+      ) {
+        return { score: -Infinity, blockReason: "rematch within the same session" }
+      }
+      // Soft, strong: spread the two meetings apart — a rematch the very
+      // next weekend reads odd. Full penalty fades out over ~5 weeks.
+      const lastMet = pairLastMet[pKey]
+      if (lastMet !== undefined) {
+        const daysApart = Math.abs(slot.startAt.getTime() - lastMet) / 86400000
+        score -= Math.max(0, 35 - daysApart) * 0.4
+      }
+    }
+
+    // Hard (both main passes): never a rematch while a first meeting (or
     // lower-cycle meeting) in the same unit is still waiting to be placed.
-    // The relaxed/repair passes lift this — when caps and bookings corner
-    // the endgame, filling every team's games beats stranding them
-    // (2026-08-01: the always-hard version left 13 of 100 games unplaced
-    // on the 20-team whole-season run).
     const unitMin = unitMinMeetings.get(pairing.unitKey)
     if (
-      !relaxDayCap &&
+      !inRepair &&
       unitMin !== undefined &&
       unitMin !== Infinity &&
       timesPlayed > unitMin
@@ -716,6 +753,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     ]
     const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
     playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
+    pairSessionMet.add(`${slot.sessionId}|${pk}`)
+    pairLastMet[pk] = Math.max(pairLastMet[pk] ?? 0, slot.startAt.getTime())
     for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
       const sk = sessionKey(slot.sessionId, id)
       teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
@@ -757,7 +796,15 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   }
   const repairCount = (teamId: string): number =>
     (teamGameCount[teamId] ?? 0) + (sessionTeamCap === null ? existingTeamGames[teamId] ?? 0 : 0)
-  for (const relax of [false, true]) {
+  // Three escalating rounds: strict → relaxed day cap → LAST RESORT (a
+  // rematch may share a session with the first meeting). The last round
+  // exists because a zero-slack season (games = sessions × session share)
+  // can make the same-session law unsatisfiable for the final games — a
+  // team missing its paid-for game is worse, and the warning says so.
+  let sameSessionRematches = 0
+  let overShareGames = 0
+  let bonusGames = 0
+  for (const mode of ["strict", "relaxDay", "lastResort", "overGuarantee"] as const) {
     let moved = true
     while (moved) {
       moved = false
@@ -765,17 +812,33 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
         if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt)) continue
         let best: Pairing | null = null
         let bestScore = -Infinity
+        // Final mode (real-league escape valve): a FULL team may take ONE
+        // bonus game (guarantee + 1) so an under-served team never ends the
+        // season short — but only pairs with at least one team genuinely
+        // under target qualify.
+        const partnerCap = repairTarget + (mode === "overGuarantee" ? 1 : 0)
         for (const u of units) {
           for (let i = 0; i < u.teams.length; i++) {
-            if (repairCount(u.teams[i].teamId) >= repairTarget) continue
+            if (repairCount(u.teams[i].teamId) >= partnerCap) continue
             for (let j = i + 1; j < u.teams.length; j++) {
-              if (repairCount(u.teams[j].teamId) >= repairTarget) continue
+              if (repairCount(u.teams[j].teamId) >= partnerCap) continue
+              if (
+                repairCount(u.teams[i].teamId) >= repairTarget &&
+                repairCount(u.teams[j].teamId) >= repairTarget
+              )
+                continue
               const pairing: Pairing = {
                 unitKey: u.key,
                 homeTeamId: u.teams[i].teamId,
                 awayTeamId: u.teams[j].teamId,
               }
-              const cand = scoreCandidate(pairing, slot, relax)
+              const cand = scoreCandidate(
+                pairing,
+                slot,
+                mode !== "strict",
+                mode === "lastResort" || mode === "overGuarantee",
+                true
+              )
               if (cand.score === -Infinity) continue
               // Fewest prior meetings dominates the slot preferences here.
               const score =
@@ -788,11 +851,45 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
           }
         }
         if (best) {
+          if (mode === "overGuarantee") {
+            for (const id of [best.homeTeamId, best.awayTeamId]) {
+              if (repairCount(id) >= repairTarget) bonusGames++
+            }
+          }
+          if (mode === "lastResort" || mode === "overGuarantee") {
+            if (pairSessionMet.has(`${slot.sessionId}|${pairKey(best.homeTeamId, best.awayTeamId)}`)) {
+              sameSessionRematches++
+            }
+            const capHere = perSessionCap.get(slot.sessionId)
+            if (
+              capHere !== undefined &&
+              [best.homeTeamId, best.awayTeamId].some(
+                (id) => (teamSessionCount[sessionKey(slot.sessionId, id)] ?? 0) >= capHere
+              )
+            ) {
+              overShareGames++
+            }
+          }
           commitPlacement(slot, best)
           moved = true
         }
       }
     }
+  }
+  if (bonusGames > 0) {
+    warnings.push(
+      `${bonusGames} team${bonusGames === 1 ? " plays" : "s play"} one game beyond the guarantee so no team ends the season short.`
+    )
+  }
+  if (overShareGames > 0) {
+    warnings.push(
+      `${overShareGames} game${overShareGames === 1 ? "" : "s"} exceed a session's per-team share — there was no other room. Add a session or more court time to avoid this.`
+    )
+  }
+  if (sameSessionRematches > 0) {
+    warnings.push(
+      `${sameSessionRematches} rematch${sameSessionRematches === 1 ? "" : "es"} had to share a session with the first meeting — there was no other room. Add a session or more court time to avoid this.`
+    )
   }
 
   // Utilization

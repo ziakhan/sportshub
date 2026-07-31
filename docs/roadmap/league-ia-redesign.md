@@ -193,3 +193,11 @@ The approved plan's P0 backend layer, unblocking the P1 drag-and-drop board:
 
 ## 20. 2026-08-01 — hotfix: whole-season 87/13 (owner repro on box)
 - The overnight always-hard fairness gate cornered the whole-season endgame: rematches stayed blocked while the leftover first meetings were themselves unplaceable (caps/bookings), stranding 13 of 100 games. Gate is now hard in the STRICT pass only — relaxed/repair passes may book rematches to fill counts (diversity scoring still prefers first meetings). Repro'd 87/13 locally → 100/0 after fix; 10/team · 2/session; matchup quality equal to session-by-session runs (87 unique pairs, 12 rematch pairs). Scheduler 41/41, int 372/372.
+
+## 21. 2026-08-01 — rematch law + spacing (owner ruling on the fairness rule)
+Owner: rule NOT removed — clarified. "For sure not the same session; preferably as far apart as possible; even next session is odd."
+- **Hard law**: the same matchup never happens twice in one session (2-team divisions exempt — nobody else to play). Enforced in every pass; seeded from existing games so session-by-session runs respect prior weekends.
+- **Spacing**: strong soft score pushes the two meetings apart (full penalty inside ~5 weeks, fades beyond). Fall receipt: rematch gaps now 29–126 days (was: could be adjacent or same weekend).
+- **Fairness gate corrected**: hard in BOTH main passes (the hotfix's relaxed-pass lift let cycle-2 rematches starve a team's unmet first meetings); the repair pass bypasses it — its own fewest-meetings-first ordering keeps the intent.
+- **Repair ladder** (zero-slack seasons like 10 games = 5×2 share are sometimes unsatisfiable for a greedy): strict → relaxed day cap → last resort (same-session rematch and/or third weekend game allowed) → bonus game (a full team plays guarantee+1 so nobody ends short). EVERY concession warns explicitly ("no other room — add a session or court time"). Shuffle variations often avoid the corner entirely. Swap-chain solver (Studio P2) will retire the ladder.
+- Fall receipts (both modes): 100 games, 10/team, 1 same-session rematch (warned), gaps 29–126 days. Scheduler 41/41 (fixtures gained sessionCount; zero-slack pins made honest), int 372/372, unit 312/312.

@@ -69,6 +69,8 @@ export interface MakeInputOptions {
   schedulingGroups?: SchedulerInput["schedulingGroups"]
   /** Number of consecutive session days starting at baseDate. Default 2. */
   days?: number
+  /** Split those days evenly across N sessions (weekends). Default 1. */
+  sessionCount?: number
   /** Courts per day-venue. Default 1. Court ids are stable across days. */
   courts?: number
   /** Day-venue window, "HH:MM". Defaults 09:00–17:00 (8 hourly slots/court/day). */
@@ -92,6 +94,7 @@ export function makeInput(opts: MakeInputOptions = {}): SchedulerInput {
     teams = 4,
     schedulingGroups = [],
     days = 2,
+    sessionCount = 1,
     courts = 1,
     open = "09:00",
     close = "17:00",
@@ -103,27 +106,32 @@ export function makeInput(opts: MakeInputOptions = {}): SchedulerInput {
   const divisions =
     opts.divisions ?? [{ id: "d1", name: "Division 1", teams: makeTeams(teams, "d1") }]
 
+  const perSession = Math.ceil(days / sessionCount)
   const sessions: SchedulerInput["sessions"] =
     opts.sessions ??
-    [
-      {
-        id: "s1",
-        phase: "REGULAR",
-        days: Array.from({ length: days }, (_, i) => ({
-          id: `day-${i + 1}`,
-          date: localDayString(i, baseDate),
-          dayVenues: [
-            {
-              id: `dv-${i + 1}`,
-              venueId: "v1",
-              startTime: open,
-              endTime: close,
-              courts: Array.from({ length: courts }, (_, c) => ({ id: `court-${c + 1}` })),
-            },
-          ],
-        })),
-      },
-    ]
+    Array.from({ length: sessionCount }, (_, si) => ({
+      id: `s${si + 1}`,
+      phase: "REGULAR" as const,
+      days: Array.from(
+        { length: Math.min(perSession, days - si * perSession) },
+        (_, di) => {
+          const i = si * perSession + di
+          return {
+            id: `day-${i + 1}`,
+            date: localDayString(i, baseDate),
+            dayVenues: [
+              {
+                id: `dv-${i + 1}`,
+                venueId: "v1",
+                startTime: open,
+                endTime: close,
+                courts: Array.from({ length: courts }, (_, c) => ({ id: `court-${c + 1}` })),
+              },
+            ],
+          }
+        }
+      ),
+    }))
 
   return {
     gamesGuaranteed,
