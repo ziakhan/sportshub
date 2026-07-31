@@ -89,10 +89,17 @@ async function signup(email: string, firstName: string, lastName: string) {
 }
 
 async function onboard(jar: Jar, payload: any) {
+  // Operator roles attest 18+ since the COPPA pass (runner personas are adults)
+  const OPERATORS = ["ClubOwner", "ClubManager", "LeagueOwner", "LeagueManager", "Referee", "Trainer"]
+  const roles: string[] = Array.isArray(payload?.roles) ? payload.roles : []
+  const body =
+    roles.some((r) => OPERATORS.includes(r)) && payload.adultAttested === undefined
+      ? { ...payload, adultAttested: true }
+      : payload
   return call("/api/onboarding", {
     method: "POST", jar,
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   })
 }
 

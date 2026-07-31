@@ -226,15 +226,17 @@ async function p10_1_create_season() {
 
 async function p10_2_create_divisions() {
   if (!leagueOwner || !seasonId) return r.record("10.2", "Create divisions", false, "no setup")
+  // Derived naming (2026-07-30): identity = ageGroup+gender+tier, names are
+  // composed — two same-structure divisions 409, so use Tier 1 and Tier 2.
   const a = await call(`/api/seasons/${seasonId}/divisions`, {
     method: "POST", jar: leagueOwner.jar,
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name: "U12 Boys A", ageGroup: "U12", gender: "MALE", maxTeams: 6 }),
+    body: JSON.stringify({ ageGroup: "U12", gender: "MALE", tier: 1, maxTeams: 6 }),
   })
   const b = await call(`/api/seasons/${seasonId}/divisions`, {
     method: "POST", jar: leagueOwner.jar,
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name: "U12 Boys B", ageGroup: "U12", gender: "MALE", maxTeams: 6 }),
+    body: JSON.stringify({ ageGroup: "U12", gender: "MALE", tier: 2, maxTeams: 6 }),
   })
   if ((a.status !== 201 && a.status !== 200) || (b.status !== 201 && b.status !== 200))
     return r.record("10.2", "Create divisions", false, `a=${a.status} b=${b.status}`)
@@ -242,8 +244,8 @@ async function p10_2_create_divisions() {
   divisionBId = b.body?.id ?? b.body?.division?.id
   if (!divisionAId || !divisionBId) {
     const list = await (prisma as any).division.findMany({ where: { seasonId } })
-    divisionAId = list.find((d: any) => d.name === "U12 Boys A")?.id ?? divisionAId
-    divisionBId = list.find((d: any) => d.name === "U12 Boys B")?.id ?? divisionBId
+    divisionAId = list.find((d: any) => d.name === "U12 Boys · Tier 1")?.id ?? divisionAId
+    divisionBId = list.find((d: any) => d.name === "U12 Boys · Tier 2")?.id ?? divisionBId
   }
   const ok = !!divisionAId && !!divisionBId
   r.record("10.2", "Create 2 divisions", ok, ok ? `2 divisions ✓` : `state wrong`)

@@ -109,7 +109,8 @@ let templateId: string | null = null
 
 async function s7_1_create_template() {
   owner = await makeOwnerWithTeam("a")
-  const res = await call(`/api/teams/${owner.teamId}/offer-templates`, {
+  // Templates are CLUB-scoped now (per-team route removed)
+  const res = await call(`/api/clubs/${owner.tenantId}/offer-templates`, {
     method: "POST", jar: owner.jar,
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -126,18 +127,17 @@ async function s7_1_create_template() {
   if (res.status !== 201 && res.status !== 200) return r.record("7.1", "Create template", false, `HTTP ${res.status} ${JSON.stringify(res.body)}`)
   templateId = res.body?.id ?? res.body?.template?.id
   if (!templateId) {
-    const t = await prisma.offerTemplate.findFirst({ where: { teamId: owner.teamId, name: "Phase7 Std Template" } })
+    const t = await prisma.offerTemplate.findFirst({ where: { tenantId: owner.tenantId, name: "Phase7 Std Template" } })
     templateId = t?.id ?? null
   }
-  // 0.1.7 fix: team-template create now sets tenantId from team.tenantId.
   const t = templateId ? await prisma.offerTemplate.findUnique({ where: { id: templateId } }) : null
   const ok = !!t && Number(t.seasonFee) === 1500 && t.includesUniform === true && t.tenantId === owner.tenantId
-  r.record("7.1", "Create offer template (tenantId set automatically)", ok, ok ? `tenantId + teamId both set ✓` : `state wrong (tenantId=${t?.tenantId}, expected=${owner.tenantId})`)
+  r.record("7.1", "Create offer template (club-scoped)", ok, ok ? `tenantId set ✓` : `state wrong (tenantId=${t?.tenantId}, expected=${owner.tenantId})`)
 }
 
 async function s7_2_edit_template() {
   if (!owner || !templateId) return r.record("7.2", "Edit template", false, "no setup")
-  const res = await call(`/api/teams/${owner.teamId}/offer-templates/${templateId}`, {
+  const res = await call(`/api/clubs/${owner.tenantId}/offer-templates/${templateId}`, {
     method: "PATCH", jar: owner.jar,
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ seasonFee: 1700, includesShoes: true }),

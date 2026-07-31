@@ -23,6 +23,21 @@ vi.mock("@/lib/auth-helpers", () => ({
   isImpersonating: vi.fn(),
 }))
 
+// The layout loads workspace data server-side (team counts, tryouts, org
+// nav). No DATABASE_URL exists in the CI unit job — everything prisma must
+// be mocked or the render throws PrismaClientInitializationError.
+vi.mock("@youthbasketballhub/db", () => ({
+  prisma: {
+    team: { findMany: vi.fn(async () => []) },
+    tryout: { groupBy: vi.fn(async () => []) },
+    organization: { findMany: vi.fn(async () => []) },
+  },
+}))
+
+vi.mock("@/lib/onboarding/checklist", () => ({
+  getCompletionChecklist: vi.fn(async () => ({ applicable: false, complete: false, items: [] })),
+}))
+
 const EMPTY_SHAPE = {
   coachTeams: [],
   hasKids: false,

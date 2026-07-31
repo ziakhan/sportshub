@@ -97,11 +97,20 @@ export async function signup(email: string, firstName = "Test", lastName = "User
   })
 }
 
+const OPERATOR_ROLES = ["ClubOwner", "ClubManager", "LeagueOwner", "LeagueManager", "Referee", "Trainer"]
+
 export async function onboard(jar: Jar, payload: any) {
+  // Operator roles attest 18+ since the COPPA pass — every runner persona
+  // is an adult, so attest automatically unless a test overrides it.
+  const roles: string[] = Array.isArray(payload?.roles) ? payload.roles : []
+  const body =
+    roles.some((r) => OPERATOR_ROLES.includes(r)) && payload.adultAttested === undefined
+      ? { ...payload, adultAttested: true }
+      : payload
   return call("/api/onboarding", {
     method: "POST", jar,
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   })
 }
 

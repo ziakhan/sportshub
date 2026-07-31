@@ -145,7 +145,9 @@ async function s6_3_multi_session() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         title: `Phase6 Tryout Session ${i}`,
-        ageGroup: "U12",
+        // U16: the 6.6 self-registered player is born 2010 — tryout age
+        // policy is STRICT since 2026-07-23, so the fixture must fit.
+        ageGroup: "U16",
         gender: "MALE",
         location: "Phase6 Gym",
         scheduledAt: tomorrow(7 + i),
