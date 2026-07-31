@@ -356,7 +356,23 @@ async function wipeDemoWorld() {
     select: { id: true },
   })
   const userIds = users.map((u: any) => u.id)
-  // Teams first (cascades TeamPlayer/messages/chatReads/tryout links)
+  // Teams first (cascades TeamPlayer/messages/chatReads/tryout links).
+  // Non-cascading FKs must go first: offers/games made AGAINST demo teams
+  // by real/manual users survive the user purge and block team deletion
+  // (box reseed crash 2026-07-31: Offer_teamId_fkey).
+  for (const marker of [MARKER, "SHOWCASE_SEED"]) {
+    await p.offer.deleteMany({ where: { team: { description: marker } } })
+    await p.offerTemplate.deleteMany({ where: { team: { description: marker } } })
+    await p.game.deleteMany({
+      where: {
+        OR: [
+          { homeTeam: { description: marker } },
+          { awayTeam: { description: marker } },
+        ],
+      },
+    })
+    await p.tournamentTeam.deleteMany({ where: { team: { description: marker } } })
+  }
   await p.team.deleteMany({ where: { description: MARKER } })
   await p.team.deleteMany({ where: { description: "SHOWCASE_SEED" } })
   await deleteUsersDeep(userIds)

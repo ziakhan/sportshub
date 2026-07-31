@@ -25,6 +25,11 @@ vi.mock("@youthbasketballhub/db", () => ({
       findMany: vi.fn(),
       updateMany: vi.fn(),
     },
+    // ...and pending family invitations (family-accounts, 2026-07-24)
+    familyInvitation: {
+      findMany: vi.fn().mockResolvedValue([]),
+      updateMany: vi.fn(),
+    },
     tenant: {
       findMany: vi.fn(),
     },

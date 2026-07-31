@@ -33,6 +33,12 @@ vi.mock("@youthbasketballhub/db", () => ({
     offerTemplate: {
       findFirst: vi.fn(),
     },
+    // Coach-scope authz (2026-07-20): canActOnTeam → isClubAdmin checks
+    // userRole — the acting user is the club owner in these tests.
+    userRole: {
+      findFirst: vi.fn().mockResolvedValue({ id: "role-1" }),
+      findMany: vi.fn().mockResolvedValue([{ role: "ClubOwner" }]),
+    },
     $transaction: vi.fn(),
   },
 }))
@@ -51,9 +57,12 @@ describe("POST /api/offers", () => {
       name: "Warriors U12",
       tenant: { name: "Warriors Club" },
     } as any)
-    vi.mocked(prisma.user.findUnique)
-      .mockResolvedValueOnce({ id: "club-user-1", roles: [{ role: "ClubOwner" }] } as any)
-      .mockResolvedValueOnce({ email: "parent@example.com", firstName: "Pat" } as any)
+    // Since the coach-scope fix (2026-07-20) authz goes through userRole —
+    // the only user.findUnique left is the parent email lookup.
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      email: "parent@example.com",
+      firstName: "Pat",
+    } as any)
     vi.mocked(prisma.player.findUnique).mockResolvedValue({
       id: "player-1",
       parentId: "parent-1",

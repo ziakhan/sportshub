@@ -59,6 +59,8 @@ describe("POST /api/onboarding", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           roles: ["ClubOwner"],
+          // Operator roles attest 18+ since the COPPA pass
+          adultAttested: true,
         }),
       })
     )
@@ -92,6 +94,7 @@ describe("POST /api/onboarding", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           roles: ["LeagueOwner"],
+          adultAttested: true,
           profileData: {
             type: "LeagueOwner",
             name: "Ontario Elite League",

@@ -2,6 +2,10 @@ import path from "node:path"
 import { configDefaults, defineConfig } from "vitest/config"
 
 export default defineConfig({
+  // tsconfig has jsx:"preserve" (Next transforms it) — esbuild under vitest
+  // would fall back to the CLASSIC runtime, breaking any rendered component
+  // without an explicit `import React` (layout chrome tests).
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

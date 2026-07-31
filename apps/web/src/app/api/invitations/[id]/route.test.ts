@@ -72,24 +72,10 @@ describe("PATCH /api/invitations/[id]", () => {
     )
 
     expect(response.status).toBe(200)
-    expect(prisma.userRole.findFirst).toHaveBeenCalledWith({
-      where: {
-        userId: "user-1",
-        tenantId: "tenant-1",
-        role: "Staff",
-        teamId: null,
-      },
-    })
-    expect(prisma.userRole.create).toHaveBeenNthCalledWith(1, {
-      data: {
-        userId: "user-1",
-        role: "Staff",
-        tenantId: "tenant-1",
-        teamId: null,
-        designation: null,
-      },
-    })
-    expect(prisma.userRole.create).toHaveBeenNthCalledWith(2, {
+    // Coach-scoping model (2026-07-20): ONE role row carrying tenantId AND
+    // teamId — the old tenant-level + team-level double create is gone.
+    expect(prisma.userRole.create).toHaveBeenCalledTimes(1)
+    expect(prisma.userRole.create).toHaveBeenCalledWith({
       data: {
         userId: "user-1",
         role: "Staff",

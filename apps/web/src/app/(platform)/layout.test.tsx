@@ -8,6 +8,14 @@ import { redirect } from "next/navigation"
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
   usePathname: () => "/dashboard",
+  // Client components in the chrome (NotificationsBell etc.) call useRouter
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
 }))
 
 vi.mock("@/lib/auth-helpers", () => ({

@@ -9,9 +9,30 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
+    // Inline waiver gate (2026-07-20): accept checks required PARENT waivers
+    waiverDocument: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     offer: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    // Roster-commitment cap check on accept (owner 2026-07-24, QA-103):
+    // no cap, empty roster — accept always fits in these tests.
+    team: {
+      findUnique: vi.fn().mockResolvedValue({
+        id: "team-1",
+        name: "Warriors U12",
+        maxPlayers: null,
+        tenantId: "tenant-1",
+        showRosterFill: null,
+        tenant: { showRosterFillDefault: false },
+      }),
+    },
+    teamPlayer: {
+      count: vi.fn().mockResolvedValue(0),
     },
     $transaction: vi.fn(),
   },
