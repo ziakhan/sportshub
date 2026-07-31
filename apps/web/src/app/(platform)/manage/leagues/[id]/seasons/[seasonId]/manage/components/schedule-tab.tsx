@@ -83,6 +83,18 @@ export function ScheduleTab({
   // Fill-the-gaps preview active (dropout/late-add recovery): existing games
   // are ALL survivors; the preview holds only the additions.
   const [fillPreview, setFillPreview] = useState(false)
+  const [report, setReport] = useState<any | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
+  const loadReport = async () => {
+    if (report) {
+      setReport(null)
+      return
+    }
+    setReportLoading(true)
+    const res = await fetch(`/api/seasons/${seasonId}/schedule/report`)
+    if (res.ok) setReport(await res.json())
+    setReportLoading(false)
+  }
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
   const [capacity, setCapacity] = useState<CapacitySession[] | null>(null)
@@ -728,6 +740,77 @@ export function ScheduleTab({
             previewing={!!preview}
           />
         </div>
+
+        {/* Fairness report (owner 2026-08-01): show operators — and
+            eventually their clubs — exactly how the schedule treats every
+            team, so nobody suspects favorites. */}
+        {scheduleGames.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={loadReport}
+              className="text-play-700 text-xs font-semibold hover:underline"
+            >
+              {reportLoading
+                ? "Building fairness report…"
+                : report
+                  ? "Hide fairness report"
+                  : "Fairness report — back-to-backs, venues, courts"}
+            </button>
+            {report && (
+              <div className={`mt-2 ${panelClass}`}>
+                <PanelHeader title="Schedule fairness" />
+                <div className="mb-3 flex flex-wrap gap-2 text-xs">
+                  <Badge tone={report.totals.backToBackTeamDays === 0 ? "court" : "warning"}>
+                    Back-to-backs: {report.totals.backToBackTeamDays}
+                  </Badge>
+                  <Badge tone={report.totals.bigGapTeamDays === 0 ? "court" : "warning"}>
+                    Morning+evening splits: {report.totals.bigGapTeamDays}
+                  </Badge>
+                  <Badge tone={report.totals.splitVenueTeamDays === 0 ? "court" : "warning"}>
+                    Two-gym days: {report.totals.splitVenueTeamDays}
+                  </Badge>
+                  <Badge tone={report.totals.maxTopCourtShare <= 0.5 ? "court" : "warning"}>
+                    Worst court concentration: {Math.round(report.totals.maxTopCourtShare * 100)}%
+                  </Badge>
+                  <Badge tone="neutral">
+                    First tip-offs per team: {report.totals.earlyGamesMin}–{report.totals.earlyGamesMax}
+                  </Badge>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="text-ink-700 w-full text-xs">
+                    <thead className="bg-ink-50 text-ink-500 text-[10px] uppercase tracking-wide">
+                      <tr>
+                        <th className="px-2 py-1.5 text-left">Team</th>
+                        <th className="px-2 py-1.5 text-right">Games</th>
+                        <th className="px-2 py-1.5 text-right">Back-to-backs</th>
+                        <th className="px-2 py-1.5 text-right">Big gaps</th>
+                        <th className="px-2 py-1.5 text-right">Two-gym days</th>
+                        <th className="px-2 py-1.5 text-right">First tip-offs</th>
+                        <th className="px-2 py-1.5 text-left">Most-used court</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.teams.map((t: any) => (
+                        <tr key={t.teamId} className="border-ink-100 border-t">
+                          <td className="text-ink-900 px-2 py-1 font-medium">{t.teamName}</td>
+                          <td className="px-2 py-1 text-right">{t.games}</td>
+                          <td className={`px-2 py-1 text-right ${t.backToBacks > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.backToBacks}</td>
+                          <td className={`px-2 py-1 text-right ${t.bigGapDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.bigGapDays}</td>
+                          <td className={`px-2 py-1 text-right ${t.splitVenueDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.splitVenueDays}</td>
+                          <td className="px-2 py-1 text-right">{t.earlyGames}</td>
+                          <td className="px-2 py-1">
+                            {t.topCourtName ?? "—"}
+                            <span className="text-ink-400"> · {Math.round(t.topCourtShare * 100)}%</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <ManualGameAdd seasonId={seasonId} league={league} refresh={refresh} />
 
