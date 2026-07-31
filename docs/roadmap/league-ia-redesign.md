@@ -135,3 +135,11 @@ Approved plan (Schedule Studio rebuild) Phase A: the org rulebook, built first.
 - Effective dates wired into every LOGIC/DISPLAY reader found: submit-team deadline gate, approval balance-due (uses effective startDate), getLeaguesDirectory (covers web /leagues + mobile browse leagues), mobile season detail (already via getPublicSeason). Season-create prefill removed (copying would freeze overrides; empty = inherit).
 - Seed: Showcase drops its typed dates (equal to the org cycle) → Basics inherits end-to-end. UTC-midnight date display bug fixed (format in UTC).
 - Verified: tsc/lint clean · resolver unit 8/8 · int 366/366 · Playwright checks + screenshot (Basics "Season window … Inherited from North Pole Hoops", fee in Registration, chip "Dates inherited").
+
+## 13. 2026-07-31 — scheduling explained + the 10/5/2 norm (commit 20975b3)
+- Owner walkthrough of scheduling surfaced three rounds of fixes:
+  - Dead `Season.targetGamesPerSession` removed from UI/save; the console now SHOWS the derived math ("≈ 2 · 10 games ÷ 5 sessions") and the real per-session override is `Session.targetGamesPerTeam` (editable in the session form, "auto" placeholder; sessions API GET/POST/PATCH carry it).
+  - Engine: the per-session share is a HARD block in all modes — whole-season generation was packing a team's full slate into weekend 1. And `idealGamesPerDayPerTeam` is now a hard cap in the first placement pass (slots are day-major; the old −5 soft penalty could never stop day 1 absorbing everything) with a relaxed second pass so single-day sessions never strand games. Philosophy A/B fixture got ideal=3 headroom (it tests philosophy scoring, not the cap); 2 new pinned cap tests → scheduler suite = 36.
+  - Demo world reshaped to the NPH norm (owner ruling): org rulebook `gamesGuaranteed: 10`; Fall = 5 Sat+Sun weekend sessions labeled October–February, snapped to real Saturdays.
+- End-to-end receipt on Fall 2026 (whole-season commit): 40 games · 10/team · 2/team/session · 1/team/day · 20 Sat + 20 Sun · 9 a.m. starts · TeamCheck "Every team has 10 games". Scheduler 36/36 · int 366/366.
+- NOT yet on the box (deploy needs owner go-ahead; box also needs a reseed for the new world shape).
