@@ -899,3 +899,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 ## #48 — 2026-07-31: TEAM CHECK + SESSION-SCOPED VIEW + BOX TZ — ✅ DEPLOYED (sha 8963eac) + reseeded
 - TeamCheck verification panel (per-team checkmarks, games vs target, click→ schedule) · committed list scoped to selected session · Summer sessions "Weekend N".
 - **BOX ENV CHANGE: TZ=America/Toronto added to /etc/sportshub/web.env** (box OS runs UTC; scheduler slot math is local-time → games generated at 5 a.m. Toronto). Any future box rebuild must keep TZ set. Verified post-reseed: Summer games at 9:00 a.m. Toronto.
+
+## #49 — 2026-07-31: SCHEDULER SPREAD FIXES + 10/5/2 DEMO NORM — local (20975b3), NOT deployed
+- Engine: per-session share hard-blocked in ALL modes (whole-season no longer packs weekend 1); idealGamesPerDayPerTeam = hard cap w/ relaxed 2nd pass (Sat+Sun split). Dead Season.targetGamesPerSession removed from console; Session.targetGamesPerTeam editable per session (sessions API GET/POST/PATCH).
+- Seed: org rulebook gamesGuaranteed 10; Fall = 5 real-Saturday weekend sessions (October–February). Deploy MUST be followed by box reseed (`reseed-demo.sh --purge-manual-leagues`) — the new world shape is required for the demo story.
+- No schema change. Neon unaffected. Verified local: scheduler 36/36, int 366/366, e2e receipt 40 games/10 per team/2 per session/1 per day.
