@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Test, Type Check & Build
+    name: Test & Type Check
     runs-on: ubuntu-latest
 
     steps:
@@ -37,11 +37,9 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
-      - name: Build
-        run: npm run build
-        env:
-          NEXTAUTH_SECRET: ci-build-secret
-          NEXTAUTH_URL: http://localhost:3000
+      # No Build step here: `next build` statically renders DB-backed pages
+      # and this job has no database. The E2E gate job builds the app against
+      # a real Postgres (then boots it), so build coverage lives there.
 
   integration:
     name: Integration (L2 vs Postgres)
