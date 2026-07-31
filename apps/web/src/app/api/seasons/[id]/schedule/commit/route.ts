@@ -68,9 +68,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           seasonId: params.id,
           phase: "REGULAR",
           status: { not: "CANCELLED" },
-          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED" },
+          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED", isLocked: false },
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
       })
     } else {
       // Whole-season runs replace only un-played games — played/live ones
@@ -79,9 +79,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         where: {
           seasonId: params.id,
           phase: "REGULAR",
-          status: { notIn: ["CANCELLED", "SCHEDULED"] },
+          OR: [
+            { status: { notIn: ["CANCELLED", "SCHEDULED"] } },
+            { status: "SCHEDULED", isLocked: true },
+          ],
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
       })
     }
 
@@ -92,11 +95,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       if (replaceExisting) {
         // Only wipe games that haven't started or transitioned beyond
         // SCHEDULED — and only in the targeted sessions when scoped.
+        // Locked games are PINNED (Studio P0): regeneration never removes
+        // them — the generator schedules around them instead.
         const del = await tx.game.deleteMany({
           where: {
             seasonId: params.id,
             phase: "REGULAR",
             status: "SCHEDULED",
+            isLocked: false,
             ...(scoped ? { sessionId: { in: sessionIds } } : {}),
           },
         })
@@ -117,7 +123,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           scheduledAt: new Date(g.scheduledAt),
           duration: g.duration,
           status: "SCHEDULED",
-          isLocked: true,
+          isLocked: false,
         })),
       })
       return { removed, created: created.count }

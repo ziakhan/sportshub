@@ -45,6 +45,7 @@ describe("PATCH /api/seasons/[id]/teams/[teamId]", () => {
     } as any)
     vi.mocked(prisma.teamSubmission.findFirst).mockResolvedValue({
       id: "submission-1",
+      divisionId: "division-1", // Studio P0: approval requires a division
       team: {
         id: "team-1",
         name: "Warriors U12",

@@ -92,7 +92,13 @@ export interface SchedulerInput {
    * guarantees accumulate across separately-scheduled sessions.
    */
   restrictToSessionIds?: string[]
-  existingGames?: Array<{ homeTeamId: string; awayTeamId: string; scheduledAt?: string }>
+  existingGames?: Array<{
+    homeTeamId: string
+    awayTeamId: string
+    scheduledAt?: string
+    courtId?: string | null
+    sessionId?: string | null
+  }>
   /**
    * Stable per-season variety seed (owner 2026-07-31): rotates which
    * matchups repeat when the guarantee exceeds a full round robin, and
@@ -409,7 +415,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
 
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
-  const teamBookings: Record<string, Array<{ start: Date; end: Date; dayId: string }>> = {}
+  const teamBookings: Record<string, Array<{ start: Date; end: Date; dateKey: string }>> = {}
+  const dateKeyOf = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
   const courtBookings: Record<string, Array<{ start: Date; end: Date }>> = {}
   // Other leagues' games at shared venues occupy their courts outright.
   for (const b of input.busyCourtBookings ?? []) {
@@ -417,6 +424,27 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       ...(courtBookings[b.courtId] ?? []),
       { start: new Date(b.start), end: new Date(b.end) },
     ]
+  }
+  // Surviving games of THIS season (played, live, or PINNED via lock) occupy
+  // their teams, courts, day caps and session shares — regeneration
+  // schedules around them, never on top of them.
+  for (const g of input.existingGames ?? []) {
+    if (g.scheduledAt) {
+      const start = new Date(g.scheduledAt)
+      const end = new Date(start.getTime() + input.gameSlotMinutes * 60000)
+      const book = { start, end, dateKey: dateKeyOf(start) }
+      teamBookings[g.homeTeamId] = [...(teamBookings[g.homeTeamId] ?? []), book]
+      teamBookings[g.awayTeamId] = [...(teamBookings[g.awayTeamId] ?? []), book]
+      if (g.courtId) {
+        courtBookings[g.courtId] = [...(courtBookings[g.courtId] ?? []), { start, end }]
+      }
+    }
+    if (g.sessionId) {
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const sk = sessionKey(g.sessionId, id)
+        teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
+      }
+    }
   }
   {
     const blocked = slots.filter((slot) =>
@@ -484,6 +512,22 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   // Remaining pairings: Map from pair key → array (ordered) of Pairing objects
   const remaining: Pairing[] = [...pairingPool]
 
+  // Hard fairness tier (owner rule: play EVERY team before you play anyone
+  // again): per unit, the minimum meeting count among still-unplaced
+  // pairings. A candidate whose pair has met MORE times than that minimum is
+  // blocked — first meetings always beat rematches, engine-level.
+  const unitMinMeetings = new Map<string, number>()
+  const recomputeUnitMin = (unitKey: string) => {
+    let min = Infinity
+    for (const p of remaining) {
+      if (p.unitKey !== unitKey) continue
+      const met = playedPairCount[pairKey(p.homeTeamId, p.awayTeamId)] ?? 0
+      if (met < min) min = met
+    }
+    unitMinMeetings.set(unitKey, min)
+  }
+  for (const key of new Set(remaining.map((p) => p.unitKey))) recomputeUnitMin(key)
+
   const teamIsBooked = (teamId: string, start: Date, end: Date): boolean => {
     const list = teamBookings[teamId] ?? []
     return list.some((b) => overlaps(b.start, b.end, start, end))
@@ -492,8 +536,9 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const list = courtBookings[courtId] ?? []
     return list.some((b) => overlaps(b.start, b.end, start, end))
   }
-  const teamGamesOnDay = (teamId: string, dayId: string): number => {
-    return (teamBookings[teamId] ?? []).filter((b) => b.dayId === dayId).length
+  const teamGamesOnDay = (teamId: string, day: Date): number => {
+    const key = dateKeyOf(day)
+    return (teamBookings[teamId] ?? []).filter((b) => b.dateKey === key).length
   }
 
   // Clustering state: keep similar games together (soft). Tracks which unit
@@ -551,8 +596,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     // a soft penalty can never stop day 1 from absorbing everything); the
     // relaxed pass lifts it rather than leave games unplaced when a
     // session genuinely can't spread (single-day finals weekend).
-    const homeDayCount = teamGamesOnDay(homeTeamId, slot.dayId)
-    const awayDayCount = teamGamesOnDay(awayTeamId, slot.dayId)
+    const homeDayCount = teamGamesOnDay(homeTeamId, slot.startAt)
+    const awayDayCount = teamGamesOnDay(awayTeamId, slot.startAt)
     if (!relaxDayCap) {
       if (homeDayCount >= input.idealGamesPerDayPerTeam)
         return { score: -Infinity, blockReason: "home team at daily limit" }
@@ -578,6 +623,13 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const pKey = pairKey(homeTeamId, awayTeamId)
     const timesPlayed = playedPairCount[pKey] ?? 0
     score -= timesPlayed * 3
+
+    // Hard: never a rematch while a first meeting (or lower-cycle meeting)
+    // in the same unit is still waiting to be placed.
+    const unitMin = unitMinMeetings.get(pairing.unitKey)
+    if (unitMin !== undefined && unitMin !== Infinity && timesPlayed > unitMin) {
+      return { score: -Infinity, blockReason: "rematch before all first meetings" }
+    }
 
     // Soft: time-of-day rotation — an early slot prefers teams whose games
     // have skewed late (and vice versa), so 9 a.m. rotates through the
@@ -646,7 +698,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
 
     teamGameCount[pairing.homeTeamId] = (teamGameCount[pairing.homeTeamId] ?? 0) + 1
     teamGameCount[pairing.awayTeamId] = (teamGameCount[pairing.awayTeamId] ?? 0) + 1
-    const book = { start: slot.startAt, end: slot.endAt, dayId: slot.dayId }
+    const book = { start: slot.startAt, end: slot.endAt, dateKey: dateKeyOf(slot.startAt) }
     teamBookings[pairing.homeTeamId] = [...(teamBookings[pairing.homeTeamId] ?? []), book]
     teamBookings[pairing.awayTeamId] = [...(teamBookings[pairing.awayTeamId] ?? []), book]
     courtBookings[slot.courtId] = [
@@ -664,6 +716,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     courtLastUnit[slot.courtId] = { endMs: slot.endAt.getTime(), unitKey: pairing.unitKey }
     const dvKey = `${slot.dayVenueId}|${pairing.unitKey}`
     dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
+    recomputeUnitMin(pairing.unitKey)
   }
 
   const openSlots: SchedulerSlot[] = []

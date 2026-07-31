@@ -10,6 +10,7 @@ import {
 } from "@youthbasketballhub/test-worlds"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { PATCH } from "./route"
+import { DELETE as DIVISIONS_DELETE } from "../../divisions/route"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
@@ -30,6 +31,8 @@ let lockedOtherSubmissionId: string
 let openSubmissionId: string
 let pastGameId: string
 let futureGameIds: string[]
+let openDivisionId: string
+let noDivSubmissionId: string
 
 const patchSubmission = (seasonId: string, submissionId: string, body: unknown) =>
   PATCH(jsonRequest(`/api/seasons/${seasonId}/teams/${submissionId}`, body, "PATCH"), {
@@ -87,6 +90,23 @@ beforeAll(async () => {
     ).id
   pastGameId = await mkGame(-5, "COMPLETED", [55, 48])
   futureGameIds = [await mkGame(2, "SCHEDULED"), await mkGame(4, "SCHEDULED")]
+
+  // Studio P0 division guards: a PENDING submission stripped of its division
+  openDivisionId = open.divisions[0].id
+  const submissionC = await submitTeamToSeason(world.ctx, {
+    seasonId: open.id,
+    divisionId: openDivisionId,
+    tenantId: clubB.tenantId,
+    ageGroup: "U13",
+    seasonLabel: open.label,
+    rosterSize: 0,
+    status: "PENDING",
+  })
+  noDivSubmissionId = submissionC.submissionId
+  await prisma.teamSubmission.update({
+    where: { id: noDivSubmissionId },
+    data: { divisionId: null },
+  })
 })
 
 afterAll(async () => {
@@ -149,5 +169,45 @@ describe("PATCH /api/seasons/[id]/teams/[teamId] (integration)", () => {
       where: { type: "game_cancelled", referenceId: withdrawSubmissionId },
     })
     expect(notified).toBe(1)
+  })
+})
+
+describe("division guards (Studio P0)", () => {
+  it("approving a team without a division is blocked with a clear code", async () => {
+    actAs(leagueOwnerId)
+    const res = await patchSubmission(openSeasonId, noDivSubmissionId, { status: "APPROVED" })
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.code).toBe("DIVISION_REQUIRED")
+  })
+
+  it("assigning the division in the same call approves cleanly", async () => {
+    actAs(leagueOwnerId)
+    const res = await patchSubmission(openSeasonId, noDivSubmissionId, {
+      status: "APPROVED",
+      divisionId: openDivisionId,
+    })
+    expect(res.status).toBe(200)
+    const row = await prisma.teamSubmission.findUnique({
+      where: { id: noDivSubmissionId },
+      select: { status: true, divisionId: true },
+    })
+    expect(row?.status).toBe("APPROVED")
+    expect(row?.divisionId).toBe(openDivisionId)
+  })
+
+  it("deleting a division that still has teams is a 409", async () => {
+    actAs(leagueOwnerId)
+    // jsonRequest builds a plain Request; this route reads nextUrl, so fake it.
+    const req: any = jsonRequest(
+      `/api/seasons/${openSeasonId}/divisions?divisionId=${openDivisionId}`,
+      undefined,
+      "DELETE"
+    )
+    req.nextUrl = new URL(req.url)
+    const res = await DIVISIONS_DELETE(req, { params: { id: openSeasonId } })
+    expect(res.status).toBe(409)
+    const body = await res.json()
+    expect(body.code).toBe("DIVISION_IN_USE")
   })
 })

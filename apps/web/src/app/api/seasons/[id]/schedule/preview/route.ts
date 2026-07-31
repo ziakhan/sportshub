@@ -58,9 +58,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           seasonId: params.id,
           phase: "REGULAR",
           status: { not: "CANCELLED" },
-          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED" },
+          NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED", isLocked: false },
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
       })
     } else {
       // Whole-season runs replace only un-played games — played/live ones
@@ -69,9 +69,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         where: {
           seasonId: params.id,
           phase: "REGULAR",
-          status: { notIn: ["CANCELLED", "SCHEDULED"] },
+          OR: [
+            { status: { notIn: ["CANCELLED", "SCHEDULED"] } },
+            { status: "SCHEDULED", isLocked: true },
+          ],
         },
-        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true },
       })
     }
 

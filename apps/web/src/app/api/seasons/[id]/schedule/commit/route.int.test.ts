@@ -128,6 +128,30 @@ describe("schedule commit → publish — draft layer + fan-out (integration)", 
     expect(res.status).toBe(400)
   })
 
+  it("a pinned (locked) game survives regeneration; new games arrive unlocked", async () => {
+    actAs(leagueOwnerId)
+    const pinned = await (prisma as any).game.findFirst({
+      where: { seasonId, status: "SCHEDULED" },
+      select: { id: true },
+    })
+    await (prisma as any).game.update({ where: { id: pinned.id }, data: { isLocked: true } })
+    const res = await POST(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/commit`, { replaceExisting: true }),
+      { params: { id: seasonId } }
+    )
+    expect(res.status).toBe(200)
+    const still = await (prisma as any).game.findUnique({
+      where: { id: pinned.id },
+      select: { id: true, isLocked: true },
+    })
+    expect(still).not.toBeNull()
+    expect(still.isLocked).toBe(true)
+    const unlocked = await (prisma as any).game.count({
+      where: { seasonId, status: "SCHEDULED", isLocked: false },
+    })
+    expect(unlocked).toBeGreaterThan(0)
+  })
+
   it("non-owner cannot commit or publish", async () => {
     actAs(clubOwnerId)
     const commit = await POST(

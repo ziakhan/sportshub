@@ -222,9 +222,22 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Scope: the division must belong to THIS season (IDOR guard, gap-audit §2).
     const target = await prisma.division.findFirst({
       where: { id: divisionId, seasonId: params.id },
-      select: { id: true },
+      select: { id: true, _count: { select: { teamSubmissions: true } } },
     })
     if (!target) return NextResponse.json({ error: "Division not found" }, { status: 404 })
+
+    // Studio P0 guard: deleting a division used to silently null its teams'
+    // division — they then vanished from the scheduler. Reassign first.
+    const teamCount = (target as any)._count?.teamSubmissions ?? 0
+    if (teamCount > 0) {
+      return NextResponse.json(
+        {
+          error: `${teamCount} team${teamCount === 1 ? " is" : "s are"} in this division — move them to another division first.`,
+          code: "DIVISION_IN_USE",
+        },
+        { status: 409 }
+      )
+    }
 
     await prisma.division.delete({ where: { id: divisionId } })
     return NextResponse.json({ success: true })

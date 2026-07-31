@@ -276,7 +276,10 @@ export function MyCalendar() {
   if (!loaded) {
     return <p className="text-ink-500 py-10 text-center text-sm">Loading your calendar…</p>
   }
-  if (!data || data.teams.length === 0) {
+  // D-004: a referee (or league owner) has NO teams but a full slate of
+  // items — the teams-only gate hid their entire calendar. Empty means
+  // no teams AND nothing scheduled.
+  if (!data || (data.teams.length === 0 && data.items.length === 0)) {
     return (
       <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-6 py-12 text-center">
         <p className="text-ink-700 text-sm font-semibold">No teams yet</p>

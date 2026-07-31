@@ -353,7 +353,7 @@ export function LiveView({ gameId }: { gameId: string }) {
         const l = leaderOf(tid, totalRebounds)
         return l ? { l, value: totalRebounds(l), unit: "REB" } : null
       },
-      sub: (l) => `${l.defRebounds} DReb · ${l.offRebounds} OReb`,
+      sub: (l) => `${l.defRebounds} DREB · ${l.offRebounds} OREB`, // W-001: stat abbreviations are all-caps
     },
     {
       label: "Assists",

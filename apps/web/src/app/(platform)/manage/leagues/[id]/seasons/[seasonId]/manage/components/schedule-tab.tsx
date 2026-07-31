@@ -206,6 +206,15 @@ export function ScheduleTab({
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
+      // Pinned game (Studio P0): moving it needs an explicit unlock — offer
+      // it inline instead of dead-ending.
+      if (err?.code === "GAME_LOCKED") {
+        if (confirm("This game is pinned (locked) so regeneration keeps it in place. Move it anyway? It stays unpinned after.")) {
+          return patchGame(gameId, { ...body, isLocked: false })
+        }
+        refresh()
+        return
+      }
       setScheduleError(
         Array.isArray(err?.conflicts)
           ? err.conflicts.join("; ")
@@ -696,9 +705,10 @@ export function ScheduleTab({
                           )}
                           <button
                             onClick={() => patchGame(g.id, { isLocked: !g.isLocked })}
+                            title="A pinned game survives regeneration (the scheduler plans around it) and can't be moved until unpinned"
                             className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border px-2 py-1 text-[11px] font-semibold"
                           >
-                            {g.isLocked ? "Unlock" : "Lock"}
+                            {g.isLocked ? "Unpin" : "Pin in place"}
                           </button>
                           <button
                             onClick={() => {

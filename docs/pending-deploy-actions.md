@@ -918,3 +918,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 
 ## #52 — 2026-07-31: SCHEDULER ROTATION + VARIETY + REPAIR + SHUFFLE + SHARED VENUES + 20-TEAM DEMO — ✅ DEPLOYED (box 59cbbe1) + reseeded (Fall 10+10 teams verified)
 - Time-of-day rotation, per-season rematch variety (varietySeed), repair pass (100/100 games), whole-season existingGames seeding. Demo Fall = 20 teams (10/division). No schema change. Deploy MUST be followed by box reseed (new world shape).
+
+## #53 — 2026-08-01 overnight: SCHEDULE STUDIO P0 FOUNDATIONS — local, NOT deployed
+- conflicts helper (cross-league court checks on manual moves) · isLocked=pinned (commit unlocked, regen preserves pinned, PATCH 409) · swap + validate endpoints · hard play-everyone-before-repeats · division guards (approve/delete/preflight) · D-004 ref calendar + W-001 stat casing.
+- Deploy steps: push→deploy.sh, then ONE-TIME SQL on box: `UPDATE "Game" SET "isLocked" = false WHERE status = 'SCHEDULED' AND "isLocked" = true;` (old commits locked every game; new semantics = pinned). Reseed optional (no world-shape change).

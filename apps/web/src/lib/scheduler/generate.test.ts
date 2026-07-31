@@ -484,6 +484,62 @@ describe("generateSchedule — seeded variety + time-of-day rotation", () => {
   })
 })
 
+// ---------- hard fairness tier (owner rule: play everyone before repeats)
+// + pinned survivors (Studio P0) ----------
+
+describe("generateSchedule — first meetings before rematches (hard)", () => {
+  it("chronologically, every pair meets once before any pair meets twice", () => {
+    // 4 teams × 4 games = 8 games: 6 unique pairs + 2 rematches. The first
+    // 6 games in time order must be 6 DISTINCT pairs — no rematch may jump
+    // the queue however good its slot looks to the soft scoring.
+    const result = generateSchedule(
+      makeInput({ teams: 4, gamesGuaranteed: 4, days: 4, courts: 2, idealGamesPerDayPerTeam: 2 })
+    )
+    expect(result.games).toHaveLength(8)
+    const ordered = [...result.games].sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime() ||
+        a.courtId.localeCompare(b.courtId)
+    )
+    const firstSix = new Set(
+      ordered.slice(0, 6).map((g) => [g.homeTeamId, g.awayTeamId].sort().join("|"))
+    )
+    expect(firstSix.size).toBe(6)
+  })
+})
+
+describe("generateSchedule — pinned/played survivors occupy their slots", () => {
+  it("never books the pinned game's court time or its teams' time", () => {
+    const input = makeInput({
+      teams: 4,
+      gamesGuaranteed: 1,
+      days: 1,
+      courts: 1,
+      open: "09:00",
+      close: "12:00",
+    })
+    const day = input.sessions[0].days[0]
+    const courtId = day.dayVenues[0].courts[0].id
+    // A locked survivor at 09:00 on the only court: (t1,t4) already booked.
+    input.existingGames = [
+      {
+        homeTeamId: "d1-t1",
+        awayTeamId: "d1-t4",
+        scheduledAt: atLocalTime(day.date, "09:00").toISOString(),
+        courtId,
+        sessionId: input.sessions[0].id,
+      },
+    ]
+    const result = generateSchedule(input)
+    // Pool consumed (t1,t4); only (t2,t3) left — it cannot land at 09:00
+    // (court busy) so it takes the next slot.
+    expect(result.games).toHaveLength(1)
+    const g = result.games[0]
+    expect([g.homeTeamId, g.awayTeamId].sort()).toEqual(["d1-t2", "d1-t3"])
+    expect(new Date(g.scheduledAt).getHours()).toBeGreaterThan(9)
+  })
+})
+
 // ---------- shared venues (owner 2026-07-31: schedule AROUND other
 // leagues' games, warn, never double-book) ----------
 

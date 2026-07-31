@@ -195,7 +195,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             },
           },
           seasonVenues: { select: { id: true } },
-          teamSubmissions: { select: { id: true, status: true } },
+          teamSubmissions: { select: { id: true, status: true, divisionId: true } },
           schedulingGroups: {
             select: { id: true, divisions: { select: { divisionId: true } } },
           },
@@ -220,6 +220,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (preflight.divisions.length === 0) missing.push("At least one division is required")
       if (preflight.sessions.length === 0) missing.push("At least one game session is required")
       if (preflight.seasonVenues.length === 0) missing.push("At least one venue must be assigned")
+      const noDivision = preflight.teamSubmissions.filter(
+        (t: any) => t.status === "APPROVED" && !t.divisionId
+      ).length
+      if (noDivision > 0)
+        missing.push(
+          `${noDivision} approved team(s) have no division — they would never be scheduled`
+        )
       const pendingCount = preflight.teamSubmissions.filter(
         (t: any) => t.status === "PENDING"
       ).length

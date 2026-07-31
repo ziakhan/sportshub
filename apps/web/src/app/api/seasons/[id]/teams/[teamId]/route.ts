@@ -13,6 +13,9 @@ export const dynamic = "force-dynamic"
 const updateTeamSubmissionSchema = z
   .object({
     status: z.enum(["APPROVED", "REJECTED", "WITHDRAWN"]).optional(),
+    // Assign/fix the division in the same call (Studio P0: approving without
+    // a division made the team invisible to the scheduler forever).
+    divisionId: z.string().optional(),
     paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
   })
   .refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
@@ -150,8 +153,29 @@ export async function PATCH(
       )
     }
 
+    // Studio P0 guard: an APPROVED team with no division never reaches the
+    // scheduler or the preflight — silently zero games. Block it here.
+    if (data.divisionId !== undefined) {
+      const division = await (prisma as any).division.findFirst({
+        where: { id: data.divisionId, seasonId: params.id },
+        select: { id: true },
+      })
+      if (!division)
+        return NextResponse.json({ error: "Division not found in this season" }, { status: 400 })
+    }
+    if (
+      data.status === "APPROVED" &&
+      !(data.divisionId ?? (submission as any).divisionId)
+    ) {
+      return NextResponse.json(
+        { error: "Assign a division before approving — teams without one are never scheduled.", code: "DIVISION_REQUIRED" },
+        { status: 400 }
+      )
+    }
+
     const updateData: Record<string, any> = {}
     if (data.status !== undefined) updateData.status = data.status
+    if (data.divisionId !== undefined) updateData.divisionId = data.divisionId
     if (data.paymentStatus !== undefined) updateData.paymentStatus = data.paymentStatus
 
     // G4 cascade: withdrawing a team cancels its FUTURE games atomically with

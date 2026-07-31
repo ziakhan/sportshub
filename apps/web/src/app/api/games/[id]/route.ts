@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
+import { findPlacementConflicts } from "@/lib/games/conflicts"
 import { z } from "zod"
 import { notifyMany, type NotificationType } from "@/lib/notifications"
 import { getGameAudienceUserIds } from "@/lib/game-audience"
@@ -196,7 +197,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Derived values for conflict check
     const newStart = data.scheduledAt ? new Date(data.scheduledAt) : new Date(game.scheduledAt)
     const duration = data.duration ?? game.duration ?? 90
-    const newEnd = new Date(newStart.getTime() + duration * 60000)
     const newCourtId = data.courtId !== undefined ? data.courtId : game.courtId
     const newHomeTeamId = data.homeTeamId ?? game.homeTeamId
     const newAwayTeamId = data.awayTeamId ?? game.awayTeamId
@@ -205,44 +205,32 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Home and away team must differ" }, { status: 400 })
     }
 
+    // A LOCKED game is pinned (Schedule Studio P0): the operator protected
+    // it from regeneration AND from casual edits. Moving it requires
+    // unlocking in the same request (the UI confirms first) — status-only
+    // changes (cancel/forfeit/complete) stay allowed.
+    const moveKeys = ["scheduledAt", "venueId", "courtId", "dayId", "dayVenueId", "sessionId", "homeTeamId", "awayTeamId", "duration"] as const
+    const isMoving = moveKeys.some((k) => (data as Record<string, unknown>)[k] !== undefined)
+    if (game.isLocked && isMoving && data.isLocked !== false) {
+      return NextResponse.json(
+        { error: "Game is locked — unlock it to move it", code: "GAME_LOCKED" },
+        { status: 409 }
+      )
+    }
+
     // Conflict check only applies when the game is still active
     const nextStatus = data.status ?? game.status
     const checkConflicts = game.seasonId && ["SCHEDULED", "LIVE", "POSTPONED"].includes(nextStatus)
 
-    if (checkConflicts) {
-      const overlappers = await (prisma as any).game.findMany({
-        where: {
-          seasonId: game.seasonId,
-          id: { not: params.id },
-          status: { in: ["SCHEDULED", "LIVE"] },
-          OR: [
-            { homeTeamId: { in: [newHomeTeamId, newAwayTeamId] } },
-            { awayTeamId: { in: [newHomeTeamId, newAwayTeamId] } },
-            ...(newCourtId ? [{ courtId: newCourtId }] : []),
-          ],
-        },
-        select: {
-          id: true,
-          scheduledAt: true,
-          duration: true,
-          homeTeamId: true,
-          awayTeamId: true,
-          courtId: true,
-        },
+    if (checkConflicts && isMoving) {
+      const conflicts = await findPlacementConflicts({
+        excludeGameIds: [params.id],
+        homeTeamId: newHomeTeamId,
+        awayTeamId: newAwayTeamId,
+        courtId: newCourtId,
+        start: newStart,
+        durationMinutes: duration,
       })
-      const conflicts: string[] = []
-      for (const g of overlappers) {
-        const gStart = new Date(g.scheduledAt)
-        const gEnd = new Date(gStart.getTime() + (g.duration ?? 90) * 60000)
-        const overlaps = gStart < newEnd && newStart < gEnd
-        if (!overlaps) continue
-        if (g.homeTeamId === newHomeTeamId || g.awayTeamId === newHomeTeamId)
-          conflicts.push(`Home team double-booked against game ${g.id}`)
-        if (g.homeTeamId === newAwayTeamId || g.awayTeamId === newAwayTeamId)
-          conflicts.push(`Away team double-booked against game ${g.id}`)
-        if (newCourtId && g.courtId === newCourtId)
-          conflicts.push(`Court double-booked against game ${g.id}`)
-      }
       if (conflicts.length > 0) {
         return NextResponse.json({ error: "Conflict detected", conflicts }, { status: 409 })
       }

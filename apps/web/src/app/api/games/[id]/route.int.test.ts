@@ -92,12 +92,19 @@ afterAll(async () => {
 })
 
 describe("PATCH/DELETE /api/games/[id] (integration)", () => {
-  it("a silent edit (lock flag) notifies nobody", async () => {
+  it("a silent edit (lock flag) notifies nobody, and a locked game refuses to move", async () => {
     actAs(leagueOwnerId)
     const res = await patchGame(game1Id, { isLocked: true })
     expect(res.status).toBe(200)
     expect(await notificationsOf("game_rescheduled", game1Id)).toEqual([])
     expect(await notificationsOf("game_cancelled", game1Id)).toEqual([])
+
+    // Studio P0: pinned games can't move until unlocked (same request is ok)
+    const blocked = await patchGame(game1Id, { scheduledAt: daysFromNow(3, 16).toISOString() })
+    expect(blocked.status).toBe(409)
+    expect((await blocked.json()).code).toBe("GAME_LOCKED")
+    const unlock = await patchGame(game1Id, { isLocked: false })
+    expect(unlock.status).toBe(200)
   })
 
   it("G8 — rescheduling notifies both clubs' owners", async () => {
