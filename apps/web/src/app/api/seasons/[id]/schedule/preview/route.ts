@@ -53,7 +53,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           status: { not: "CANCELLED" },
           NOT: { sessionId: { in: sessionIds }, status: "SCHEDULED" },
         },
-        select: { homeTeamId: true, awayTeamId: true },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
+      })
+    } else {
+      // Whole-season runs replace only un-played games — played/live ones
+      // survive, so they must seed matchup + per-team counts too.
+      input.existingGames = await (prisma as any).game.findMany({
+        where: {
+          seasonId: params.id,
+          phase: "REGULAR",
+          status: { notIn: ["CANCELLED", "SCHEDULED"] },
+        },
+        select: { homeTeamId: true, awayTeamId: true, scheduledAt: true },
       })
     }
 

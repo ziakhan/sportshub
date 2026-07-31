@@ -92,7 +92,15 @@ export interface SchedulerInput {
    * guarantees accumulate across separately-scheduled sessions.
    */
   restrictToSessionIds?: string[]
-  existingGames?: Array<{ homeTeamId: string; awayTeamId: string }>
+  existingGames?: Array<{ homeTeamId: string; awayTeamId: string; scheduledAt?: string }>
+  /**
+   * Stable per-season variety seed (owner 2026-07-31): rotates which
+   * matchups repeat when the guarantee exceeds a full round robin, and
+   * thereby which teams land in which time slots — WITHOUT randomness, so a
+   * previewed schedule commits identically and re-runs reproduce. Different
+   * seasons get different rotations.
+   */
+  varietySeed?: number
 }
 
 export interface ProposedGame {
@@ -257,7 +265,11 @@ function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`
 }
 
-function buildPairings(unit: SchedulerUnit, gamesGuaranteed: number): Pairing[] {
+function buildPairings(
+  unit: SchedulerUnit,
+  gamesGuaranteed: number,
+  varietySeed = 0
+): Pairing[] {
   const n = unit.teams.length
   if (n < 2) return []
   const targetGames = Math.ceil((n * gamesGuaranteed) / 2)
@@ -289,7 +301,14 @@ function buildPairings(unit: SchedulerUnit, gamesGuaranteed: number): Pairing[] 
   const pool: Pairing[] = []
   let cycle = 0
   while (pool.length < targetGames) {
-    const round = rounds[cycle % rounds.length]
+    // Per-cycle seeded rotation: within each full cycle every round still
+    // appears exactly once (per-team counts stay within one of each other),
+    // but the PARTIAL last cycle starts from a season-specific offset — so
+    // WHICH matchups repeat (8 teams x 10 games = 3 rematches) changes from
+    // season to season instead of always being rounds 1-3.
+    const fullCycle = Math.floor(cycle / rounds.length)
+    const offset = (varietySeed * (fullCycle + 1)) % rounds.length
+    const round = rounds[(cycle + offset) % rounds.length]
     // Repeat meetings (second cycle onward) swap home/away
     const flip = Math.floor(cycle / rounds.length) % 2 === 1
     for (const [a, b] of round) {
@@ -364,7 +383,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       warnings.push(`${u.label}: not included in any session — no games scheduled.`)
       continue
     }
-    pairingPool.push(...buildPairings(u, input.gamesGuaranteed))
+    pairingPool.push(...buildPairings(u, input.gamesGuaranteed, input.varietySeed ?? 0))
   }
   const preplayedByPair: Record<string, number> = {}
   for (const g of input.existingGames ?? []) {
@@ -388,6 +407,51 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   const courtBookings: Record<string, Array<{ start: Date; end: Date }>> = {}
   // Seed matchup history so opponent-diversity scoring sees prior sessions.
   const playedPairCount: Record<string, number> = { ...preplayedByPair }
+
+  // Time-of-day rotation state (owner 2026-07-31: "not everybody gets a
+  // 9 a.m. game all the time"). Each slot gets a ratio 0..1 for WHERE its
+  // tip-off sits in its day (0 = first start time, 1 = last); each team
+  // accumulates the ratios of its games — historical (existingGames with
+  // scheduledAt, ranked within their own day) and placed this run. Scoring
+  // then steers early slots toward teams that have been playing late and
+  // vice versa. Deterministic — a rotation, not a shuffle.
+  const slotRatioByDay = new Map<string, Map<number, number>>()
+  for (const slot of slots) {
+    if (!slotRatioByDay.has(slot.dayId)) slotRatioByDay.set(slot.dayId, new Map())
+  }
+  for (const [dayId, m] of slotRatioByDay) {
+    const times = [...new Set(slots.filter((s) => s.dayId === dayId).map((s) => s.startAt.getTime()))].sort(
+      (a, b) => a - b
+    )
+    times.forEach((t, i) => m.set(t, times.length > 1 ? i / (times.length - 1) : 0.5))
+  }
+  const slotTimeRatio = (slot: SchedulerSlot): number =>
+    slotRatioByDay.get(slot.dayId)?.get(slot.startAt.getTime()) ?? 0.5
+  const timeLoadSum: Record<string, number> = {}
+  const timeLoadCount: Record<string, number> = {}
+  {
+    const byDate = new Map<string, Array<{ homeTeamId: string; awayTeamId: string; ms: number }>>()
+    for (const g of input.existingGames ?? []) {
+      if (!g.scheduledAt) continue
+      const d = new Date(g.scheduledAt)
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      if (!byDate.has(key)) byDate.set(key, [])
+      byDate.get(key)!.push({ homeTeamId: g.homeTeamId, awayTeamId: g.awayTeamId, ms: d.getTime() })
+    }
+    for (const dayGames of byDate.values()) {
+      const times = [...new Set(dayGames.map((g) => g.ms))].sort((a, b) => a - b)
+      for (const g of dayGames) {
+        const idx = times.indexOf(g.ms)
+        const ratio = times.length > 1 ? idx / (times.length - 1) : 0.5
+        for (const id of [g.homeTeamId, g.awayTeamId]) {
+          timeLoadSum[id] = (timeLoadSum[id] ?? 0) + ratio
+          timeLoadCount[id] = (timeLoadCount[id] ?? 0) + 1
+        }
+      }
+    }
+  }
+  const teamTimeAvg = (teamId: string): number =>
+    (timeLoadCount[teamId] ?? 0) > 0 ? timeLoadSum[teamId] / timeLoadCount[teamId] : 0.5
 
   const games: ProposedGame[] = []
   // Remaining pairings: Map from pair key → array (ordered) of Pairing objects
@@ -488,6 +552,16 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const timesPlayed = playedPairCount[pKey] ?? 0
     score -= timesPlayed * 3
 
+    // Soft: time-of-day rotation — an early slot prefers teams whose games
+    // have skewed late (and vice versa), so 9 a.m. rotates through the
+    // league instead of hitting the same families every weekend.
+    const slotRatio = slotTimeRatio(slot)
+    score +=
+      3 *
+      (teamTimeAvg(homeTeamId) - 0.5 + (teamTimeAvg(awayTeamId) - 0.5)) *
+      (0.5 - slotRatio) *
+      2
+
     // Soft: cluster similar games — same unit back-to-back on a court, and
     // same unit gathered at the same venue that day. Preference only.
     const last = courtLastUnit[slot.courtId]
@@ -525,6 +599,11 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     if (bestIdx === -1 || bestScore === -Infinity) return false
 
     const pairing = remaining.splice(bestIdx, 1)[0]
+    commitPlacement(slot, pairing)
+    return true
+  }
+
+  const commitPlacement = (slot: SchedulerSlot, pairing: Pairing): void => {
     games.push({
       sessionId: slot.sessionId,
       dayId: slot.dayId,
@@ -552,11 +631,12 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
       const sk = sessionKey(slot.sessionId, id)
       teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
+      timeLoadSum[id] = (timeLoadSum[id] ?? 0) + slotTimeRatio(slot)
+      timeLoadCount[id] = (timeLoadCount[id] ?? 0) + 1
     }
     courtLastUnit[slot.courtId] = { endMs: slot.endAt.getTime(), unitKey: pairing.unitKey }
     const dvKey = `${slot.dayVenueId}|${pairing.unitKey}`
     dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
-    return true
   }
 
   const openSlots: SchedulerSlot[] = []
@@ -568,6 +648,62 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   for (const slot of openSlots) {
     if (remaining.length === 0) break
     placeInto(slot, true)
+  }
+
+  // Repair pass (owner 2026-07-31): the pool is consumed pair by pair, so
+  // the endgame can strand two under-target teams with no unused pairing
+  // between them — every weekend then comes up a game short and the deficit
+  // compounds across the season. A human scheduler just books the extra
+  // rematch; so do we: synthesize a pairing between under-served teams
+  // (fewest prior meetings first, all hard constraints still enforced),
+  // strict day-cap first, relaxed only if that strands the game.
+  const repairTarget = sessionTeamCap ?? input.gamesGuaranteed
+  // Session mode's target is per-RUN; whole-season's is per-SEASON, so
+  // surviving games (played/live, passed as existingGames) count toward it.
+  const existingTeamGames: Record<string, number> = {}
+  for (const g of input.existingGames ?? []) {
+    for (const id of [g.homeTeamId, g.awayTeamId]) {
+      existingTeamGames[id] = (existingTeamGames[id] ?? 0) + 1
+    }
+  }
+  const repairCount = (teamId: string): number =>
+    (teamGameCount[teamId] ?? 0) + (sessionTeamCap === null ? existingTeamGames[teamId] ?? 0 : 0)
+  for (const relax of [false, true]) {
+    let moved = true
+    while (moved) {
+      moved = false
+      for (const slot of slots) {
+        if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt)) continue
+        let best: Pairing | null = null
+        let bestScore = -Infinity
+        for (const u of units) {
+          for (let i = 0; i < u.teams.length; i++) {
+            if (repairCount(u.teams[i].teamId) >= repairTarget) continue
+            for (let j = i + 1; j < u.teams.length; j++) {
+              if (repairCount(u.teams[j].teamId) >= repairTarget) continue
+              const pairing: Pairing = {
+                unitKey: u.key,
+                homeTeamId: u.teams[i].teamId,
+                awayTeamId: u.teams[j].teamId,
+              }
+              const cand = scoreCandidate(pairing, slot, relax)
+              if (cand.score === -Infinity) continue
+              // Fewest prior meetings dominates the slot preferences here.
+              const score =
+                cand.score - (playedPairCount[pairKey(pairing.homeTeamId, pairing.awayTeamId)] ?? 0) * 100
+              if (score > bestScore) {
+                bestScore = score
+                best = pairing
+              }
+            }
+          }
+        }
+        if (best) {
+          commitPlacement(slot, best)
+          moved = true
+        }
+      }
+    }
   }
 
   // Utilization
@@ -588,17 +724,13 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     }
   }
 
-  // In session-by-session mode most of the pool intentionally waits for
-  // later sessions — only pairings whose teams are still under this run's
-  // target genuinely failed to place.
-  const failedToPlace =
-    sessionTeamCap === null
-      ? remaining
-      : remaining.filter(
-          (p) =>
-            (teamGameCount[p.homeTeamId] ?? 0) < sessionTeamCap &&
-            (teamGameCount[p.awayTeamId] ?? 0) < sessionTeamCap
-        )
+  // Pool leftovers only count as failures while their teams are still under
+  // this run's target — in session mode most of the pool intentionally waits
+  // for later sessions, and after the repair pass a leftover pairing whose
+  // teams both hit target was simply replaced by a make-up rematch.
+  const failedToPlace = remaining.filter(
+    (p) => repairCount(p.homeTeamId) < repairTarget && repairCount(p.awayTeamId) < repairTarget
+  )
 
   return {
     games,

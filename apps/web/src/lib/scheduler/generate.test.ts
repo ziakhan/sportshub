@@ -421,6 +421,69 @@ describe("generateSchedule — scheduling philosophy", () => {
   })
 })
 
+// ---------- variety + time rotation (owner 2026-07-31) ----------
+
+describe("generateSchedule — seeded variety + time-of-day rotation", () => {
+  it("varietySeed rotates WHICH matchups repeat, keeping counts fair", () => {
+    // 8 teams × 10 games = 40 games: full round robin (28) + 12 rematches.
+    const base = {
+      teams: 8,
+      gamesGuaranteed: 10,
+      days: 10,
+      courts: 4,
+      open: "09:00",
+      close: "18:00",
+    }
+    const runA = generateSchedule(makeInput({ ...base }))
+    const runB = generateSchedule({ ...makeInput({ ...base }), varietySeed: 5 })
+    const repeats = (games: ProposedGame[]) => {
+      const counts = new Map<string, number>()
+      for (const g of games) {
+        const k = [g.homeTeamId, g.awayTeamId].sort().join("|")
+        counts.set(k, (counts.get(k) ?? 0) + 1)
+      }
+      return counts
+    }
+    for (const run of [runA, runB]) {
+      expect(run.games).toHaveLength(40)
+      const counts = repeats(run.games)
+      // Every unique pair met at least once before any pair met a third time
+      expect(counts.size).toBe(28)
+      expect([...counts.values()].every((c) => c <= 2)).toBe(true)
+      for (const count of Object.values(gameCounts(run.games))) expect(count).toBe(10)
+    }
+    const rematchesA = [...repeats(runA.games).entries()].filter(([, c]) => c > 1).map(([k]) => k)
+    const rematchesB = [...repeats(runB.games).entries()].filter(([, c]) => c > 1).map(([k]) => k)
+    expect(rematchesA.sort()).not.toEqual(rematchesB.sort())
+  })
+
+  it("the morning slot goes to the pairing whose history skews latest", () => {
+    // History (one prior day, three tip-offs): t1 early+midday (load 0.25),
+    // t2 late (1.0), t3 early (0), t4 midday+late (0.75). The pool that's
+    // left holds (t2,t3) [0.5], (t1,t2) [0.625], (t3,t4) [0.375] — today's
+    // 09:00 must go to (t1,t2), the pair that has been playing latest.
+    // Without rotation, pool order decided and never changed week to week.
+    const input = makeInput({
+      teams: 4,
+      gamesGuaranteed: 3,
+      days: 1,
+      courts: 1,
+      open: "09:00",
+      close: "15:00",
+    })
+    input.existingGames = [
+      { homeTeamId: "d1-t1", awayTeamId: "d1-t3", scheduledAt: "2026-06-28T09:00:00" },
+      { homeTeamId: "d1-t1", awayTeamId: "d1-t4", scheduledAt: "2026-06-28T10:30:00" },
+      { homeTeamId: "d1-t2", awayTeamId: "d1-t4", scheduledAt: "2026-06-28T12:00:00" },
+    ]
+    const result = generateSchedule(input)
+    expect(result.games).toHaveLength(3)
+    const nine = result.games.filter((g) => new Date(g.scheduledAt).getHours() === 9)
+    expect(nine).toHaveLength(1)
+    expect([nine[0].homeTeamId, nine[0].awayTeamId].sort()).toEqual(["d1-t1", "d1-t2"])
+  })
+})
+
 // ---------- per-day cap (owner 2026-07-31: a weekend session = one game
 // Saturday, one Sunday when idealGamesPerDayPerTeam is 1) ----------
 

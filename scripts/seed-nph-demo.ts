@@ -1377,6 +1377,81 @@ async function seed() {
     })
   }
 
+  // Realistic division sizes (owner 2026-07-31; NPH-style grade divisions
+  // run 8-12 teams, not 4): every FALL_READY club also fields its OTHER
+  // grade, and two clubs per grade run a second "White" squad → 10 teams
+  // per division, 100 games at the 10-game guarantee.
+  const mkFallTeam = async (clubKey: string, grade: number, suffix?: string) => {
+    const club = CLUBS.find((c) => c.key === clubKey)!
+    const row = clubRows.get(clubKey)!
+    const teamName = `${club.name} Fall Grade ${grade}${suffix ? ` ${suffix}` : ""}`
+    const team = await p.team.create({
+      data: { tenantId: row.id, name: teamName, ageGroup: `Grade ${grade}`, nameSuffix: suffix ?? null, gender: "MALE", season: SPRING_SEASON, description: MARKER },
+      select: { id: true },
+    })
+    const rosterIds: string[] = []
+    for (let i = 0; i < 10; i++) {
+      const parent = await mkUser(
+        `parent-fall-${clubKey}-g${grade}${suffix ? "w" : ""}-${String(i + 1).padStart(2, "0")}@${EMAIL_DOMAIN}`,
+        pick(ADULT_NAMES),
+        pick(LAST_NAMES)
+      )
+      await p.userRole.create({ data: { userId: parent.id, role: "Parent" } })
+      const player = await p.player.create({
+        data: {
+          firstName: pick(BOY_NAMES), lastName: pick(LAST_NAMES),
+          dateOfBirth: new Date(Date.UTC(GRADES[grade].birthYear, Math.floor(rnd() * 12), 1 + Math.floor(rnd() * 28))),
+          gender: "MALE", isMinor: true, parentId: parent.id,
+          position: pick(["Guard", "Guard", "Forward", "Forward", "Center"]),
+        },
+        select: { id: true },
+      })
+      await p.teamPlayer.create({ data: { teamId: team.id, playerId: player.id, jerseyNumber: 4 + i, status: "ACTIVE" } })
+      rosterIds.push(player.id)
+    }
+    const submission = await p.teamSubmission.create({
+      data: {
+        seasonId: springSeason.id, divisionId: springDivisions.get(grade).id, teamId: team.id,
+        status: "APPROVED", registrationFee: LEAGUE_TEAM_FEE, paymentStatus: "PAID_MANUAL",
+      },
+      select: { id: true },
+    })
+    await p.seasonRoster.create({
+      data: {
+        seasonId: springSeason.id, teamSubmissionId: submission.id, isLocked: true,
+        submittedAt: new Date(now.getTime() - days(9)),
+        lockedAt: new Date(now.getTime() - days(7)),
+        players: { create: rosterIds.map((playerId, i) => ({ playerId, jerseyNumber: 4 + i })) },
+      },
+    })
+    const fillerObligation = await p.paymentObligation.create({
+      data: {
+        payerTenantId: row.id, payeeLeagueId: springLeague.id,
+        referenceType: "TeamSubmission", referenceId: submission.id,
+        description: `${SPRING_LEAGUE} team entry — ${teamName} (${SPRING_SEASON})`,
+        amount: LEAGUE_TEAM_FEE, status: "PAID",
+      },
+      select: { id: true },
+    })
+    await p.payment.create({
+      data: {
+        obligationId: fillerObligation.id,
+        amount: LEAGUE_TEAM_FEE, currency: "CAD",
+        status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
+        payeeId: nph.id, recordedById: nph.id,
+        description: `${SPRING_LEAGUE} team entry — ${teamName} (${SPRING_SEASON})`,
+        createdAt: new Date(now.getTime() - days(6)),
+      },
+    })
+  }
+  for (const [clubKey, sourceGrade] of FALL_READY) {
+    await mkFallTeam(clubKey, sourceGrade === 9 ? 10 : 9)
+  }
+  await mkFallTeam("force", 9, "White")
+  await mkFallTeam("monarchs", 9, "White")
+  await mkFallTeam("west", 10, "White")
+  await mkFallTeam("cityabove", 10, "White")
+
   // Recruiting clubs: fall tryouts live on the marketplace NOW.
   // Lords' tryout is in ~3 hours with 5 kids already checked in — the
   // on-stage check-in + send-offer demo (plan §3). Their fall team is

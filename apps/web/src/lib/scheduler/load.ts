@@ -74,6 +74,9 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
     gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
     gameLengthMinutes: (cfg.gameLengthMinutes as number) ?? 40,
     idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 1,
+    // Stable per-season variety: rotates repeat matchups + time assignments
+    // between seasons while keeping preview == commit within one.
+    varietySeed: Array.from(seasonId).reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7),
     schedulingPhilosophy: (cfg.schedulingPhilosophy ?? "FAMILY_FRIENDLY") as SchedulerPhilosophy,
     allowCrossDivisionScheduling: !!season.allowCrossDivisionScheduling,
     defaultVenueOpenTime: (cfg.defaultVenueOpenTime as string) ?? "09:00",
