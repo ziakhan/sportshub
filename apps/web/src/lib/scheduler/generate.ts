@@ -341,7 +341,51 @@ function buildPairings(
 
 // ---------- main generator ----------
 
+/**
+ * Auto-retry wrapper (owner 2026-08-01: "better spread over two days than
+ * back-to-backs"): whether a weekend can be split one-game-per-day is
+ * decided by which matchups share the weekend — an odd matchup-cycle makes
+ * a double mathematically unavoidable INSIDE that variation. So when the
+ * one-game-per-day model produces doubles, deterministically try a few
+ * sibling variations and keep the first clean one. Same input → same
+ * output, so previews still commit identically.
+ */
 export function generateSchedule(input: SchedulerInput): SchedulerResult {
+  const attempts = input.idealGamesPerDayPerTeam <= 1 ? 4 : 1
+  const countDoubles = (games: ProposedGame[]): number => {
+    const byTeamDay = new Map<string, number>()
+    for (const g of games) {
+      const d = new Date(g.scheduledAt)
+      const dk = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${id}|${dk}`
+        byTeamDay.set(k, (byTeamDay.get(k) ?? 0) + 1)
+      }
+    }
+    return [...byTeamDay.values()].filter((c) => c > 1).length
+  }
+  let best: SchedulerResult | null = null
+  let bestKey: [number, number, number] = [Infinity, Infinity, Infinity]
+  for (let k = 0; k < attempts; k++) {
+    const res = generateScheduleOnce({
+      ...input,
+      varietySeed: (input.varietySeed ?? 0) + k * 7919,
+    })
+    const doubles = countDoubles(res.games)
+    const key: [number, number, number] = [res.unscheduled.length, doubles, res.tradeoffs.length]
+    if (key[0] === 0 && key[1] === 0 && key[2] === 0) return res
+    if (
+      key[0] < bestKey[0] ||
+      (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))
+    ) {
+      best = res
+      bestKey = key
+    }
+  }
+  return best!
+}
+
+function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   const warnings: string[] = []
   const tradeoffs: string[] = []
   const slots = buildSlots(input)
@@ -1268,6 +1312,182 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   }
   runRepairMode("lastResort")
   runRepairMode("overGuarantee")
+
+  // ── De-double pass (owner 2026-08-01: "better to have a game spread
+  // over two days than back-to-backs") ──
+  // The relaxed passes sometimes give a team both weekend games on one
+  // day. Almost always the OTHER day of the same weekend has room — so
+  // after everything is placed, every doubled team-day tries to move one
+  // of its games to a different day (strict day-cap at the destination, so
+  // a fix can never create a new double). Transactional; a stuck double
+  // simply stays and shows up in the fairness report.
+  const tryMoveGameOffDay = (gi: number): boolean => {
+    const log: MoveLogEntry[] = []
+    const entry: MoveLogEntry = { gi, prev: { ...games[gi] }, placed: false }
+    log.push(entry)
+    const gPairing: Pairing = {
+      unitKey: entry.prev.unitKey,
+      homeTeamId: entry.prev.homeTeamId,
+      awayTeamId: entry.prev.awayTeamId,
+    }
+    const fromDay = dateKeyOf(new Date(entry.prev.scheduledAt))
+    removeGameState(gi)
+    for (const slot of slots) {
+      if (dateKeyOf(slot.startAt) === fromDay) continue
+      const c = scoreCandidate(gPairing, slot, false, false, true)
+      if (c.score !== -Infinity) {
+        setGamePlacement(gi, slot)
+        entry.placed = true
+        return true
+      }
+    }
+    rollbackTo(log, 0)
+    return false
+  }
+  /** De-double chain (owner: two days beat back-to-backs): move games[gi]
+   *  to another DAY; when the target day is blocked by a participant's
+   *  existing game there, recursively evict that game first. Everyone else
+   *  usually plays both weekend days, so the fix is a short CYCLE of
+   *  moves — the freed slots cascade until the chain closes. Strict
+   *  one-game-per-day law at every landing; transactional per branch. */
+  // Depth generously deep: the fix for a Saturday double is an ALTERNATING
+  // Sat/Sun chain that terminates at the complementary double (parity
+  // guarantees one exists) — up to ~division-size hops, but branching is
+  // ~1 per hop since everyone plays once per day.
+  const DEDOUBLE_MAX_DEPTH = 14
+  let dedoubleBudget = 200_000
+  const allDayKeys = [...new Set(slots.map((sl) => dateKeyOf(sl.startAt)))]
+  const tryMoveGameDayChain = (
+    gi: number,
+    depth: number,
+    log: MoveLogEntry[],
+    inChain: Set<number>
+  ): boolean => {
+    if (dedoubleBudget <= 0) return false
+    const save = log.length
+    const entry: MoveLogEntry = { gi, prev: { ...games[gi] }, placed: false }
+    log.push(entry)
+    const gPairing: Pairing = {
+      unitKey: entry.prev.unitKey,
+      homeTeamId: entry.prev.homeTeamId,
+      awayTeamId: entry.prev.awayTeamId,
+    }
+    const fromDay = dateKeyOf(new Date(entry.prev.scheduledAt))
+    inChain.add(gi)
+    removeGameState(gi)
+    const materialize = (day: string): boolean => {
+      for (const sl of slots) {
+        if (dedoubleBudget-- <= 0) return false
+        if (dateKeyOf(sl.startAt) !== day) continue
+        const c = scoreCandidate(gPairing, sl, false, false, true)
+        if (c.score !== -Infinity) {
+          setGamePlacement(gi, sl)
+          entry.placed = true
+          return true
+        }
+      }
+      return false
+    }
+    for (const day of allDayKeys) {
+      if (day === fromDay) continue
+      const blockers = [gPairing.homeTeamId, gPairing.awayTeamId].filter((t) =>
+        (teamBookings[t] ?? []).some((b) => b.dateKey === day)
+      )
+      if (blockers.length === 0) {
+        if (materialize(day)) {
+          inChain.delete(gi)
+          return true
+        }
+        continue
+      }
+      if (depth >= DEDOUBLE_MAX_DEPTH) continue
+      const branchSave = log.length
+      let cleared = true
+      for (const bt of blockers) {
+        let evicted = false
+        for (let gj = 0; gj < games.length; gj++) {
+          if (gj === gi || inChain.has(gj)) continue
+          const other = games[gj]
+          if (dateKeyOf(new Date(other.scheduledAt)) !== day) continue
+          if (other.homeTeamId !== bt && other.awayTeamId !== bt) continue
+          if (tryMoveGameDayChain(gj, depth + 1, log, inChain)) {
+            evicted = true
+            break
+          }
+        }
+        if (!evicted) {
+          cleared = false
+          break
+        }
+      }
+      if (cleared && materialize(day)) {
+        inChain.delete(gi)
+        return true
+      }
+      rollbackTo(log, branchSave)
+    }
+    rollbackTo(log, save)
+    inChain.delete(gi)
+    return false
+  }
+  const trySwapDays = (gi: number): boolean => {
+    const log: MoveLogEntry[] = []
+    if (tryMoveGameDayChain(gi, 0, log, new Set())) return true
+    rollbackTo(log, 0)
+    return false
+  }
+  // Only when the league's model is ONE game per day — there, a double is a
+  // rule violation worth fixing. At ideal 2+ doubles are by design (and
+  // chasing them can oscillate: fixing one team's double doubles another).
+  if (input.idealGamesPerDayPerTeam <= 1) {
+    let dedoubled = true
+    let guard = games.length * 4
+    while (dedoubled && guard-- > 0) {
+      dedoubled = false
+      const byTeamDay = new Map<string, number[]>()
+      for (let gi = 0; gi < games.length; gi++) {
+        const g = games[gi]
+        const dk = dateKeyOf(new Date(g.scheduledAt))
+        for (const id of [g.homeTeamId, g.awayTeamId]) {
+          const k = `${id}|${dk}`
+          if (!byTeamDay.has(k)) byTeamDay.set(k, [])
+          byTeamDay.get(k)!.push(gi)
+        }
+      }
+      const doubledKeys = [...byTeamDay.keys()].filter((k) => byTeamDay.get(k)!.length > 1).sort()
+      for (const k of doubledKeys) {
+        const gis = byTeamDay
+          .get(k)!
+          .sort(
+            (a, b) =>
+              new Date(games[b].scheduledAt).getTime() - new Date(games[a].scheduledAt).getTime()
+          )
+        for (const gi of gis) {
+          if (tryMoveGameOffDay(gi) || trySwapDays(gi)) {
+            dedoubled = true
+            break
+          }
+        }
+        if (!dedoubled && RELOC_DBG) {
+          const gi = gis[0]
+          const prev = { ...games[gi] }
+          const gp: Pairing = { unitKey: prev.unitKey, homeTeamId: prev.homeTeamId, awayTeamId: prev.awayTeamId }
+          const fromDay = dateKeyOf(new Date(prev.scheduledAt))
+          removeGameState(gi)
+          const tally = new Map<string, number>()
+          for (const sl of slots) {
+            if (dateKeyOf(sl.startAt) === fromDay) continue
+            const c = scoreCandidate(gp, sl, false, false, true)
+            tally.set(c.blockReason ?? "OK", (tally.get(c.blockReason ?? "OK") ?? 0) + 1)
+          }
+          games[gi] = prev
+          applyPlacementState(siteOfGame(prev), gp)
+          console.error(`[dedouble] STUCK ${k}: off-day blockers: ${[...tally.entries()].map(([r, c]) => `${r}×${c}`).join(", ")}`)
+        }
+        if (dedoubled) break
+      }
+    }
+  }
 
   // ── PHASE 2: court & venue assignment (owner 2026-08-01) ──
   // Games were placed against TIME buckets; now each bucket's games get
