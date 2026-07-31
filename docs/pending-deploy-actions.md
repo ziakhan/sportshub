@@ -886,3 +886,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 
 ## #45 — 2026-07-31: SETTINGS GROUPING + STRUCTURED QUESTIONS + ORG NAV + DATES/FEE INHERITANCE — local, NOT deployed
 - No schema change (questions ride the existing Json columns; legacy strings normalize). Reseed recommended after deploy (seed adds a single-choice demo question): reseed-demo.sh --purge-manual-leagues. No cron, no env.
+
+## #46 — 2026-07-31: DATES/FEE INHERITANCE + CI GREEN + PURGE FIX — ✅ DEPLOYED TO BOX (sha ea23460) + reseeded (verified: Showcase inherits dates, 46 demo teams)
+- Also live from #45 batch: settings grouped rulebook-first, structured application questions, org→league nav.
+- CI: deploy.yml (Vercel leftover) REMOVED — GitHub is a mirror only; 9 stale unit tests fixed → suite 305/305 green → push-failure emails stop.
+- Seed purge hardened (offers/games against demo teams deleted before teams — box reseed had crashed mid-purge on Offer FK).
