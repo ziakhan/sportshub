@@ -215,3 +215,8 @@ Owner: "one team drops out of 10 — minimize the changes so people aren't affec
 - Preview UI already renders both (warnings list + per-pairing reasons under "couldn't be placed") — no UI change needed.
 - Box reseeded on owner request: canonical 4 demo venues restored; verified ON BOX with default venues — whole-season preview 100 games / 0 unscheduled.
 - Suite 41/41 (slot-exhaustion test re-pinned to diagnostic strings), int 373/373, unit 312/312.
+
+## 24. 2026-08-01 — trade-offs are not errors (owner pasted the exact "error": concession warnings)
+- Root cause of the confusion: the repair ladder's concession messages ("2 games exceed a session's per-team share — there was no other room…") rendered in the same amber warnings list as real failures — the season had actually placed 100/100. Sweep across 9 variations showed the concession is STRUCTURAL to the 4-venue/8-court layout (identical trade-offs every seed), so "try Shuffle" advice would be false; the honest fixes are the stated ones (court time / a session), or the Studio P2 swap solver.
+- **SchedulerResult gains `tradeoffs[]`** — "things the engine did to make everything fit": over-share games, same-weekend rematches, bonus games, scheduled-around-other-leagues. Reworded to lead with success ("To fit every game in, …"). Preview renders them in a neutral ink panel titled "How it fit together — nothing failed", ABOVE the amber warnings which now only carry real problems (unplaced games w/ diagnosis, teams under target).
+- Receipt: seeded Fall preview shows "Preview: 100 games" + the info panel + green TeamCheck. Scheduler 41/41 (2 pins moved to tradeoffs), int 373/373, unit 312/312.

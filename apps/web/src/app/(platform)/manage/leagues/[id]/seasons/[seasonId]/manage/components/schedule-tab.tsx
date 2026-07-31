@@ -72,6 +72,7 @@ export function ScheduleTab({
     games: any[]
     unscheduled: any[]
     warnings: string[]
+    tradeoffs?: string[]
     utilization: any
   } | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -655,6 +656,20 @@ export function ScheduleTab({
                   </li>
                 ))}
               </ul>
+            )}
+            {(preview.tradeoffs ?? []).length > 0 && (
+              <div className="border-ink-100 mb-3 rounded-xl border bg-white/70 px-3 py-2">
+                <p className="text-ink-700 mb-1 text-[11px] font-semibold uppercase tracking-wide">
+                  How it fit together — nothing failed
+                </p>
+                <ul className="space-y-0.5">
+                  {(preview.tradeoffs ?? []).map((w, i) => (
+                    <li key={i} className="text-ink-600 text-xs">
+                      • {w}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {preview.utilization && (
               <p className="text-ink-500 mb-3 text-xs">

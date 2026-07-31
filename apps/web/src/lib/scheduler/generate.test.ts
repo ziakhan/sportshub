@@ -468,7 +468,7 @@ describe("generateSchedule — seeded variety + time-of-day rotation", () => {
         expect(count).toBeLessThanOrEqual(11)
       }
       if (perTeam.some((c) => c > 10)) {
-        expect(run.warnings.some((w) => w.includes("beyond the guarantee"))).toBe(true)
+        expect(run.tradeoffs.some((w) => w.includes("bonus game beyond the guarantee"))).toBe(true)
       }
     }
     const rematchesA = [...repeats(runA.games).entries()].filter(([, c]) => c > 1).map(([k]) => k)
@@ -595,7 +595,7 @@ describe("generateSchedule — busyCourtBookings (shared venues)", () => {
     const result = generateSchedule(input)
     expect(result.games).toHaveLength(1)
     expect(new Date(result.games[0].scheduledAt).getHours()).toBe(11)
-    expect(result.warnings.some((w) => w.includes("booked by other leagues"))).toBe(true)
+    expect(result.tradeoffs.some((w) => w.includes("booked by other leagues"))).toBe(true)
   })
 })
 

@@ -137,6 +137,9 @@ export interface SchedulerResult {
     reason: string
   }>
   warnings: string[]
+  /** Things the engine DID to make everything fit — informational, not
+   *  errors (owner 2026-08-01: concession warnings read like failures). */
+  tradeoffs: string[]
   utilization: {
     slotsTotal: number
     slotsUsed: number
@@ -340,6 +343,7 @@ function buildPairings(
 
 export function generateSchedule(input: SchedulerInput): SchedulerResult {
   const warnings: string[] = []
+  const tradeoffs: string[] = []
   const slots = buildSlots(input)
   const units = buildUnits(input)
 
@@ -467,8 +471,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       )
     ).length
     if (blocked > 0) {
-      warnings.push(
-        `${blocked} slot${blocked === 1 ? " is" : "s are"} already booked by other leagues at shared venues — scheduled around them.`
+      tradeoffs.push(
+        `${blocked} slot${blocked === 1 ? " was" : "s were"} already booked by other leagues at shared venues — your games were scheduled around them.`
       )
     }
   }
@@ -877,18 +881,18 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     }
   }
   if (bonusGames > 0) {
-    warnings.push(
-      `${bonusGames} team${bonusGames === 1 ? " plays" : "s play"} one game beyond the guarantee so no team ends the season short.`
+    tradeoffs.push(
+      `To keep every team whole, ${bonusGames} team${bonusGames === 1 ? " plays" : "s play"} one bonus game beyond the guarantee.`
     )
   }
   if (overShareGames > 0) {
-    warnings.push(
-      `${overShareGames} game${overShareGames === 1 ? "" : "s"} exceed a session's per-team share — there was no other room. Add a session or more court time to avoid this.`
+    tradeoffs.push(
+      `To fit every game in, ${overShareGames} game${overShareGames === 1 ? " gives" : "s give"} a team an extra game in one weekend (three that weekend instead of two). More court time or another session removes the squeeze.`
     )
   }
   if (sameSessionRematches > 0) {
-    warnings.push(
-      `${sameSessionRematches} rematch${sameSessionRematches === 1 ? "" : "es"} had to share a session with the first meeting — there was no other room. Add a session or more court time to avoid this.`
+    tradeoffs.push(
+      `To fit every game in, ${sameSessionRematches} rematch${sameSessionRematches === 1 ? " lands" : "es land"} in the same weekend as the first meeting. Another session would spread them apart.`
     )
   }
 
@@ -957,6 +961,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
 
   return {
     games,
+    tradeoffs,
     unscheduled: failedToPlace.map((p, i) => ({
       unitKey: p.unitKey,
       homeTeamId: p.homeTeamId,

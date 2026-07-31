@@ -132,6 +132,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         awayTeamName: teamNameById.get(u.awayTeamId) ?? u.awayTeamId,
       })),
       warnings: result.warnings,
+      tradeoffs: result.tradeoffs,
       utilization: result.utilization,
     })
   } catch (error) {

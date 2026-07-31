@@ -163,6 +163,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       draftCount,
       unscheduledCount: result.unscheduled.length,
       warnings: result.warnings,
+      tradeoffs: result.tradeoffs,
       utilization: result.utilization,
     })
   } catch (error) {
