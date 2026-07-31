@@ -624,10 +624,19 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const timesPlayed = playedPairCount[pKey] ?? 0
     score -= timesPlayed * 3
 
-    // Hard: never a rematch while a first meeting (or lower-cycle meeting)
-    // in the same unit is still waiting to be placed.
+    // Hard (strict pass only): never a rematch while a first meeting (or
+    // lower-cycle meeting) in the same unit is still waiting to be placed.
+    // The relaxed/repair passes lift this — when caps and bookings corner
+    // the endgame, filling every team's games beats stranding them
+    // (2026-08-01: the always-hard version left 13 of 100 games unplaced
+    // on the 20-team whole-season run).
     const unitMin = unitMinMeetings.get(pairing.unitKey)
-    if (unitMin !== undefined && unitMin !== Infinity && timesPlayed > unitMin) {
+    if (
+      !relaxDayCap &&
+      unitMin !== undefined &&
+      unitMin !== Infinity &&
+      timesPlayed > unitMin
+    ) {
       return { score: -Infinity, blockReason: "rematch before all first meetings" }
     }
 

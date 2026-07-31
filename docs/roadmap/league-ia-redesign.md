@@ -190,3 +190,6 @@ The approved plan's P0 backend layer, unblocking the P1 drag-and-drop board:
 - **Division guards**: approving a team without a division = 400 (divisionId settable in the same call); deleting a division with teams = 409; finalize preflight blocks "N approved teams have no division" (such teams were silently never scheduled).
 - **Wishlist defects**: D-004 referee calendar no longer hidden behind the "No teams yet" gate (empty = no teams AND no items); W-001 box-score leader line DReb/OReb → DREB/OREB (table headers were already CSS-uppercased).
 - Verified: scheduler 41/41 (2 new pinned: first-meetings-before-rematches, pinned-survivor avoidance) · int 372/372 (+4: division guards ×3, pinned-game regeneration, locked-move 409) · unit 312/312 · tsc/lint clean.
+
+## 20. 2026-08-01 — hotfix: whole-season 87/13 (owner repro on box)
+- The overnight always-hard fairness gate cornered the whole-season endgame: rematches stayed blocked while the leftover first meetings were themselves unplaceable (caps/bookings), stranding 13 of 100 games. Gate is now hard in the STRICT pass only — relaxed/repair passes may book rematches to fill counts (diversity scoring still prefers first meetings). Repro'd 87/13 locally → 100/0 after fix; 10/team · 2/session; matchup quality equal to session-by-session runs (87 unique pairs, 12 rematch pairs). Scheduler 41/41, int 372/372.
