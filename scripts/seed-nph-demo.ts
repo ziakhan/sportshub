@@ -678,20 +678,17 @@ async function seed() {
       type: "SUMMER",
       startDate: new Date(now.getTime() - days(32)),
       endDate: new Date(now.getTime() + days(40)), // wraps up end of August (owner 2026-07-23)
-      teamFee: LEAGUE_TEAM_FEE,
-      gamePeriods: "QUARTERS",
+      // Fee/deposit/format inherit from the NPH org rulebook (Phase A).
+      // Summer keeps DELIBERATE overrides — 20 games (vs the org's 12),
+      // its own venue hours, and locked explicit tiebreakers — so the
+      // "Overrides · Reset to organization" UI has a live demo.
       gamesGuaranteed: SUMMER_GAMES_PER_TEAM,
-      gameSlotMinutes: GAME_SLOT_MINUTES,
-      gameLengthMinutes: GAME_LENGTH_MINUTES,
       idealGamesPerDayPerTeam: 1, // 2-day weekend sessions → 2 games/weekend
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",
       rosterChangePolicy: "REQUEST_ONLY", // locked rosters need commissioner approval
       tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
       tiebreakersLockedAt: now,
-      // Playoff eligibility rule (owner 2026-07-29): min 5 games played
-      playoffMinGames: 5,
-      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
     },
   })
   const winterDivisions = new Map<number, any>()
@@ -1276,14 +1273,8 @@ async function seed() {
       type: "FALL_WINTER",
       registrationDeadline: new Date(now.getTime() + days(45)),
       startDate: fallStart, endDate: new Date(now.getFullYear() + 1, 2, 28), // end of March
-      teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
-      gamesGuaranteed: FALL_GAMES_PER_TEAM,
-      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
-      gameSlotMinutes: GAME_SLOT_MINUTES,
-      gameLengthMinutes: GAME_LENGTH_MINUTES,
-      idealGamesPerDayPerTeam: 1,
-      defaultVenueOpenTime: "09:00",
-      defaultVenueCloseTime: "18:00",
+      // Fee, deposit, format (12 games), tiebreakers: inherited from the
+      // NPH org rulebook (fields null on purpose, Phase A).
       // Clubs may edit rosters until the first fall session wraps
       rosterChangePolicy: "OPEN_UNTIL_DEADLINE",
       rosterChangeDeadline: new Date(fallStart.getTime() + days(9)),
@@ -2130,21 +2121,11 @@ async function seed() {
       registrationDeadline: new Date(Date.UTC(2026, 9, 1)),
       startDate: showcaseStart, endDate: new Date(Date.UTC(2027, 2, 14)),
       ageGroupCutoffDate: new Date(Date.UTC(2026, 11, 31)), // U-age as of Dec 31
-      teamFee: LEAGUE_TEAM_FEE, gamePeriods: "QUARTERS",
-      gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
-      depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
-      // Their real application questions — asked ONCE per club at entry
-      applicationQuestions: [
-        "Brief synopsis of your team and top prospects",
-        "Why do you want to join this league?",
-        "Program vision — goals over the next 1, 3 and 5 years",
-      ],
+      // Fee, deposit, format, tiebreakers, application questions: ALL
+      // inherited from the NPH org rulebook (fields left null on purpose —
+      // this is the flagship "configuration is reading" demo, Phase A).
       targetGamesPerSession: 2, // 5 sessions × 2 + finals weekend × 2 = 10+2
-      gameSlotMinutes: GAME_SLOT_MINUTES, gameLengthMinutes: GAME_LENGTH_MINUTES,
-      idealGamesPerDayPerTeam: 1,
-      defaultVenueOpenTime: "08:00", defaultVenueCloseTime: "20:00",
       rosterChangePolicy: "REQUEST_ONLY",
-      tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
     },
   })
   // NPH's own venues (owner 2026-07-29). Court counts default to 2 and the
@@ -2589,6 +2570,30 @@ async function seed() {
       tagline: "A pathway for Canadian basketball to the next level",
       description:
         "North Pole Hoops provides a pathway for Canadian basketball to the next level, from elementary school to the pros — leagues, showcases, scouting and media.",
+      // The NPH rulebook (Phase A): every league inherits these live —
+      // Showcase + Fall leave the fields null; Summer keeps deliberate
+      // overrides (20 games, its own hours) to demo the override UI.
+      seasonDefaults: {
+        cycleStartDate: "2026-10-03T00:00:00.000Z",
+        cycleEndDate: "2027-03-14T00:00:00.000Z",
+        cycleRegistrationDeadline: "2026-10-01T00:00:00.000Z",
+        gamesGuaranteed: 12, // real NPH format: 10 + 2 guaranteed playoff games
+        gamePeriods: "QUARTERS",
+        periodLengthMinutes: 10,
+        gameLengthMinutes: GAME_LENGTH_MINUTES,
+        gameSlotMinutes: GAME_SLOT_MINUTES,
+        teamFee: LEAGUE_TEAM_FEE,
+        depositPct: 50, // NPH terms: 50% deposit, balance 2 wks before tip-off
+        balanceDueDaysBeforeStart: 14,
+        tiebreakerOrder: ["HEAD_TO_HEAD", "POINT_DIFFERENTIAL", "POINTS_SCORED"],
+        allowGuestPlayers: true,
+        playoffMinGames: 5,
+        applicationQuestions: [
+          "Brief synopsis of your team and top prospects",
+          "Why do you want to join this league?",
+          "Program vision — goals over the next 1, 3 and 5 years",
+        ],
+      },
     },
     select: { id: true },
   })

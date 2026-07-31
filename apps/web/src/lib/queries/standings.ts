@@ -6,6 +6,7 @@ import {
   type StandingsGame,
   type TiebreakerKey,
 } from "@/lib/standings/compute"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 
 /**
  * Season standings, computed on read. Shared by the public league hub page
@@ -32,6 +33,7 @@ export const getSeasonStandings = cache(async (seasonId: string): Promise<Season
           },
         },
       },
+      league: { select: { organization: { select: { seasonDefaults: true } } } },
     },
   })) as any
   if (!season) return null
@@ -80,8 +82,14 @@ export const getSeasonStandings = cache(async (seasonId: string): Promise<Season
     })),
   }))
 
-  const tiebreakerOrder: TiebreakerKey[] = Array.isArray(season.tiebreakerOrder)
-    ? (season.tiebreakerOrder as TiebreakerKey[])
+  // Season override → org rulebook → system (Phase A): an inheriting season
+  // still breaks ties by the organization's order.
+  const { values: cfg } = effectiveSeasonConfig(
+    season,
+    season.league?.organization?.seasonDefaults
+  )
+  const tiebreakerOrder: TiebreakerKey[] = Array.isArray(cfg.tiebreakerOrder)
+    ? (cfg.tiebreakerOrder as TiebreakerKey[])
     : []
 
   return {

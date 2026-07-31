@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { getPublicSeason } from "@/lib/queries/season"
+import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
 import { notifyMany } from "@/lib/notifications"
 import { sendSeasonReviewInvites } from "@/lib/reviews/invites"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
@@ -193,16 +194,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           schedulingGroups: {
             select: { id: true, divisions: { select: { divisionId: true } } },
           },
+          league: { select: { organization: { select: { seasonDefaults: true } } } },
         },
       })
 
       const effective = { ...(preflight as any), ...update }
+      // Inherited org rulebook counts as configured (Phase A) — a season
+      // leaving format/tiebreakers to its Organization must still finalize.
+      const { values: cfg } = effectiveSeasonConfig(
+        effective,
+        (preflight as any).league?.organization?.seasonDefaults
+      )
       const missing: string[] = []
       const warnings: string[] = []
 
-      if (!effective.gamesGuaranteed)
+      if (!cfg.gamesGuaranteed)
         missing.push("Max games per team per season must be set in Scheduling Settings")
-      if (!effective.periodLengthMinutes)
+      if (!cfg.periodLengthMinutes)
         missing.push("Period / half length (minutes) must be set in Scheduling Settings")
       if (preflight.divisions.length === 0) missing.push("At least one division is required")
       if (preflight.sessions.length === 0) missing.push("At least one game session is required")
@@ -227,9 +235,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       }
 
-      // NEW: tiebreaker order non-empty
-      const effectiveTiebreakers: string[] = Array.isArray(effective.tiebreakerOrder)
-        ? effective.tiebreakerOrder
+      // NEW: tiebreaker order non-empty (org-inherited order counts)
+      const effectiveTiebreakers: string[] = Array.isArray(cfg.tiebreakerOrder)
+        ? (cfg.tiebreakerOrder as string[])
         : []
       if (effectiveTiebreakers.length === 0)
         missing.push(
@@ -270,8 +278,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
 
       // NEW: feasibility warning — court-minutes available vs. required
-      const gameSlotMinutes: number = effective.gameSlotMinutes ?? 90
-      const gamesGuaranteed: number = effective.gamesGuaranteed ?? 0
+      const gameSlotMinutes: number = (cfg.gameSlotMinutes as number) ?? 90
+      const gamesGuaranteed: number = (cfg.gamesGuaranteed as number) ?? 0
       const approvedTeamCount = preflight.teamSubmissions.filter(
         (t: any) => t.status === "APPROVED"
       ).length
@@ -293,8 +301,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       for (const s of preflight.sessions as any[]) {
         for (const d of s.days ?? []) {
           for (const dv of d.dayVenues ?? []) {
-            const start = parseHHMM(dv.startTime) ?? parseHHMM(effective.defaultVenueOpenTime)
-            const end = parseHHMM(dv.endTime) ?? parseHHMM(effective.defaultVenueCloseTime)
+            const start =
+              parseHHMM(dv.startTime) ?? parseHHMM(cfg.defaultVenueOpenTime as string)
+            const end =
+              parseHHMM(dv.endTime) ?? parseHHMM(cfg.defaultVenueCloseTime as string)
             const window = start !== null && end !== null ? Math.max(0, end - start) : 0
             availableCourtMinutes += window * (dv.courts?.length ?? 0)
           }

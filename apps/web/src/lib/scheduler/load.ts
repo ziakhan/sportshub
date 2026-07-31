@@ -1,6 +1,8 @@
 import { prisma } from "@youthbasketballhub/db"
 import type { SchedulerInput, SchedulerPhilosophy } from "./generate"
-import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
+// Relative (not "@/") import: scripts/seed-nph-demo.ts pulls this module
+// straight through tsx without the app's path alias.
+import { effectiveSeasonConfig } from "../org/season-defaults"
 
 /**
  * Load a Season + its substrate and shape it as SchedulerInput.
