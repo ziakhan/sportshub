@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 import { TeamCheck } from "./team-check"
+import { computeFairnessReport } from "@/lib/scheduler/report"
 
 interface CapacityUnit {
   unitKey: string
@@ -90,6 +91,30 @@ export function ScheduleTab({
       setReport(null)
       return
     }
+    // A live preview gets its report computed right here from the proposed
+    // games — no need to commit first to see the fairness picture.
+    if (preview && preview.games.length > 0) {
+      const teamNames = new Map<string, string>(
+        ((league?.teams ?? []) as any[]).map((t) => [t.team.id, t.team.name])
+      )
+      setReport(
+        computeFairnessReport(
+          preview.games.map((g: any) => ({
+            id: g.id ?? `${g.homeTeamId}|${g.scheduledAt}`,
+            homeTeamId: g.homeTeamId,
+            awayTeamId: g.awayTeamId,
+            scheduledAt: g.scheduledAt,
+            venueId: g.venueId,
+            venueName: g.venue?.name ?? null,
+            courtId: g.courtId,
+            courtName: g.court?.name ?? null,
+          })),
+          teamNames,
+          league?.gameSlotMinutes ?? 90
+        )
+      )
+      return
+    }
     setReportLoading(true)
     const res = await fetch(`/api/seasons/${seasonId}/schedule/report`)
     if (res.ok) setReport(await res.json())
@@ -146,6 +171,7 @@ export function ScheduleTab({
 
   const runPreview = async (shuffleOverride?: number) => {
     setFillPreview(false)
+    setReport(null)
     const attempt = shuffleOverride ?? shuffle
     if (shuffleOverride !== undefined) setShuffle(shuffleOverride)
     setPreviewLoading(true)
@@ -669,6 +695,12 @@ export function ScheduleTab({
                 ))}
               </ul>
             )}
+            {(preview.tradeoffs ?? []).length === 0 && preview.unscheduled.length === 0 && (
+              <p className="text-court-700 mb-3 text-xs font-semibold">
+                ✓ No trade-offs — every rule held: shares, rest days, rematch spacing, court
+                rotation.
+              </p>
+            )}
             {(preview.tradeoffs ?? []).length > 0 && (
               <div className="border-ink-100 mb-3 rounded-xl border bg-white/70 px-3 py-2">
                 <p className="text-ink-700 mb-1 text-[11px] font-semibold uppercase tracking-wide">
@@ -744,7 +776,7 @@ export function ScheduleTab({
         {/* Fairness report (owner 2026-08-01): show operators — and
             eventually their clubs — exactly how the schedule treats every
             team, so nobody suspects favorites. */}
-        {scheduleGames.length > 0 && (
+        {(scheduleGames.length > 0 || (preview?.games.length ?? 0) > 0) && (
           <div className="mb-4">
             <button
               onClick={loadReport}
@@ -754,7 +786,7 @@ export function ScheduleTab({
                 ? "Building fairness report…"
                 : report
                   ? "Hide fairness report"
-                  : "Fairness report — back-to-backs, venues, courts"}
+                  : `Fairness report${preview ? " (of this preview)" : ""} — back-to-backs, venues, courts`}
             </button>
             {report && (
               <div className={`mt-2 ${panelClass}`}>
