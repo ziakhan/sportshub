@@ -421,8 +421,12 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   // one session (2-team divisions excepted — they only have each other),
   // and rematches are pushed as far from the first meeting as possible.
   const unitSizeByKey = new Map(units.map((u) => [u.key, u.teams.length]))
-  const pairSessionMet = new Set<string>()
-  const pairLastMet: Record<string, number> = {}
+  const pairSessionCount: Record<string, number> = {}
+  const pairMeetTimes: Record<string, number[]> = {}
+  const pairLastMet = (pk: string): number | undefined => {
+    const t = pairMeetTimes[pk]
+    return t && t.length > 0 ? Math.max(...t) : undefined
+  }
 
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
@@ -455,11 +459,12 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
         const sk = sessionKey(g.sessionId, id)
         teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
       }
-      pairSessionMet.add(`${g.sessionId}|${pairKey(g.homeTeamId, g.awayTeamId)}`)
+      const spk = `${g.sessionId}|${pairKey(g.homeTeamId, g.awayTeamId)}`
+      pairSessionCount[spk] = (pairSessionCount[spk] ?? 0) + 1
     }
     if (g.scheduledAt) {
       const pk = pairKey(g.homeTeamId, g.awayTeamId)
-      pairLastMet[pk] = Math.max(pairLastMet[pk] ?? 0, new Date(g.scheduledAt).getTime())
+      ;(pairMeetTimes[pk] ??= []).push(new Date(g.scheduledAt).getTime())
     }
   }
   {
@@ -656,13 +661,13 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       if (
         !lastResort &&
         (unitSizeByKey.get(pairing.unitKey) ?? 99) > 2 &&
-        pairSessionMet.has(`${slot.sessionId}|${pKey}`)
+        (pairSessionCount[`${slot.sessionId}|${pKey}`] ?? 0) > 0
       ) {
         return { score: -Infinity, blockReason: "rematch within the same session" }
       }
       // Soft, strong: spread the two meetings apart — a rematch the very
       // next weekend reads odd. Full penalty fades out over ~5 weeks.
-      const lastMet = pairLastMet[pKey]
+      const lastMet = pairLastMet(pKey)
       if (lastMet !== undefined) {
         const daysApart = Math.abs(slot.startAt.getTime() - lastMet) / 86400000
         score -= Math.max(0, 35 - daysApart) * 0.4
@@ -732,6 +737,103 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return true
   }
 
+  interface PlacementSite {
+    sessionId: string
+    dayId: string
+    dayVenueId: string
+    courtId: string
+    venueId: string
+    startAt: Date
+    endAt: Date
+  }
+  const siteOfGame = (g: ProposedGame): PlacementSite => {
+    const startAt = new Date(g.scheduledAt)
+    return {
+      sessionId: g.sessionId,
+      dayId: g.dayId,
+      dayVenueId: g.dayVenueId,
+      courtId: g.courtId,
+      venueId: g.venueId,
+      startAt,
+      endAt: new Date(startAt.getTime() + input.gameSlotMinutes * 60000),
+    }
+  }
+
+  const applyPlacementState = (site: PlacementSite, pairing: Pairing): void => {
+    teamGameCount[pairing.homeTeamId] = (teamGameCount[pairing.homeTeamId] ?? 0) + 1
+    teamGameCount[pairing.awayTeamId] = (teamGameCount[pairing.awayTeamId] ?? 0) + 1
+    const book = { start: site.startAt, end: site.endAt, dateKey: dateKeyOf(site.startAt) }
+    teamBookings[pairing.homeTeamId] = [...(teamBookings[pairing.homeTeamId] ?? []), book]
+    teamBookings[pairing.awayTeamId] = [...(teamBookings[pairing.awayTeamId] ?? []), book]
+    courtBookings[site.courtId] = [
+      ...(courtBookings[site.courtId] ?? []),
+      { start: site.startAt, end: site.endAt },
+    ]
+    const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
+    playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
+    const spk = `${site.sessionId}|${pk}`
+    pairSessionCount[spk] = (pairSessionCount[spk] ?? 0) + 1
+    ;(pairMeetTimes[pk] ??= []).push(site.startAt.getTime())
+    const ratio = slotRatioByDay.get(site.dayId)?.get(site.startAt.getTime()) ?? 0.5
+    for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
+      const sk = sessionKey(site.sessionId, id)
+      teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
+      timeLoadSum[id] = (timeLoadSum[id] ?? 0) + ratio
+      timeLoadCount[id] = (timeLoadCount[id] ?? 0) + 1
+    }
+    courtLastUnit[site.courtId] = { endMs: site.endAt.getTime(), unitKey: pairing.unitKey }
+    const dvKey = `${site.dayVenueId}|${pairing.unitKey}`
+    dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
+    recomputeUnitMin(pairing.unitKey)
+  }
+
+  /** Exact inverse of applyPlacementState for a game placed THIS run. */
+  const removeGameState = (gi: number): void => {
+    const g = games[gi]
+    const site = siteOfGame(g)
+    for (const id of [g.homeTeamId, g.awayTeamId]) {
+      teamGameCount[id] = (teamGameCount[id] ?? 1) - 1
+      const list = teamBookings[id] ?? []
+      const bi = list.findIndex((b) => b.start.getTime() === site.startAt.getTime())
+      if (bi >= 0) list.splice(bi, 1)
+      const sk = sessionKey(g.sessionId, id)
+      teamSessionCount[sk] = (teamSessionCount[sk] ?? 1) - 1
+      const ratio = slotRatioByDay.get(g.dayId)?.get(site.startAt.getTime()) ?? 0.5
+      timeLoadSum[id] = (timeLoadSum[id] ?? ratio) - ratio
+      timeLoadCount[id] = (timeLoadCount[id] ?? 1) - 1
+    }
+    const clist = courtBookings[g.courtId] ?? []
+    const ci = clist.findIndex((b) => b.start.getTime() === site.startAt.getTime())
+    if (ci >= 0) clist.splice(ci, 1)
+    const pk = pairKey(g.homeTeamId, g.awayTeamId)
+    playedPairCount[pk] = (playedPairCount[pk] ?? 1) - 1
+    const spk = `${g.sessionId}|${pk}`
+    pairSessionCount[spk] = (pairSessionCount[spk] ?? 1) - 1
+    const times = pairMeetTimes[pk] ?? []
+    const ti = times.indexOf(site.startAt.getTime())
+    if (ti >= 0) times.splice(ti, 1)
+    const dvKey = `${g.dayVenueId}|${g.unitKey}`
+    dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 1) - 1
+    recomputeUnitMin(g.unitKey)
+  }
+
+  const setGamePlacement = (gi: number, slot: SchedulerSlot): void => {
+    const g = games[gi]
+    games[gi] = {
+      ...g,
+      sessionId: slot.sessionId,
+      dayId: slot.dayId,
+      dayVenueId: slot.dayVenueId,
+      courtId: slot.courtId,
+      venueId: slot.venueId,
+      scheduledAt: slot.startAt.toISOString(),
+    }
+    applyPlacementState(
+      { ...slot },
+      { unitKey: g.unitKey, homeTeamId: g.homeTeamId, awayTeamId: g.awayTeamId }
+    )
+  }
+
   const commitPlacement = (slot: SchedulerSlot, pairing: Pairing): void => {
     games.push({
       sessionId: slot.sessionId,
@@ -745,30 +847,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       duration: input.gameLengthMinutes,
       unitKey: pairing.unitKey,
     })
-
-    teamGameCount[pairing.homeTeamId] = (teamGameCount[pairing.homeTeamId] ?? 0) + 1
-    teamGameCount[pairing.awayTeamId] = (teamGameCount[pairing.awayTeamId] ?? 0) + 1
-    const book = { start: slot.startAt, end: slot.endAt, dateKey: dateKeyOf(slot.startAt) }
-    teamBookings[pairing.homeTeamId] = [...(teamBookings[pairing.homeTeamId] ?? []), book]
-    teamBookings[pairing.awayTeamId] = [...(teamBookings[pairing.awayTeamId] ?? []), book]
-    courtBookings[slot.courtId] = [
-      ...(courtBookings[slot.courtId] ?? []),
-      { start: slot.startAt, end: slot.endAt },
-    ]
-    const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
-    playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
-    pairSessionMet.add(`${slot.sessionId}|${pk}`)
-    pairLastMet[pk] = Math.max(pairLastMet[pk] ?? 0, slot.startAt.getTime())
-    for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
-      const sk = sessionKey(slot.sessionId, id)
-      teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
-      timeLoadSum[id] = (timeLoadSum[id] ?? 0) + slotTimeRatio(slot)
-      timeLoadCount[id] = (timeLoadCount[id] ?? 0) + 1
-    }
-    courtLastUnit[slot.courtId] = { endMs: slot.endAt.getTime(), unitKey: pairing.unitKey }
-    const dvKey = `${slot.dayVenueId}|${pairing.unitKey}`
-    dayVenueUnitGames[dvKey] = (dayVenueUnitGames[dvKey] ?? 0) + 1
-    recomputeUnitMin(pairing.unitKey)
+    applyPlacementState(slot, pairing)
   }
 
   const openSlots: SchedulerSlot[] = []
@@ -808,7 +887,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
   let sameSessionRematches = 0
   let overShareGames = 0
   let bonusGames = 0
-  for (const mode of ["strict", "relaxDay", "lastResort", "overGuarantee"] as const) {
+  type RepairMode = "strict" | "relaxDay" | "lastResort" | "overGuarantee"
+  const runRepairMode = (mode: RepairMode) => {
     let moved = true
     while (moved) {
       moved = false
@@ -861,7 +941,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
             }
           }
           if (mode === "lastResort" || mode === "overGuarantee") {
-            if (pairSessionMet.has(`${slot.sessionId}|${pairKey(best.homeTeamId, best.awayTeamId)}`)) {
+            if ((pairSessionCount[`${slot.sessionId}|${pairKey(best.homeTeamId, best.awayTeamId)}`] ?? 0) > 0) {
               sameSessionRematches++
             }
             const capHere = perSessionCap.get(slot.sessionId)
@@ -880,6 +960,287 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       }
     }
   }
+
+  // Depth-1 relocation (owner 2026-08-01: "96 slots per session and you
+  // tell me there's no room — investigate"): the greedy can fill weekend
+  // shares ASYMMETRICALLY — one session ends a game short while the pair
+  // that needs it has a full share there, with acres of empty court time.
+  // Before conceding an extra weekend game or a shared-weekend rematch,
+  // MOVE one of this run's games out of the crowded weekend and place the
+  // missing game in the room that opens up.
+  let relocationBudget = 500_000 // scoreCandidate calls, safety valve
+  const RELOC_DBG =
+    typeof process !== "undefined" && process.env?.SCHED_DEBUG === "1"
+  const RELOC_MAX_DEPTH = 4
+
+  // Relocation reasons about SESSIONS (weekend-share room), not slots — a
+  // session has ~100 slots but only one share ledger, so the chain search
+  // runs on a 5-node graph and slots only matter when materializing a move.
+  const slotsBySession = new Map<string, SchedulerSlot[]>()
+  for (const slot of slots) {
+    if (!slotsBySession.has(slot.sessionId)) slotsBySession.set(slot.sessionId, [])
+    slotsBySession.get(slot.sessionId)!.push(slot)
+  }
+  const hasShareRoom = (teamId: string, sessionId: string): boolean =>
+    (teamSessionCount[sessionKey(sessionId, teamId)] ?? 0) <
+    (perSessionCap.get(sessionId) ?? Infinity)
+  const pairMetIn = (a: string, b: string, sessionId: string): boolean =>
+    (pairSessionCount[`${sessionId}|${pairKey(a, b)}`] ?? 0) > 0
+
+  interface MoveLogEntry {
+    gi: number
+    prev: ProposedGame
+    placed: boolean
+  }
+  const rollbackTo = (log: MoveLogEntry[], mark: number): void => {
+    while (log.length > mark) {
+      const e = log.pop()!
+      if (e.placed) removeGameState(e.gi)
+      games[e.gi] = e.prev
+      applyPlacementState(siteOfGame(e.prev), {
+        unitKey: e.prev.unitKey,
+        homeTeamId: e.prev.homeTeamId,
+        awayTeamId: e.prev.awayTeamId,
+      })
+    }
+  }
+
+  /** Find a legal free slot in the session and commit the pairing there. */
+  const placeInSession = (pairing: Pairing, sessionId: string): boolean => {
+    for (const slot of slotsBySession.get(sessionId) ?? []) {
+      if (relocationBudget <= 0) return false
+      if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt)) continue
+      relocationBudget--
+      const c = scoreCandidate(pairing, slot, true, false, true)
+      if (c.score !== -Infinity) {
+        commitPlacement(slot, pairing)
+        return true
+      }
+    }
+    return false
+  }
+
+  /** Tx-logged: move games[gi] to any legal free slot of `toSession`. */
+  const moveGameToSession = (gi: number, toSession: string, log: MoveLogEntry[]): boolean => {
+    const entry: MoveLogEntry = { gi, prev: { ...games[gi] }, placed: false }
+    log.push(entry)
+    const gPairing: Pairing = {
+      unitKey: entry.prev.unitKey,
+      homeTeamId: entry.prev.homeTeamId,
+      awayTeamId: entry.prev.awayTeamId,
+    }
+    removeGameState(gi)
+    for (const slot of slotsBySession.get(toSession) ?? []) {
+      if (relocationBudget <= 0) break
+      if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt)) continue
+      relocationBudget--
+      const c = scoreCandidate(gPairing, slot, true, false, true)
+      if (c.score !== -Infinity) {
+        setGamePlacement(gi, slot)
+        entry.placed = true
+        return true
+      }
+    }
+    rollbackTo(log, log.length - 1)
+    return false
+  }
+
+  /**
+   * Move games[gi] to ANOTHER session. The game is lifted OUT first — its
+   * departure is often precisely what frees room for the rest of the chain
+   * (B leaving November is what gives X a home there). When a destination's
+   * share is blocked, recursively evict the blocking game. Transactional:
+   * false ⇒ own log entries rolled back.
+   */
+  const tryMoveGameChain = (
+    gi: number,
+    depth: number,
+    log: MoveLogEntry[],
+    inChain: Set<number>
+  ): boolean => {
+    if (relocationBudget <= 0) return false
+    const save = log.length
+    const entry: MoveLogEntry = { gi, prev: { ...games[gi] }, placed: false }
+    log.push(entry)
+    const gPairing: Pairing = {
+      unitKey: entry.prev.unitKey,
+      homeTeamId: entry.prev.homeTeamId,
+      awayTeamId: entry.prev.awayTeamId,
+    }
+    inChain.add(gi)
+    removeGameState(gi)
+    const materialize = (dest: string): boolean => {
+      for (const slot of slotsBySession.get(dest) ?? []) {
+        if (relocationBudget <= 0) return false
+        if (courtIsBooked(slot.courtId, slot.startAt, slot.endAt)) continue
+        relocationBudget--
+        const c = scoreCandidate(gPairing, slot, true, false, true)
+        if (c.score !== -Infinity) {
+          setGamePlacement(gi, slot)
+          entry.placed = true
+          return true
+        }
+      }
+      return false
+    }
+    for (const dest of slotsBySession.keys()) {
+      if (dest === entry.prev.sessionId) continue
+      if (pairMetIn(gPairing.homeTeamId, gPairing.awayTeamId, dest)) continue
+      const blockers = [gPairing.homeTeamId, gPairing.awayTeamId].filter(
+        (t) => !hasShareRoom(t, dest)
+      )
+      if (blockers.length === 0) {
+        if (materialize(dest)) {
+          inChain.delete(gi)
+          return true
+        }
+        continue
+      }
+      if (depth >= RELOC_MAX_DEPTH) continue
+      // Evict blocking games one by one (usually a single blocker).
+      const branchSave = log.length
+      let cleared = true
+      for (const bt of blockers) {
+        let evicted = false
+        for (let gj = 0; gj < games.length; gj++) {
+          if (gj === gi || inChain.has(gj)) continue
+          const other = games[gj]
+          if (other.sessionId !== dest) continue
+          if (other.homeTeamId !== bt && other.awayTeamId !== bt) continue
+          if (tryMoveGameChain(gj, depth + 1, log, inChain)) {
+            evicted = true
+            break
+          }
+        }
+        if (!evicted) {
+          cleared = false
+          break
+        }
+      }
+      if (cleared && materialize(dest)) {
+        inChain.delete(gi)
+        return true
+      }
+      rollbackTo(log, branchSave)
+    }
+    rollbackTo(log, save)
+    inChain.delete(gi)
+    return false
+  }
+
+  /**
+   * Place `pairing` somewhere legal, moving up to RELOC_MAX_DEPTH games
+   * between sessions to open share room (augmenting chain). Transactional:
+   * false ⇒ the log was rolled back to how it was.
+   */
+  const tryChain = (
+    pairing: Pairing,
+    depth: number,
+    log: MoveLogEntry[],
+    movedGis: Set<number>
+  ): boolean => {
+    if (relocationBudget <= 0) return false
+    for (const sessionId of slotsBySession.keys()) {
+      if (pairMetIn(pairing.homeTeamId, pairing.awayTeamId, sessionId)) continue
+      if (!hasShareRoom(pairing.homeTeamId, sessionId)) continue
+      if (!hasShareRoom(pairing.awayTeamId, sessionId)) continue
+      if (placeInSession(pairing, sessionId)) return true
+    }
+    if (depth >= RELOC_MAX_DEPTH) return false
+    for (const sessionId of slotsBySession.keys()) {
+      if (pairMetIn(pairing.homeTeamId, pairing.awayTeamId, sessionId)) continue
+      for (const teamId of [pairing.homeTeamId, pairing.awayTeamId]) {
+        if (hasShareRoom(teamId, sessionId)) continue
+        for (let gi = 0; gi < games.length; gi++) {
+          if (movedGis.has(gi)) continue
+          const g = games[gi]
+          if (g.sessionId !== sessionId) continue
+          if (g.homeTeamId !== teamId && g.awayTeamId !== teamId) continue
+          const save = log.length
+          if (!tryMoveGameChain(gi, depth, log, new Set(movedGis))) continue
+          movedGis.add(gi)
+          if (tryChain(pairing, depth + 1, log, movedGis)) return true
+          rollbackTo(log, save)
+          movedGis.delete(gi)
+        }
+      }
+    }
+    return false
+  }
+
+  const tryPlaceWithRelocation = (pairing: Pairing): boolean => {
+    const log: MoveLogEntry[] = []
+    if (tryChain(pairing, 0, log, new Set())) return true
+    rollbackTo(log, 0)
+    if (RELOC_DBG)
+      console.error(
+        `[reloc] FAILED ${pairing.homeTeamId.slice(0, 8)} vs ${pairing.awayTeamId.slice(0, 8)} (budget left ${relocationBudget})`
+      )
+    return false
+  }
+
+  const runRelocationPhase = () => {
+    let moved = true
+    while (moved && relocationBudget > 0) {
+      moved = false
+      const deficits: Pairing[] = []
+      for (const u of units) {
+        for (let i = 0; i < u.teams.length; i++) {
+          if (repairCount(u.teams[i].teamId) >= repairTarget) continue
+          for (let j = i + 1; j < u.teams.length; j++) {
+            if (repairCount(u.teams[j].teamId) >= repairTarget) continue
+            deficits.push({
+              unitKey: u.key,
+              homeTeamId: u.teams[i].teamId,
+              awayTeamId: u.teams[j].teamId,
+            })
+          }
+        }
+      }
+      deficits.sort(
+        (a, b) =>
+          (playedPairCount[pairKey(a.homeTeamId, a.awayTeamId)] ?? 0) -
+          (playedPairCount[pairKey(b.homeTeamId, b.awayTeamId)] ?? 0)
+      )
+      if (RELOC_DBG && deficits.length > 0)
+        console.error(`[reloc] phase: ${deficits.length} deficit pair(s)`)
+      for (const pairing of deficits) {
+        if (
+          repairCount(pairing.homeTeamId) >= repairTarget ||
+          repairCount(pairing.awayTeamId) >= repairTarget
+        )
+          continue
+        if (tryPlaceWithRelocation(pairing)) moved = true
+      }
+    }
+  }
+
+  runRepairMode("strict")
+  runRepairMode("relaxDay")
+  if (RELOC_DBG) {
+    const perS = new Map<string, number>()
+    for (const g of games) perS.set(g.sessionId, (perS.get(g.sessionId) ?? 0) + 1)
+    console.error(`[reloc] BEFORE phase: ${games.length} games, per-session ${[...perS.values()].join(",")}`)
+  }
+  runRelocationPhase()
+  if (RELOC_DBG) {
+    const perS = new Map<string, number>()
+    const audit: Record<string, number> = {}
+    for (const g of games) {
+      perS.set(g.sessionId, (perS.get(g.sessionId) ?? 0) + 1)
+      for (const id of [g.homeTeamId, g.awayTeamId])
+        audit[`${g.sessionId}|${id}`] = (audit[`${g.sessionId}|${id}`] ?? 0) + 1
+    }
+    let mism = 0
+    for (const [k, v] of Object.entries(audit)) if ((teamSessionCount[k] ?? 0) !== v) mism++
+    for (const [k, v] of Object.entries(teamSessionCount)) if (v > 0 && !(k in audit)) mism++
+    console.error(
+      `[reloc] AFTER phase: ${games.length} games, per-session ${[...perS.values()].join(",")}, state-audit mismatches: ${mism}, budget left ${relocationBudget}`
+    )
+  }
+  runRepairMode("lastResort")
+  runRepairMode("overGuarantee")
+
   if (bonusGames > 0) {
     tradeoffs.push(
       `To keep every team whole, ${bonusGames} team${bonusGames === 1 ? " plays" : "s play"} one bonus game beyond the guarantee.`
