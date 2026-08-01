@@ -56,20 +56,32 @@ export const JOURNEY_LEAGUES = [SL_LEAGUE, D1_LEAGUE, NPA_LEAGUE, WNPA_LEAGUE]
 // track (Gr9 opens Oct 24; Gr10/11 the Nov 1 track; Gr12 its own; etc.),
 // 2 games per playing weekend → the 10-game guarantee.
 const SL_TRACKS: Array<{ sat: string; grades: string[] }> = [
-  { sat: "2026-10-24", grades: ["Gr8", "Gr9", "Gr12", "JrGirls"] },
-  { sat: "2026-10-31", grades: ["Gr7", "Gr10", "Gr11"] },
-  { sat: "2026-11-14", grades: ["Gr12"] },
-  { sat: "2026-11-21", grades: ["Gr7", "Gr8", "Gr9", "JrGirls"] },
-  { sat: "2026-12-05", grades: ["Gr10", "Gr11"] },
-  { sat: "2026-12-12", grades: ["Gr12"] },
-  { sat: "2026-12-19", grades: ["Gr7", "Gr8", "Gr9"] },
-  { sat: "2027-01-02", grades: ["Gr8", "Gr10", "Gr11"] },
-  { sat: "2027-01-09", grades: ["Gr9", "Gr12", "JrGirls"] },
-  { sat: "2027-01-16", grades: ["Gr10", "Gr11"] },
-  { sat: "2027-01-23", grades: ["Gr7", "Gr12"] },
-  { sat: "2027-01-30", grades: ["Gr7", "Gr11", "JrGirls"] },
-  { sat: "2027-02-06", grades: ["Gr7", "Gr9", "Gr10", "JrGirls"] },
-  { sat: "2027-02-13", grades: ["Gr8"] },
+  // OFFICIAL 2026-27 boys calendar (owner-supplied NPH graphic, 2026-08-01).
+  // Our census world fields Gr7-12 (+ JrGirls, whose girls calendar isn't on
+  // the boys slide — mapped to her 2025-26 pattern's nearest weekends).
+  // The real season also adds Gr5/Gr6 — not in the 2025-26 census, noted.
+  { sat: "2026-10-24", grades: ["Gr7", "Gr8", "Gr9", "Gr11", "JrGirls"] },
+  { sat: "2026-10-31", grades: ["Gr10", "Gr12"] },
+  { sat: "2026-11-14", grades: ["Gr7"] },
+  { sat: "2026-11-21", grades: ["Gr8", "Gr9", "Gr10", "JrGirls"] },
+  { sat: "2026-11-28", grades: ["Gr11", "Gr12"] },
+  { sat: "2026-12-12", grades: ["Gr8", "Gr11", "Gr12"] },
+  { sat: "2026-12-19", grades: ["Gr7", "Gr9", "Gr10"] },
+  { sat: "2027-01-09", grades: ["Gr7", "Gr9", "JrGirls"] },
+  { sat: "2027-01-16", grades: ["Gr10"] },
+  { sat: "2027-01-30", grades: ["Gr8", "Gr11", "Gr12", "JrGirls"] },
+  { sat: "2027-02-06", grades: ["Gr9", "JrGirls"] },
+  { sat: "2027-02-13", grades: ["Gr7", "Gr8", "Gr10"] },
+  { sat: "2027-02-20", grades: ["Gr11", "Gr12"] },
+]
+
+// Finals weekends (official graphic): Tier 2 all grades Feb 27-28; Tier 1
+// split Mar 6-7 (Gr5/7/9/10) and Mar 13-14 (Gr6/8/11/12). Seeded as
+// PLAYOFF-phase sessions — regular scheduling never touches them.
+const SL_FINALS: Array<{ sat: string; label: string }> = [
+  { sat: "2027-02-27", label: "Tier 2 Finals · Feb 27-28" },
+  { sat: "2027-03-06", label: "Tier 1 Finals · Mar 6-7 (Gr7, Gr9, Gr10)" },
+  { sat: "2027-03-13", label: "Tier 1 Finals · Mar 13-14 (Gr8, Gr11, Gr12)" },
 ]
 const D1_WEEKENDS = ["2026-11-14", "2026-12-12", "2027-01-16", "2027-02-13", "2027-03-13"]
 const PREP_WEEKENDS = ["2026-11-21", "2027-01-23", "2027-02-27"]
@@ -505,6 +517,17 @@ export async function seedJourneyStage1() {
     })
     for (const offset of [0, 1]) {
       const date = new Date(`${track.sat}T00:00:00Z`)
+      date.setUTCDate(date.getUTCDate() + offset)
+      await p.seasonSessionDay.create({ data: { sessionId: session.id, date } })
+    }
+  }
+  for (const fin of SL_FINALS) {
+    const session = await p.seasonSession.create({
+      data: { seasonId: slSeason.id, label: fin.label, phase: "PLAYOFF" },
+      select: { id: true },
+    })
+    for (const offset of [0, 1]) {
+      const date = new Date(`${fin.sat}T00:00:00Z`)
       date.setUTCDate(date.getUTCDate() + offset)
       await p.seasonSessionDay.create({ data: { sessionId: session.id, date } })
     }

@@ -48,12 +48,13 @@ Phones: sign in, leave the app on the team/home screen.
 6. **admin profile**: **Fast forward → stage 3** (~10s). League is
    FINALIZED, everyone approved, fees settled.
 7. **owner-nph@ → Schedule tab → Commit whole season.** It FAILS, in
-   seconds, naming the exact weekend: *"Weekend 13 · Feb 6 (Gr7, Gr9,
-   Gr10, JrGirls) needs 86 games but has 80 court-slots — extend hours or
-   add a court."* The season runs on NPH's REAL calendar: 14 weekends,
-   every grade on its own five (Gr9 opens Oct 24, Gr10/11 the Oct 31
-   track, Gr12 its own…), and only Six Park is attached — with 5 of its
-   6 courts.
+   seconds, naming the exact weekend: *"Weekend 4 · Nov 21 (Gr8, Gr9,
+   Gr10, JrGirls) needs 84 games but has 80 court-slots — extend hours or
+   add a court."* The season runs NPH's OFFICIAL 2026-27 calendar (the
+   registration graphic): 13 session weekends Oct 24 → Feb 20, every grade
+   on its own five, plus the three tiered finals weekends (Feb 27-28,
+   Mar 6-7, Mar 13-14) already sitting as playoff sessions. Only Six Park
+   is attached — with 5 of its 6 courts.
 8. **Sessions tab** → Six Park East → add **Court 6** → run again →
    **every game fits** on Six Park alone. Then the kicker: "but every
    family drives to Oshawa every weekend — watch." **Venues panel** →
