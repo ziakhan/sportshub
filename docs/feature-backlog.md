@@ -197,3 +197,6 @@ feature is greenlit for build.
 - Design cares: number recycling (re-verify on long inactivity), account
   recovery when phone lost (email fallback), COPPA (13+ self-accounts
   only), international format normalization.
+
+## Org-level TRUE Capacity Planner (owner vision 2026-08-01 — NOT scheduled)
+Current "Capacity Planner" (per-session demand/supply card) is a feasibility check, not the planner the owner envisioned. The real thing: **organization-level** planning across ALL concurrently-running leagues (NPH: high school division, D1, scholastic, different age groups/team counts) with every court thrown into one pool. It should let an operator plan where everything could be scheduled so it maximizes preference-keeping AND court utilization while deliberately keeping chosen courts/times free for other activities — with interactive what-if levers: shorten/expand the day, keep certain courts empty and run longer days, etc. Cheap to prototype: whole-engine simulation runs ~1-2.5s per scenario. Related open items from the same session: venue/court utilization % missing from reports (owner saw computed numbers, deferred surfacing); no "compact the day / finish early" preference (single-venue sim sprawled to 7:30pm with an empty court). Sequencing suggestion: after Schedule Studio P1.
