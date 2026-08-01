@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
+import { runDistributed } from "@/lib/scheduler/distribute"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
 
 export const dynamic = "force-dynamic"
@@ -17,6 +18,9 @@ const scenarioSchema = z
       })
       .optional(),
     compactDays: z.boolean().optional(),
+    // Venue distribution (owner 2026-08-01): divisionId → venueIds it may
+    // use; the engine runs once per venue group and merges.
+    divisionVenueMap: z.record(z.array(z.string()).min(1)).optional(),
   })
   .optional()
 
@@ -78,6 +82,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       if (parsed.scenario.dayWindow) input.dayWindow = parsed.scenario.dayWindow
       if (parsed.scenario.compactDays) input.compactDays = true
     }
+    const divisionVenueMap = parsed.scenario?.divisionVenueMap
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     if (sessionIds && sessionIds.length > 0) {
       input.restrictToSessionIds = sessionIds
@@ -120,7 +125,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     }
 
-    const result = generateSchedule(input)
+    const result = divisionVenueMap
+      ? { utilization: undefined, ...runDistributed(input, divisionVenueMap) }
+      : generateSchedule(input)
 
     // Enrich output with team/venue/court names so UI (incl. Team check's
     // preview mode) can render "when · who · where" without extra lookups.

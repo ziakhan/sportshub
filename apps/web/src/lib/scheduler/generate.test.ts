@@ -859,6 +859,59 @@ describe("generateSchedule — schedule requests", () => {
   })
 })
 
+// ---------- venue distribution (owner 2026-08-01: every division gets a
+// home gym; groups share no courts so merged runs never double-book) ----------
+
+describe("venue distribution", () => {
+  it("plans a home venue per division and the merged run keeps them there", async () => {
+    const { planVenueDistribution, runDistributed } = await import("./distribute")
+    const input = makeInput({
+      divisions: [
+        { id: "d1", name: "Division 1", teams: makeTeams(6, "d1") },
+        { id: "d2", name: "Division 2", teams: makeTeams(6, "d2") },
+      ],
+      gamesGuaranteed: 2,
+      days: 2,
+      sessionCount: 1,
+      courts: 2,
+      open: "09:00",
+      close: "17:00",
+    })
+    // Two venues on every day (the fixture builds one — clone it).
+    input.sessions = input.sessions.map((s) => ({
+      ...s,
+      days: s.days.map((d) => ({
+        ...d,
+        dayVenues: [
+          d.dayVenues[0],
+          {
+            ...d.dayVenues[0],
+            id: `${d.dayVenues[0].id}-b`,
+            venueId: "v2",
+            courts: [{ id: "v2-c1" }, { id: "v2-c2" }],
+          },
+        ],
+      })),
+    }))
+    const plan = planVenueDistribution(
+      input,
+      new Map([
+        ["v1", "Gym One"],
+        ["v2", "Gym Two"],
+      ])
+    )
+    expect(plan).not.toBeNull()
+    expect(plan!.groups.length).toBe(2)
+    const merged = runDistributed(input, plan!.divisionVenueMap)
+    expect(merged.unscheduled).toHaveLength(0)
+    // Every game of a division sits at its assigned venue.
+    for (const g of merged.games) {
+      const div = g.unitKey.includes("d1") || g.homeTeamId.startsWith("d1") ? "d1" : "d2"
+      expect(plan!.divisionVenueMap[div]).toContain(g.venueId)
+    }
+  })
+})
+
 // ---------- per-day cap (owner 2026-07-31: a weekend session = one game
 // Saturday, one Sunday when idealGamesPerDayPerTeam is 1) ----------
 

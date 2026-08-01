@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
+import { runDistributed } from "@/lib/scheduler/distribute"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
 import { canCommitSchedule, COMMIT_NOT_READY_MESSAGE } from "@/lib/seasons/season-lock"
 
@@ -18,6 +19,9 @@ const scenarioSchema = z
       })
       .optional(),
     compactDays: z.boolean().optional(),
+    // Venue distribution (owner 2026-08-01): divisionId → venueIds it may
+    // use; the engine runs once per venue group and merges.
+    divisionVenueMap: z.record(z.array(z.string()).min(1)).optional(),
   })
   .optional()
 
@@ -86,6 +90,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       if (parsed.scenario.dayWindow) input.dayWindow = parsed.scenario.dayWindow
       if (parsed.scenario.compactDays) input.compactDays = true
     }
+    const divisionVenueMap = parsed.scenario?.divisionVenueMap
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     const scoped = !!(sessionIds && sessionIds.length > 0)
     if (scoped) {
@@ -130,7 +135,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     }
 
-    const result = generateSchedule(input)
+    const result = divisionVenueMap
+      ? { utilization: undefined, ...runDistributed(input, divisionVenueMap) }
+      : generateSchedule(input)
 
     const writeCounts = await (prisma as any).$transaction(async (tx: any) => {
       let removed = 0

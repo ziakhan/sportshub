@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
-import { runSeasonSchedule, type SeasonRun } from "@/lib/scheduler/run"
+import { reportForRun, runSeasonSchedule, type SeasonRun } from "@/lib/scheduler/run"
+import { planVenueDistribution, runDistributed } from "@/lib/scheduler/distribute"
 import type { SchedulerInput } from "@/lib/scheduler/generate"
 
 export const dynamic = "force-dynamic"
@@ -221,6 +222,37 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
         unscheduled: 0,
         tradeoffs: trimmed.result.tradeoffs,
       })
+    }
+
+    // 4. Distribute by venue (owner 2026-08-01): every division gets a home
+    // venue — "certain grades only play in certain venues", every venue
+    // maximized, families never split across buildings.
+    const distPlan = planVenueDistribution(baseline.input, venueLabel as Map<string, string>)
+    if (distPlan) {
+      const merged = runDistributed(baseline.input, distPlan.divisionVenueMap)
+      const distRun: SeasonRun = {
+        input: baseline.input,
+        result: { ...merged, utilization: undefined } as any,
+        report: reportForRun(baseline.input, merged as any),
+      }
+      if (
+        merged.unscheduled.length === 0 &&
+        distRun.report.totals.backToBackTeamDays <= baseline.report.totals.backToBackTeamDays &&
+        distRun.report.totals.requestViolations <= baseline.report.totals.requestViolations
+      ) {
+        cards.push({
+          key: "distribute-venues",
+          title: "Distribute by venue — every division gets a home gym",
+          descriptor: { divisionVenueMap: distPlan.divisionVenueMap } as any,
+          wins: [
+            ...distPlan.summary,
+            "Families go to ONE building per weekend — no two-gym days",
+          ],
+          totals: cardTotals(distRun),
+          unscheduled: 0,
+          tradeoffs: merged.tradeoffs.slice(0, 2),
+        })
+      }
     }
 
     // When the baseline itself is struggling, say so — expansion advice
