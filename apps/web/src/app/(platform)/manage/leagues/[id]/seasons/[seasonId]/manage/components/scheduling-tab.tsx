@@ -123,34 +123,40 @@ export function SchedulingTab({
         <div className="space-y-4">
           {!hideFormatSettings && (
           <div>
-            <label className="text-ink-700 mb-2 block text-xs font-medium">Philosophy</label>
+            <label className="text-ink-700 mb-2 block text-xs font-medium">
+              Weekend style (league default)
+            </label>
             <div className="space-y-2">
               {[
                 {
-                  key: "FAMILY_FRIENDLY",
-                  label: "Family-friendly",
-                  hint: "Pack each team's games into fewer days so families spend less time at venues.",
+                  key: "SAME_DAY",
+                  label: "One trip",
+                  hint: "Both weekend games on the same day, with a break in between — families drive once.",
                 },
                 {
-                  key: "SPREAD_DAYS",
-                  label: "Spread days",
-                  hint: "Distribute each team's games across more session days for more player rest.",
+                  key: "SPLIT_DAYS",
+                  label: "Split days",
+                  hint: "One game Saturday, one game Sunday — more rest between games.",
                 },
-              ].map((opt) => (
+              ].map((opt) => {
+                const current =
+                  league.defaultWeekendStyle ??
+                  (league.schedulingPhilosophy === "SPREAD_DAYS" ? "SPLIT_DAYS" : "SAME_DAY")
+                return (
                 <label
                   key={opt.key}
                   className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
-                    league.schedulingPhilosophy === opt.key
+                    current === opt.key
                       ? "border-play-400 bg-play-50"
                       : "border-ink-200 hover:border-ink-300"
                   }`}
                 >
                   <input
                     type="radio"
-                    name="schedulingPhilosophy"
+                    name="defaultWeekendStyle"
                     value={opt.key}
-                    checked={league.schedulingPhilosophy === opt.key}
-                    onChange={() => patchSeason({ schedulingPhilosophy: opt.key })}
+                    checked={current === opt.key}
+                    onChange={() => patchSeason({ defaultWeekendStyle: opt.key })}
                     className="mt-0.5"
                   />
                   <span>
@@ -158,8 +164,12 @@ export function SchedulingTab({
                     <span className="text-ink-500 block text-xs">{opt.hint}</span>
                   </span>
                 </label>
-              ))}
+                )
+              })}
             </div>
+            <p className="text-ink-400 mt-1.5 text-[11px]">
+              Individual teams can override this on their team page — the team&apos;s choice wins.
+            </p>
           </div>
           )}
 

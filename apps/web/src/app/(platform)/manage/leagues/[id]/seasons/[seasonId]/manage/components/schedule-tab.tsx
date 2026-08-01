@@ -97,20 +97,43 @@ export function ScheduleTab({
       const teamNames = new Map<string, string>(
         ((league?.teams ?? []) as any[]).map((t) => [t.team.id, t.team.name])
       )
+      const leagueDefaultStyle =
+        (league?.defaultWeekendStyle as "SAME_DAY" | "SPLIT_DAYS" | null | undefined) ??
+        ((league?.schedulingPhilosophy ?? "FAMILY_FRIENDLY") === "SPREAD_DAYS"
+          ? "SPLIT_DAYS"
+          : "SAME_DAY")
+      const stylesByTeam = new Map<string, "SAME_DAY" | "SPLIT_DAYS">(
+        ((league?.teams ?? []) as any[]).map((t) => [
+          t.team.id,
+          t.weekendStyle && t.weekendStyle !== "NO_PREFERENCE" ? t.weekendStyle : leagueDefaultStyle,
+        ])
+      )
+      const previewGames = preview.games.map((g: any, i: number) => ({
+        id: g.id ?? `preview-${i}`,
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+        scheduledAt: g.scheduledAt,
+        venueId: g.venueId,
+        venueName: g.venue?.name ?? null,
+        courtId: g.courtId,
+        courtName: g.court?.name ?? null,
+      }))
+      const sessionByGame = new Map<string, string>(
+        preview.games.map((g: any, i: number) => [g.id ?? `preview-${i}`, g.sessionId])
+      )
+      const unitByTeam = new Map<string, string>(
+        ((league?.teams ?? []) as any[])
+          .filter((t) => t.divisionId)
+          .map((t) => [t.team.id, t.divisionId as string])
+      )
       setReport(
         computeFairnessReport(
-          preview.games.map((g: any) => ({
-            id: g.id ?? `${g.homeTeamId}|${g.scheduledAt}`,
-            homeTeamId: g.homeTeamId,
-            awayTeamId: g.awayTeamId,
-            scheduledAt: g.scheduledAt,
-            venueId: g.venueId,
-            venueName: g.venue?.name ?? null,
-            courtId: g.courtId,
-            courtName: g.court?.name ?? null,
-          })),
+          previewGames,
           teamNames,
-          league?.gameSlotMinutes ?? 90
+          league?.gameSlotMinutes ?? 90,
+          stylesByTeam,
+          sessionByGame,
+          unitByTeam.size > 0 ? unitByTeam : undefined
         )
       )
       return
@@ -807,6 +830,14 @@ export function ScheduleTab({
                   <Badge tone="neutral">
                     First tip-offs per team: {report.totals.earlyGamesMin}–{report.totals.earlyGamesMax}
                   </Badge>
+                  <Badge tone="neutral">
+                    Day-ending games per team: {report.totals.lastGamesMin}–{report.totals.lastGamesMax}
+                  </Badge>
+                  {report.totals.preferenceViolations !== undefined && (
+                    <Badge tone={report.totals.preferenceViolations === 0 ? "court" : "warning"}>
+                      Weekend preference misses: {report.totals.preferenceViolations}
+                    </Badge>
+                  )}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="text-ink-700 w-full text-xs">
@@ -818,6 +849,8 @@ export function ScheduleTab({
                         <th className="px-2 py-1.5 text-right">Big gaps</th>
                         <th className="px-2 py-1.5 text-right">Two-gym days</th>
                         <th className="px-2 py-1.5 text-right">First tip-offs</th>
+                        <th className="px-2 py-1.5 text-right">Day-enders</th>
+                        <th className="px-2 py-1.5 text-left">Preference</th>
                         <th className="px-2 py-1.5 text-left">Most-used court</th>
                       </tr>
                     </thead>
@@ -830,6 +863,16 @@ export function ScheduleTab({
                           <td className={`px-2 py-1 text-right ${t.bigGapDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.bigGapDays}</td>
                           <td className={`px-2 py-1 text-right ${t.splitVenueDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.splitVenueDays}</td>
                           <td className="px-2 py-1 text-right">{t.earlyGames}</td>
+                          <td className="px-2 py-1 text-right">{t.lastGames}</td>
+                          <td className="px-2 py-1">
+                            {t.weekendStyle
+                              ? `${t.weekendStyle === "SAME_DAY" ? "One trip" : "Split days"}${
+                                  t.preferenceHonored && t.preferenceHonored.total > 0
+                                    ? ` · ${t.preferenceHonored.ok}/${t.preferenceHonored.total} ✓`
+                                    : ""
+                                }`
+                              : "—"}
+                          </td>
                           <td className="px-2 py-1">
                             {t.topCourtName ?? "—"}
                             <span className="text-ink-400"> · {Math.round(t.topCourtShare * 100)}%</span>

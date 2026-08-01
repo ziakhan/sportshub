@@ -59,6 +59,7 @@ export function SeasonDefaultsEditor({
   const [guests, setGuests] = useState<"" | "yes" | "no">(
     d.allowGuestPlayers == null ? "" : d.allowGuestPlayers ? "yes" : "no"
   )
+  const [weekendStyle, setWeekendStyle] = useState<string>(d.defaultWeekendStyle ?? "")
   const [minGames, setMinGames] = useState(num(d.playoffMinGames))
   // Registration
   const [questions, setQuestions] = useState<ApplicationQuestion[]>(
@@ -89,6 +90,7 @@ export function SeasonDefaultsEditor({
           balanceDueDaysBeforeStart: balanceDays ? parseInt(balanceDays) : null,
           tiebreakerOrder: tiebreakers.length > 0 ? tiebreakers : null,
           allowGuestPlayers: guests === "" ? null : guests === "yes",
+          defaultWeekendStyle: weekendStyle === "" ? null : weekendStyle,
           playoffMinGames: minGames ? parseInt(minGames) : null,
           applicationQuestions: (() => {
             const filled = questions.filter((q) => q.label.trim())
@@ -235,6 +237,18 @@ export function SeasonDefaultsEditor({
             </div>
           </div>
           <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="text-ink-600 mb-0.5 block text-xs">Weekend style</label>
+              <select
+                value={weekendStyle}
+                onChange={(e) => setWeekendStyle(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">—</option>
+                <option value="SAME_DAY">One trip (same day)</option>
+                <option value="SPLIT_DAYS">Split days (Sat + Sun)</option>
+              </select>
+            </div>
             <div>
               <label className="text-ink-600 mb-0.5 block text-xs">Guest players</label>
               <select value={guests} onChange={(e) => setGuests(e.target.value as any)} className={inputCls}>

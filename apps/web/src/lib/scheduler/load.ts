@@ -69,11 +69,24 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
     errors.push("gamesGuaranteed must be set before generating a schedule")
   }
 
+  // Weekend style resolution (owner 2026-08-01): the TEAM's own preference
+  // wins; otherwise the league's declared default (season → org rulebook);
+  // legacy philosophy maps as the default's source; system fallback SAME_DAY.
+  const leagueDefaultStyle: "SAME_DAY" | "SPLIT_DAYS" =
+    (cfg.defaultWeekendStyle as "SAME_DAY" | "SPLIT_DAYS" | null | undefined) ??
+    ((cfg.schedulingPhilosophy ?? "FAMILY_FRIENDLY") === "SPREAD_DAYS"
+      ? "SPLIT_DAYS"
+      : "SAME_DAY")
+  const resolveStyle = (ts: any): "SAME_DAY" | "SPLIT_DAYS" =>
+    ts.weekendStyle && ts.weekendStyle !== "NO_PREFERENCE"
+      ? ts.weekendStyle
+      : leagueDefaultStyle
+
   const input: SchedulerInput = {
     gamesGuaranteed: (cfg.gamesGuaranteed as number) ?? 0,
     gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
     gameLengthMinutes: (cfg.gameLengthMinutes as number) ?? 40,
-    idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 1,
+    idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 2,
     // Stable per-season variety: rotates repeat matchups + time assignments
     // between seasons while keeping preview == commit within one.
     varietySeed: Array.from(seasonId).reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 9973, 7),
@@ -89,6 +102,7 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
         teamId: ts.teamId,
         divisionId: ts.divisionId,
         name: ts.team?.name ?? ts.teamId,
+        weekendStyle: resolveStyle(ts),
       })),
     })),
     schedulingGroups: (season.schedulingGroups ?? []).map((g: any) => ({

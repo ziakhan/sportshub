@@ -278,6 +278,7 @@ export default async function LeagueTeamDetailPage({
         submissionId={submission.id}
         status={submission.status}
         paymentStatus={submission.paymentStatus}
+        weekendStyle={(submission as any).weekendStyle ?? null}
       />
 
       {/* Entry fee */}

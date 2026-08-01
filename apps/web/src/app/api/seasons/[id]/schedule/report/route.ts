@@ -37,6 +37,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         awayTeamId: true,
         scheduledAt: true,
         status: true,
+        sessionId: true,
         venueId: true,
         courtId: true,
         venue: { select: { name: true } },
@@ -49,6 +50,34 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     for (const g of games) {
       teamNames.set(g.homeTeamId, g.homeTeam?.name ?? g.homeTeamId)
       teamNames.set(g.awayTeamId, g.awayTeam?.name ?? g.awayTeamId)
+    }
+    // Resolved weekend styles: the team's own choice wins, else the league
+    // default (same chain the scheduler uses).
+    const submissions = await (prisma as any).teamSubmission.findMany({
+      where: { seasonId: params.id },
+      select: { teamId: true, weekendStyle: true, divisionId: true },
+    })
+    const leagueDefaultStyle: "SAME_DAY" | "SPLIT_DAYS" =
+      (cfg.defaultWeekendStyle as "SAME_DAY" | "SPLIT_DAYS" | null | undefined) ??
+      ((cfg.schedulingPhilosophy ?? "FAMILY_FRIENDLY") === "SPREAD_DAYS"
+        ? "SPLIT_DAYS"
+        : "SAME_DAY")
+    const stylesByTeam = new Map<string, "SAME_DAY" | "SPLIT_DAYS">()
+    for (const sub of submissions) {
+      stylesByTeam.set(
+        sub.teamId,
+        sub.weekendStyle && sub.weekendStyle !== "NO_PREFERENCE"
+          ? sub.weekendStyle
+          : leagueDefaultStyle
+      )
+    }
+    const sessionByGame = new Map<string, string>()
+    for (const g of games) if (g.sessionId) sessionByGame.set(g.id, g.sessionId)
+    // Division scoping for first/last tip-offs (the division block's edges
+    // are the rotatable slots, not the whole day's first wave).
+    const unitByTeam = new Map<string, string>()
+    for (const sub of submissions) {
+      if (sub.divisionId) unitByTeam.set(sub.teamId, sub.divisionId)
     }
     const report = computeFairnessReport(
       games.map((g: any) => ({
@@ -63,7 +92,10 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         courtName: g.court?.name ?? null,
       })),
       teamNames,
-      (cfg.gameSlotMinutes as number) ?? 90
+      (cfg.gameSlotMinutes as number) ?? 90,
+      stylesByTeam,
+      sessionByGame,
+      unitByTeam.size > 0 ? unitByTeam : undefined
     )
     return NextResponse.json(report)
   } catch (error) {

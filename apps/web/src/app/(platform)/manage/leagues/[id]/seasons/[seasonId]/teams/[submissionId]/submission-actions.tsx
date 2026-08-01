@@ -9,11 +9,13 @@ export function SubmissionActions({
   submissionId,
   status,
   paymentStatus,
+  weekendStyle,
 }: {
   seasonId: string
   submissionId: string
   status: string
   paymentStatus: string
+  weekendStyle?: string | null
 }) {
   const router = useRouter()
   const patch = async (body: Record<string, string>, confirmText?: string) => {
@@ -58,6 +60,20 @@ export function SubmissionActions({
           Withdraw
         </Button>
       )}
+      {/* Weekend preference (owner 2026-08-01): the team's choice overrides
+          the league default when the schedule is generated. */}
+      <label className="text-ink-600 flex items-center gap-1.5 text-xs">
+        Weekend preference
+        <select
+          value={weekendStyle ?? "NO_PREFERENCE"}
+          onChange={(e) => patch({ weekendStyle: e.target.value })}
+          className="border-ink-200 focus:border-play-500 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+        >
+          <option value="NO_PREFERENCE">League default</option>
+          <option value="SAME_DAY">One trip (both games same day)</option>
+          <option value="SPLIT_DAYS">Split days (Sat + Sun)</option>
+        </select>
+      </label>
       {!paid ? (
         <>
           <Button size="sm" variant="secondary" tone="court" onClick={() => patch({ paymentStatus: "PAID_MANUAL" })}>

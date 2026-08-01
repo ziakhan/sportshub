@@ -699,7 +699,9 @@ async function seed() {
       // its own venue hours, and locked explicit tiebreakers — so the
       // "Overrides · Reset to organization" UI has a live demo.
       gamesGuaranteed: SUMMER_GAMES_PER_TEAM,
-      idealGamesPerDayPerTeam: 1, // 2-day weekend sessions → 2 games/weekend
+      // Weekend style (owner 2026-08-01): NPH's norm is ONE TRIP — both
+      // weekend games the same day with a break; teams may override.
+      defaultWeekendStyle: "SAME_DAY",
       defaultVenueOpenTime: "09:00",
       defaultVenueCloseTime: "18:00",
       rosterChangePolicy: "REQUEST_ONLY", // locked rosters need commissioner approval
@@ -1451,6 +1453,19 @@ async function seed() {
   await mkFallTeam("monarchs", 9, "White")
   await mkFallTeam("west", 10, "White")
   await mkFallTeam("cityabove", 10, "White")
+
+  // Two teams per division prefer SPLIT days (owner 2026-08-01) — the
+  // fairness report shows both styles honored side by side.
+  const splitTeams = await p.teamSubmission.findMany({
+    where: { seasonId: springSeason.id, team: { name: { contains: "White" } } },
+    select: { id: true },
+  })
+  for (const sub of splitTeams) {
+    await p.teamSubmission.update({
+      where: { id: sub.id },
+      data: { weekendStyle: "SPLIT_DAYS" },
+    })
+  }
 
   // Recruiting clubs: fall tryouts live on the marketplace NOW.
   // Lords' tryout is in ~3 hours with 5 kids already checked in — the

@@ -143,7 +143,10 @@ describe("same-unit clustering (soft)", () => {
     for (let i = 1; i < ordered.length; i++) {
       if (ordered[i].unitKey !== ordered[i - 1].unitKey) switches++
     }
-    // Perfect clustering = 1 switch; alternating = ordered.length - 1.
-    expect(switches).toBeLessThanOrEqual(2)
+    // Perfect blocks would be 1 switch, but the no-back-to-back law
+    // (owner 2026-08-01) forces a breather after a 4-team division has
+    // cycled its teams — the unit returns after a gap instead of running
+    // b2b. Alternating every slot would be ordered.length - 1 (= 7).
+    expect(switches).toBeLessThanOrEqual(4)
   })
 })

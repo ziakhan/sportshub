@@ -131,6 +131,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "balanceDueDaysBeforeStart",
       "applicationQuestions",
       "schedulingPhilosophy",
+      "defaultWeekendStyle",
       "allowCrossDivisionScheduling",
       "tiebreakerOrder",
       "rosterChangePolicy",

@@ -1405,6 +1405,9 @@ model Season {
   // When the remaining balance is due, in days before startDate (owner
   // 2026-07-30: make the hardcoded 14 a setting). Null = 14.
   balanceDueDaysBeforeStart Int?
+  // League's declared weekend shape for teams with no preference of their
+  // own (owner 2026-08-01). Null = inherit org rulebook → SAME_DAY.
+  defaultWeekendStyle WeekendStyle?
   // Club-entry application questions (two-level registration): array of
   // strings, asked ONCE per club on their season entry — never per team.
   applicationQuestions Json?
@@ -1531,6 +1534,11 @@ model TeamSubmission {
   roster    SeasonRoster?
   blackouts SeasonTeamBlackout[]
 
+  // Weekend scheduling preference (owner 2026-08-01): the TEAM's choice
+  // overrides the league's default. NO_PREFERENCE/null = schedule the way
+  // the league prefers (season → org rulebook → SAME_DAY).
+  weekendStyle WeekendStyle?
+
   createdAt DateTime @default(now())
 
   withdrawalRequests WithdrawalRequest[]
@@ -1538,6 +1546,12 @@ model TeamSubmission {
   @@unique([seasonId, teamId])
   @@index([seasonId])
   @@index([teamId])
+}
+
+enum WeekendStyle {
+  SAME_DAY
+  SPLIT_DAYS
+  NO_PREFERENCE
 }
 
 enum TeamSubmissionStatus {

@@ -16,6 +16,9 @@ const updateTeamSubmissionSchema = z
     // Assign/fix the division in the same call (Studio P0: approving without
     // a division made the team invisible to the scheduler forever).
     divisionId: z.string().optional(),
+    // Weekend scheduling preference (owner 2026-08-01): team choice
+    // overrides the league default.
+    weekendStyle: z.enum(["SAME_DAY", "SPLIT_DAYS", "NO_PREFERENCE"]).nullable().optional(),
     paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
   })
   .refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
@@ -176,6 +179,7 @@ export async function PATCH(
     const updateData: Record<string, any> = {}
     if (data.status !== undefined) updateData.status = data.status
     if (data.divisionId !== undefined) updateData.divisionId = data.divisionId
+    if (data.weekendStyle !== undefined) updateData.weekendStyle = data.weekendStyle
     if (data.paymentStatus !== undefined) updateData.paymentStatus = data.paymentStatus
 
     // G4 cascade: withdrawing a team cancels its FUTURE games atomically with

@@ -30,11 +30,16 @@ export interface SchedulerSlot {
   endAt: Date
 }
 
+export type WeekendStyle = "SAME_DAY" | "SPLIT_DAYS"
+
 export interface SchedulerTeam {
   submissionId: string
   teamId: string
   divisionId: string
   name: string
+  /** Resolved weekend preference: TEAM's own choice wins, else the league
+   *  default (owner 2026-08-01). Absent = derive from philosophy. */
+  weekendStyle?: WeekendStyle
 }
 
 export interface SchedulerUnit {
@@ -280,11 +285,27 @@ function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`
 }
 
+/**
+ * Integer hash for variety seeds. The raw seed reaches every consumer
+ * through SMALL moduli (round offset % 7, day rotation % 2), so two
+ * different seasons could collapse onto identical schedules whenever the
+ * raw values collided in those tiny spaces — hash first so every seed bit
+ * matters.
+ */
+function mixSeed(x: number): number {
+  let h = x | 0
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b)
+  h = Math.imul(h ^ (h >>> 13), 0x45d9f3b)
+  h ^= h >>> 16
+  return h >>> 0
+}
+
 function buildPairings(
   unit: SchedulerUnit,
   gamesGuaranteed: number,
-  varietySeed = 0
+  rawSeed = 0
 ): Pairing[] {
+  const varietySeed = mixSeed(rawSeed)
   const n = unit.teams.length
   if (n < 2) return []
   const targetGames = Math.ceil((n * gamesGuaranteed) / 2)
@@ -351,33 +372,117 @@ function buildPairings(
  * output, so previews still commit identically.
  */
 export function generateSchedule(input: SchedulerInput): SchedulerResult {
-  const attempts = input.idealGamesPerDayPerTeam <= 1 ? 4 : 1
-  const countDoubles = (games: ProposedGame[]): number => {
-    const byTeamDay = new Map<string, number>()
+  const attempts = 6
+  const philosophyStyle: WeekendStyle =
+    input.schedulingPhilosophy === "SPREAD_DAYS" ? "SPLIT_DAYS" : "SAME_DAY"
+  const styleByTeam = new Map<string, string>()
+  for (const d of input.divisions)
+    for (const t of d.teams) styleByTeam.set(t.teamId, t.weekendStyle ?? philosophyStyle)
+  const dkOf = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  // Max first/last-tip unevenness across teams (day edges from the games).
+  const edgeSpread = (games: ProposedGame[]): number => {
+    // Per UNIT-day: the division block's opening/closing games are the
+    // scarce, rotatable edges.
+    const firstByDay = new Map<string, number>()
+    const lastByDay = new Map<string, number>()
     for (const g of games) {
-      const d = new Date(g.scheduledAt)
-      const dk = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      const t = new Date(g.scheduledAt).getTime()
+      const dk = `${dkOf(new Date(g.scheduledAt))}|${g.unitKey}`
+      if (!firstByDay.has(dk) || t < firstByDay.get(dk)!) firstByDay.set(dk, t)
+      if (!lastByDay.has(dk) || t > lastByDay.get(dk)!) lastByDay.set(dk, t)
+    }
+    const firsts: Record<string, number> = {}
+    const lasts: Record<string, number> = {}
+    const days: Record<string, number> = {}
+    const seenDay = new Set<string>()
+    const teams = new Set<string>()
+    for (const g of games) {
+      const t = new Date(g.scheduledAt).getTime()
+      const dk = `${dkOf(new Date(g.scheduledAt))}|${g.unitKey}`
       for (const id of [g.homeTeamId, g.awayTeamId]) {
-        const k = `${id}|${dk}`
-        byTeamDay.set(k, (byTeamDay.get(k) ?? 0) + 1)
+        teams.add(id)
+        if (!seenDay.has(`${id}|${dk}`)) {
+          seenDay.add(`${id}|${dk}`)
+          days[id] = (days[id] ?? 0) + 1
+        }
+        if (firstByDay.get(dk) === t) firsts[id] = (firsts[id] ?? 0) + 1
+        if (lastByDay.get(dk) === t && lastByDay.get(dk) !== firstByDay.get(dk))
+          lasts[id] = (lasts[id] ?? 0) + 1
       }
     }
-    return [...byTeamDay.values()].filter((c) => c > 1).length
+    // Spread of early/late SHARE (percent of each team's playing days) —
+    // split-days teams play ~2× the days of one-trip teams, so raw counts
+    // aren't comparable.
+    let spread = 0
+    for (const counts of [firsts, lasts]) {
+      const vals = [...teams].map((id) =>
+        Math.round((100 * (counts[id] ?? 0)) / Math.max(1, days[id] ?? 1))
+      )
+      if (vals.length > 0) spread = Math.max(spread, Math.max(...vals) - Math.min(...vals))
+    }
+    return spread
+  }
+  /** [back-to-backs, style violations] for a candidate result. */
+  const shapeIssues = (games: ProposedGame[]): [number, number] => {
+    const bySessionTeam = new Map<string, number[]>()
+    for (const g of games) {
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${g.sessionId}|${id}`
+        if (!bySessionTeam.has(k)) bySessionTeam.set(k, [])
+        bySessionTeam.get(k)!.push(new Date(g.scheduledAt).getTime())
+      }
+    }
+    let b2b = 0
+    let styleViol = 0
+    for (const [k, times] of bySessionTeam) {
+      if (times.length < 2) continue
+      const teamId = k.split("|")[1]
+      const style = styleByTeam.get(teamId) ?? philosophyStyle
+      times.sort((a, b) => a - b)
+      const dks = times.map((t) => dkOf(new Date(t)))
+      const sameDay = new Set(dks).size === 1
+      if (sameDay) {
+        for (let i = 1; i < times.length; i++) {
+          if ((times[i] - times[i - 1]) / (input.gameSlotMinutes * 60000) - 1 <= 0) b2b++
+        }
+      }
+      if ((style === "SAME_DAY" && !sameDay) || (style === "SPLIT_DAYS" && sameDay)) styleViol++
+    }
+    return [b2b, styleViol]
   }
   let best: SchedulerResult | null = null
-  let bestKey: [number, number, number] = [Infinity, Infinity, Infinity]
+  let bestKey: [number, number, number, number, number] = [
+    Infinity,
+    Infinity,
+    Infinity,
+    Infinity,
+    Infinity,
+  ]
   for (let k = 0; k < attempts; k++) {
     const res = generateScheduleOnce({
       ...input,
       varietySeed: (input.varietySeed ?? 0) + k * 7919,
     })
-    const doubles = countDoubles(res.games)
-    const key: [number, number, number] = [res.unscheduled.length, doubles, res.tradeoffs.length]
-    if (key[0] === 0 && key[1] === 0 && key[2] === 0) return res
-    if (
-      key[0] < bestKey[0] ||
-      (key[0] === bestKey[0] && (key[1] < bestKey[1] || (key[1] === bestKey[1] && key[2] < bestKey[2])))
-    ) {
+    const [b2b, styleViol] = shapeIssues(res.games)
+    const key: [number, number, number, number, number] = [
+      res.unscheduled.length,
+      b2b,
+      styleViol,
+      edgeSpread(res.games),
+      res.tradeoffs.length,
+    ]
+    // Edge spread is a RATE (percent of playing days); within ~a-day-in-four
+    // is the target, not a defect — treat ≤25 as passing for the early exit.
+    if (key[0] === 0 && key[1] === 0 && key[2] === 0 && key[3] <= 25 && key[4] === 0) return res
+    let better = false
+    for (let i = 0; i < 5; i++) {
+      if (key[i] < bestKey[i]) {
+        better = true
+        break
+      }
+      if (key[i] > bestKey[i]) break
+    }
+    if (better) {
       best = res
       bestKey = key
     }
@@ -466,6 +571,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   // whose capacity is the number of open courts. Specific courts and venues
   // are assigned AFTERWARDS (venue-major fill, same-gym cohesion, court
   // rotation), so no team is welded to a court by placement order.
+  const dateKeyOf = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
   const bucketKeyOf = (dayId: string, startMs: number): string => `${dayId}|${startMs}`
   const bucketOfSlot = (slot: SchedulerSlot): string =>
     bucketKeyOf(slot.dayId, slot.startAt.getTime())
@@ -497,6 +603,56 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     return (bucketUsed.get(bk) ?? 0) < capacity
   }
 
+  // Weekend-style state (owner 2026-08-01): each team's resolved preference
+  // (team's own choice already applied in load; fixtures derive from the
+  // philosophy), plus per-session day usage so "joins the weekend" vs
+  // "splits the weekend" is scoreable.
+  const philosophyStyle: WeekendStyle =
+    input.schedulingPhilosophy === "SPREAD_DAYS" ? "SPLIT_DAYS" : "SAME_DAY"
+  // A one-game-per-day cap makes SAME_DAY unexpressible — everyone is
+  // effectively split-days in such leagues, whatever their preference.
+  const capForcesSplit = input.idealGamesPerDayPerTeam <= 1
+  const styleByTeam = new Map<string, WeekendStyle>()
+  for (const u of units)
+    for (const t of u.teams)
+      styleByTeam.set(t.teamId, capForcesSplit ? "SPLIT_DAYS" : t.weekendStyle ?? philosophyStyle)
+  const styleOf = (teamId: string): WeekendStyle =>
+    capForcesSplit ? "SPLIT_DAYS" : styleByTeam.get(teamId) ?? philosophyStyle
+  // `${sessionId}|${teamId}` → Map<dateKey, games>
+  const teamSessionDays = new Map<string, Map<string, number>>()
+  const bumpSessionDay = (sessionId: string, teamId: string, dateKey: string, delta: number) => {
+    const k = `${sessionId}|${teamId}`
+    if (!teamSessionDays.has(k)) teamSessionDays.set(k, new Map())
+    const m = teamSessionDays.get(k)!
+    m.set(dateKey, (m.get(dateKey) ?? 0) + delta)
+  }
+
+  // First/last tip-off rotation state (owner 2026-08-01: the same team must
+  // not take the day's first tip — or its last game — every week). Hard in
+  // strict passes: a team above its division's minimum count is blocked
+  // from taking another; the ladder may relax with a trade-off note.
+  const dayFirstMs = new Map<string, number>()
+  const dayLastMs = new Map<string, number>()
+  for (const slot of slots) {
+    const dk = dateKeyOf(slot.startAt)
+    const t = slot.startAt.getTime()
+    if (!dayFirstMs.has(dk) || t < dayFirstMs.get(dk)!) dayFirstMs.set(dk, t)
+    if (!dayLastMs.has(dk) || t > dayLastMs.get(dk)!) dayLastMs.set(dk, t)
+  }
+  const firstTipCount: Record<string, number> = {}
+  const lastGameCount: Record<string, number> = {}
+  const unitOfTeam = new Map<string, string>()
+  for (const u of units) for (const t of u.teams) unitOfTeam.set(t.teamId, u.key)
+  const unitEdgeMin = (teamId: string, counts: Record<string, number>): number => {
+    const uk = unitOfTeam.get(teamId)
+    if (!uk) return 0
+    let min = Infinity
+    for (const u of units) {
+      if (u.key !== uk) continue
+      for (const t of u.teams) min = Math.min(min, counts[t.teamId] ?? 0)
+    }
+    return min === Infinity ? 0 : min
+  }
   // Rematch shaping state (owner 2026-08-01): a pair NEVER meets twice in
   // one session (2-team divisions excepted — they only have each other),
   // and rematches are pushed as far from the first meeting as possible.
@@ -508,10 +664,172 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     return t && t.length > 0 ? Math.max(...t) : undefined
   }
 
+  // ── Weekend day-anchor pre-plan (owner 2026-08-01). The greedy used to
+  // pick every FIRST game's day style-blind, sealing a weekend's fate before
+  // the second game existed — repair then fought the placement instead of
+  // the plan. So plan days up front, from the pairing pool's own round
+  // structure (which is exactly what the play-everyone-first law will admit):
+  // each weekend takes the next `cap` games per team from the pool, and that
+  // weekend's games are 2-colored by day under parity constraints — a
+  // one-trip team's two games get the SAME color, a split-days team's two
+  // games get OPPOSITE colors. Components are balanced across the weekend's
+  // days. Every preference then has a placement that honors it by
+  // construction; repair becomes the exception.
+  const anchorByTeamSession = new Map<string, string>()
+  const plannedDayByPair = new Map<string, string>() // `${sessionId}|${pairKey}` → dateKey
+  const plannedSessionsByPair = new Map<string, string[]>() // pairKey → sessionIds
+  {
+    const sessionDates = new Map<string, string[]>()
+    const dayGameCap = new Map<string, number>() // `${sessionId}|${dateKey}` → court-slots
+    for (const slot of slots) {
+      const dk = dateKeyOf(slot.startAt)
+      const list = sessionDates.get(slot.sessionId) ?? []
+      if (!list.includes(dk)) sessionDates.set(slot.sessionId, [...list, dk].sort())
+      const key = `${slot.sessionId}|${dk}`
+      dayGameCap.set(key, (dayGameCap.get(key) ?? 0) + 1)
+    }
+    const poolByUnit = new Map<string, Pairing[]>()
+    for (const pr of pairingPool) {
+      if (!poolByUnit.has(pr.unitKey)) poolByUnit.set(pr.unitKey, [])
+      poolByUnit.get(pr.unitKey)!.push(pr)
+    }
+    const cursorByUnit = new Map<string, number>()
+    regularSessions.forEach((sess, sessIdx) => {
+      const days = sessionDates.get(sess.id)
+      if (!days || days.length === 0) return
+      const cap = perSessionCap.get(sess.id) ?? 2
+      // One-trip is only plannable when the weekend share fits in one day.
+      if (cap > input.idealGamesPerDayPerTeam) return
+      const seats = new Map<string, number>(
+        days.map((dk) => [dk, 2 * (dayGameCap.get(`${sess.id}|${dk}`) ?? 0)])
+      )
+      units.forEach((u, unitIdx) => {
+        const allowed = filter?.[sess.id]
+        if (allowed && !allowed.includes(u.key)) return
+        const pool = poolByUnit.get(u.key)
+        if (!pool || pool.length === 0) return
+        // This weekend's matchups: next games in pool order, ≤ cap per team.
+        const perSession = Math.floor((u.teams.length * cap) / 2)
+        const cur = cursorByUnit.get(u.key) ?? 0
+        if (cur >= pool.length) return
+        const count: Record<string, number> = {}
+        const picked: Pairing[] = []
+        let scan = cur
+        while (scan < pool.length && picked.length < perSession) {
+          const pr = pool[scan]
+          const h = count[pr.homeTeamId] ?? 0
+          const a = count[pr.awayTeamId] ?? 0
+          if (h < cap && a < cap) {
+            picked.push(pr)
+            count[pr.homeTeamId] = h + 1
+            count[pr.awayTeamId] = a + 1
+          }
+          scan++
+        }
+        cursorByUnit.set(u.key, cur + picked.length)
+        if (picked.length === 0) return
+        // Parity 2-coloring: game graph linked through each team's weekend.
+        const gamesOfTeam = new Map<string, number[]>()
+        picked.forEach((pr, gi) => {
+          for (const id of [pr.homeTeamId, pr.awayTeamId]) {
+            if (!gamesOfTeam.has(id)) gamesOfTeam.set(id, [])
+            gamesOfTeam.get(id)!.push(gi)
+          }
+        })
+        const adj = new Map<number, Array<[number, number]>>()
+        for (const [id, gis] of gamesOfTeam) {
+          if (gis.length !== 2) continue
+          const par = styleOf(id) === "SPLIT_DAYS" ? 1 : 0
+          if (!adj.has(gis[0])) adj.set(gis[0], [])
+          if (!adj.has(gis[1])) adj.set(gis[1], [])
+          adj.get(gis[0])!.push([gis[1], par])
+          adj.get(gis[1])!.push([gis[0], par])
+        }
+        const color: number[] = new Array(picked.length).fill(-1)
+        const comps: number[][] = []
+        for (let gi = 0; gi < picked.length; gi++) {
+          if (color[gi] !== -1) continue
+          const comp = [gi]
+          color[gi] = 0
+          const queue = [gi]
+          while (queue.length > 0) {
+            const x = queue.shift()!
+            for (const [y, par] of adj.get(x) ?? []) {
+              if (color[y] === -1) {
+                color[y] = color[x] ^ par
+                comp.push(y)
+                queue.push(y)
+              }
+              // Odd-parity conflicts are skipped: that team's preference is
+              // structurally unsatisfiable this weekend and is counted by
+              // the post-hoc trade-off notes.
+            }
+          }
+          comps.push(comp)
+        }
+        // Single-day sessions: everything on that day; split preferences are
+        // unsatisfiable there and stay unplanned.
+        if (days.length === 1) {
+          for (const pr of picked) {
+            for (const id of [pr.homeTeamId, pr.awayTeamId]) {
+              if (styleOf(id) === "SAME_DAY")
+                anchorByTeamSession.set(`${sess.id}|${id}`, days[0])
+            }
+          }
+          return
+        }
+        // Balance components across the weekend's two fullest days; rotate
+        // which day leads by session+unit so nobody owns Saturday forever.
+        const dayPair = [...days]
+          .sort(
+            (x, y) =>
+              (dayGameCap.get(`${sess.id}|${y}`) ?? 0) - (dayGameCap.get(`${sess.id}|${x}`) ?? 0)
+          )
+          .slice(0, 2)
+          .sort()
+        const lead = dayPair[(sessIdx + unitIdx) % 2]
+        const other = dayPair[0] === lead ? dayPair[1] : dayPair[0]
+        comps.sort((a, b) => b.length - a.length)
+        for (const comp of comps) {
+          const seats0 = comp.filter((gi) => color[gi] === 0).length * 2
+          const seats1 = comp.length * 2 - seats0
+          const leadLeft = seats.get(lead) ?? 0
+          const otherLeft = seats.get(other) ?? 0
+          const day0 = leadLeft - seats0 >= 0 || leadLeft >= otherLeft ? lead : other
+          const day1 = day0 === lead ? other : lead
+          seats.set(day0, (seats.get(day0) ?? 0) - seats0)
+          seats.set(day1, (seats.get(day1) ?? 0) - seats1)
+          for (const gi of comp) {
+            const pr = picked[gi]
+            const dk = color[gi] === 0 ? day0 : day1
+            const pk = pairKey(pr.homeTeamId, pr.awayTeamId)
+            if (!plannedDayByPair.has(`${sess.id}|${pk}`))
+              plannedDayByPair.set(`${sess.id}|${pk}`, dk)
+            if (!plannedSessionsByPair.has(pk)) plannedSessionsByPair.set(pk, [])
+            plannedSessionsByPair.get(pk)!.push(sess.id)
+            for (const id of [pr.homeTeamId, pr.awayTeamId]) {
+              if (styleOf(id) === "SAME_DAY") anchorByTeamSession.set(`${sess.id}|${id}`, dk)
+            }
+          }
+        }
+      })
+    })
+    // Session-by-session mode: games already committed in THIS session win
+    // over the plan — anchor to where the team actually plays.
+    for (const g of input.existingGames ?? []) {
+      if (!g.sessionId || !g.scheduledAt) continue
+      const dk = dateKeyOf(new Date(g.scheduledAt))
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        if (styleOf(id) !== "SAME_DAY") continue
+        if (anchorByTeamSession.has(`${g.sessionId}|${id}`))
+          anchorByTeamSession.set(`${g.sessionId}|${id}`, dk)
+      }
+    }
+  }
+
   // Scheduling state
   const teamGameCount: Record<string, number> = {}
   const teamBookings: Record<string, Array<{ start: Date; end: Date; dateKey: string }>> = {}
-  const dateKeyOf = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
   // Other leagues' games at shared venues occupy their courts outright.
   for (const b of input.busyCourtBookings ?? []) {
     markCourtBusy(b.courtId, new Date(b.start), new Date(b.end))
@@ -534,6 +852,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       for (const id of [g.homeTeamId, g.awayTeamId]) {
         const sk = sessionKey(g.sessionId, id)
         teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
+        if (g.scheduledAt) bumpSessionDay(g.sessionId, id, dateKeyOf(new Date(g.scheduledAt)), 1)
       }
       const spk = `${g.sessionId}|${pairKey(g.homeTeamId, g.awayTeamId)}`
       pairSessionCount[spk] = (pairSessionCount[spk] ?? 0) + 1
@@ -602,6 +921,32 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       }
     }
   }
+  // Seed first/last-tip history from surviving games (per their own days).
+  {
+    const byDay = new Map<string, Array<{ ms: number; home: string; away: string }>>()
+    for (const g of input.existingGames ?? []) {
+      if (!g.scheduledAt) continue
+      const d = new Date(g.scheduledAt)
+      const dk = dateKeyOf(d)
+      if (!byDay.has(dk)) byDay.set(dk, [])
+      byDay.get(dk)!.push({ ms: d.getTime(), home: g.homeTeamId, away: g.awayTeamId })
+    }
+    for (const list of byDay.values()) {
+      const first = Math.min(...list.map((x) => x.ms))
+      const last = Math.max(...list.map((x) => x.ms))
+      for (const x of list) {
+        if (x.ms === first)
+          for (const id of [x.home, x.away]) firstTipCount[id] = (firstTipCount[id] ?? 0) + 1
+        if (x.ms === last)
+          for (const id of [x.home, x.away]) lastGameCount[id] = (lastGameCount[id] ?? 0) + 1
+      }
+    }
+  }
+
+  // Unit time-clustering (phase 1, court-free): a division keeps rolling in
+  // consecutive time buckets instead of interleaving with other divisions.
+  const unitLastEnd = new Map<string, number>() // `${dayId}|${unitKey}` → endMs
+
   const teamTimeAvg = (teamId: string): number =>
     (timeLoadCount[teamId] ?? 0) > 0 ? timeLoadSum[teamId] / timeLoadCount[teamId] : 0.5
 
@@ -767,34 +1112,117 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       2
 
 
-    // Philosophy
-    if (input.schedulingPhilosophy === "FAMILY_FRIENDLY") {
-      // Prefer slots where one team already has a game today (cluster)
-      if (homeDayCount > 0) score += 3
-      if (awayDayCount > 0) score += 3
-    } else {
-      // SPREAD_DAYS: penalize same-day games
-      if (homeDayCount > 0) score -= 6
-      if (awayDayCount > 0) score -= 6
+    // Weekend-style scoring (owner 2026-08-01, per-TEAM preference):
+    //   SAME_DAY team: second game same day with the GAP CURVE — 2-slot
+    //     break ideal (+6), then 1 (+4), then 3 (+3), 4 (+2), wider (+1);
+    //     back-to-back −8 (last resort); splitting the weekend −4.
+    //   SPLIT_DAYS team: completing the Sat/Sun split +4; a same-day
+    //     double −4 (and −10 total when back-to-back).
+    const dayKeyHere = dateKeyOf(slot.startAt)
+    // Mixed-preference matchups (one team wants one trip, the other wants
+    // split days) can make BOTH days a hard violation for someone — the
+    // owner's ruling is that the sum of satisfaction decides, so the hard
+    // style blocks apply only when the two teams agree.
+    const mixedPair = styleOf(homeTeamId) !== styleOf(awayTeamId)
+    // Pre-plan steers: this matchup was planned into a specific weekend and
+    // day — soft, so repair keeps its freedom, but strong enough that the
+    // greedy follows the plan when the plan is followable.
+    {
+      const pk = pairKey(homeTeamId, awayTeamId)
+      const plannedSessions = plannedSessionsByPair.get(pk)
+      if (plannedSessions && plannedSessions.length > 0) {
+        score += plannedSessions.includes(slot.sessionId) ? 3 : -3
+      }
+      const plannedDk = plannedDayByPair.get(`${slot.sessionId}|${pk}`)
+      if (plannedDk !== undefined) score += plannedDk === dayKeyHere ? 3 : -3
+    }
+    for (const teamId of [homeTeamId, awayTeamId]) {
+      const style = styleOf(teamId)
+      // Day-anchor law: a one-trip team plays only on its planned day while
+      // the strict pass runs; movers/repair get a soft steer back to it.
+      const anchor = anchorByTeamSession.get(`${slot.sessionId}|${teamId}`)
+      if (anchor !== undefined && style === "SAME_DAY" && dayKeyHere !== anchor) {
+        // Hard for every strict-day-cap caller — including repair movers,
+        // whose first-fit slot scans never see soft penalties (receipts
+        // showed placement ending at ZERO violations and repair chains
+        // creating dozens). Relaxed callers still pay dearly.
+        if (!relaxDayCap) {
+          return { score: -Infinity, blockReason: "off the team's planned day" }
+        }
+        score -= 30
+      }
+      const sameDayBookings = (teamBookings[teamId] ?? []).filter(
+        (b) => b.dateKey === dayKeyHere
+      )
+      const sessionDayMap = teamSessionDays.get(`${slot.sessionId}|${teamId}`)
+      let otherDaysInSession = 0
+      if (sessionDayMap) {
+        for (const [dk, n] of sessionDayMap) if (dk !== dayKeyHere) otherDaysInSession += n
+      }
+      if (sameDayBookings.length > 0) {
+        let minGapSlots = Infinity
+        for (const b of sameDayBookings) {
+          const gapMs = Math.max(
+            b.start.getTime() - slot.endAt.getTime(),
+            slot.startAt.getTime() - b.end.getTime()
+          )
+          minGapSlots = Math.min(minGapSlots, gapMs / (input.gameSlotMinutes * 60000))
+        }
+        const b2b = minGapSlots <= 0
+        // Back-to-back is a LAST RESORT (owner): hard-blocked while the
+        // strict pass runs; the relaxed/repair ladder may allow it.
+        if (b2b && !relaxDayCap && !inRepair) {
+          return { score: -Infinity, blockReason: "back-to-back" }
+        }
+        if (style === "SAME_DAY") {
+          if (b2b) score -= 8
+          else if (minGapSlots <= 1.01) score += 4
+          else if (minGapSlots <= 2.01) score += 6
+          else if (minGapSlots <= 3.01) score += 3
+          else if (minGapSlots <= 4.01) score += 2
+          else score += 1
+        } else {
+          // A SPLIT_DAYS team doubling a day violates its preference —
+          // hard while the strict pass runs, a penalty afterwards. (The
+          // day-anchor pre-plan gives every mixed matchup a consistent day,
+          // so no mixed-pair exemption is needed here anymore.)
+          if (!relaxDayCap && !inRepair) {
+            return { score: -Infinity, blockReason: "would double a split-days team's day" }
+          }
+          score -= b2b ? 10 : 4
+        }
+      } else if (otherDaysInSession > 0) {
+        if (style === "SPLIT_DAYS") {
+          score += 4
+        } else {
+          // A SAME_DAY team's second weekend game on a DIFFERENT day
+          // splits the family's one trip — hard in the strict pass.
+          if (!relaxDayCap && !inRepair && !mixedPair) {
+            return { score: -Infinity, blockReason: "would split a one-trip team's weekend" }
+          }
+          score -= 4
+        }
+      }
     }
 
-    // Same-day GAP shaping (owner 2026-08-01): when a team plays twice in a
-    // day, the games should sit close but never back-to-back — roughly a
-    // two-slot break is ideal; a 9:30 + 7:00pm split is almost as bad as
-    // none. Back-to-back stays merely a last resort, not forbidden.
-    const dayKeyHere = dateKeyOf(slot.startAt)
-    for (const teamId of [homeTeamId, awayTeamId]) {
-      for (const b of teamBookings[teamId] ?? []) {
-        if (b.dateKey !== dayKeyHere) continue
-        const gapMs = Math.max(
-          b.start.getTime() - slot.endAt.getTime(),
-          slot.startAt.getTime() - b.end.getTime()
-        )
-        const gapSlots = gapMs / (input.gameSlotMinutes * 60000)
-        if (gapSlots <= 0) score -= 8
-        else if (gapSlots <= 2.01) score += 4
-        else score -= Math.min(8, 2 * (gapSlots - 2))
-      }
+    // First/last-tip rotation (owner 2026-08-01): softly steered here; the
+    // dedicated edge-rebalance pass afterwards enforces max−min ≤ 1 by
+    // swapping game times within days (a hard placement block just pushed
+    // games into the law-free relaxed passes on sparse days).
+    const slotMs = slot.startAt.getTime()
+    const isDayFirst = dayFirstMs.get(dayKeyHere) === slotMs
+    const isDayLast = dayLastMs.get(dayKeyHere) === slotMs
+    // Soft: unit time-clustering — continue the division's block.
+    if (unitLastEnd.get(`${slot.dayId}|${pairing.unitKey}`) === slot.startAt.getTime()) {
+      score += 4
+    }
+
+    // Soft steer everywhere: prefer teams with fewer edge slots so far.
+    if (isDayFirst) {
+      score -= 1.5 * ((firstTipCount[homeTeamId] ?? 0) + (firstTipCount[awayTeamId] ?? 0))
+    }
+    if (isDayLast) {
+      score -= 1.5 * ((lastGameCount[homeTeamId] ?? 0) + (lastGameCount[awayTeamId] ?? 0))
     }
 
     return { score }
@@ -853,11 +1281,20 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     pairSessionCount[spk] = (pairSessionCount[spk] ?? 0) + 1
     ;(pairMeetTimes[pk] ??= []).push(site.startAt.getTime())
     const ratio = slotRatioByDay.get(site.dayId)?.get(site.startAt.getTime()) ?? 0.5
+    const siteDk = dateKeyOf(site.startAt)
+    const siteMs = site.startAt.getTime()
     for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
       const sk = sessionKey(site.sessionId, id)
       teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
       timeLoadSum[id] = (timeLoadSum[id] ?? 0) + ratio
       timeLoadCount[id] = (timeLoadCount[id] ?? 0) + 1
+      bumpSessionDay(site.sessionId, id, siteDk, 1)
+      if (dayFirstMs.get(siteDk) === siteMs) firstTipCount[id] = (firstTipCount[id] ?? 0) + 1
+      if (dayLastMs.get(siteDk) === siteMs) lastGameCount[id] = (lastGameCount[id] ?? 0) + 1
+    }
+    const ukey = `${site.dayId}|${pairing.unitKey}`
+    if ((unitLastEnd.get(ukey) ?? 0) < site.endAt.getTime()) {
+      unitLastEnd.set(ukey, site.endAt.getTime())
     }
     recomputeUnitMin(pairing.unitKey)
   }
@@ -876,6 +1313,11 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       const ratio = slotRatioByDay.get(g.dayId)?.get(site.startAt.getTime()) ?? 0.5
       timeLoadSum[id] = (timeLoadSum[id] ?? ratio) - ratio
       timeLoadCount[id] = (timeLoadCount[id] ?? 1) - 1
+      bumpSessionDay(g.sessionId, id, dateKeyOf(site.startAt), -1)
+      if (dayFirstMs.get(dateKeyOf(site.startAt)) === site.startAt.getTime())
+        firstTipCount[id] = (firstTipCount[id] ?? 1) - 1
+      if (dayLastMs.get(dateKeyOf(site.startAt)) === site.startAt.getTime())
+        lastGameCount[id] = (lastGameCount[id] ?? 1) - 1
     }
     const bk = bucketKeyOf(g.dayId, site.startAt.getTime())
     bucketUsed.set(bk, (bucketUsed.get(bk) ?? 1) - 1)
@@ -922,10 +1364,24 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     applyPlacementState(slot, pairing)
   }
 
+  const debugOffAnchor = (label: string): void => {
+    if (!process.env.SCHED_DEBUG) return
+    let off = 0
+    for (const g of games) {
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const a = anchorByTeamSession.get(`${g.sessionId}|${id}`)
+        if (!a || styleOf(id) !== "SAME_DAY") continue
+        if (dateKeyOf(new Date(g.scheduledAt)) !== a) off++
+      }
+    }
+    console.error(`[anchors] ${label}: games=${games.length} OFF-anchor=${off}`)
+  }
+
   const openSlots: SchedulerSlot[] = []
   for (const slot of slots) {
     if (!placeInto(slot, false)) openSlots.push(slot)
   }
+  debugOffAnchor("after strict pass")
   // Relaxed pass: the per-day ideal is honored when the session has room to
   // spread; when it doesn't, filling the game beats leaving it unplaced.
   for (const slot of openSlots) {
@@ -1077,19 +1533,54 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
   }
 
-  /** Find a legal free slot in the session and commit the pairing there. */
+  /**
+   * The relaxed movers take the FIRST legal slot, so scoring penalties can't
+   * steer them — this predicate keeps their first tier on the day plan and
+   * only the fallback tier is allowed to break it.
+   */
+  const anchorSafe = (pairing: Pairing, slot: SchedulerSlot): boolean => {
+    const dk = dateKeyOf(slot.startAt)
+    for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
+      const a = anchorByTeamSession.get(`${slot.sessionId}|${id}`)
+      if (a !== undefined && styleOf(id) === "SAME_DAY" && dk !== a) return false
+      for (const b of teamBookings[id] ?? []) {
+        if (b.dateKey !== dk) continue
+        // A split-days team already plays this day — a second game here
+        // would double it; and NOBODY takes a back-to-back in tier 0.
+        if (styleOf(id) === "SPLIT_DAYS") return false
+        const gapMs = Math.max(
+          b.start.getTime() - slot.endAt.getTime(),
+          slot.startAt.getTime() - b.end.getTime()
+        )
+        if (gapMs <= 0) return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * Find the BEST legal free slot in the session and commit the pairing
+   * there. Repair's endgame goes through here — first-fit used to take the
+   * first legal slot and eat avoidable back-to-backs and off-plan days.
+   */
   const placeInSession = (pairing: Pairing, sessionId: string): boolean => {
+    let bestSlot: SchedulerSlot | null = null
+    let bestScore = -Infinity
     for (const slot of slotsBySession.get(sessionId) ?? []) {
-      if (relocationBudget <= 0) return false
+      if (relocationBudget <= 0) break
       if (!bucketHasRoom(slot)) continue
       relocationBudget--
       const c = scoreCandidate(pairing, slot, true, false, true)
-      if (c.score !== -Infinity) {
-        commitPlacement(slot, pairing)
-        return true
+      if (c.score === -Infinity) continue
+      const bonus = anchorSafe(pairing, slot) ? 1000 : 0
+      if (c.score + bonus > bestScore) {
+        bestScore = c.score + bonus
+        bestSlot = slot
       }
     }
-    return false
+    if (!bestSlot) return false
+    commitPlacement(bestSlot, pairing)
+    return true
   }
 
   /** Tx-logged: move games[gi] to any legal free slot of `toSession`. */
@@ -1102,15 +1593,18 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       awayTeamId: entry.prev.awayTeamId,
     }
     removeGameState(gi)
-    for (const slot of slotsBySession.get(toSession) ?? []) {
-      if (relocationBudget <= 0) break
-      if (!bucketHasRoom(slot)) continue
-      relocationBudget--
-      const c = scoreCandidate(gPairing, slot, true, false, true)
-      if (c.score !== -Infinity) {
-        setGamePlacement(gi, slot)
-        entry.placed = true
-        return true
+    for (const tier of [0, 1]) {
+      for (const slot of slotsBySession.get(toSession) ?? []) {
+        if (relocationBudget <= 0) break
+        if (!bucketHasRoom(slot)) continue
+        if (tier === 0 && !anchorSafe(gPairing, slot)) continue
+        relocationBudget--
+        const c = scoreCandidate(gPairing, slot, true, false, true)
+        if (c.score !== -Infinity) {
+          setGamePlacement(gi, slot)
+          entry.placed = true
+          return true
+        }
       }
     }
     rollbackTo(log, log.length - 1)
@@ -1142,15 +1636,18 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     inChain.add(gi)
     removeGameState(gi)
     const materialize = (dest: string): boolean => {
-      for (const slot of slotsBySession.get(dest) ?? []) {
-        if (relocationBudget <= 0) return false
-        if (!bucketHasRoom(slot)) continue
-        relocationBudget--
-        const c = scoreCandidate(gPairing, slot, true, false, true)
-        if (c.score !== -Infinity) {
-          setGamePlacement(gi, slot)
-          entry.placed = true
-          return true
+      for (const tier of [0, 1]) {
+        for (const slot of slotsBySession.get(dest) ?? []) {
+          if (relocationBudget <= 0) return false
+          if (!bucketHasRoom(slot)) continue
+          if (tier === 0 && !anchorSafe(gPairing, slot)) continue
+          relocationBudget--
+          const c = scoreCandidate(gPairing, slot, true, false, true)
+          if (c.score !== -Infinity) {
+            setGamePlacement(gi, slot)
+            entry.placed = true
+            return true
+          }
         }
       }
       return false
@@ -1287,8 +1784,11 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
   }
 
+  debugOffAnchor("after relaxed pass")
   runRepairMode("strict")
+  debugOffAnchor("after repair:strict")
   runRepairMode("relaxDay")
+  debugOffAnchor("after repair:relaxDay")
   if (RELOC_DBG) {
     const perS = new Map<string, number>()
     for (const g of games) perS.set(g.sessionId, (perS.get(g.sessionId) ?? 0) + 1)
@@ -1311,7 +1811,9 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     )
   }
   runRepairMode("lastResort")
+  debugOffAnchor("after repair:lastResort")
   runRepairMode("overGuarantee")
+  debugOffAnchor("after repair:overGuarantee")
 
   // ── De-double pass (owner 2026-08-01: "better to have a game spread
   // over two days than back-to-backs") ──
@@ -1436,55 +1938,478 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     rollbackTo(log, 0)
     return false
   }
-  // Only when the league's model is ONE game per day — there, a double is a
-  // rule violation worth fixing. At ideal 2+ doubles are by design (and
-  // chasing them can oscillate: fixing one team's double doubles another).
-  if (input.idealGamesPerDayPerTeam <= 1) {
-    let dedoubled = true
-    let guard = games.length * 4
-    while (dedoubled && guard-- > 0) {
-      dedoubled = false
-      const byTeamDay = new Map<string, number[]>()
+  /** Direct move of games[gi] to a SPECIFIC day (strict laws; style scoring
+   *  steers timing on arrival). */
+  const tryMoveGameToDay = (gi: number, targetDk: string): boolean => {
+    const log: MoveLogEntry[] = []
+    const entry: MoveLogEntry = { gi, prev: { ...games[gi] }, placed: false }
+    log.push(entry)
+    const gPairing: Pairing = {
+      unitKey: entry.prev.unitKey,
+      homeTeamId: entry.prev.homeTeamId,
+      awayTeamId: entry.prev.awayTeamId,
+    }
+    removeGameState(gi)
+    let best: SchedulerSlot | null = null
+    let bestScore = -Infinity
+    for (const sl of slots) {
+      if (dateKeyOf(sl.startAt) !== targetDk) continue
+      const c = scoreCandidate(gPairing, sl, false, false, true)
+      if (c.score > bestScore) {
+        bestScore = c.score
+        best = sl
+      }
+    }
+    if (best && bestScore !== -Infinity) {
+      setGamePlacement(gi, best)
+      entry.placed = true
+      return true
+    }
+    rollbackTo(log, 0)
+    return false
+  }
+  /** Re-time games[gi] within its own day to a better-scoring slot (fixes
+   *  back-to-backs and bad gaps without changing the day). */
+  const tryRetimeWithinDay = (gi: number): boolean => {
+    const prev = { ...games[gi] }
+    const dk = dateKeyOf(new Date(prev.scheduledAt))
+    const gPairing: Pairing = {
+      unitKey: prev.unitKey,
+      homeTeamId: prev.homeTeamId,
+      awayTeamId: prev.awayTeamId,
+    }
+    removeGameState(gi)
+    const currentSlotScore = (() => {
+      let sc = -Infinity
+      for (const sl of slots) {
+        if (sl.startAt.getTime() !== new Date(prev.scheduledAt).getTime()) continue
+        if (dateKeyOf(sl.startAt) !== dk) continue
+        const c = scoreCandidate(gPairing, sl, false, false, true)
+        sc = Math.max(sc, c.score)
+        break
+      }
+      return sc
+    })()
+    let best: SchedulerSlot | null = null
+    let bestScore = currentSlotScore
+    for (const sl of slots) {
+      if (dateKeyOf(sl.startAt) !== dk) continue
+      if (sl.startAt.getTime() === new Date(prev.scheduledAt).getTime()) continue
+      const c = scoreCandidate(gPairing, sl, false, false, true)
+      if (c.score > bestScore) {
+        bestScore = c.score
+        best = sl
+      }
+    }
+    if (best) {
+      setGamePlacement(gi, best)
+      return true
+    }
+    games[gi] = prev
+    applyPlacementState(siteOfGame(prev), gPairing)
+    return false
+  }
+
+  // ── Shape pass (owner 2026-08-01, per-team preference): every team's
+  // weekend should match ITS style — SAME_DAY teams get both games on one
+  // day with a comfortable break; SPLIT_DAYS teams get one game per day;
+  // nobody plays back-to-back if any alternative exists. Violations are
+  // repaired with the transactional movers; leftovers become trade-offs.
+  {
+    const shapeIssues = (): Array<{ kind: "join" | "separate" | "retime"; gi: number; targetDk?: string }> => {
+      const issues: Array<{ kind: "join" | "separate" | "retime"; gi: number; targetDk?: string }> = []
+      const bySessionTeam = new Map<string, number[]>()
       for (let gi = 0; gi < games.length; gi++) {
         const g = games[gi]
+        for (const id of [g.homeTeamId, g.awayTeamId]) {
+          const k = `${g.sessionId}|${id}`
+          if (!bySessionTeam.has(k)) bySessionTeam.set(k, [])
+          bySessionTeam.get(k)!.push(gi)
+        }
+      }
+      for (const [k, gis] of [...bySessionTeam.entries()].sort()) {
+        if (gis.length < 2) continue
+        const teamId = k.split("|")[1]
+        const style = styleOf(teamId)
+        const sorted = [...gis].sort(
+          (a, b) => new Date(games[a].scheduledAt).getTime() - new Date(games[b].scheduledAt).getTime()
+        )
+        const dks = sorted.map((gi) => dateKeyOf(new Date(games[gi].scheduledAt)))
+        const sameDay = new Set(dks).size === 1
+        if (sameDay) {
+          // back-to-back check within the day
+          for (let i = 1; i < sorted.length; i++) {
+            const gap =
+              (new Date(games[sorted[i]].scheduledAt).getTime() -
+                new Date(games[sorted[i - 1]].scheduledAt).getTime()) /
+                (input.gameSlotMinutes * 60000) -
+              1
+            if (gap <= 0) issues.push({ kind: "retime", gi: sorted[i] })
+          }
+          if (style === "SPLIT_DAYS") issues.push({ kind: "separate", gi: sorted[sorted.length - 1] })
+        } else if (style === "SAME_DAY") {
+          // join: move the later game onto the earlier game's day (or vice versa)
+          issues.push({ kind: "join", gi: sorted[sorted.length - 1], targetDk: dks[0] })
+          issues.push({ kind: "join", gi: sorted[0], targetDk: dks[dks.length - 1] })
+        }
+      }
+      return issues
+    }
+    let guard = games.length * 4
+    let improved = true
+    const kindRank = { separate: 0, join: 1, retime: 2 } as const
+    while (improved && guard-- > 0) {
+      improved = false
+      // Style fixes first (separate/join), THEN back-to-back retimes — the
+      // retime churn must never starve a team's actual preference.
+      const issues = shapeIssues().sort((a, b) => kindRank[a.kind] - kindRank[b.kind])
+      const touched = new Set<number>()
+      for (const issue of issues) {
+        if (touched.has(issue.gi)) continue
+        let ok = false
+        if (issue.kind === "retime") ok = tryRetimeWithinDay(issue.gi)
+        else if (issue.kind === "join" && issue.targetDk)
+          ok = tryMoveGameToDay(issue.gi, issue.targetDk)
+        else if (issue.kind === "separate")
+          ok = tryMoveGameOffDay(issue.gi) || trySwapDays(issue.gi)
+        if (ok) {
+          improved = true
+          touched.add(issue.gi)
+        }
+      }
+    }
+  }
+
+  // ── Edge-rebalance pass (owner 2026-08-01: "the same team should not get
+  // the first tip every week"): compute each day's ACTUAL first and last
+  // games; while any team is more than one above its division's minimum,
+  // swap that edge game's time with a mid-day game whose teams are at the
+  // minimum. Swaps are same-day site exchanges — shares, day counts and
+  // matchups are untouched by construction; only team time-overlap is
+  // re-checked.
+  {
+    const siteFromGame = (g: ProposedGame) => siteOfGame(g)
+    const swapSites = (gi: number, hj: number): boolean => {
+      const a = { ...games[gi] }
+      const b = { ...games[hj] }
+      const aP: Pairing = { unitKey: a.unitKey, homeTeamId: a.homeTeamId, awayTeamId: a.awayTeamId }
+      const bP: Pairing = { unitKey: b.unitKey, homeTeamId: b.homeTeamId, awayTeamId: b.awayTeamId }
+      removeGameState(gi)
+      removeGameState(hj)
+      const aOk = (() => {
+        for (const sl of slots) {
+          if (sl.startAt.getTime() !== new Date(b.scheduledAt).getTime()) continue
+          if (sl.dayId !== b.dayId) continue
+          return scoreCandidate(aP, sl, true, true, true).score !== -Infinity
+        }
+        return false
+      })()
+      const bOk = (() => {
+        for (const sl of slots) {
+          if (sl.startAt.getTime() !== new Date(a.scheduledAt).getTime()) continue
+          if (sl.dayId !== a.dayId) continue
+          return scoreCandidate(bP, sl, true, true, true).score !== -Infinity
+        }
+        return false
+      })()
+      if (aOk && bOk) {
+        games[gi] = { ...a, scheduledAt: b.scheduledAt, dayId: b.dayId, dayVenueId: b.dayVenueId, courtId: b.courtId, venueId: b.venueId, sessionId: b.sessionId }
+        games[hj] = { ...b, scheduledAt: a.scheduledAt, dayId: a.dayId, dayVenueId: a.dayVenueId, courtId: a.courtId, venueId: a.venueId, sessionId: a.sessionId }
+        applyPlacementState(siteFromGame(games[gi]), aP)
+        applyPlacementState(siteFromGame(games[hj]), bP)
+        return true
+      }
+      games[gi] = a
+      games[hj] = b
+      applyPlacementState(siteFromGame(a), aP)
+      applyPlacementState(siteFromGame(b), bP)
+      return false
+    }
+
+    let guard = games.length * 6
+    let improved = true
+    while (improved && guard-- > 0) {
+      improved = false
+      // Actual edge games per UNIT-day (owner's complaint is "the same team
+      // opens OUR division every week" — at 8 courts most teams sit in the
+      // day's global first wave, so only the division block's opening and
+      // closing games are scarce enough to rotate).
+      const byDay = new Map<string, number[]>()
+      for (let gi = 0; gi < games.length; gi++) {
+        const dk = `${dateKeyOf(new Date(games[gi].scheduledAt))}|${games[gi].unitKey}`
+        if (!byDay.has(dk)) byDay.set(dk, [])
+        byDay.get(dk)!.push(gi)
+      }
+      const firsts: Record<string, number> = {}
+      const lasts: Record<string, number> = {}
+      const playDays: Record<string, number> = {}
+      {
+        const seen = new Set<string>()
+        for (const [dk, gis] of byDay) {
+          for (const gi of gis) {
+            for (const id of [games[gi].homeTeamId, games[gi].awayTeamId]) {
+              const k = `${id}|${dk}`
+              if (!seen.has(k)) {
+                seen.add(k)
+                playDays[id] = (playDays[id] ?? 0) + 1
+              }
+            }
+          }
+        }
+      }
+      const dayEdgeMs = new Map<string, [number, number]>() // dk → [firstMs, lastMs]
+      const edgeGames: Array<{ gi: number; kind: "first" | "last"; dk: string }> = []
+      for (const [dk, gis] of byDay) {
+        let fMs = Infinity
+        let lMs = 0
+        for (const gi of gis) {
+          const t = new Date(games[gi].scheduledAt).getTime()
+          fMs = Math.min(fMs, t)
+          lMs = Math.max(lMs, t)
+        }
+        dayEdgeMs.set(dk, [fMs, lMs])
+        for (const gi of gis) {
+          const t = new Date(games[gi].scheduledAt).getTime()
+          if (t === fMs) {
+            edgeGames.push({ gi, kind: "first", dk })
+            for (const id of [games[gi].homeTeamId, games[gi].awayTeamId])
+              firsts[id] = (firsts[id] ?? 0) + 1
+          }
+          if (t === lMs && lMs !== fMs) {
+            edgeGames.push({ gi, kind: "last", dk })
+            for (const id of [games[gi].homeTeamId, games[gi].awayTeamId])
+              lasts[id] = (lasts[id] ?? 0) + 1
+          }
+        }
+      }
+      const unitMinOf = (teamId: string, counts: Record<string, number>): number => {
+        const uk = unitOfTeam.get(teamId)
+        let min = Infinity
+        for (const u of units) {
+          if (u.key !== uk) continue
+          for (const t of u.teams) min = Math.min(min, counts[t.teamId] ?? 0)
+        }
+        return min === Infinity ? 0 : min
+      }
+      // Joint metric over BOTH edge kinds: [worst unit spread, teams stuck
+      // at an over-served max, total excess]. A swap that keeps the spread
+      // but shrinks the over-served set still moves toward within-1 — the
+      // old strict-spread-only rule plateaued the moment two teams shared
+      // the max.
+      // Rates, not raw counts: a split-days team plays ~2× the days of a
+      // one-trip team, so raw within-1 across a mixed division is
+      // structurally impossible — early-day SHARE is the fair comparison.
+      const rateOf = (counts: Record<string, number>, teamId: string): number =>
+        Math.round((100 * (counts[teamId] ?? 0)) / Math.max(1, playDays[teamId] ?? 1))
+      const RATE_TOL = 25 // one day in four — within "one day" at 4-5 playing days
+      const metric = (
+        f: Record<string, number>,
+        l: Record<string, number>
+      ): [number, number, number] => {
+        let spread = 0
+        let atMax = 0
+        let excess = 0
+        for (const counts of [f, l]) {
+          for (const u of units) {
+            let min = Infinity
+            let max = 0
+            for (const t of u.teams) {
+              const c = rateOf(counts, t.teamId)
+              min = Math.min(min, c)
+              max = Math.max(max, c)
+            }
+            if (min === Infinity) continue
+            spread = Math.max(spread, max - min)
+            if (max - min > RATE_TOL) {
+              for (const t of u.teams) {
+                const c = rateOf(counts, t.teamId)
+                if (c === max) {
+                  atMax++
+                  excess += c - min - RATE_TOL
+                }
+              }
+            }
+          }
+        }
+        return [spread, atMax, excess]
+      }
+      const lexLess = (a: [number, number, number], b: [number, number, number]): boolean => {
+        for (let i = 0; i < 3; i++) {
+          if (a[i] < b[i]) return true
+          if (a[i] > b[i]) return false
+        }
+        return false
+      }
+      // Both games exchange times; recompute both edge-count maps for the
+      // four teams involved.
+      const simSwap = (
+        dk: string,
+        g: ProposedGame,
+        h: ProposedGame
+      ): [Record<string, number>, Record<string, number>] => {
+        const [fMs, lMs] = dayEdgeMs.get(dk)!
+        const f = { ...firsts }
+        const l = { ...lasts }
+        const applyMove = (game: ProposedGame, oldT: number, newT: number): void => {
+          for (const id of [game.homeTeamId, game.awayTeamId]) {
+            if (oldT === fMs) f[id] = (f[id] ?? 1) - 1
+            if (oldT === lMs && lMs !== fMs) l[id] = (l[id] ?? 1) - 1
+            if (newT === fMs) f[id] = (f[id] ?? 0) + 1
+            if (newT === lMs && lMs !== fMs) l[id] = (l[id] ?? 0) + 1
+          }
+        }
+        const gT = new Date(g.scheduledAt).getTime()
+        const hT = new Date(h.scheduledAt).getTime()
+        applyMove(g, gT, hT)
+        applyMove(h, hT, gT)
+        return [f, l]
+      }
+      // Best-improvement search: examine EVERY candidate swap and take the
+      // one with the smallest resulting metric (first-improvement greed
+      // walked into worse local optima).
+      const before = metric(firsts, lasts)
+      let bestSwap: { gi: number; hj: number; m: [number, number, number] } | null = null
+      for (const e of [...edgeGames].sort((x, y) => x.gi - y.gi)) {
+        const counts = e.kind === "first" ? firsts : lasts
+        const g = games[e.gi]
+        const over = [g.homeTeamId, g.awayTeamId].some((id) => {
+          const uk = unitOfTeam.get(id)
+          let minRate = Infinity
+          for (const u of units) {
+            if (u.key !== uk) continue
+            for (const t of u.teams) minRate = Math.min(minRate, rateOf(counts, t.teamId))
+          }
+          return rateOf(counts, id) > (minRate === Infinity ? 0 : minRate) + RATE_TOL
+        })
+        if (!over) continue
+        const dayGis = byDay.get(e.dk)!
+        for (const hj of dayGis) {
+          if (hj === e.gi) continue
+          const h = games[hj]
+          const sameSlot =
+            new Date(h.scheduledAt).getTime() === new Date(g.scheduledAt).getTime()
+          if (sameSlot) continue // swapping identical times changes nothing
+          const [simF, simL] = simSwap(e.dk, g, h)
+          const m = metric(simF, simL)
+          if (!lexLess(m, before)) continue
+          if (!bestSwap || lexLess(m, bestSwap.m)) bestSwap = { gi: e.gi, hj, m }
+        }
+      }
+      if (bestSwap && swapSites(bestSwap.gi, bestSwap.hj)) improved = true
+    }
+  }
+
+  debugOffAnchor("final")
+
+  // Post-hoc honesty: leftover shape violations and uneven edge slots
+  // become trade-off notes (the fairness report carries the detail).
+  {
+    let styleViolations = 0
+    let b2bCount = 0
+    const bySessionTeam = new Map<string, number[]>()
+    for (let gi = 0; gi < games.length; gi++) {
+      const g = games[gi]
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${g.sessionId}|${id}`
+        if (!bySessionTeam.has(k)) bySessionTeam.set(k, [])
+        bySessionTeam.get(k)!.push(gi)
+      }
+    }
+    for (const [k, gis] of bySessionTeam) {
+      if (gis.length < 2) continue
+      const teamId = k.split("|")[1]
+      const style = styleOf(teamId)
+      const times = gis
+        .map((gi) => new Date(games[gi].scheduledAt).getTime())
+        .sort((a, b) => a - b)
+      const dks = gis.map((gi) => dateKeyOf(new Date(games[gi].scheduledAt)))
+      const sameDay = new Set(dks).size === 1
+      if (sameDay) {
+        for (let i = 1; i < times.length; i++) {
+          if ((times[i] - times[i - 1]) / (input.gameSlotMinutes * 60000) - 1 <= 0) b2bCount++
+        }
+      }
+      if ((style === "SAME_DAY" && !sameDay) || (style === "SPLIT_DAYS" && sameDay)) styleViolations++
+    }
+    if (b2bCount > 0) {
+      tradeoffs.push(
+        `${b2bCount} back-to-back${b2bCount === 1 ? "" : "s"} could not be avoided — add court time or a session.`
+      )
+    }
+    if (styleViolations > 0) {
+      tradeoffs.push(
+        `${styleViolations} team-weekend${styleViolations === 1 ? "" : "s"} couldn't get the team's preferred shape — the fairness report shows which.`
+      )
+    }
+    // Edge fairness is judged as a SHARE of each team's playing days — a
+    // split-days team plays ~2× the days of a one-trip team, so raw counts
+    // are not comparable across styles.
+    const playDayCount: Record<string, number> = {}
+    {
+      const seen = new Set<string>()
+      for (const g of games) {
         const dk = dateKeyOf(new Date(g.scheduledAt))
         for (const id of [g.homeTeamId, g.awayTeamId]) {
           const k = `${id}|${dk}`
-          if (!byTeamDay.has(k)) byTeamDay.set(k, [])
-          byTeamDay.get(k)!.push(gi)
+          if (!seen.has(k)) {
+            seen.add(k)
+            playDayCount[id] = (playDayCount[id] ?? 0) + 1
+          }
         }
       }
-      const doubledKeys = [...byTeamDay.keys()].filter((k) => byTeamDay.get(k)!.length > 1).sort()
-      for (const k of doubledKeys) {
-        const gis = byTeamDay
-          .get(k)!
-          .sort(
-            (a, b) =>
-              new Date(games[b].scheduledAt).getTime() - new Date(games[a].scheduledAt).getTime()
+    }
+    // Edge counts per UNIT-day: the division block's opening/closing games.
+    const unitDayFirst = new Map<string, number>()
+    const unitDayLast = new Map<string, number>()
+    for (const g of games) {
+      const k = `${dateKeyOf(new Date(g.scheduledAt))}|${g.unitKey}`
+      const t = new Date(g.scheduledAt).getTime()
+      if (!unitDayFirst.has(k) || t < unitDayFirst.get(k)!) unitDayFirst.set(k, t)
+      if (!unitDayLast.has(k) || t > unitDayLast.get(k)!) unitDayLast.set(k, t)
+    }
+    const unitFirstCount: Record<string, number> = {}
+    const unitLastCount: Record<string, number> = {}
+    const unitEdgeSlots: Record<string, number> = {} // unitKey → edge team-slots
+    const unitAllSlots: Record<string, number> = {} // unitKey → all team-slots
+    for (const g of games) {
+      const k = `${dateKeyOf(new Date(g.scheduledAt))}|${g.unitKey}`
+      const t = new Date(g.scheduledAt).getTime()
+      unitAllSlots[g.unitKey] = (unitAllSlots[g.unitKey] ?? 0) + 2
+      const isEdge =
+        unitDayFirst.get(k) === t ||
+        (unitDayLast.get(k) === t && unitDayLast.get(k) !== unitDayFirst.get(k))
+      if (isEdge) unitEdgeSlots[g.unitKey] = (unitEdgeSlots[g.unitKey] ?? 0) + 2
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        if (unitDayFirst.get(k) === t) unitFirstCount[id] = (unitFirstCount[id] ?? 0) + 1
+        if (unitDayLast.get(k) === t && unitDayLast.get(k) !== unitDayFirst.get(k))
+          unitLastCount[id] = (unitLastCount[id] ?? 0) + 1
+      }
+    }
+    for (const u of units) {
+      // When most of a division's games share the opening/closing wave
+      // (many courts running at once), the "edge" isn't scarce — unevenness
+      // there is court-density noise, not unfairness worth a warning.
+      const edgeShare = (unitEdgeSlots[u.key] ?? 0) / Math.max(1, unitAllSlots[u.key] ?? 0)
+      if (edgeShare > 0.4) continue
+      for (const [label, counts] of [
+        ["first tip-offs", unitFirstCount],
+        ["day-ending games", unitLastCount],
+      ] as const) {
+        let min = Infinity
+        let max = 0
+        for (const t of u.teams) {
+          const rate = (counts[t.teamId] ?? 0) / Math.max(1, playDayCount[t.teamId] ?? 1)
+          min = Math.min(min, rate)
+          max = Math.max(max, rate)
+        }
+        // More than ~a day in four apart counts as uneven.
+        if (min !== Infinity && max - min > 0.25) {
+          tradeoffs.push(
+            `${u.label}: ${label} are uneven (${Math.round(min * 100)}%–${Math.round(
+              max * 100
+            )}% of each team's days) — there was no other room.`
           )
-        for (const gi of gis) {
-          if (tryMoveGameOffDay(gi) || trySwapDays(gi)) {
-            dedoubled = true
-            break
-          }
         }
-        if (!dedoubled && RELOC_DBG) {
-          const gi = gis[0]
-          const prev = { ...games[gi] }
-          const gp: Pairing = { unitKey: prev.unitKey, homeTeamId: prev.homeTeamId, awayTeamId: prev.awayTeamId }
-          const fromDay = dateKeyOf(new Date(prev.scheduledAt))
-          removeGameState(gi)
-          const tally = new Map<string, number>()
-          for (const sl of slots) {
-            if (dateKeyOf(sl.startAt) === fromDay) continue
-            const c = scoreCandidate(gp, sl, false, false, true)
-            tally.set(c.blockReason ?? "OK", (tally.get(c.blockReason ?? "OK") ?? 0) + 1)
-          }
-          games[gi] = prev
-          applyPlacementState(siteOfGame(prev), gp)
-          console.error(`[dedouble] STUCK ${k}: off-day blockers: ${[...tally.entries()].map(([r, c]) => `${r}×${c}`).join(", ")}`)
-        }
-        if (dedoubled) break
       }
     }
   }
@@ -1512,7 +2437,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     // team|dateKey|venueId → games that day at that venue (cohesion)
     const teamDayVenue = new Map<string, number>()
     const seedHash = (a: string, b: string): number => {
-      let h = (input.varietySeed ?? 0) + 17
+      let h = mixSeed(input.varietySeed ?? 0) + 17
       const str = `${a}|${b}`
       for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 104729
       return h / 104729
@@ -1560,7 +2485,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           }
           // Division continuity on the court
           const prev = courtPrevUnit.get(cs.courtId)
-          if (prev && prev.unitKey === g.unitKey && prev.endMs === cs.startAt.getTime()) sc += 3
+          if (prev && prev.unitKey === g.unitKey && prev.endMs === cs.startAt.getTime()) sc += 6
           // Court spread: teams rotate away from courts they've used a lot
           for (const id of [g.homeTeamId, g.awayTeamId]) {
             sc -= 2 * (courtUse.get(`${id}|${cs.courtId}`) ?? 0)
@@ -1587,6 +2512,145 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           teamDayVenue.set(vk, (teamDayVenue.get(vk) ?? 0) + 1)
         }
       }
+    }
+  }
+
+  // ── Venue-cohesion repair (owner 2026-08-01: same gym per trip is the
+  // point of one-trip weekends). Court assignment is chronological, so a
+  // team's FIRST game can't know where its second wants to be — this sweep
+  // unifies split-venue team-days afterwards: move the odd game to a free
+  // court at the family's venue, or swap courts with a same-time game,
+  // accepting only changes that reduce total split team-days.
+  {
+    const bucketOfG = (g: ProposedGame): string =>
+      bucketKeyOf(g.dayId, new Date(g.scheduledAt).getTime())
+    const assignedByBucket = new Map<string, number[]>()
+    for (let gi = 0; gi < games.length; gi++) {
+      const bk = bucketOfG(games[gi])
+      if (!assignedByBucket.has(bk)) assignedByBucket.set(bk, [])
+      assignedByBucket.get(bk)!.push(gi)
+    }
+    const freeSlotsByBucket = new Map<string, SchedulerSlot[]>()
+    for (const [bk, courtSlots] of bucketCourts) {
+      const usedCourts = new Set(
+        (assignedByBucket.get(bk) ?? []).map((gi) => games[gi].courtId)
+      )
+      const busy = bucketBusyCourts.get(bk)
+      freeSlotsByBucket.set(
+        bk,
+        courtSlots.filter((cs) => !usedCourts.has(cs.courtId) && !(busy?.has(cs.courtId) ?? false))
+      )
+    }
+    const dayVenuesOf = new Map<string, Map<string, number>>() // `${id}|${dk}` → venue→n
+    const bumpDV = (id: string, dk: string, venueId: string, delta: number): void => {
+      const k = `${id}|${dk}`
+      if (!dayVenuesOf.has(k)) dayVenuesOf.set(k, new Map())
+      const m = dayVenuesOf.get(k)!
+      const next = (m.get(venueId) ?? 0) + delta
+      if (next <= 0) m.delete(venueId)
+      else m.set(venueId, next)
+    }
+    for (const g of games) {
+      const dk = dateKeyOf(new Date(g.scheduledAt))
+      for (const id of [g.homeTeamId, g.awayTeamId]) bumpDV(id, dk, g.venueId, 1)
+    }
+    const splitOf = (id: string, dk: string): number =>
+      (dayVenuesOf.get(`${id}|${dk}`)?.size ?? 0) > 1 ? 1 : 0
+    const teamsOf = (g: ProposedGame): string[] => [g.homeTeamId, g.awayTeamId]
+    // Court usage, so fixes prefer courts the team has NOT camped on.
+    const tcUse = new Map<string, number>()
+    for (const g of [...games, ...((input.existingGames ?? []) as ProposedGame[])]) {
+      if (!g.courtId) continue
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${id}|${g.courtId}`
+        tcUse.set(k, (tcUse.get(k) ?? 0) + 1)
+      }
+    }
+    const useOf = (g: ProposedGame, courtId: string): number =>
+      teamsOf(g).reduce((acc, id) => acc + (tcUse.get(`${id}|${courtId}`) ?? 0), 0)
+    const reassign = (gi: number, cs: SchedulerSlot): void => {
+      const g = games[gi]
+      const dk = dateKeyOf(new Date(g.scheduledAt))
+      for (const id of teamsOf(g)) {
+        bumpDV(id, dk, g.venueId, -1)
+        tcUse.set(`${id}|${g.courtId}`, (tcUse.get(`${id}|${g.courtId}`) ?? 1) - 1)
+      }
+      games[gi] = { ...g, courtId: cs.courtId, venueId: cs.venueId, dayVenueId: cs.dayVenueId }
+      for (const id of teamsOf(games[gi])) {
+        bumpDV(id, dk, cs.venueId, 1)
+        tcUse.set(`${id}|${cs.courtId}`, (tcUse.get(`${id}|${cs.courtId}`) ?? 0) + 1)
+      }
+    }
+    for (let sweep = 0; sweep < 4; sweep++) {
+      let changed = false
+      for (let gi = 0; gi < games.length; gi++) {
+        const g = games[gi]
+        const dk = dateKeyOf(new Date(g.scheduledAt))
+        // Which of this game's teams sits split today, and where do their
+        // OTHER games live?
+        const wantVenues = new Set<string>()
+        for (const id of teamsOf(g)) {
+          if (!splitOf(id, dk)) continue
+          for (const [v, n] of dayVenuesOf.get(`${id}|${dk}`) ?? []) {
+            if (v !== g.venueId && n > 0) wantVenues.add(v)
+          }
+        }
+        if (wantVenues.size === 0) continue
+        const bk = bucketOfG(g)
+        const before = teamsOf(g).reduce((acc, id) => acc + splitOf(id, dk), 0)
+        // Free court at a wanted venue, same time?
+        const free = freeSlotsByBucket.get(bk) ?? []
+        let freeIdx = -1
+        let freeBest = Infinity
+        for (let fi = 0; fi < free.length; fi++) {
+          if (!wantVenues.has(free[fi].venueId)) continue
+          const u = useOf(g, free[fi].courtId)
+          if (u < freeBest) {
+            freeBest = u
+            freeIdx = fi
+          }
+        }
+        if (freeIdx >= 0) {
+          const cs = free[freeIdx]
+          const oldSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === g.courtId)
+          reassign(gi, cs)
+          const after = teamsOf(g).reduce((acc, id) => acc + splitOf(id, dk), 0)
+          if (after < before) {
+            free.splice(freeIdx, 1)
+            if (oldSlot) free.push(oldSlot)
+            changed = true
+          } else if (oldSlot) {
+            reassign(gi, oldSlot) // no gain — put it back
+          }
+          continue
+        }
+        // Swap courts with a same-time game already at a wanted venue —
+        // least-camped courts first.
+        const swapCands = (assignedByBucket.get(bk) ?? [])
+          .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId))
+          .sort((a, b) => useOf(g, games[a].courtId) - useOf(g, games[b].courtId))
+        for (const gj of swapCands) {
+          const other = games[gj]
+          const odk = dateKeyOf(new Date(other.scheduledAt))
+          const beforeAll =
+            before + teamsOf(other).reduce((acc, id) => acc + splitOf(id, odk), 0)
+          const gSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === g.courtId)
+          const oSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === other.courtId)
+          if (!gSlot || !oSlot) continue
+          reassign(gi, oSlot)
+          reassign(gj, gSlot)
+          const afterAll =
+            teamsOf(games[gi]).reduce((acc, id) => acc + splitOf(id, dk), 0) +
+            teamsOf(games[gj]).reduce((acc, id) => acc + splitOf(id, odk), 0)
+          if (afterAll < beforeAll) {
+            changed = true
+            break
+          }
+          reassign(gi, gSlot)
+          reassign(gj, oSlot)
+        }
+      }
+      if (!changed) break
     }
   }
 

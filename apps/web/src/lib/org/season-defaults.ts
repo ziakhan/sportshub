@@ -30,6 +30,7 @@ export const seasonDefaultsSchema = z
     gameSlotMinutes: z.number().int().min(30).max(180).nullable().optional(),
     idealGamesPerDayPerTeam: z.number().int().min(1).max(5).nullable().optional(),
     schedulingPhilosophy: z.enum(["FAMILY_FRIENDLY", "SPREAD_DAYS"]).nullable().optional(),
+    defaultWeekendStyle: z.enum(["SAME_DAY", "SPLIT_DAYS"]).nullable().optional(),
     defaultVenueOpenTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
     defaultVenueCloseTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
     // Money (live-inherited)
@@ -61,8 +62,13 @@ export const SYSTEM_DEFAULTS = {
   periodLengthMinutes: null as number | null,
   gameLengthMinutes: 40,
   gameSlotMinutes: 90,
-  idealGamesPerDayPerTeam: 1,
+  // Daily max 2 so the SAME_DAY weekend style is expressible (owner
+  // 2026-08-01) — the weekend-share law still caps totals per session.
+  idealGamesPerDayPerTeam: 2,
   schedulingPhilosophy: "FAMILY_FRIENDLY" as string,
+  // Weekend shape for teams without their own preference (owner 2026-08-01:
+  // same-day, close together, is the norm).
+  defaultWeekendStyle: "SAME_DAY" as string,
   defaultVenueOpenTime: "09:00",
   defaultVenueCloseTime: "20:00",
   teamFee: null as number | null,
