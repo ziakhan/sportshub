@@ -2566,7 +2566,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         tcUse.set(k, (tcUse.get(k) ?? 0) + 1)
       }
     }
-    const useOf = (g: ProposedGame, courtId: string): number =>
+    const courtUseOf = (g: ProposedGame, courtId: string): number =>
       teamsOf(g).reduce((acc, id) => acc + (tcUse.get(`${id}|${courtId}`) ?? 0), 0)
     const reassign = (gi: number, cs: SchedulerSlot): void => {
       const g = games[gi]
@@ -2604,7 +2604,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         let freeBest = Infinity
         for (let fi = 0; fi < free.length; fi++) {
           if (!wantVenues.has(free[fi].venueId)) continue
-          const u = useOf(g, free[fi].courtId)
+          const u = courtUseOf(g, free[fi].courtId)
           if (u < freeBest) {
             freeBest = u
             freeIdx = fi
@@ -2628,7 +2628,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         // least-camped courts first.
         const swapCands = (assignedByBucket.get(bk) ?? [])
           .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId))
-          .sort((a, b) => useOf(g, games[a].courtId) - useOf(g, games[b].courtId))
+          .sort((a, b) => courtUseOf(g, games[a].courtId) - courtUseOf(g, games[b].courtId))
         for (const gj of swapCands) {
           const other = games[gj]
           const odk = dateKeyOf(new Date(other.scheduledAt))
