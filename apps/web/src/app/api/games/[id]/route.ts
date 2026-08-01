@@ -104,6 +104,9 @@ const patchSchema = z.object({
     .optional(),
   isLocked: z.boolean().optional(),
   defaultedBy: z.string().nullable().optional(),
+  // Predefined cancellation/postponement/forfeit reason (owner 2026-08-01)
+  // — carried into the family notifications.
+  statusReason: z.string().trim().max(200).nullable().optional(),
   duration: z.number().int().min(10).max(240).optional(),
 })
 
@@ -248,6 +251,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (data.status !== undefined) update.status = data.status
     if (data.isLocked !== undefined) update.isLocked = data.isLocked
     if (data.defaultedBy !== undefined) update.defaultedBy = data.defaultedBy
+    if (data.statusReason !== undefined) update.statusReason = data.statusReason
     if (data.duration !== undefined) update.duration = data.duration
 
     const updated = await (prisma as any).game.update({
@@ -298,13 +302,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         audienceUserIds,
         "game_cancelled",
         data.status === "POSTPONED" ? "Game Postponed" : "Game Cancelled",
-        `${matchup} on ${fmtWhen(game.scheduledAt)} has been ${verb} by the league.`
+        `${matchup} on ${fmtWhen(game.scheduledAt)} has been ${verb} by the league.${data.statusReason ? ` Reason: ${data.statusReason}.` : ""}`
       )
       await emailGameAudience(
         audienceUserIds,
         `Game ${verb}: ${matchup}`,
         `Game ${data.status === "POSTPONED" ? "Postponed" : "Cancelled"}`,
         `<p><strong>${matchupHtml}</strong>, scheduled for <strong>${fmtWhen(game.scheduledAt)}</strong>${whereHtml}, has been ${verb} by the league.</p>
+         ${data.statusReason ? `<p>Reason: ${data.statusReason}</p>` : ""}
          <p>This game will not be played as scheduled — please do not travel to the venue.${data.status === "POSTPONED" ? " A new time will be announced." : ""}</p>`,
         game.id,
         leagueName

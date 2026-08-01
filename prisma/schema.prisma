@@ -2027,6 +2027,9 @@ model Game {
 
   isLocked    Boolean @default(false)
   defaultedBy String?
+  // Why a game was cancelled/postponed/defaulted (owner 2026-08-01) — a
+  // predefined reason families see in the notification.
+  statusReason String?
 
   // Scorekeeper's pre-game clock choice (owner 2026-07-15): null inherits the
   // league's gameClockMode; true/false overrides per game — an unoperated
