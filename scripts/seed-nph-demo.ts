@@ -28,6 +28,7 @@
 import { readFileSync } from "fs"
 import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
+import { Prisma } from "@prisma/client"
 import { foldEvents, totalRebounds } from "../apps/web/src/lib/scoring/fold"
 import { upsertGameRecap } from "../apps/web/src/lib/content/recap-service"
 import { loadSchedulerInput } from "../apps/web/src/lib/scheduler/load"
@@ -38,9 +39,8 @@ import { WAIVER_TEMPLATES } from "../apps/web/src/lib/waivers/templates"
 // Re-run scripts/backfill-recaps.ts with ANTHROPIC_API_KEY for AI prose.
 delete process.env.ANTHROPIC_API_KEY
 
-const MARKER = "NPH_DEMO_SEED"
-const EMAIL_DOMAIN = "sportshub.demo"
-const PASSWORD = "TestPass123!"
+import { EMAIL_DOMAIN, JOURNEY_SLUG_PREFIX, MARKER, PASSWORD } from "./demo-shared"
+import { JOURNEY_LEAGUES, runJourneyStage } from "./seed-journey"
 // Active league: summer, weekly weekend sessions, wraps up end of July.
 // Open league: fall, monthly sessions, runs October through March.
 const WINTER_LEAGUE = "NPH Summer League"
@@ -336,6 +336,7 @@ async function wipeDemoWorld() {
     SHOWCASE_LEAGUE,
     ...NPH_SHELL_LEAGUES.map(([n]) => n),
     ...DIRECTORY_LEAGUES.map(([n]) => n),
+    ...JOURNEY_LEAGUES,
     "NPH Spring Circuit",
     "Ontario Youth Basketball League",
   ]) {
@@ -395,6 +396,13 @@ async function wipeDemoWorld() {
     }
   }
   console.log("✓ demo world wiped (adopted tenants restored to UNCLAIMED)")
+
+  // Journey-created tenants (real-name census clubs) — slugs are prefixed
+  // so adopted import tenants are never touched.
+  await p.tenantBranding.deleteMany({ where: { tenant: { slug: { startsWith: JOURNEY_SLUG_PREFIX } } } })
+  await p.tenant.deleteMany({ where: { slug: { startsWith: JOURNEY_SLUG_PREFIX } } })
+  // Loaded-scenario marker resets with the world.
+  await p.platformSettings.updateMany({ where: { id: "default" }, data: { demoState: Prisma.JsonNull } }).catch(() => {})
 }
 
 // ── Manual-league purge (owner 2026-07-29) ──────────────────────────────
@@ -2856,6 +2864,21 @@ async function main() {
   }
   if (args.includes("--scrub-noise")) {
     await scrubNoise()
+    return
+  }
+
+  const scenarioArg = args.find((a) => a.startsWith("--scenario="))?.split("=")[1] ?? "pitch"
+  const stageArg = Number(args.find((a) => a.startsWith("--stage="))?.split("=")[1] ?? "1")
+
+  if (scenarioArg === "nph-pitch-journey") {
+    console.log(`— NPH JOURNEY SEEDER — stage ${stageArg}`)
+    const t0j = Date.now()
+    if (stageArg <= 1) {
+      await wipeDemoWorld()
+      if (args.includes("--purge-manual-leagues")) await purgeManualLeagues()
+    }
+    await runJourneyStage(Math.max(1, stageArg))
+    console.log(`\n✓ journey ready in ${Math.round((Date.now() - t0j) / 1000)}s`)
     return
   }
 

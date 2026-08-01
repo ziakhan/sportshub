@@ -3651,6 +3651,10 @@ model PlatformSettings {
   id               String   @id @default("default")
   enabledCountries String[] // ISO codes: ["US", "CA"]
 
+  // Which demo scenario/stage the world currently holds (admin demo loader,
+  // owner 2026-08-01). {scenario, stage, loadedAt} — null = unknown/manual.
+  demoState Json?
+
   // Platform-wide payment policy — the defaults every merchant inherits.
   // Per-merchant PaymentConfig rows override field-by-field (null = inherit).
   payOfflineAllowed         Boolean    @default(true)

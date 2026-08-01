@@ -537,11 +537,15 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     Infinity,
     Infinity,
   ]
-  for (let k = 0; k < attempts; k++) {
+  let attemptCap = attempts
+  for (let k = 0; k < attemptCap; k++) {
     const res = generateScheduleOnce({
       ...input,
       varietySeed: (input.varietySeed ?? 0) + k * 7919,
     })
+    // A structural capacity shortfall is arithmetic, not luck — more
+    // variations can't conjure court-slots. One confirmation attempt only.
+    if (res.unscheduled.length >= 3 && k === 0) attemptCap = Math.min(attempts, 2)
     const [b2b, styleViol] = shapeIssues(res.games)
     const key: [number, number, number, number, number, number] = [
       res.unscheduled.length,
@@ -647,6 +651,18 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         pairingPool.splice(i, 1)
       }
     }
+  }
+
+  // Structural capacity check (owner 2026-08-01, demo journey): when the
+  // season needs MORE GAMES THAN COURT-SLOTS EXIST, no amount of repair or
+  // retries can fix it — those ladders used to grind for MINUTES fighting
+  // arithmetic. Detect it up front: place greedily, skip every repair pass,
+  // and lead the diagnostics with exactly what's missing.
+  const structuralShortfall = Math.max(0, pairingPool.length - slots.length)
+  if (structuralShortfall > 0) {
+    warnings.push(
+      `Court capacity is ${structuralShortfall} game${structuralShortfall === 1 ? "" : "s"} short: ${pairingPool.length} games need scheduling but only ${slots.length} court-slots exist. Add a court, extend hours, or add a session — the schedule below fills what fits.`
+    )
   }
 
   // ── Phase 1/Phase 2 split (owner 2026-08-01): "courts are just slots".
@@ -2005,6 +2021,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   }
 
   debugOffAnchor("after relaxed pass")
+  if (structuralShortfall === 0) {
   runRepairMode("strict")
   debugOffAnchor("after repair:strict")
   runRepairMode("relaxDay")
@@ -2639,6 +2656,8 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         console.error(`[b2b-elim] pairs seen=${b2bSeen} fixed=${b2bFixed}`)
       }
     }
+
+  } // structuralShortfall gate — short worlds skip repair + quality sweeps
 
   debugOffAnchor("final")
 
