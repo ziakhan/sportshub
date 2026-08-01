@@ -50,28 +50,40 @@ export async function loadSchedulerInput(
   const season = (await (prisma as any).season.findUnique({
     where: { id: seasonId },
     include: {
+      // Deterministic ordering EVERYWHERE (owner bug 2026-08-01): without
+      // orderBy, Postgres row order varies by insertion/vacuum history, so
+      // the SAME season with the SAME seed scheduled differently on the box
+      // than anywhere else. The engine's determinism starts here.
       divisions: {
+        orderBy: { id: "asc" },
         include: {
           teamSubmissions: {
             where: { status: "APPROVED" },
+            orderBy: { id: "asc" },
             include: {
               team: { select: { id: true, name: true } },
               division: { select: { id: true } },
-              blackouts: true,
-              scheduleRequests: { where: { status: "APPROVED" } },
+              blackouts: { orderBy: { id: "asc" } },
+              scheduleRequests: { where: { status: "APPROVED" }, orderBy: { id: "asc" } },
             },
           },
         },
       },
       sessions: {
+        orderBy: { id: "asc" },
         include: {
           days: {
+            orderBy: { date: "asc" },
             include: {
               dayVenues: {
+                orderBy: { id: "asc" },
                 include: {
                   // Preferred fill order (owner 2026-07-30): court 1 packs
                   // first, the rest are overflow.
-                  courts: { select: { courtId: true, order: true }, orderBy: { order: "asc" } },
+                  courts: {
+                    select: { courtId: true, order: true },
+                    orderBy: [{ order: "asc" }, { courtId: "asc" }],
+                  },
                 },
               },
             },
@@ -79,6 +91,7 @@ export async function loadSchedulerInput(
         },
       },
       schedulingGroups: {
+        orderBy: { id: "asc" },
         include: {
           divisions: { select: { divisionId: true } },
         },

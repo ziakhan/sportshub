@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { applyVenueHoursToSessionDays } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
 
@@ -41,7 +42,7 @@ export async function PUT(
     // The link row must belong to THIS season (IDOR guard).
     const seasonVenue = await prisma.seasonVenue.findFirst({
       where: { id: params.seasonVenueId, seasonId: params.id },
-      select: { id: true },
+      select: { id: true, venueId: true },
     })
     if (!seasonVenue) {
       return NextResponse.json({ error: "Season venue not found" }, { status: 404 })
@@ -70,11 +71,20 @@ export async function PUT(
       )
     )
 
+    // Push the new hours into the session-day rows the scheduler actually
+    // reads — without this, edited hours silently applied to only the days
+    // created AFTER the edit (owner hit exactly that).
+    const updatedDays = await applyVenueHoursToSessionDays(
+      params.id,
+      (seasonVenue as any).venueId,
+      data.hours
+    )
+
     const hours = await (prisma as any).seasonVenueHours.findMany({
       where: { seasonVenueId: params.seasonVenueId },
       orderBy: { dayOfWeek: "asc" },
     })
-    return NextResponse.json({ success: true, hours })
+    return NextResponse.json({ success: true, hours, updatedDays })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

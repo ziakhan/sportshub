@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
+  applyVenueHoursToSessionDays,
   defaultCourtIdsForVenue,
   propagateVenueToSessions,
 } from "@/lib/seasons/venue-propagation"
@@ -145,7 +146,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     }
 
-    return NextResponse.json({ success: true, id: seasonVenue.id, addedToSessions }, { status: 201 })
+    // Re-running the setup card with new hours must reach EXISTING session
+    // days too, not just the ones propagation adds (owner 2026-08-01: half
+    // the weekends kept the old window).
+    let updatedDays = 0
+    if (data.openTime && data.closeTime) {
+      updatedDays = await applyVenueHoursToSessionDays(
+        params.id,
+        venueId,
+        Array.from({ length: 7 }, (_, dow) => ({
+          dayOfWeek: dow,
+          openTime: data.openTime!,
+          closeTime: data.closeTime!,
+        }))
+      )
+    }
+
+    return NextResponse.json(
+      { success: true, id: seasonVenue.id, addedToSessions, updatedDays },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

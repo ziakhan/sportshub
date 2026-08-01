@@ -70,3 +70,33 @@ export async function defaultCourtIdsForVenue(
   const ids = courts.map((c: any) => c.id)
   return courtsAvailable != null ? ids.slice(0, courtsAvailable) : ids
 }
+
+/**
+ * Venue-hours edits reach the rows the SCHEDULER reads (owner 2026-08-01:
+ * hours were changed to 8:00-20:00 but half the weekends' session-day rows
+ * kept the old window — the engine scheduled on mixed hours and the
+ * scenario advice read as nonsense). Updates every existing session-day
+ * row for the venue whose weekday has non-null hours; returns rows updated.
+ */
+export async function applyVenueHoursToSessionDays(
+  seasonId: string,
+  venueId: string,
+  hours: Array<{ dayOfWeek: number; openTime: string | null; closeTime: string | null }>
+): Promise<number> {
+  const byDow = new Map(hours.map((h) => [h.dayOfWeek, h]))
+  const dayVenues = await (prisma as any).seasonSessionDayVenue.findMany({
+    where: { venueId, day: { session: { seasonId } } },
+    select: { id: true, day: { select: { date: true } } },
+  })
+  let updated = 0
+  for (const dv of dayVenues) {
+    const h = byDow.get(new Date(dv.day.date).getUTCDay())
+    if (!h?.openTime || !h?.closeTime) continue
+    await (prisma as any).seasonSessionDayVenue.update({
+      where: { id: dv.id },
+      data: { startTime: h.openTime, endTime: h.closeTime },
+    })
+    updated++
+  }
+  return updated
+}

@@ -302,7 +302,7 @@ describe("schedule requests — gate toggle + blackout CRUD + withdrawal cascade
       }) as any,
       { params: { id: seasonId, teamId: submissionId } } as any
     )
-    expect(clubAdd.status).toBe(403)
+    expect(clubAdd!.status).toBe(403)
 
     actAs(leagueOwnerId)
     const added = await ADD_BLACKOUT(
@@ -312,7 +312,7 @@ describe("schedule requests — gate toggle + blackout CRUD + withdrawal cascade
       }) as any,
       { params: { id: seasonId, teamId: submissionId } } as any
     )
-    expect(added.status).toBe(201)
+    expect(added!.status).toBe(201)
 
     // Remove a materialized row — its APPROVED request must stay APPROVED.
     const materialized = await (prisma as any).seasonTeamBlackout.findFirst({

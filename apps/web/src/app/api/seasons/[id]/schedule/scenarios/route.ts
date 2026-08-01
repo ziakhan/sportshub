@@ -184,13 +184,31 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     }
 
     // 3. Trim hours — cap the day at what the compact run actually needed.
+    // Only offered when it actually SAVES court time: capping at (or past)
+    // the latest configured close recommends shrinking by zero (owner hit
+    // exactly that — "shrink to 6:00" on a day already ending at 6).
+    const maxCloseMin = (() => {
+      let max = 0
+      for (const sess of baseline.input.sessions) {
+        for (const d of sess.days) {
+          for (const dv of d.dayVenues) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(dv.endTime ?? "")
+            if (m) max = Math.max(max, Number(m[1]) * 60 + Number(m[2]))
+          }
+        }
+      }
+      return max
+    })()
     const capSource = compact && holdsQuality(compact, baseline) ? compact : baseline
     const capMin = latestEndMin(capSource)
     const endTime = `${String(Math.floor(capMin / 60)).padStart(2, "0")}:${String(capMin % 60).padStart(2, "0")}`
-    const { run: trimmed } = await runSeasonSchedule(params.id, undefined, {
-      dayWindow: { endTime },
-      compactDays: true,
-    })
+    const { run: trimmed } =
+      capMin < maxCloseMin
+        ? await runSeasonSchedule(params.id, undefined, {
+            dayWindow: { endTime },
+            compactDays: true,
+          })
+        : { run: null }
     if (trimmed && holdsQuality(trimmed, baseline)) {
       cards.push({
         key: "trim-hours",

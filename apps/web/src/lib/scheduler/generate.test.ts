@@ -795,6 +795,35 @@ describe("generateSchedule — schedule requests", () => {
     expect(result.tradeoffs.some((t) => t.includes("schedule request"))).toBe(true)
   })
 
+  it("a back-to-back is never taken to honor a window — the window breaks instead", () => {
+    // One day, waves 09:00-12:00. Team 1's approved window says "start no
+    // earlier than 11:00" — honoring it fully would force its two games
+    // into 11:00+12:00, adjacent. Priority ruling: the window loses.
+    const input = makeInput({
+      teams: 4,
+      gamesGuaranteed: 2,
+      days: 1,
+      sessionCount: 1,
+      courts: 2,
+      open: "09:00",
+      close: "13:00",
+    })
+    const dk = dkOf(input.sessions[0].days[0].date)
+    input.divisions[0].teams[0].windows = [{ dateKey: dk, earliestMin: 11 * 60 }]
+    const result = generateSchedule(input)
+    expect(result.games).toHaveLength(4)
+    expect(result.unscheduled).toHaveLength(0)
+    const t1 = input.divisions[0].teams[0].teamId
+    const times = result.games
+      .filter((g) => g.homeTeamId === t1 || g.awayTeamId === t1)
+      .map((g) => new Date(g.scheduledAt).getTime())
+      .sort((a, b) => a - b)
+    expect(times).toHaveLength(2)
+    expect(times[1] - times[0]).toBeGreaterThan(60 * 60000) // never adjacent
+    // The broken window is reported, not hidden.
+    expect(result.tradeoffs.some((t) => t.includes("schedule request"))).toBe(true)
+  })
+
   it("scenario overrides shrink the slot grid (excludeCourtIds, dayWindow)", () => {
     const input = makeInput({ days: 1, courts: 2, open: "09:00", close: "13:00" })
     expect(buildSlots(input)).toHaveLength(8)

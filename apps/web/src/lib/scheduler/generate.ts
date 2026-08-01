@@ -545,10 +545,10 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     const [b2b, styleViol] = shapeIssues(res.games)
     const key: [number, number, number, number, number, number] = [
       res.unscheduled.length,
-      // Approved requests outrank everything except placing all games —
-      // they're the promises the league explicitly signed off on.
-      requestIssues(res.games),
+      // No back-to-backs, at all costs (owner 2026-08-01) — they outrank
+      // even approved requests, which are best effort by contract.
       b2b,
+      requestIssues(res.games),
       styleViol,
       edgeSpread(res.games),
       res.tradeoffs.length,
@@ -1309,9 +1309,10 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           minGapSlots = Math.min(minGapSlots, gapMs / (input.gameSlotMinutes * 60000))
         }
         const b2b = minGapSlots <= 0
-        // Back-to-back is a LAST RESORT (owner): hard-blocked while the
-        // strict pass runs; the relaxed/repair ladder may allow it.
-        if (b2b && !relaxDayCap && !inRepair) {
+        // Back-to-backs are avoided AT ALL COSTS (owner 2026-08-01): hard in
+        // BOTH placement passes; only the repair ladder may cross, and the
+        // dedicated elimination pass afterwards hunts down whatever it made.
+        if (b2b && !inRepair) {
           return { score: -Infinity, blockReason: "back-to-back" }
         }
         if (style === "SAME_DAY") {
@@ -1725,10 +1726,12 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
 
   /**
    * The relaxed movers take the FIRST legal slot, so scoring penalties can't
-   * steer them — this predicate keeps their first tier on the day plan and
-   * only the fallback tier is allowed to break it.
+   * steer them — these predicates define their tiers. Priority ruling
+   * (owner 2026-08-01): back-to-backs at all costs > approved requests >
+   * weekend styles, so the tiers are [core+window, core-only, anything] —
+   * a mover breaks a window BEFORE it ever creates a back-to-back.
    */
-  const anchorSafe = (pairing: Pairing, slot: SchedulerSlot): boolean => {
+  const coreSafe = (pairing: Pairing, slot: SchedulerSlot): boolean => {
     const dk = dateKeyOf(slot.startAt)
     const slotStartMin = slot.startAt.getHours() * 60 + slot.startAt.getMinutes()
     for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
@@ -1740,18 +1743,10 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         const to = b.endMin ?? 24 * 60
         if (slotStartMin < to && from < slotStartMin + input.gameSlotMinutes) return false
       }
-      for (const w of windowsByTeam.get(id) ?? []) {
-        const applies =
-          (w.dateKey !== undefined && w.dateKey === dk) ||
-          (w.dayOfWeek !== undefined && slot.startAt.getDay() === w.dayOfWeek)
-        if (!applies) continue
-        if (w.earliestMin !== undefined && slotStartMin < w.earliestMin) return false
-        if (w.latestMin !== undefined && slotStartMin > w.latestMin) return false
-      }
       for (const b of teamBookings[id] ?? []) {
         if (b.dateKey !== dk) continue
         // A split-days team already plays this day — a second game here
-        // would double it; and NOBODY takes a back-to-back in tier 0.
+        // would double it; and NOBODY takes a back-to-back in this tier.
         if (styleOf(id) === "SPLIT_DAYS") return false
         const gapMs = Math.max(
           b.start.getTime() - slot.endAt.getTime(),
@@ -1762,6 +1757,23 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
     return true
   }
+  const windowSafe = (pairing: Pairing, slot: SchedulerSlot): boolean => {
+    const dk = dateKeyOf(slot.startAt)
+    const slotStartMin = slot.startAt.getHours() * 60 + slot.startAt.getMinutes()
+    for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
+      for (const w of windowsByTeam.get(id) ?? []) {
+        const applies =
+          (w.dateKey !== undefined && w.dateKey === dk) ||
+          (w.dayOfWeek !== undefined && slot.startAt.getDay() === w.dayOfWeek)
+        if (!applies) continue
+        if (w.earliestMin !== undefined && slotStartMin < w.earliestMin) return false
+        if (w.latestMin !== undefined && slotStartMin > w.latestMin) return false
+      }
+    }
+    return true
+  }
+  const anchorSafe = (pairing: Pairing, slot: SchedulerSlot): boolean =>
+    coreSafe(pairing, slot) && windowSafe(pairing, slot)
 
   /**
    * Find the BEST legal free slot in the session and commit the pairing
@@ -1777,7 +1789,8 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       relocationBudget--
       const c = scoreCandidate(pairing, slot, true, false, true)
       if (c.score === -Infinity) continue
-      const bonus = anchorSafe(pairing, slot) ? 1000 : 0
+      const bonus =
+        (coreSafe(pairing, slot) ? 2000 : 0) + (windowSafe(pairing, slot) ? 1000 : 0)
       if (c.score + bonus > bestScore) {
         bestScore = c.score + bonus
         bestSlot = slot
@@ -1798,11 +1811,12 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       awayTeamId: entry.prev.awayTeamId,
     }
     removeGameState(gi)
-    for (const tier of [0, 1]) {
+    for (const tier of [0, 1, 2]) {
       for (const slot of slotsBySession.get(toSession) ?? []) {
         if (relocationBudget <= 0) break
         if (!bucketHasRoom(slot)) continue
         if (tier === 0 && !anchorSafe(gPairing, slot)) continue
+        if (tier === 1 && !coreSafe(gPairing, slot)) continue
         relocationBudget--
         const c = scoreCandidate(gPairing, slot, true, false, true)
         if (c.score !== -Infinity) {
@@ -1841,11 +1855,12 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     inChain.add(gi)
     removeGameState(gi)
     const materialize = (dest: string): boolean => {
-      for (const tier of [0, 1]) {
+      for (const tier of [0, 1, 2]) {
         for (const slot of slotsBySession.get(dest) ?? []) {
           if (relocationBudget <= 0) return false
           if (!bucketHasRoom(slot)) continue
           if (tier === 0 && !anchorSafe(gPairing, slot)) continue
+          if (tier === 1 && !coreSafe(gPairing, slot)) continue
           relocationBudget--
           const c = scoreCandidate(gPairing, slot, true, false, true)
           if (c.score !== -Infinity) {
@@ -2331,6 +2346,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       return false
     }
 
+
     let guard = games.length * 6
     let improved = true
     while (improved && guard-- > 0) {
@@ -2494,6 +2510,30 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           const sameSlot =
             new Date(h.scheduledAt).getTime() === new Date(g.scheduledAt).getTime()
           if (sameSlot) continue // swapping identical times changes nothing
+          // NEVER trade a back-to-back for tip-off fairness (owner ruling):
+          // reject any exchange that would leave either game adjacent to a
+          // teammate's other game.
+          const wouldAdjoin = (game: ProposedGame, newMs: number): boolean => {
+            for (const id of [game.homeTeamId, game.awayTeamId]) {
+              for (const other of games) {
+                if (other === game) continue
+                if (other.homeTeamId !== id && other.awayTeamId !== id) continue
+                const oMs = new Date(other.scheduledAt).getTime()
+                if (dateKeyOf(new Date(oMs)) !== dateKeyOf(new Date(newMs))) continue
+                if (
+                  other === (game === g ? h : g) // the swap partner moves too
+                ) {
+                  continue
+                }
+                if (Math.abs(oMs - newMs) <= input.gameSlotMinutes * 60000 && oMs !== newMs)
+                  return true
+              }
+            }
+            return false
+          }
+          const gMs = new Date(g.scheduledAt).getTime()
+          const hMs = new Date(h.scheduledAt).getTime()
+          if (wouldAdjoin(g, hMs) || wouldAdjoin(h, gMs)) continue
           const [simF, simL] = simSwap(e.dk, g, h)
           const m = metric(simF, simL)
           if (!lexLess(m, before)) continue
@@ -2503,6 +2543,102 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       if (bestSwap && swapSites(bestSwap.gi, bestSwap.hj)) improved = true
     }
   }
+
+    // ── Back-to-back ELIMINATION (owner 2026-08-01: "avoided at all
+    // costs"). Runs LAST among the time-movers so nothing recreates what it
+    // fixes. Repair can leave adjacent pairs while free waves sit open the
+    // same day; hunt each pair down and retime one of its games. Candidate
+    // tiers, best first: same day + window-kept, same day, other day of the
+    // SAME weekend (breaking a one-trip preference is allowed here — a
+    // back-to-back outranks every preference), other day window-broken.
+    {
+      const adjacencyAfter = (pairing: Pairing, slot: SchedulerSlot): boolean => {
+        const dk = dateKeyOf(slot.startAt)
+        for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
+          for (const b of teamBookings[id] ?? []) {
+            if (b.dateKey !== dk) continue
+            const gapMs = Math.max(
+              b.start.getTime() - slot.endAt.getTime(),
+              slot.startAt.getTime() - b.end.getTime()
+            )
+            if (gapMs <= 0) return true
+          }
+        }
+        return false
+      }
+      const retimeAwayFromB2B = (gi: number): boolean => {
+        const prev = { ...games[gi] }
+        const prevDk = dateKeyOf(new Date(prev.scheduledAt))
+        const gPairing: Pairing = {
+          unitKey: prev.unitKey,
+          homeTeamId: prev.homeTeamId,
+          awayTeamId: prev.awayTeamId,
+        }
+        removeGameState(gi)
+        let best: SchedulerSlot | null = null
+        let bestRank = -1
+        let bestScore = -Infinity
+        for (const sl of slots) {
+          if (sl.sessionId !== prev.sessionId) continue
+          if (
+            dateKeyOf(sl.startAt) === prevDk &&
+            sl.startAt.getTime() === new Date(prev.scheduledAt).getTime()
+          )
+            continue
+          if (!bucketHasRoom(sl)) continue
+          if (adjacencyAfter(gPairing, sl)) continue
+          const c = scoreCandidate(gPairing, sl, false, false, true)
+          if (c.score === -Infinity) continue
+          const sameDay = dateKeyOf(sl.startAt) === prevDk
+          const rank = (sameDay ? 2 : 0) + (windowSafe(gPairing, sl) ? 1 : 0)
+          if (rank > bestRank || (rank === bestRank && c.score > bestScore)) {
+            bestRank = rank
+            bestScore = c.score
+            best = sl
+          }
+        }
+        if (best) {
+          setGamePlacement(gi, best)
+          return true
+        }
+        games[gi] = prev
+        applyPlacementState(siteOfGame(prev), gPairing)
+        return false
+      }
+      let sweeps = 8
+      let killed = true
+      let b2bFixed = 0
+      let b2bSeen = 0
+      while (killed && sweeps-- > 0) {
+        killed = false
+        const byTeamDay = new Map<string, Array<{ ms: number; gi: number }>>()
+        for (let gi = 0; gi < games.length; gi++) {
+          const d = new Date(games[gi].scheduledAt)
+          for (const id of [games[gi].homeTeamId, games[gi].awayTeamId]) {
+            const k = `${id}|${dateKeyOf(d)}`
+            if (!byTeamDay.has(k)) byTeamDay.set(k, [])
+            byTeamDay.get(k)!.push({ ms: d.getTime(), gi })
+          }
+        }
+        for (const [, list] of byTeamDay) {
+          if (list.length < 2) continue
+          list.sort((a, b) => a.ms - b.ms)
+          for (let i = 1; i < list.length; i++) {
+            if (list[i].ms - list[i - 1].ms > input.gameSlotMinutes * 60000) continue
+            b2bSeen++
+            if (retimeAwayFromB2B(list[i].gi) || retimeAwayFromB2B(list[i - 1].gi)) {
+              b2bFixed++
+              killed = true
+              break
+            }
+          }
+          if (killed) break
+        }
+      }
+      if (process.env.SCHED_DEBUG) {
+        console.error(`[b2b-elim] pairs seen=${b2bSeen} fixed=${b2bFixed}`)
+      }
+    }
 
   debugOffAnchor("final")
 
