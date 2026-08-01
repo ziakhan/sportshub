@@ -655,6 +655,153 @@ export async function seedJourneyStage3() {
   console.log(`✓ journey stage 3: ${updated.count} approvals finalized · venues one court short · requests + withdrawal staged`)
 }
 
+// ═════════════════════════ STAGE 4 ═════════════════════════════════════
+/**
+ * Game day: several completed weekends with scores + player stats, a
+ * referee assigned to today's slate, one game queued for the LIVE scoring
+ * demo. Self-sufficient: if the owner never committed a schedule live, it
+ * adds Six Park Court 6 (the capacity fix) and commits one itself.
+ */
+export async function seedJourneyStage4() {
+  const season = await journeySeason(SL_LEAGUE)
+  const passwordHash = await bcrypt.hash(PASSWORD, 10)
+
+  let games = await p.game.findMany({
+    where: { seasonId: season.id, phase: "REGULAR" },
+    select: { id: true, homeTeamId: true, awayTeamId: true, scheduledAt: true },
+    orderBy: { scheduledAt: "asc" },
+  })
+  if (games.length === 0) {
+    // Live commit never happened — do the capacity fix + commit ourselves.
+    const sixpark = await p.venue.findFirst({ where: { name: "Six Park East" }, select: { id: true } })
+    const court6 = await p.court.findFirst({
+      where: { venueId: sixpark.id, name: "Court 6" },
+      select: { id: true },
+    })
+    const dayVenues = await p.seasonSessionDayVenue.findMany({
+      where: { venueId: sixpark.id, day: { session: { seasonId: season.id } } },
+      select: { id: true, courts: { select: { courtId: true } } },
+    })
+    for (const dv of dayVenues) {
+      if (dv.courts.some((c: any) => c.courtId === court6.id)) continue
+      await p.seasonSessionDayVenueCourt.create({
+        data: { dayVenueId: dv.id, courtId: court6.id, order: 5 },
+      })
+    }
+    const { loadSchedulerInput } = await import("../apps/web/src/lib/scheduler/load")
+    const { generateSchedule } = await import("../apps/web/src/lib/scheduler/generate")
+    const { input } = await loadSchedulerInput(season.id)
+    if (!input) throw new Error("stage 4: cannot load scheduler input")
+    const result = generateSchedule(input)
+    for (const g of result.games) {
+      await p.game.create({
+        data: {
+          seasonId: season.id,
+          sessionId: g.sessionId,
+          dayVenueId: g.dayVenueId,
+          homeTeamId: g.homeTeamId,
+          awayTeamId: g.awayTeamId,
+          venueId: g.venueId,
+          courtId: g.courtId,
+          scheduledAt: new Date(g.scheduledAt),
+          duration: g.duration,
+          status: "SCHEDULED",
+          phase: "REGULAR",
+          publishedAt: new Date(),
+        },
+      })
+    }
+    games = await p.game.findMany({
+      where: { seasonId: season.id, phase: "REGULAR" },
+      select: { id: true, homeTeamId: true, awayTeamId: true, scheduledAt: true },
+      orderBy: { scheduledAt: "asc" },
+    })
+    console.log(`  · committed ${games.length} games (Court 6 added + schedule generated)`)
+  }
+
+  // Complete the first two weekends with scores + player stat lines.
+  const byDate = new Map<string, any[]>()
+  for (const g of games) {
+    const dk = new Date(g.scheduledAt).toISOString().slice(0, 10)
+    if (!byDate.has(dk)) byDate.set(dk, [])
+    byDate.get(dk)!.push(g)
+  }
+  const dates = [...byDate.keys()].sort()
+  const completeDates = dates.slice(0, 4) // two weekends
+  let completed = 0
+  for (const dk of completeDates) {
+    for (const g of byDate.get(dk)!) {
+      const homeScore = 45 + Math.floor(rnd() * 40)
+      let awayScore = 45 + Math.floor(rnd() * 40)
+      if (awayScore === homeScore) awayScore++
+      await p.game.update({
+        where: { id: g.id },
+        data: { status: "COMPLETED", homeScore, awayScore },
+      })
+      for (const teamId of [g.homeTeamId, g.awayTeamId]) {
+        const teamScore = teamId === g.homeTeamId ? homeScore : awayScore
+        const roster = await p.teamPlayer.findMany({
+          where: { teamId, status: "ACTIVE" },
+          select: { playerId: true },
+          take: 8,
+        })
+        let remaining = teamScore
+        for (let i = 0; i < roster.length; i++) {
+          const share = i === roster.length - 1 ? remaining : Math.min(remaining, Math.floor(rnd() * 16))
+          remaining -= share
+          await p.playerStat.create({
+            data: {
+              gameId: g.id,
+              playerId: roster[i].playerId,
+              teamId,
+              points: share,
+              rebounds: Math.floor(rnd() * 8),
+              assists: Math.floor(rnd() * 6),
+              steals: Math.floor(rnd() * 3),
+              blocks: Math.floor(rnd() * 2),
+            },
+          }).catch(() => {})
+          if (remaining <= 0 && i < roster.length - 1) remaining = 0
+        }
+      }
+      completed++
+    }
+  }
+
+  // Referee: ref-mike@ assigned to the NEXT upcoming slate + the live game.
+  let ref = await p.user.findFirst({ where: { email: `ref-mike@${EMAIL_DOMAIN}` }, select: { id: true } })
+  if (!ref) {
+    ref = await p.user.create({
+      data: {
+        email: `ref-mike@${EMAIL_DOMAIN}`,
+        passwordHash,
+        firstName: "Mike",
+        lastName: "Whistler",
+        phoneNumber: "416-555-0142",
+        onboardedAt: new Date(),
+        city: "Toronto",
+        state: "ON",
+      },
+      select: { id: true },
+    })
+    await p.userRole.create({ data: { userId: ref.id, role: "Referee" } })
+    await p.refereeProfile.create({ data: { userId: ref.id, pin: "1234" } }).catch(() => {})
+  }
+  const upcoming = games.filter((g: any) => !completeDates.includes(new Date(g.scheduledAt).toISOString().slice(0, 10)))
+  const slate = upcoming.slice(0, 6)
+  for (const g of slate) {
+    const existing = await p.userRole.findFirst({
+      where: { userId: ref.id, role: "Referee", gameId: g.id },
+      select: { id: true },
+    })
+    if (!existing) {
+      await p.userRole.create({ data: { userId: ref.id, role: "Referee", gameId: g.id } })
+    }
+  }
+  console.log(`✓ journey stage 4: ${completed} games completed with stats · ref assigned to ${slate.length} upcoming games`)
+  await writeDemoState("nph-pitch-journey", 4)
+}
+
 export async function runJourneyStage(stage: number) {
   if (stage === 1) return seedJourneyStage1()
   const state = await readDemoState()
@@ -668,6 +815,7 @@ export async function runJourneyStage(stage: number) {
   for (let s = state.stage + 1; s <= stage; s++) {
     if (s === 2) await seedJourneyStage2()
     else if (s === 3) await seedJourneyStage3()
-    else throw new Error(`Journey stage ${s} isn't available yet (wave 4)`)
+    else if (s === 4) await seedJourneyStage4()
+    else throw new Error(`Unknown journey stage ${s}`)
   }
 }

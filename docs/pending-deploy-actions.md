@@ -945,3 +945,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 ## #58 — 2026-08-01: B2B-AT-ALL-COSTS + 4 BUG FIXES — ✅ DEPLOYED (box 99d3a03; no schema change; owner still owes the one-time Playground hours re-save to heal mixed weekend rows)
 - Priority reorder (b2b > requests > styles) + new b2b elimination pass + edge-rebalance b2b-safety + venue-hours propagation fix (applyVenueHoursToSessionDays) + deterministic loader ordering + trim-card guard. Build log §30.
 - NOTE for owner on deploy: re-save the Playground hours once (setup card or hours editor) after deploying — that now pushes 8:00-20:00 into ALL weekends' day rows and the mixed-hours state heals itself.
+
+## #59 — 2026-08-01: DEMO JOURNEY ARC (scenario loader + full-scale NPH world + lifecycle/scoring gaps) — ⏳ NOT DEPLOYED (needs owner word)
+- SCHEMA (additive): PlatformSettings.demoState Json · Game.statusReason String. `prisma db push` on box (+ Neon later).
+- Full build log §31; demo run-sheet docs/demo-runbook-nph-journey.md. Deploy: push GitHub → deploy.sh → schema push → load scenarios from admin console (box seeder path uses npx tsx from repo root — verify /opt/sportshub has scripts/data/nph-census.ts after pull).
