@@ -25,7 +25,7 @@ interface LoadStatus {
   pid?: number
 }
 
-export function readStatus(): LoadStatus | null {
+function readStatus(): LoadStatus | null {
   try {
     return JSON.parse(readFileSync(STATUS_FILE, "utf8"))
   } catch {
