@@ -47,15 +47,22 @@ Phones: sign in, leave the app on the team/home screen.
 ### Fast forward → Stage 3 — "Let's build the season"
 6. **admin profile**: **Fast forward → stage 3** (~10s). League is
    FINALIZED, everyone approved, fees settled.
-7. **owner-nph@ → Schedule tab → Commit whole season.** It FAILS, fast:
-   *"Court capacity is N games short… add a court, extend hours, or add a
-   session."* — "the system tells you exactly what's wrong."
-8. **Sessions tab** → Six Park East → add **Court 6** to the sessions.
-   Back to Schedule → run again → **all 720 games fit**.
-9. **Scenarios** button → the cards. Star of the show:
-   **"Distribute by venue — every division gets a home gym"** (Gr7/8 at
-   the Playground, Gr9/10 at Six Park…, ~80% per venue, no two-gym
-   weekends). → **Use this scenario** → Preview → **Commit whole season**.
+7. **owner-nph@ → Schedule tab → Commit whole season.** It FAILS, in
+   seconds, naming the exact weekend: *"Weekend 13 · Feb 6 (Gr7, Gr9,
+   Gr10, JrGirls) needs 86 games but has 80 court-slots — extend hours or
+   add a court."* The season runs on NPH's REAL calendar: 14 weekends,
+   every grade on its own five (Gr9 opens Oct 24, Gr10/11 the Oct 31
+   track, Gr12 its own…), and only Six Park is attached — with 5 of its
+   6 courts.
+8. **Sessions tab** → Six Park East → add **Court 6** → run again →
+   **every game fits** on Six Park alone. Then the kicker: "but every
+   family drives to Oshawa every weekend — watch." **Venues panel** →
+   attach **The Playground Burlington** and **Haber Rec** (add-to-sessions
+   on).
+9. **Scenarios** button → **"Distribute by venue — every division gets a
+   home gym"** (grades split across Six Park / Playground / Haber, no
+   two-gym weekends, requests still honored) → **Use this scenario** →
+   Preview → **Commit whole season**.
 10. **Requests**: Teams → Ottawa Elite → show the APPROVED Sunday-by-noon
     window honored in the fairness report ("they drive back to Ottawa").
     Then Dragons de Gatineau → the PENDING request → **Simulate cost**

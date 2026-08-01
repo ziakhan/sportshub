@@ -50,8 +50,27 @@ const NPA_LEAGUE = "NPA"
 const WNPA_LEAGUE = "WNPA"
 export const JOURNEY_LEAGUES = [SL_LEAGUE, D1_LEAGUE, NPA_LEAGUE, WNPA_LEAGUE]
 
-// SL weekends (Sat/Sun), Nov 2026 → Mar 2027; D1 alternates weekends.
-const SL_WEEKENDS = ["2026-11-07", "2026-12-05", "2027-01-09", "2027-02-06", "2027-03-06"]
+// SL weekends (Sat/Sun) mirror NPH's REAL per-grade calendar (owner
+// 2026-08-01: "the dates are different for different age groups"): 14
+// weekends Oct→Feb, each grade playing exactly FIVE of them on its own
+// track (Gr9 opens Oct 24; Gr10/11 the Nov 1 track; Gr12 its own; etc.),
+// 2 games per playing weekend → the 10-game guarantee.
+const SL_TRACKS: Array<{ sat: string; grades: string[] }> = [
+  { sat: "2026-10-24", grades: ["Gr8", "Gr9", "Gr12", "JrGirls"] },
+  { sat: "2026-10-31", grades: ["Gr7", "Gr10", "Gr11"] },
+  { sat: "2026-11-14", grades: ["Gr12"] },
+  { sat: "2026-11-21", grades: ["Gr7", "Gr8", "Gr9", "JrGirls"] },
+  { sat: "2026-12-05", grades: ["Gr10", "Gr11"] },
+  { sat: "2026-12-12", grades: ["Gr12"] },
+  { sat: "2026-12-19", grades: ["Gr7", "Gr8", "Gr9"] },
+  { sat: "2027-01-02", grades: ["Gr8", "Gr10", "Gr11"] },
+  { sat: "2027-01-09", grades: ["Gr9", "Gr12", "JrGirls"] },
+  { sat: "2027-01-16", grades: ["Gr10", "Gr11"] },
+  { sat: "2027-01-23", grades: ["Gr7", "Gr12"] },
+  { sat: "2027-01-30", grades: ["Gr7", "Gr11", "JrGirls"] },
+  { sat: "2027-02-06", grades: ["Gr7", "Gr9", "Gr10", "JrGirls"] },
+  { sat: "2027-02-13", grades: ["Gr8"] },
+]
 const D1_WEEKENDS = ["2026-11-14", "2026-12-12", "2027-01-16", "2027-02-13", "2027-03-13"]
 const PREP_WEEKENDS = ["2026-11-21", "2027-01-23", "2027-02-27"]
 
@@ -459,16 +478,33 @@ export async function seedJourneyStage1() {
   const slLeague = await mkLeague(SL_LEAGUE, "NPH's flagship grade-based circuit — ARETE, DMV CHILL, GAME SPEAKS and PRIME conferences, Grade 7 through 12 plus Junior Girls.")
   const slSeason = await mkSeason(slLeague.id, SL_SEASON, "REGISTRATION", 10)
   const slDivs = await mkDivisions(slSeason.id, "SL")
-  // Sessions exist from day one; venues attach at stage 3 (one court short).
-  let si = 0
-  for (const sat of SL_WEEKENDS) {
-    si++
+  // Division ids per grade → unit keys for each weekend's allow-list.
+  const gradeOfDivName = (name: string): string =>
+    name.startsWith("Junior Girls") ? "JrGirls" : `Gr${/Grade (\d+)/.exec(name)?.[1] ?? "?"}`
+  const unitKeysForGrades = (grades: string[]): string[] =>
+    [...slDivs.entries()]
+      .filter(([name]) => grades.includes(gradeOfDivName(name)))
+      .map(([, id]) => `division:${id}`)
+  // Sessions carry their grade tracks from day one; venues attach at
+  // stage 3 (Six Park only, one court short — the live capacity beat).
+  for (const [i, track] of SL_TRACKS.entries()) {
+    const label = new Date(`${track.sat}T12:00:00Z`).toLocaleDateString("en-CA", {
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    })
     const session = await p.seasonSession.create({
-      data: { seasonId: slSeason.id, label: `Session ${si}`, phase: "REGULAR", targetGamesPerTeam: 2 },
+      data: {
+        seasonId: slSeason.id,
+        label: `Weekend ${i + 1} · ${label} (${track.grades.join(", ")})`,
+        phase: "REGULAR",
+        targetGamesPerTeam: 2,
+        unitKeys: unitKeysForGrades(track.grades),
+      },
       select: { id: true },
     })
     for (const offset of [0, 1]) {
-      const date = new Date(`${sat}T00:00:00Z`)
+      const date = new Date(`${track.sat}T00:00:00Z`)
       date.setUTCDate(date.getUTCDate() + offset)
       await p.seasonSessionDay.create({ data: { sessionId: session.id, date } })
     }
@@ -603,40 +639,36 @@ export async function seedJourneyStage3() {
     data: { isLocked: true, lockedAt: new Date() },
   })
 
-  // Attach venues ONE COURT SHORT (Six Park 5 of 6 + Playground 3): the
-  // whole-season run FAILS with the actionable capacity message until the
-  // owner adds Court 6 live. Haber stays unattached (an "add a venue" out).
+  // Attach SIX PARK ONLY with 5 of its 6 courts (owner's beat): the
+  // busiest weekend (Feb 6-7 — four grades, 87 games) needs 87 slots but
+  // has 80 → the run fails naming that weekend; adding Court 6 live fixes
+  // it (96). The Playground + Haber stay unattached — the owner adds them
+  // live before the venue-distribution close.
   const sixpark = await p.venue.findFirst({ where: { name: "Six Park East" }, select: { id: true } })
-  const playground = await p.venue.findFirst({ where: { name: "The Playground Burlington" }, select: { id: true } })
-  for (const v of [sixpark, playground]) {
-    await p.seasonVenue.upsert({
-      where: { seasonId_venueId: { seasonId: season.id, venueId: v.id } },
-      create: { seasonId: season.id, venueId: v.id, courtsAvailable: v.id === sixpark.id ? 5 : 3 },
-      update: {},
-    })
-  }
-  const courtRows = async (venueId: string, take: number) =>
-    p.court.findMany({ where: { venueId }, orderBy: { displayOrder: "asc" }, take, select: { id: true } })
-  const sixCourts = await courtRows(sixpark.id, 5)
-  const pgCourts = await courtRows(playground.id, 3)
+  await p.seasonVenue.upsert({
+    where: { seasonId_venueId: { seasonId: season.id, venueId: sixpark.id } },
+    create: { seasonId: season.id, venueId: sixpark.id, courtsAvailable: 5 },
+    update: {},
+  })
+  const sixCourts = await p.court.findMany({
+    where: { venueId: sixpark.id },
+    orderBy: { displayOrder: "asc" },
+    take: 5,
+    select: { id: true },
+  })
   const daysRows = await p.seasonSessionDay.findMany({
     where: { session: { seasonId: season.id } },
     select: { id: true, dayVenues: { select: { id: true } } },
   })
   for (const day of daysRows) {
     if (day.dayVenues.length > 0) continue // already attached (idempotent)
-    for (const [venue, courts] of [
-      [sixpark, sixCourts],
-      [playground, pgCourts],
-    ] as const) {
-      const dayVenue = await p.seasonSessionDayVenue.create({
-        data: { dayId: day.id, venueId: venue.id, startTime: "08:00", endTime: "20:00" },
-        select: { id: true },
-      })
-      let order = 0
-      for (const c of courts) {
-        await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ } })
-      }
+    const dayVenue = await p.seasonSessionDayVenue.create({
+      data: { dayId: day.id, venueId: sixpark.id, startTime: "08:00", endTime: "20:00" },
+      select: { id: true },
+    })
+    let order = 0
+    for (const c of sixCourts) {
+      await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ } })
     }
   }
 

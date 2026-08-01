@@ -1762,6 +1762,10 @@ model SeasonSession {
   label              String?
   phase              SessionPhase @default(REGULAR)
   targetGamesPerTeam Int?
+  // Which scheduling units play this session (owner 2026-08-01: NPH's real
+  // calendar gives every grade its OWN weekends). Unit keys as the engine
+  // knows them ("division:<id>" / "group:<id>"); empty = every unit.
+  unitKeys String[] @default([])
 
   // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
   playoffPlan Json?

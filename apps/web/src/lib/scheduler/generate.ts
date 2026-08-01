@@ -658,11 +658,42 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   // retries can fix it — those ladders used to grind for MINUTES fighting
   // arithmetic. Detect it up front: place greedily, skip every repair pass,
   // and lead the diagnostics with exactly what's missing.
-  const structuralShortfall = Math.max(0, pairingPool.length - slots.length)
+  let structuralShortfall = Math.max(0, pairingPool.length - slots.length)
   if (structuralShortfall > 0) {
     warnings.push(
       `Court capacity is ${structuralShortfall} game${structuralShortfall === 1 ? "" : "s"} short: ${pairingPool.length} games need scheduling but only ${slots.length} court-slots exist. Add a court, extend hours, or add a session — the schedule below fills what fits.`
     )
+  } else {
+    // Per-SESSION arithmetic (owner 2026-08-01: with each grade on its own
+    // weekends, a single overloaded weekend can be impossible while the
+    // season total looks fine — say WHICH weekend and by how much).
+    const slotsBySess = new Map<string, number>()
+    for (const sl of slots) slotsBySess.set(sl.sessionId, (slotsBySess.get(sl.sessionId) ?? 0) + 1)
+    const shortSessions: Array<{ label: string; need: number; have: number }> = []
+    let sessionShortTotal = 0
+    for (const sess of regularSessions) {
+      const share = perSessionCap.get(sess.id) ?? fallbackPerTeam
+      let demand = 0
+      for (const u of units) {
+        const allowed = filter?.[sess.id]
+        if (allowed && !allowed.includes(u.key)) continue
+        demand += Math.ceil((u.teams.length * share) / 2)
+      }
+      const have = slotsBySess.get(sess.id) ?? 0
+      if (demand > have) {
+        sessionShortTotal += demand - have
+        shortSessions.push({ label: sess.label ?? sess.id, need: demand, have })
+      }
+    }
+    if (sessionShortTotal > 0) {
+      structuralShortfall = sessionShortTotal
+      const worst = shortSessions.sort((a, b) => b.need - b.have - (a.need - a.have)).slice(0, 2)
+      warnings.push(
+        `${sessionShortTotal} game${sessionShortTotal === 1 ? "" : "s"} can't fit the weekends they belong to: ${worst
+          .map((w) => `${w.label} needs ${w.need} games but has ${w.have} court-slots`)
+          .join("; ")}. Extend hours or add a court on those days — the schedule below fills what fits.`
+      )
+    }
   }
 
   // ── Phase 1/Phase 2 split (owner 2026-08-01): "courts are just slots".

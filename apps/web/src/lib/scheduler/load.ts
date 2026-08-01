@@ -221,6 +221,7 @@ export async function loadSchedulerInput(
       phase: s.phase,
       label: s.label ?? null,
       targetGamesPerTeam: s.targetGamesPerTeam ?? null,
+      // (unitKeys folded into sessionUnitFilter below)
       days: (s.days ?? []).map((d: any) => ({
         id: d.id,
         date: new Date(d.date).toISOString(),
@@ -270,6 +271,19 @@ export async function loadSchedulerInput(
   }
   if (options?.extraBusyBookings?.length) {
     input.busyCourtBookings = [...(input.busyCourtBookings ?? []), ...options.extraBusyBookings]
+  }
+
+  // Persisted per-session unit assignments (owner 2026-08-01: NPH's real
+  // calendar gives every grade its own weekends). A session with unitKeys
+  // hosts ONLY those units; sessions with none host any unit.
+  const unitFilter: Record<string, string[]> = {}
+  for (const sess of season.sessions ?? []) {
+    if (Array.isArray(sess.unitKeys) && sess.unitKeys.length > 0) {
+      unitFilter[sess.id] = sess.unitKeys
+    }
+  }
+  if (Object.keys(unitFilter).length > 0) {
+    input.sessionUnitFilter = { ...unitFilter, ...(input.sessionUnitFilter ?? {}) }
   }
 
   return { input, errors }
