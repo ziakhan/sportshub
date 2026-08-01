@@ -17,6 +17,8 @@ export interface ReportGame {
   status?: string
 }
 
+import type { ScheduleBlackout, ScheduleWindow } from "./generate"
+
 export interface TeamFairness {
   teamId: string
   teamName: string
@@ -30,6 +32,9 @@ export interface TeamFairness {
   weekendStyle?: "SAME_DAY" | "SPLIT_DAYS"
   /** Weekends matching the team's style / weekends with 2+ games. */
   preferenceHonored?: { ok: number; total: number }
+  /** Approved schedule requests: compliant games / games a request applies
+   *  to (blackout violations count as applicable-and-failed). */
+  requestsHonored?: { ok: number; total: number }
   topCourtName: string | null
   topCourtShare: number // 0..1 of games on their most-used court
 }
@@ -47,6 +52,8 @@ export interface ScheduleFairnessReport {
     lastGamesMax: number
     /** Team-weekends NOT matching the team's style (when styles known). */
     preferenceViolations: number
+    /** Approved-request games NOT honored (windows missed + blackout hits). */
+    requestViolations: number
     maxTopCourtShare: number
   }
   teams: TeamFairness[]
@@ -67,7 +74,11 @@ export function computeFairnessReport(
    * rotatable slots — instead of the whole day's (at 8 courts most teams
    * sit in the day's global first wave, which is not a fairness signal).
    */
-  unitByTeam?: Map<string, string>
+  unitByTeam?: Map<string, string>,
+  /** Approved best-effort windows per team (for "requests honored"). */
+  windowsByTeam?: Map<string, ScheduleWindow[]>,
+  /** Blackouts per team — a scheduled game overlapping one is a violation. */
+  blackoutsByTeam?: Map<string, ScheduleBlackout[]>
 ): ScheduleFairnessReport {
   const active = games.filter((g) => g.status !== "CANCELLED")
   const byTeam = new Map<string, ReportGame[]>()
@@ -123,6 +134,35 @@ export function computeFairnessReport(
       }
     }
     const style = stylesByTeam?.get(teamId)
+    // Requests honored: every game a window applies to counts; blackout
+    // overlaps count as applicable-and-failed.
+    let reqOk = 0
+    let reqTotal = 0
+    const windows = windowsByTeam?.get(teamId) ?? []
+    const blackoutList = blackoutsByTeam?.get(teamId) ?? []
+    if (windows.length > 0 || blackoutList.length > 0) {
+      for (const g of sorted) {
+        const d = new Date(g.scheduledAt)
+        const dk = dayKey(d)
+        const startMin = d.getHours() * 60 + d.getMinutes()
+        for (const w of windows) {
+          const applies =
+            (w.dateKey !== undefined && w.dateKey === dk) ||
+            (w.dayOfWeek !== undefined && d.getDay() === w.dayOfWeek)
+          if (!applies) continue
+          reqTotal++
+          const okEarliest = w.earliestMin === undefined || startMin >= w.earliestMin
+          const okLatest = w.latestMin === undefined || startMin <= w.latestMin
+          if (okEarliest && okLatest) reqOk++
+        }
+        for (const b of blackoutList) {
+          if (b.dateKey !== dk) continue
+          const from = b.startMin ?? 0
+          const to = b.endMin ?? 24 * 60
+          if (startMin < to && from < startMin + slotMinutes) reqTotal++
+        }
+      }
+    }
     let prefOk = 0
     let prefTotal = 0
     if (style) {
@@ -172,6 +212,8 @@ export function computeFairnessReport(
       lastGames,
       weekendStyle: style,
       preferenceHonored: style ? { ok: prefOk, total: prefTotal } : undefined,
+      requestsHonored:
+        windows.length > 0 || blackoutList.length > 0 ? { ok: reqOk, total: reqTotal } : undefined,
       topCourtName,
       topCourtShare: sorted.length > 0 ? topCourtN / sorted.length : 0,
     })
@@ -193,6 +235,10 @@ export function computeFairnessReport(
       lastGamesMax: lastCounts.length ? Math.max(...lastCounts) : 0,
       preferenceViolations: teams.reduce(
         (s, t) => s + (t.preferenceHonored ? t.preferenceHonored.total - t.preferenceHonored.ok : 0),
+        0
+      ),
+      requestViolations: teams.reduce(
+        (s, t) => s + (t.requestsHonored ? t.requestsHonored.total - t.requestsHonored.ok : 0),
         0
       ),
       maxTopCourtShare: teams.length ? Math.max(...teams.map((t) => t.topCourtShare)) : 0,

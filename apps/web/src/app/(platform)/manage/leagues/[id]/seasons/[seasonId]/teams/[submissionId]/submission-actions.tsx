@@ -10,15 +10,17 @@ export function SubmissionActions({
   status,
   paymentStatus,
   weekendStyle,
+  scheduleRequestsEnabled,
 }: {
   seasonId: string
   submissionId: string
   status: string
   paymentStatus: string
   weekendStyle?: string | null
+  scheduleRequestsEnabled?: boolean
 }) {
   const router = useRouter()
-  const patch = async (body: Record<string, string>, confirmText?: string) => {
+  const patch = async (body: Record<string, string | boolean>, confirmText?: string) => {
     if (confirmText && !window.confirm(confirmText)) return
     const res = await fetch(`/api/seasons/${seasonId}/teams/${submissionId}`, {
       method: "PATCH",
@@ -73,6 +75,18 @@ export function SubmissionActions({
           <option value="SAME_DAY">One trip (both games same day)</option>
           <option value="SPLIT_DAYS">Split days (Sat + Sun)</option>
         </select>
+      </label>
+      {/* Schedule requests gate (owner 2026-08-01): OFF for everyone; the
+          league flips it per team "upon request". */}
+      <label className="text-ink-600 flex items-center gap-1.5 text-xs">
+        <input
+          type="checkbox"
+          checked={!!scheduleRequestsEnabled}
+          onChange={(e) => patch({ scheduleRequestsEnabled: e.target.checked })}
+          className="accent-play-600"
+        />
+        Schedule requests
+        <span className="text-ink-400">(club can ask for windows/blackouts — approval required, best effort)</span>
       </label>
       {!paid ? (
         <>

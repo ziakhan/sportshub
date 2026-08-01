@@ -63,13 +63,21 @@ export default async function OrgSettingsPage({ params }: { params: { id: string
             Customize page; blank league fields fall back to what you set here.
           </p>
         </div>
-        <Link
-          href={`/org/${org.slug}`}
-          target="_blank"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-        >
-          View public page ↗
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/manage/org/${org.id}/planner`}
+            className="bg-play-600 hover:bg-play-700 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+          >
+            Capacity planner
+          </Link>
+          <Link
+            href={`/org/${org.slug}`}
+            target="_blank"
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+          >
+            View public page ↗
+          </Link>
+        </div>
       </div>
 
       <OrgEditor

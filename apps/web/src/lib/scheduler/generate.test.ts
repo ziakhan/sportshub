@@ -717,6 +717,119 @@ describe("generateSchedule — per-team weekend styles", () => {
   })
 })
 
+// ---------- schedule requests (owner 2026-08-01: blackouts hard, windows
+// best-effort, scenario overrides) ----------
+
+describe("generateSchedule — schedule requests", () => {
+  const dkOf = (iso: string): string => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  }
+
+  it("a blacked-out team never plays that day (hard law)", () => {
+    const input = makeInput({
+      teams: 4,
+      gamesGuaranteed: 2,
+      days: 2,
+      sessionCount: 1,
+      courts: 2,
+      open: "09:00",
+      close: "17:00",
+    })
+    const day1Key = dkOf(input.sessions[0].days[0].date)
+    input.divisions[0].teams[0].blackouts = [{ dateKey: day1Key }]
+    const result = generateSchedule(input)
+    expect(result.games).toHaveLength(4)
+    const t1 = input.divisions[0].teams[0].teamId
+    for (const g of result.games) {
+      if (g.homeTeamId !== t1 && g.awayTeamId !== t1) continue
+      expect(dkOf(g.scheduledAt)).not.toBe(day1Key)
+    }
+  })
+
+  it("an approved start-time window is honored when the world has room", () => {
+    const input = makeInput({
+      teams: 4,
+      gamesGuaranteed: 2,
+      days: 2,
+      sessionCount: 1,
+      courts: 2,
+      open: "09:00",
+      close: "17:00",
+    })
+    const keys = input.sessions[0].days.map((d) => dkOf(d.date))
+    // "Games any day start no later than 12:00" for team 1.
+    input.divisions[0].teams[0].windows = keys.map((dateKey) => ({
+      dateKey,
+      latestMin: 12 * 60,
+    }))
+    const result = generateSchedule(input)
+    expect(result.games).toHaveLength(4)
+    const t1 = input.divisions[0].teams[0].teamId
+    for (const g of result.games) {
+      if (g.homeTeamId !== t1 && g.awayTeamId !== t1) continue
+      const d = new Date(g.scheduledAt)
+      expect(d.getHours() * 60 + d.getMinutes()).toBeLessThanOrEqual(12 * 60)
+    }
+    expect(result.tradeoffs.some((t) => t.includes("schedule request"))).toBe(false)
+  })
+
+  it("an impossible window is reported honestly, not silently dropped", () => {
+    const input = makeInput({
+      teams: 2,
+      gamesGuaranteed: 2,
+      days: 2,
+      sessionCount: 1,
+      courts: 1,
+      open: "09:00",
+      close: "12:00",
+    })
+    // Nothing can start before 09:00 — a "by 08:00" window can never hold.
+    const keys = input.sessions[0].days.map((d) => dkOf(d.date))
+    input.divisions[0].teams[0].windows = keys.map((dateKey) => ({
+      dateKey,
+      latestMin: 8 * 60,
+    }))
+    const result = generateSchedule(input)
+    expect(result.games.length).toBeGreaterThan(0)
+    expect(result.tradeoffs.some((t) => t.includes("schedule request"))).toBe(true)
+  })
+
+  it("scenario overrides shrink the slot grid (excludeCourtIds, dayWindow)", () => {
+    const input = makeInput({ days: 1, courts: 2, open: "09:00", close: "13:00" })
+    expect(buildSlots(input)).toHaveLength(8)
+    expect(buildSlots({ ...input, excludeCourtIds: ["court-2"] })).toHaveLength(4)
+    expect(buildSlots({ ...input, dayWindow: { endTime: "11:00" } })).toHaveLength(4)
+    expect(
+      buildSlots({ ...input, excludeCourtIds: ["court-2"], dayWindow: { endTime: "11:00" } })
+    ).toHaveLength(2)
+  })
+
+  it("compactDays finishes the day no later than the baseline, at full quality", () => {
+    const opts = {
+      teams: 6,
+      gamesGuaranteed: 2,
+      days: 2,
+      sessionCount: 1,
+      courts: 3,
+      open: "09:00",
+      close: "19:00",
+    }
+    const latestEnd = (games: Array<{ scheduledAt: string }>): number =>
+      Math.max(
+        ...games.map((g) => {
+          const d = new Date(g.scheduledAt)
+          return d.getHours() * 60 + d.getMinutes()
+        })
+      )
+    const baseline = generateSchedule(makeInput(opts))
+    const compact = generateSchedule({ ...makeInput(opts), compactDays: true })
+    expect(compact.games.length).toBe(baseline.games.length)
+    expect(compact.unscheduled).toHaveLength(0)
+    expect(latestEnd(compact.games)).toBeLessThanOrEqual(latestEnd(baseline.games))
+  })
+})
+
 // ---------- per-day cap (owner 2026-07-31: a weekend session = one game
 // Saturday, one Sunday when idealGamesPerDayPerTeam is 1) ----------
 

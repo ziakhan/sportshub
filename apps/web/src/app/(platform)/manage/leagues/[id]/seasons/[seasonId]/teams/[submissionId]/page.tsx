@@ -4,6 +4,9 @@ import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { Badge, SmartBack, toneForStatus } from "@/components/ui"
 import { SubmissionActions } from "./submission-actions"
+import { ScheduleRequestActions } from "./schedule-request-actions"
+import { BlackoutManager } from "./blackout-manager"
+import { describeScheduleRequest } from "@/lib/schedule-requests/requests"
 import { RosterTools } from "./roster-tools"
 import { EligibilityAction } from "./eligibility-action"
 import { getGamesPlayed, computeEligibility } from "@/lib/seasons/games-played"
@@ -88,7 +91,21 @@ export default async function LeagueTeamDetailPage({
           },
         },
       },
-      blackouts: { select: { id: true, date: true, reason: true }, orderBy: { date: "asc" } },
+      blackouts: {
+        select: {
+          id: true,
+          date: true,
+          startTime: true,
+          endTime: true,
+          reason: true,
+          sourceRequestId: true,
+        },
+        orderBy: { date: "asc" },
+      },
+      scheduleRequests: {
+        include: { requestedBy: { select: { firstName: true, lastName: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   })
   if (!submission) notFound()
@@ -279,7 +296,56 @@ export default async function LeagueTeamDetailPage({
         status={submission.status}
         paymentStatus={submission.paymentStatus}
         weekendStyle={(submission as any).weekendStyle ?? null}
+        scheduleRequestsEnabled={!!(submission as any).scheduleRequestsEnabled}
       />
+
+      {/* Schedule requests (owner 2026-08-01): league-approved, best effort.
+          Pending rows carry Simulate/Approve/Decline. */}
+      {((submission as any).scheduleRequests?.length > 0 ||
+        (submission as any).scheduleRequestsEnabled) && (
+        <div className={panel}>
+          <h2 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">
+            Schedule requests
+          </h2>
+          {((submission as any).scheduleRequests ?? []).length === 0 ? (
+            <p className="text-ink-500 text-sm">
+              None yet — the club can submit them from their team dashboard.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {((submission as any).scheduleRequests ?? []).map((r: any) => (
+                <div key={r.id} className="border-ink-100 rounded-lg border p-2.5">
+                  <p className="text-ink-800 text-sm">
+                    {describeScheduleRequest(r)}
+                    <span
+                      className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                        r.status === "PENDING"
+                          ? "bg-gold-100 text-gold-800"
+                          : r.status === "APPROVED"
+                            ? "bg-court-100 text-court-800"
+                            : "bg-ink-100 text-ink-500"
+                      }`}
+                    >
+                      {r.status}
+                    </span>
+                  </p>
+                  <p className="text-ink-500 mt-0.5 text-xs">
+                    {r.requestedBy?.firstName} {r.requestedBy?.lastName} · &ldquo;{r.reason}&rdquo;
+                    {r.decisionNote ? ` · league note: ${r.decisionNote}` : ""}
+                  </p>
+                  {r.status === "PENDING" && (
+                    <ScheduleRequestActions
+                      seasonId={params.seasonId}
+                      requestId={r.id}
+                      summary={describeScheduleRequest(r)}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Entry fee */}
       <div className={panel}>
@@ -433,16 +499,18 @@ export default async function LeagueTeamDetailPage({
       <div className="grid gap-5 md:grid-cols-2">
         <div className={panel}>
           <h2 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">Blackout dates</h2>
-          {submission.blackouts.length === 0 ? (
-            <p className="text-ink-500 text-sm">None requested.</p>
-          ) : (
-            submission.blackouts.map((b: any) => (
-              <p key={b.id} className="text-ink-700 mb-1 text-sm">
-                {fmtDate(b.date)}
-                {b.reason ? ` — ${b.reason}` : ""}
-              </p>
-            ))
-          )}
+          <BlackoutManager
+            seasonId={params.seasonId}
+            submissionId={submission.id}
+            blackouts={submission.blackouts.map((b: any) => ({
+              id: b.id,
+              date: new Date(b.date).toISOString(),
+              startTime: b.startTime ?? null,
+              endTime: b.endTime ?? null,
+              reason: b.reason ?? null,
+              fromRequest: !!b.sourceRequestId,
+            }))}
+          />
         </div>
         <div className={panel}>
           <h2 className="text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide">Contacts</h2>

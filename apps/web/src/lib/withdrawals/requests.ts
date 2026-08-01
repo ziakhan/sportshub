@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notifyMany } from "@/lib/notifications"
 import { cancelObligationIfUnpaid } from "@/lib/payments/obligations"
+import { cancelPendingScheduleRequestsForSubmission } from "@/lib/schedule-requests/requests"
 
 /**
  * Withdrawal requests (owner 2026-07-18): installment commitments make
@@ -282,6 +283,11 @@ export async function decideWithdrawalRequest(input: {
       // Same cascade as the league's direct withdraw (seasons/[id]/teams/[teamId]):
       // unpaid fees die with the submission; future games cancel atomically.
       await cancelObligationIfUnpaid(tx, "TeamSubmission", sub.id)
+      await cancelPendingScheduleRequestsForSubmission(
+        tx,
+        sub.id,
+        "Team withdrew from the season"
+      )
       cancelledGames = await tx.game.findMany({
         where: {
           seasonId: sub.season.id,

@@ -8,7 +8,23 @@ import { canCommitSchedule, COMMIT_NOT_READY_MESSAGE } from "@/lib/seasons/seaso
 
 export const dynamic = "force-dynamic"
 
+const scenarioSchema = z
+  .object({
+    excludeCourtIds: z.array(z.string()).max(50).optional(),
+    dayWindow: z
+      .object({
+        startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+      })
+      .optional(),
+    compactDays: z.boolean().optional(),
+  })
+  .optional()
+
 const commitSchema = z.object({
+  // Scenario descriptor (owner 2026-08-01) — commit writes what "Use this
+  // scenario" previewed.
+  scenario: scenarioSchema,
   // If true, wipe existing REGULAR games first — scoped to `sessionIds`
   // when session-by-session mode is on.
   replaceExisting: z.boolean().default(true),
@@ -63,6 +79,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     if (varietyShuffle) {
       input.varietySeed = ((input.varietySeed ?? 0) + varietyShuffle * 131) % 9973
+    }
+    if (parsed.scenario) {
+      if (parsed.scenario.excludeCourtIds?.length)
+        input.excludeCourtIds = parsed.scenario.excludeCourtIds
+      if (parsed.scenario.dayWindow) input.dayWindow = parsed.scenario.dayWindow
+      if (parsed.scenario.compactDays) input.compactDays = true
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     const scoped = !!(sessionIds && sessionIds.length > 0)

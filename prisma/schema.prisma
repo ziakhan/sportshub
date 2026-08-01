@@ -122,6 +122,8 @@ model User {
   reviewInvites             ReviewInvite[]      @relation("ReviewInvites")
   withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
   withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
+  scheduleRequestsMade    TeamScheduleRequest[] @relation("ScheduleRequestsMade")
+  scheduleRequestsDecided TeamScheduleRequest[] @relation("ScheduleRequestsDecided")
 
   @@index([email])
   @@index([status])
@@ -1539,6 +1541,12 @@ model TeamSubmission {
   // the league prefers (season → org rulebook → SAME_DAY).
   weekendStyle WeekendStyle?
 
+  // Schedule requests (owner 2026-08-01): OFF by default — the league flips
+  // this per team "upon request" before the club sees any request UI.
+  scheduleRequestsEnabled Boolean @default(false)
+
+  scheduleRequests TeamScheduleRequest[]
+
   createdAt DateTime @default(now())
 
   withdrawalRequests WithdrawalRequest[]
@@ -1546,6 +1554,62 @@ model TeamSubmission {
   @@unique([seasonId, teamId])
   @@index([seasonId])
   @@index([teamId])
+}
+
+// Team schedule requests (owner 2026-08-01): a traveling team asks for an
+// early-Sunday / late-Saturday window or a blackout date. Nothing reaches the
+// scheduler until the league APPROVES; approved requests are best effort,
+// never guaranteed. Approved BLACKOUTs materialize SeasonTeamBlackout rows;
+// approved WINDOWs are read by the scheduler directly.
+model TeamScheduleRequest {
+  id           String         @id @default(uuid())
+  submissionId String
+  submission   TeamSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  kind   ScheduleRequestKind
+  status ScheduleRequestStatus @default(PENDING)
+
+  // Which day this constrains — recurring weekday (0=Sunday…6=Saturday) OR
+  // one specific date, never both (enforced in zod + service layer).
+  dayOfWeek Int?
+  date      DateTime?
+
+  // WINDOW: earliest/latest a game may START ("HH:mm" 24h).
+  earliestStart String?
+  latestStart   String?
+
+  // BLACKOUT: optional time bounds (mirrors SeasonTeamBlackout).
+  startTime String?
+  endTime   String?
+
+  reason String @db.Text
+
+  requestedById String
+  requestedBy   User   @relation("ScheduleRequestsMade", fields: [requestedById], references: [id])
+
+  decidedById  String?
+  decidedBy    User?     @relation("ScheduleRequestsDecided", fields: [decidedById], references: [id])
+  decidedAt    DateTime?
+  decisionNote String?
+
+  createdAt DateTime @default(now())
+
+  materializedBlackouts SeasonTeamBlackout[]
+
+  @@index([submissionId])
+  @@index([status])
+}
+
+enum ScheduleRequestKind {
+  WINDOW
+  BLACKOUT
+}
+
+enum ScheduleRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
 }
 
 enum WeekendStyle {
@@ -1907,6 +1971,11 @@ model SeasonTeamBlackout {
   startTime String?
   endTime   String?
   reason    String?
+
+  // Set when an approved TeamScheduleRequest BLACKOUT created this row (a
+  // recurring request creates several); null for league-added blackouts.
+  sourceRequestId String?
+  sourceRequest   TeamScheduleRequest? @relation(fields: [sourceRequestId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 

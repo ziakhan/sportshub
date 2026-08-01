@@ -1467,6 +1467,75 @@ async function seed() {
     })
   }
 
+  // Schedule requests (owner 2026-08-01): league-enabled per team, approved
+  // = best effort. Force's two Fall teams demo the whole loop from one
+  // club login (owner-force@): an APPROVED early-Sunday window (the Ottawa
+  // travel story) + a PENDING late-Saturday request the league can Simulate
+  // and Approve live. Polaris gets a league-added blackout (no request).
+  const forceOwnerId = clubRows.get("force")!.ownerId
+  const reqSub = async (namePart: string) =>
+    p.teamSubmission.findFirst({
+      where: { seasonId: springSeason.id, team: { name: { contains: namePart } } },
+      select: { id: true },
+    })
+  const forceFallG9Sub = await reqSub("Burlington Force Fall Grade 9")
+  const forceFallG10Sub = await reqSub("Burlington Force Fall Grade 10")
+  if (forceFallG9Sub) {
+    await p.teamSubmission.update({
+      where: { id: forceFallG9Sub.id },
+      data: { scheduleRequestsEnabled: true },
+    })
+    await p.teamScheduleRequest.create({
+      data: {
+        submissionId: forceFallG9Sub.id,
+        kind: "WINDOW",
+        status: "APPROVED",
+        dayOfWeek: 0,
+        latestStart: "12:00",
+        reason: "Traveling back to Ottawa — we need to head home early Sunday afternoon.",
+        requestedById: forceOwnerId,
+        decidedById: nph.id,
+        decidedAt: new Date(now.getTime() - days(2)),
+        decisionNote: "Approved — best effort, we'll aim your Sunday games at the morning block.",
+      },
+    })
+  }
+  if (forceFallG10Sub) {
+    await p.teamSubmission.update({
+      where: { id: forceFallG10Sub.id },
+      data: { scheduleRequestsEnabled: true },
+    })
+    await p.teamScheduleRequest.create({
+      data: {
+        submissionId: forceFallG10Sub.id,
+        kind: "WINDOW",
+        status: "PENDING",
+        dayOfWeek: 6,
+        earliestStart: "14:00",
+        reason: "Our head coach works Saturday mornings — afternoon tip-offs only, please.",
+        requestedById: forceOwnerId,
+      },
+    })
+  }
+  const polarisG9 = await reqSub("Polaris Prep Fall Grade 9")
+  if (polarisG9) {
+    const fallDays = await p.seasonSessionDay.findMany({
+      where: { session: { seasonId: springSeason.id } },
+      select: { date: true },
+      orderBy: { date: "asc" },
+    })
+    const blackoutDay = fallDays[2]?.date
+    if (blackoutDay) {
+      await p.seasonTeamBlackout.create({
+        data: {
+          teamSubmissionId: polarisG9.id,
+          date: blackoutDay,
+          reason: "Team away at a tournament",
+        },
+      })
+    }
+  }
+
   // Recruiting clubs: fall tryouts live on the marketplace NOW.
   // Lords' tryout is in ~3 hours with 5 kids already checked in — the
   // on-stage check-in + send-offer demo (plan §3). Their fall team is

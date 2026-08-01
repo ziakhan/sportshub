@@ -99,6 +99,7 @@ async function getTeamDashboardData(teamId: string, tenantId: string) {
       status: true,
       paymentStatus: true,
       createdAt: true,
+      scheduleRequestsEnabled: true,
       division: { select: { name: true } },
       season: {
         select: { id: true, label: true, status: true, league: { select: { name: true } } },
@@ -318,16 +319,26 @@ export default async function TeamDashboardPage({
                     )}
                   </div>
                 </div>
-                {s.roster && (
-                  <Button
-                    href={`/clubs/${clubId}/teams/${teamId}/league-rosters?submission=${s.id}`}
-                    variant="subtle"
-                    size="sm"
-                    className="shrink-0"
-                  >
-                    View league roster
-                  </Button>
-                )}
+                <div className="flex shrink-0 items-center gap-2">
+                  {s.scheduleRequestsEnabled && s.status === "APPROVED" && (
+                    <Button
+                      href={`/clubs/${clubId}/teams/${teamId}/schedule-requests?submission=${s.id}`}
+                      variant="subtle"
+                      size="sm"
+                    >
+                      Schedule requests
+                    </Button>
+                  )}
+                  {s.roster && (
+                    <Button
+                      href={`/clubs/${clubId}/teams/${teamId}/league-rosters?submission=${s.id}`}
+                      variant="subtle"
+                      size="sm"
+                    >
+                      View league roster
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

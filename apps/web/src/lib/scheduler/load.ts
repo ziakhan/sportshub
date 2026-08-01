@@ -1,14 +1,48 @@
 import { prisma } from "@youthbasketballhub/db"
-import type { SchedulerInput, SchedulerPhilosophy } from "./generate"
+import type {
+  ScheduleBlackout,
+  ScheduleWindow,
+  SchedulerInput,
+  SchedulerPhilosophy,
+} from "./generate"
 // Relative (not "@/") import: scripts/seed-nph-demo.ts pulls this module
 // straight through tsx without the app's path alias.
 import { effectiveSeasonConfig } from "../org/season-defaults"
+
+export interface LoadSchedulerOptions {
+  /**
+   * Simulation only (owner 2026-08-01): treat this one PENDING schedule
+   * request as if the league had approved it — nothing is written. The
+   * approval UI uses this to show the cost of approving before deciding.
+   */
+  includePendingRequestId?: string
+  /**
+   * Org planner (owner 2026-08-01): extra hard court bookings injected by
+   * the cross-league simulation (earlier seasons' placed games).
+   */
+  extraBusyBookings?: Array<{ courtId: string; start: string; end: string }>
+}
+
+/** Blackout DATE columns are date-only (UTC midnight) — key them by their
+ *  UTC calendar day so they match the engine's local-date slot keys. */
+const utcDateKey = (d: Date): string =>
+  `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`
+
+const hhmmToMin = (t: string | null | undefined): number | undefined => {
+  if (!t) return undefined
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t)
+  if (!m) return undefined
+  return Number(m[1]) * 60 + Number(m[2])
+}
 
 /**
  * Load a Season + its substrate and shape it as SchedulerInput.
  * Only APPROVED team submissions feed the generator.
  */
-export async function loadSchedulerInput(seasonId: string): Promise<{
+export async function loadSchedulerInput(
+  seasonId: string,
+  options?: LoadSchedulerOptions
+): Promise<{
   input: SchedulerInput | null
   errors: string[]
 }> {
@@ -23,6 +57,8 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
             include: {
               team: { select: { id: true, name: true } },
               division: { select: { id: true } },
+              blackouts: true,
+              scheduleRequests: { where: { status: "APPROVED" } },
             },
           },
         },
@@ -82,6 +118,62 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
       ? ts.weekendStyle
       : leagueDefaultStyle
 
+  // Approved schedule requests + blackouts (owner 2026-08-01). A simulated
+  // pending request (approval-cost preview) folds in as if approved.
+  const requestToWindow = (r: any): ScheduleWindow => ({
+    dayOfWeek: r.dayOfWeek ?? undefined,
+    dateKey: r.date ? utcDateKey(new Date(r.date)) : undefined,
+    earliestMin: hhmmToMin(r.earliestStart),
+    latestMin: hhmmToMin(r.latestStart),
+  })
+  const constraintsFor = (ts: any): { blackouts?: ScheduleBlackout[]; windows?: ScheduleWindow[] } => {
+    const blackouts: ScheduleBlackout[] = (ts.blackouts ?? []).map((b: any) => ({
+      dateKey: utcDateKey(new Date(b.date)),
+      startMin: hhmmToMin(b.startTime),
+      endMin: hhmmToMin(b.endTime),
+    }))
+    const windows: ScheduleWindow[] = (ts.scheduleRequests ?? [])
+      .filter((r: any) => r.kind === "WINDOW")
+      .map(requestToWindow)
+    const pending = pendingRequest && pendingRequest.submissionId === ts.id ? pendingRequest : null
+    if (pending) {
+      if (pending.kind === "WINDOW") {
+        windows.push(requestToWindow(pending))
+      } else if (pending.date) {
+        blackouts.push({
+          dateKey: utcDateKey(new Date(pending.date)),
+          startMin: hhmmToMin(pending.startTime),
+          endMin: hhmmToMin(pending.endTime),
+        })
+      } else if (pending.dayOfWeek !== null && pending.dayOfWeek !== undefined) {
+        // Recurring blackout: expand against the season's playing days.
+        for (const sess of season.sessions ?? []) {
+          for (const d of sess.days ?? []) {
+            const day = new Date(d.date)
+            if (day.getUTCDay() === pending.dayOfWeek) {
+              blackouts.push({
+                dateKey: utcDateKey(day),
+                startMin: hhmmToMin(pending.startTime),
+                endMin: hhmmToMin(pending.endTime),
+              })
+            }
+          }
+        }
+      }
+    }
+    return {
+      blackouts: blackouts.length > 0 ? blackouts : undefined,
+      windows: windows.length > 0 ? windows : undefined,
+    }
+  }
+  let pendingRequest: any = null
+  if (options?.includePendingRequestId) {
+    pendingRequest = await (prisma as any).teamScheduleRequest.findUnique({
+      where: { id: options.includePendingRequestId },
+    })
+    if (pendingRequest && pendingRequest.status !== "PENDING") pendingRequest = null
+  }
+
   const input: SchedulerInput = {
     gamesGuaranteed: (cfg.gamesGuaranteed as number) ?? 0,
     gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
@@ -103,6 +195,7 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
         divisionId: ts.divisionId,
         name: ts.team?.name ?? ts.teamId,
         weekendStyle: resolveStyle(ts),
+        ...constraintsFor(ts),
       })),
     })),
     schedulingGroups: (season.schedulingGroups ?? []).map((g: any) => ({
@@ -161,6 +254,9 @@ export async function loadSchedulerInput(seasonId: string): Promise<{
         end: new Date(new Date(g.scheduledAt).getTime() + (g.duration ?? 90) * 60000).toISOString(),
       }))
     }
+  }
+  if (options?.extraBusyBookings?.length) {
+    input.busyCourtBookings = [...(input.busyCourtBookings ?? []), ...options.extraBusyBookings]
   }
 
   return { input, errors }

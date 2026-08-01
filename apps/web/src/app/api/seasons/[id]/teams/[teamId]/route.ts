@@ -7,6 +7,7 @@ import { isSeasonLocked } from "@/lib/seasons/season-lock"
 import { cancelObligationIfUnpaid, ensureObligation } from "@/lib/payments/obligations"
 import { sendWaiversForApprovedSubmission } from "@/lib/waivers/auto-send"
 import { effectiveSeasonConfig } from "@/lib/org/season-defaults"
+import { cancelPendingScheduleRequestsForSubmission } from "@/lib/schedule-requests/requests"
 
 export const dynamic = "force-dynamic"
 
@@ -19,11 +20,19 @@ const updateTeamSubmissionSchema = z
     // Weekend scheduling preference (owner 2026-08-01): team choice
     // overrides the league default.
     weekendStyle: z.enum(["SAME_DAY", "SPLIT_DAYS", "NO_PREFERENCE"]).nullable().optional(),
+    // Schedule-request gate (owner 2026-08-01): league-only per-team toggle.
+    scheduleRequestsEnabled: z.boolean().optional(),
     paymentStatus: z.enum(["UNPAID", "PAID_MANUAL", "PAID_STRIPE", "WAIVED"]).optional(),
   })
-  .refine((d) => d.status !== undefined || d.paymentStatus !== undefined, {
-    message: "Provide status or paymentStatus",
-  })
+  .refine(
+    (d) =>
+      d.status !== undefined ||
+      d.paymentStatus !== undefined ||
+      d.scheduleRequestsEnabled !== undefined,
+    {
+      message: "Provide status, paymentStatus or scheduleRequestsEnabled",
+    }
+  )
 
 /**
  * PATCH /api/seasons/[id]/teams/[teamId]
@@ -118,7 +127,11 @@ export async function PATCH(
       if (!hasClubManagerAccess) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 })
       }
-      if (data.status !== "WITHDRAWN" || data.paymentStatus !== undefined) {
+      if (
+        data.status !== "WITHDRAWN" ||
+        data.paymentStatus !== undefined ||
+        data.scheduleRequestsEnabled !== undefined
+      ) {
         return NextResponse.json(
           { error: "Clubs can only withdraw their own team from a season" },
           { status: 403 }
@@ -180,6 +193,8 @@ export async function PATCH(
     if (data.status !== undefined) updateData.status = data.status
     if (data.divisionId !== undefined) updateData.divisionId = data.divisionId
     if (data.weekendStyle !== undefined) updateData.weekendStyle = data.weekendStyle
+    if (data.scheduleRequestsEnabled !== undefined)
+      updateData.scheduleRequestsEnabled = data.scheduleRequestsEnabled
     if (data.paymentStatus !== undefined) updateData.paymentStatus = data.paymentStatus
 
     // G4 cascade: withdrawing a team cancels its FUTURE games atomically with
@@ -226,6 +241,11 @@ export async function PATCH(
         await cancelObligationIfUnpaid(tx, "TeamSubmission", submission.id)
       }
       if (withdrawing) {
+        await cancelPendingScheduleRequestsForSubmission(
+          tx,
+          submission.id,
+          "Team withdrew from the season"
+        )
         cancelledGames = await tx.game.findMany({
           where: {
             seasonId: params.id,

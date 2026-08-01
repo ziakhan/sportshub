@@ -7,7 +7,24 @@ import { loadSchedulerInput } from "@/lib/scheduler/load"
 
 export const dynamic = "force-dynamic"
 
+const scenarioSchema = z
+  .object({
+    excludeCourtIds: z.array(z.string()).max(50).optional(),
+    dayWindow: z
+      .object({
+        startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+      })
+      .optional(),
+    compactDays: z.boolean().optional(),
+  })
+  .optional()
+
 const previewSchema = z.object({
+  // Scenario descriptor (owner 2026-08-01): recommendations from the
+  // scenarios endpoint round-trip through preview and commit so "Use this"
+  // writes exactly what was shown.
+  scenario: scenarioSchema,
   // sessionId → unit keys that session hosts (capacity planning); a session
   // absent from the map hosts any unit.
   sessionUnits: z.record(z.array(z.string())).optional(),
@@ -54,6 +71,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     if (varietyShuffle) {
       input.varietySeed = ((input.varietySeed ?? 0) + varietyShuffle * 131) % 9973
+    }
+    if (parsed.scenario) {
+      if (parsed.scenario.excludeCourtIds?.length)
+        input.excludeCourtIds = parsed.scenario.excludeCourtIds
+      if (parsed.scenario.dayWindow) input.dayWindow = parsed.scenario.dayWindow
+      if (parsed.scenario.compactDays) input.compactDays = true
     }
     if (sessionUnits) input.sessionUnitFilter = sessionUnits
     if (sessionIds && sessionIds.length > 0) {

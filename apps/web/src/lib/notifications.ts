@@ -30,6 +30,9 @@ export type NotificationType =
   // Withdrawals (owner 2026-07-18: self-withdrawal needs the other party's sign-off)
   | "withdrawal_request"
   | "withdrawal_decision"
+  // Schedule requests (owner 2026-08-01: league-approved, best effort)
+  | "schedule_request_submitted"
+  | "schedule_request_decided"
   | "jersey_assigned"
   // Staff invitations & requests
   | "staff_invite"

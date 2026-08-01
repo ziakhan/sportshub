@@ -32,6 +32,24 @@ export interface SchedulerSlot {
 
 export type WeekendStyle = "SAME_DAY" | "SPLIT_DAYS"
 
+/** A day a team cannot play (owner 2026-08-01: approved blackout requests +
+ *  league-entered blackouts). dateKey matches the engine's local date key;
+ *  missing time bounds = the whole day. */
+export interface ScheduleBlackout {
+  dateKey: string
+  startMin?: number
+  endMin?: number
+}
+
+/** An approved best-effort start-time window (owner 2026-08-01): games on the
+ *  matching day should START within [earliestMin, latestMin]. */
+export interface ScheduleWindow {
+  dayOfWeek?: number // 0=Sunday … 6=Saturday
+  dateKey?: string
+  earliestMin?: number
+  latestMin?: number
+}
+
 export interface SchedulerTeam {
   submissionId: string
   teamId: string
@@ -40,6 +58,10 @@ export interface SchedulerTeam {
   /** Resolved weekend preference: TEAM's own choice wins, else the league
    *  default (owner 2026-08-01). Absent = derive from philosophy. */
   weekendStyle?: WeekendStyle
+  /** Hard no-play periods (approved blackout requests + league-entered). */
+  blackouts?: ScheduleBlackout[]
+  /** Approved best-effort start-time windows. */
+  windows?: ScheduleWindow[]
 }
 
 export interface SchedulerUnit {
@@ -118,6 +140,15 @@ export interface SchedulerInput {
    * never a double-booking, never a hard stop.
    */
   busyCourtBookings?: Array<{ courtId: string; start: string; end: string }>
+  /**
+   * Scenario overrides (owner 2026-08-01: recommendations, not settings).
+   * excludeCourtIds removes courts from the grid entirely; dayWindow clamps
+   * every day's open hours; compactDays nudges games toward the earliest
+   * waves so days finish early.
+   */
+  excludeCourtIds?: string[]
+  dayWindow?: { startTime?: string; endTime?: string }
+  compactDays?: boolean
 }
 
 export interface ProposedGame {
@@ -187,13 +218,20 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
   const restrict = input.restrictToSessionIds?.length
     ? new Set(input.restrictToSessionIds)
     : null
+  const excluded = input.excludeCourtIds?.length ? new Set(input.excludeCourtIds) : null
+  const windowOpen = parseHHMM(input.dayWindow?.startTime ?? null)
+  const windowClose = parseHHMM(input.dayWindow?.endTime ?? null)
+  const laterOf = (a: { h: number; m: number }, b: { h: number; m: number } | null) =>
+    b && b.h * 60 + b.m > a.h * 60 + a.m ? b : a
+  const earlierOf = (a: { h: number; m: number }, b: { h: number; m: number } | null) =>
+    b && b.h * 60 + b.m < a.h * 60 + a.m ? b : a
   for (const s of input.sessions) {
     if (s.phase !== "REGULAR") continue
     if (restrict && !restrict.has(s.id)) continue
     for (const d of s.days) {
       for (const dv of d.dayVenues) {
-        const open = parseHHMM(dv.startTime) ?? fallbackOpen
-        const close = parseHHMM(dv.endTime) ?? fallbackClose
+        const open = laterOf(parseHHMM(dv.startTime) ?? fallbackOpen, windowOpen)
+        const close = earlierOf(parseHHMM(dv.endTime) ?? fallbackClose, windowClose)
         const dayStart = atTimeOnDate(d.date, open)
         const dayEnd = atTimeOnDate(d.date, close)
         if (dayEnd <= dayStart) continue
@@ -202,6 +240,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
         const slotsPerCourt = Math.floor(windowMinutes / input.gameSlotMinutes)
 
         for (const [courtIdx, court] of dv.courts.entries()) {
+          if (excluded?.has(court.id)) continue
           for (let i = 0; i < slotsPerCourt; i++) {
             const startAt = new Date(dayStart.getTime() + i * input.gameSlotMinutes * 60000)
             const endAt = new Date(startAt.getTime() + input.gameSlotMinutes * 60000)
@@ -422,6 +461,45 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     }
     return spread
   }
+  // Approved-request compliance for a candidate result (windows + blackouts).
+  const requestIssues = (games: ProposedGame[]): number => {
+    let viol = 0
+    const windowsOf = new Map<string, NonNullable<SchedulerTeam["windows"]>>()
+    const blackoutsOf = new Map<string, NonNullable<SchedulerTeam["blackouts"]>>()
+    for (const d of input.divisions) {
+      for (const t of d.teams) {
+        if (t.windows?.length) windowsOf.set(t.teamId, t.windows)
+        if (t.blackouts?.length) blackoutsOf.set(t.teamId, t.blackouts)
+      }
+    }
+    if (windowsOf.size === 0 && blackoutsOf.size === 0) return 0
+    for (const g of games) {
+      const d = new Date(g.scheduledAt)
+      const dk = dkOf(d)
+      const startMin = d.getHours() * 60 + d.getMinutes()
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        for (const w of windowsOf.get(id) ?? []) {
+          const applies =
+            (w.dateKey !== undefined && w.dateKey === dk) ||
+            (w.dayOfWeek !== undefined && d.getDay() === w.dayOfWeek)
+          if (!applies) continue
+          if (
+            (w.earliestMin !== undefined && startMin < w.earliestMin) ||
+            (w.latestMin !== undefined && startMin > w.latestMin)
+          )
+            viol++
+        }
+        for (const b of blackoutsOf.get(id) ?? []) {
+          if (b.dateKey !== dk) continue
+          const from = b.startMin ?? 0
+          const to = b.endMin ?? 24 * 60
+          if (startMin < to && from < startMin + input.gameSlotMinutes) viol++
+        }
+      }
+    }
+    return viol
+  }
+
   /** [back-to-backs, style violations] for a candidate result. */
   const shapeIssues = (games: ProposedGame[]): [number, number] => {
     const bySessionTeam = new Map<string, number[]>()
@@ -451,7 +529,8 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return [b2b, styleViol]
   }
   let best: SchedulerResult | null = null
-  let bestKey: [number, number, number, number, number] = [
+  let bestKey: [number, number, number, number, number, number] = [
+    Infinity,
     Infinity,
     Infinity,
     Infinity,
@@ -464,8 +543,11 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       varietySeed: (input.varietySeed ?? 0) + k * 7919,
     })
     const [b2b, styleViol] = shapeIssues(res.games)
-    const key: [number, number, number, number, number] = [
+    const key: [number, number, number, number, number, number] = [
       res.unscheduled.length,
+      // Approved requests outrank everything except placing all games —
+      // they're the promises the league explicitly signed off on.
+      requestIssues(res.games),
       b2b,
       styleViol,
       edgeSpread(res.games),
@@ -473,9 +555,10 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     ]
     // Edge spread is a RATE (percent of playing days); within ~a-day-in-four
     // is the target, not a defect — treat ≤25 as passing for the early exit.
-    if (key[0] === 0 && key[1] === 0 && key[2] === 0 && key[3] <= 25 && key[4] === 0) return res
+    if (key[0] === 0 && key[1] === 0 && key[2] === 0 && key[3] === 0 && key[4] <= 25 && key[5] === 0)
+      return res
     let better = false
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       if (key[i] < bestKey[i]) {
         better = true
         break
@@ -613,9 +696,14 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   // effectively split-days in such leagues, whatever their preference.
   const capForcesSplit = input.idealGamesPerDayPerTeam <= 1
   const styleByTeam = new Map<string, WeekendStyle>()
+  const blackoutsByTeam = new Map<string, ScheduleBlackout[]>()
+  const windowsByTeam = new Map<string, ScheduleWindow[]>()
   for (const u of units)
-    for (const t of u.teams)
+    for (const t of u.teams) {
       styleByTeam.set(t.teamId, capForcesSplit ? "SPLIT_DAYS" : t.weekendStyle ?? philosophyStyle)
+      if (t.blackouts?.length) blackoutsByTeam.set(t.teamId, t.blackouts)
+      if (t.windows?.length) windowsByTeam.set(t.teamId, t.windows)
+    }
   const styleOf = (teamId: string): WeekendStyle =>
     capForcesSplit ? "SPLIT_DAYS" : styleByTeam.get(teamId) ?? philosophyStyle
   // `${sessionId}|${teamId}` → Map<dateKey, games>
@@ -790,12 +878,64 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         const lead = dayPair[(sessIdx + unitIdx) % 2]
         const other = dayPair[0] === lead ? dayPair[1] : dayPair[0]
         comps.sort((a, b) => b.length - a.length)
+        // A team's whole-day blackout forbids its color's day: count the
+        // violations of each of the two possible assignments and take the
+        // cleaner one (seat balance breaks ties).
+        const blackoutHits = (comp: number[], dayForColor0: string, dayForColor1: string): number => {
+          let hits = 0
+          for (const gi of comp) {
+            const pr = picked[gi]
+            const dk = color[gi] === 0 ? dayForColor0 : dayForColor1
+            for (const id of [pr.homeTeamId, pr.awayTeamId]) {
+              for (const b of blackoutsByTeam.get(id) ?? []) {
+                if (b.dateKey === dk && b.startMin === undefined) hits++
+              }
+            }
+          }
+          return hits
+        }
+        // Window pressure: anchoring a team on a day where its approved
+        // window restricts start times makes its weekend HARD to place —
+        // prefer the unconstrained day (a "Saturdays after 2pm" team is
+        // cheapest to schedule on Sundays).
+        const weekdayOfKey = (dk: string): number => {
+          const [y, m, d] = dk.split("-").map(Number)
+          return new Date(y, m, d).getDay()
+        }
+        const windowPressure = (comp: number[], dayForColor0: string, dayForColor1: string): number => {
+          let hits = 0
+          for (const gi of comp) {
+            const pr = picked[gi]
+            const dk = color[gi] === 0 ? dayForColor0 : dayForColor1
+            const dow = weekdayOfKey(dk)
+            for (const id of [pr.homeTeamId, pr.awayTeamId]) {
+              for (const w of windowsByTeam.get(id) ?? []) {
+                if (
+                  (w.dateKey !== undefined && w.dateKey === dk) ||
+                  (w.dayOfWeek !== undefined && w.dayOfWeek === dow)
+                )
+                  hits++
+              }
+            }
+          }
+          return hits
+        }
         for (const comp of comps) {
           const seats0 = comp.filter((gi) => color[gi] === 0).length * 2
           const seats1 = comp.length * 2 - seats0
           const leadLeft = seats.get(lead) ?? 0
           const otherLeft = seats.get(other) ?? 0
-          const day0 = leadLeft - seats0 >= 0 || leadLeft >= otherLeft ? lead : other
+          let day0 = leadLeft - seats0 >= 0 || leadLeft >= otherLeft ? lead : other
+          if (blackoutsByTeam.size > 0 || windowsByTeam.size > 0) {
+            const alt = day0 === lead ? other : lead
+            const asIs = [blackoutHits(comp, day0, alt), windowPressure(comp, day0, alt)]
+            const flipped = [blackoutHits(comp, alt, day0), windowPressure(comp, alt, day0)]
+            if (
+              flipped[0] < asIs[0] ||
+              (flipped[0] === asIs[0] && flipped[1] < asIs[1])
+            )
+              day0 = alt
+          }
           const day1 = day0 === lead ? other : lead
           seats.set(day0, (seats.get(day0) ?? 0) - seats0)
           seats.set(day1, (seats.get(day1) ?? 0) - seats1)
@@ -1205,6 +1345,56 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       }
     }
 
+    // Approved schedule requests (owner 2026-08-01). Blackout = the team is
+    // NOT THERE: hard in every pass except the relaxed repair ladder, which
+    // may cross it only as the alternative to an unplaced game (counted
+    // loudly in the trade-off notes). Window = best effort: strong soft.
+    if (blackoutsByTeam.size > 0 || windowsByTeam.size > 0) {
+      const slotStartMin = slot.startAt.getHours() * 60 + slot.startAt.getMinutes()
+      const slotEndMin = slotStartMin + input.gameSlotMinutes
+      for (const teamId of [homeTeamId, awayTeamId]) {
+        for (const b of blackoutsByTeam.get(teamId) ?? []) {
+          if (b.dateKey !== dayKeyHere) continue
+          const from = b.startMin ?? 0
+          const to = b.endMin ?? 24 * 60
+          if (slotStartMin < to && from < slotEndMin) {
+            if (!(relaxDayCap && inRepair)) {
+              return { score: -Infinity, blockReason: "team blackout" }
+            }
+            score -= 40
+          }
+        }
+        for (const w of windowsByTeam.get(teamId) ?? []) {
+          const applies =
+            (w.dateKey !== undefined && w.dateKey === dayKeyHere) ||
+            (w.dayOfWeek !== undefined && slot.startAt.getDay() === w.dayOfWeek)
+          if (!applies) continue
+          const okEarliest = w.earliestMin === undefined || slotStartMin >= w.earliestMin
+          const okLatest = w.latestMin === undefined || slotStartMin <= w.latestMin
+          if (okEarliest && okLatest) {
+            score += 2
+          } else {
+            // Hard in BOTH placement passes — a soft penalty can't stop a
+            // placement when the pairing is a slot's only candidate (late
+            // windows lost to the early-wave fill, then leaked through the
+            // relaxed pass). Only the repair ladder may concede, counted in
+            // the trade-off notes.
+            if (!inRepair) {
+              return { score: -Infinity, blockReason: "outside an approved window" }
+            }
+            score -= 12
+          }
+        }
+      }
+    }
+
+    // Compact-day scenario (owner 2026-08-01: a recommendation, never a
+    // league setting): pull games toward the day's earliest waves.
+    if (input.compactDays) {
+      const ratio = slotRatioByDay.get(slot.dayId)?.get(slot.startAt.getTime()) ?? 0.5
+      score += (1 - ratio) * 4
+    }
+
     // First/last-tip rotation (owner 2026-08-01): softly steered here; the
     // dedicated edge-rebalance pass afterwards enforces max−min ≤ 1 by
     // swapping game times within days (a hard placement block just pushed
@@ -1540,9 +1730,24 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
    */
   const anchorSafe = (pairing: Pairing, slot: SchedulerSlot): boolean => {
     const dk = dateKeyOf(slot.startAt)
+    const slotStartMin = slot.startAt.getHours() * 60 + slot.startAt.getMinutes()
     for (const id of [pairing.homeTeamId, pairing.awayTeamId]) {
       const a = anchorByTeamSession.get(`${slot.sessionId}|${id}`)
       if (a !== undefined && styleOf(id) === "SAME_DAY" && dk !== a) return false
+      for (const b of blackoutsByTeam.get(id) ?? []) {
+        if (b.dateKey !== dk) continue
+        const from = b.startMin ?? 0
+        const to = b.endMin ?? 24 * 60
+        if (slotStartMin < to && from < slotStartMin + input.gameSlotMinutes) return false
+      }
+      for (const w of windowsByTeam.get(id) ?? []) {
+        const applies =
+          (w.dateKey !== undefined && w.dateKey === dk) ||
+          (w.dayOfWeek !== undefined && slot.startAt.getDay() === w.dayOfWeek)
+        if (!applies) continue
+        if (w.earliestMin !== undefined && slotStartMin < w.earliestMin) return false
+        if (w.latestMin !== undefined && slotStartMin > w.latestMin) return false
+      }
       for (const b of teamBookings[id] ?? []) {
         if (b.dateKey !== dk) continue
         // A split-days team already plays this day — a second game here
@@ -2340,6 +2545,44 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       tradeoffs.push(
         `${styleViolations} team-weekend${styleViolations === 1 ? "" : "s"} couldn't get the team's preferred shape — the fairness report shows which.`
       )
+    }
+    if (blackoutsByTeam.size > 0 || windowsByTeam.size > 0) {
+      let blackoutViol = 0
+      let windowViol = 0
+      for (const g of games) {
+        const start = new Date(g.scheduledAt)
+        const dk = dateKeyOf(start)
+        const startMin = start.getHours() * 60 + start.getMinutes()
+        for (const id of [g.homeTeamId, g.awayTeamId]) {
+          for (const b of blackoutsByTeam.get(id) ?? []) {
+            if (b.dateKey !== dk) continue
+            const from = b.startMin ?? 0
+            const to = b.endMin ?? 24 * 60
+            if (startMin < to && from < startMin + input.gameSlotMinutes) blackoutViol++
+          }
+          for (const w of windowsByTeam.get(id) ?? []) {
+            const applies =
+              (w.dateKey !== undefined && w.dateKey === dk) ||
+              (w.dayOfWeek !== undefined && start.getDay() === w.dayOfWeek)
+            if (!applies) continue
+            if (
+              (w.earliestMin !== undefined && startMin < w.earliestMin) ||
+              (w.latestMin !== undefined && startMin > w.latestMin)
+            )
+              windowViol++
+          }
+        }
+      }
+      if (blackoutViol > 0) {
+        tradeoffs.push(
+          `${blackoutViol} game${blackoutViol === 1 ? " sits" : "s sit"} on a team's blackout — nothing else fit; move ${blackoutViol === 1 ? "it" : "them"} by hand or add court time.`
+        )
+      }
+      if (windowViol > 0) {
+        tradeoffs.push(
+          `${windowViol} approved schedule request${windowViol === 1 ? "" : "s"} couldn't be honored this run — best effort, the fairness report shows which.`
+        )
+      }
     }
     // Edge fairness is judged as a SHARE of each team's playing days — a
     // split-days team plays ~2× the days of a one-trip team, so raw counts

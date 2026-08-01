@@ -936,3 +936,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Report/API/UI: fairness report gains weekendStyle, preference honored, last games, division-scoped edges (unitByTeam); team page weekend-preference selector; Settings › Game format league default; org rulebook default; NPH seed: org default SAME_DAY + 4 White teams SPLIT_DAYS.
 - Receipts (Fall 20-team seeded world): whole-season 100/100 games, 0 b2b, preference 98/100 (SAME 79/80, SPLIT 19/20), ~2.4s; session-by-session 100 games, 0 b2b, SAME 80/80, SPLIT 18/20; Shuffle differs, determinism holds. Suites: scheduler 45/45, unit+int green (see session log).
 - Deployed 2026-08-01: deploy.sh (first run failed lint — `useOf` helper read as a React hook, renamed courtUseOf in 5eee87a) → schema push (deploy already synced it; columns verified) → reseed clean. Site 200.
+
+## #57 — 2026-08-01: SCHEDULE REQUESTS + SCENARIOS + ORG PLANNER v1 — ⏳ NOT DEPLOYED (needs owner word + box schema push + reseed)
+- SCHEMA (additive): new table TeamScheduleRequest + enums ScheduleRequestKind/Status; TeamSubmission.scheduleRequestsEnabled; SeasonTeamBlackout.sourceRequestId; User relations. `prisma db push` on box (+ Neon eventually with #24+).
+- Full build log: docs/roadmap/league-ia-redesign.md §29. Deploy steps when approved: push GitHub → deploy.sh → verify schema synced → reseed demo world.
+- Suites at commit time: scheduler 50/50 · unit + int green (see §29) · Playwright loop 14/14.
