@@ -35,14 +35,12 @@ const LAST_NAMES = ["Ali", "Bennett", "Chen", "Diallo", "Evans", "Fofana", "Gran
 const ADULT_NAMES = ["Andre", "Bianca", "Carlos", "Dawn", "Errol", "Farah", "Glen", "Hodan", "Ivan", "Jasmine", "Kwame", "Leila", "Marco", "Nadia", "Omar", "Paula", "Quentin", "Rosa", "Stefan", "Tanya"]
 
 // ── Real venues (docs/research/nph-operations-intel-2026-08.md) ─────────
+// THREE main gyms only (owner 2026-08-01: "everything happens in our GTA —
+// Six Park, the Playground, and Haber"; no Ottawa/Quebec satellites).
 const JOURNEY_VENUES = [
   { key: "sixpark", name: "Six Park East", address: "1000 Thornton Rd S", city: "Oshawa", zipCode: "L1J 7E2", courts: 6 },
   { key: "playground", name: "The Playground Burlington", address: "952 Century Dr", city: "Burlington", zipCode: "L7L 5P2", courts: 3 },
   { key: "haber", name: "Haber Recreation Centre", address: "3040 Tim Dobbie Dr", city: "Burlington", zipCode: "L7M 0M3", courts: 2 },
-  { key: "carleton", name: "Carleton University Raven's Nest", address: "1125 Colonel By Dr", city: "Ottawa", zipCode: "K1S 5B6", courts: 2 },
-  { key: "lisgar", name: "Lisgar Collegiate Institute", address: "29 Lisgar St", city: "Ottawa", zipCode: "K2P 0B9", courts: 1 },
-  { key: "turner", name: "Turner Fenton Secondary School", address: "7935 Kennedy Rd S", city: "Brampton", zipCode: "L6W 4T5", courts: 2 },
-  { key: "ndl", name: "Complexe NDL", address: "820 Rue Marie-Victorin", city: "Longueuil", zipCode: "J4G 1A9", courts: 2 },
 ]
 
 const SL_LEAGUE = "NPH Showcase League"
@@ -227,7 +225,7 @@ export async function seedJourneyStage1() {
     }
     venueByKey.set(v.key, { id: venue.id, courtIds })
   }
-  console.log(`✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 2 + satellites)`)
+  console.log(`✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 2)`)
 
   // Clubs: one tenant per census club (adopt-or-create). Demo logins only
   // for the clubs the pitch script drives.
@@ -440,12 +438,12 @@ export async function seedJourneyStage1() {
   const npaLeague = await mkLeague(NPA_LEAGUE, "National Prep Association — Canada's national prep circuit.")
   const npaSeason = await mkSeason(npaLeague.id, "Season 8", "FINALIZED", 6)
   const npaDivs = await mkDivisions(npaSeason.id, "NPA")
-  await buildSessions(npaSeason.id, PREP_WEEKENDS, ["carleton", "turner"], null, 2)
+  await buildSessions(npaSeason.id, PREP_WEEKENDS, ["sixpark"], { sixpark: 3 }, 2)
 
   const wnpaLeague = await mkLeague(WNPA_LEAGUE, "Women's National Prep Association — Season 3.")
   const wnpaSeason = await mkSeason(wnpaLeague.id, "Season 3", "FINALIZED", 6)
   const wnpaDivs = await mkDivisions(wnpaSeason.id, "WNPA")
-  await buildSessions(wnpaSeason.id, PREP_WEEKENDS, ["ndl", "lisgar"], null, 2)
+  await buildSessions(wnpaSeason.id, PREP_WEEKENDS, ["playground"], null, 2)
 
   const teamIdByEntry = new Map<NphCensusEntry, string>()
   for (const e of entries) {
@@ -517,10 +515,21 @@ export async function seedJourneyStage1() {
     ...slEntries.filter((e) => e.division === "Gr9").slice(0, 7),
     ...slEntries.filter((e) => e.division === "Gr10").slice(0, 6),
   ]
+  // Flagship clubs are never shown rejected (owner 2026-08-01: "Royal
+  // Crown is one of the top clubs"); Royal Crown's entries land APPROVED.
+  const NEVER_REJECT = new Set([
+    "Royal Crown",
+    "Ottawa Elite (incl. Prep)",
+    "Dragons de Gatineau",
+    "Capital Courts",
+    "Orillia Lakers",
+  ])
   let k = 0
   for (const e of early) {
     k++
-    const status = k % 5 === 0 ? "PENDING" : k % 11 === 0 ? "REJECTED" : "APPROVED"
+    let status = k % 5 === 0 ? "PENDING" : k % 11 === 0 ? "REJECTED" : "APPROVED"
+    if (e.club === "Royal Crown") status = "APPROVED"
+    else if (status === "REJECTED" && NEVER_REJECT.has(e.club)) status = "APPROVED"
     await submitTeam(slSeason.id, slDivs.get(divisionName(e))!, teamIdByEntry.get(e)!, status as any, status === "APPROVED")
   }
   console.log(`✓ Showcase League mid-registration: ${early.length} of ${slEntries.length} submitted`)
