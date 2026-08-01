@@ -476,6 +476,39 @@ export async function seedJourneyStage1() {
     }
   }
 
+  // The demo FAMILY (run-sheet beats 9-14): a coach and a parent with a
+  // named kid on Royal Crown's Grade 10 PRIME team — the second-screen
+  // logins that watch the schedule publish, notifications, and stat cards.
+  const rcEntry = entries.find(
+    (e) => e.club === "Royal Crown" && e.league === "SL" && e.division === "Gr10"
+  )
+  if (rcEntry) {
+    const rcTeamId = teamIdByEntry.get(rcEntry)!
+    const coach = await mkUser(`coach-journey@${EMAIL_DOMAIN}`, "Coreen", "Baptiste")
+    await p.userRole.create({
+      data: { userId: coach.id, role: "Staff", teamId: rcTeamId, designation: "HeadCoach" },
+    })
+    const parent = await mkUser(`parent-journey@${EMAIL_DOMAIN}`, "Priya", "Reyes")
+    await p.userRole.create({ data: { userId: parent.id, role: "Parent" } })
+    const kid = await p.player.create({
+      data: {
+        firstName: "Jordan",
+        lastName: "Reyes",
+        dateOfBirth: new Date(Date.UTC(2011, 3, 14)),
+        gender: "MALE",
+        isMinor: true,
+        parentId: parent.id,
+        position: "Guard",
+        mediaConsent: "GRANTED",
+      },
+      select: { id: true },
+    })
+    await p.teamPlayer.create({
+      data: { teamId: rcTeamId, playerId: kid.id, jerseyNumber: 7, status: "ACTIVE" },
+    })
+    console.log("✓ demo family: coach-journey@ + parent-journey@ (Jordan Reyes #7, Royal Crown Gr10 PRIME)")
+  }
+
   // ~25 of 146 submitted: every Gr7 club (12) + a spread of Gr9/Gr10 —
   // statuses mixed so the approvals screen has work to show.
   const slEntries = entries.filter((e) => e.league === "SL")

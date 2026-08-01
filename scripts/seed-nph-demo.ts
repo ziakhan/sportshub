@@ -2904,6 +2904,11 @@ async function main() {
     },
     data: { publishedAt: new Date() },
   })
+  await p.platformSettings.upsert({
+    where: { id: "default" },
+    create: { id: "default", enabledCountries: ["CA", "US"], demoState: { scenario: "pitch", stage: 1, loadedAt: new Date().toISOString() } },
+    update: { demoState: { scenario: "pitch", stage: 1, loadedAt: new Date().toISOString() } },
+  })
   console.log(`\n✓ world built in ${Math.round((Date.now() - t0) / 1000)}s — ${result.teams} teams, ${result.completed} completed, ${result.live} live`)
   printCheatSheet()
 }
