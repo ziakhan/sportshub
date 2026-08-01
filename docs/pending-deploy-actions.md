@@ -942,6 +942,6 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Full build log: docs/roadmap/league-ia-redesign.md §29. Deploy steps when approved: push GitHub → deploy.sh → verify schema synced → reseed demo world.
 - Suites at commit time: scheduler 50/50 · unit + int green (see §29) · Playwright loop 14/14.
 
-## #58 — 2026-08-01: B2B-AT-ALL-COSTS + 4 BUG FIXES — ⏳ NOT DEPLOYED (needs owner word; no schema change)
+## #58 — 2026-08-01: B2B-AT-ALL-COSTS + 4 BUG FIXES — ✅ DEPLOYED (box 99d3a03; no schema change; owner still owes the one-time Playground hours re-save to heal mixed weekend rows)
 - Priority reorder (b2b > requests > styles) + new b2b elimination pass + edge-rebalance b2b-safety + venue-hours propagation fix (applyVenueHoursToSessionDays) + deterministic loader ordering + trim-card guard. Build log §30.
 - NOTE for owner on deploy: re-save the Playground hours once (setup card or hours editor) after deploying — that now pushes 8:00-20:00 into ALL weekends' day rows and the mixed-hours state heals itself.
