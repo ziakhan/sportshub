@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest"
 import {
   packPlanVenues,
+  packShownPlacements,
   packShownVenues,
   packWeekendVenues,
   planningSource,
   proposePlan,
+  reasonPhrase,
   resolveWeekendGyms,
   weekendDemand,
+  weekendStory,
   type PlannerState,
   type PlannerUnit,
   type PlannerVenue,
@@ -268,6 +271,312 @@ describe("resolveWeekendGyms", () => {
     expect(gyms.sections).toEqual([])
     expect(gyms.unplaced).toEqual(["age:Gr7"])
     expect(gyms.overflow).toBe(12)
+  })
+})
+
+describe("why a grade is in the building it is in", () => {
+  it("names fill order when nothing else decided it", () => {
+    const packed = packWeekendVenues(
+      [unit("Gr7", 12), unit("Gr8", 12)],
+      weekend("s1", "2026-10-24", [EAST, WEST]),
+      {}
+    )
+    expect(packed.reasonByUnit).toEqual({ "age:Gr7": "fill", "age:Gr8": "fill" })
+  })
+
+  it("names residency when a grade goes back to its own gym", () => {
+    const packed = packWeekendVenues(
+      [unit("Gr7", 10)],
+      weekend("s1", "2026-11-14", [EAST, WEST]),
+      { "age:Gr7": "west" }
+    )
+    expect(packed.reasonByUnit["age:Gr7"]).toBe("resident")
+  })
+
+  it("names the bump when the home gym could not hold it", () => {
+    const packed = packWeekendVenues(
+      [unit("Gr7", 10)],
+      weekend("s1", "2026-11-14", [
+        gym("east", "Six Park East", 40, 0),
+        gym("west", "Playground West", 8, 1),
+      ]),
+      { "age:Gr7": "west" }
+    )
+    expect(packed.byUnit["age:Gr7"]).toBe("east")
+    expect(packed.reasonByUnit["age:Gr7"]).toBe("bumped")
+  })
+
+  it("names the dodge when an alternating grade steers off its last gym", () => {
+    const packed = packWeekendVenues(
+      [unit("Gr7", 10, true)],
+      weekend("s1", "2026-11-14", [EAST, WEST]),
+      { "age:Gr7": "east" }
+    )
+    expect(packed.byUnit["age:Gr7"]).toBe("west")
+    expect(packed.reasonByUnit["age:Gr7"]).toBe("avoided")
+
+    // No gym to dodge is not a dodge: that grade is simply filling in order.
+    const fresh = packWeekendVenues(
+      [unit("Gr7", 10, true)],
+      weekend("s1", "2026-11-14", [EAST, WEST]),
+      {}
+    )
+    expect(fresh.reasonByUnit["age:Gr7"]).toBe("fill")
+  })
+
+  it("calls it a bump when an alternating grade has to repeat its gym", () => {
+    const packed = packWeekendVenues(
+      [unit("Gr7", 10, true)],
+      weekend("s1", "2026-11-14", [EAST, gym("west", "Playground West", 4, 1)]),
+      { "age:Gr7": "east" }
+    )
+    expect(packed.byUnit["age:Gr7"]).toBe("east")
+    expect(packed.reasonByUnit["age:Gr7"]).toBe("bumped")
+  })
+
+  it("names the overflow, gym or no gym", () => {
+    const oversize = packWeekendVenues(
+      [unit("Gr10", 40)],
+      weekend("s1", "2026-10-24", [
+        gym("east", "Six Park East", 10, 0),
+        gym("west", "Playground West", 30, 1),
+      ]),
+      {}
+    )
+    expect(oversize.reasonByUnit["age:Gr10"]).toBe("overflow")
+
+    const nowhere = packWeekendVenues([unit("Gr7", 12)], weekend("s1", "2026-10-24", []), {})
+    expect(nowhere.reasonByUnit["age:Gr7"]).toBe("overflow")
+  })
+
+  it("a picked gym is the reason, whatever the packing had to do to honour it", () => {
+    // Both grades hand-picked into the small gym: the pick wins, and it is
+    // still the reason even where it puts that gym over its courts.
+    const gyms = resolveWeekendGyms(
+      [unit("Gr7", 12), unit("Gr8", 12)],
+      weekend("s1", "2026-10-24", [EAST, WEST]),
+      ["age:Gr7", "age:Gr8"],
+      { "age:Gr7": "east", "age:Gr8": "east" }
+    )
+    expect(gyms.reasonByUnit).toEqual({ "age:Gr7": "decided", "age:Gr8": "decided" })
+    expect(gyms.sections[0].over).toBe(4)
+  })
+
+  it("lets the caller's own reasons win, because the board already knows them", () => {
+    // The board hands resolveWeekendGyms the season-long pass's buildings just
+    // to shape sections. Without this every chip would read "your pick".
+    const gyms = resolveWeekendGyms(
+      [unit("Gr7", 10)],
+      weekend("s1", "2026-11-14", [EAST, WEST]),
+      ["age:Gr7"],
+      { "age:Gr7": "west" },
+      { "age:Gr7": "resident" }
+    )
+    expect(gyms.reasonByUnit["age:Gr7"]).toBe("resident")
+    expect(gyms.byUnit["age:Gr7"]).toBe("west")
+  })
+
+  it("says it in three words for the strip, and says nothing for fill order", () => {
+    expect(reasonPhrase("resident")).toBe("home gym")
+    expect(reasonPhrase("bumped")).toBe("moved, home gym full")
+    expect(reasonPhrase("decided")).toBe("your pick")
+    expect(reasonPhrase("fill")).toBeNull()
+  })
+})
+
+describe("packShownPlacements: reasons and homes across the season", () => {
+  const PLAYGROUND = gym("playground", "The Playground", 48, 0)
+  const SIXPARK = gym("sixpark", "Six Park East", 96, 1)
+
+  function season(): PlannerState {
+    return {
+      seasonId: "season",
+      units: [unit("Gr6", 10), unit("Gr8", 10), unit("Gr10", 42)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND, SIXPARK])] },
+        { label: "Dec 2026", weekends: [weekend("dec19", "2026-12-19", [PLAYGROUND, SIXPARK])] },
+      ],
+    }
+  }
+
+  const shown = {
+    nov21: ["age:Gr6", "age:Gr8"],
+    dec19: ["age:Gr6", "age:Gr8", "age:Gr10"],
+  }
+
+  it("carries where each grade WAS, so a sentence can name the gym it left", () => {
+    const placed = packShownPlacements(season(), shown)
+    expect(placed.homes.nov21).toEqual({})
+    expect(placed.homes.dec19).toEqual({
+      "age:Gr6": "playground",
+      "age:Gr8": "playground",
+    })
+    expect(placed.reasons.nov21).toEqual({ "age:Gr6": "fill", "age:Gr8": "fill" })
+    // December: the two residents keep The Playground, the giant fills next.
+    expect(placed.reasons.dec19).toEqual({
+      "age:Gr6": "resident",
+      "age:Gr8": "resident",
+      "age:Gr10": "fill",
+    })
+    expect(placed.venues).toEqual(packShownVenues(season(), shown))
+  })
+
+  it("marks a hand pick as decided, and carries it forward as residency", () => {
+    const placed = packShownPlacements(season(), shown, { dec19: { "age:Gr8": "sixpark" } })
+    expect(placed.reasons.dec19["age:Gr8"]).toBe("decided")
+    expect(placed.venues.dec19["age:Gr8"]).toBe("sixpark")
+  })
+})
+
+describe("weekendStory: the weekend in numbers", () => {
+  const SIXPARK_FIRST = gym("sixpark", "Six Park East", 96, 0)
+  const PLAYGROUND_SECOND = gym("playground", "The Playground", 48, 1)
+
+  /** The story for one weekend, packed the way the board packs it. */
+  function story(
+    units: PlannerUnit[],
+    w: PlannerWeekend,
+    keys: string[],
+    decided: Record<string, string> = {},
+    homes: Record<string, string> = {},
+    reasons?: Record<string, ReturnType<typeof reasonOf>>
+  ) {
+    const gyms = resolveWeekendGyms(units, w, keys, decided, reasons)
+    return weekendStory(units, w, gyms, homes)
+  }
+  const reasonOf = (r: "decided" | "resident" | "fill" | "bumped" | "avoided" | "overflow") => r
+
+  it("says which gym filled, which grade spilled, and both loads", () => {
+    const units = [unit("Grade 9", 51), unit("Grade 10", 40), unit("Grade 8", 10)]
+    const w = weekend("dec19", "2026-12-19", [SIXPARK_FIRST, PLAYGROUND_SECOND])
+    const { caption } = story(units, w, ["age:Grade 9", "age:Grade 10", "age:Grade 8"])
+    expect(caption).toBe(
+      "Six Park full at 91 of 96 · Grade 8 (10 games) spills to Playground (10 of 48)"
+    )
+  })
+
+  it("says a grade stayed in its own gym, and why, when fill order would not have", () => {
+    const units = [unit("Grade 8", 10), unit("Grade 10", 40)]
+    const w = weekend("dec19", "2026-12-19", [SIXPARK_FIRST, PLAYGROUND_SECOND])
+    const { caption, chipCaptions } = story(
+      units,
+      w,
+      ["age:Grade 8", "age:Grade 10"],
+      { "age:Grade 8": "playground" },
+      { "age:Grade 8": "playground" },
+      { "age:Grade 8": reasonOf("resident"), "age:Grade 10": reasonOf("fill") }
+    )
+    expect(caption).toBe(
+      "Six Park 40 of 96 · Grade 8 (10 games) stays in Playground (10 of 48, home gym)"
+    )
+    expect(chipCaptions["age:Grade 8"]).toBe("home gym")
+  })
+
+  it("names the grade that was moved, and the gym that was full", () => {
+    // November holds all three in The Playground, so that is home for every
+    // one of them. December's Playground is half the size: two residents keep
+    // it and the third is the one capacity moves.
+    const units = [unit("Grade 6", 21), unit("Grade 8", 21), unit("Grade 9", 42)]
+    const keys = units.map((u) => u.key)
+    const state: PlannerState = {
+      seasonId: "season",
+      units,
+      errors: [],
+      windows: [
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov21", "2026-11-21", [
+              gym("playground", "The Playground", 96, 0),
+              gym("sixpark", "Six Park East", 96, 1),
+            ]),
+          ],
+        },
+        {
+          label: "Dec 2026",
+          weekends: [
+            weekend("dec19", "2026-12-19", [
+              gym("playground", "The Playground", 48, 0),
+              gym("sixpark", "Six Park East", 96, 1),
+            ]),
+          ],
+        },
+      ],
+    }
+    const placed = packShownPlacements(state, { nov21: keys, dec19: keys })
+    expect(placed.reasons.dec19).toEqual({
+      "age:Grade 6": "resident",
+      "age:Grade 8": "resident",
+      "age:Grade 9": "bumped",
+    })
+    const w = state.windows[1].weekends[0]
+    const gyms = resolveWeekendGyms(units, w, keys, placed.venues.dec19, placed.reasons.dec19)
+    const { caption, chipCaptions } = weekendStory(units, w, gyms, placed.homes.dec19)
+    expect(caption).toBe(
+      "Playground full at 42 of 48 · Grade 9 (42 games) spills to Six Park (42 of 96)"
+    )
+    expect(chipCaptions["age:Grade 9"]).toBe("moved, Playground full")
+
+    // And when the buildings clause did NOT already name it, the line says it:
+    // Grade 9 bumped INTO the gym that fills first is not a spill.
+    const flipped = weekendStory(
+      units,
+      w,
+      {
+        ...gyms,
+        byUnit: { ...gyms.byUnit, "age:Grade 9": "playground" },
+        reasonByUnit: { ...gyms.reasonByUnit, "age:Grade 9": "bumped" },
+        sections: [
+          { ...gyms.sections[0], unitKeys: ["age:Grade 9"], games: 42 },
+          { ...gyms.sections[1], unitKeys: ["age:Grade 6", "age:Grade 8"], games: 42 },
+        ],
+      },
+      { ...placed.homes.dec19, "age:Grade 9": "sixpark" }
+    )
+    expect(flipped.caption).toContain(
+      "Grade 9 moved to Playground (Six Park full, 42 of 96)"
+    )
+  })
+
+  it("agrees with itself when more than one grade spills", () => {
+    const units = [unit("Grade 9", 51), unit("Grade 10", 43), unit("Grade 8", 3), unit("Grade 7", 4)]
+    const w = weekend("dec19", "2026-12-19", [SIXPARK_FIRST, PLAYGROUND_SECOND])
+    const { caption } = story(units, w, units.map((u) => u.key))
+    expect(caption).toBe(
+      "Six Park full at 94 of 96 · Grade 8 (3 games) and Grade 7 (4 games) spill to Playground (7 of 48)"
+    )
+  })
+
+  it("says a one-building weekend is one building, with the number", () => {
+    const units = [unit("Grade 8", 10)]
+    const w = weekend("dec19", "2026-12-19", [SIXPARK_FIRST, PLAYGROUND_SECOND])
+    expect(story(units, w, ["age:Grade 8"]).caption).toBe("fits in Six Park alone, 10 of 96")
+  })
+
+  it("leads with the shortage, in games", () => {
+    const units = [unit("Grade 10", 60)]
+    const w = weekend("dec12", "2026-12-12", [gym("playground", "The Playground", 48, 0)])
+    const { caption, chipCaptions } = story(units, w, ["age:Grade 10"])
+    expect(caption).toContain("Playground over by 12 (60 of 48)")
+    expect(chipCaptions["age:Grade 10"]).toBe("no room")
+  })
+
+  it("says an empty weekend is spare, and a full one is a full house", () => {
+    const units = [unit("Grade 8", 10), unit("Grade 9", 34)]
+    const w = weekend("dec12", "2026-12-12", [gym("playground", "The Playground", 48, 0)])
+    expect(story(units, w, []).caption).toBe("spare capacity")
+    // 44 of 48 is past the tight line, and nothing else happened.
+    expect(story(units, w, ["age:Grade 8", "age:Grade 9"]).caption).toBe("full house")
+  })
+
+  it("writes no em-dash anywhere an operator can read", () => {
+    const units = [unit("Grade 9", 51), unit("Grade 10", 40), unit("Grade 8", 10)]
+    const w = weekend("dec19", "2026-12-19", [SIXPARK_FIRST, PLAYGROUND_SECOND])
+    const { caption, chipCaptions } = story(units, w, units.map((u) => u.key))
+    for (const line of [caption, ...Object.values(chipCaptions)]) {
+      expect(line).not.toContain("—")
+    }
   })
 })
 

@@ -5,7 +5,12 @@
  * Deterministic by owner ruling (2026-08-02): no model call in the solve
  * path — validated against NPH's official 2026-27 calendar
  * (scripts/analysis/validate-nph-calendar.ts).
+ *
+ * Sentences live here too, next to the numbers they describe: the board and
+ * the strip RENDER copy, they never compose it, so what an operator reads is
+ * unit-tested against the same packing the plan saves.
  */
+import { venueShortName } from "@/lib/seasons/venue-strip"
 
 /**
  * How a weekend is named everywhere an operator sees one: "Oct 24–25", or
@@ -137,10 +142,35 @@ export interface PlannerState {
 
 export type PlannerLever = "balance" | "compact" | "spread" | "one-gym"
 
+/**
+ * A suggestion the operator can take with one tap: which grade goes where,
+ * with the numbers on both ends so the button is never a leap of faith. The
+ * board applies it through the same state change a drag makes.
+ */
+export interface SuggestionMove {
+  unitKey: string
+  unitLabel: string
+  /** Games the grade brings, counted on the weekend it is leaving. */
+  games: number
+  fromSessionId: string
+  fromLabel: string
+  toSessionId: string
+  toLabel: string
+  /** The weekend it leaves, as it stands right now. */
+  fromBefore: { demand: number; capacity: number }
+  /** The weekend it lands on, with this grade already added. */
+  toAfter: { demand: number; capacity: number }
+  /** What taking the move fixes. */
+  resolves: "shortage" | "two-building" | "idle-weekend"
+}
+
 export interface PlannerSuggestion {
   kind: "overflow" | "extend-hours" | "move-unit" | "idle-weekend" | "two-building"
   sessionId: string
   text: string
+  /** Present when the suggestion is one tap away from being done. Additive:
+   *  a reader that does not know about it still has the whole sentence. */
+  move?: SuggestionMove
 }
 
 /** Weekend demand in games for a set of assigned units. */
@@ -518,9 +548,35 @@ export function expectedTeamUpdates(
 
 /* ------------------------- which gym a grade plays in -------------------- */
 
+/**
+ * WHY a grade ended up in the building it did (owner 2026-08-02: "why you kept
+ * the grades — their home gym, that's where they play most of their games").
+ * The board writes it in words, the strip says it in the cell's label, and
+ * neither has to guess whether a gym was picked, kept, or forced.
+ *
+ *  - "decided":  somebody chose this gym. The saved plan, or a hand switch.
+ *  - "resident": the grade went back to the gym it has been playing.
+ *  - "fill":     the gyms filled in order and this is where it landed.
+ *  - "bumped":   its own gym could not hold it, so it moved. For a grade that
+ *                alternates buildings the same word means the mirror miss: it
+ *                had to repeat the building it just played.
+ *  - "avoided":  an alternating grade steered off the building it just played.
+ *  - "overflow": no gym on the weekend can hold it whole.
+ */
+export type PlacementReason =
+  | "decided"
+  | "resident"
+  | "fill"
+  | "bumped"
+  | "avoided"
+  | "overflow"
+
 export interface WeekendVenuePacking {
   /** The one gym each grade plays in this weekend: unit key → venueId. */
   byUnit: Record<string, string>
+  /** Why each grade is where it is: unit key → reason. Same keys as `byUnit`,
+   *  plus any grade the weekend stranded with no gym at all. */
+  reasonByUnit: Record<string, PlacementReason>
   /** Gyms that took at least one grade, in fill order. One entry is the
    *  goal; two means the league opened a second building that weekend. */
   opened: string[]
@@ -554,20 +610,36 @@ function unitGames(unit: PlannerUnit, targetGamesPerTeam: number): number {
  * `weekend.venues` must already be in fill order (buildPlannerState sorts
  * them); this walks that order and never re-sorts, because the exact search
  * calls it hundreds of thousands of times.
+ *
+ * `decided` names the grades somebody already chose a gym for, so the packing
+ * can say "your pick" instead of guessing at a reason. It changes no
+ * placement: a decided gym reaches the packer as that grade's `prior`, which
+ * is what makes it win.
  */
 export function packWeekendVenues(
   units: PlannerUnit[],
   weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
-  prior: Record<string, string>
+  prior: Record<string, string>,
+  decided?: ReadonlySet<string>
 ): WeekendVenuePacking {
   const byUnit: Record<string, string> = {}
+  const reasonByUnit: Record<string, PlacementReason> = {}
   const venues = weekend.venues
   const target = weekend.targetGamesPerTeam
+  /** A picked gym is always the reason, whatever route the packing took to
+   *  it: the operator's choice outranks every rule the packer applies. */
+  const mark = (key: string, reason: PlacementReason) => {
+    reasonByUnit[key] = decided?.has(key) ? "decided" : reason
+  }
 
   if (units.length === 0 || venues.length === 0) {
     let stranded = 0
-    for (const u of units) stranded += Math.max(0, unitGames(u, target))
-    return { byUnit, opened: [], overflow: stranded, violations: 0 }
+    for (const u of units) {
+      const games = Math.max(0, unitGames(u, target))
+      stranded += games
+      if (games > 0) reasonByUnit[u.key] = "overflow"
+    }
+    return { byUnit, reasonByUnit, opened: [], overflow: stranded, violations: 0 }
   }
 
   const remaining = venues.map((v) => v.capacityGames)
@@ -576,6 +648,9 @@ export function packWeekendVenues(
   venues.forEach((v, k) => indexOf.set(v.venueId, k))
   let overflow = 0
   let violations = 0
+  /** Grades whose own gym could not hold them this weekend. They go back in
+   *  the pool, and wherever they land, the reason is the bump. */
+  const bumped = new Set<string>()
 
   // Residents first, in key order — a deterministic answer to "which of two
   // grades that both live here gets bumped".
@@ -598,10 +673,12 @@ export function packWeekendVenues(
     }
     if (remaining[k] >= demand) {
       byUnit[u.key] = venues[k].venueId
+      mark(u.key, "resident")
       used[k] = true
       remaining[k] -= demand
     } else {
       violations++
+      bumped.add(u.key)
       pool.push(u)
     }
   }
@@ -613,6 +690,9 @@ export function packWeekendVenues(
   for (const u of pool) {
     const demand = unitGames(u, target)
     const avoid = u.alternate ? prior[u.key] : undefined
+    // Steering only counts as steering when the gym to dodge is actually open
+    // this weekend; otherwise the grade is simply filling in order.
+    const steered = avoid != null && indexOf.has(avoid)
     let pick = -1
     for (let k = 0; k < venues.length; k++) {
       if (remaining[k] >= demand && venues[k].venueId !== avoid) {
@@ -627,6 +707,7 @@ export function packWeekendVenues(
         if (remaining[k] >= demand) {
           pick = k
           violations++
+          bumped.add(u.key)
           break
         }
       }
@@ -640,17 +721,26 @@ export function packWeekendVenues(
       remaining[big] = 0
       if (avoid != null && venues[big].venueId === avoid) violations++
       byUnit[u.key] = venues[big].venueId
+      mark(u.key, "overflow")
       used[big] = true
       continue
     }
     byUnit[u.key] = venues[pick].venueId
+    mark(
+      u.key,
+      bumped.has(u.key)
+        ? "bumped"
+        : steered && venues[pick].venueId !== avoid
+          ? "avoided"
+          : "fill"
+    )
     used[pick] = true
     remaining[pick] -= demand
   }
 
   const opened: string[] = []
   for (let k = 0; k < venues.length; k++) if (used[k]) opened.push(venues[k].venueId)
-  return { byUnit, opened, overflow, violations }
+  return { byUnit, reasonByUnit, opened, overflow, violations }
 }
 
 export interface WeekendGymSection {
@@ -669,6 +759,9 @@ export interface WeekendGyms {
   /** unit key → venueId: the decided gym where there is one, the packed gym
    *  everywhere else. A grade the weekend has no building for is absent. */
   byUnit: Record<string, string>
+  /** unit key → why it is in that building. Every grade the weekend holds has
+   *  one, so a caption or a chip can always say what happened. */
+  reasonByUnit: Record<string, PlacementReason>
   /** One section per gym that takes a grade, in the weekend's fill order. */
   sections: WeekendGymSection[]
   /** Grades with no building at all, because the weekend has no gym. */
@@ -691,12 +784,19 @@ export interface WeekendGyms {
  * `unplaced` when the weekend has no gym at all. A grade with no teams yet
  * asks for no games, so it rides along in the gym that fills first rather
  * than vanishing off the board.
+ *
+ * `given` is for the caller that already knows WHY, and there is one: the
+ * board hands this function the season-long pass's buildings purely to shape
+ * them into sections, so every grade would otherwise read as "decided" here.
+ * The reasons the caller passes win, and the ones it does not name are
+ * worked out from this weekend alone.
  */
 export function resolveWeekendGyms(
   units: PlannerUnit[],
   weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
   assigned: string[],
-  decided: Record<string, string> = {}
+  decided: Record<string, string> = {},
+  given?: Record<string, PlacementReason>
 ): WeekendGyms {
   const here = unitsOn(units, assigned)
   const open = new Set(weekend.venues.map((v) => v.venueId))
@@ -707,14 +807,17 @@ export function resolveWeekendGyms(
     if (venueId && open.has(venueId)) kept[u.key] = venueId
   }
 
-  const packed = packWeekendVenues(here, weekend, kept)
+  const packed = packWeekendVenues(here, weekend, kept, new Set(Object.keys(kept)))
   const fallback = weekend.venues[0]?.venueId
   const byUnit: Record<string, string> = {}
+  const reasonByUnit: Record<string, PlacementReason> = {}
   const unplaced: string[] = []
   for (const u of here) {
     const venueId = kept[u.key] ?? packed.byUnit[u.key] ?? fallback
     if (venueId) byUnit[u.key] = venueId
     else unplaced.push(u.key)
+    reasonByUnit[u.key] =
+      given?.[u.key] ?? packed.reasonByUnit[u.key] ?? (venueId ? "fill" : "overflow")
   }
 
   const sections: WeekendGymSection[] = []
@@ -742,7 +845,203 @@ export function resolveWeekendGyms(
     if (u) overflow += unitGames(u, weekend.targetGamesPerTeam)
   }
 
-  return { byUnit, sections, unplaced, overflow }
+  return { byUnit, reasonByUnit, sections, unplaced, overflow }
+}
+
+/* ------------------------- saying it in numbers -------------------------- */
+
+/** Games in a sentence, so "1 game" never reads "1 games". */
+const gamesWord = (n: number) => `${n} game${n === 1 ? "" : "s"}`
+
+/** Things in a sentence: "Grade 8", "Grade 8 and Grade 10", "a, b and c". */
+function nameList(parts: string[]): string {
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+}
+
+/**
+ * The reason in three or four words, with no gym named: what the season
+ * strip puts in a cell's label, where there is no room for the whole story
+ * and the cell already says which gym it is. Null for the ordinary case, so a
+ * caller can leave a plain placement plain.
+ */
+export function reasonPhrase(reason: PlacementReason): string | null {
+  switch (reason) {
+    case "decided":
+      return "your pick"
+    case "resident":
+      return "home gym"
+    case "bumped":
+      return "moved, home gym full"
+    case "avoided":
+      return "not the gym it just played"
+    case "overflow":
+      return "no room, short of courts"
+    default:
+      return null
+  }
+}
+
+export interface WeekendStory {
+  /** The weekend's one line under its meter, with the numbers in it. Empty
+   *  when the meter has already said everything true about the weekend. */
+  caption: string
+  /** unit key → the short why for that grade's chip. Only the grades whose
+   *  placement is worth explaining are in here. */
+  chipCaptions: Record<string, string>
+}
+
+/**
+ * What happened on one weekend, in numbers (owner 2026-08-02: "give the game
+ * numbers, the capacity — this spills over from Playground into Six Park,
+ * capacity 48 games, they require this many, this many moved over. Which grade
+ * you moved that spilled over, and why you kept the grades").
+ *
+ * Reads the packing it is handed, never packs anything itself, so the sentence
+ * and the sections on screen can never disagree. `homes` is where each grade
+ * was playing before this weekend (packShownPlacements carries it), and it is
+ * the only way a sentence can name the building a grade was moved OUT of.
+ *
+ * One line, because it sits in a 172px column: the buildings story, the
+ * shortage, and ONE per-grade why. Every other why goes on its own chip.
+ */
+export function weekendStory(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  gyms: WeekendGyms,
+  homes: Record<string, string> = {}
+): WeekendStory {
+  const byKey = new Map(units.map((u) => [u.key, u]))
+  const shortOf = new Map(weekend.venues.map((v) => [v.venueId, venueShortName(v.name)]))
+  const sectionOf = new Map(gyms.sections.map((s) => [s.venueId, s]))
+  const labelOf = (key: string) => byKey.get(key)?.label ?? key
+  const gamesOf = (key: string) => {
+    const u = byKey.get(key)
+    return u ? unitGames(u, weekend.targetGamesPerTeam) : 0
+  }
+  const gymName = (venueId: string | undefined) =>
+    (venueId && shortOf.get(venueId)) || "another gym"
+
+  const parts: string[] = []
+  const [first, ...spill] = gyms.sections
+
+  // 1. Short of courts, which outranks everything else the weekend can say.
+  for (const s of gyms.sections) {
+    if (s.over > 0) {
+      parts.push(
+        `${venueShortName(s.name)} over by ${s.over} (${s.games} of ${s.capacityGames})`
+      )
+    }
+  }
+  if (gyms.unplaced.length > 0) {
+    parts.push(`no gym for ${nameList(gyms.unplaced.map(labelOf))}`)
+  }
+
+  // 2. The buildings: what filled, what spilled, and by how much. A grade
+  //    named here carries its own reason, so nothing is said twice.
+  const named = new Set<string>()
+  if (first && spill.length > 0) {
+    const room = Math.max(0, first.capacityGames - first.games)
+    const all = spill.flatMap((s) => s.unitKeys).filter((k) => gamesOf(k) > 0)
+    const forced = all.some((k) => gamesOf(k) > room)
+    parts.push(
+      `${venueShortName(first.name)} ${forced ? "full at " : ""}${first.games} of ${
+        first.capacityGames
+      }`
+    )
+    for (const s of spill) {
+      const movers = s.unitKeys.filter((k) => gamesOf(k) > 0)
+      const numbers = `${s.games} of ${s.capacityGames}`
+      if (movers.length === 0) {
+        parts.push(`also open: ${venueShortName(s.name)} (${numbers})`)
+        continue
+      }
+      const reasons = new Set(movers.map((k) => gyms.reasonByUnit[k]))
+      const only = reasons.size === 1 ? [...reasons][0] : null
+      const kept = !forced && (only === "resident" || only === "decided")
+      // Two grades spill, one grade spills: the sentence has to agree with
+      // however many of them there are.
+      const many = movers.length > 1
+      const verb = forced
+        ? many
+          ? "spill to"
+          : "spills to"
+        : kept
+          ? many
+            ? "stay in"
+            : "stays in"
+          : many
+            ? "also run in"
+            : "also runs in"
+      const tag = kept ? (only === "resident" ? ", home gym" : ", your pick") : ""
+      for (const k of movers) named.add(k)
+      parts.push(
+        `${nameList(movers.map((k) => `${labelOf(k)} (${gamesWord(gamesOf(k))})`))} ${verb} ${venueShortName(
+          s.name
+        )} (${numbers}${tag})`
+      )
+    }
+  } else if (first && weekend.venues.length > 1) {
+    parts.push(
+      `fits in ${venueShortName(first.name)} alone, ${first.games} of ${first.capacityGames}`
+    )
+  }
+
+  // 3. ONE per-grade why, for a grade the buildings clause did not already
+  //    explain: a grade moved out of its gym first, then a grade that stayed
+  //    in its own gym where fill order would have moved it.
+  const chipCaptions: Record<string, string> = {}
+  let moved: string | null = null
+  let stayed: string | null = null
+  for (const key of Object.keys(gyms.reasonByUnit)) {
+    const reason = gyms.reasonByUnit[key]
+    const at = gyms.byUnit[key]
+    const home = homes[key]
+    const homeSection = home ? sectionOf.get(home) : undefined
+    // A grade the buildings clause already named has had its say.
+    const told = named.has(key)
+    if (reason === "decided") {
+      chipCaptions[key] = "your pick"
+    } else if (reason === "bumped") {
+      const homeShort = home ? gymName(home) : null
+      chipCaptions[key] = homeShort ? `moved, ${homeShort} full` : "moved, home gym full"
+      if (!told && moved === null) {
+        moved = homeSection
+          ? `${labelOf(key)} moved to ${gymName(at)} (${homeShort} full, ${
+              homeSection.games
+            } of ${homeSection.capacityGames})`
+          : homeShort
+            ? `${labelOf(key)} moved to ${gymName(at)} (${homeShort} could not hold ${gamesWord(
+                gamesOf(key)
+              )})`
+            : `${labelOf(key)} moved to ${gymName(at)}, its own gym was full`
+      }
+    } else if (reason === "resident" && first && at !== first.venueId) {
+      // Fill order would have put it in the first gym; it is here because it
+      // has been here all season, and that is worth saying out loud.
+      chipCaptions[key] = "home gym"
+      if (!told && stayed === null) stayed = `${labelOf(key)} stays at ${gymName(at)} (home gym)`
+    } else if (reason === "avoided") {
+      chipCaptions[key] = "alternating"
+    } else if (reason === "overflow") {
+      chipCaptions[key] = "no room"
+    }
+  }
+  // A bumped grade beats a resident one: it is the thing that changed.
+  const why = moved ?? stayed
+  if (why) parts.push(why)
+
+  // 4. How full the weekend is, in the board's own two words.
+  const placed = [...Object.keys(gyms.byUnit), ...gyms.unplaced]
+  const demand = placed.reduce((sum, key) => sum + gamesOf(key), 0)
+  const capacity = weekend.venues.reduce((sum, v) => sum + v.capacityGames, 0)
+  if (capacity > 0 && demand === 0) parts.push("spare capacity")
+  else if (capacity > 0 && gyms.overflow === 0 && demand / capacity >= TIGHT_RATIO)
+    parts.push("full house")
+
+  return { caption: parts.join(" · "), chipCaptions }
 }
 
 /** Every weekend of a season in calendar order, windows flattened. */
@@ -830,7 +1129,7 @@ function packWeekendShown(
   weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
   resident: Record<string, string>,
   decided: Record<string, string>
-): Record<string, string> {
+): { byUnit: Record<string, string>; reasonByUnit: Record<string, PlacementReason> } {
   const open = new Set(weekend.venues.map((v) => v.venueId))
   // A gym that is not on this weekend is not a decision, it is a leftover.
   const picked: Record<string, string> = {}
@@ -838,18 +1137,32 @@ function packWeekendShown(
     const venueId = decided[u.key]
     if (venueId && open.has(venueId)) picked[u.key] = venueId
   }
-  const packed = packWeekendVenues(units, weekend, { ...resident, ...picked })
+  const packed = packWeekendVenues(
+    units,
+    weekend,
+    { ...resident, ...picked },
+    new Set(Object.keys(picked))
+  )
   const fallback = weekend.venues[0]?.venueId
-  const out: Record<string, string> = {}
+  const byUnit: Record<string, string> = {}
+  const reasonByUnit: Record<string, PlacementReason> = {}
   for (const u of units) {
     // For a grade that alternates, the gym it carries is the one to AVOID, so
     // it is no fallback: that grade takes the gym that fills first instead.
     const home = u.alternate ? undefined : resident[u.key]
-    const venueId =
-      picked[u.key] ?? packed.byUnit[u.key] ?? (home && open.has(home) ? home : fallback)
-    if (venueId) out[u.key] = venueId
+    const homeIsOpen = Boolean(home && open.has(home))
+    const venueId = picked[u.key] ?? packed.byUnit[u.key] ?? (homeIsOpen ? home : fallback)
+    if (!venueId) continue
+    byUnit[u.key] = venueId
+    reasonByUnit[u.key] =
+      picked[u.key] != null
+        ? "decided"
+        : // A grade the packer seated has its own reason; one it skipped (no
+          // teams, so no games to place) is simply riding along in the gym it
+          // already plays, or in the one that fills first.
+          (packed.reasonByUnit[u.key] ?? (homeIsOpen ? "resident" : "fill"))
   }
-  return out
+  return { byUnit, reasonByUnit }
 }
 
 /**
@@ -873,16 +1186,44 @@ export function packShownVenues(
   shown: Record<string, string[]>,
   decided: Record<string, Record<string, string>> = {}
 ): Record<string, Record<string, string>> {
+  return packShownPlacements(state, shown, decided).venues
+}
+
+export interface ShownPlacements {
+  /** sessionId → (unit key → venueId): where every grade plays. */
+  venues: Record<string, Record<string, string>>
+  /** sessionId → (unit key → why it is there). */
+  reasons: Record<string, Record<string, PlacementReason>>
+  /** sessionId → (unit key → the gym that grade was playing BEFORE this
+   *  weekend). Empty for a grade the season has not placed yet. This is what
+   *  lets a sentence name the building a grade was moved out of. */
+  homes: Record<string, Record<string, string>>
+}
+
+/**
+ * The same chronological walk as packShownVenues, with the two things a
+ * sentence needs on top of the buildings: why each grade is where it is, and
+ * which gym it was in before that weekend.
+ */
+export function packShownPlacements(
+  state: PlannerState,
+  shown: Record<string, string[]>,
+  decided: Record<string, Record<string, string>> = {}
+): ShownPlacements {
   const unitByKey = new Map(state.units.map((u) => [u.key, u]))
   const resident: Record<string, string> = {}
-  const out: Record<string, Record<string, string>> = {}
+  const out: ShownPlacements = { venues: {}, reasons: {}, homes: {} }
   for (const w of chronologicalWeekends(state)) {
     const units = unitsFor(unitByKey, shown[w.sessionId])
     if (units.length === 0) continue
-    const byUnit = packWeekendShown(units, w, resident, decided[w.sessionId] ?? {})
-    if (Object.keys(byUnit).length === 0) continue
-    for (const key of Object.keys(byUnit)) resident[key] = byUnit[key]
-    out[w.sessionId] = byUnit
+    const home: Record<string, string> = {}
+    for (const u of units) if (resident[u.key]) home[u.key] = resident[u.key]
+    const packed = packWeekendShown(units, w, resident, decided[w.sessionId] ?? {})
+    if (Object.keys(packed.byUnit).length === 0) continue
+    for (const key of Object.keys(packed.byUnit)) resident[key] = packed.byUnit[key]
+    out.venues[w.sessionId] = packed.byUnit
+    out.reasons[w.sessionId] = packed.reasonByUnit
+    out.homes[w.sessionId] = home
   }
   return out
 }
@@ -1279,68 +1620,264 @@ export function hoursPreviewSentence(label: string, preview: HoursPreview): stri
   return `${label}: ${parts.join(", ")}.`
 }
 
-/** Plain-language observations about an assignment — the suggestion rail. */
+/**
+ * Where a grade would LAND if it were moved onto a weekend, when that is not
+ * the gym it has been playing: "Lands at Six Park (The Playground holds Grade
+ * 10, 42 of 48)." Empty when the grade keeps its own building, which is the
+ * quiet, ordinary case nobody needs told about.
+ *
+ * An approximation, and deliberately so: the destination weekend is packed
+ * against the residency the season already had going INTO it, not against a
+ * re-walk of every later weekend. A move can ripple forward through residency;
+ * this sentence describes the weekend the operator is looking at.
+ */
+function landingClause(
+  unit: PlannerUnit,
+  to: PlannerWeekend,
+  keysThere: string[],
+  unitByKey: Map<string, PlannerUnit>,
+  homes: Record<string, string>,
+  decidedThere: Record<string, string>
+): string {
+  const home = homes[unit.key]
+  const open = new Map(to.venues.map((v) => [v.venueId, v]))
+  if (!home || !open.has(home)) return ""
+  const there = unitsFor(unitByKey, [...keysThere.filter((k) => k !== unit.key), unit.key])
+  const packed = packWeekendVenues(
+    there,
+    to,
+    { ...homes, ...decidedThere },
+    new Set(Object.keys(decidedThere))
+  )
+  const landed = packed.byUnit[unit.key]
+  if (!landed || landed === home) return ""
+  const shortOf = (venueId: string) => venueShortName(open.get(venueId)?.name ?? "")
+  const holders = there.filter(
+    (u) => u.key !== unit.key && packed.byUnit[u.key] === home
+  )
+  const held = holders.reduce((sum, u) => sum + unitGames(u, to.targetGamesPerTeam), 0)
+  const capacity = open.get(home)?.capacityGames ?? 0
+  const lands = `Lands at ${shortOf(landed) || "another gym"}`
+  if (holders.length === 0) return `${lands} (${shortOf(home)} has no room, ${capacity} slots).`
+  return `${lands} (${shortOf(home)} holds ${nameList(
+    holders.map((u) => u.label)
+  )}, ${held} of ${capacity}).`
+}
+
+/**
+ * The suggestion rail: what the math noticed, said with the numbers behind it,
+ * and wired to a button wherever there is a move that fixes it (owner
+ * 2026-08-02: "suggestions must say moving from where to where, how many
+ * games, how it solves the problem. Make those buttons clickable").
+ *
+ * Every sentence is self-contained, because the rail is read three inches from
+ * a board that is already full of numbers and nobody should have to cross
+ * reference. Every move stays inside its own month, since a grade plays one
+ * weekend per monthly session and the board refuses anything else.
+ *
+ * `decided` is the gyms the caller has on screen, per weekend; where it says
+ * nothing, the plan as saved stands. That is what makes the rail's buildings
+ * the same buildings the board is drawing.
+ */
 export function suggestFor(
   state: PlannerState,
-  assignment: Record<string, string[]>
+  assignment: Record<string, string[]>,
+  decided: Record<string, Record<string, string>> = {}
 ): PlannerSuggestion[] {
   const suggestions: PlannerSuggestion[] = []
+  const unitByKey = new Map(state.units.map((u) => [u.key, u]))
+  const decidedAll: Record<string, Record<string, string>> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const chosen = decided[w.sessionId] ?? w.assignedVenues ?? {}
+      if (Object.keys(chosen).length > 0) decidedAll[w.sessionId] = chosen
+    }
+  }
+  // ONE chronological pass for the whole calendar, the same one the board
+  // draws from, so a suggestion never names a building the screen does not.
+  const placement = packShownPlacements(state, assignment, decidedAll)
+  const demandOn = (w: PlannerWeekend) =>
+    weekendDemand(state.units, w, assignment[w.sessionId] ?? [])
+  const gamesOn = (unit: PlannerUnit, w: PlannerWeekend) =>
+    Math.ceil((unit.teams * w.targetGamesPerTeam) / 2)
+  /** Which gym every grade would bring to a weekend: the residency the season
+   *  already had going into it, plus the moving grade's own current building,
+   *  which is the home the move would be taking it away from. */
+  const homesArriving = (to: PlannerWeekend, unit: PlannerUnit, fromSessionId: string) => {
+    const homes = { ...(placement.homes[to.sessionId] ?? {}) }
+    const at = placement.venues[fromSessionId]?.[unit.key]
+    if (at) homes[unit.key] = at
+    return homes
+  }
+
   for (const win of state.windows) {
     for (const w of win.weekends) {
       const assigned = assignment[w.sessionId] ?? []
-      const demand = weekendDemand(state.units, w, assigned)
+      const demand = demandOn(w)
+      const here = unitsOn(state.units, assigned)
+
+      /** The move, spelled out: both weekends, both loads, and where the
+       *  grade ends up standing when it gets there. */
+      const moveFor = (
+        unit: PlannerUnit,
+        to: PlannerWeekend,
+        resolves: SuggestionMove["resolves"],
+        fixes: string
+      ): { move: SuggestionMove; text: string } => {
+        const games = gamesOn(unit, w)
+        const toBefore = demandOn(to)
+        const toAfter = toBefore + gamesOn(unit, to)
+        const short = demand - w.capacityGames
+        const fromNumbers =
+          short > 0
+            ? `${demand} of ${w.capacityGames}, ${short} short`
+            : `${demand} of ${w.capacityGames}`
+        const lands = landingClause(
+          unit,
+          to,
+          assignment[to.sessionId] ?? [],
+          unitByKey,
+          homesArriving(to, unit, w.sessionId),
+          decidedAll[to.sessionId] ?? {}
+        )
+        return {
+          move: {
+            unitKey: unit.key,
+            unitLabel: unit.label,
+            games,
+            fromSessionId: w.sessionId,
+            fromLabel: w.label,
+            toSessionId: to.sessionId,
+            toLabel: to.label,
+            fromBefore: { demand, capacity: w.capacityGames },
+            toAfter: { demand: toAfter, capacity: to.capacityGames },
+            resolves,
+          },
+          text: `Move ${unit.label} (${gamesWord(games)}) from ${w.label} (${fromNumbers}) to ${
+            to.label
+          } (${toAfter} of ${to.capacityGames} after). ${fixes}${lands ? ` ${lands}` : ""}`,
+        }
+      }
+
+      /** Weekends of this same month that could take a grade whole. */
+      const roomFor = (unit: PlannerUnit) =>
+        win.weekends.filter(
+          (o) =>
+            o.sessionId !== w.sessionId &&
+            o.capacityGames > 0 &&
+            demandOn(o) + gamesOn(unit, o) <= o.capacityGames
+        )
+
       if (demand > w.capacityGames) {
         const short = demand - w.capacityGames
         suggestions.push({
           kind: "overflow",
           sessionId: w.sessionId,
-          text: `${w.label} needs ${demand} games but has ${w.capacityGames} slots (${short} short). Extend hours, add a court, or drag a grade to a lighter weekend.`,
+          text: `${w.label} needs ${gamesWord(demand)} and has ${
+            w.capacityGames
+          } slots, ${short} short. Extend the hours, add a court, or move a grade to a lighter weekend.`,
         })
-        const smallest = assigned
-          .map((k) => state.units.find((u) => u.key === k))
-          .filter(Boolean)
-          .sort((a, b) => a!.teams - b!.teams)[0]
-        const roomier = win.weekends.find(
-          (o) =>
-            o.sessionId !== w.sessionId &&
-            weekendDemand(state.units, o, assignment[o.sessionId] ?? []) +
-              Math.ceil((smallest!.teams * o.targetGamesPerTeam) / 2) <=
-              o.capacityGames
-        )
-        if (smallest && roomier) {
-          suggestions.push({
-            kind: "move-unit",
-            sessionId: w.sessionId,
-            text: `Moving ${smallest.label} to ${roomier.label} clears the shortage.`,
-          })
+        // The smallest grade that actually clears it: moving a giant fixes the
+        // weekend by breaking another one.
+        const candidates = [...here].sort((a, b) => a.teams - b.teams)
+        for (const unit of candidates) {
+          if (demand - gamesOn(unit, w) > w.capacityGames) continue
+          const to = roomFor(unit)[0]
+          if (!to) continue
+          const { move, text } = moveFor(unit, to, "shortage", "Clears the shortage.")
+          suggestions.push({ kind: "move-unit", sessionId: w.sessionId, text, move })
+          break
         }
       } else {
         // Buildings from the real packing, not from a guess at the biggest
         // gym: the two used to disagree, and the packing is what the plan
         // actually saves.
-        const packed = packWeekendVenues(
-          unitsOn(state.units, assigned),
+        const gyms = resolveWeekendGyms(
+          state.units,
           w,
-          w.assignedVenues ?? {}
+          assigned,
+          placement.venues[w.sessionId] ?? {},
+          placement.reasons[w.sessionId]
         )
-        if (packed.opened.length > 1) {
-          const nameOf = new Map(w.venues.map((v) => [v.venueId, v.name]))
-          const [first, second] = packed.opened
-          suggestions.push({
-            kind: "two-building",
-            sessionId: w.sessionId,
-            text: `${w.label} fills ${nameOf.get(first) ?? "the first gym"} and spills into ${
-              nameOf.get(second) ?? "a second gym"
-            } (${demand} games).`,
-          })
+        if (gyms.sections.length > 1) {
+          const [first, ...spill] = gyms.sections
+          const opens = nameList(
+            spill.map((s) => `${venueShortName(s.name)} (${s.games} of ${s.capacityGames})`)
+          )
+          let text = `${w.label} fills ${venueShortName(first.name)} (${first.games} of ${
+            first.capacityGames
+          }) and opens ${opens}, ${gamesWord(demand)} in all.`
+          // The one grade whose leaving would close the second building.
+          let move: SuggestionMove | undefined
+          const spillUnits = spill
+            .flatMap((s) => s.unitKeys)
+            .map((k) => unitByKey.get(k))
+            .filter((u): u is PlannerUnit => Boolean(u && u.teams > 0))
+          for (const unit of spillUnits) {
+            const rest = unitsFor(
+              unitByKey,
+              assigned.filter((k) => k !== unit.key)
+            )
+            const without = packWeekendVenues(rest, w, {
+              ...(placement.homes[w.sessionId] ?? {}),
+              ...(decidedAll[w.sessionId] ?? {}),
+            })
+            if (without.opened.length > 1 || without.overflow > 0) continue
+            const to = roomFor(unit)[0]
+            if (!to) continue
+            const built = moveFor(unit, to, "two-building", `Keeps ${w.label} in one building.`)
+            move = built.move
+            text = `${text} ${built.text}`
+            break
+          }
+          suggestions.push({ kind: "two-building", sessionId: w.sessionId, text, move })
         }
       }
+
       if (assigned.length === 0 && w.capacityGames > 0) {
-        suggestions.push({
-          kind: "idle-weekend",
-          sessionId: w.sessionId,
-          text: `${w.label} has ${w.capacityGames} open slots and no grades assigned: spare capacity, or another league's weekend.`,
-        })
+        let text = `${w.label} has ${w.capacityGames} open slots and no grades on it. Spare capacity, or another league's weekend.`
+        let move: SuggestionMove | undefined
+        // The busiest weekend of the month is the one with something to give.
+        const busiest = [...win.weekends]
+          .filter((o) => o.sessionId !== w.sessionId && (assignment[o.sessionId] ?? []).length > 1)
+          .sort((a, b) => demandOn(b) - demandOn(a))[0]
+        if (busiest) {
+          const giver = unitsOn(state.units, assignment[busiest.sessionId] ?? [])
+            .filter((u) => u.teams > 0)
+            .sort((a, b) => b.teams - a.teams)
+            .find((u) => gamesOn(u, w) <= w.capacityGames)
+          if (giver) {
+            const from = demandOn(busiest)
+            const games = gamesOn(giver, busiest)
+            const landed = gamesOn(giver, w)
+            move = {
+              unitKey: giver.key,
+              unitLabel: giver.label,
+              games,
+              fromSessionId: busiest.sessionId,
+              fromLabel: busiest.label,
+              toSessionId: w.sessionId,
+              toLabel: w.label,
+              fromBefore: { demand: from, capacity: busiest.capacityGames },
+              toAfter: { demand: landed, capacity: w.capacityGames },
+              resolves: "idle-weekend",
+            }
+            const lands = landingClause(
+              giver,
+              w,
+              assigned,
+              unitByKey,
+              homesArriving(w, giver, busiest.sessionId),
+              decidedAll[w.sessionId] ?? {}
+            )
+            text = `${text} Move ${giver.label} (${gamesWord(games)}) from ${busiest.label} (${from} of ${
+              busiest.capacityGames
+            }) to ${w.label} (${landed} of ${w.capacityGames} after). Puts the empty weekend to work.${
+              lands ? ` ${lands}` : ""
+            }`
+          }
+        }
+        suggestions.push({ kind: "idle-weekend", sessionId: w.sessionId, text, move })
       }
     }
   }

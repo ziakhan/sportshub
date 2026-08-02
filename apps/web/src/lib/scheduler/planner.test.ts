@@ -241,6 +241,164 @@ describe("suggestFor", () => {
     const suggestions = suggestFor(state, assignment)
     expect(suggestions.some((s) => s.kind === "two-building" && s.sessionId === feb6.sessionId)).toBe(true)
   })
+
+  it("spells the shortage out, and hands over a move that clears it", () => {
+    const state = nphState()
+    const nov14 = state.windows[1].weekends[0] // 80 cap
+    const nov21 = state.windows[1].weekends[1] // 176 cap, empty
+    const assignment = { [nov14.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr12"] } // 93 games
+    const suggestions = suggestFor(state, assignment)
+
+    const over = suggestions.find((s) => s.kind === "overflow" && s.sessionId === nov14.sessionId)
+    expect(over?.text).toBe(
+      "Nov 14–15 needs 93 games and has 80 slots, 13 short. Extend the hours, add a court, or move a grade to a lighter weekend."
+    )
+
+    const move = suggestions.find((s) => s.kind === "move-unit")
+    // The smallest grade that actually clears it, not simply the smallest.
+    expect(move?.text).toBe(
+      "Move Gr9 (25 games) from Nov 14–15 (93 of 80, 13 short) to Nov 21–22 (25 of 176 after). Clears the shortage."
+    )
+    expect(move?.move).toEqual({
+      unitKey: "age:Gr9",
+      unitLabel: "Gr9",
+      games: 25,
+      fromSessionId: nov14.sessionId,
+      fromLabel: "Nov 14–15",
+      toSessionId: nov21.sessionId,
+      toLabel: "Nov 21–22",
+      fromBefore: { demand: 93, capacity: 80 },
+      toAfter: { demand: 25, capacity: 176 },
+      resolves: "shortage",
+    })
+  })
+
+  it("gives the two-building note both loads, and the move that closes the second gym", () => {
+    const state = nphState()
+    const feb6 = state.windows[4].weekends[0]
+    const feb13 = state.windows[4].weekends[1] // 80 cap, empty
+    const assignment = {
+      [feb6.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr11", "age:Gr12"],
+    }
+    const two = suggestFor(state, assignment).find((s) => s.kind === "two-building")
+    expect(two?.text).toBe(
+      "Feb 6–7 fills Six Park (93 of 96) and opens Playground (24 of 80), 117 games in all. " +
+        "Move Gr11 (24 games) from Feb 6–7 (117 of 176) to Feb 13–14 (24 of 80 after). Keeps Feb 6–7 in one building."
+    )
+    expect(two?.move?.unitKey).toBe("age:Gr11")
+    expect(two?.move?.toSessionId).toBe(feb13.sessionId)
+    expect(two?.move?.resolves).toBe("two-building")
+  })
+
+  it("reads the gyms the caller has on screen, not only the ones saved", () => {
+    const state = nphState()
+    const feb6 = state.windows[4].weekends[0]
+    const assignment = {
+      [feb6.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr11", "age:Gr12"],
+    }
+    // Everybody hand-picked into the first gym: one building on screen, so
+    // there is no second building to talk about.
+    const decided = {
+      [feb6.sessionId]: Object.fromEntries(
+        assignment[feb6.sessionId].map((key) => [key, "v1"])
+      ),
+    }
+    const suggestions = suggestFor(state, assignment, decided)
+    expect(suggestions.some((s) => s.kind === "two-building")).toBe(false)
+  })
+
+  it("offers the empty weekend a grade, from the busiest weekend of its month", () => {
+    const state = nphState()
+    const [nov14, nov21] = state.windows[1].weekends
+    const assignment = { [nov21.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr12"] } // 93 games
+    const idle = suggestFor(state, assignment).find(
+      (s) => s.kind === "idle-weekend" && s.sessionId === nov14.sessionId
+    )
+    expect(idle?.text).toBe(
+      "Nov 14–15 has 80 open slots and no grades on it. Spare capacity, or another league's weekend. " +
+        "Move Gr10 (42 games) from Nov 21–22 (93 of 176) to Nov 14–15 (42 of 80 after). Puts the empty weekend to work."
+    )
+    expect(idle?.move?.resolves).toBe("idle-weekend")
+    expect(idle?.move?.fromSessionId).toBe(nov21.sessionId)
+    expect(idle?.move?.toSessionId).toBe(nov14.sessionId)
+  })
+
+  it("says where the grade would LAND when the move takes it off its home gym", () => {
+    // October hands both grades The Playground. November's first weekend is
+    // Playground-only and too small; the second still has room for one of
+    // them, so the grade that moves ends up in the other building.
+    const gymAt = (venueId: string, name: string, capacityGames: number, fillOrder: number) => ({
+      venueId,
+      name,
+      capacityGames,
+      fillOrder,
+    })
+    const weekendAt = (
+      sessionId: string,
+      label: string,
+      dateISO: string,
+      venues: Array<{ venueId: string; name: string; capacityGames: number; fillOrder: number }>
+    ): PlannerWeekend => ({
+      sessionId,
+      label,
+      dateISO,
+      capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+      largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+      venues,
+      targetGamesPerTeam: 2,
+      assigned: [],
+      assignedVenues: {},
+    })
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [registered("Gr8", 40), registered("Gr9", 30)],
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekendAt("oct1", "Oct 24–25", "2026-10-24", [
+              gymAt("playground", "The Playground", 96, 0),
+              gymAt("sixpark", "Six Park East", 96, 1),
+            ]),
+          ],
+        },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekendAt("nov1", "Nov 14–15", "2026-11-14", [
+              gymAt("playground", "The Playground", 20, 0),
+            ]),
+            weekendAt("nov2", "Nov 21–22", "2026-11-21", [
+              gymAt("playground", "The Playground", 48, 0),
+              gymAt("sixpark", "Six Park East", 96, 1),
+            ]),
+          ],
+        },
+      ],
+    }
+    const assignment = {
+      oct1: ["age:Gr8", "age:Gr9"],
+      nov1: ["age:Gr9"],
+      nov2: ["age:Gr8"],
+    }
+    const move = suggestFor(state, assignment).find((s) => s.kind === "move-unit")
+    expect(move?.text).toBe(
+      "Move Gr9 (30 games) from Nov 14–15 (30 of 20, 10 short) to Nov 21–22 (70 of 144 after). " +
+        "Clears the shortage. Lands at Six Park (Playground holds Gr8, 40 of 48)."
+    )
+  })
+
+  it("writes no em-dash into anything an operator reads", () => {
+    const state = nphState()
+    const [nov14, nov21] = state.windows[1].weekends
+    for (const assignment of [
+      { [nov14.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr12"] },
+      { [nov21.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr11", "age:Gr12"] },
+    ]) {
+      for (const s of suggestFor(state, assignment)) expect(s.text).not.toContain("—")
+    }
+  })
 })
 
 describe("weekendDemand", () => {

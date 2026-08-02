@@ -2,9 +2,11 @@
 
 import { useMemo } from "react"
 import {
+  reasonPhrase,
   weekendDemand,
   weekendLoad,
   weekendShortDays,
+  type PlacementReason,
   type PlannerState,
   type PlannerUnit,
   type PlannerWeekend,
@@ -119,6 +121,7 @@ export function StripView({
   state,
   shown,
   playsIn,
+  whyIn,
   hasKept,
   side,
   onSide,
@@ -135,6 +138,9 @@ export function StripView({
    *  sessionId → (unit key → venueId). One chronological packShownVenues pass,
    *  owned by the step, so the strip says exactly what the board says. */
   playsIn: Record<string, Record<string, string>>
+  /** Why each grade is in that building, from the same pass: a cell says it
+   *  in its label whenever the answer is not simply "the gyms filled up". */
+  whyIn: Record<string, Record<string, PlacementReason>>
   hasKept: boolean
   side: StripSide
   onSide: (side: StripSide) => void
@@ -349,6 +355,7 @@ export function StripView({
                     assigned={(shown[weekend.sessionId] ?? []).includes(unit.key)}
                     gyms={gymsOn.get(weekend.sessionId) ?? []}
                     playsAt={playsAt.get(weekend.sessionId)?.get(unit.key) ?? null}
+                    why={whyIn[weekend.sessionId]?.[unit.key] ?? null}
                     hue={hue}
                     interactive={interactive}
                     armed={armed}
@@ -392,6 +399,7 @@ function StripCell({
   assigned,
   gyms,
   playsAt,
+  why,
   hue,
   interactive,
   armed,
@@ -407,6 +415,9 @@ function StripCell({
   /** The one building this grade plays in that weekend, decided or packed.
    *  Null only when the weekend has no gym at all. */
   playsAt: StripVenue | null
+  /** Why it is that building. Said out loud whenever it is not simply the
+   *  gyms filling in order. */
+  why: PlacementReason | null
   hue: Map<string, number>
   interactive: boolean
   armed: Armed | null
@@ -445,6 +456,13 @@ function StripCell({
       isArmed ? "ring-play-500 ring-2" : ""
     }`
     const where = playsAt ? `at ${playsAt.short}` : "with no gym booked"
+    // The gym is on the cell; the REASON is what the cell has no room for, so
+    // it rides in the label and the tooltip. Fill order is the ordinary case
+    // and says nothing (owner 2026-08-02).
+    const because = playsAt ? reasonPhrase(why ?? "fill") : null
+    const label = `${unit.label} plays ${weekend.label} ${where}, ${games} games${
+      because ? `, ${because}` : ""
+    }`
 
     return (
       <td className={cell}>
@@ -452,7 +470,8 @@ function StripCell({
           <button
             type="button"
             aria-pressed={isArmed}
-            aria-label={`${unit.label} plays ${weekend.label} ${where}, ${games} games`}
+            aria-label={label}
+            title={because ? `${playsAt?.name}: ${because}` : playsAt?.name}
             data-testid="strip-pill"
             onClick={(e) => {
               e.stopPropagation()
@@ -472,7 +491,7 @@ function StripCell({
             {body}
           </button>
         ) : (
-          <span className={cls} data-testid="strip-pill">
+          <span className={cls} data-testid="strip-pill" aria-label={label} title={label}>
             {body}
           </span>
         )}

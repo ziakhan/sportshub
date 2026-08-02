@@ -6,14 +6,17 @@ import {
   currentAssignment,
   diffAssignments,
   hoursPreviewSentence,
-  packShownVenues,
+  packShownPlacements,
   planSummary,
   resolveWeekendGyms,
   shiftClock,
+  suggestFor,
   weekendLoad,
   weekendShortDays,
+  weekendStory,
   type AssignmentDiffSummary,
   type HoursPreview,
+  type PlacementReason,
   type PlannerLever,
   type PlannerState,
   type PlannerSuggestion,
@@ -114,6 +117,20 @@ const HOURS_CHIPS: HoursChip[] = [
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
+/** How many boards back an operator can step. Ten is more than anybody has
+ *  ever wanted, and it costs two small objects a move. */
+const UNDO_DEPTH = 10
+
+/** The whole board, as it was before a move: the calendar and the gyms
+ *  somebody had decided. Everything else on screen is derived from these two. */
+interface BoardSnapshot {
+  assignment: Record<string, string[]>
+  venues: Record<string, Record<string, string>>
+  /** Whether the plan had unsaved changes at that point, so undoing back to
+   *  the saved calendar puts the Keep button back to sleep. */
+  dirty: boolean
+}
+
 /** Drop a grade's gym on the given weekends: it moved, or it left. Weekends
  *  that end up deciding nothing drop out, so an empty map stays empty. */
 function forgetGym(
@@ -192,7 +209,10 @@ export function CalendarStep({
   /** The gym each grade plays in, weekend by weekend. Decisions only: a
    *  weekend nobody has decided is absent and the board packs a preview. */
   const [venues, setVenues] = useState<Record<string, Record<string, string>>>({})
-  const [suggestions, setSuggestions] = useState<PlannerSuggestion[]>([])
+  /** The last few boards, newest last, so a move taken by mistake is one tap
+   *  from undone. Local only: the plan is temporary until Keep, and leaving
+   *  the page throws the whole thing away, stack included. */
+  const [undoStack, setUndoStack] = useState<BoardSnapshot[]>([])
   const [locked, setLocked] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -281,7 +301,7 @@ export function CalendarStep({
     onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
     setAssignment(opening ? opening.assignment : saved)
     setVenues(opening ? (opening.venues ?? {}) : savedVenues)
-    setSuggestions((opening ? opening.suggestions : data.suggestions) ?? [])
+    setUndoStack([])
     setDirty(Boolean(opening))
     setNotice(opening ? COPY.opened : null)
   }, [seasonId, onLoaded, propose])
@@ -311,15 +331,32 @@ export function CalendarStep({
    * a grade had been playing, so the biggest grade took the gym that fills
    * first and a resident was quietly moved out of its own building.
    */
-  const shownGyms = useMemo(
-    () => (state ? packShownVenues(state, assignment, venues) : {}),
+  const shown = useMemo(
+    () =>
+      state
+        ? packShownPlacements(state, assignment, venues)
+        : { venues: {}, reasons: {}, homes: {} },
     [state, assignment, venues]
   )
   /** The same walk over the calendar the league KEPT, so the strip's kept side
    *  names the buildings that were saved rather than the ones on trial. */
-  const keptGyms = useMemo(
-    () => (state && kept ? packShownVenues(state, kept, keptVenues) : {}),
+  const keptShown = useMemo(
+    () =>
+      state && kept
+        ? packShownPlacements(state, kept, keptVenues)
+        : { venues: {}, reasons: {}, homes: {} },
     [state, kept, keptVenues]
+  )
+
+  /**
+   * The suggestion rail, worked out from the board ON SCREEN. It used to be
+   * whatever the server last said, which went stale the moment anything moved;
+   * suggestFor is pure and reads the same gyms both views draw, so a move
+   * taken from the rail immediately changes what the rail says next.
+   */
+  const suggestions: PlannerSuggestion[] = useMemo(
+    () => (state ? suggestFor(state, assignment, venues) : []),
+    [state, assignment, venues]
   )
 
   const runLever = async (lever: PlannerLever) => {
@@ -333,7 +370,9 @@ export function CalendarStep({
     }
     setAssignment(result.assignment)
     setVenues(result.venues ?? {})
-    setSuggestions(result.suggestions ?? [])
+    // A whole new calendar is not a move, so it is not something to step back
+    // through one grade at a time. "Undo changes" reloads the saved plan.
+    setUndoStack([])
     setArmed(null)
     setDirty(true)
     setNotice(LEVERS.find((l) => l.lever === lever)?.note ?? null)
@@ -425,7 +464,7 @@ export function CalendarStep({
     const res = await fetch(`/api/seasons/${seasonId}/planner/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignment, venues: shownGyms }),
+      body: JSON.stringify({ assignment, venues: shown.venues }),
     }).catch(() => null)
     setBusy(null)
     if (!res?.ok) {
@@ -441,15 +480,22 @@ export function CalendarStep({
     // What was just kept becomes the calendar every later comparison is against.
     setKept(savedNow)
     setKeptVenues(savedVenuesNow)
-    setSuggestions(data.suggestions ?? [])
+    setUndoStack([])
     setArmed(null)
     setDirty(false)
     setNotice(COPY.saved)
   }
 
-  /** The one place a chip changes weekends: drag and tap both land here. */
+  /** The board as it stands, remembered before something changes it. */
+  const remember = () =>
+    setUndoStack((prev) => [...prev, { assignment, venues, dirty }].slice(-UNDO_DEPTH))
+
+  /** The one place a chip changes weekends: drag, tap and the suggestion rail
+   *  all land here, so every route through the board is undoable and every one
+   *  of them treats the gyms the same way. */
   const move = (unitKey: string, fromSessionId: string | null, toSessionId: string) => {
     if (locked || fromSessionId === toSessionId) return
+    remember()
     setAssignment((prev) => {
       const next: Record<string, string[]> = {}
       for (const [sid, keys] of Object.entries(prev)) {
@@ -466,8 +512,22 @@ export function CalendarStep({
     setNotice(null)
   }
 
+  /** Step one move back. Local only: what is on screen is what Keep saves, and
+   *  nothing here has been written down yet. */
+  const undoMove = () => {
+    const last = undoStack[undoStack.length - 1]
+    if (!last) return
+    setAssignment(last.assignment)
+    setVenues(last.venues)
+    setDirty(last.dirty)
+    setUndoStack(undoStack.slice(0, -1))
+    setArmed(null)
+    setNotice(null)
+  }
+
   const removeUnit = (unitKey: string, fromSessionId: string) => {
     if (locked) return
+    remember()
     setAssignment((prev) => ({
       ...prev,
       [fromSessionId]: (prev[fromSessionId] ?? []).filter((k) => k !== unitKey),
@@ -482,6 +542,7 @@ export function CalendarStep({
    *  pick is a decision, so it sticks even if that gym then reads full. */
   const switchGym = (sessionId: string, unitKey: string, venueId: string) => {
     if (locked) return
+    remember()
     setVenues((prev) => ({
       ...prev,
       [sessionId]: { ...(prev[sessionId] ?? {}), [unitKey]: venueId },
@@ -635,7 +696,9 @@ export function CalendarStep({
               <BoardView
                 state={state}
                 assignment={assignment}
-                playsIn={shownGyms}
+                playsIn={shown.venues}
+                whyIn={shown.reasons}
+                cameFrom={shown.homes}
                 unitByKey={unitByKey}
                 armed={armed}
                 interactive={interactive}
@@ -650,7 +713,8 @@ export function CalendarStep({
               <StripView
                 state={state}
                 shown={showingKept ? (kept ?? assignment) : assignment}
-                playsIn={showingKept ? keptGyms : shownGyms}
+                playsIn={showingKept ? keptShown.venues : shown.venues}
+                whyIn={showingKept ? keptShown.reasons : shown.reasons}
                 hasKept={Boolean(kept)}
                 side={side}
                 onSide={(next) => {
@@ -670,9 +734,9 @@ export function CalendarStep({
             {suggestions.length > 0 && !showingKept && (
               <div className="mt-4 space-y-1.5">
                 {suggestions.slice(0, 6).map((s, i) => (
-                  <p
+                  <div
                     key={`${s.sessionId}-${s.kind}-${i}`}
-                    className={`rounded-lg border px-3 py-1.5 text-xs ${
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-xs ${
                       s.kind === "overflow"
                         ? "border-hoop-200 bg-hoop-50 text-hoop-900"
                         : s.kind === "idle-weekend"
@@ -680,8 +744,26 @@ export function CalendarStep({
                           : "border-gold-200 bg-gold-50 text-gold-900"
                     }`}
                   >
-                    {s.text}
-                  </p>
+                    <span>{s.text}</span>
+                    {/* The suggestion does itself. Same state change as a
+                        drag, so it is undoable and nothing is written. */}
+                    {s.move && interactive && (
+                      <button
+                        type="button"
+                        data-testid="suggestion-move"
+                        data-unit-key={s.move.unitKey}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const m = s.move!
+                          move(m.unitKey, m.fromSessionId, m.toSessionId)
+                        }}
+                        aria-label={`Move ${s.move.unitLabel} from ${s.move.fromLabel} to ${s.move.toLabel}`}
+                        className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 shrink-0 rounded-lg border px-2 py-1 text-[11px] font-bold"
+                      >
+                        Move to {s.move.toLabel}
+                      </button>
+                    )}
+                  </div>
                 ))}
                 {suggestions.length > 6 && (
                   <p className="text-ink-400 px-1 text-xs">
@@ -747,6 +829,22 @@ export function CalendarStep({
                     <span className="text-ink-400 text-xs">
                       {dirty ? COPY.unsaved : "This calendar is saved."}
                     </span>
+                    {/* One step back through the moves, however they were
+                        made: dragged, tapped, or taken from a suggestion. */}
+                    {undoStack.length > 0 && (
+                      <button
+                        type="button"
+                        data-testid="undo-move"
+                        disabled={busy !== null}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          undoMove()
+                        }}
+                        className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                      >
+                        Undo move
+                      </button>
+                    )}
                     {dirty && (
                       <Button
                         size="sm"
@@ -866,6 +964,8 @@ function BoardView({
   state,
   assignment,
   playsIn,
+  whyIn,
+  cameFrom,
   unitByKey,
   armed,
   interactive,
@@ -881,6 +981,11 @@ function BoardView({
   /** Where every grade plays, for the whole calendar: sessionId → (unit key →
    *  venueId), from the step's one chronological pass. */
   playsIn: Record<string, Record<string, string>>
+  /** Why each grade is there, from the same pass. */
+  whyIn: Record<string, Record<string, PlacementReason>>
+  /** The gym each grade was playing BEFORE that weekend, so a caption can
+   *  name the building somebody was moved out of. */
+  cameFrom: Record<string, Record<string, string>>
   unitByKey: Map<string, PlannerUnit>
   armed: Armed | null
   interactive: boolean
@@ -919,6 +1024,8 @@ function BoardView({
                   units={state.units}
                   keys={assignment[w.sessionId] ?? []}
                   playsIn={playsIn[w.sessionId] ?? {}}
+                  whyIn={whyIn[w.sessionId] ?? {}}
+                  cameFrom={cameFrom[w.sessionId] ?? {}}
                   unitByKey={unitByKey}
                   armed={armed}
                   interactive={interactive}
@@ -972,6 +1079,8 @@ function WeekendCard({
   units,
   keys,
   playsIn,
+  whyIn,
+  cameFrom,
   unitByKey,
   armed,
   interactive,
@@ -992,6 +1101,10 @@ function WeekendCard({
    *  the season-long pass so a resident keeps the gym it has been playing.
    *  Sections are shaped from it, never packed again here. */
   playsIn: Record<string, string>
+  /** Why each of them is there, from that same pass. */
+  whyIn: Record<string, PlacementReason>
+  /** The gym each grade played before this weekend. */
+  cameFrom: Record<string, string>
   unitByKey: Map<string, PlannerUnit>
   armed: Armed | null
   interactive: boolean
@@ -1010,7 +1123,7 @@ function WeekendCard({
   // Grouping only: the buildings are already decided by the season-long pass,
   // and handing them in as the decided gyms is what shapes them into sections
   // (with each gym's games against its courts) without repacking anything.
-  const gyms = resolveWeekendGyms(units, weekend, keys, playsIn)
+  const gyms = resolveWeekendGyms(units, weekend, keys, playsIn, whyIn)
   // A weekend whose buildings cannot hold a grade whole is short of courts
   // even when the totals say otherwise, and it reads red either way.
   const tone = gyms.overflow > 0 ? "over" : load.tone
@@ -1028,15 +1141,10 @@ function WeekendCard({
     return weekend.venues[(at + 1) % weekend.venues.length]
   }
 
-  const spill = gyms.sections.slice(1).reduce((sum, s) => sum + s.games, 0)
-  const captions: string[] = []
-  if (gyms.overflow > 0) captions.push(`${gyms.overflow} short`)
-  else if (gyms.sections.length > 1)
-    captions.push(`opens ${venueShortName(gyms.sections[1].name)} (+${spill} games)`)
-  else if (gyms.sections.length === 1 && weekend.venues.length > 1)
-    captions.push(`fits in ${venueShortName(gyms.sections[0].name)} alone`)
-  if (tone === "tight" && gyms.overflow === 0) captions.push("full house")
-  if (tone === "empty") captions.push("spare capacity")
+  // The whole story of the weekend, in numbers, composed in the pure core and
+  // only rendered here (owner 2026-08-02: which gym filled, which grade
+  // spilled where, how many games, and why anybody stayed put).
+  const story = weekendStory(units, weekend, gyms, cameFrom)
 
   /** One grade, wherever it sits: in a gym section, or with no gym at all. */
   const chipFor = (key: string, venueId: string | null) => {
@@ -1060,7 +1168,15 @@ function WeekendCard({
         switchTo={next ? { venueId: next.venueId, short: venueShortName(next.name) } : undefined}
         onSwitchGym={next ? () => onSwitchGym(weekend.sessionId, key, next.venueId) : undefined}
         diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
-        caption={changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined}
+        // Comparing is a live question about this grade, so it outranks the
+        // standing explanation of which building the grade is in.
+        caption={
+          changed
+            ? keptDays
+              ? `kept: ${keptDays}`
+              : "not in the kept plan"
+            : story.chipCaptions[key]
+        }
       />
     )
   }
@@ -1159,10 +1275,16 @@ function WeekendCard({
             <b className={tone === "roomy" || tone === "empty" ? "text-ink-900" : ""}>
               {load.demand} / {load.capacity}
             </b>
-            {captions.length > 0 && ` · ${captions.join(" · ")}`}
           </>
         )}
       </p>
+      {/* The story gets its own line: it names buildings and grades, and it
+          has to wrap without pushing the court count around. */}
+      {story.caption && (
+        <p className={`text-[10.5px] ${METER_TONE[tone]}`} data-testid="weekend-caption">
+          {story.caption}
+        </p>
+      )}
 
       {canTakeArmed && armed && (
         <button
@@ -1212,7 +1334,9 @@ function GradeChip({
   muted?: boolean
   /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
   diffTone?: "agreed" | "changed"
-  /** Compare mode: where the kept calendar plays this grade instead. */
+  /** The one small thing worth saying under this chip: in compare mode, where
+   *  the kept calendar plays the grade instead; otherwise why it is in the
+   *  building it is in ("home gym", "moved, Playground full"). */
   caption?: string
 }) {
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
@@ -1294,7 +1418,13 @@ function GradeChip({
   return (
     <span className="inline-flex flex-col items-start gap-0.5">
       {chip}
-      <span className="text-gold-600 pl-0.5 text-[9px] font-bold leading-none">{caption}</span>
+      <span
+        className={`pl-0.5 text-[9px] font-bold leading-none ${
+          diffTone === "changed" ? "text-gold-600" : "text-ink-400"
+        }`}
+      >
+        {caption}
+      </span>
     </span>
   )
 }
