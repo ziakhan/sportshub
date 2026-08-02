@@ -70,7 +70,9 @@ export function PublishStep({
   const [cardVersion, setCardVersion] = useState(() => Date.now())
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/planner`).catch(() => null)
+    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
+      () => null
+    )
     if (!res?.ok) {
       setError("Couldn't load your calendar")
       return

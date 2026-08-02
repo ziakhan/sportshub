@@ -133,7 +133,11 @@ export function CalendarStep({
    *  balanced proposal when there is not. A locked season only ever shows
    *  what was actually saved. */
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/planner`).catch(() => null)
+    // no-store: capacity moves when a gym or a court does, and this screen
+    // must never draw a weekend on a cached court count.
+    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
+      () => null
+    )
     if (!res?.ok) {
       setError("Couldn't load your calendar")
       return

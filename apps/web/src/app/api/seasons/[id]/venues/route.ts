@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
+  applyVenueCourtsToSessionDays,
   applyVenueHoursToSessionDays,
   defaultCourtIdsForVenue,
   propagateVenueToSessions,
@@ -162,8 +163,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
+    // Re-running the setup card with a NEW court count must reach existing
+    // weekends too (owner 2026-08-02: courts were raised to 6 and the planner
+    // kept planning on the count wired at attach time, so step 3 painted red).
+    let courtRewire = { daysRewired: 0, daysBlocked: 0, blockedCourtIds: [] as string[] }
+    if (courtCount != null) {
+      const courtIds = await defaultCourtIdsForVenue(venueId, courtCount)
+      const res = await applyVenueCourtsToSessionDays(params.id, venueId, courtIds)
+      courtRewire = {
+        daysRewired: res.daysRewired,
+        daysBlocked: res.daysBlocked,
+        blockedCourtIds: res.blockedCourtIds,
+      }
+    }
+
     return NextResponse.json(
-      { success: true, id: seasonVenue.id, addedToSessions, updatedDays },
+      { success: true, id: seasonVenue.id, addedToSessions, updatedDays, ...courtRewire },
       { status: 201 }
     )
   } catch (error) {

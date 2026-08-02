@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { weekendLabel } from "@/lib/scheduler/planner-core"
+import { isSeasonLocked } from "@/lib/seasons/season-lock"
 
 /**
  * Venue → session propagation (owner 2026-07-31): a venue added to the
@@ -375,4 +376,167 @@ export async function applyVenueHoursToSessionDays(
     updated++
   }
   return updated
+}
+
+export interface CourtRewireResult {
+  /** Weekend DAYS whose court set (or fill order) actually changed. */
+  daysRewired: number
+  /** Days where a court could not be pulled because a game is on it. */
+  daysBlocked: number
+  courtsAdded: number
+  courtsRemoved: number
+  /** The courts a game is holding, deduped — for the operator's sentence. */
+  blockedCourtIds: string[]
+}
+
+/**
+ * Court-count edits reach the rows the SCHEDULER reads (owner hit this live
+ * 2026-08-02: Six Park was set to 6 courts and The Playground to 3, then the
+ * calendar showed heavy red over-scheduling because planner capacity comes
+ * from SeasonSessionDayVenueCourt rows that were wired ONCE at attach time).
+ * Hours already propagated; courts did not, so every court edit after attach
+ * was invisible to capacity.
+ *
+ * Sibling of applyVenueHoursToSessionDays: for every day-venue of this venue
+ * in this season, make the court rows be exactly `courtIds`, in that
+ * preferred fill order.
+ *
+ * The one guard: a court a GAME is already on is never pulled out from under
+ * it (Game.courtId, matched on this day-venue — or on the same day at the
+ * same venue, for legacy rows written before Game.dayVenueId existed). That
+ * court keeps its row on THAT day, sorted after the courts the season wants,
+ * and the day is reported in `daysBlocked` so the UI can say so instead of
+ * quietly stranding a scheduled game. Adding courts is always safe.
+ *
+ * An empty `courtIds` is a no-op: a season never means "no courts anywhere".
+ */
+export async function applyVenueCourtsToSessionDays(
+  seasonId: string,
+  venueId: string,
+  courtIds: string[]
+): Promise<CourtRewireResult> {
+  const empty: CourtRewireResult = {
+    daysRewired: 0,
+    daysBlocked: 0,
+    courtsAdded: 0,
+    courtsRemoved: 0,
+    blockedCourtIds: [],
+  }
+  const desired = [...new Set(courtIds)]
+  if (desired.length === 0) return empty
+
+  const dayVenues = await (prisma as any).seasonSessionDayVenue.findMany({
+    where: { venueId, day: { session: { seasonId } } },
+    select: {
+      id: true,
+      dayId: true,
+      courts: { select: { id: true, courtId: true, order: true } },
+    },
+  })
+  if (dayVenues.length === 0) return empty
+
+  const desiredSet = new Set(desired)
+  const result: CourtRewireResult = { ...empty, blockedCourtIds: [] }
+  const blockedAll = new Set<string>()
+
+  for (const dv of dayVenues) {
+    const current = new Map<string, { id: string; order: number }>(
+      dv.courts.map((c: any) => [c.courtId, { id: c.id, order: c.order }])
+    )
+    const toRemove = [...current.keys()].filter((id) => !desiredSet.has(id))
+    const toAdd = desired.filter((id) => !current.has(id))
+
+    let blocked: string[] = []
+    if (toRemove.length > 0) {
+      const games = await (prisma as any).game.findMany({
+        where: {
+          courtId: { in: toRemove },
+          OR: [{ dayVenueId: dv.id }, { dayId: dv.dayId, venueId }],
+        },
+        select: { courtId: true },
+      })
+      blocked = [...new Set(games.map((g: any) => g.courtId).filter(Boolean))] as string[]
+    }
+    const blockedSet = new Set(blocked)
+    const removable = toRemove.filter((id) => !blockedSet.has(id))
+
+    if (removable.length > 0) {
+      const dropped = await (prisma as any).seasonSessionDayVenueCourt.deleteMany({
+        where: { dayVenueId: dv.id, courtId: { in: removable } },
+      })
+      result.courtsRemoved += dropped.count
+    }
+    if (toAdd.length > 0) {
+      await (prisma as any).seasonSessionDayVenueCourt.createMany({
+        data: toAdd.map((courtId) => ({
+          dayVenueId: dv.id,
+          courtId,
+          order: desired.indexOf(courtId),
+        })),
+      })
+      result.courtsAdded += toAdd.length
+    }
+
+    // Fill order: the season's courts first, in the season's order, then any
+    // court a game is holding on to.
+    let reordered = 0
+    for (const [i, courtId] of desired.entries()) {
+      const row = current.get(courtId)
+      if (!row || row.order === i) continue
+      await (prisma as any).seasonSessionDayVenueCourt.update({
+        where: { id: row.id },
+        data: { order: i },
+      })
+      reordered++
+    }
+    for (const [i, courtId] of blocked.entries()) {
+      const row = current.get(courtId)
+      const order = desired.length + i
+      if (!row || row.order === order) continue
+      await (prisma as any).seasonSessionDayVenueCourt.update({
+        where: { id: row.id },
+        data: { order },
+      })
+      reordered++
+    }
+
+    if (blocked.length > 0) {
+      result.daysBlocked++
+      for (const id of blocked) blockedAll.add(id)
+    }
+    if (removable.length > 0 || toAdd.length > 0 || reordered > 0) result.daysRewired++
+  }
+
+  result.blockedCourtIds = [...blockedAll]
+  return result
+}
+
+/**
+ * The same rewire for a court change made on the VENUE itself (a court added
+ * or deleted in the venue editor): every season that still has this gym and
+ * is not finalized follows, each on its own court count. A locked season is
+ * left exactly as it was finalized.
+ */
+export async function applyVenueCourtsToAllSeasons(venueId: string): Promise<{
+  seasonsRewired: number
+  daysRewired: number
+  daysBlocked: number
+}> {
+  const seasonVenues = await (prisma as any).seasonVenue.findMany({
+    where: { venueId },
+    select: { seasonId: true, courtsAvailable: true, season: { select: { status: true } } },
+  })
+  let seasonsRewired = 0
+  let daysRewired = 0
+  let daysBlocked = 0
+  for (const sv of seasonVenues) {
+    if (isSeasonLocked(sv.season?.status)) continue
+    const courtIds = await defaultCourtIdsForVenue(venueId, sv.courtsAvailable)
+    if (courtIds.length === 0) continue
+    const res = await applyVenueCourtsToSessionDays(sv.seasonId, venueId, courtIds)
+    if (res.daysRewired > 0) seasonsRewired++
+    daysRewired += res.daysRewired
+    daysBlocked += res.daysBlocked
+  }
+  return { seasonsRewired, daysRewired, daysBlocked }
 }

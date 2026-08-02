@@ -54,8 +54,12 @@ export function GymsWeekendsStep({
   const [locked, setLocked] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // A save that only partly landed reads amber, never the green of a clean
+  // save — the same rule the board paints tone by.
+  const [noticeTone, setNoticeTone] = useState<"court" | "gold">("court")
   const [error, setError] = useState<string | null>(null)
   const [hours, setHours] = useState<Record<string, HoursDraft>>({})
+  const [courts, setCourts] = useState<Record<string, string>>({})
   const [exceptionFor, setExceptionFor] = useState<string | null>(null)
   const [exceptionKey, setExceptionKey] = useState<string>("")
   const [exceptionDraft, setExceptionDraft] = useState<HoursDraft>({ start: "", end: "" })
@@ -63,7 +67,11 @@ export function GymsWeekendsStep({
   const [addingGym, setAddingGym] = useState(false)
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/planner/venues`).catch(() => null)
+    // no-store: capacity is the number this screen exists to get right, and a
+    // cached grid would hand back yesterday's courts and hours.
+    const res = await fetch(`/api/seasons/${seasonId}/planner/venues`, {
+      cache: "no-store",
+    }).catch(() => null)
     if (!res?.ok) {
       setError("Couldn't load your gyms")
       return
@@ -79,6 +87,14 @@ export function GymsWeekendsStep({
         ])
       )
     )
+    setCourts(
+      Object.fromEntries(
+        (data.grid.venues as VenueGridRow[]).map((v) => [
+          v.seasonVenueId,
+          String(v.courtsAvailable ?? v.courtCount),
+        ])
+      )
+    )
     onLoaded?.(data.grid)
   }, [seasonId, onLoaded])
 
@@ -86,18 +102,27 @@ export function GymsWeekendsStep({
     load()
   }, [load])
 
-  const call = async (url: string, init: RequestInit, key: string, success: string) => {
+  /** `success` may read the response: some saves only know what they did
+   *  after the server answers (how many weekends followed, what a game held
+   *  on to), and the operator gets told the truth either way. */
+  const call = async (
+    url: string,
+    init: RequestInit,
+    key: string,
+    success: string | ((data: any) => string)
+  ) => {
     setBusy(key)
     setError(null)
     setNotice(null)
+    setNoticeTone("court")
     const res = await fetch(url, init).catch(() => null)
     setBusy(null)
+    const data = await res?.json().catch(() => null)
     if (!res?.ok) {
-      const data = await res?.json().catch(() => null)
       setError(data?.error ?? "That didn't save. Try again.")
       return false
     }
-    setNotice(success)
+    setNotice(typeof success === "function" ? success(data) : success)
     await load()
     return true
   }
@@ -167,6 +192,36 @@ export function GymsWeekendsStep({
     )
   }
 
+  /** Courts are capacity, so editing them here has to reach every weekend
+   *  the gym is already on — not just the ones created afterwards (owner hit
+   *  exactly that on 2026-08-02: six courts entered, step 3 still red). */
+  const saveCourts = async (venue: VenueGridRow) => {
+    const next = Number(courts[venue.seasonVenueId])
+    if (!Number.isInteger(next) || next < 1 || next > 30) {
+      setError("Courts has to be a whole number from 1 to 30.")
+      return
+    }
+    await call(
+      `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}`,
+      json({ courtsAvailable: next }, "PATCH"),
+      `${venue.seasonVenueId}:courts`,
+      (data) => {
+        const count = `${venue.name} now runs ${next} court${next === 1 ? "" : "s"}`
+        const blocked = Number(data?.daysBlocked ?? 0)
+        setNoticeTone(blocked > 0 ? "gold" : "court")
+        // Never both: claiming every weekend updated while some kept a court
+        // would be the same half-truth this whole fix is about.
+        if (blocked === 0) return `${count}, every weekend updated.`
+        const names = (data?.blockedCourts ?? [])
+          .map((c: { name: string }) => c.name)
+          .join(", ")
+        return `${count}. ${blocked} day${blocked === 1 ? "" : "s"} kept ${
+          names || "a court"
+        } because a game is already scheduled there.`
+      }
+    )
+  }
+
   const saveException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
     if (!exceptionDraft.start || !exceptionDraft.end) {
       setError("Set both a start and an end time.")
@@ -226,7 +281,15 @@ export function GymsWeekendsStep({
           </p>
         )}
         {notice && !error && (
-          <p className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
+          <p
+            data-testid="step2-notice"
+            data-tone={noticeTone}
+            className={`mb-4 rounded-xl border px-4 py-2.5 text-sm ${
+              noticeTone === "gold"
+                ? "border-gold-200 bg-gold-50 text-gold-900"
+                : "border-court-200 bg-court-50 text-court-900"
+            }`}
+          >
             {notice}
           </p>
         )}
@@ -250,6 +313,9 @@ export function GymsWeekendsStep({
           const draft = hours[venue.seasonVenueId] ?? { start: "", end: "" }
           const dirty =
             draft.start !== (venue.simpleOpen ?? "") || draft.end !== (venue.simpleClose ?? "")
+          const courtsNow = String(venue.courtsAvailable ?? venue.courtCount)
+          const courtsDraft = courts[venue.seasonVenueId] ?? courtsNow
+          const courtsDirty = courtsDraft !== courtsNow
           const exceptionOpen = exceptionFor === venue.seasonVenueId
           const liveWeekends = weekends.filter((w, i) => venue.cells[i].state !== "off" && w.sessionId)
 
@@ -273,9 +339,39 @@ export function GymsWeekendsStep({
                 aria-label={`${venue.name} availability`}
                 className="mt-2.5 flex flex-wrap items-center gap-2"
               >
-                <span className="border-ink-100 bg-ink-50 text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
-                  <b className="text-ink-900">{venue.courtsAvailable ?? venue.courtCount}</b> courts
-                </span>
+                {locked ? (
+                  <span className="border-ink-100 bg-ink-50 text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
+                    <b className="text-ink-900">{courtsNow}</b> courts
+                  </span>
+                ) : (
+                  <>
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={courtsDraft}
+                      aria-label={`${venue.name} courts`}
+                      onChange={(e) =>
+                        setCourts((c) => ({ ...c, [venue.seasonVenueId]: e.target.value }))
+                      }
+                      className="border-ink-200 focus:border-play-500 w-16 rounded-lg border px-2 py-1 text-sm focus:outline-none"
+                    />
+                    <span className="text-ink-700 text-xs font-semibold">courts</span>
+                    {courtsDirty && (
+                      <Button
+                        size="sm"
+                        tone="court"
+                        disabled={busy !== null}
+                        onClick={() => saveCourts(venue)}
+                      >
+                        Save courts
+                      </Button>
+                    )}
+                  </>
+                )}
+                {/* Two facts, one row: how many courts, and when. The chips
+                    of the locked card already read apart. */}
+                {!locked && <span className="bg-ink-200 mx-1 h-5 w-px" aria-hidden />}
                 {locked ? (
                   <span className="border-ink-100 bg-ink-50 text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
                     Available{" "}

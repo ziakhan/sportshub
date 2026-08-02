@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId, canManageVenues } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { applyVenueCourtsToAllSeasons } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
 
@@ -73,7 +74,13 @@ export async function DELETE(
     }
 
     await (prisma as any).court.delete({ where: { id: params.courtId } })
-    return NextResponse.json({ success: true })
+
+    // The deleted court's session-day rows cascade away; every unfinalized
+    // season that uses this gym re-fills its court set from what is left, so
+    // a season asking for 6 courts does not silently plan on 5.
+    const rewired = await applyVenueCourtsToAllSeasons(params.id)
+
+    return NextResponse.json({ success: true, ...rewired })
   } catch (error) {
     console.error("Delete court error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

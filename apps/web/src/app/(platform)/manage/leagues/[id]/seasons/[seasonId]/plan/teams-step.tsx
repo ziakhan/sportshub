@@ -68,7 +68,11 @@ export function TeamsStep({
   }, [counts])
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/planner`).catch(() => null)
+    // no-store everywhere in the wizard: the plan is only worth what its
+    // numbers are worth, and a cached response is yesterday's.
+    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
+      () => null
+    )
     if (!res?.ok) {
       setError("Couldn't load your grades")
       return

@@ -52,6 +52,10 @@ const COPY = {
     "Your grades are at or past what you planned for. One button turns everything already entered into a schedule.",
   final:
     "Entries for this season are closed. Everything the scheduler needs is already here: gyms, hours, weekends and groupings.",
+  noPlan:
+    "No weekend holds a grade yet, so there is nothing here to measure against. Build the calendar in step 3 and keep it, then this screen watches it.",
+  noPlanLocked:
+    "This season was finalized without a kept calendar, so there is nothing here to measure against. These bars are the teams that registered.",
   reuse: "uses your plan, nothing to re-enter",
   footer:
     "After generating you get preview, fairness report and publish. Those are the scheduling screens you already have, reached from here instead of found in a tab.",
@@ -83,7 +87,11 @@ export function ScheduleStep({
   const namedRef = useRef(false)
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/planner`).catch(() => null)
+    // no-store: this screen polls to be true about right now, so a cached
+    // response would be the one thing it cannot afford.
+    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
+      () => null
+    )
     if (!res?.ok) {
       setError("Couldn't load your registration")
       return
@@ -131,6 +139,19 @@ export function ScheduleStep({
   )
   const lead = useMemo(() => overPlanSentence(bars), [bars])
 
+  /**
+   * A saved calendar where no weekend holds a grade has zero demand, so every
+   * weekend reads comfortable and the pill went green while step 3 was
+   * showing the proposal in red. That green was a lie: there is no plan yet.
+   * Grades with teams and nothing kept means "not started", not "on plan".
+   */
+  const noCalendar = useMemo(() => {
+    if (!state) return false
+    const assignment = currentAssignment(state)
+    const kept = Object.values(assignment).some((keys) => keys.length > 0)
+    return !kept && state.units.some((u) => u.teams > 0)
+  }, [state])
+
   /** What the operator should do about it, in the planner's own words. A
    *  weekend the rail had nothing to add about still gets its numbers said
    *  out loud: being one game from full IS the news. */
@@ -173,17 +194,22 @@ export function ScheduleStep({
         </div>
         <span
           data-testid="attention-pill"
+          data-state={noCalendar ? "no-plan" : attention.length > 0 ? "attention" : "on-plan"}
           className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-            attention.length > 0
-              ? "border-gold-200 bg-gold-50 text-gold-800"
-              : "border-court-200 bg-court-50 text-court-800"
+            noCalendar
+              ? "border-ink-200 bg-ink-50 text-ink-600"
+              : attention.length > 0
+                ? "border-gold-200 bg-gold-50 text-gold-800"
+                : "border-court-200 bg-court-50 text-court-800"
           }`}
         >
-          {attention.length > 0
-            ? `${attention.length} weekend${attention.length === 1 ? "" : "s"} need${
-                attention.length === 1 ? "s" : ""
-              } attention`
-            : "On plan"}
+          {noCalendar
+            ? "No calendar kept yet"
+            : attention.length > 0
+              ? `${attention.length} weekend${attention.length === 1 ? "" : "s"} need${
+                  attention.length === 1 ? "s" : ""
+                } attention`
+              : "On plan"}
         </span>
       </div>
 
@@ -292,6 +318,23 @@ export function ScheduleStep({
               </button>
             )}
           </div>
+        )}
+
+        {/* Nothing kept means nothing to watch. Say it, and hand over the
+            step that fixes it. */}
+        {noCalendar && (
+          <p data-testid="no-plan-line" className="text-ink-500 mt-4 max-w-2xl text-sm">
+            {locked ? COPY.noPlanLocked : COPY.noPlan}{" "}
+            {onGoToStep && !locked && (
+              <button
+                type="button"
+                onClick={() => onGoToStep(3)}
+                className="text-play-700 hover:text-play-800 font-semibold"
+              >
+                Go to step 3 &rarr;
+              </button>
+            )}
+          </p>
         )}
 
         {/* The doorway. Same destination, two moments. */}

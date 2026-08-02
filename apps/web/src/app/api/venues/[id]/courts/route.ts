@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId, canManageVenues } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
+import { applyVenueCourtsToAllSeasons } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
 
@@ -52,7 +53,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       },
     })
 
-    return NextResponse.json({ success: true, id: court.id, court }, { status: 201 })
+    // A court added at the gym reaches the weekends every unfinalized season
+    // already has there — otherwise capacity keeps planning on the court set
+    // wired when the gym was attached (owner 2026-08-02).
+    const rewired = await applyVenueCourtsToAllSeasons(params.id)
+
+    return NextResponse.json({ success: true, id: court.id, court, ...rewired }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

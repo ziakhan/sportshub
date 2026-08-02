@@ -55,6 +55,7 @@ import { getServerSession } from "next-auth"
  *   1141 planner step 4 (publish/unpublish + card gating: private before, public after)
  *   1142 planner step 1 saves (planning number = max(approved, expected), editable while open)
  *   1143 planner step 2 weekends (ensureWeekendSession + POST /weekends: create-on-toggle)
+ *   1144 planner step 2 courts (applyVenueCourtsToSessionDays: rewire/add/blocked-by-game)
  */
 
 export function actAs(userId: string | null): void {
