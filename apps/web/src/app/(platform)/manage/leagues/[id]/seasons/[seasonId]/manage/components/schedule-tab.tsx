@@ -7,7 +7,9 @@ import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 import { TeamCheck } from "./team-check"
+import { ScheduleBoard } from "./schedule-board"
 import { computeFairnessReport } from "@/lib/scheduler/report"
+import { unitAbbrev, type BoardGame } from "@/lib/scheduler/board"
 
 interface CapacityUnit {
   unitKey: string
@@ -499,10 +501,51 @@ export function ScheduleTab({
       : capacity
   // Session mode shows ONLY the selected session's games (owner 2026-07-31:
   // "after you create the schedule for a week, you should only see that week")
-  const visibleGames =
-    mode === "session" && selectedSessionId
-      ? scheduleGames.filter((g: any) => g.sessionId === selectedSessionId)
-      : scheduleGames
+  const visibleGames = useMemo(
+    () =>
+      mode === "session" && selectedSessionId
+        ? scheduleGames.filter((g: any) => g.sessionId === selectedSessionId)
+        : scheduleGames,
+    [scheduleGames, mode, selectedSessionId]
+  )
+
+  // List or board (owner 2026-08-02: "show a day view or a gym view or
+  // maybe somehow if you can combine them both"). Same games either way —
+  // the board is a second reading of what the list already holds, so
+  // switching costs nothing and never disagrees with the list.
+  const [gamesView, setGamesView] = useState<"list" | "board">("list")
+  const unitByTeam = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const t of (league?.teams ?? []) as any[]) {
+      const label = unitAbbrev(t.division?.name) ?? unitAbbrev(t.team?.ageGroup)
+      if (label && t.team?.id) map.set(t.team.id, label)
+    }
+    return map
+  }, [league])
+  const boardGames: BoardGame[] = useMemo(
+    () =>
+      visibleGames.map((g: any) => ({
+        id: g.id,
+        scheduledAt: g.scheduledAt,
+        venueId: g.venueId ?? g.venue?.id ?? null,
+        venueName: g.venue?.name ?? null,
+        courtId: g.courtId ?? g.court?.id ?? null,
+        courtName: g.court?.name ?? null,
+        homeTeamId: g.homeTeamId,
+        awayTeamId: g.awayTeamId,
+        homeTeamName: g.homeTeam?.name ?? null,
+        awayTeamName: g.awayTeam?.name ?? null,
+        // A game's grade is its teams' — both sides share a division, so
+        // either one answers, and the away team covers a home team whose
+        // submission is missing.
+        unitLabel: unitByTeam.get(g.homeTeamId) ?? unitByTeam.get(g.awayTeamId) ?? null,
+        status: g.status,
+        homeScore: g.homeScore ?? null,
+        awayScore: g.awayScore ?? null,
+        publishedAt: g.publishedAt ?? null,
+      })),
+    [visibleGames, unitByTeam]
+  )
 
   return (
     <div className="space-y-6">
@@ -1031,11 +1074,38 @@ export function ScheduleTab({
                 : "Committed games"
             }
             action={
-              <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                {visibleGames.length}
-                {mode === "session" && visibleGames.length !== scheduleGames.length
-                  ? ` of ${scheduleGames.length}`
-                  : ""}
+              <span className="flex items-center gap-2">
+                <span className="border-ink-200 flex overflow-hidden rounded-lg border">
+                  {([
+                    ["list", "List"],
+                    ["board", "Board"],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setGamesView(key)}
+                      aria-pressed={gamesView === key}
+                      data-games-view={key}
+                      title={
+                        key === "board"
+                          ? "One day across every gym and court"
+                          : "Every game in one list, with the controls for each"
+                      }
+                      className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        gamesView === key
+                          ? "bg-ink-950 text-white"
+                          : "text-ink-600 hover:bg-ink-50 bg-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </span>
+                <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                  {visibleGames.length}
+                  {mode === "session" && visibleGames.length !== scheduleGames.length
+                    ? ` of ${scheduleGames.length}`
+                    : ""}
+                </span>
               </span>
             }
           />
@@ -1045,7 +1115,9 @@ export function ScheduleTab({
               season&quot; above to see everything.
             </p>
           )}
-          {visibleGames.length === 0 ? (
+          {gamesView === "board" ? (
+            <ScheduleBoard games={boardGames} />
+          ) : visibleGames.length === 0 ? (
             <p className="text-ink-500 text-sm">
               {scheduleGames.length === 0
                 ? "No games committed yet. Preview then commit once the season is finalized."
