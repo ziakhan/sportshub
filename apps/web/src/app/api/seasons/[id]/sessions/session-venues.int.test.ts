@@ -91,7 +91,11 @@ describe("POST / DELETE one gym on one weekend", () => {
     expect(res.status).toBe(200)
     const { grid } = await res.json()
     const row = grid.venues.find((v: any) => v.venueId === venueId)
-    expect(row.cells[0].state).toBe("off")
+    // The grid now draws every weekend of the season, so find THIS one by its
+    // session rather than trusting the first column.
+    const idx = grid.weekends.findIndex((w: any) => w.sessionId === sessionId)
+    expect(idx).toBeGreaterThanOrEqual(0)
+    expect(row.cells[idx].state).toBe("off")
   })
 
   it("puts it back with the season's default courts", async () => {

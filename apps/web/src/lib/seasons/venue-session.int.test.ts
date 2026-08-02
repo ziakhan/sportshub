@@ -290,15 +290,23 @@ describe("setSessionVenueWindow", () => {
 })
 
 describe("buildVenueWeekendGrid", () => {
-  it("returns every weekend in date order with a cell per gym", async () => {
+  it("returns every weekend of the season in date order with a cell per gym", async () => {
     const grid = await buildVenueWeekendGrid(seasonId)
 
-    expect(grid.weekends).toHaveLength(2)
-    expect(new Date(grid.weekends[0].dateISO).getTime()).toBeLessThan(
-      new Date(grid.weekends[1].dateISO).getTime()
-    )
-    expect(grid.weekends[0].dayCount).toBe(2)
-    expect(grid.weekends[0].label).toMatch(/^[A-Z][a-z]{2} \d+/)
+    // Both real weekends are there, in date order, alongside the weekends
+    // nobody has created yet (owner 2026-08-02: all of them, every month).
+    const real = grid.weekends.filter((w) => w.sessionId)
+    expect(real.map((w) => w.sessionId)).toEqual([sessionA, sessionB])
+    expect(grid.weekends.length).toBeGreaterThan(real.length)
+    for (let i = 1; i < grid.weekends.length; i++) {
+      expect(new Date(grid.weekends[i - 1].dateISO).getTime()).toBeLessThanOrEqual(
+        new Date(grid.weekends[i].dateISO).getTime()
+      )
+    }
+    expect(real[0].dayCount).toBe(2)
+    expect(real[0].label).toMatch(/^[A-Z][a-z]{2} \d+/)
+    expect(real[0].dayLabel).toMatch(/^\d/)
+    expect(real[0].month).toMatch(/^[A-Z][a-z]{2}$/)
 
     expect(grid.venues).toHaveLength(1)
     const row = grid.venues[0]
@@ -307,8 +315,19 @@ describe("buildVenueWeekendGrid", () => {
     expect(row.courts).toHaveLength(3)
     // "Sat–Sun 08:00 – 20:00" style, built from the weekdays actually played.
     expect(row.defaultWindowLabel).toContain("08:00 – 20:00")
+    expect(row.simpleOpen).toBe("08:00")
+    expect(row.simpleClose).toBe("20:00")
+    expect(row.hoursVary).toBe(false)
     expect(row.isPrimary).toBe(true)
     expect(grid.seasonLabel).toBeTruthy()
+
+    // A weekend with no session yet reads off, and says which Saturday it is
+    // so one tap can create it.
+    const virtualIdx = grid.weekends.findIndex((w) => !w.sessionId)
+    expect(virtualIdx).toBeGreaterThanOrEqual(0)
+    expect(grid.weekends[virtualIdx].satDateISO).toBeTruthy()
+    expect(row.cells[virtualIdx].state).toBe("off")
+    expect(row.cells[virtualIdx].sessionId).toBeNull()
   })
 
   it("counts a half-attached weekend as on, and says how many days", async () => {

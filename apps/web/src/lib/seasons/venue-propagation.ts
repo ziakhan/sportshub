@@ -1,4 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
+import { weekendLabel } from "@/lib/scheduler/planner-core"
 
 /**
  * Venue → session propagation (owner 2026-07-31): a venue added to the
@@ -109,6 +110,106 @@ async function sessionDays(
     },
   })
   return session ? session.days : null
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Midnight UTC of a date — session days are stored and read as UTC dates
+ *  everywhere in the scheduler, so every weekend key agrees. */
+function utcMidnight(value: Date | string): Date {
+  const d = new Date(value)
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+}
+
+/** What a new weekend should play: whatever its siblings play (the most
+ *  common non-null), else the season's own target, else 2 (the 10/5/2 norm). */
+function siblingGamesPerTeam(
+  siblings: Array<{ targetGamesPerTeam: number | null }>,
+  seasonTarget: number | null
+): number {
+  const counts = new Map<number, number>()
+  for (const s of siblings) {
+    if (s.targetGamesPerTeam == null) continue
+    counts.set(s.targetGamesPerTeam, (counts.get(s.targetGamesPerTeam) ?? 0) + 1)
+  }
+  let best: number | null = null
+  let bestCount = 0
+  for (const [value, count] of counts) {
+    if (count > bestCount) {
+      best = value
+      bestCount = count
+    }
+  }
+  return best ?? seasonTarget ?? 2
+}
+
+/**
+ * The session behind one weekend, creating it when nobody has (planner step
+ * 2, owner 2026-08-02: "make it open for every month, all weekends"). The
+ * grid now offers every Sat–Sun of the season, most of which have no session
+ * yet — turning a gym on for one of those has to bring the weekend into
+ * existence first.
+ *
+ * Idempotent: a weekend that already has a session (REGULAR preferred, but a
+ * finals weekend counts too — we never double-book a date) returns that one
+ * untouched. A created session copies its siblings' games-per-team and is
+ * named the way the season names its weekends.
+ *
+ * Returns null when the season or the date is not real, so callers 400/404
+ * instead of writing orphan rows.
+ */
+export async function ensureWeekendSession(
+  seasonId: string,
+  satDateISO: string
+): Promise<{ sessionId: string; created: boolean } | null> {
+  const sat = utcMidnight(satDateISO)
+  if (Number.isNaN(sat.getTime()) || sat.getUTCDay() !== 6) return null
+
+  const sun = new Date(sat.getTime() + DAY_MS)
+  const monday = new Date(sat.getTime() + 2 * DAY_MS)
+
+  const season = await (prisma as any).season.findUnique({
+    where: { id: seasonId },
+    select: { id: true, targetGamesPerSession: true },
+  })
+  if (!season) return null
+
+  const onThisWeekend = await (prisma as any).seasonSession.findMany({
+    where: { seasonId, days: { some: { date: { gte: sat, lt: monday } } } },
+    select: { id: true, phase: true },
+    orderBy: { createdAt: "asc" },
+  })
+  const match =
+    onThisWeekend.find((s: any) => s.phase === "REGULAR") ?? onThisWeekend[0] ?? null
+  if (match) return { sessionId: match.id, created: false }
+
+  const siblings = await (prisma as any).seasonSession.findMany({
+    where: { seasonId, phase: "REGULAR" },
+    select: { targetGamesPerTeam: true, days: { orderBy: { date: "asc" }, select: { date: true } } },
+  })
+  // "Weekend 7 · Nov 14" — the number is the weekend's place in the season.
+  const position =
+    siblings.filter((s: any) => s.days[0] && new Date(s.days[0].date).getTime() < sat.getTime())
+      .length + 1
+
+  const created = await (prisma as any).$transaction(async (tx: any) => {
+    const session = await tx.seasonSession.create({
+      data: {
+        seasonId,
+        // Same shape the season's own weekends carry: "Weekend 7 · Nov 14".
+        label: `Weekend ${position} · ${weekendLabel([sat])}`,
+        phase: "REGULAR",
+        targetGamesPerTeam: siblingGamesPerTeam(siblings, season.targetGamesPerSession ?? null),
+      },
+      select: { id: true },
+    })
+    for (const date of [sat, sun]) {
+      await tx.seasonSessionDay.create({ data: { sessionId: session.id, date } })
+    }
+    return session
+  })
+
+  return { sessionId: created.id, created: true }
 }
 
 /**
