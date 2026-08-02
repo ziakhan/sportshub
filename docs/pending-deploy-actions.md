@@ -950,7 +950,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - SCHEMA (additive): PlatformSettings.demoState Json · Game.statusReason String. `prisma db push` on box (+ Neon later).
 - Full build log §31; demo run-sheet docs/demo-runbook-nph-journey.md. Deploy: push GitHub → deploy.sh → schema push → load scenarios from admin console (box seeder path uses npx tsx from repo root — verify /opt/sportshub has scripts/data/nph-census.ts after pull).
 
-## #60 — 2026-08-02: SEASON PLANNER BOARD v1 — ⏳ LOCAL ONLY (owner word needed for box)
+## #60 — 2026-08-02: SEASON PLANNER BOARD v1 — ✅ DEPLOYED (box 3c6a33e; expectedTeams column verified integer on box DB; planner API 401-gates + page auth-redirects live. Neon pending with #24+)
 - Schema: `Division.expectedTeams Int?` — box needs `prisma db push` at deploy
   (local pushed). Neon pending with #24+.
 - Code: lib/scheduler/planner-core.ts + planner.ts + planner-auth.ts, 3 API
