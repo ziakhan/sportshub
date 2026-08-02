@@ -53,3 +53,36 @@ verifiable (post-level = low confidence). Sub-accounts: @nphshowcase,
 - Their gaps vs us: no owned family app/notifications/iCal (they rent
   Exposure Events), third-party scoring, $2k/team streaming upsell. Our
   platform = schedule + scoring + notifications in one.
+
+## Cross-league venue usage 2025-26 (all 8 calendars pulled, 2026-08-01)
+Totals: ~1,420 games — SL 966 (68%) · D1 five divisions 315 · NPA 80 ·
+WNPA 57. Venue share of ALL NPH games: **Six Park East ~37% · The
+Playground Burlington ~29%** (top-2 = two-thirds), Ridley ~5%, FEIA ~3%,
+then ~20 school/college gyms at 1-2% each (St. Francis Xavier, Turner
+Fenton, Henry Street, Royal Crown, Carleton, King's Christian, Humber,
+NDL Longueuil, York Tait McKenzie, Lisgar, David Ann, Crestwood, Edge,
+St. Jude, F.H. Sherman, Bramalea, Glebe, Earl Haig, Bishop Reding, The
+Gate, Athol Murray, Hodan Nalayeh).
+- Biggest league: SL (966 games, 146 census entries). Most BUILDINGS for
+  its size: NPA (12+ buildings for 80 games — academy home gyms +
+  weekdays). Most teams through one building: Six Park East (~150+).
+- Division residency: Gr9 ~65% + Gr10 ~55% of games AT Six Park; Gr7/Gr8
+  resident at Playground; Gr11/Gr12 split both hubs; D1 girls rotate
+  hosts monthly (Playground→Six Park→NDL→Royal Crown→Carleton) = travel
+  relief via home weekends, not requests.
+
+## Six Park East is a SHARED building — NJC/NSC interleave (KEY)
+National Junior Circuit + National Senior Circuit (sibling orgs, TeamLinkt)
+book Six Park East for the SAME six Fri-Sun blocks in 2026-27: Oct 16-18,
+Nov 13-15, Dec 11-13, Jan 15-17, Feb 12-14, Mar 12-14 (championship).
+Overlaying NPH's official 2026-27 SL calendar: every collision weekend
+(Nov 14-15, Dec 12-13, Jan 16-17, Feb 13-14, finals Mar 13-14) carries
+EXACTLY the grades that don't need Six Park (Gr7, Gr8, Gr10-with-schools,
+Tier-1 finals block), while every big Six Park stack (Oct 24-25, Nov 21-22
+peak 84 games, Dec 19-20, Jan 9-10, Jan 30-31, Feb 6-7, Feb 20-21) sits on
+an NJC-free weekend. The building's season is effectively sold out ~20 of
+~23 weekends across the two orgs.
+→ Product implication (owner 2026-08-01): venue WEEKEND AVAILABILITY is the
+true planning input. Flow: building availability calendar → session-day
+planning (which grades on which available weekend) → actual scheduling.
+Matches the calendar-planner design (weekends primitive, courts output).
