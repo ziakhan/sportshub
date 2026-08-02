@@ -28,7 +28,14 @@ export interface PlannerUnit {
   key: string // "age:<ageGroup>"
   label: string
   divisionIds: string[]
+  /** What the board plans on: registration truth once there is any, the
+   *  step-1 estimate until then. Everything that computes capacity reads
+   *  THIS number. */
   teams: number
+  /** Teams actually registered (approved submissions). */
+  approved: number
+  /** What step 1 said to expect. Zero when nobody ever estimated this grade. */
+  expected: number
   source: "approved" | "expected" | "none"
 }
 
@@ -179,6 +186,99 @@ export function planSummary(
   ).length
 
   return { fits: over === 0 && unplaced === 0, over, tight, unavailable, unplaced, games }
+}
+
+/* ------------------------- step 5: registration vs plan ------------------ */
+
+export interface AttentionWeekend {
+  sessionId: string
+  label: string
+  load: WeekendLoad
+}
+
+/**
+ * The weekends worth looking at before anything else: past their courts, or
+ * close enough that one late entry breaks them. Same tone vocabulary as the
+ * board, so amber on the watch screen means what amber means on the calendar.
+ *
+ * Broken weekends come first, then full ones, each in calendar order. A
+ * screen that shows only its first couple of sentences must lead with the
+ * weekend that is actually short of courts, not the one that merely has no
+ * spare slot.
+ *
+ * It reads the units' `teams`, which is registration truth wherever teams
+ * have registered — that is the whole point of watching in October.
+ */
+export function weekendsNeedingAttention(
+  state: PlannerState,
+  assignment: Record<string, string[]>
+): AttentionWeekend[] {
+  const over: AttentionWeekend[] = []
+  const tight: AttentionWeekend[] = []
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const load = weekendLoad(state.units, w, assignment[w.sessionId] ?? [])
+      if (load.tone === "over") over.push({ sessionId: w.sessionId, label: w.label, load })
+      else if (load.tone === "tight") tight.push({ sessionId: w.sessionId, label: w.label, load })
+    }
+  }
+  return [...over, ...tight]
+}
+
+export interface RegistrationBar {
+  key: string
+  label: string
+  /** Teams registered so far. */
+  approved: number
+  /** The step-1 estimate. Zero means nobody estimated this grade. */
+  expected: number
+  /** 0–1 of the track the solid registered bar fills. */
+  fill: number
+  /** There was a plan for this grade, and registration passed it. */
+  over: boolean
+}
+
+/**
+ * One bar per grade for the watch screen: what registered against what step 1
+ * expected. A grade that beat its estimate fills the whole track (the track
+ * grows to the real number) and says so, the way the approved mock reads
+ * "30 of 27 expected".
+ *
+ * Grades nobody expected and nobody registered are not rows: an empty grade
+ * is not news. A grade with teams but no estimate is a row with nothing to
+ * measure against, never an "over plan" alarm.
+ */
+export function registrationBars(units: PlannerUnit[]): RegistrationBar[] {
+  return units
+    .filter((u) => u.approved > 0 || u.expected > 0)
+    .map((u) => {
+      const track = Math.max(u.expected, u.approved)
+      return {
+        key: u.key,
+        label: u.label,
+        approved: u.approved,
+        expected: u.expected,
+        fill: track > 0 ? u.approved / track : 0,
+        over: u.expected > 0 && u.approved > u.expected,
+      }
+    })
+}
+
+/**
+ * The lead line of the watch screen's alert: which grades outgrew the
+ * estimate, and by how much. Null while registration is still inside the
+ * plan, so the alert stays quiet when there is nothing to say.
+ */
+export function overPlanSentence(bars: RegistrationBar[]): string | null {
+  const parts = bars
+    .filter((b) => b.over)
+    .map((b) => {
+      const by = b.approved - b.expected
+      return `${b.label} is ${by} team${by === 1 ? "" : "s"} over plan`
+    })
+  if (parts.length === 0) return null
+  if (parts.length === 1) return `${parts[0]}.`
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}.`
 }
 
 /** The words youth sport already abbreviates a particular way. Cutting

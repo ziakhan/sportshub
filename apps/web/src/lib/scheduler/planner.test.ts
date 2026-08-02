@@ -3,11 +3,14 @@ import {
   expectedTeamUpdates,
   gradeAbbrev,
   gradeLine,
+  overPlanSentence,
   planSummary,
   proposePlan,
+  registrationBars,
   seasonCalendarMonths,
   suggestFor,
   weekendDays,
+  weekendsNeedingAttention,
   TIGHT_RATIO,
   weekendDemand,
   weekendLoad,
@@ -23,14 +26,41 @@ import {
  * full weekends = 176), 2 games per team per weekend.
  */
 
+/** A registered grade: the teams are really in, and the estimate matched
+ *  unless a test says otherwise. `teams` is what the board plans on. */
+function registered(label: string, teams: number, expected = teams): PlannerUnit {
+  return {
+    key: `age:${label}`,
+    label,
+    divisionIds: [`d${label}`],
+    teams,
+    approved: teams,
+    expected,
+    source: "approved",
+  }
+}
+
+/** A grade nobody has registered for yet: the estimate IS the plan. */
+function estimated(label: string, expected: number): PlannerUnit {
+  return {
+    key: `age:${label}`,
+    label,
+    divisionIds: [`d${label}`],
+    teams: expected,
+    approved: 0,
+    expected,
+    source: expected > 0 ? "expected" : "none",
+  }
+}
+
 const UNITS: PlannerUnit[] = [
-  { key: "age:Gr7", label: "Gr7", divisionIds: ["d7"], teams: 12, source: "approved" },
-  { key: "age:Gr8", label: "Gr8", divisionIds: ["d8"], teams: 9, source: "approved" },
-  { key: "age:Gr9", label: "Gr9", divisionIds: ["d9"], teams: 25, source: "approved" },
-  { key: "age:Gr10", label: "Gr10", divisionIds: ["d10"], teams: 42, source: "approved" },
-  { key: "age:Gr11", label: "Gr11", divisionIds: ["d11"], teams: 24, source: "approved" },
-  { key: "age:Gr12", label: "Gr12", divisionIds: ["d12"], teams: 26, source: "approved" },
-  { key: "age:JrGirls", label: "JrGirls", divisionIds: ["dj"], teams: 8, source: "approved" },
+  registered("Gr7", 12),
+  registered("Gr8", 9),
+  registered("Gr9", 25),
+  registered("Gr10", 42),
+  registered("Gr11", 24),
+  registered("Gr12", 26),
+  registered("JrGirls", 8),
 ]
 
 let seq = 0
@@ -149,13 +179,9 @@ describe("proposePlan on the NPH shape", () => {
 
   it("greedy fallback (large unit count) still assigns every unit once per window", () => {
     seq = 0
-    const manyUnits: PlannerUnit[] = Array.from({ length: 13 }, (_, i) => ({
-      key: `age:U${i}`,
-      label: `U${i}`,
-      divisionIds: [`du${i}`],
-      teams: 6 + i,
-      source: "approved" as const,
-    }))
+    const manyUnits: PlannerUnit[] = Array.from({ length: 13 }, (_, i) =>
+      registered(`U${i}`, 6 + i)
+    )
     const state: PlannerState = {
       seasonId: "s",
       units: manyUnits,
@@ -340,7 +366,7 @@ describe("planSummary", () => {
     seq = 0
     const state: PlannerState = {
       seasonId: "s",
-      units: [...UNITS, { key: "age:Gr6", label: "Gr6", divisionIds: ["d6"], teams: 0, source: "none" }],
+      units: [...UNITS, estimated("Gr6", 0)],
       errors: [],
       windows: [{ label: "Nov 2026", weekends: [wk("Only", "2026-11-07", 200)] }],
     }
@@ -460,5 +486,137 @@ describe("seasonCalendarMonths", () => {
     expect(seasonCalendarMonths({ seasonId: "s", units: [], windows: [], errors: [] }, {})).toEqual(
       []
     )
+  })
+})
+
+describe("registrationBars", () => {
+  it("draws registered against expected, and fills the track when a grade beats it", () => {
+    const bars = registrationBars([
+      registered("Gr7", 9, 14),
+      registered("Gr9", 30, 27), // the mock's over-plan grade
+      estimated("Gr11", 25),
+    ])
+    expect(bars.map((b) => [b.label, b.approved, b.expected, b.over])).toEqual([
+      ["Gr7", 9, 14, false],
+      ["Gr9", 30, 27, true],
+      ["Gr11", 0, 25, false],
+    ])
+    // 9 of 14 is nine fourteenths of the track; 30 of 27 fills it.
+    expect(bars[0].fill).toBeCloseTo(9 / 14)
+    expect(bars[1].fill).toBe(1)
+    expect(bars[2].fill).toBe(0)
+  })
+
+  it("leaves out grades nobody expected and nobody registered", () => {
+    const bars = registrationBars([registered("Gr7", 9, 14), estimated("Gr6", 0)])
+    expect(bars.map((b) => b.label)).toEqual(["Gr7"])
+  })
+
+  it("a grade with teams but no estimate is a row, never an alarm", () => {
+    const [bar] = registrationBars([registered("Gr7", 12, 0)])
+    expect(bar.expected).toBe(0)
+    expect(bar.over).toBe(false)
+    expect(bar.fill).toBe(1)
+  })
+})
+
+describe("overPlanSentence", () => {
+  it("says exactly what the operator would say out loud", () => {
+    expect(overPlanSentence(registrationBars([registered("Grade 9", 30, 27)]))).toBe(
+      "Grade 9 is 3 teams over plan."
+    )
+    expect(overPlanSentence(registrationBars([registered("Grade 9", 28, 27)]))).toBe(
+      "Grade 9 is 1 team over plan."
+    )
+  })
+
+  it("names every grade that outgrew its estimate, and stays quiet otherwise", () => {
+    const bars = registrationBars([
+      registered("Grade 9", 30, 27),
+      registered("Grade 7", 9, 14),
+      registered("Grade 10", 46, 44),
+    ])
+    expect(overPlanSentence(bars)).toBe(
+      "Grade 9 is 3 teams over plan and Grade 10 is 2 teams over plan."
+    )
+    expect(overPlanSentence(registrationBars([registered("Grade 7", 9, 14)]))).toBeNull()
+    expect(overPlanSentence([])).toBeNull()
+  })
+})
+
+describe("weekendsNeedingAttention", () => {
+  it("picks up the weekends that are over or tight, and nothing else", () => {
+    seq = 0
+    const state: PlannerState = {
+      seasonId: "s",
+      units: UNITS,
+      errors: [],
+      windows: [
+        {
+          label: "Nov 2026",
+          weekends: [
+            wk("Over", "2026-11-07", 24), // Gr9 = 25 games
+            wk("Tight", "2026-11-14", 12), // Gr7 = 12 games, exactly full
+            wk("Roomy", "2026-11-21", 100),
+            wk("Idle", "2026-11-28", 100),
+          ],
+        },
+      ],
+    }
+    const [over, tight, roomy, idle] = state.windows[0].weekends
+    const flagged = weekendsNeedingAttention(state, {
+      [over.sessionId]: ["age:Gr9"],
+      [tight.sessionId]: ["age:Gr7"],
+      [roomy.sessionId]: ["age:Gr8"],
+      [idle.sessionId]: [],
+    })
+    expect(flagged.map((f) => f.label)).toEqual(["Over", "Tight"])
+    expect(flagged[0].load.tone).toBe("over")
+    expect(flagged[1].load.tone).toBe("tight")
+  })
+
+  it("leads with the broken weekend even when a merely full one comes first", () => {
+    seq = 0
+    const state: PlannerState = {
+      seasonId: "s",
+      units: UNITS,
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [wk("Full", "2026-10-24", 12)] }, // Gr7 = 12
+        { label: "Nov 2026", weekends: [wk("Short", "2026-11-21", 24)] }, // Gr9 = 25
+      ],
+    }
+    const [full] = state.windows[0].weekends
+    const [short] = state.windows[1].weekends
+    const flagged = weekendsNeedingAttention(state, {
+      [full.sessionId]: ["age:Gr7"],
+      [short.sessionId]: ["age:Gr9"],
+    })
+    expect(flagged.map((f) => f.label)).toEqual(["Short", "Full"])
+  })
+
+  it("a weekend holding grades with no gym at all is over, not quietly ignored", () => {
+    seq = 0
+    const state: PlannerState = {
+      seasonId: "s",
+      units: UNITS,
+      errors: [],
+      windows: [{ label: "Nov 2026", weekends: [wk("No gym", "2026-11-07", 0)] }],
+    }
+    const flagged = weekendsNeedingAttention(state, {
+      [state.windows[0].weekends[0].sessionId]: ["age:Gr7"],
+    })
+    expect(flagged).toHaveLength(1)
+    expect(flagged[0].load.tone).toBe("over")
+  })
+
+  it("the balanced plan on the NPH shape overflows nowhere, and flags its one full house", () => {
+    const state = nphState()
+    const flagged = weekendsNeedingAttention(state, proposePlan(state, "balance"))
+    // Nothing overflows, but Dec 12–13 is a Burlington-only 80-slot weekend
+    // carrying 74 games: the one weekend a late entry would break.
+    expect(flagged.every((f) => f.load.tone === "tight")).toBe(true)
+    expect(flagged).toHaveLength(1)
+    expect(flagged[0].label).toBe("Dec 12–13")
   })
 })

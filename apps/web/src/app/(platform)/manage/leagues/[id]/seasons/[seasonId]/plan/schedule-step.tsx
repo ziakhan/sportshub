@@ -1,0 +1,321 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Button } from "@/components/ui"
+import {
+  currentAssignment,
+  gradeAbbrev,
+  overPlanSentence,
+  registrationBars,
+  weekendsNeedingAttention,
+  type PlannerState,
+  type PlannerSuggestion,
+} from "@/lib/scheduler/planner-core"
+import type { PlanHeaderInfo } from "./teams-step"
+
+/**
+ * Step 5, schedule (owner-approved mock, 2026-08-02). Scheduling is the
+ * follow-through, not a second product, so this step is a watch screen first:
+ * real sign-ups against the step-1 estimate, one bar per grade, updating
+ * while registration runs.
+ *
+ * The rule the screen is built around: the moment actuals break a weekend it
+ * says so, in October, while a court can still be booked. The numbers behind
+ * that are the same ones the calendar board uses, and the sentences are the
+ * ones the planner already writes, so amber here means what amber means
+ * there.
+ *
+ * Generating is a doorway, not a new engine: both buttons open the scheduling
+ * screens this season already has, and they arrive with the plan filled in.
+ */
+
+const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
+
+/** Registration moves in hours, not seconds. Half a minute is live enough to
+ *  be true and quiet enough to cost nothing. */
+const POLL_MS = 30_000
+
+/** How many alert sentences show before the rest go behind "See options". */
+const ALERT_PREVIEW = 2
+
+// Real apostrophes live here as JS expressions, so nothing needs escaping.
+const COPY = {
+  locked:
+    "This season is finalized, so the plan behind these bars is read only. Scheduling still runs from here.",
+  noGrades:
+    "There is nothing to watch yet. Say how many teams you expect in step 1 and every grade shows up here as a bar.",
+  noEstimate:
+    "This season never saved an estimate, so there is no plan line to measure against. These are the teams that registered.",
+  waiting:
+    "You can wait for entries to lock, or schedule now with the teams already in. Either way the gyms, hours, weekends and groupings come from steps 2 and 3.",
+  ready:
+    "Your grades are at or past what you planned for. One button turns everything already entered into a schedule.",
+  final:
+    "Entries for this season are closed. Everything the scheduler needs is already here: gyms, hours, weekends and groupings.",
+  reuse: "uses your plan, nothing to re-enter",
+  footer:
+    "After generating you get preview, fairness report and publish. Those are the scheduling screens you already have, reached from here instead of found in a tab.",
+}
+
+const clockTime = (at: number) =>
+  new Date(at).toLocaleTimeString("en-CA", { hour: "numeric", minute: "2-digit" })
+
+export function ScheduleStep({
+  seasonId,
+  leagueId,
+  onLoaded,
+  onGoToStep,
+}: {
+  seasonId: string
+  leagueId: string
+  onLoaded?: (info: PlanHeaderInfo) => void
+  onGoToStep?: (step: number) => void
+}) {
+  const [state, setState] = useState<PlannerState | null>(null)
+  const [suggestions, setSuggestions] = useState<PlannerSuggestion[]>([])
+  const [locked, setLocked] = useState(false)
+  const [checkedAt, setCheckedAt] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [showOptions, setShowOptions] = useState(false)
+
+  // The page header is named once. A poll every half minute must not hand it
+  // a fresh object and re-render the whole wizard for nothing.
+  const namedRef = useRef(false)
+
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/seasons/${seasonId}/planner`).catch(() => null)
+    if (!res?.ok) {
+      setError("Couldn't load your registration")
+      return
+    }
+    const data = await res.json()
+    setState(data.state)
+    // The rail's sentences, computed by the planner on the saved plan.
+    setSuggestions(data.suggestions ?? [])
+    setLocked(LOCKED_STATUSES.includes(data.seasonStatus))
+    setCheckedAt(Date.now())
+    setError(null)
+    if (!namedRef.current) {
+      namedRef.current = true
+      onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
+    }
+  }, [seasonId, onLoaded])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  /** "Updating live as teams sign up": a light poll while the operator is
+   *  actually looking at it, and an immediate refresh when they come back to
+   *  the tab rather than a stale screen for up to half a minute. A finalized
+   *  season has nothing left to sign up, so it is not polled at all. */
+  useEffect(() => {
+    if (locked) return
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void load()
+    }, POLL_MS)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [load, locked])
+
+  const bars = useMemo(() => registrationBars(state?.units ?? []), [state])
+  const attention = useMemo(
+    () => (state ? weekendsNeedingAttention(state, currentAssignment(state)) : []),
+    [state]
+  )
+  const lead = useMemo(() => overPlanSentence(bars), [bars])
+
+  /** What the operator should do about it, in the planner's own words. A
+   *  weekend the rail had nothing to add about still gets its numbers said
+   *  out loud: being one game from full IS the news. */
+  const lines = useMemo(() => {
+    const out: string[] = []
+    for (const w of attention) {
+      const said = suggestions.filter(
+        (s) => s.sessionId === w.sessionId && s.kind !== "idle-weekend"
+      )
+      if (said.length > 0) out.push(...said.map((s) => s.text))
+      else
+        out.push(
+          `${w.label} is nearly full: ${w.load.demand} games in ${w.load.capacity} slots.`
+        )
+    }
+    return out
+  }, [attention, suggestions])
+
+  if (!state) {
+    return <p className="text-ink-500 p-6 text-sm">{error ?? "Loading your registration…"}</p>
+  }
+
+  const scheduleHref = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
+  const shownLines = showOptions ? lines : lines.slice(0, ALERT_PREVIEW)
+  const hasAlert = Boolean(lead) || lines.length > 0
+  // Scheduling stops being early once every grade that HAD an estimate has
+  // met it. Grades nobody estimated cannot vote on that question.
+  const planned = bars.filter((b) => b.expected > 0)
+  const allIn = planned.length > 0 && planned.every((b) => b.approved >= b.expected)
+
+  return (
+    <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+      {/* Screen head */}
+      <div className="border-ink-100 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+        <div>
+          <p className="text-ink-900 text-[15px] font-bold">Registration vs plan</p>
+          <p className="text-ink-500 text-xs">
+            {locked ? "the counts this season was finalized on" : "updating live as teams sign up"}
+          </p>
+        </div>
+        <span
+          data-testid="attention-pill"
+          className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+            attention.length > 0
+              ? "border-gold-200 bg-gold-50 text-gold-800"
+              : "border-court-200 bg-court-50 text-court-800"
+          }`}
+        >
+          {attention.length > 0
+            ? `${attention.length} weekend${attention.length === 1 ? "" : "s"} need${
+                attention.length === 1 ? "s" : ""
+              } attention`
+            : "On plan"}
+        </span>
+      </div>
+
+      <div className="p-5">
+        {locked && (
+          <p className="border-gold-200 bg-gold-50 text-gold-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
+            {COPY.locked}
+          </p>
+        )}
+        {error && (
+          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
+            {error}
+          </p>
+        )}
+
+        {bars.length === 0 ? (
+          <div className="border-ink-200 rounded-xl border border-dashed px-4 py-6 text-center">
+            <p className="text-ink-500 text-sm">{COPY.noGrades}</p>
+            {onGoToStep && !locked && (
+              <button
+                type="button"
+                onClick={() => onGoToStep(1)}
+                className="text-play-700 hover:text-play-800 mt-2 text-sm font-semibold"
+              >
+                Go to step 1 &rarr;
+              </button>
+            )}
+          </div>
+        ) : (
+          <div data-testid="registration-bars" className="space-y-2">
+            {bars.map((bar) => (
+              <div
+                key={bar.key}
+                data-testid="registration-bar"
+                data-grade={bar.label}
+                data-approved={bar.approved}
+                data-expected={bar.expected}
+                data-over={bar.over ? "1" : "0"}
+                className="flex items-center gap-3"
+              >
+                <span
+                  title={bar.label}
+                  className="text-ink-700 w-12 shrink-0 text-xs font-bold sm:w-16"
+                >
+                  {gradeAbbrev(bar.label)}
+                </span>
+                <span className="bg-ink-100 h-2.5 min-w-0 flex-1 overflow-hidden rounded-full">
+                  {/* Green measures against a plan. A grade nobody estimated
+                      has no plan to measure against, so its bar stays grey
+                      rather than posing as a target met. */}
+                  <span
+                    className={`block h-full rounded-full ${
+                      bar.expected === 0
+                        ? "bg-ink-300"
+                        : bar.over
+                          ? "bg-gold-500"
+                          : "bg-court-500"
+                    }`}
+                    style={{ width: `${Math.round(bar.fill * 100)}%` }}
+                  />
+                </span>
+                <span className="text-ink-500 w-[136px] shrink-0 text-right text-xs tabular-nums">
+                  {bar.expected > 0 ? (
+                    <>
+                      {bar.over ? (
+                        <b className="text-gold-600">{bar.approved}</b>
+                      ) : (
+                        <b className="text-ink-900">{bar.approved}</b>
+                      )}{" "}
+                      of {bar.expected} expected
+                    </>
+                  ) : (
+                    <>
+                      <b className="text-ink-900">{bar.approved}</b> registered
+                    </>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {bars.length > 0 && planned.length === 0 && (
+          <p className="text-ink-400 mt-3 text-xs">{COPY.noEstimate}</p>
+        )}
+
+        {/* What the numbers just broke, and what to do about it. */}
+        {hasAlert && (
+          <div
+            data-testid="attention-alert"
+            className="border-gold-200 bg-gold-50 mt-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border px-4 py-3"
+          >
+            <span className="text-gold-900 min-w-0 flex-1 text-sm">
+              {lead && <b>{lead} </b>}
+              {shownLines.join(" ")}
+            </span>
+            {lines.length > ALERT_PREVIEW && (
+              <button
+                type="button"
+                data-testid="see-options"
+                onClick={() => setShowOptions((v) => !v)}
+                aria-expanded={showOptions}
+                className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+              >
+                {showOptions ? "Fewer options" : "See options"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* The doorway. Same destination, two moments. */}
+        <p className="text-ink-600 mt-5 max-w-2xl text-sm">
+          {locked ? COPY.final : allIn ? COPY.ready : COPY.waiting}
+        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
+          <Button href={scheduleHref} size="sm" tone="court">
+            Generate schedule
+          </Button>
+          <Button href={scheduleHref} size="sm" variant="subtle">
+            Schedule now with current teams
+          </Button>
+          <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
+            {COPY.reuse}
+          </span>
+        </div>
+
+        <p className="text-ink-400 mt-3 max-w-2xl text-xs">{COPY.footer}</p>
+        {/* Only a screen that keeps checking says when it last checked. */}
+        <p className="text-ink-400 mt-2 h-4 text-xs" aria-live="polite">
+          {checkedAt && !locked ? `Checked at ${clockTime(checkedAt)}` : ""}
+        </p>
+      </div>
+    </div>
+  )
+}

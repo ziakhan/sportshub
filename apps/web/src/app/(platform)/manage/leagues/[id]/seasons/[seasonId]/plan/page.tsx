@@ -1,12 +1,12 @@
 "use client"
 
 import { Suspense, useCallback, useState } from "react"
-import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
 import { CalendarStep } from "./calendar-step"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
 import { PublishStep } from "./publish-step"
+import { ScheduleStep } from "./schedule-step"
 import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
 
 /**
@@ -15,11 +15,10 @@ import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
  * answer the one thing we cannot know, get the calendar, publish, then
  * schedule when registration locks.
  *
- * The rail is always visible and every finished step stays clickable, because
- * after setup these same five steps become the season's home page. Steps 1
- * (teams), 2 (gyms and weekends), 3 (the calendar) and 4 (publish) are built
- * for real; the rest land in later waves and point at today's screens in the
- * meantime.
+ * The rail is always visible and every step stays clickable, because after
+ * setup these same five steps become the season's home page. All five are
+ * built for real: teams, gyms and weekends, the calendar, publish, and the
+ * registration watch screen that opens scheduling.
  */
 
 // Hints carry real apostrophes: they render as JS expressions, not JSX text,
@@ -31,8 +30,6 @@ const STEPS = [
   { n: 4, label: "Publish", hint: "post the card" },
   { n: 5, label: "Schedule", hint: "when you're ready" },
 ] as const
-
-const BUILT = new Set<number>([1, 2, 3, 4])
 
 // useSearchParams requires a Suspense boundary in Next 14 (same pattern as
 // manage/leagues/[id]/page.tsx).
@@ -76,22 +73,20 @@ function PlanWizard() {
       {/* The rail, always visible. */}
       <ol className="border-ink-100 shadow-soft mt-5 flex items-center gap-0 overflow-x-auto rounded-2xl border bg-white px-5 py-4">
         {STEPS.map((s, i) => {
-          const state = s.n === step ? "current" : BUILT.has(s.n) ? "done" : "todo"
+          // Every step is a real screen now, so the only distinction the rail
+          // draws is the one the operator is standing on.
+          const current = s.n === step
           return (
             <li key={s.n} className="flex flex-none items-center">
               <button
                 type="button"
                 onClick={() => setStep(s.n)}
                 className="brand-focus flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1 py-1"
-                aria-current={s.n === step ? "step" : undefined}
+                aria-current={current ? "step" : undefined}
               >
                 <span
                   className={`flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full text-xs font-bold ${
-                    state === "current"
-                      ? "bg-court-600 text-white"
-                      : state === "done"
-                        ? "bg-court-100 text-court-700"
-                        : "bg-ink-100 text-ink-400"
+                    current ? "bg-court-600 text-white" : "bg-court-100 text-court-700"
                   }`}
                 >
                   {s.n}
@@ -99,7 +94,7 @@ function PlanWizard() {
                 <span className="text-left">
                   <span
                     className={`block text-sm font-semibold ${
-                      s.n === step ? "text-ink-900" : "text-ink-600"
+                      current ? "text-ink-900" : "text-ink-600"
                     }`}
                   >
                     {s.label}
@@ -126,50 +121,14 @@ function PlanWizard() {
         ) : step === 4 ? (
           <PublishStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
         ) : (
-          <Placeholder step={step} leagueId={leagueId} seasonId={seasonId} />
+          <ScheduleStep
+            seasonId={seasonId}
+            leagueId={leagueId}
+            onLoaded={onLoaded}
+            onGoToStep={setStep}
+          />
         )}
       </div>
-    </div>
-  )
-}
-
-/** Steps still to be built. Each one says what it will do and, where a screen
- *  already exists for that job today, links straight to it. */
-function Placeholder({
-  step,
-  leagueId,
-  seasonId,
-}: {
-  step: number
-  leagueId: string
-  seasonId: string
-}) {
-  const meta = STEPS.find((s) => s.n === step)
-  const copy: Record<number, { body: string; href?: string; cta?: string }> = {
-    5: {
-      body: "While registration runs this is a watch screen: real sign-ups against the step 1 estimate. When entries lock, one button generates the schedule from everything already entered.",
-      href: `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`,
-      cta: "Go to scheduling",
-    },
-  }
-  const c = copy[step]
-
-  return (
-    <div className="border-ink-200 rounded-2xl border border-dashed bg-white p-6">
-      <p className="text-ink-500 text-xs font-bold uppercase tracking-[0.12em]">
-        Step {step} of 5
-      </p>
-      <h2 className="text-ink-900 mt-1.5 text-lg font-bold">{meta?.label}</h2>
-      <p className="text-ink-600 mt-2 max-w-2xl text-sm">{c?.body}</p>
-      <p className="text-ink-400 mt-3 text-xs">Coming in a later wave.</p>
-      {c?.href && (
-        <Link
-          href={c.href}
-          className="text-play-700 hover:text-play-800 mt-3 inline-block text-sm font-semibold"
-        >
-          {c.cta} →
-        </Link>
-      )}
     </div>
   )
 }
