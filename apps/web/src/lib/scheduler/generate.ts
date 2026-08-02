@@ -26,6 +26,10 @@ export interface SchedulerSlot {
   /** Preferred fill order within the day-venue (0 = first choice). */
   courtOrder: number
   venueId: string
+  /** Building fill order for the season (0 = the gym that fills first).
+   *  Dense 0..n-1; gyms the league never ordered rank after the ordered
+   *  ones, in plan order (owner 2026-08-02). */
+  venueRank: number
   startAt: Date
   endAt: Date
 }
@@ -113,6 +117,18 @@ export interface SchedulerInput {
    */
   sessionUnitFilter?: Record<string, string[]>
   /**
+   * The league's gym priority (SeasonVenue.fillOrder, owner 2026-08-02):
+   * venueId → order, 0 fills first. A gym missing from the map is unranked
+   * and sorts after every ranked one, in plan order.
+   */
+  venueFillOrder?: Record<string, number>
+  /**
+   * Which BUILDING a grade plays in on a given weekend (SeasonSession
+   * .unitVenues, owner 2026-08-02): sessionId → divisionId → venueId. A soft
+   * law: games only leave their gym when it has nothing left to give.
+   */
+  venueAssignments?: Record<string, Record<string, string>>
+  /**
    * Session-by-session mode (owner 2026-07-30): only these sessions produce
    * slots, per-team demand scales to their session targets, and
    * `existingGames` seeds matchup/count state so matchups rotate and
@@ -176,6 +192,9 @@ export interface SchedulerResult {
   /** Things the engine DID to make everything fit — informational, not
    *  errors (owner 2026-08-01: concession warnings read like failures). */
   tradeoffs: string[]
+  /** Games placed in a gym other than the one their grade was assigned for
+   *  that weekend (owner 2026-08-02). 0 when no gyms were assigned. */
+  venueFallbacks: number
   utilization: {
     slotsTotal: number
     slotsUsed: number
@@ -210,8 +229,39 @@ function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
 
 // ---------- slot inventory ----------
 
+/**
+ * The league's building order (owner 2026-08-02: "the top gym fills
+ * completely before the next one opens"). SeasonVenue.fillOrder ranks the
+ * gyms; a gym nobody ordered keeps its plan order and sorts after every
+ * ordered one. Returns a DENSE rank (0 = fills first) so callers can compare
+ * ranks directly and ties never interleave two buildings.
+ */
+export function venueRanks(input: SchedulerInput): Map<string, number> {
+  const appearance: string[] = []
+  for (const s of input.sessions) {
+    for (const d of s.days) {
+      for (const dv of d.dayVenues) {
+        if (!appearance.includes(dv.venueId)) appearance.push(dv.venueId)
+      }
+    }
+  }
+  const fill = input.venueFillOrder ?? {}
+  const orderOf = (venueId: string): number =>
+    typeof fill[venueId] === "number" ? fill[venueId] : Infinity
+  const ordered = appearance
+    .map((venueId, i) => ({ venueId, i }))
+    .sort((a, b) => {
+      const fa = orderOf(a.venueId)
+      const fb = orderOf(b.venueId)
+      if (fa !== fb) return fa < fb ? -1 : 1
+      return a.i - b.i
+    })
+  return new Map(ordered.map((v, rank) => [v.venueId, rank]))
+}
+
 export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
   const slots: SchedulerSlot[] = []
+  const ranks = venueRanks(input)
   const fallbackOpen = parseHHMM(input.defaultVenueOpenTime) ?? { h: 9, m: 0 }
   const fallbackClose = parseHHMM(input.defaultVenueCloseTime) ?? { h: 20, m: 0 }
 
@@ -251,6 +301,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
               courtId: court.id,
               courtOrder: court.order ?? courtIdx,
               venueId: dv.venueId,
+              venueRank: ranks.get(dv.venueId) ?? 0,
               startAt,
               endAt,
             })
@@ -259,10 +310,12 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
       }
     }
   }
-  // Day by day chronologically; within a day the PREFERRED court's whole
-  // timeline comes first, so games pack onto court 1 and only overflow to
-  // court 2 when needed (owner 2026-07-30). Same-order courts (legacy rows,
-  // order 0 everywhere) degrade to the old pure-time sort.
+  // Day by day chronologically; within a day the PRIORITY GYM's whole
+  // inventory comes first (owner 2026-08-02: the next building only opens
+  // when the top one is full), and inside a gym the PREFERRED court's whole
+  // timeline, so games pack onto court 1 and only overflow to court 2 when
+  // needed (owner 2026-07-30). Same-order courts (legacy rows, order 0
+  // everywhere) degrade to the old pure-time sort.
   const dayKey = (d: Date) => {
     const c = new Date(d)
     c.setHours(0, 0, 0, 0)
@@ -271,6 +324,7 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
   slots.sort(
     (a, b) =>
       dayKey(a.startAt) - dayKey(b.startAt) ||
+      a.venueRank - b.venueRank ||
       a.courtOrder - b.courtOrder ||
       a.startAt.getTime() - b.startAt.getTime()
   )
@@ -725,6 +779,64 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       bucketBusyCourts.get(bk)!.add(courtId)
     }
   }
+  // ── Assigned gyms (owner 2026-08-02) ──
+  // The season plan says which BUILDING a grade plays in on a given weekend.
+  // Placement reasons about time, so the gym shows up twice: as a gate that
+  // keeps a grade waiting for its own gym while that gym still has an open
+  // slot this weekend, and as the first tier of the court-assignment phase
+  // below (which has the final say on venueId).
+  const divisionsOfUnit = new Map<string, string[]>()
+  for (const u of units) {
+    divisionsOfUnit.set(
+      u.key,
+      u.key.startsWith("division:")
+        ? [u.key.slice("division:".length)]
+        : [...new Set(u.teams.map((t) => t.divisionId))]
+    )
+  }
+  const assignedVenueCache = new Map<string, string | null>()
+  /** The gym this unit plays in that weekend, or null when the plan is silent
+   *  (a group whose divisions were sent to different gyms has no one gym). */
+  const assignedVenue = (sessionId: string, unitKey: string): string | null => {
+    if (!input.venueAssignments) return null
+    const ck = `${sessionId}|${unitKey}`
+    const cached = assignedVenueCache.get(ck)
+    if (cached !== undefined) return cached
+    const perSession = input.venueAssignments[sessionId]
+    let out: string | null = null
+    for (const divisionId of divisionsOfUnit.get(unitKey) ?? []) {
+      const v = perSession?.[divisionId]
+      if (!v) continue
+      if (out === null) out = v
+      else if (out !== v) {
+        out = null
+        break
+      }
+    }
+    assignedVenueCache.set(ck, out)
+    return out
+  }
+  // Court-slots a gym still has free this weekend — the gate's "is my own
+  // gym full yet?" test. Kept in step with placement by
+  // applyPlacementState/removeGameState, so relocation rollbacks stay honest.
+  const venueKeyOf = (sessionId: string, venueId: string): string => `${sessionId}|${venueId}`
+  const venueSlotTotal = new Map<string, number>()
+  const venueOfCourt = new Map<string, string>()
+  for (const slot of slots) {
+    const k = venueKeyOf(slot.sessionId, slot.venueId)
+    venueSlotTotal.set(k, (venueSlotTotal.get(k) ?? 0) + 1)
+    if (!venueOfCourt.has(slot.courtId)) venueOfCourt.set(slot.courtId, slot.venueId)
+  }
+  const venueTaken = new Map<string, number>()
+  const bumpVenueTaken = (sessionId: string, venueId: string, delta: number): void => {
+    const k = venueKeyOf(sessionId, venueId)
+    venueTaken.set(k, (venueTaken.get(k) ?? 0) + delta)
+  }
+  const venueRoomLeft = (sessionId: string, venueId: string): number => {
+    const k = venueKeyOf(sessionId, venueId)
+    return (venueSlotTotal.get(k) ?? 0) - (venueTaken.get(k) ?? 0)
+  }
+
   const bucketUsed = new Map<string, number>()
   const bucketHasRoom = (slot: SchedulerSlot): boolean => {
     const bk = bucketOfSlot(slot)
@@ -1036,6 +1148,10 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       }
     }
     if (g.sessionId) {
+      // A surviving game holds a court in ITS gym — the assigned-gym gate
+      // must see that room as gone.
+      const heldVenue = g.courtId ? venueOfCourt.get(g.courtId) : undefined
+      if (heldVenue) bumpVenueTaken(g.sessionId, heldVenue, 1)
       for (const id of [g.homeTeamId, g.awayTeamId]) {
         const sk = sessionKey(g.sessionId, id)
         teamSessionCount[sk] = (teamSessionCount[sk] ?? 0) + 1
@@ -1202,6 +1318,22 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     if (!bucketHasRoom(slot))
       return { score: -Infinity, blockReason: "court busy" }
 
+    // Hard (placement passes): the weekend plan gave this grade a BUILDING.
+    // While that gym still has an open court-slot this weekend, the game
+    // waits for it instead of opening the next building (owner 2026-08-02).
+    // The repair ladder skips the gate — a game placed in the wrong gym
+    // beats a game not placed — and the court-assignment phase still hands
+    // the game back its own gym whenever a court there is free.
+    const wantVenue = assignedVenue(slot.sessionId, pairing.unitKey)
+    if (
+      wantVenue !== null &&
+      wantVenue !== slot.venueId &&
+      !inRepair &&
+      venueRoomLeft(slot.sessionId, wantVenue) > 0
+    ) {
+      return { score: -Infinity, blockReason: "off the grade's gym for the weekend" }
+    }
+
     // Hard (session-by-session): a team never exceeds this run's session
     // share — the rest of its season schedules with later sessions.
     if (sessionTeamCap !== null) {
@@ -1238,6 +1370,11 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
 
     let score = 0
+
+    // Soft: the assigned gym, for the paths that choose a SLOT for a game
+    // (repair, movers) rather than a game for a slot — they never see the
+    // gate above, so the steer has to live in the score.
+    if (wantVenue !== null) score += wantVenue === slot.venueId ? 4 : -4
 
     // Soft: prefer teams still under their gamesGuaranteed
     const homeCount = teamGameCount[homeTeamId] ?? 0
@@ -1513,6 +1650,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     teamBookings[pairing.awayTeamId] = [...(teamBookings[pairing.awayTeamId] ?? []), book]
     const bk = bucketKeyOf(site.dayId, site.startAt.getTime())
     bucketUsed.set(bk, (bucketUsed.get(bk) ?? 0) + 1)
+    bumpVenueTaken(site.sessionId, site.venueId, 1)
     const pk = pairKey(pairing.homeTeamId, pairing.awayTeamId)
     playedPairCount[pk] = (playedPairCount[pk] ?? 0) + 1
     const spk = `${site.sessionId}|${pk}`
@@ -1559,6 +1697,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
     const bk = bucketKeyOf(g.dayId, site.startAt.getTime())
     bucketUsed.set(bk, (bucketUsed.get(bk) ?? 1) - 1)
+    bumpVenueTaken(g.sessionId, g.venueId, -1)
     const pk = pairKey(g.homeTeamId, g.awayTeamId)
     playedPairCount[pk] = (playedPairCount[pk] ?? 1) - 1
     const spk = `${g.sessionId}|${pk}`
@@ -2891,10 +3030,14 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       )
       const free = [...courtSlots]
       // Deterministic game order within the bucket
+      // Grades WITH a gym for the weekend choose first, so an unassigned
+      // division can never take the last court in someone's building.
       const order = gamesByBucket
         .get(bk)!
         .sort(
           (a, b) =>
+            (assignedVenue(games[a].sessionId, games[a].unitKey) ? 0 : 1) -
+              (assignedVenue(games[b].sessionId, games[b].unitKey) ? 0 : 1) ||
             games[a].unitKey.localeCompare(games[b].unitKey) ||
             games[a].homeTeamId.localeCompare(games[b].homeTeamId)
         )
@@ -2902,9 +3045,20 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         const g = games[gi]
         if (free.length === 0) break // capacity accounting should prevent this
         const dk = dateKeyOf(new Date(g.scheduledAt))
-        let best = free[0]
+        // Buildings before courts (owner 2026-08-02): the grade's own gym
+        // when it still has a court free here, otherwise the highest-priority
+        // gym that does — the top gym fills before the next one opens. Court
+        // preferences below then choose WITHIN that building.
+        const want = assignedVenue(g.sessionId, g.unitKey)
+        let candidates = want !== null ? free.filter((cs) => cs.venueId === want) : []
+        if (candidates.length === 0) {
+          let bestRank = Infinity
+          for (const cs of free) bestRank = Math.min(bestRank, cs.venueRank)
+          candidates = free.filter((cs) => cs.venueRank === bestRank)
+        }
+        let best = candidates[0]
         let bestScore = -Infinity
-        for (const cs of free) {
+        for (const cs of candidates) {
           let sc = 0
           // Venue-major: earlier venues in the session plan fill first
           sc += (10 - Math.min(9, dvRank.get(cs.dayVenueId) ?? 9)) * 1.5
@@ -2949,8 +3103,15 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   // team's FIRST game can't know where its second wants to be — this sweep
   // unifies split-venue team-days afterwards: move the odd game to a free
   // court at the family's venue, or swap courts with a same-time game,
-  // accepting only changes that reduce total split team-days.
+  // accepting only changes that reduce total split team-days. A game already
+  // sitting in the gym its grade was assigned for that weekend is off limits
+  // to this sweep, in both roles (owner 2026-08-02: the plan's gym outranks
+  // cohesion, and cohesion is what the plan was for in the first place).
   {
+    const atAssignedGym = (g: ProposedGame): boolean => {
+      const want = assignedVenue(g.sessionId, g.unitKey)
+      return want !== null && want === g.venueId
+    }
     const bucketOfG = (g: ProposedGame): string =>
       bucketKeyOf(g.dayId, new Date(g.scheduledAt).getTime())
     const assignedByBucket = new Map<string, number[]>()
@@ -3014,6 +3175,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       let changed = false
       for (let gi = 0; gi < games.length; gi++) {
         const g = games[gi]
+        if (atAssignedGym(g)) continue
         const dk = dateKeyOf(new Date(g.scheduledAt))
         // Which of this game's teams sits split today, and where do their
         // OTHER games live?
@@ -3056,7 +3218,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         // Swap courts with a same-time game already at a wanted venue —
         // least-camped courts first.
         const swapCands = (assignedByBucket.get(bk) ?? [])
-          .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId))
+          .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId) && !atAssignedGym(games[gj]))
           .sort((a, b) => courtUseOf(g, games[a].courtId) - courtUseOf(g, games[b].courtId))
         for (const gj of swapCands) {
           const other = games[gj]
@@ -3096,6 +3258,22 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   if (sameSessionRematches > 0) {
     tradeoffs.push(
       `To fit every game in, ${sameSessionRematches} rematch${sameSessionRematches === 1 ? " lands" : "es land"} in the same weekend as the first meeting. Another session would spread them apart.`
+    )
+  }
+
+  // Games that had to leave the gym their grade was given for that weekend
+  // (owner 2026-08-02). The assignment is a preference, never a reason to
+  // drop a game, so this is a number the operator acts on, not a failure.
+  let venueFallbacks = 0
+  if (input.venueAssignments) {
+    for (const g of games) {
+      const want = assignedVenue(g.sessionId, g.unitKey)
+      if (want !== null && want !== g.venueId) venueFallbacks++
+    }
+  }
+  if (venueFallbacks > 0) {
+    warnings.push(
+      `${venueFallbacks} game${venueFallbacks === 1 ? "" : "s"} could not fit the gym their grade was given for that weekend and were placed in another gym. Add hours or a court at the assigned gym, or plan the grade into a bigger building.`
     )
   }
 
@@ -3140,6 +3318,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     "away team at daily limit": "the teams are at their games-per-day limit on every open day — raise it in Game format or add another day",
     "rematch within the same session": "these teams already meet in every session that has room — add a session so the rematch lands elsewhere",
     "rematch before all first meetings": "first-time matchups are scheduled ahead of rematches — schedule the remaining sessions first",
+    "off the grade's gym for the weekend": "the gym this grade is assigned that weekend has no time they can use. Give the weekend another gym, add hours there, or send the grade to a bigger building",
     "unit not included in this session": "their division is unticked in every session with room — include it in a session's capacity plan",
     "no slots": "the sessions have no open court time at all — add venues, courts, or hours",
   }
@@ -3165,6 +3344,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   return {
     games,
     tradeoffs,
+    venueFallbacks,
     unscheduled: failedToPlace.map((p, i) => ({
       unitKey: p.unitKey,
       homeTeamId: p.homeTeamId,

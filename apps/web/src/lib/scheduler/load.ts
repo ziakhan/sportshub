@@ -96,6 +96,13 @@ export async function loadSchedulerInput(
           divisions: { select: { divisionId: true } },
         },
       },
+      // Which gym the league fills FIRST (owner 2026-08-02). Postgres sorts
+      // NULLs last on asc, so gyms nobody ordered land after the ordered ones
+      // and keep a stable order of their own.
+      seasonVenues: {
+        select: { venueId: true, fillOrder: true },
+        orderBy: [{ fillOrder: "asc" }, { venueId: "asc" }],
+      },
       league: {
         select: { organization: { select: { seasonDefaults: true } } },
       },
@@ -285,6 +292,32 @@ export async function loadSchedulerInput(
   if (Object.keys(unitFilter).length > 0) {
     input.sessionUnitFilter = { ...unitFilter, ...(input.sessionUnitFilter ?? {}) }
   }
+
+  // The plan's BUILDINGS (owner 2026-08-02). fillOrder is the league's gym
+  // priority (0 fills first); unitVenues says which gym each grade plays in
+  // that weekend. Both are preferences the engine honors while it can.
+  const fillOrder: Record<string, number> = {}
+  for (const sv of season.seasonVenues ?? []) {
+    if (typeof sv.fillOrder === "number") fillOrder[sv.venueId] = sv.fillOrder
+  }
+  if (Object.keys(fillOrder).length > 0) input.venueFillOrder = fillOrder
+
+  // unitVenues is keyed by unit key ("division:<id>"); the engine wants plain
+  // division ids. Anything else in there is stale and simply ignored.
+  const venueAssignments: Record<string, Record<string, string>> = {}
+  for (const sess of season.sessions ?? []) {
+    const raw = sess.unitVenues
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue
+    const perSession: Record<string, string> = {}
+    for (const [key, venueId] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof venueId !== "string" || venueId.length === 0) continue
+      if (!key.startsWith("division:")) continue
+      const divisionId = key.slice("division:".length)
+      if (divisionId.length > 0) perSession[divisionId] = venueId
+    }
+    if (Object.keys(perSession).length > 0) venueAssignments[sess.id] = perSession
+  }
+  if (Object.keys(venueAssignments).length > 0) input.venueAssignments = venueAssignments
 
   return { input, errors }
 }
