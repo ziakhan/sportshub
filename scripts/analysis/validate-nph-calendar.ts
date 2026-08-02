@@ -140,3 +140,152 @@ console.log(`  tightest weekend leaves ${minSlack} free game-slots → about ${m
 const growth = Math.floor((capacity / off.seasonPeak) * 100 - 100)
 console.log(`  uniform growth tolerance: every grade could grow ~${growth}% before the peak weekend outgrows all three gyms`)
 console.log(`  Six Park alone (96 slots): peak weekend ${off.seasonPeak > 96 ? "does NOT fit" : "fits"} (${off.seasonPeak} games)`)
+
+/* ------------------------------------------------------------------ *
+ * PART 2 — the ORG hypothetical (owner 2026-08-02): add every other
+ * league at last year's demand, on the same calendar. Is it enough?
+ *
+ * Model, from the 2025-26 actuals:
+ *  - D1 hub demand per monthly session-weekend: JrBoys ~9 games,
+ *    Academy ~15, JrGirls+SrGirls co-hosted ~14. (Scholastic ~15/mo is
+ *    EXCLUDED — it lives in school gyms, never the hubs.)
+ *  - NPA+WNPA touch the hubs ~5 games/month (homes are FEIA/academies).
+ *  - NJC/NSC (published 2026-27 dates) hold ALL of Six Park on
+ *    Oct 17, Nov 14, Dec 12, Jan 16, Feb 13 weekends → hub capacity
+ *    those weekends = Playground 48 + Haber 32 = 80 slots.
+ *  - Months have their real weekend count; SL-free weekends are usable
+ *    by D1 (they did exactly that last year, e.g. Nov 8-9 at Six Park).
+ * ------------------------------------------------------------------ */
+console.log("\n\nPART 2 — whole org on the same calendar (D1 + NPA/WNPA added at last year's volumes)")
+
+const SIX_PARK = 96, PLAYGROUND = 48, HABER = 32
+interface Wk { name: string; sl: number; slGrades: string[]; njc: boolean }
+const MONTHS: { label: string; weekends: Wk[] }[] = [
+  { label: "Oct", weekends: [
+    { name: "Oct 3", sl: 0, slGrades: [], njc: false },
+    { name: "Oct 10", sl: 0, slGrades: [], njc: false },
+    { name: "Oct 17", sl: 0, slGrades: [], njc: true },
+    { name: "Oct 24", sl: gamesOf(OFFICIAL["Oct 24"]), slGrades: OFFICIAL["Oct 24"], njc: false },
+    { name: "Oct 31", sl: gamesOf(OFFICIAL["Oct 31"]), slGrades: OFFICIAL["Oct 31"], njc: false },
+  ]},
+  { label: "Nov", weekends: [
+    { name: "Nov 7", sl: 0, slGrades: [], njc: false },
+    { name: "Nov 14", sl: gamesOf(OFFICIAL["Nov 14"]), slGrades: OFFICIAL["Nov 14"], njc: true },
+    { name: "Nov 21", sl: gamesOf(OFFICIAL["Nov 21"]), slGrades: OFFICIAL["Nov 21"], njc: false },
+    { name: "Nov 28", sl: gamesOf(OFFICIAL["Nov 28"]), slGrades: OFFICIAL["Nov 28"], njc: false },
+  ]},
+  { label: "Dec", weekends: [
+    { name: "Dec 5", sl: 0, slGrades: [], njc: false },
+    { name: "Dec 12", sl: gamesOf(OFFICIAL["Dec 12"]), slGrades: OFFICIAL["Dec 12"], njc: true },
+    { name: "Dec 19", sl: gamesOf(OFFICIAL["Dec 19"]), slGrades: OFFICIAL["Dec 19"], njc: false },
+  ]},
+  { label: "Jan", weekends: [
+    { name: "Jan 9", sl: gamesOf(OFFICIAL["Jan 9"]), slGrades: OFFICIAL["Jan 9"], njc: false },
+    { name: "Jan 16", sl: gamesOf(OFFICIAL["Jan 16"]), slGrades: OFFICIAL["Jan 16"], njc: true },
+    { name: "Jan 23", sl: 0, slGrades: [], njc: false },
+    { name: "Jan 30", sl: gamesOf(OFFICIAL["Jan 30"]), slGrades: OFFICIAL["Jan 30"], njc: false },
+  ]},
+  { label: "Feb", weekends: [
+    { name: "Feb 6", sl: gamesOf(OFFICIAL["Feb 6"]), slGrades: OFFICIAL["Feb 6"], njc: false },
+    { name: "Feb 13", sl: gamesOf(OFFICIAL["Feb 13"]), slGrades: OFFICIAL["Feb 13"], njc: true },
+    { name: "Feb 20", sl: gamesOf(OFFICIAL["Feb 20"]), slGrades: OFFICIAL["Feb 20"], njc: false },
+  ]},
+]
+const D1_CHUNKS = [
+  { name: "D1 JrBoys", games: 9 },
+  { name: "D1 Academy", games: 15 },
+  { name: "D1 Girls (Jr+Sr)", games: 14 },
+  { name: "NPA/WNPA", games: 5 },
+]
+
+let orgTight: { name: string; free: number } | null = null
+for (const month of MONTHS) {
+  const cap = (w: Wk) => (w.njc ? 0 : SIX_PARK) + PLAYGROUND + HABER
+  const used = new Map(month.weekends.map((w) => [w.name, w.sl]))
+  const placed = new Map<string, string[]>()
+  // greedy: each league chunk takes the month's weekend with most room
+  for (const chunk of D1_CHUNKS) {
+    const pick = [...month.weekends].sort(
+      (a, b) => (cap(b) - used.get(b.name)!) - (cap(a) - used.get(a.name)!)
+    )[0]
+    used.set(pick.name, used.get(pick.name)! + chunk.games)
+    placed.set(pick.name, [...(placed.get(pick.name) ?? []), chunk.name])
+  }
+  console.log(`\n  ${month.label}`)
+  for (const w of month.weekends) {
+    const total = used.get(w.name)!
+    const c = cap(w)
+    const free = c - total
+    if (!orgTight || free < orgTight.free) orgTight = { name: w.name, free }
+    const parts = [
+      w.sl ? `SL ${w.sl} [${w.slGrades.join(" ")}]` : "",
+      ...(placed.get(w.name) ?? []),
+    ].filter(Boolean)
+    console.log(
+      `    ${w.name.padEnd(7)}${w.njc ? " (Six Park → NJC/NSC)" : ""}`.padEnd(32) +
+        `${String(total).padStart(3)} of ${String(c).padStart(3)} slots · ${parts.join(" + ") || "idle"}`
+    )
+  }
+}
+console.log(`\n  VERDICT: tightest weekend of the whole org = ${orgTight!.name} with ${orgTight!.free} slots to spare.`)
+console.log("  Note how the official SL calendar puts small, Playground-sized loads on exactly")
+console.log("  the NJC/NSC weekends — the peaks exist because those weekends aren't fully theirs.")
+
+/* ------------------------------------------------------------------ *
+ * PART 3 — rerun OUR planner, now given the input we were missing:
+ * per-weekend venue availability (Six Park absent on NJC weekends).
+ * Objective becomes: minimize peak UTILIZATION of what's actually
+ * available each weekend; overflow is forbidden. If the planner now
+ * drifts toward their shape, the missing ingredient was availability —
+ * exactly the venue-calendar object the product design added.
+ * ------------------------------------------------------------------ */
+console.log("\n\nPART 3 — our planner re-run WITH weekend availability (NJC weekends = 80 slots)")
+const CAP: Record<string, number> = {
+  "Oct 24": 176, "Oct 31": 176,
+  "Nov 14": 80, "Nov 21": 176, "Nov 28": 176,
+  "Dec 12": 80, "Dec 19": 176,
+  "Jan 9": 176, "Jan 16": 80, "Jan 30": 176,
+  "Feb 6": 176, "Feb 13": 80, "Feb 20": 176,
+}
+function planWindowCapped(win: Window): Record<string, string[]> {
+  const n = win.weekends.length
+  let best: number[] | null = null
+  let bestScore = Infinity
+  const assign = new Array(GRADES.length).fill(0)
+  for (let mask = 0; mask < Math.pow(n, GRADES.length); mask++) {
+    let m = mask
+    for (let i = 0; i < GRADES.length; i++) { assign[i] = m % n; m = Math.floor(m / n) }
+    const loads = new Array(n).fill(0)
+    for (let i = 0; i < GRADES.length; i++) loads[assign[i]] += TEAMS[GRADES[i]]
+    let overflow = false
+    let peakUtil = 0
+    for (let k = 0; k < n; k++) {
+      const cap = CAP[win.weekends[k]]
+      if (loads[k] > cap) { overflow = true; break }
+      peakUtil = Math.max(peakUtil, loads[k] / cap)
+    }
+    if (overflow) continue
+    const w = (g: string) => assign[GRADES.indexOf(g)]
+    let score = Math.round(peakUtil * 100) * 1000
+    if (w("Gr11") !== w("Gr12")) score += 300
+    if (w("Gr9") === w("Gr10")) score += 120
+    if (w("Gr7") !== w("Gr8")) score += 60
+    if (score < bestScore) { bestScore = score; best = [...assign] }
+  }
+  const out: Record<string, string[]> = {}
+  win.weekends.forEach((wk) => (out[wk] = []))
+  GRADES.forEach((g, i) => out[win.weekends[best![i]]].push(g))
+  return out
+}
+const capped: Record<string, string[]> = {}
+for (const win of WINDOWS) Object.assign(capped, planWindowCapped(win))
+for (const win of WINDOWS) {
+  for (const wk of win.weekends) {
+    const g = capped[wk]
+    const games = gamesOf(g)
+    const officialGames = gamesOf(OFFICIAL[wk] ?? [])
+    console.log(
+      `  ${wk.padEnd(7)}${CAP[wk] === 80 ? " (NJC wkend, 80 cap)" : "".padEnd(20)}  ours: ${String(games).padStart(3)} [${g.join(" ") || "—"}]  · theirs: ${String(officialGames).padStart(3)} [${(OFFICIAL[wk] ?? []).join(" ")}]`
+    )
+  }
+}
