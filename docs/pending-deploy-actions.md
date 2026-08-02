@@ -965,3 +965,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - ⚠️ Box runtime check at deploy: card routes need next/og — if box cards already work (they do, live cards ship), nothing new needed; locally requires arm64 node for dev.
 - Verify after deploy: owner-nph@ → Showcase season → Schedule → "Season calendar →" → 5-step wizard; step 4 operator card preview renders; public league page shows NO calendar until published.
 - Gates at commit: unit 362/362 · int 435/435 · tsc clean · Playwright drives step1/2/3/4/5 locked+drive all PASS.
+
+## #62 — 2026-08-02: PLAN WIZARD OWNER-FEEDBACK FIXES — ✅ DEPLOYED (box 725ed7a; no schema change; live-verified: Grade 7 w/ 9 registered edited to 14 → planner plans 14, restored; grid serves 21 weekends Nov–Mar w/ 16 virtual + simple hours pair)
+- 95d2004: every grade editable in planning — plan = max(registered, estimate) via shared planningTeams(); floor at grade-cluster level; stepper seeds from registration, hint "N registered".
+- 725ed7a: grid = EVERY Sat–Sun of the season (union of declared dates + session days, whole months) under month bands; virtual weekends created on first tap (ensureWeekendSession + POST /api/seasons/[id]/weekends, phase-aware, full auth gate); one-tap cells; ONE hours range per gym card (exceptions + full editor behind quiet links).
+- Gates: unit 379/379 · int 460/460 · tsc clean · all 12 step-drive runs PASS. Neon pending with #24+.
