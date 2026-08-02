@@ -12,6 +12,8 @@
       "Bash(git commit -m ' *)",
       "Bash(rm -f /tmp/commit-msg.txt)",
       "Read(//private/tmp/**)",
+      "Read(/Users/ziakhan/.claude/**)",
+      "Read(/Users/ziakhan/zia/personal/sportshub/docs/**)",
       "Bash(git commit *)",
       "Bash(git push *)",
       "Bash(git mv *)",
