@@ -1470,6 +1470,9 @@ model Division {
   gender   Gender?
   tier     Int     @default(1)
   maxTeams Int?
+  // Season planner (owner 2026-08-02): the operator's pre-registration
+  // estimate — planning runs off this until real approved teams exist.
+  expectedTeams Int?
 
   teamSubmissions  TeamSubmission[]
   schedulingGroups SchedulingGroupDivision[]

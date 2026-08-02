@@ -1,0 +1,185 @@
+import { prisma } from "@youthbasketballhub/db"
+import { buildSlots } from "./generate"
+import { loadSchedulerInput } from "./load"
+
+/**
+ * Season planner (owner 2026-08-02: "build it — drag and drop, spread or
+ * compact, suggestions for better"). Deterministic by ruling: the grade→
+ * weekend problem is a small exact search (per month, a few thousand
+ * assignments); no model call belongs in the solve path. Validated against
+ * NPH's official 2026-27 calendar in scripts/analysis/validate-nph-calendar.ts.
+ *
+ * Units are GRADE clusters (divisions sharing ageGroup) because that's the
+ * operator's mental object; applying a plan expands clusters back to the
+ * engine's "division:<id>" keys on SeasonSession.unitKeys — the same column
+ * the scheduler already reads. A weekend with no chips keeps unitKeys empty,
+ * which the engine treats as open-to-any (existing semantic, unchanged).
+ */
+
+export * from "./planner-core"
+import {
+  weekendDemand,
+  type PlannerState,
+  type PlannerUnit,
+  type PlannerWeekend,
+  type PlannerWindow,
+} from "./planner-core"
+
+const monthKey = (iso: string): string => {
+  const d = new Date(iso)
+  return `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCFullYear()}`
+}
+
+const weekendLabel = (dates: string[]): string => {
+  const ds = dates.map((x) => new Date(x)).sort((a, b) => a.getTime() - b.getTime())
+  const fmt = (d: Date) =>
+    `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCDate()}`
+  if (ds.length === 0) return "No days"
+  if (ds.length === 1) return fmt(ds[0])
+  const last = ds[ds.length - 1]
+  const sameMonth = ds[0].getUTCMonth() === last.getUTCMonth()
+  return `${fmt(ds[0])}–${sameMonth ? last.getUTCDate() : fmt(last)}`
+}
+
+export async function buildPlannerState(seasonId: string): Promise<PlannerState> {
+  const { input, errors } = await loadSchedulerInput(seasonId)
+  if (!input) return { seasonId, units: [], windows: [], errors }
+
+  const [divisions, sessions] = await Promise.all([
+    (prisma as any).division.findMany({
+      where: { seasonId },
+      select: { id: true, name: true, ageGroup: true, expectedTeams: true },
+      orderBy: { id: "asc" },
+    }),
+    (prisma as any).seasonSession.findMany({
+      where: { seasonId },
+      select: { id: true, unitKeys: true, targetGamesPerTeam: true },
+      orderBy: { id: "asc" },
+    }),
+  ])
+
+  // Grade clusters: divisions sharing ageGroup act as one draggable unit.
+  const byAge = new Map<string, { divisionIds: string[]; approved: number; expected: number }>()
+  for (const d of divisions) {
+    const c = byAge.get(d.ageGroup) ?? { divisionIds: [], approved: 0, expected: 0 }
+    c.divisionIds.push(d.id)
+    c.expected += d.expectedTeams ?? 0
+    const engineDiv = input.divisions.find((x) => x.id === d.id)
+    c.approved += engineDiv?.teams.length ?? 0
+    byAge.set(d.ageGroup, c)
+  }
+  const units: PlannerUnit[] = [...byAge.entries()]
+    .map(([ageGroup, c]) => ({
+      key: `age:${ageGroup}`,
+      label: ageGroup,
+      divisionIds: c.divisionIds,
+      teams: c.approved > 0 ? c.approved : c.expected,
+      source: (c.approved > 0 ? "approved" : c.expected > 0 ? "expected" : "none") as
+        | "approved"
+        | "expected"
+        | "none",
+    }))
+    // Natural order (Grade 7 … Grade 12, then named groups) so the strip
+    // reads the way an operator thinks.
+    .sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }))
+
+  // Capacity per session from the same slot builder the engine uses.
+  const slots = buildSlots(input)
+  const bySession = new Map<string, Map<string, number>>()
+  for (const s of slots) {
+    const v = bySession.get(s.sessionId) ?? new Map<string, number>()
+    v.set(s.venueId, (v.get(s.venueId) ?? 0) + 1)
+    bySession.set(s.sessionId, v)
+  }
+  const venueIds = [...new Set(slots.map((s) => s.venueId))]
+  const venueRows = venueIds.length
+    ? await (prisma as any).venue.findMany({
+        where: { id: { in: venueIds } },
+        select: { id: true, name: true },
+      })
+    : []
+  const venueName = new Map<string, string>(venueRows.map((v: any) => [v.id, v.name]))
+
+  const sessionMeta = new Map<string, { unitKeys: string[]; target: number | null }>(
+    sessions.map((s: any) => [s.id, { unitKeys: s.unitKeys ?? [], target: s.targetGamesPerTeam }])
+  )
+  const divisionAge = new Map<string, string>(divisions.map((d: any) => [d.id, d.ageGroup]))
+
+  const weekends: PlannerWeekend[] = input.sessions
+    .filter((s) => s.phase === "REGULAR" && s.days.length > 0)
+    .map((s) => {
+      const venueSlots = bySession.get(s.id) ?? new Map<string, number>()
+      const venues = [...venueSlots.entries()].map(([venueId, capacityGames]) => ({
+        venueId,
+        name: venueName.get(venueId) ?? venueId,
+        capacityGames,
+      }))
+      const meta = sessionMeta.get(s.id)
+      // unitKeys hold "division:<id>" — fold back to grade clusters.
+      const assigned = [
+        ...new Set(
+          (meta?.unitKeys ?? [])
+            .map((k) => (k.startsWith("division:") ? divisionAge.get(k.slice(9)) : null))
+            .filter(Boolean)
+            .map((age) => `age:${age}`)
+        ),
+      ]
+      return {
+        sessionId: s.id,
+        label: weekendLabel(s.days.map((d) => d.date)),
+        dateISO: s.days[0].date,
+        capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+        largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+        venues,
+        targetGamesPerTeam: meta?.target ?? s.targetGamesPerTeam ?? 2,
+        assigned,
+      }
+    })
+    .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime())
+
+  const windowMap = new Map<string, PlannerWeekend[]>()
+  for (const w of weekends) {
+    const k = monthKey(w.dateISO)
+    windowMap.set(k, [...(windowMap.get(k) ?? []), w])
+  }
+  const windows: PlannerWindow[] = [...windowMap.entries()].map(([label, wks]) => ({
+    label,
+    weekends: wks,
+  }))
+
+  return { seasonId, units, windows, errors }
+}
+
+/** Persist an assignment: expand grade clusters to division keys on
+ *  SeasonSession.unitKeys. Only sessions present in the payload change. */
+export async function applyAssignment(
+  seasonId: string,
+  assignment: Record<string, string[]>
+): Promise<{ updated: number }> {
+  const divisions = await (prisma as any).division.findMany({
+    where: { seasonId },
+    select: { id: true, ageGroup: true },
+  })
+  const byAge = new Map<string, string[]>()
+  for (const d of divisions) byAge.set(d.ageGroup, [...(byAge.get(d.ageGroup) ?? []), d.id])
+
+  const sessions = await (prisma as any).seasonSession.findMany({
+    where: { seasonId },
+    select: { id: true },
+  })
+  const valid = new Set(sessions.map((s: any) => s.id))
+
+  let updated = 0
+  for (const [sessionId, unitKeys] of Object.entries(assignment)) {
+    if (!valid.has(sessionId)) continue
+    const divisionKeys = unitKeys.flatMap((k) =>
+      k.startsWith("age:") ? (byAge.get(k.slice(4)) ?? []).map((id) => `division:${id}`) : [k]
+    )
+    await (prisma as any).seasonSession.update({
+      where: { id: sessionId },
+      data: { unitKeys: divisionKeys },
+    })
+    updated++
+  }
+  return { updated }
+}

@@ -280,3 +280,32 @@ Owner: "press a button in my admin console and load that demo… full-scale ever
 - **Wave 4**: mostly existed (referee signature at finalize + signoff tests; printable scoresheet page (sheet)/scoresheet/[gameId]; STAT_CARD + PLAYER_OF_GAME post kinds + posts/player-card API). Added journey stage 4: two weekends completed with player stats (288 games), ref-mike@ assigned to the next slate, self-sufficient auto-commit (adds Court 6 + generates) if the live commit didn't happen — 67s.
 - **Receipts**: scheduler 52/52 · unit 324/324 · int (final run in session log) · loader Playwright drive 5/5 (admin login → status → page card → spawn load → polls to done). Demo run-sheet: docs/demo-runbook-nph-journey.md.
 - NOT deployed: needs box schema push (PlatformSettings.demoState, Game.statusReason) + the census/scenario code — runbook #59.
+
+## 32. 2026-08-02 — SEASON PLANNER BOARD v1 (owner: "build it — drag and drop, spread or compact, suggestions for better")
+- **Deterministic by ruling**: no model call in the solve path. The grade→weekend
+  assignment is an exact per-window search (overflow hard, absolute peak games
+  minimized, two giants apart, one-building-per-weekend preference, greedy
+  fallback past 300k combos). Validated against NPH's official 2026-27 calendar
+  (scripts/analysis/validate-nph-calendar.ts: availability input reproduces
+  their shape; balance beats their 84-game peak at 74).
+- `lib/scheduler/planner-core.ts` (pure: types, weekendDemand, proposePlan
+  levers balance/compact/spread, suggestFor rail) + `planner.ts` (prisma:
+  buildPlannerState off loadSchedulerInput+buildSlots — same capacity math as
+  the engine; applyAssignment writes grade clusters back to
+  SeasonSession.unitKeys, the column the scheduler already reads) +
+  `planner-auth.ts` (league owner / platform admin gate).
+- Schema: `Division.expectedTeams Int?` — pre-registration estimates; units use
+  approved team counts when they exist, estimates otherwise (badged in the UI).
+- API: GET `/api/seasons/[id]/planner` (state+suggestions) · PATCH (expected
+  teams) · POST `planner/propose` {lever} · POST `planner/apply` {assignment}.
+- UI: `/manage/leagues/[id]/seasons/[seasonId]/planner` — window columns,
+  weekend cards w/ demand/capacity meter + venue names + two-gyms flag, native
+  drag-and-drop grade chips, per-window "Not playing this month" tray (drag
+  back on), suggestion rail (overflow/move/idle/two-building), lever buttons,
+  Apply. Linked from the Schedule tab ("Season planner →").
+- Receipts: planner unit tests 9/9 (scheduler suite 61/61) · Playwright drive
+  scripts/demo/verify-planner.mjs ALL PASS on the journey world (7 units,
+  13 weekends; propose ×3 = 35 placements; apply round-trip verified then
+  official calendar restored; board 36 chips; screenshots) — the short-court
+  demo state correctly shows "Nov 21–22 needs 84 games but has 80 slots" with
+  "Moving Junior Girls to Nov 14–15 clears the shortage."

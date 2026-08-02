@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
@@ -34,6 +36,21 @@ interface CapacitySession {
  * season at once. Session mode scopes preview/commit to one session;
  * committed games elsewhere are never touched and seed matchup rotation.
  */
+/** Doorway to the drag-and-drop grade→weekend board (owner 2026-08-02). */
+function PlannerLink({ seasonId }: { seasonId: string }) {
+  const params = useParams()
+  const leagueId = params?.id as string
+  if (!leagueId) return null
+  return (
+    <Link
+      href={`/manage/leagues/${leagueId}/seasons/${seasonId}/planner`}
+      className="border-court-200 bg-court-50 text-court-800 hover:bg-court-100 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors"
+    >
+      Season planner →
+    </Link>
+  )
+}
+
 export function ScheduleTab({
   seasonId,
   league,
@@ -489,7 +506,10 @@ export function ScheduleTab({
   return (
     <div className="space-y-6">
       <div className={`reveal ${panelClass}`}>
-        <PanelHeader title="Generate the schedule" />
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <PanelHeader title="Generate the schedule" />
+          <PlannerLink seasonId={seasonId} />
+        </div>
 
         {/* THE first question: how do you want to schedule? */}
         <div className="mb-4 grid gap-2 sm:grid-cols-2">
