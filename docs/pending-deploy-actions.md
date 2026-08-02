@@ -958,7 +958,7 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Verify after deploy: log in owner-nph@ → Showcase season → Schedule →
   "Season planner →" → board shows 13 weekends; Balance/Apply round-trips.
 
-## #61 — 2026-08-02: SEASON PLAN WIZARD (5-step rebuild to the approved mock) — ⏳ NOT DEPLOYED (owner word needed)
+## #61 — 2026-08-02: SEASON PLAN WIZARD (5-step rebuild to the approved mock) — ✅ DEPLOYED (box fa88f1f; planPublishedAt column synced by deploy.sh, verified; anon gates verified live: planner 401, card 404, league page w/o calendar, wizard 307→sign-in; operator card renders 73KB PNG w/ fonts on the box build. Neon pending with #24+)
 - Commits: 96cc6d0 (w1 gyms&weekends grid) · e39e61a (w2 teams+last-season) · c502d25 (w3 calendar step, /planner folds into /plan?step=3, season-lock guards added to planner apply/PATCH) · 6e2f0b1 (w4 publish+card+living view) · 29f0906 (w5 registration-vs-plan watch screen).
 - SCHEMA (additive): `Season.planPublishedAt DateTime?` — local pushed; box needs `prisma db push` at deploy. Neon pending with #24+.
 - Route change: /manage/.../seasons/[id]/planner now redirects to /plan?step=3 (API routes unmoved). New endpoints: sessions/[sid]/venues/[vid] POST/DELETE + /hours PATCH · planner/venues GET · planner/card GET (404 until published) · planner/publish POST/DELETE.
