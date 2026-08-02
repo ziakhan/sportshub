@@ -957,3 +957,11 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
   routes under /api/seasons/[id]/planner, planner board page, Schedule-tab link.
 - Verify after deploy: log in owner-nph@ → Showcase season → Schedule →
   "Season planner →" → board shows 13 weekends; Balance/Apply round-trips.
+
+## #61 — 2026-08-02: SEASON PLAN WIZARD (5-step rebuild to the approved mock) — ⏳ NOT DEPLOYED (owner word needed)
+- Commits: 96cc6d0 (w1 gyms&weekends grid) · e39e61a (w2 teams+last-season) · c502d25 (w3 calendar step, /planner folds into /plan?step=3, season-lock guards added to planner apply/PATCH) · 6e2f0b1 (w4 publish+card+living view) · 29f0906 (w5 registration-vs-plan watch screen).
+- SCHEMA (additive): `Season.planPublishedAt DateTime?` — local pushed; box needs `prisma db push` at deploy. Neon pending with #24+.
+- Route change: /manage/.../seasons/[id]/planner now redirects to /plan?step=3 (API routes unmoved). New endpoints: sessions/[sid]/venues/[vid] POST/DELETE + /hours PATCH · planner/venues GET · planner/card GET (404 until published) · planner/publish POST/DELETE.
+- ⚠️ Box runtime check at deploy: card routes need next/og — if box cards already work (they do, live cards ship), nothing new needed; locally requires arm64 node for dev.
+- Verify after deploy: owner-nph@ → Showcase season → Schedule → "Season calendar →" → 5-step wizard; step 4 operator card preview renders; public league page shows NO calendar until published.
+- Gates at commit: unit 362/362 · int 435/435 · tsc clean · Playwright drives step1/2/3/4/5 locked+drive all PASS.
