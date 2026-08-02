@@ -2,7 +2,6 @@
 
 import { useMemo } from "react"
 import {
-  resolveWeekendGyms,
   weekendDemand,
   weekendLoad,
   weekendShortDays,
@@ -37,12 +36,12 @@ import { METER_TONE, type Armed } from "./plan-shared"
  *
  * Every cell names ONE gym, because one gym per grade-weekend is the model
  * (owner 2026-08-02) and the board already draws it that way: the decided
- * building where somebody picked one, and otherwise the building
- * resolveWeekendGyms packs the grade into. The board and the strip call the
- * same resolver on the same inputs, so the two views of one weekend can never
- * give different answers — the strip used to shrug and say "both gyms", which
- * reads as a grade double booked across two buildings. A weekend with no gym
- * on it at all still says exactly that, and names nothing.
+ * building where somebody picked one, and otherwise the building the calendar
+ * packs the grade into. Both views read ONE packShownVenues pass, computed by
+ * the step that owns the calendar, so the strip's December and the board's
+ * December can never name different buildings — and neither can differ from
+ * what Keep writes down. A weekend with no gym on it at all still says exactly
+ * that, and names nothing.
  */
 
 /** Copy with real apostrophes lives here, as JS, so nothing needs escaping. */
@@ -119,7 +118,7 @@ export function Segmented<T extends string>({
 export function StripView({
   state,
   shown,
-  shownVenues,
+  playsIn,
   hasKept,
   side,
   onSide,
@@ -132,10 +131,10 @@ export function StripView({
   state: PlannerState
   /** The calendar on screen: the working proposal, or the one you kept. */
   shown: Record<string, string[]>
-  /** The gyms already DECIDED for the calendar on screen: sessionId → (unit
-   *  key → venueId), saved or hand picked. Everything else the strip packs,
-   *  with the board's resolver, from these same two inputs. */
-  shownVenues: Record<string, Record<string, string>>
+  /** Which building every grade plays in, for the whole calendar on screen:
+   *  sessionId → (unit key → venueId). One chronological packShownVenues pass,
+   *  owned by the step, so the strip says exactly what the board says. */
+  playsIn: Record<string, Record<string, string>>
   hasKept: boolean
   side: StripSide
   onSide: (side: StripSide) => void
@@ -164,10 +163,11 @@ export function StripView({
   )
 
   /**
-   * The ONE gym each grade plays in, weekend by weekend: sessionId → (unit key
-   * → gym). Resolved by the board's own resolver on the board's own inputs
-   * (the calendar on screen and the gyms already decided for it), so a cell
-   * here and a chip over there always name the same building.
+   * The ONE gym each grade plays in, weekend by weekend, as a gym the strip can
+   * paint: sessionId → (unit key → gym). The buildings themselves are the
+   * step's single chronological pass, so a cell here and a chip on the board
+   * always name the same one; this only turns venue ids into named, coloured
+   * gyms.
    *
    * Step 2 still outranks the plan on availability: a weekend the operator has
    * released both gyms for names none, whatever capacity the planner last
@@ -180,21 +180,15 @@ export function StripView({
       const keys = shown[weekend.sessionId] ?? []
       const open = gymsOn.get(weekend.sessionId) ?? []
       if (keys.length === 0 || open.length === 0) continue
-      const { byUnit } = resolveWeekendGyms(
-        state.units,
-        weekend,
-        keys,
-        shownVenues[weekend.sessionId] ?? {}
-      )
       const here = new Map<string, StripVenue>()
-      for (const [unitKey, venueId] of Object.entries(byUnit)) {
+      for (const [unitKey, venueId] of Object.entries(playsIn[weekend.sessionId] ?? {})) {
         const gym = resolveUnitVenue(open, venueId) ?? byId.get(venueId)
         if (gym) here.set(unitKey, gym)
       }
       out.set(weekend.sessionId, here)
     }
     return out
-  }, [gymOrder, gymsOn, shown, shownVenues, state, weekends])
+  }, [gymOrder, gymsOn, playsIn, shown, weekends])
 
   const note = !interactive ? (side === "kept" ? COPY.kept : COPY.readOnly) : COPY.proposal
 

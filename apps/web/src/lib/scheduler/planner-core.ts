@@ -756,6 +756,23 @@ function chronologicalWeekends(state: PlannerState): PlannerWeekend[] {
     )
 }
 
+/** The grades a weekend holds, deduped, in the order they were listed — the
+ *  same rule as unitsOn, against a lookup the caller already built once. */
+function unitsFor(
+  unitByKey: Map<string, PlannerUnit>,
+  keys: string[] | undefined
+): PlannerUnit[] {
+  const seen = new Set<string>()
+  const out: PlannerUnit[] = []
+  for (const key of keys ?? []) {
+    if (seen.has(key)) continue
+    seen.add(key)
+    const u = unitByKey.get(key)
+    if (u) out.push(u)
+  }
+  return out
+}
+
 /**
  * Pack a run of weekends in order, carrying each grade's building forward:
  * where a grade played last time is where it wants to play next time (or,
@@ -770,15 +787,7 @@ function carryResidency(
   collect?: Record<string, Record<string, string>>
 ): void {
   for (const w of weekends) {
-    const seen = new Set<string>()
-    const units: PlannerUnit[] = []
-    for (const key of assignment[w.sessionId] ?? []) {
-      if (seen.has(key)) continue
-      seen.add(key)
-      const u = unitByKey.get(key)
-      if (u) units.push(u)
-    }
-    const packed = packWeekendVenues(units, w, resident)
+    const packed = packWeekendVenues(unitsFor(unitByKey, assignment[w.sessionId]), w, resident)
     for (const key of Object.keys(packed.byUnit)) resident[key] = packed.byUnit[key]
     if (collect && Object.keys(packed.byUnit).length > 0) collect[w.sessionId] = packed.byUnit
   }
@@ -803,10 +812,105 @@ export function packPlanVenues(
   return out
 }
 
-/** What opening a second building, and breaking a gym promise, cost the
- *  search. One number so the scoring line below stays readable. */
+/**
+ * One weekend of a PREVIEW walk: where every grade on screen plays, given the
+ * gyms somebody already decided and the gym each grade has been playing.
+ *
+ * The same three rules as packWeekendVenues, plus the two a screen needs:
+ *  - a DECIDED gym wins outright (the plan as saved, or a hand pick), even
+ *    when it puts that gym over its courts. It is handed to the packer as the
+ *    grade's home so everything else packs around it.
+ *  - every grade the weekend holds gets a building, so nothing vanishes off
+ *    the board. A grade with no teams asks for no games and the packer seats
+ *    it nowhere, so it rides along in the gym it already plays in, or the one
+ *    that fills first.
+ */
+function packWeekendShown(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  resident: Record<string, string>,
+  decided: Record<string, string>
+): Record<string, string> {
+  const open = new Set(weekend.venues.map((v) => v.venueId))
+  // A gym that is not on this weekend is not a decision, it is a leftover.
+  const picked: Record<string, string> = {}
+  for (const u of units) {
+    const venueId = decided[u.key]
+    if (venueId && open.has(venueId)) picked[u.key] = venueId
+  }
+  const packed = packWeekendVenues(units, weekend, { ...resident, ...picked })
+  const fallback = weekend.venues[0]?.venueId
+  const out: Record<string, string> = {}
+  for (const u of units) {
+    // For a grade that alternates, the gym it carries is the one to AVOID, so
+    // it is no fallback: that grade takes the gym that fills first instead.
+    const home = u.alternate ? undefined : resident[u.key]
+    const venueId =
+      picked[u.key] ?? packed.byUnit[u.key] ?? (home && open.has(home) ? home : fallback)
+    if (venueId) out[u.key] = venueId
+  }
+  return out
+}
+
+/**
+ * The buildings behind the calendar ON SCREEN: sessionId → (unit key → venueId).
+ *
+ * The preview twin of packPlanVenues, and the reason the board, the season
+ * strip and Keep can never disagree. It walks the whole shown calendar in date
+ * order carrying residency, so a grade that has been playing The Playground
+ * since October is still in The Playground in December (owner rule 2026-08-02:
+ * a grade is moved out of its gym only when capacity forces it). Packing one
+ * weekend at a time could not know that, and handed the busiest weekend's
+ * first gym to whichever grade happened to be biggest.
+ *
+ * `shown` is the calendar being drawn — the working proposal, or the one the
+ * league kept — and `decided` the gyms already chosen for it. Weekends that
+ * place nobody are left out, so a caller can tell "no grades here" from
+ * "grades here with no gym".
+ */
+export function packShownVenues(
+  state: PlannerState,
+  shown: Record<string, string[]>,
+  decided: Record<string, Record<string, string>> = {}
+): Record<string, Record<string, string>> {
+  const unitByKey = new Map(state.units.map((u) => [u.key, u]))
+  const resident: Record<string, string> = {}
+  const out: Record<string, Record<string, string>> = {}
+  for (const w of chronologicalWeekends(state)) {
+    const units = unitsFor(unitByKey, shown[w.sessionId])
+    if (units.length === 0) continue
+    const byUnit = packWeekendShown(units, w, resident, decided[w.sessionId] ?? {})
+    if (Object.keys(byUnit).length === 0) continue
+    for (const key of Object.keys(byUnit)) resident[key] = byUnit[key]
+    out[w.sessionId] = byUnit
+  }
+  return out
+}
+
+/** What opening a second building cost the search. One number so the scoring
+ *  line below stays readable. */
 const SECOND_BUILDING_COST = 150
-const GYM_VIOLATION_COST = 60
+
+/**
+ * What breaking a gym promise costs, priced above every other lever the search
+ * has (owner rule 2026-08-02): "a grade keeps the SAME gym all season and is
+ * moved out of it only when capacity genuinely forces it."
+ *
+ * It used to be 60 — less than one game of peak, which is 100 — so the search
+ * would bump a grade out of its home gym to flatten a weekend by a game or
+ * two. That is exactly the trade the rule forbids. At 25,000 a violation
+ * outranks BOTH peak (a whole month's peak runs to about 170 games, so 17,000)
+ * and the one-gym lever's second building (1,500), so the solver now opens
+ * another building rather than move a resident — the same order of preference
+ * packWeekendVenues already applies inside a single weekend.
+ *
+ * It does NOT outrank feasibility. Overflow is 1,000,000 a game, and a window
+ * can only break as many promises as it has grades × weekends (under 40 at any
+ * size the exact search runs, since the greedy path takes over past 300k
+ * candidates), so one stranded game still costs more than every broken promise
+ * of that month put together.
+ */
+const GYM_VIOLATION_COST = 25_000
 
 /**
  * How much harder "one-gym" leans on buildings than "balance" does (owner

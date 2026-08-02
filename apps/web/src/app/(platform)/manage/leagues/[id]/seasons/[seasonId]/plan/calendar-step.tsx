@@ -6,6 +6,7 @@ import {
   currentAssignment,
   diffAssignments,
   hoursPreviewSentence,
+  packShownVenues,
   planSummary,
   resolveWeekendGyms,
   shiftClock,
@@ -299,6 +300,28 @@ export function CalendarStep({
     return () => window.removeEventListener("keydown", onKey)
   }, [armed])
 
+  /**
+   * Which building every grade plays in, for the WHOLE calendar at once: one
+   * chronological pass, carrying each grade's gym from October through to
+   * February (owner rule 2026-08-02 — a grade keeps its gym and only moves
+   * when capacity forces it). Both views read this one answer, and so does
+   * Keep, so the board, the strip and the saved plan can never disagree.
+   *
+   * Packing a weekend on its own could not do this: December had no idea where
+   * a grade had been playing, so the biggest grade took the gym that fills
+   * first and a resident was quietly moved out of its own building.
+   */
+  const shownGyms = useMemo(
+    () => (state ? packShownVenues(state, assignment, venues) : {}),
+    [state, assignment, venues]
+  )
+  /** The same walk over the calendar the league KEPT, so the strip's kept side
+   *  names the buildings that were saved rather than the ones on trial. */
+  const keptGyms = useMemo(
+    () => (state && kept ? packShownVenues(state, kept, keptVenues) : {}),
+    [state, kept, keptVenues]
+  )
+
   const runLever = async (lever: PlannerLever) => {
     setBusy(lever)
     setError(null)
@@ -396,23 +419,9 @@ export function CalendarStep({
   const apply = async () => {
     setBusy("apply")
     setError(null)
-    // Save the buildings the board is SHOWING, not just the ones somebody
-    // pressed: a preview the operator kept is a promise about where a family
-    // drives, so it gets written down the same as a hand pick.
-    const shownGyms: Record<string, Record<string, string>> = {}
-    for (const win of state?.windows ?? []) {
-      for (const w of win.weekends) {
-        const keys = assignment[w.sessionId] ?? []
-        if (keys.length === 0) continue
-        const { byUnit } = resolveWeekendGyms(
-          state?.units ?? [],
-          w,
-          keys,
-          venues[w.sessionId] ?? {}
-        )
-        if (Object.keys(byUnit).length > 0) shownGyms[w.sessionId] = byUnit
-      }
-    }
+    // Save the buildings the board is SHOWING — the same chronological pass
+    // both views draw from. A preview the operator kept is a promise about
+    // where a family drives, so it is written down like a hand pick.
     const res = await fetch(`/api/seasons/${seasonId}/planner/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -626,7 +635,7 @@ export function CalendarStep({
               <BoardView
                 state={state}
                 assignment={assignment}
-                venues={venues}
+                playsIn={shownGyms}
                 unitByKey={unitByKey}
                 armed={armed}
                 interactive={interactive}
@@ -641,7 +650,7 @@ export function CalendarStep({
               <StripView
                 state={state}
                 shown={showingKept ? (kept ?? assignment) : assignment}
-                shownVenues={showingKept ? keptVenues : venues}
+                playsIn={showingKept ? keptGyms : shownGyms}
                 hasKept={Boolean(kept)}
                 side={side}
                 onSide={(next) => {
@@ -856,7 +865,7 @@ export function CalendarStep({
 function BoardView({
   state,
   assignment,
-  venues,
+  playsIn,
   unitByKey,
   armed,
   interactive,
@@ -869,8 +878,9 @@ function BoardView({
 }: {
   state: PlannerState
   assignment: Record<string, string[]>
-  /** The gyms already decided: sessionId → (unit key → venueId). */
-  venues: Record<string, Record<string, string>>
+  /** Where every grade plays, for the whole calendar: sessionId → (unit key →
+   *  venueId), from the step's one chronological pass. */
+  playsIn: Record<string, Record<string, string>>
   unitByKey: Map<string, PlannerUnit>
   armed: Armed | null
   interactive: boolean
@@ -908,7 +918,7 @@ function BoardView({
                   windowLabel={win.label}
                   units={state.units}
                   keys={assignment[w.sessionId] ?? []}
-                  decidedGyms={venues[w.sessionId] ?? {}}
+                  playsIn={playsIn[w.sessionId] ?? {}}
                   unitByKey={unitByKey}
                   armed={armed}
                   interactive={interactive}
@@ -961,7 +971,7 @@ function WeekendCard({
   windowLabel,
   units,
   keys,
-  decidedGyms,
+  playsIn,
   unitByKey,
   armed,
   interactive,
@@ -978,9 +988,10 @@ function WeekendCard({
   windowLabel: string
   units: PlannerUnit[]
   keys: string[]
-  /** Gyms already decided for this weekend: unit key → venueId. Everything
-   *  else is packed for preview, the way the solver would pack it. */
-  decidedGyms: Record<string, string>
+  /** Where each grade on this weekend plays: unit key → venueId, taken from
+   *  the season-long pass so a resident keeps the gym it has been playing.
+   *  Sections are shaped from it, never packed again here. */
+  playsIn: Record<string, string>
   unitByKey: Map<string, PlannerUnit>
   armed: Armed | null
   interactive: boolean
@@ -996,7 +1007,10 @@ function WeekendCard({
   keptOn?: Map<string, string>
 }) {
   const load = weekendLoad(units, weekend, keys)
-  const gyms = resolveWeekendGyms(units, weekend, keys, decidedGyms)
+  // Grouping only: the buildings are already decided by the season-long pass,
+  // and handing them in as the decided gyms is what shapes them into sections
+  // (with each gym's games against its courts) without repacking anything.
+  const gyms = resolveWeekendGyms(units, weekend, keys, playsIn)
   // A weekend whose buildings cannot hold a grade whole is short of courts
   // even when the totals say otherwise, and it reads red either way.
   const tone = gyms.overflow > 0 ? "over" : load.tone

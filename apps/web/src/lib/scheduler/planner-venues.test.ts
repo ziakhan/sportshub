@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   packPlanVenues,
+  packShownVenues,
   packWeekendVenues,
   planningSource,
   proposePlan,
@@ -377,6 +378,140 @@ describe("packPlanVenues", () => {
   })
 })
 
+describe("packShownVenues: the whole calendar a screen is drawing", () => {
+  /**
+   * The live NPH shape behind the owner's 2026-08-02 bug report: The
+   * Playground fills first and is the SMALL building, Six Park is the big one.
+   * Grade 8 and Grade 6 have been playing The Playground all season, and
+   * December is the weekend Grade 10's 42 games turn up.
+   */
+  const PLAYGROUND = gym("playground", "The Playground", 48, 0)
+  const SIXPARK = gym("sixpark", "Six Park East", 96, 1)
+
+  function heavyDecember(): PlannerState {
+    return {
+      seasonId: "season",
+      units: [unit("Gr6", 10), unit("Gr8", 10), unit("Gr10", 42)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND, SIXPARK])] },
+        { label: "Dec 2026", weekends: [weekend("dec19", "2026-12-19", [PLAYGROUND, SIXPARK])] },
+      ],
+    }
+  }
+
+  const shown = {
+    nov21: ["age:Gr6", "age:Gr8"],
+    dec19: ["age:Gr6", "age:Gr8", "age:Gr10"],
+  }
+
+  it("keeps the residents in their gym when the biggest grade arrives", () => {
+    const venues = packShownVenues(heavyDecember(), shown)
+    expect(venues.nov21).toEqual({ "age:Gr6": "playground", "age:Gr8": "playground" })
+    // Grade 10 opens the big building rather than turf a grade that lives here.
+    expect(venues.dec19).toEqual({
+      "age:Gr6": "playground",
+      "age:Gr8": "playground",
+      "age:Gr10": "sixpark",
+    })
+  })
+
+  it("is the thing one weekend on its own could never work out", () => {
+    // The bug: resolving December alone knows no residency, so largest-first
+    // hands The Playground to Grade 10 and moves Grade 8 into Six Park.
+    const state = heavyDecember()
+    const alone = resolveWeekendGyms(state.units, state.windows[1].weekends[0], shown.dec19)
+    expect(alone.byUnit["age:Gr10"]).toBe("playground")
+    expect(alone.byUnit["age:Gr8"]).toBe("sixpark")
+  })
+
+  it("a decided gym beats residency, and becomes the gym carried forward", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr6", 10), unit("Gr8", 10)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND, SIXPARK])] },
+        { label: "Dec 2026", weekends: [weekend("dec19", "2026-12-19", [PLAYGROUND, SIXPARK])] },
+        { label: "Jan 2027", weekends: [weekend("jan16", "2027-01-16", [PLAYGROUND, SIXPARK])] },
+      ],
+    }
+    const keys = ["age:Gr6", "age:Gr8"]
+    const venues = packShownVenues(
+      state,
+      { nov21: keys, dec19: keys, jan16: keys },
+      // Somebody switched Grade 8 to Six Park for December, by hand.
+      { dec19: { "age:Gr8": "sixpark" } }
+    )
+    expect(venues.nov21["age:Gr8"]).toBe("playground")
+    expect(venues.dec19["age:Gr8"]).toBe("sixpark")
+    // And January follows the pick, because that is where the grade now plays.
+    expect(venues.jan16["age:Gr8"]).toBe("sixpark")
+    // Nobody else moved.
+    expect(venues.jan16["age:Gr6"]).toBe("playground")
+  })
+
+  it("ignores a decided gym the weekend does not run", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr6", 10)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND])] },
+      ],
+    }
+    const venues = packShownVenues(state, { nov21: ["age:Gr6"] }, {
+      nov21: { "age:Gr6": "sixpark" },
+    })
+    expect(venues.nov21).toEqual({ "age:Gr6": "playground" })
+  })
+
+  it("sends a grade that alternates to the building it did not just play", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr11", 10, true)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND, SIXPARK])] },
+        { label: "Dec 2026", weekends: [weekend("dec19", "2026-12-19", [PLAYGROUND, SIXPARK])] },
+        { label: "Jan 2027", weekends: [weekend("jan16", "2027-01-16", [PLAYGROUND, SIXPARK])] },
+      ],
+    }
+    const keys = ["age:Gr11"]
+    const venues = packShownVenues(state, { nov21: keys, dec19: keys, jan16: keys })
+    expect(venues.nov21["age:Gr11"]).toBe("playground")
+    expect(venues.dec19["age:Gr11"]).toBe("sixpark")
+    expect(venues.jan16["age:Gr11"]).toBe("playground")
+  })
+
+  it("draws a grade with no teams somewhere, and leaves empty weekends out", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr6", 0)],
+      errors: [],
+      windows: [
+        { label: "Nov 2026", weekends: [weekend("nov21", "2026-11-21", [PLAYGROUND, SIXPARK])] },
+        { label: "Dec 2026", weekends: [weekend("dec19", "2026-12-19", [PLAYGROUND, SIXPARK])] },
+      ],
+    }
+    const venues = packShownVenues(state, { nov21: ["age:Gr6"], dec19: [] })
+    expect(venues.nov21).toEqual({ "age:Gr6": "playground" })
+    expect(Object.keys(venues)).toEqual(["nov21"])
+  })
+
+  it("agrees with what Keep would save: the same walk, the same answer", () => {
+    const state = nphTwoGyms()
+    const plan = proposePlan(state, "balance")
+    expect(packShownVenues(state, plan)).toEqual(packPlanVenues(state, plan))
+  })
+
+  it("is deterministic: the same calendar packs the same way twice", () => {
+    expect(packShownVenues(heavyDecember(), shown)).toEqual(
+      packShownVenues(heavyDecember(), shown)
+    )
+  })
+})
+
 describe("proposePlan with buildings in the score", () => {
   /** One month, two weekends: one split across three small gyms, one big
    *  single-gym weekend of the same total capacity. */
@@ -524,6 +659,115 @@ describe("proposePlan lever: one-gym", () => {
     expect(proposePlan(nphTwoGyms(), "one-gym")).toEqual(proposePlan(nphTwoGyms(), "one-gym"))
     const state = nphTwoGyms()
     fitsEverywhere(state, proposePlan(state, "one-gym"))
+  })
+})
+
+describe("proposePlan: a grade leaves its gym only when capacity forces it", () => {
+  /**
+   * Owner rule 2026-08-02, and the weight that used to break it: a gym promise
+   * cost 60 while one game of peak cost 100, so the search bought a flatter
+   * weekend by moving a grade out of the building it lives in.
+   *
+   * October hands out the homes: The Playground fills first but is too small
+   * for the giant, so the two small grades live there and Grade 10 lives in
+   * Six Park. November is where the search has a choice to make.
+   */
+  function homesThenChoice(secondWeekend: PlannerVenue[]): PlannerState {
+    return {
+      seasonId: "season",
+      units: [unit("Gr6", 10), unit("Gr8", 10), unit("Gr10", 22)],
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("oct24", "2026-10-24", [
+              gym("playground", "The Playground", 20, 0),
+              gym("sixpark", "Six Park East", 40, 1),
+            ]),
+          ],
+        },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov14", "2026-11-14", [
+              gym("playground", "The Playground", 15, 0),
+              gym("sixpark", "Six Park East", 40, 1),
+            ]),
+            weekend("nov21", "2026-11-21", secondWeekend),
+          ],
+        },
+      ],
+    }
+  }
+
+  const roomyNovember = () =>
+    homesThenChoice([
+      gym("playground", "The Playground", 15, 0),
+      gym("sixpark", "Six Park East", 40, 1),
+    ])
+
+  it("takes the heavier weekend rather than move a grade out of its gym", () => {
+    const state = roomyNovember()
+    const plan = proposePlan(state, "balance")
+    const venues = packPlanVenues(state, plan)
+
+    // October is the home each grade keeps.
+    expect(venues.oct24).toEqual({
+      "age:Gr6": "playground",
+      "age:Gr8": "playground",
+      "age:Gr10": "sixpark",
+    })
+    // November: nobody moved building, on either weekend.
+    for (const byUnit of [venues.nov14, venues.nov21]) {
+      for (const [key, venueId] of Object.entries(byUnit ?? {})) {
+        expect(venueId).toBe(key === "age:Gr10" ? "sixpark" : "playground")
+      }
+    }
+    // The old weight put Grade 6 and Grade 8 on one weekend for a 22-game
+    // peak, which The Playground's 15 slots cannot hold — one of them was
+    // bumped into Six Park to buy it. They are split now, and the month's
+    // heaviest weekend is the 32 games that keeping everyone home costs.
+    const together = state.windows[1].weekends.some(
+      (w) =>
+        (plan[w.sessionId] ?? []).includes("age:Gr6") &&
+        (plan[w.sessionId] ?? []).includes("age:Gr8")
+    )
+    expect(together).toBe(false)
+    const peak = Math.max(
+      ...state.windows[1].weekends.map((w) =>
+        weekendDemand(state.units, w, plan[w.sessionId] ?? [])
+      )
+    )
+    expect(peak).toBe(32)
+  })
+
+  it("still moves the grade when the courts leave no other answer", () => {
+    // November's second weekend has no gym at all, so every grade plays the
+    // one that does: 30 games of small grades against 15 slots in The
+    // Playground. Overflow is a million a game and outranks the promise, so
+    // the search takes the whole month on one weekend and moves a resident.
+    const state = homesThenChoice([])
+    const plan = proposePlan(state, "balance")
+    const venues = packPlanVenues(state, plan)
+
+    expect((plan.nov14 ?? []).sort()).toEqual(["age:Gr10", "age:Gr6", "age:Gr8"])
+    expect(plan.nov21).toEqual([])
+    // Residents are seated in key order, so Grade 6 keeps the room and Grade 8
+    // is the one capacity moves.
+    expect(venues.nov14).toEqual({
+      "age:Gr6": "playground",
+      "age:Gr8": "sixpark",
+      "age:Gr10": "sixpark",
+    })
+    // And nothing is stranded.
+    for (const win of state.windows) {
+      for (const w of win.weekends) {
+        expect(weekendDemand(state.units, w, plan[w.sessionId] ?? [])).toBeLessThanOrEqual(
+          w.capacityGames
+        )
+      }
+    }
   })
 })
 
