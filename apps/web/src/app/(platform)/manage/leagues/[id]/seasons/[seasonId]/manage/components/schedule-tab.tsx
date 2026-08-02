@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
@@ -38,21 +36,10 @@ interface CapacitySession {
  * season at once. Session mode scopes preview/commit to one session;
  * committed games elsewhere are never touched and seed matchup rotation.
  */
-/** Doorway to the grade→weekend calendar, now step 3 of the plan wizard
- *  (owner 2026-08-02). */
-function PlannerLink({ seasonId }: { seasonId: string }) {
-  const params = useParams()
-  const leagueId = params?.id as string
-  if (!leagueId) return null
-  return (
-    <Link
-      href={`/manage/leagues/${leagueId}/seasons/${seasonId}/plan?step=3`}
-      className="border-court-200 bg-court-50 text-court-800 hover:bg-court-100 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors"
-    >
-      Season calendar →
-    </Link>
-  )
-}
+/* The doorway into planning used to live here as a "Season calendar" button.
+   It moved to its own tab (owner 2026-08-02: planning was buried inside
+   Schedule). What is left below is one quiet line pointing back at the plan
+   the games came from. */
 
 export function ScheduleTab({
   seasonId,
@@ -60,12 +47,14 @@ export function ScheduleTab({
   sessions,
   scheduleGames,
   refresh,
+  onGoToTab,
 }: {
   seasonId: string
   league: any
   sessions: any[]
   scheduleGames: any[]
   refresh: () => void
+  onGoToTab?: (tab: string) => void
 }) {
   const regularSessions = useMemo(
     () => sessions.filter((s: any) => (s.phase ?? "REGULAR") === "REGULAR"),
@@ -550,10 +539,19 @@ export function ScheduleTab({
   return (
     <div className="space-y-6">
       <div className={`reveal ${panelClass}`}>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <PanelHeader title="Generate the schedule" />
-          <PlannerLink seasonId={seasonId} />
-        </div>
+        <PanelHeader title="Generate the schedule" />
+        {league?.planPublishedAt && onGoToTab && (
+          <p className="text-ink-500 -mt-2 mb-4 text-xs">
+            This schedule is generated from your season plan.{" "}
+            <button
+              type="button"
+              onClick={() => onGoToTab("plan")}
+              className="text-play-600 hover:text-play-700 font-semibold"
+            >
+              Open the plan &rarr;
+            </button>
+          </p>
+        )}
 
         {/* THE first question: how do you want to schedule? */}
         <div className="mb-4 grid gap-2 sm:grid-cols-2">

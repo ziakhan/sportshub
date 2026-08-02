@@ -14,6 +14,7 @@ import { SeasonReport } from "./components/season-report"
 import { ScheduleReadiness } from "./components/capacity-words"
 import { SessionsTab } from "./components/sessions-tab"
 import { VenuesTab } from "./components/venues-tab"
+import { PlanTab } from "./components/plan-tab"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
 import { PlayoffsTab } from "./components/playoffs-tab"
@@ -36,6 +37,10 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "clubs", label: "Clubs" },
   { key: "teams", label: "Teams" },
+  // Planning is its own job, not a corner of Schedule (owner 2026-08-02:
+  // "I want the planner to show up as a separate tab beside Schedule
+  // because currently you have it buried inside Schedule").
+  { key: "plan", label: "Plan Your Season" },
   { key: "schedule", label: "Schedule" },
   { key: "standings", label: "Standings" },
   { key: "playoffs", label: "Playoffs" },
@@ -306,6 +311,18 @@ export default function LeagueManagePage() {
           <TeamsTab seasonId={seasonId} leagueId={leagueId} league={league} refresh={fetchAll} />
         )}
 
+        {activeTab === "plan" && (
+          <PlanTab
+            leagueId={leagueId}
+            seasonId={seasonId}
+            league={league}
+            divisions={divisions}
+            sessions={sessions}
+            scheduleGames={scheduleGames}
+            onGoToTab={(t) => selectTab(t as TabKey)}
+          />
+        )}
+
         {activeTab === "schedule" && (
           <div className="space-y-6">
             <ScheduleReadiness
@@ -330,6 +347,7 @@ export default function LeagueManagePage() {
               sessions={sessions}
               scheduleGames={scheduleGames}
               refresh={fetchAll}
+              onGoToTab={(t) => selectTab(t as TabKey)}
             />
           </div>
         )}
