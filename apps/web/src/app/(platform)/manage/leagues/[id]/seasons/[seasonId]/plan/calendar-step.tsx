@@ -5,11 +5,14 @@ import { Button } from "@/components/ui"
 import {
   currentAssignment,
   diffAssignments,
+  hoursPreviewSentence,
   planSummary,
   resolveWeekendGyms,
+  shiftClock,
   weekendLoad,
   weekendShortDays,
   type AssignmentDiffSummary,
+  type HoursPreview,
   type PlannerLever,
   type PlannerState,
   type PlannerSuggestion,
@@ -59,12 +62,53 @@ const COPY = {
   compareSame: "This is the kept calendar, unchanged.",
   compareLegend:
     "Green agrees with what you kept, amber moved to another weekend that month, and a dashed chip is where the kept calendar had that grade.",
+  hours:
+    "These change WHEN your gyms are open, not who plays which weekend. One hour, every weekend, every gym. Nothing is booked until you apply it.",
 }
 
 const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
   { lever: "balance", label: "Even weekends", note: "Proposed: the flattest weekends. Keep it, or drag first." },
   { lever: "compact", label: "Fewest weekends", note: "Proposed: as few weekends in use as your gyms allow." },
   { lever: "spread", label: "Use every weekend", note: "Proposed: every weekend of the season in use." },
+  {
+    lever: "one-gym",
+    label: "Pack one gym",
+    note: "Proposed: every weekend inside one building, even where that makes a weekend heavier.",
+  },
+]
+
+/** Hours, not grouping (owner 2026-08-02). Each chip moves the day window an
+ *  hour and says what that does to this plan before anything is booked. */
+interface HoursChip {
+  key: string
+  label: string
+  hint: string
+  deltaStartMinutes: number
+  deltaEndMinutes: number
+}
+
+const HOURS_CHIPS: HoursChip[] = [
+  {
+    key: "start-early",
+    label: "Start early",
+    hint: "Every gym opens an hour earlier",
+    deltaStartMinutes: -60,
+    deltaEndMinutes: 0,
+  },
+  {
+    key: "start-late",
+    label: "Start late",
+    hint: "Every gym opens an hour later",
+    deltaStartMinutes: 60,
+    deltaEndMinutes: 0,
+  },
+  {
+    key: "finish-early",
+    label: "Finish early",
+    hint: "Every gym closes an hour earlier",
+    deltaStartMinutes: 0,
+    deltaEndMinutes: -60,
+  },
 ]
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
@@ -155,6 +199,11 @@ export function CalendarStep({
   const [error, setError] = useState<string | null>(null)
   const [armed, setArmed] = useState<Armed | null>(null)
   const [showRules, setShowRules] = useState(false)
+  /** The hours group: which chip is open, and what the server says it does. */
+  const [showHours, setShowHours] = useState(false)
+  const [hoursChip, setHoursChip] = useState<HoursChip | null>(null)
+  const [hoursPreview, setHoursPreview] = useState<HoursPreview | null>(null)
+  const [hoursError, setHoursError] = useState<string | null>(null)
   /** The calendar as SAVED, captured before any proposal touches the board.
    *  Null until the league has kept one. This is what compare mode measures
    *  against, so it must never be the working assignment. */
@@ -265,6 +314,83 @@ export function CalendarStep({
     setArmed(null)
     setDirty(true)
     setNotice(LEVERS.find((l) => l.lever === lever)?.note ?? null)
+  }
+
+  /** What an hour would do, against the calendar ON SCREEN — proposal
+   *  included. Read only: the endpoint rebuilds the plan on a shifted window
+   *  in memory and writes nothing. */
+  const previewHours = async (chip: HoursChip) => {
+    setBusy(`hours:${chip.key}`)
+    setHoursError(null)
+    setHoursChip(chip)
+    setHoursPreview(null)
+    const res = await fetch(`/api/seasons/${seasonId}/planner/preview-hours`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        deltaStartMinutes: chip.deltaStartMinutes,
+        deltaEndMinutes: chip.deltaEndMinutes,
+        assignment,
+      }),
+    }).catch(() => null)
+    setBusy(null)
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    if (!data?.preview) {
+      setHoursError("Couldn't work that one out. Try again.")
+      return
+    }
+    setHoursPreview(data.preview as HoursPreview)
+  }
+
+  /** Book it for real: the same season-venue hours route step 2 saves with,
+   *  once per gym, then the board reloads on the new gym time. */
+  const applyHours = async (chip: HoursChip) => {
+    const rows = (venueGrid?.venues ?? []).filter((v) => v.simpleOpen && v.simpleClose)
+    if (rows.length === 0) {
+      setHoursError("Set the hours for your gyms on step 2 first.")
+      return
+    }
+    const writes = rows.map((venue) => ({
+      venue,
+      start: shiftClock(venue.simpleOpen as string, chip.deltaStartMinutes),
+      end: shiftClock(venue.simpleClose as string, chip.deltaEndMinutes),
+    }))
+    if (writes.some((w) => w.start >= w.end)) {
+      setHoursError("That would close a gym before it opens.")
+      return
+    }
+    setBusy("hours-apply")
+    setHoursError(null)
+    const results = await Promise.all(
+      writes.map((w) =>
+        fetch(`/api/seasons/${seasonId}/venues/${w.venue.seasonVenueId}/hours`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            // The step-2 hours model: one range, Saturday and Sunday alike.
+            hours: [
+              { dayOfWeek: 6, openTime: w.start, closeTime: w.end },
+              { dayOfWeek: 0, openTime: w.start, closeTime: w.end },
+            ],
+          }),
+        })
+          .then((res) => res.ok)
+          .catch(() => false)
+      )
+    )
+    setBusy(null)
+    if (results.some((ok) => !ok)) {
+      setHoursError("Some gyms did not take the new hours. Try again.")
+      return
+    }
+    setHoursChip(null)
+    setHoursPreview(null)
+    await load()
+    setNotice(
+      writes.length === 1
+        ? `${writes[0].venue.name} runs ${writes[0].start} to ${writes[0].end} every weekend now.`
+        : `${writes.length} gyms moved their hours. The calendar is back on your real gym time.`
+    )
   }
 
   const apply = async () => {
@@ -574,6 +700,23 @@ export function CalendarStep({
                     >
                       Adjust grouping rules
                     </button>
+                    {/* The second group, and it changes something else: the
+                        hours, not who plays which weekend. */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowHours((v) => !v)
+                        setHoursChip(null)
+                        setHoursPreview(null)
+                        setHoursError(null)
+                      }}
+                      aria-expanded={showHours}
+                      data-testid="hours-toggle"
+                      className="text-play-700 hover:text-play-800 text-sm font-semibold"
+                    >
+                      Change the hours
+                    </button>
                     {/* The board's own lens. The strip has the two calendars
                         side by side already, so it does not need it. */}
                     {kept && view === "board" && (
@@ -632,6 +775,71 @@ export function CalendarStep({
                         </Button>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Hours. Its own group, labelled by what it changes, and
+                    every chip previews before it books (owner 2026-08-02). */}
+                {showHours && (
+                  <div
+                    className="border-ink-100 bg-ink-50/60 mt-3 rounded-xl border p-3"
+                    data-testid="hours-panel"
+                  >
+                    <p className="text-ink-400 text-[11px] font-bold uppercase tracking-[0.06em]">
+                      Gym hours
+                    </p>
+                    <p className="text-ink-500 mt-1 text-xs">{COPY.hours}</p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {HOURS_CHIPS.map((chip) => (
+                        <Button
+                          key={chip.key}
+                          size="sm"
+                          variant="secondary"
+                          tone={hoursChip?.key === chip.key ? "play" : "brand"}
+                          disabled={busy !== null}
+                          onClick={() => previewHours(chip)}
+                        >
+                          {busy === `hours:${chip.key}` ? "Working…" : chip.label}
+                        </Button>
+                      ))}
+                    </div>
+                    {hoursError && (
+                      <p className="text-hoop-700 mt-2 text-xs font-semibold">{hoursError}</p>
+                    )}
+                    {hoursChip && hoursPreview && (
+                      <div
+                        className="border-ink-100 mt-2.5 rounded-lg border bg-white px-3 py-2"
+                        data-testid="hours-preview"
+                      >
+                        <p className="text-ink-900 text-xs font-semibold" aria-live="polite">
+                          {hoursPreviewSentence(hoursChip.label, hoursPreview)}
+                        </p>
+                        <p className="text-ink-400 mt-0.5 text-[11px]">
+                          {hoursChip.hint}. Applying writes it to every gym, every weekend.
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            tone="court"
+                            disabled={busy !== null}
+                            onClick={() => applyHours(hoursChip)}
+                          >
+                            {busy === "hours-apply" ? "Applying…" : "Apply these hours"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setHoursChip(null)
+                              setHoursPreview(null)
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </>

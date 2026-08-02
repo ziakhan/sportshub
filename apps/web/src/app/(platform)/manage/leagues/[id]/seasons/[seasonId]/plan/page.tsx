@@ -59,8 +59,8 @@ function PlanWizard() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
       <SmartBack
-        fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`}
-        fallbackLabel="Back to Schedule"
+        fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}
+        fallbackLabel="Back to Plan Your Season"
       />
 
       <div className="mt-2">

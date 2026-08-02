@@ -18,24 +18,70 @@ import { loadSchedulerInput } from "./load"
 
 export * from "./planner-core"
 import {
+  currentAssignment,
+  packWeekendVenues,
   planningSource,
   planningTeams,
+  shiftClock,
   weekendDemand,
   weekendLabel,
+  type HoursPreview,
+  type HoursPreviewWeekend,
   type PlannerState,
   type PlannerUnit,
   type PlannerWeekend,
   type PlannerWindow,
 } from "./planner-core"
+import type { SchedulerInput } from "./generate"
 
 const monthKey = (iso: string): string => {
   const d = new Date(iso)
   return `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCFullYear()}`
 }
 
-export async function buildPlannerState(seasonId: string): Promise<PlannerState> {
+/**
+ * A day that opens earlier, or closes earlier, than the season has it saved
+ * (owner 2026-08-02: "start early / start late / early finish"). Minutes,
+ * signed: -60 on `startMinutes` opens the gyms an hour sooner.
+ */
+export interface HoursShift {
+  startMinutes: number
+  endMinutes: number
+}
+
+/**
+ * Move every day-venue window of a loaded input, IN MEMORY ONLY. Nothing here
+ * touches the database: this is what lets an operator see what an extra hour
+ * would do before deciding to book it.
+ *
+ * A day-venue with no window of its own inherits the season default first, so
+ * a shifted day is a real clock time rather than a shift of nothing.
+ */
+function shiftInputWindows(input: SchedulerInput, shift: HoursShift): void {
+  if (shift.startMinutes === 0 && shift.endMinutes === 0) return
+  for (const session of input.sessions) {
+    for (const day of session.days) {
+      for (const dv of day.dayVenues) {
+        const open = dv.startTime ?? input.defaultVenueOpenTime
+        const close = dv.endTime ?? input.defaultVenueCloseTime
+        dv.startTime = shiftClock(open, shift.startMinutes)
+        dv.endTime = shiftClock(close, shift.endMinutes)
+      }
+    }
+  }
+}
+
+/**
+ * The board's whole world. `hoursShift` rebuilds it on a day window that is
+ * not the saved one — a preview, never a write (see shiftInputWindows).
+ */
+export async function buildPlannerState(
+  seasonId: string,
+  hoursShift?: HoursShift
+): Promise<PlannerState> {
   const { input, errors } = await loadSchedulerInput(seasonId)
   if (!input) return { seasonId, units: [], windows: [], errors }
+  if (hoursShift) shiftInputWindows(input, hoursShift)
 
   const [divisions, sessions, seasonVenues] = await Promise.all([
     (prisma as any).division.findMany({
@@ -117,10 +163,18 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
   // Capacity per session from the same slot builder the engine uses.
   const slots = buildSlots(input)
   const bySession = new Map<string, Map<string, number>>()
+  // How many (day × court) pairs stand behind that capacity, so a capacity
+  // change can be read back as games per court per day.
+  const courtDaysBySession = new Map<string, Map<string, Set<string>>>()
   for (const s of slots) {
     const v = bySession.get(s.sessionId) ?? new Map<string, number>()
     v.set(s.venueId, (v.get(s.venueId) ?? 0) + 1)
     bySession.set(s.sessionId, v)
+    const cd = courtDaysBySession.get(s.sessionId) ?? new Map<string, Set<string>>()
+    const seen = cd.get(s.venueId) ?? new Set<string>()
+    seen.add(`${s.dayId}|${s.courtId}`)
+    cd.set(s.venueId, seen)
+    courtDaysBySession.set(s.sessionId, cd)
   }
   const venueIds = [...new Set(slots.map((s) => s.venueId))]
   const venueRows = venueIds.length
@@ -153,12 +207,14 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
     .filter((s) => s.phase === "REGULAR" && s.days.length > 0)
     .map((s) => {
       const venueSlots = bySession.get(s.id) ?? new Map<string, number>()
+      const courtDaysHere = courtDaysBySession.get(s.id)
       const venues = [...venueSlots.entries()]
         .map(([venueId, capacityGames]) => ({
           venueId,
           name: venueName.get(venueId) ?? venueId,
           capacityGames,
           fillOrder: fillOrderOf.get(venueId) ?? UNRANKED + seasonVenues.length,
+          courtDays: courtDaysHere?.get(venueId)?.size ?? 0,
         }))
         // Fill order first, then name: the packer walks this array as given,
         // so the order here IS the league's "fill this gym first" rule.
@@ -229,6 +285,135 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
     )
 
   return { seasonId, units, windows, errors, gamesPerTeam }
+}
+
+/* ------------------------- what an hour would do ------------------------- */
+
+/** The grades a weekend holds, deduped, in the order given. */
+function weekendUnits(units: PlannerUnit[], assigned: string[]): PlannerUnit[] {
+  const seen = new Set<string>()
+  const out: PlannerUnit[] = []
+  for (const key of assigned) {
+    if (seen.has(key)) continue
+    seen.add(key)
+    const u = units.find((x) => x.key === key)
+    if (u) out.push(u)
+  }
+  return out
+}
+
+/** Games one court holds per day at a gym this weekend, as a plain average
+ *  over its court-days. Null when the weekend never opened that gym. */
+function perCourtDay(venue: { capacityGames: number; courtDays?: number } | undefined): number | null {
+  if (!venue || !venue.courtDays) return null
+  return venue.capacityGames / venue.courtDays
+}
+
+/**
+ * What moving the day window would do to THIS plan, before anybody books it
+ * (owner 2026-08-02: "start early / start late / early finish"). Reads the
+ * season twice — once as saved, once on the shifted window — and reports the
+ * same two facts the board paints in: does a weekend run short, and does it
+ * need a second building.
+ *
+ * NOTHING IS WRITTEN. The shift lives in memory for the length of the request;
+ * the hours only change if the operator presses Apply, which goes through the
+ * ordinary season-venue hours route.
+ *
+ * `assignment` is the calendar on screen, which may be an unsaved proposal.
+ * Left out, the saved calendar is what gets measured.
+ */
+export async function planHoursPreview(
+  seasonId: string,
+  shift: HoursShift,
+  assignment?: Record<string, string[]>
+): Promise<HoursPreview> {
+  const [before, after] = await Promise.all([
+    buildPlannerState(seasonId),
+    buildPlannerState(seasonId, shift),
+  ])
+  const plan = assignment ?? currentAssignment(before)
+
+  const afterWeekends = new Map<string, PlannerWeekend>()
+  for (const win of after.windows) for (const w of win.weekends) afterWeekends.set(w.sessionId, w)
+
+  const weekends: HoursPreviewWeekend[] = []
+  const cleared: string[] = []
+  const broke: string[] = []
+  const oneGymNow: string[] = []
+  const twoGymNow: string[] = []
+  const totals = {
+    capacityBefore: 0,
+    capacityAfter: 0,
+    overflowBefore: 0,
+    overflowAfter: 0,
+    twoBuildingBefore: 0,
+    twoBuildingAfter: 0,
+  }
+  /** Every distinct games-per-court-per-day move the season makes. One entry
+   *  means the whole season moved the same way, which is the sentence. */
+  const courtDayMoves = new Set<number>()
+
+  for (const win of before.windows) {
+    for (const w of win.weekends) {
+      const next = afterWeekends.get(w.sessionId)
+      const assigned = plan[w.sessionId] ?? []
+      const here = weekendUnits(before.units, assigned)
+      const emptyWeekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues"> = {
+        targetGamesPerTeam: w.targetGamesPerTeam,
+        venues: [],
+      }
+      const packBefore = packWeekendVenues(here, w, w.assignedVenues ?? {})
+      const packAfter = packWeekendVenues(here, next ?? emptyWeekend, w.assignedVenues ?? {})
+
+      const row: HoursPreviewWeekend = {
+        sessionId: w.sessionId,
+        label: w.label,
+        capacityBefore: w.capacityGames,
+        capacityAfter: next?.capacityGames ?? 0,
+        demand: weekendDemand(before.units, w, assigned),
+        overflowBefore: packBefore.overflow,
+        overflowAfter: packAfter.overflow,
+        buildingsBefore: packBefore.opened.length,
+        buildingsAfter: packAfter.opened.length,
+      }
+      weekends.push(row)
+
+      totals.capacityBefore += row.capacityBefore
+      totals.capacityAfter += row.capacityAfter
+      totals.overflowBefore += row.overflowBefore
+      totals.overflowAfter += row.overflowAfter
+      if (row.buildingsBefore > 1) totals.twoBuildingBefore++
+      if (row.buildingsAfter > 1) totals.twoBuildingAfter++
+      if (row.overflowBefore > 0 && row.overflowAfter === 0) cleared.push(w.label)
+      if (row.overflowBefore === 0 && row.overflowAfter > 0) broke.push(w.label)
+      if (row.buildingsBefore > 1 && row.buildingsAfter === 1) oneGymNow.push(w.label)
+      if (row.buildingsBefore === 1 && row.buildingsAfter > 1) twoGymNow.push(w.label)
+
+      for (const venue of w.venues) {
+        const was = perCourtDay(venue)
+        const now = perCourtDay(next?.venues.find((v) => v.venueId === venue.venueId))
+        if (was === null) continue
+        courtDayMoves.add((now ?? 0) - was)
+      }
+    }
+  }
+
+  const moves = [...courtDayMoves]
+  const perCourtDayDelta =
+    moves.length === 1 && Number.isInteger(moves[0]) ? moves[0] : moves.length === 0 ? 0 : null
+
+  return {
+    deltaStartMinutes: shift.startMinutes,
+    deltaEndMinutes: shift.endMinutes,
+    perCourtDayDelta,
+    weekends,
+    totals,
+    cleared,
+    broke,
+    oneGymNow,
+    twoGymNow,
+  }
 }
 
 /**

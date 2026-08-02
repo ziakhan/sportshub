@@ -452,6 +452,81 @@ describe("proposePlan with buildings in the score", () => {
   })
 })
 
+describe("proposePlan lever: one-gym", () => {
+  /**
+   * One month, two weekends. The first is a single big building; the second
+   * pairs two small gyms. Four grades of ten games each, so 20/20 is the
+   * flattest split and 30/10 is the one that keeps both weekends inside a
+   * single building.
+   */
+  function oneBigOnePair(bigCapacity = 30): PlannerState {
+    return {
+      seasonId: "season",
+      units: [unit("Gr7", 10), unit("Gr8", 10), unit("Gr9", 10), unit("Gr10", 10)],
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("big", "2026-10-24", [gym("north", "North Gym", bigCapacity, 0)]),
+            weekend("pair", "2026-10-31", [
+              gym("east", "Six Park East", 10, 0),
+              gym("west", "Playground West", 10, 1),
+            ]),
+          ],
+        },
+      ],
+    }
+  }
+
+  /** Weekends the plan really has to open a second building on. */
+  const twoBuildingWeekends = (state: PlannerState, plan: Record<string, string[]>): number =>
+    Object.values(packPlanVenues(state, plan)).filter(
+      (byUnit) => new Set(Object.values(byUnit)).size > 1
+    ).length
+
+  const fitsEverywhere = (state: PlannerState, plan: Record<string, string[]>) => {
+    for (const win of state.windows) {
+      for (const w of win.weekends) {
+        expect(weekendDemand(state.units, w, plan[w.sessionId] ?? [])).toBeLessThanOrEqual(
+          w.capacityGames
+        )
+      }
+      // One weekend per grade per month, exactly as the other levers.
+      const all = win.weekends.flatMap((w) => plan[w.sessionId] ?? [])
+      expect(all.sort()).toEqual(state.units.map((u) => u.key).sort())
+    }
+  }
+
+  it("keeps every weekend in one building where balance opens a second", () => {
+    // Balance buys the flat 20/20 peak and pays for a second gym to get it.
+    const balanced = oneBigOnePair()
+    expect(twoBuildingWeekends(balanced, proposePlan(balanced, "balance"))).toBe(1)
+
+    // One-gym takes the heavier 30/10 weekend instead, and every family
+    // still drives to one address.
+    const packed = oneBigOnePair()
+    const plan = proposePlan(packed, "one-gym")
+    expect(twoBuildingWeekends(packed, plan)).toBe(0)
+    fitsEverywhere(packed, plan)
+  })
+
+  it("still refuses overflow: it opens the second gym rather than strand a game", () => {
+    // The big weekend now holds 25, so the one-building answer would leave 5
+    // games nowhere. Overflow is a million a game and nothing outranks it.
+    const state = oneBigOnePair(25)
+    const plan = proposePlan(state, "one-gym")
+    fitsEverywhere(state, plan)
+    expect(twoBuildingWeekends(state, plan)).toBe(1)
+  })
+
+  it("is deterministic, and holds the NPH shape without stranding a game", () => {
+    expect(proposePlan(nphTwoGyms(), "one-gym")).toEqual(proposePlan(nphTwoGyms(), "one-gym"))
+    const state = nphTwoGyms()
+    fitsEverywhere(state, proposePlan(state, "one-gym"))
+  })
+})
+
 /** The NPH shape with two real buildings behind every weekend, and one grade
  *  the league promised would not sit in the same gym every month. */
 function nphTwoGyms(): PlannerState {

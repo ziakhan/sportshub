@@ -7,7 +7,9 @@ import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 export const dynamic = "force-dynamic"
 
 const bodySchema = z.object({
-  lever: z.enum(["balance", "compact", "spread"]).default("balance"),
+  // "one-gym" is balance with a second building priced ten times higher
+  // (owner 2026-08-02: "pack one gym" is one of the options).
+  lever: z.enum(["balance", "compact", "spread", "one-gym"]).default("balance"),
 })
 
 /** POST /api/seasons/[id]/planner/propose {lever} — deterministic proposal,

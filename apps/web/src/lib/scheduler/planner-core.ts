@@ -24,6 +24,23 @@ export function weekendLabel(dates: Array<string | Date>): string {
   return `${fmt(ds[0])}–${sameMonth ? last.getUTCDate() : fmt(last)}`
 }
 
+/**
+ * A wall-clock time moved by some minutes: "09:00" an hour earlier is
+ * "08:00". Clamped to the day, so an early start can never wrap past
+ * midnight into a window that reads backwards.
+ *
+ * ONE implementation on purpose (owner 2026-08-02, the hours chips): the
+ * server previews a shifted day the same way the Apply writes it, so what the
+ * chip promised is exactly what the season ends up running.
+ */
+export function shiftClock(time: string, deltaMinutes: number): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(time.trim())
+  if (!m) return time
+  const total = Number(m[1]) * 60 + Number(m[2]) + deltaMinutes
+  const clamped = Math.max(0, Math.min(23 * 60 + 59, total))
+  return `${String(Math.floor(clamped / 60)).padStart(2, "0")}:${String(clamped % 60).padStart(2, "0")}`
+}
+
 export interface PlannerUnit {
   key: string // "age:<ageGroup>"
   label: string
@@ -81,6 +98,11 @@ export interface PlannerVenue {
    *  array always arrives sorted by this then by name, and the packer walks
    *  it in that order without re-sorting. */
   fillOrder: number
+  /** Court-days behind `capacityGames` this weekend: how many (day × court)
+   *  pairs the gym opens. Set by buildPlannerState; absent in hand-built
+   *  states. It is what turns a capacity change into the number an operator
+   *  thinks in — games per court per day — when the hours move. */
+  courtDays?: number
 }
 
 export interface PlannerWeekend {
@@ -113,7 +135,7 @@ export interface PlannerState {
   gamesPerTeam?: number
 }
 
-export type PlannerLever = "balance" | "compact" | "spread"
+export type PlannerLever = "balance" | "compact" | "spread" | "one-gym"
 
 export interface PlannerSuggestion {
   kind: "overflow" | "extend-hours" | "move-unit" | "idle-weekend" | "two-building"
@@ -787,6 +809,16 @@ const SECOND_BUILDING_COST = 150
 const GYM_VIOLATION_COST = 60
 
 /**
+ * How much harder "one-gym" leans on buildings than "balance" does (owner
+ * 2026-08-02: "pack one gym" is one of the options an operator gets). Ten
+ * times the normal price of a second building, so 1,500 a weekend: past the
+ * point where a flatter peak can buy one, since peak games cost 100 each. It
+ * buys buildings with peak, never with overflow — that term is a million and
+ * stays untouched.
+ */
+const ONE_GYM_BUILDING_WEIGHT = 10
+
+/**
  * Deterministic per-window search. Every unit appears exactly once per
  * window (NPH's real rule: each grade plays one weekend per monthly
  * session). Overflow is forbidden when any overflow-free assignment
@@ -795,6 +827,8 @@ const GYM_VIOLATION_COST = 60
  *  - balance: flattest peak utilization
  *  - compact: fewest weekends used, then flattest
  *  - spread: every weekend used, then flattest
+ *  - one-gym: balance, with a second building priced ten times higher, so a
+ *    heavier weekend inside one building beats a flatter weekend across two
  *
  * Buildings are part of the score, not an afterthought: every candidate is
  * really packed into gyms (packWeekendVenues), and a month pays for each
@@ -808,6 +842,9 @@ export function proposePlan(
 ): Record<string, string[]> {
   const units = state.units.filter((u) => u.teams > 0)
   const out: Record<string, string[]> = {}
+  // The only thing "one-gym" changes: what a second building costs.
+  const buildingCost =
+    lever === "one-gym" ? SECOND_BUILDING_COST * ONE_GYM_BUILDING_WEIGHT : SECOND_BUILDING_COST
   const giants = [...units].sort((a, b) => b.teams - a.teams).slice(0, 2).map((u) => u.key)
   const unitByKey = new Map(units.map((u) => [u.key, u]))
   // Where each grade has been playing, as decided by the months already
@@ -901,7 +938,7 @@ export function proposePlan(
           if (buckets[k].length === 0) continue
           const packed = packWeekendVenues(buckets[k], win.weekends[k], resident)
           venueCost +=
-            Math.max(0, packed.opened.length - 1) * SECOND_BUILDING_COST +
+            Math.max(0, packed.opened.length - 1) * buildingCost +
             packed.violations * GYM_VIOLATION_COST
         }
       }
@@ -1050,6 +1087,92 @@ export function diffAssignments(
   }
 
   return { weekends, summary }
+}
+
+/* ------------------------- moving the day window ------------------------- */
+
+export interface HoursPreviewWeekend {
+  sessionId: string
+  label: string
+  capacityBefore: number
+  capacityAfter: number
+  /** Games this weekend's grades ask for. Hours never change this. */
+  demand: number
+  overflowBefore: number
+  overflowAfter: number
+  buildingsBefore: number
+  buildingsAfter: number
+}
+
+/** What an earlier start (or an earlier finish) would do to a plan, weekend
+ *  by weekend. Computed server-side by planHoursPreview; nothing is written. */
+export interface HoursPreview {
+  deltaStartMinutes: number
+  deltaEndMinutes: number
+  /** Games each court holds per day, gained or lost. Null when the season's
+   *  gyms do not all move by the same number (different windows round the
+   *  extra hour differently), and the sentence falls back to season totals. */
+  perCourtDayDelta: number | null
+  weekends: HoursPreviewWeekend[]
+  totals: {
+    capacityBefore: number
+    capacityAfter: number
+    overflowBefore: number
+    overflowAfter: number
+    twoBuildingBefore: number
+    twoBuildingAfter: number
+  }
+  /** Weekends whose shortage this clears, by label. */
+  cleared: string[]
+  /** Weekends this puts short. */
+  broke: string[]
+  /** Weekends that fall back into a single building. */
+  oneGymNow: string[]
+  /** Weekends that have to open a second one. */
+  twoGymNow: string[]
+}
+
+/** Weekends in a sentence: one, two by name, more by count. */
+function weekendList(labels: string[]): string {
+  if (labels.length === 1) return labels[0]
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`
+  return `${labels.length} weekends`
+}
+
+/**
+ * The one line an hours chip says before anybody books anything: what the
+ * change buys in court time, and the one thing it fixes or breaks on the
+ * calendar. Same voice as the board's own captions, because it is read three
+ * inches from them.
+ */
+export function hoursPreviewSentence(label: string, preview: HoursPreview): string {
+  const { perCourtDayDelta, totals, cleared, broke, oneGymNow, twoGymNow } = preview
+  const games = totals.capacityAfter - totals.capacityBefore
+  const quiet =
+    cleared.length === 0 && broke.length === 0 && oneGymNow.length === 0 && twoGymNow.length === 0
+  if (games === 0 && quiet) return `${label}: no change, the hour does not fit another game.`
+
+  const parts: string[] = []
+  if (perCourtDayDelta) {
+    const n = Math.abs(perCourtDayDelta)
+    parts.push(
+      `${perCourtDayDelta > 0 ? "+" : "-"}${n} game${n === 1 ? "" : "s"} per court each day`
+    )
+  } else if (games !== 0) {
+    const n = Math.abs(games)
+    parts.push(`${games > 0 ? "+" : "-"}${n} game${n === 1 ? "" : "s"} of gym time this season`)
+  } else {
+    parts.push("the same gym time")
+  }
+
+  if (cleared.length > 0) parts.push(`clears the ${weekendList(cleared)} shortage`)
+  if (broke.length > 0) parts.push(`puts ${weekendList(broke)} short`)
+  if (cleared.length === 0 && broke.length === 0) {
+    if (twoGymNow.length > 0) parts.push(`opens a second gym on ${weekendList(twoGymNow)}`)
+    else if (oneGymNow.length > 0) parts.push(`keeps ${weekendList(oneGymNow)} in one gym`)
+    else parts.push("no weekend changes")
+  }
+  return `${label}: ${parts.join(", ")}.`
 }
 
 /** Plain-language observations about an assignment — the suggestion rail. */
