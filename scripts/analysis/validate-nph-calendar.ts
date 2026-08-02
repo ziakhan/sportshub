@@ -232,6 +232,50 @@ console.log("  Note how the official SL calendar puts small, Playground-sized lo
 console.log("  the NJC/NSC weekends — the peaks exist because those weekends aren't fully theirs.")
 
 /* ------------------------------------------------------------------ *
+ * PART 2b — owner hypothetical: NPA + WNPA moved ENTIRELY onto the
+ * weekends at the hubs (today they're mostly weekday games at FEIA and
+ * academy gyms). Regular-season volumes from 2025-26 actuals, minus the
+ * March playoffs at Humber: NPA ~65 games → 13/month, WNPA ~46 → 9/month.
+ * Scholastic stays excluded (owner: "not the high school games").
+ * ------------------------------------------------------------------ */
+console.log("\n\nPART 2b — hypothetical: NPA + WNPA run fully on weekends too")
+const FULL_CHUNKS = [
+  { name: "D1 JrBoys", games: 9 },
+  { name: "D1 Academy", games: 15 },
+  { name: "D1 Girls (Jr+Sr)", games: 14 },
+  { name: "NPA (all games)", games: 13 },
+  { name: "WNPA (all games)", games: 9 },
+]
+let tight2: { name: string; free: number } | null = null
+for (const month of MONTHS) {
+  const cap = (w: Wk) => (w.njc ? 0 : SIX_PARK) + PLAYGROUND + HABER
+  const used = new Map(month.weekends.map((w) => [w.name, w.sl]))
+  const placed = new Map<string, string[]>()
+  for (const chunk of FULL_CHUNKS) {
+    const pick = [...month.weekends].sort(
+      (a, b) => (cap(b) - used.get(b.name)!) - (cap(a) - used.get(a.name)!)
+    )[0]
+    used.set(pick.name, used.get(pick.name)! + chunk.games)
+    placed.set(pick.name, [...(placed.get(pick.name) ?? []), chunk.name])
+  }
+  console.log(`  ${month.label}`)
+  for (const w of month.weekends) {
+    const total = used.get(w.name)!
+    const c = cap(w)
+    const free = c - total
+    if (!tight2 || free < tight2.free) tight2 = { name: w.name, free }
+    const parts = [
+      w.sl ? `SL ${w.sl}` : "",
+      ...(placed.get(w.name) ?? []),
+    ].filter(Boolean)
+    console.log(
+      `    ${w.name.padEnd(7)}${w.njc ? " (NJC)" : "      "} ${String(total).padStart(3)} of ${String(c).padStart(3)} · ${parts.join(" + ") || "idle"}`
+    )
+  }
+}
+console.log(`  VERDICT: still fits — tightest weekend ${tight2!.name}, ${tight2!.free} slots free.`)
+
+/* ------------------------------------------------------------------ *
  * PART 3 — rerun OUR planner, now given the input we were missing:
  * per-weekend venue availability (Six Park absent on NJC weekends).
  * Objective becomes: minimize peak UTILIZATION of what's actually
