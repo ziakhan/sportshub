@@ -18,6 +18,8 @@ import { loadSchedulerInput } from "./load"
 
 export * from "./planner-core"
 import {
+  planningSource,
+  planningTeams,
   weekendDemand,
   weekendLabel,
   type PlannerState,
@@ -63,16 +65,15 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
       key: `age:${ageGroup}`,
       label: ageGroup,
       divisionIds: c.divisionIds,
-      teams: c.approved > 0 ? c.approved : c.expected,
+      // The operator's number leads, and never plans for fewer teams than
+      // have already registered (owner ruling 2026-08-02).
+      teams: planningTeams(c.approved, c.expected),
       // Both halves ride along so the watch screen can draw registration
       // against the estimate without a second query. `teams` keeps its one
       // meaning: the number everything else plans on.
       approved: c.approved,
       expected: c.expected,
-      source: (c.approved > 0 ? "approved" : c.expected > 0 ? "expected" : "none") as
-        | "approved"
-        | "expected"
-        | "none",
+      source: planningSource(c.approved, c.expected),
     }))
     // Natural order (Grade 7 … Grade 12, then named groups) so the strip
     // reads the way an operator thinks.

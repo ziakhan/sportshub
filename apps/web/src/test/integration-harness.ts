@@ -53,6 +53,8 @@ import { getServerSession } from "next-auth"
  *   1139 planner step 2 routes (session venue POST/DELETE/PATCH hours + grid GET)
  *   1140 planner step 1 (last-season team counts: approved-only, per grade)
  *   1141 planner step 4 (publish/unpublish + card gating: private before, public after)
+ *   1142 planner step 1 saves (planning number = max(approved, expected), editable while open)
+ *   1143 planner step 2 weekends (ensureWeekendSession + POST /weekends: create-on-toggle)
  */
 
 export function actAs(userId: string | null): void {

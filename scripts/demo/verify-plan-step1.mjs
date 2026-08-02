@@ -1,19 +1,29 @@
 /**
- * Plan wizard step 1 drive (wave 2, 2026-08-02). Two runs, no world damage:
+ * Plan wizard step 1 drive (wave 2, 2026-08-02; re-driven for the editable-
+ * while-registered ruling, 2026-08-02). Two runs, no world damage:
  *
  *   node verify-plan-step1.mjs locked
  *     The NPH journey season (FINALIZED, every grade already registered):
- *     read-only banner, real counts instead of steppers, summary line.
+ *     read-only banner, dead steppers holding the registered counts, the
+ *     "N registered" hint, summary line.
  *
  *   node verify-plan-step1.mjs drive
  *     An editable season, driven as the platform admin: scratch grades are
  *     created, stepped through the UI, checked against the API (including the
- *     grade→divisions split), then removed again. The "N last season" hint
- *     comes from that league's real prior season.
+ *     grade→divisions split), then given real registered teams to prove the
+ *     stepper STAYS live and the plan never drops below them. Everything the
+ *     run creates is removed again. The "N last season" hint comes from that
+ *     league's real prior season.
+ *
+ * The registered teams are fabricated the way the integration worlds do it —
+ * an APPROVED TeamSubmission against a real team — because no API turns a
+ * DRAFT season's grade into a registered one in a single call. Local DB only.
  *
  * Screenshots to /tmp/plan-step1-*.png.
  */
+import { readFileSync } from "node:fs"
 import { chromium } from "playwright"
+import { PrismaClient } from "@prisma/client"
 
 const BASE = "http://localhost:3000"
 const MODE = process.argv[2] ?? "locked"
@@ -38,6 +48,16 @@ const fail = (msg) => {
   console.error("FAIL:", msg)
   process.exit(1)
 }
+
+/** The dev database, and only ever the dev database: this run writes rows. */
+const dbUrl =
+  process.env.DATABASE_URL ??
+  readFileSync(new URL("../../apps/web/.env.local", import.meta.url), "utf8").match(
+    /^DATABASE_URL="?([^"\n]+)"?/m
+  )?.[1]
+if (!dbUrl) fail("no DATABASE_URL (env or apps/web/.env.local)")
+if (!/@localhost[:/]/.test(dbUrl)) fail("this drive writes scratch rows: localhost only")
+const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } })
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1500, height: 1000 } })
@@ -78,6 +98,13 @@ const open = async () => {
 const summary = async () =>
   (await page.locator("text=/team(s)? ·|team(s)?\\./").first().textContent())?.trim()
 
+/** The teams the summary line says the season is planning for. */
+const planTotal = (line) => {
+  const n = Number(line?.match(/^(\d+)\s+teams?\b/)?.[1])
+  if (!Number.isFinite(n)) fail(`could not read a team total from "${line}"`)
+  return n
+}
+
 await open()
 
 // ——— locked ———
@@ -87,11 +114,23 @@ if (MODE === "locked") {
   await page.waitForSelector("text=read only", { timeout: 10000 })
   const live = await page.locator('button[aria-label*="One more"]:not([disabled])').count()
   if (live > 0) fail(`${live} steppers still live while finalized`)
-  // Every NPH grade has approved teams: registration truth, not an estimate.
-  await page.waitForSelector("text=already registered", { timeout: 10000 })
+  // Every NPH grade has approved teams, and the season never estimated: the
+  // dead stepper holds the registered count and the hint names it.
+  const first = data.state.units[0]
+  const shownFirst = (await page.locator("tbody tr td b").first().textContent())?.trim()
+  if (shownFirst !== String(first.teams))
+    fail(`first row should hold ${first.teams}, got "${shownFirst}"`)
+  const firstHint = await page.locator("tbody tr td:last-child").first().textContent()
+  if (!firstHint?.includes(`${first.approved} registered`))
+    fail(`hint should name the registered teams, got "${firstHint}"`)
+  await page.waitForSelector("text=never less than the teams already registered", {
+    timeout: 10000,
+  })
+  console.log(`first row: ${first.label} holds ${shownFirst}, hint "${firstHint?.trim()}"`)
   console.log(`summary line: ${await summary()}`)
   await page.screenshot({ path: "/tmp/plan-step1-locked.png", fullPage: true })
   await browser.close()
+  await prisma.$disconnect()
   console.log("PLAN STEP1 LOCKED: PASS")
   process.exit(0)
 }
@@ -125,12 +164,20 @@ for (const tier of [1, 2]) {
 }
 console.log(`scratch grade created: ${SCRATCH.grade} across ${scratchIds.length} divisions`)
 
+// Fabricated registrations, removed before the grades they sit in.
+const submissionIds = []
+
 const cleanup = async () => {
+  if (submissionIds.length > 0) {
+    await prisma.teamSubmission
+      .deleteMany({ where: { id: { in: submissionIds } } })
+      .catch((e) => console.error("CLEANUP FAILED for submissions:", e.message))
+  }
   for (const id of scratchIds) {
     const res = await page.request.delete(`${divisionsUrl}?divisionId=${id}`)
     if (!res.ok()) console.error(`CLEANUP FAILED for ${id}: ${res.status()}`)
   }
-  console.log("scratch grades removed; world restored")
+  console.log("scratch registrations and grades removed; world restored")
 }
 
 try {
@@ -182,9 +229,77 @@ try {
   const shown = await page.locator("tbody tr td b").first().textContent()
   if (shown?.trim() !== "4") fail(`after reload the row should read 4, got "${shown}"`)
   console.log("survives a reload")
+
+  // ——— the ruling (owner 2026-08-02): teams registering never takes the
+  // number away from the operator, and the plan never drops below them ———
+  const REGISTERED = 3
+  const free = await prisma.team.findMany({
+    where: { seasonSubmissions: { none: { seasonId: target.seasonId } } },
+    select: { id: true },
+    orderBy: { id: "asc" },
+    take: REGISTERED,
+  })
+  if (free.length < REGISTERED) fail("not enough unsubmitted teams to fabricate registration")
+  for (const t of free) {
+    const sub = await prisma.teamSubmission.create({
+      data: {
+        seasonId: target.seasonId,
+        divisionId: scratchIds[0],
+        teamId: t.id,
+        status: "APPROVED",
+      },
+      select: { id: true },
+    })
+    submissionIds.push(sub.id)
+  }
+  console.log(`${REGISTERED} teams registered into ${SCRATCH.grade}`)
+
+  await open()
+  if (await plus.isDisabled()) fail("a registered grade must STILL be editable")
+  if (await minus.isDisabled()) fail("a registered grade must STILL be editable")
+  const stillReads = await page.locator("tbody tr td b").first().textContent()
+  if (stillReads?.trim() !== "4") fail(`the estimate should still read 4, got "${stillReads}"`)
+  const regHint = await page.locator("tbody tr td:last-child").first().textContent()
+  if (!regHint?.includes(`${REGISTERED} registered`))
+    fail(`hint should read "${REGISTERED} registered", got "${regHint}"`)
+  await page.waitForSelector("text=never less than the teams already registered", {
+    timeout: 10000,
+  })
+  console.log(`registered grade is still live; hint reads: ${regHint?.trim()}`)
+
+  // The bigger number wins while it is bigger.
+  after = await plannerState()
+  unit = after.state.units.find((u) => u.label === SCRATCH.grade)
+  if (unit?.teams !== 4 || unit?.approved !== REGISTERED || unit?.source !== "expected")
+    fail(`the estimate should lead: got ${JSON.stringify(unit)}`)
+  if (planTotal(await summary()) !== 4) fail("summary should plan on the estimate")
+
+  // Raise it while teams are in: the whole point of the ruling.
+  await plus.click()
+  await page.waitForSelector("text=Saved.", { timeout: 15000 })
+  after = await plannerState()
+  unit = after.state.units.find((u) => u.label === SCRATCH.grade)
+  if (unit?.teams !== 5 || unit?.expected !== 5)
+    fail(`raising a registered grade should plan 5, got ${JSON.stringify(unit)}`)
+  console.log("the operator raised a registered grade to 5, and the plan followed")
+  await page.screenshot({ path: "/tmp/plan-step1-registered.png", fullPage: true })
+
+  // Step under the teams that are really in: the plan holds the floor.
+  for (let i = 0; i < 3; i++) await minus.click()
+  await page.waitForTimeout(1500)
+  await page.waitForSelector("text=Saved.", { timeout: 15000 })
+  after = await plannerState()
+  unit = after.state.units.find((u) => u.label === SCRATCH.grade)
+  if (unit?.expected !== 2) fail(`the estimate should save as 2, got ${unit?.expected}`)
+  if (unit?.teams !== REGISTERED || unit?.source !== "approved")
+    fail(`the plan must hold at the ${REGISTERED} registered, got ${JSON.stringify(unit)}`)
+  if (planTotal(await summary()) !== REGISTERED)
+    fail(`summary should hold at ${REGISTERED}, read "${await summary()}"`)
+  console.log(`estimate 2 with ${REGISTERED} registered: the plan and the line both hold at 3`)
 } finally {
   await cleanup()
 }
 
 await browser.close()
+await prisma.$disconnect()
 console.log("PLAN STEP1 DRIVE: ALL PASS")

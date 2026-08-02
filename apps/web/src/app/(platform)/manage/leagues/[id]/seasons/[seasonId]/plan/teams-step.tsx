@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { expectedTeamUpdates, type PlannerState, type PlannerUnit } from "@/lib/scheduler/planner-core"
+import {
+  expectedTeamUpdates,
+  planningTeams,
+  type PlannerState,
+  type PlannerUnit,
+} from "@/lib/scheduler/planner-core"
 
 /**
  * Step 1, teams (owner-approved mock, 2026-08-02). The flow opens where the
@@ -12,8 +17,10 @@ import { expectedTeamUpdates, type PlannerState, type PlannerUnit } from "@/lib/
  * Two rules the screen is built around:
  *   - last season is a HINT, never a default we quietly commit them to. It
  *     shows only where there is real history, and never as a zero.
- *   - registration truth beats the estimate: once a grade has approved
- *     teams, the row shows the real count and stops being editable.
+ *   - planning is the operator's call (owner ruling 2026-08-02). Every grade
+ *     stays editable while the season is unlocked, registered or not; the
+ *     plan then runs on their number and never below what has registered
+ *     (planningTeams), so a grade that fills up keeps its real floor.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -70,7 +77,12 @@ export function TeamsStep({
     const next: PlannerState = data.state
     setState(next)
     unitsRef.current = next.units
-    const seeded = Object.fromEntries(next.units.map((u) => [u.key, u.teams]))
+    // The stepper edits the ESTIMATE. A grade that never got one starts from
+    // the teams already registered, so + counts up from reality instead of
+    // from zero — seeded only, never saved until the operator moves it.
+    const seeded = Object.fromEntries(
+      next.units.map((u) => [u.key, u.expected > 0 ? u.expected : u.approved])
+    )
     setCounts(seeded)
     countsRef.current = seeded
     setLastSeason(data.lastSeasonTeams ?? null)
@@ -121,7 +133,7 @@ export function TeamsStep({
   )
 
   const bump = (unit: PlannerUnit, delta: number) => {
-    if (locked || unit.source === "approved") return
+    if (locked) return
     setCounts((prev) => {
       const now = Math.min(MAX_PER_GRADE, Math.max(0, (prev[unit.key] ?? 0) + delta))
       return { ...prev, [unit.key]: now }
@@ -137,7 +149,12 @@ export function TeamsStep({
 
   const totals = useMemo(
     () => ({
-      teams: (state?.units ?? []).reduce((sum, u) => sum + (counts[u.key] ?? 0), 0),
+      // Same rule the server plans on, so the line matches the plan: the
+      // operator's number per grade, floored at the teams already in.
+      teams: (state?.units ?? []).reduce(
+        (sum, u) => sum + planningTeams(u.approved, counts[u.key] ?? 0),
+        0
+      ),
       // The season's promise to a team, straight off the planner state.
       gamesPerTeam: state?.gamesPerTeam ?? 0,
     }),
@@ -149,7 +166,7 @@ export function TeamsStep({
   }
 
   const games = Math.round((totals.teams * totals.gamesPerTeam) / 2)
-  const anyApproved = state.units.some((u) => u.source === "approved")
+  const anyApproved = state.units.some((u) => u.approved > 0)
 
   return (
     <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
@@ -207,58 +224,54 @@ export function TeamsStep({
             <tbody>
               {state.units.map((unit) => {
                 const value = counts[unit.key] ?? 0
-                const registered = unit.source === "approved"
                 // Units are grade clusters keyed "age:<ageGroup>", which is
                 // exactly how last season's counts come back.
                 const ageGroup = unit.key.startsWith("age:") ? unit.key.slice(4) : unit.label
                 const history = lastSeason?.[ageGroup]
-                const editable = !locked && !registered
+                // What this grade actually plans on, the way the server
+                // reads it: growth is measured against that, not against a
+                // number the season has already outgrown.
+                const planned = planningTeams(unit.approved, value)
                 return (
                   <tr key={unit.key} className="border-ink-100 border-t">
                     <td className="text-ink-900 py-2.5 pr-4 text-sm font-bold">{unit.label}</td>
                     <td className="py-2.5 pr-4">
-                      {registered ? (
-                        <span className="border-court-200 bg-court-50 text-court-900 inline-flex h-9 min-w-[92px] items-center justify-center rounded-lg border px-3 text-sm font-bold">
-                          {value}
-                        </span>
-                      ) : (
-                        <span
-                          role="group"
-                          aria-label={`Expected teams for ${unit.label}`}
-                          className="border-ink-200 bg-ink-50 inline-flex h-9 items-center rounded-lg border"
+                      <span
+                        role="group"
+                        aria-label={`Expected teams for ${unit.label}`}
+                        className="border-ink-200 bg-ink-50 inline-flex h-9 items-center rounded-lg border"
+                      >
+                        <button
+                          type="button"
+                          disabled={locked || value <= 0}
+                          onClick={() => bump(unit, -1)}
+                          aria-label={`One fewer ${unit.label} team`}
+                          className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <button
-                            type="button"
-                            disabled={!editable || value <= 0}
-                            onClick={() => bump(unit, -1)}
-                            aria-label={`One fewer ${unit.label} team`}
-                            className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            −
-                          </button>
-                          <b
-                            aria-live="polite"
-                            className="text-ink-900 min-w-[34px] text-center text-sm tabular-nums"
-                          >
-                            {value}
-                          </b>
-                          <button
-                            type="button"
-                            disabled={!editable || value >= MAX_PER_GRADE}
-                            onClick={() => bump(unit, 1)}
-                            aria-label={`One more ${unit.label} team`}
-                            className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            +
-                          </button>
-                        </span>
-                      )}
+                          −
+                        </button>
+                        <b
+                          aria-live="polite"
+                          className="text-ink-900 min-w-[34px] text-center text-sm tabular-nums"
+                        >
+                          {value}
+                        </b>
+                        <button
+                          type="button"
+                          disabled={locked || value >= MAX_PER_GRADE}
+                          onClick={() => bump(unit, 1)}
+                          aria-label={`One more ${unit.label} team`}
+                          className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          +
+                        </button>
+                      </span>
                     </td>
                     <td className="text-ink-400 py-2.5 text-xs">
                       {[
+                        unit.approved > 0 ? `${unit.approved} registered` : null,
                         history !== undefined ? `${history} last season` : null,
-                        registered ? "already registered" : null,
-                        !registered && history !== undefined && value > history ? "growing" : null,
+                        history !== undefined && planned > history ? "growing" : null,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -272,8 +285,7 @@ export function TeamsStep({
 
         {anyApproved && (
           <p className="text-ink-400 mt-3 text-xs">
-            Grades with teams already registered show the real count, so there is nothing left to
-            estimate there.
+            Planning uses your number, and never less than the teams already registered.
           </p>
         )}
 

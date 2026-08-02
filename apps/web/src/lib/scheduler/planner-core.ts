@@ -28,15 +28,37 @@ export interface PlannerUnit {
   key: string // "age:<ageGroup>"
   label: string
   divisionIds: string[]
-  /** What the board plans on: registration truth once there is any, the
-   *  step-1 estimate until then. Everything that computes capacity reads
-   *  THIS number. */
+  /** What the board plans on: the operator's step-1 number, never below the
+   *  teams already registered — `planningTeams(approved, expected)`.
+   *  Everything that computes capacity reads THIS number. */
   teams: number
   /** Teams actually registered (approved submissions). */
   approved: number
   /** What step 1 said to expect. Zero when nobody ever estimated this grade. */
   expected: number
+  /** Which of the two numbers is driving `teams`. */
   source: "approved" | "expected" | "none"
+}
+
+/**
+ * The number a grade plans on (owner ruling 2026-08-02: "I need to be able to
+ * edit every team count for the planning mode even if teams are registered").
+ * Planning is the operator's call, so their estimate leads — but a plan never
+ * makes room for fewer teams than have already registered, because those
+ * teams are coming whatever the estimate says.
+ */
+export function planningTeams(approved: number, expected: number): number {
+  return Math.max(approved, expected)
+}
+
+/** Which number is driving `planningTeams`: the estimate when it leads,
+ *  registration when it does, "none" when the grade has neither yet. */
+export function planningSource(
+  approved: number,
+  expected: number
+): "approved" | "expected" | "none" {
+  if (expected > approved) return "expected"
+  return approved > 0 ? "approved" : "none"
 }
 
 export interface PlannerWeekend {
@@ -206,8 +228,9 @@ export interface AttentionWeekend {
  * weekend that is actually short of courts, not the one that merely has no
  * spare slot.
  *
- * It reads the units' `teams`, which is registration truth wherever teams
- * have registered — that is the whole point of watching in October.
+ * It reads the units' `teams`, the planning number, which never sits below
+ * the teams that have registered — that is the whole point of watching in
+ * October.
  */
 export function weekendsNeedingAttention(
   state: PlannerState,

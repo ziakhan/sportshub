@@ -5,6 +5,8 @@ import {
   gradeLine,
   overPlanSentence,
   planSummary,
+  planningSource,
+  planningTeams,
   proposePlan,
   registrationBars,
   seasonCalendarMonths,
@@ -27,16 +29,17 @@ import {
  */
 
 /** A registered grade: the teams are really in, and the estimate matched
- *  unless a test says otherwise. `teams` is what the board plans on. */
-function registered(label: string, teams: number, expected = teams): PlannerUnit {
+ *  unless a test says otherwise. `teams` is what the board plans on, built
+ *  the one way the server builds it. */
+function registered(label: string, approved: number, expected = approved): PlannerUnit {
   return {
     key: `age:${label}`,
     label,
     divisionIds: [`d${label}`],
-    teams,
-    approved: teams,
+    teams: planningTeams(approved, expected),
+    approved,
     expected,
-    source: "approved",
+    source: planningSource(approved, expected),
   }
 }
 
@@ -46,10 +49,10 @@ function estimated(label: string, expected: number): PlannerUnit {
     key: `age:${label}`,
     label,
     divisionIds: [`d${label}`],
-    teams: expected,
+    teams: planningTeams(0, expected),
     approved: 0,
     expected,
-    source: expected > 0 ? "expected" : "none",
+    source: planningSource(0, expected),
   }
 }
 
@@ -403,6 +406,44 @@ describe("expectedTeamUpdates", () => {
       { divisionId: "b", expectedTeams: 0 },
     ])
     expect(expectedTeamUpdates([], 9)).toEqual([])
+  })
+})
+
+/**
+ * Owner ruling 2026-08-02: "I need to be able to edit every team count for
+ * the planning mode even if teams are registered ... and you should plan
+ * according to that number." The operator's number leads; registration is a
+ * floor under it, never a ceiling over them.
+ */
+describe("planningTeams / planningSource", () => {
+  it("plans on the operator's number when they planned bigger", () => {
+    expect(planningTeams(9, 14)).toBe(14)
+    expect(planningSource(9, 14)).toBe("expected")
+  })
+
+  it("never plans for fewer teams than have registered", () => {
+    expect(planningTeams(30, 27)).toBe(30)
+    expect(planningSource(30, 27)).toBe("approved")
+  })
+
+  it("falls back to whichever number exists", () => {
+    expect(planningTeams(12, 0)).toBe(12)
+    expect(planningSource(12, 0)).toBe("approved")
+    expect(planningTeams(0, 25)).toBe(25)
+    expect(planningSource(0, 25)).toBe("expected")
+  })
+
+  it("an equal estimate reads as registration, an empty grade as neither", () => {
+    expect(planningSource(8, 8)).toBe("approved")
+    expect(planningTeams(0, 0)).toBe(0)
+    expect(planningSource(0, 0)).toBe("none")
+  })
+
+  it("carries into everything that plans on a unit", () => {
+    // 14 expected against 9 registered: the weekend is sized for 14.
+    const unit = registered("Gr7", 9, 14)
+    expect(unit.teams).toBe(14)
+    expect(weekendDemand([unit], { targetGamesPerTeam: 2 }, [unit.key])).toBe(14)
   })
 })
 
