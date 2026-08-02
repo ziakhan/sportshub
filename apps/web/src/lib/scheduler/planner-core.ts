@@ -367,6 +367,19 @@ export function weekendDays(label: string): string {
     .join("–")
 }
 
+/**
+ * The same job for a column that already heads itself with a month, but
+ * honest about the weekend that straddles two of them: "Oct 24–25" → "24–25",
+ * "Oct 31–Nov 1" → "31–Nov 1". The board's chip captions and the season
+ * strip's weekend headers both read this, so a weekend is never spelled two
+ * ways on one screen.
+ */
+export function weekendShortDays(label: string): string {
+  const [from, to] = label.split("–")
+  if (!to) return label
+  return `${from.match(/\d+/)?.[0] ?? from.trim()}–${to.trim()}`
+}
+
 export interface CalendarMonth {
   /** "Oct" — the window's month, which heads the column. */
   month: string

@@ -13,6 +13,7 @@ import {
   seasonCalendarMonths,
   suggestFor,
   weekendDays,
+  weekendShortDays,
   weekendsNeedingAttention,
   TIGHT_RATIO,
   weekendDemand,
@@ -486,6 +487,14 @@ describe("weekendDays", () => {
     expect(weekendDays("Oct 24–25")).toBe("24–25")
     expect(weekendDays("Oct 31–Nov 1")).toBe("31–1")
     expect(weekendDays("Feb 6")).toBe("6")
+  })
+})
+
+describe("weekendShortDays", () => {
+  it("keeps the second month, because 31–1 tells nobody anything", () => {
+    expect(weekendShortDays("Oct 24–25")).toBe("24–25")
+    expect(weekendShortDays("Oct 31–Nov 1")).toBe("31–Nov 1")
+    expect(weekendShortDays("Feb 6")).toBe("Feb 6")
   })
 })
 

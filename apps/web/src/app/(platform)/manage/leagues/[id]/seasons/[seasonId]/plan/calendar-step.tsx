@@ -7,6 +7,7 @@ import {
   diffAssignments,
   planSummary,
   weekendLoad,
+  weekendShortDays,
   type AssignmentDiffSummary,
   type PlannerLever,
   type PlannerState,
@@ -15,8 +16,10 @@ import {
   type PlannerWeekend,
   type PlanSummary,
   type WeekendDiff,
-  type WeekendLoad,
 } from "@/lib/scheduler/planner-core"
+import type { VenueGrid } from "@/lib/seasons/venue-grid"
+import { CARD_TONE, METER_TONE, PILL_TONE, type Armed } from "./plan-shared"
+import { Segmented, StripView, type StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
 
 /**
@@ -31,6 +34,11 @@ import type { PlanHeaderInfo } from "./teams-step"
  *
  * Grouping rules are league truths, not preferences, so they are not a step.
  * The three levers live behind a quiet link for the operator who cares.
+ *
+ * Two views of the SAME calendar (owner 2026-08-02): the board, which is where
+ * a month gets rearranged, and the season strip, which reads a grade's whole
+ * season left to right and names the gyms each weekend. This component owns
+ * every piece of state; the views only draw it.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -56,28 +64,6 @@ const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
   { lever: "compact", label: "Fewest weekends", note: "Proposed: as few weekends in use as your gyms allow." },
   { lever: "spread", label: "Use every weekend", note: "Proposed: every weekend of the season in use." },
 ]
-
-const CARD_TONE: Record<WeekendLoad["tone"], string> = {
-  over: "border-hoop-300 bg-hoop-50",
-  tight: "border-gold-200 bg-gold-50",
-  unavailable: "border-ink-200 border-dashed bg-ink-50/70",
-  empty: "border-ink-100 bg-white",
-  roomy: "border-ink-100 bg-white",
-}
-
-const METER_TONE: Record<WeekendLoad["tone"], string> = {
-  over: "text-hoop-800",
-  tight: "text-gold-800",
-  unavailable: "text-ink-400",
-  empty: "text-ink-400",
-  roomy: "text-ink-500",
-}
-
-const PILL_TONE = {
-  ok: "border-court-200 bg-court-50 text-court-800",
-  warn: "border-gold-200 bg-gold-50 text-gold-800",
-  bad: "border-hoop-200 bg-hoop-50 text-hoop-800",
-}
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
@@ -112,27 +98,6 @@ function compareLine(summary: AssignmentDiffSummary): string {
   return parts.length > 0 ? `${lead} ${parts.join(", ")}.` : lead
 }
 
-/**
- * The weekend a chip's caption points back to. A grade only ever moves inside
- * its own month column, so the leading month is noise: "Oct 24–25" becomes
- * "24–25". A weekend that straddles two months keeps the second one, because
- * "31–1" tells nobody anything.
- */
-function keptDayLabel(label: string): string {
-  const [from, to] = label.split("–")
-  if (!to) return label
-  return `${from.match(/\d+/)?.[0] ?? from.trim()}–${to.trim()}`
-}
-
-interface Armed {
-  unitKey: string
-  label: string
-  fromSessionId: string | null
-  /** A grade plays ONE weekend per month window, so it only ever moves
-   *  inside the column it is already in. */
-  window: string
-}
-
 export function CalendarStep({
   seasonId,
   onLoaded,
@@ -155,6 +120,13 @@ export function CalendarStep({
    *  against, so it must never be the working assignment. */
   const [kept, setKept] = useState<Record<string, string[]> | null>(null)
   const [comparing, setComparing] = useState(false)
+  /** Board by default: it is where a month gets rearranged. The strip is the
+   *  season read left to right, and it is one tap away. */
+  const [view, setView] = useState<"board" | "strip">("board")
+  const [side, setSide] = useState<StripSide>("proposal")
+  /** Step 2's gyms-and-weekends answer, so the strip can say which gyms you
+   *  actually have each weekend instead of assuming both. */
+  const [venueGrid, setVenueGrid] = useState<VenueGrid | null>(null)
 
   const propose = useCallback(
     async (lever: PlannerLever) => {
@@ -176,16 +148,20 @@ export function CalendarStep({
    *  balanced proposal when there is not. A locked season only ever shows
    *  what was actually saved. */
   const load = useCallback(async () => {
-    // no-store: capacity moves when a gym or a court does, and this screen
-    // must never draw a weekend on a cached court count.
-    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
-      () => null
-    )
+    // no-store on both: capacity moves when a gym or a court does, and this
+    // screen must never draw a weekend on a cached court count.
+    const [res, venueRes] = await Promise.all([
+      fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(() => null),
+      fetch(`/api/seasons/${seasonId}/planner/venues`, { cache: "no-store" }).catch(() => null),
+    ])
     if (!res?.ok) {
       setError("Couldn't load your calendar")
       return
     }
     const data = await res.json()
+    // The gym row is extra truth, not a dependency: if it fails the strip
+    // falls back to the venues the planner itself found capacity at.
+    const venueData = venueRes?.ok ? await venueRes.json().catch(() => null) : null
     const next: PlannerState = data.state
     const isLocked = LOCKED_STATUSES.includes(data.seasonStatus)
     const saved = currentAssignment(next)
@@ -198,9 +174,11 @@ export function CalendarStep({
       hasSaved || isLocked || !planningIsPossible ? null : await propose("balance")
 
     setState(next)
+    setVenueGrid(venueData?.grid ?? null)
     setLocked(isLocked)
     setArmed(null)
     setKept(hasSaved ? saved : null)
+    if (!hasSaved) setSide("proposal")
     onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
     setAssignment(opening ? opening.assignment : saved)
     setSuggestions((opening ? opening.suggestions : data.suggestions) ?? [])
@@ -316,14 +294,15 @@ export function CalendarStep({
   )
 
   /** Compare mode is a lens, not a freeze: this recomputes on every drag, tap
-   *  and lever, so the diff always describes the board on screen. */
+   *  and lever, so the diff always describes the board on screen. A board
+   *  lens, deliberately: the strip shows the two calendars whole instead. */
   const compare = useMemo(() => {
-    if (!comparing || !state || !kept) return null
+    if (view !== "board" || !comparing || !state || !kept) return null
     const diff = diffAssignments(state, kept, assignment)
     const byWeekend = new Map(diff.weekends.map((w) => [w.sessionId, w]))
     const days = new Map<string, string>()
     for (const win of state.windows)
-      for (const w of win.weekends) days.set(w.sessionId, keptDayLabel(w.label))
+      for (const w of win.weekends) days.set(w.sessionId, weekendShortDays(w.label))
     // For a grade that landed on a new weekend: which weekend the kept
     // calendar plays it on, keyed the way the chip asks for it.
     const keptOn = new Map<string, string>()
@@ -331,7 +310,7 @@ export function CalendarStep({
       keptOn.set(`${m.toSessionId}|${m.unitKey}`, days.get(m.fromSessionId) ?? "")
     }
     return { line: compareLine(diff.summary), byWeekend, keptOn }
-  }, [comparing, state, kept, assignment])
+  }, [view, comparing, state, kept, assignment])
 
   /** Most weekends run the same set of gyms. Naming one on every card is
    *  noise, so a card only names its gyms when they differ from the season's
@@ -363,6 +342,9 @@ export function CalendarStep({
 
   const pill = summary ? headerPill(summary) : null
   const interactive = !locked
+  /** The strip can show the calendar the league KEPT, which is read only and
+   *  is not what the levers, the suggestions or Keep act on. */
+  const showingKept = view === "strip" && side === "kept" && kept !== null
 
   return (
     <div
@@ -376,18 +358,35 @@ export function CalendarStep({
             {dirty ? "Proposed calendar" : "Your calendar"}
           </p>
           <p className="text-ink-500 text-xs">
-            {interactive
-              ? "Drag a grade to move it · math updates live"
-              : "The calendar this season was finalized on"}
+            {!interactive
+              ? "The calendar this season was finalized on"
+              : view === "board"
+                ? "Drag a grade to move it · math updates live"
+                : "Every grade across the season · math updates live"}
           </p>
         </div>
-        {pill && (
-          <span
-            className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${PILL_TONE[pill.tone]}`}
-          >
-            {pill.text}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Segmented
+            label="How to view the calendar"
+            value={view}
+            testId="calendar-view"
+            options={[
+              { value: "board" as const, label: "Board" },
+              { value: "strip" as const, label: "Strip" },
+            ]}
+            onChange={(next) => {
+              setView(next)
+              setArmed(null)
+            }}
+          />
+          {pill && (
+            <span
+              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${PILL_TONE[pill.tone]}`}
+            >
+              {pill.text}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="p-5">
@@ -433,83 +432,41 @@ export function CalendarStep({
               </p>
             )}
 
-            {/* The board: one column per month window, weekends stacked inside. */}
-            <div className="overflow-x-auto pb-2">
-              <div
-                className="grid gap-2.5"
-                style={{
-                  gridTemplateColumns: `repeat(${state.windows.length}, minmax(172px, 1fr))`,
-                  minWidth: `${state.windows.length * 172}px`,
-                  // A two-month season should not stretch its columns across
-                  // the whole page just because there is room.
-                  maxWidth: `${state.windows.length * 260}px`,
+            {view === "board" ? (
+              <BoardView
+                state={state}
+                assignment={assignment}
+                unitByKey={unitByKey}
+                usualVenues={usualVenues}
+                armed={armed}
+                interactive={interactive}
+                onArm={setArmed}
+                onMove={move}
+                onRemove={removeUnit}
+                onDrop={onDrop}
+                compare={compare}
+              />
+            ) : (
+              <StripView
+                state={state}
+                shown={showingKept ? (kept ?? assignment) : assignment}
+                hasKept={Boolean(kept)}
+                side={side}
+                onSide={(next) => {
+                  setSide(next)
+                  setArmed(null)
                 }}
-              >
-                {state.windows.map((win, i) => {
-                  const inWindow = new Set(win.weekends.flatMap((w) => assignment[w.sessionId] ?? []))
-                  const missing = state.units.filter((u) => u.teams > 0 && !inWindow.has(u.key))
-                  return (
-                    <section
-                      key={win.label}
-                      className="border-ink-100 bg-ink-50/50 rounded-2xl border p-2.5"
-                    >
-                      <h3 className="text-ink-500 mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.08em]">
-                        Session {i + 1} · {win.label.split(" ")[0]}
-                      </h3>
-                      {win.weekends.map((w) => (
-                        <WeekendCard
-                          key={w.sessionId}
-                          weekend={w}
-                          windowLabel={win.label}
-                          units={state.units}
-                          keys={assignment[w.sessionId] ?? []}
-                          unitByKey={unitByKey}
-                          namesGyms={
-                            w.venues.length > 0 &&
-                            w.venues.map((v) => v.venueId).sort().join("|") !== usualVenues
-                          }
-                          armed={armed}
-                          interactive={interactive}
-                          onArm={setArmed}
-                          onMove={move}
-                          onRemove={removeUnit}
-                          onDrop={onDrop}
-                          onDisarm={() => setArmed(null)}
-                          diff={compare?.byWeekend.get(w.sessionId)}
-                          keptOn={compare?.keptOn}
-                        />
-                      ))}
+                venueGrid={venueGrid}
+                interactive={interactive && !showingKept}
+                armed={armed}
+                onArm={setArmed}
+                onMove={move}
+              />
+            )}
 
-                      {missing.length > 0 && (
-                        <div className="border-ink-200 rounded-xl border border-dashed p-2">
-                          <p className="text-ink-400 text-[10px] font-bold uppercase tracking-wide">
-                            Not playing this month
-                          </p>
-                          <div className="mt-1.5 flex flex-wrap gap-1">
-                            {missing.map((u) => (
-                              <GradeChip
-                                key={u.key}
-                                unit={u}
-                                fromSessionId={null}
-                                windowLabel={win.label}
-                                weekendLabel="the bench"
-                                armed={armed}
-                                interactive={interactive}
-                                onArm={setArmed}
-                                muted
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </section>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* What the math noticed, in plain language. */}
-            {suggestions.length > 0 && (
+            {/* What the math noticed, in plain language. It describes the
+                proposal, so it stays quiet while the kept calendar is up. */}
+            {suggestions.length > 0 && !showingKept && (
               <div className="mt-4 space-y-1.5">
                 {suggestions.slice(0, 6).map((s, i) => (
                   <p
@@ -533,8 +490,10 @@ export function CalendarStep({
               </div>
             )}
 
-            {/* The quiet door to the levers, and the one button that commits. */}
-            {interactive && (
+            {/* The quiet door to the levers, and the one button that commits.
+                Both act on the proposal, so neither is offered while the kept
+                calendar is the thing on screen. */}
+            {interactive && !showingKept && (
               <>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-4">
@@ -549,7 +508,9 @@ export function CalendarStep({
                     >
                       Adjust grouping rules
                     </button>
-                    {kept && (
+                    {/* The board's own lens. The strip has the two calendars
+                        side by side already, so it does not need it. */}
+                    {kept && view === "board" && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -611,6 +572,109 @@ export function CalendarStep({
             )}
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+/** The board: one column per month window, weekends stacked inside. Where a
+ *  month gets rearranged, which is what a column is good at. */
+function BoardView({
+  state,
+  assignment,
+  unitByKey,
+  usualVenues,
+  armed,
+  interactive,
+  onArm,
+  onMove,
+  onRemove,
+  onDrop,
+  compare,
+}: {
+  state: PlannerState
+  assignment: Record<string, string[]>
+  unitByKey: Map<string, PlannerUnit>
+  /** The gym signature most weekends run, so a card only names its gyms when
+   *  that weekend differs. */
+  usualVenues: string
+  armed: Armed | null
+  interactive: boolean
+  onArm: (armed: Armed | null) => void
+  onMove: (unitKey: string, from: string | null, to: string) => void
+  onRemove: (unitKey: string, from: string) => void
+  onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
+  compare: { byWeekend: Map<string, WeekendDiff>; keptOn: Map<string, string> } | null
+}) {
+  return (
+    <div className="overflow-x-auto pb-2">
+      <div
+        className="grid gap-2.5"
+        style={{
+          gridTemplateColumns: `repeat(${state.windows.length}, minmax(172px, 1fr))`,
+          minWidth: `${state.windows.length * 172}px`,
+          // A two-month season should not stretch its columns across the whole
+          // page just because there is room.
+          maxWidth: `${state.windows.length * 260}px`,
+        }}
+      >
+        {state.windows.map((win, i) => {
+          const inWindow = new Set(win.weekends.flatMap((w) => assignment[w.sessionId] ?? []))
+          const missing = state.units.filter((u) => u.teams > 0 && !inWindow.has(u.key))
+          return (
+            <section key={win.label} className="border-ink-100 bg-ink-50/50 rounded-2xl border p-2.5">
+              <h3 className="text-ink-500 mb-2 px-1 text-[11px] font-bold uppercase tracking-[0.08em]">
+                Session {i + 1} · {win.label.split(" ")[0]}
+              </h3>
+              {win.weekends.map((w) => (
+                <WeekendCard
+                  key={w.sessionId}
+                  weekend={w}
+                  windowLabel={win.label}
+                  units={state.units}
+                  keys={assignment[w.sessionId] ?? []}
+                  unitByKey={unitByKey}
+                  namesGyms={
+                    w.venues.length > 0 &&
+                    w.venues.map((v) => v.venueId).sort().join("|") !== usualVenues
+                  }
+                  armed={armed}
+                  interactive={interactive}
+                  onArm={onArm}
+                  onMove={onMove}
+                  onRemove={onRemove}
+                  onDrop={onDrop}
+                  onDisarm={() => onArm(null)}
+                  diff={compare?.byWeekend.get(w.sessionId)}
+                  keptOn={compare?.keptOn}
+                />
+              ))}
+
+              {missing.length > 0 && (
+                <div className="border-ink-200 rounded-xl border border-dashed p-2">
+                  <p className="text-ink-400 text-[10px] font-bold uppercase tracking-wide">
+                    Not playing this month
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {missing.map((u) => (
+                      <GradeChip
+                        key={u.key}
+                        unit={u}
+                        fromSessionId={null}
+                        windowLabel={win.label}
+                        weekendLabel="the bench"
+                        armed={armed}
+                        interactive={interactive}
+                        onArm={onArm}
+                        muted
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )
+        })}
       </div>
     </div>
   )
