@@ -555,6 +555,122 @@ export function currentAssignment(state: PlannerState): Record<string, string[]>
   return out
 }
 
+/* ------------------------- comparing two calendars ----------------------- */
+
+export interface WeekendDiff {
+  sessionId: string
+  /** Grades the two calendars put on this weekend together. */
+  agreed: string[]
+  /** Grades this calendar has here that the reference does not. */
+  added: string[]
+  /** Grades the reference has here that this calendar does not. */
+  removed: string[]
+}
+
+export interface AssignmentDiffSummary {
+  /** Placements the reference calendar makes — the "of M" in the verdict. */
+  placements: number
+  /** Placements both calendars make on the same weekend. */
+  agreedCount: number
+  /** A grade the reference and the board both play that month, on different
+   *  weekends of it. */
+  moved: Array<{ unitKey: string; fromSessionId: string; toSessionId: string }>
+  /** One unit key per reference placement the board never replaces anywhere
+   *  in that month. A grade absent from two months appears twice, so
+   *  agreedCount + moved + missing always adds up to `placements`. */
+  missing: string[]
+  /** One unit key per board placement the reference has nowhere that month. */
+  extra: string[]
+}
+
+export interface AssignmentDiff {
+  /** In board order: every weekend of every window, including the quiet ones,
+   *  so a caller can look one up without worrying whether it differed. */
+  weekends: WeekendDiff[]
+  summary: AssignmentDiffSummary
+}
+
+/**
+ * Two calendars for the same season, side by side: what the board currently
+ * says against a reference calendar (in practice the one the league kept).
+ *
+ * The month is the unit of meaning, because the league's own rule is that a
+ * grade plays one weekend per monthly session. So a grade the reference has on
+ * one weekend of October and the board has on another weekend of October MOVED
+ * — the operator still plays it that month, just elsewhere. A grade the
+ * reference plays in October and the board plays nowhere in October is MISSING
+ * from October, even if the board picked it up in November: November is a
+ * different promise. The mirror case, a board placement the reference has
+ * nowhere that month, is EXTRA.
+ *
+ * Only weekends the board draws (state.windows) and grades the board knows
+ * (state.units) are compared: a diff can only talk about what is on screen.
+ */
+export function diffAssignments(
+  state: PlannerState,
+  reference: Record<string, string[]>,
+  current: Record<string, string[]>
+): AssignmentDiff {
+  const order = new Map(state.units.map((u, i) => [u.key, i]))
+  const known = (keys: string[] | undefined) =>
+    (keys ?? []).filter((k) => order.has(k))
+  const sorted = (keys: string[]) =>
+    [...new Set(keys)].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
+
+  const weekends: WeekendDiff[] = []
+  const summary: AssignmentDiffSummary = {
+    placements: 0,
+    agreedCount: 0,
+    moved: [],
+    missing: [],
+    extra: [],
+  }
+
+  for (const win of state.windows) {
+    // Per grade, which weekends of THIS month each calendar dropped it on.
+    const refHomes = new Map<string, string[]>()
+    const curHomes = new Map<string, string[]>()
+
+    for (const w of win.weekends) {
+      const ref = new Set(known(reference[w.sessionId]))
+      const cur = new Set(known(current[w.sessionId]))
+      const agreed: string[] = []
+      const added: string[] = []
+      const removed: string[] = []
+      for (const key of cur) (ref.has(key) ? agreed : added).push(key)
+      for (const key of ref) if (!cur.has(key)) removed.push(key)
+      weekends.push({
+        sessionId: w.sessionId,
+        agreed: sorted(agreed),
+        added: sorted(added),
+        removed: sorted(removed),
+      })
+      summary.placements += ref.size
+      summary.agreedCount += agreed.length
+      for (const key of removed) refHomes.set(key, [...(refHomes.get(key) ?? []), w.sessionId])
+      for (const key of added) curHomes.set(key, [...(curHomes.get(key) ?? []), w.sessionId])
+    }
+
+    // Pair each vacated weekend with a new one in the same month, in calendar
+    // order: that pairing is the move. Whatever is left over is a hole (or,
+    // on the board's side, something the reference never planned).
+    for (const [unitKey, fromIds] of refHomes) {
+      const toIds = curHomes.get(unitKey) ?? []
+      const pairs = Math.min(fromIds.length, toIds.length)
+      for (let i = 0; i < pairs; i++) {
+        summary.moved.push({ unitKey, fromSessionId: fromIds[i], toSessionId: toIds[i] })
+      }
+      for (let i = pairs; i < fromIds.length; i++) summary.missing.push(unitKey)
+      curHomes.set(unitKey, toIds.slice(pairs))
+    }
+    for (const [unitKey, toIds] of curHomes) {
+      for (let i = 0; i < toIds.length; i++) summary.extra.push(unitKey)
+    }
+  }
+
+  return { weekends, summary }
+}
+
 /** Plain-language observations about an assignment — the suggestion rail. */
 export function suggestFor(
   state: PlannerState,

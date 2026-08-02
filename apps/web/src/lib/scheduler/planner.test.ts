@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  diffAssignments,
   expectedTeamUpdates,
   gradeAbbrev,
   gradeLine,
@@ -659,5 +660,131 @@ describe("weekendsNeedingAttention", () => {
     expect(flagged.every((f) => f.load.tone === "tight")).toBe(true)
     expect(flagged).toHaveLength(1)
     expect(flagged[0].label).toBe("Dec 12–13")
+  })
+})
+
+describe("diffAssignments", () => {
+  const clone = (plan: Record<string, string[]>) =>
+    Object.fromEntries(Object.entries(plan).map(([sid, keys]) => [sid, [...keys]]))
+
+  const drop = (plan: Record<string, string[]>, sessionId: string, key: string) => {
+    const next = clone(plan)
+    next[sessionId] = (next[sessionId] ?? []).filter((k) => k !== key)
+    return next
+  }
+
+  const add = (plan: Record<string, string[]>, sessionId: string, key: string) => {
+    const next = clone(plan)
+    next[sessionId] = [...(next[sessionId] ?? []), key]
+    return next
+  }
+
+  const at = (diff: ReturnType<typeof diffAssignments>, sessionId: string) =>
+    diff.weekends.find((w) => w.sessionId === sessionId)!
+
+  /** The weekend a plan puts a grade on inside one window. */
+  const homeOf = (state: PlannerState, plan: Record<string, string[]>, win: number, key: string) =>
+    state.windows[win].weekends.find((w) => (plan[w.sessionId] ?? []).includes(key))!.sessionId
+
+  it("an identical calendar agrees on every placement", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const diff = diffAssignments(state, kept, kept)
+    const placed = Object.values(kept).reduce((n, keys) => n + keys.length, 0)
+    expect(diff.summary.placements).toBe(placed)
+    expect(diff.summary.agreedCount).toBe(placed)
+    expect(diff.summary.moved).toHaveLength(0)
+    expect(diff.summary.missing).toHaveLength(0)
+    expect(diff.summary.extra).toHaveLength(0)
+    expect(diff.weekends.every((w) => w.added.length === 0 && w.removed.length === 0)).toBe(true)
+    // Every weekend of the board is in the diff, quiet ones included.
+    expect(diff.weekends).toHaveLength(13)
+  })
+
+  it("same month, different weekend, is a move (not a hole and a surprise)", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const from = homeOf(state, kept, 0, "age:Gr7")
+    const to = state.windows[0].weekends.find((w) => w.sessionId !== from)!.sessionId
+    const board = add(drop(kept, from, "age:Gr7"), to, "age:Gr7")
+
+    const diff = diffAssignments(state, kept, board)
+    expect(diff.summary.moved).toEqual([
+      { unitKey: "age:Gr7", fromSessionId: from, toSessionId: to },
+    ])
+    expect(diff.summary.missing).toHaveLength(0)
+    expect(diff.summary.extra).toHaveLength(0)
+    expect(diff.summary.agreedCount).toBe(diff.summary.placements - 1)
+    expect(at(diff, from).removed).toEqual(["age:Gr7"])
+    expect(at(diff, from).agreed).not.toContain("age:Gr7")
+    expect(at(diff, to).added).toEqual(["age:Gr7"])
+  })
+
+  it("a grade taken off the month with nowhere to land is missing", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const from = homeOf(state, kept, 1, "age:Gr10")
+    const diff = diffAssignments(state, kept, drop(kept, from, "age:Gr10"))
+
+    expect(diff.summary.missing).toEqual(["age:Gr10"])
+    expect(diff.summary.moved).toHaveLength(0)
+    expect(diff.summary.extra).toHaveLength(0)
+    expect(at(diff, from).removed).toEqual(["age:Gr10"])
+  })
+
+  it("a placement the kept calendar never made that month is extra", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const other = state.windows[2].weekends.find(
+      (w) => !(kept[w.sessionId] ?? []).includes("age:Gr8")
+    )!.sessionId
+    const diff = diffAssignments(state, kept, add(kept, other, "age:Gr8"))
+
+    expect(diff.summary.extra).toEqual(["age:Gr8"])
+    expect(diff.summary.moved).toHaveLength(0)
+    expect(diff.summary.missing).toHaveLength(0)
+    expect(diff.summary.agreedCount).toBe(diff.summary.placements)
+    expect(at(diff, other).added).toEqual(["age:Gr8"])
+  })
+
+  it("a grade that jumps months is missing there and extra here, never a move", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const octHome = homeOf(state, kept, 0, "age:Gr11")
+    const novFree = state.windows[1].weekends.find(
+      (w) => !(kept[w.sessionId] ?? []).includes("age:Gr11")
+    )!.sessionId
+    const diff = diffAssignments(state, kept, add(drop(kept, octHome, "age:Gr11"), novFree, "age:Gr11"))
+
+    expect(diff.summary.moved).toHaveLength(0)
+    expect(diff.summary.missing).toEqual(["age:Gr11"])
+    expect(diff.summary.extra).toEqual(["age:Gr11"])
+  })
+
+  it("agreed + moved + missing always accounts for every kept placement", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    let board = drop(kept, homeOf(state, kept, 0, "age:Gr9"), "age:Gr9")
+    board = add(board, state.windows[0].weekends[0].sessionId, "age:JrGirls")
+    board = drop(board, homeOf(state, kept, 3, "age:Gr12"), "age:Gr12")
+    board = add(board, homeOf(state, kept, 3, "age:Gr7"), "age:Gr12")
+
+    const { summary } = diffAssignments(state, kept, board)
+    expect(summary.agreedCount + summary.moved.length + summary.missing.length).toBe(
+      summary.placements
+    )
+  })
+
+  it("ignores grades and weekends the board does not know about", () => {
+    const state = nphState()
+    const kept = proposePlan(state, "balance")
+    const noisy = add(clone(kept), state.windows[0].weekends[0].sessionId, "age:Deleted")
+    noisy["not-a-weekend-of-this-season"] = ["age:Gr7"]
+    const diff = diffAssignments(state, noisy, kept)
+
+    expect(diff.summary.missing).toHaveLength(0)
+    expect(diff.summary.extra).toHaveLength(0)
+    expect(diff.summary.agreedCount).toBe(diff.summary.placements)
+    expect(diff.weekends.some((w) => w.sessionId === "not-a-weekend-of-this-season")).toBe(false)
   })
 })

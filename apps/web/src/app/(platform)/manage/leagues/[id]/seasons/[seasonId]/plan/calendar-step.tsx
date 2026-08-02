@@ -4,14 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui"
 import {
   currentAssignment,
+  diffAssignments,
   planSummary,
   weekendLoad,
+  type AssignmentDiffSummary,
   type PlannerLever,
   type PlannerState,
   type PlannerSuggestion,
   type PlannerUnit,
   type PlannerWeekend,
   type PlanSummary,
+  type WeekendDiff,
   type WeekendLoad,
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
@@ -43,6 +46,9 @@ const COPY = {
   unsaved: "Nothing is saved until you keep it.",
   oneWeekendPerMonth:
     "Every grade gets one weekend a month, so move it to another weekend in the same month.",
+  compareSame: "This is the kept calendar, unchanged.",
+  compareLegend:
+    "Green agrees with what you kept, amber moved to another weekend that month, and a dashed chip is where the kept calendar had that grade.",
 }
 
 const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
@@ -86,6 +92,38 @@ function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE; text:
   return { tone: "ok", text: "All grades fit" }
 }
 
+/**
+ * The verdict on the board against the calendar the league kept: how much of
+ * their own plan we reproduce, and what we do differently. Zero clauses are
+ * left out, because "0 missing" is a sentence nobody needs to read.
+ */
+function compareLine(summary: AssignmentDiffSummary): string {
+  const { placements, agreedCount, moved, missing, extra } = summary
+  const parts: string[] = []
+  if (moved.length > 0) parts.push(`${moved.length} moved`)
+  if (missing.length > 0) parts.push(`${missing.length} missing`)
+  if (extra.length > 0) parts.push(`${extra.length} added`)
+  if (parts.length === 0 && agreedCount === placements) return COPY.compareSame
+  const lead = `Agrees with the kept calendar on ${agreedCount} of ${plural(
+    placements,
+    "placement",
+    "placements"
+  )}.`
+  return parts.length > 0 ? `${lead} ${parts.join(", ")}.` : lead
+}
+
+/**
+ * The weekend a chip's caption points back to. A grade only ever moves inside
+ * its own month column, so the leading month is noise: "Oct 24–25" becomes
+ * "24–25". A weekend that straddles two months keeps the second one, because
+ * "31–1" tells nobody anything.
+ */
+function keptDayLabel(label: string): string {
+  const [from, to] = label.split("–")
+  if (!to) return label
+  return `${from.match(/\d+/)?.[0] ?? from.trim()}–${to.trim()}`
+}
+
 interface Armed {
   unitKey: string
   label: string
@@ -112,6 +150,11 @@ export function CalendarStep({
   const [error, setError] = useState<string | null>(null)
   const [armed, setArmed] = useState<Armed | null>(null)
   const [showRules, setShowRules] = useState(false)
+  /** The calendar as SAVED, captured before any proposal touches the board.
+   *  Null until the league has kept one. This is what compare mode measures
+   *  against, so it must never be the working assignment. */
+  const [kept, setKept] = useState<Record<string, string[]> | null>(null)
+  const [comparing, setComparing] = useState(false)
 
   const propose = useCallback(
     async (lever: PlannerLever) => {
@@ -157,6 +200,7 @@ export function CalendarStep({
     setState(next)
     setLocked(isLocked)
     setArmed(null)
+    setKept(hasSaved ? saved : null)
     onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
     setAssignment(opening ? opening.assignment : saved)
     setSuggestions((opening ? opening.suggestions : data.suggestions) ?? [])
@@ -208,8 +252,11 @@ export function CalendarStep({
       return
     }
     const data = await res.json()
+    const savedNow = currentAssignment(data.state)
     setState(data.state)
-    setAssignment(currentAssignment(data.state))
+    setAssignment(savedNow)
+    // What was just kept becomes the calendar every later comparison is against.
+    setKept(savedNow)
     setSuggestions(data.suggestions ?? [])
     setArmed(null)
     setDirty(false)
@@ -267,6 +314,24 @@ export function CalendarStep({
     () => (state ? planSummary(state, assignment) : null),
     [state, assignment]
   )
+
+  /** Compare mode is a lens, not a freeze: this recomputes on every drag, tap
+   *  and lever, so the diff always describes the board on screen. */
+  const compare = useMemo(() => {
+    if (!comparing || !state || !kept) return null
+    const diff = diffAssignments(state, kept, assignment)
+    const byWeekend = new Map(diff.weekends.map((w) => [w.sessionId, w]))
+    const days = new Map<string, string>()
+    for (const win of state.windows)
+      for (const w of win.weekends) days.set(w.sessionId, keptDayLabel(w.label))
+    // For a grade that landed on a new weekend: which weekend the kept
+    // calendar plays it on, keyed the way the chip asks for it.
+    const keptOn = new Map<string, string>()
+    for (const m of diff.summary.moved) {
+      keptOn.set(`${m.toSessionId}|${m.unitKey}`, days.get(m.fromSessionId) ?? "")
+    }
+    return { line: compareLine(diff.summary), byWeekend, keptOn }
+  }, [comparing, state, kept, assignment])
 
   /** Most weekends run the same set of gyms. Naming one on every card is
    *  noise, so a card only names its gyms when they differ from the season's
@@ -336,7 +401,17 @@ export function CalendarStep({
             {error}
           </p>
         )}
-        {notice && !error && (
+        {compare && !error && (
+          <div
+            className="border-gold-400 bg-gold-50 mb-4 rounded-xl border px-4 py-2.5"
+            aria-live="polite"
+            data-testid="compare-banner"
+          >
+            <p className="text-ink-900 text-sm font-semibold">{compare.line}</p>
+            <p className="text-ink-500 mt-0.5 text-xs">{COPY.compareLegend}</p>
+          </div>
+        )}
+        {notice && !error && !compare && (
           <p className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
             {notice}
           </p>
@@ -400,6 +475,8 @@ export function CalendarStep({
                           onRemove={removeUnit}
                           onDrop={onDrop}
                           onDisarm={() => setArmed(null)}
+                          diff={compare?.byWeekend.get(w.sessionId)}
+                          keptOn={compare?.keptOn}
                         />
                       ))}
 
@@ -460,17 +537,33 @@ export function CalendarStep({
             {interactive && (
               <>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowRules((v) => !v)
-                    }}
-                    aria-expanded={showRules}
-                    className="text-play-700 hover:text-play-800 text-sm font-semibold"
-                  >
-                    Adjust grouping rules
-                  </button>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowRules((v) => !v)
+                      }}
+                      aria-expanded={showRules}
+                      className="text-play-700 hover:text-play-800 text-sm font-semibold"
+                    >
+                      Adjust grouping rules
+                    </button>
+                    {kept && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setComparing((v) => !v)
+                        }}
+                        aria-pressed={comparing}
+                        data-testid="compare-toggle"
+                        className="text-play-700 hover:text-play-800 text-sm font-semibold"
+                      >
+                        {comparing ? "Stop comparing" : "Compare with the kept calendar"}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-ink-400 text-xs">
                       {dirty ? COPY.unsaved : "This calendar is saved."}
@@ -539,6 +632,8 @@ function WeekendCard({
   onRemove,
   onDrop,
   onDisarm,
+  diff,
+  keptOn,
 }: {
   weekend: PlannerWeekend
   windowLabel: string
@@ -553,6 +648,10 @@ function WeekendCard({
   onRemove: (unitKey: string, from: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDisarm: () => void
+  /** Set only in compare mode: this weekend against the kept calendar. */
+  diff?: WeekendDiff
+  /** "<sessionId>|<unitKey>" → the days the kept calendar plays it on. */
+  keptOn?: Map<string, string>
 }) {
   const load = weekendLoad(units, weekend, keys)
   const droppable = interactive && load.capacity > 0
@@ -592,10 +691,13 @@ function WeekendCard({
         {weekend.label}
       </p>
 
-      <div className="my-1.5 flex flex-wrap gap-1">
+      <div className="my-1.5 flex flex-wrap items-start gap-1">
         {keys.map((k) => {
           const unit = unitByKey.get(k)
           if (!unit) return null
+          const agreed = diff?.agreed.includes(k)
+          const changed = diff?.added.includes(k)
+          const keptDays = keptOn?.get(`${weekend.sessionId}|${k}`)
           return (
             <GradeChip
               key={k}
@@ -607,10 +709,28 @@ function WeekendCard({
               interactive={interactive}
               onArm={onArm}
               onRemove={() => onRemove(k, weekend.sessionId)}
+              diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
+              caption={
+                changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined
+              }
             />
           )
         })}
-        {keys.length === 0 && (
+        {/* Where the kept calendar plays a grade this weekend and the board
+            no longer does: a hole you can see, in its place. */}
+        {(diff?.removed ?? []).map((k) => {
+          const unit = unitByKey.get(k)
+          if (!unit) return null
+          return (
+            <span
+              key={`kept-${k}`}
+              className="border-ink-300 text-ink-400 inline-flex items-center rounded-lg border border-dashed px-1.5 py-0.5 text-[11px] font-bold"
+            >
+              {unit.label} · kept here
+            </span>
+          )
+        })}
+        {keys.length === 0 && (diff?.removed.length ?? 0) === 0 && (
           <span className="text-ink-300 text-[11px]">
             {load.capacity > 0 ? "No grades here" : "Gym not yours"}
           </span>
@@ -660,6 +780,8 @@ function GradeChip({
   onArm,
   onRemove,
   muted,
+  diffTone,
+  caption,
 }: {
   unit: PlannerUnit
   fromSessionId: string | null
@@ -670,9 +792,21 @@ function GradeChip({
   onArm: (a: Armed | null) => void
   onRemove?: () => void
   muted?: boolean
+  /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
+  diffTone?: "agreed" | "changed"
+  /** Compare mode: where the kept calendar plays this grade instead. */
+  caption?: string
 }) {
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
-  return (
+  // Arming is a live action, so it outranks the compare ring while it lasts.
+  const ring = isArmed
+    ? "ring-play-500 ring-2"
+    : diffTone === "agreed"
+      ? "ring-court-400 ring-1"
+      : diffTone === "changed"
+        ? "ring-gold-500 ring-1"
+        : ""
+  const chip = (
     <span
       draggable={interactive}
       onDragStart={(e) =>
@@ -681,13 +815,12 @@ function GradeChip({
           JSON.stringify({ unitKey: unit.key, fromSessionId, window: windowLabel })
         )
       }
+      data-diff={diffTone}
       className={`inline-flex items-center gap-0.5 rounded-lg border pl-1.5 text-[11px] font-bold ${
         muted
           ? "border-ink-200 bg-ink-50 text-ink-500"
           : "border-court-200 bg-court-50 text-court-800"
-      } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${
-        isArmed ? "ring-play-500 ring-2" : ""
-      }`}
+      } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring}`}
     >
       <button
         type="button"
@@ -720,6 +853,14 @@ function GradeChip({
           ×
         </button>
       )}
+    </span>
+  )
+
+  if (!caption) return chip
+  return (
+    <span className="inline-flex flex-col items-start gap-0.5">
+      {chip}
+      <span className="text-gold-600 pl-0.5 text-[9px] font-bold leading-none">{caption}</span>
     </span>
   )
 }
