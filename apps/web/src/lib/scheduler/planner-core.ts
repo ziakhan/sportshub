@@ -32,37 +32,45 @@ export interface PlannerUnit {
    *  one gym all season (travel fairness, owner 2026-08-02). For an
    *  alternating grade the carried gym is the one to AVOID next, not a home. */
   alternate?: boolean
-  /** What the board plans on: the operator's step-1 number, never below the
-   *  teams already registered — `planningTeams(approved, expected)`.
-   *  Everything that computes capacity reads THIS number. */
+  /** What the board plans on: the operator's step-1 estimate, and only that
+   *  — `planningTeams(approved, expected)`. Everything that computes capacity
+   *  reads THIS number. */
   teams: number
-  /** Teams actually registered (approved submissions). */
+  /** Teams actually registered (approved submissions). Overlay only: it is
+   *  drawn next to the plan, never folded into it. */
   approved: number
   /** What step 1 said to expect. Zero when nobody ever estimated this grade. */
   expected: number
-  /** Which of the two numbers is driving `teams`. */
+  /** Whether the plan has a number for this grade at all. */
   source: "approved" | "expected" | "none"
 }
 
 /**
- * The number a grade plans on (owner ruling 2026-08-02: "I need to be able to
- * edit every team count for the planning mode even if teams are registered").
- * Planning is the operator's call, so their estimate leads — but a plan never
- * makes room for fewer teams than have already registered, because those
- * teams are coming whatever the estimate says.
+ * The number a grade plans on. Owner ruling 2026-08-02, which SUPERSEDES the
+ * earlier max(approved, expected) rule: "The planning phase should not be
+ * looking at the real teams until we get to the real scheduling. The estimate
+ * should be the number entered by the human, not what's in the database. If
+ * teams sign up below the estimates that's fine. If you go over, maybe a
+ * slight warning somewhere."
+ *
+ * So the estimate is the plan, period. `approved` stays in the signature
+ * because every caller holds both numbers and the screens show them side by
+ * side, but registration never moves the plan: it is overlay data (the
+ * "N registered" chip, the gold over-the-estimate warning, the step-5 bars).
  */
 export function planningTeams(approved: number, expected: number): number {
-  return Math.max(approved, expected)
+  return expected
 }
 
-/** Which number is driving `planningTeams`: the estimate when it leads,
- *  registration when it does, "none" when the grade has neither yet. */
+/** Whether a grade has a planning number: "expected" once the operator has
+ *  estimated it, "none" while they have not. Never "approved" since the
+ *  2026-08-02 ruling — registration counts do not drive planning — but the
+ *  value stays in the union for signature stability. */
 export function planningSource(
   approved: number,
   expected: number
 ): "approved" | "expected" | "none" {
-  if (expected > approved) return "expected"
-  return approved > 0 ? "approved" : "none"
+  return expected > 0 ? "expected" : "none"
 }
 
 export interface PlannerVenue {
@@ -261,9 +269,10 @@ export interface AttentionWeekend {
  * weekend that is actually short of courts, not the one that merely has no
  * spare slot.
  *
- * It reads the units' `teams`, the planning number, which never sits below
- * the teams that have registered — that is the whole point of watching in
- * October.
+ * It reads the units' `teams`, the planning number, which is the operator's
+ * estimate. Registration is drawn against that estimate rather than folded
+ * into it, so a grade that outgrows its number shows up as a warning here and
+ * on the bars, in October, while a court can still be booked.
  */
 export function weekendsNeedingAttention(
   state: PlannerState,

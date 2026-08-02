@@ -8,14 +8,17 @@ import { GET, PATCH } from "./route"
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
 /**
- * The planning number (plan wizard step 1, owner ruling 2026-08-02: "I need
- * to be able to edit every team count for the planning mode even if teams are
- * registered and you should plan according to that number").
+ * The planning number (plan wizard step 1). Owner ruling 2026-08-02, which
+ * SUPERSEDES the earlier max(approved, expected) rule this file used to pin:
+ * "The planning phase should not be looking at the real teams until we get to
+ * the real scheduling. The estimate should be the number entered by the human,
+ * not what's in the database. If teams sign up below the estimates that's
+ * fine. If you go over, maybe a slight warning somewhere."
  *
  * Two contracts:
- *   - a grade plans on the operator's estimate, floored at the teams already
- *     registered: max(approved, expected), per GRADE cluster, never per
- *     division
+ *   - a grade plans on the operator's estimate and nothing else, per GRADE
+ *     cluster (never per division). Registered teams ride along on the state
+ *     as overlay data for the chips and the step-5 bars.
  *   - a registered grade is still editable while the season is unlocked. Only
  *     the season lock stops the save.
  */
@@ -71,7 +74,8 @@ beforeAll(async () => {
             divisions: [
               // Registered, and the operator expects more to come.
               { name: "Grade 7", ageGroup: "Grade 7", teams: 3, rosterSize: 1 },
-              // Registered past the estimate: reality is the floor.
+              // Registered past the estimate: a warning on screen, not a
+              // bigger plan.
               { name: "Grade 8", ageGroup: "Grade 8", teams: 5, rosterSize: 1 },
               // Nobody in yet: the estimate IS the plan.
               { name: "Grade 9", ageGroup: "Grade 9", teams: 0 },
@@ -106,24 +110,27 @@ afterAll(async () => {
 })
 
 describe("the planning number", () => {
-  it("starts at registration when nobody has estimated yet", async () => {
-    expect(await unit("Grade 7")).toMatchObject({ teams: 3, approved: 3, expected: 0 })
-    expect((await unit("Grade 7"))!.source).toBe("approved")
+  it("plans nothing for a grade nobody has estimated, teams in or not", async () => {
+    // Three teams are registered; until a human says a number, this grade is
+    // not in the plan (it still shows those three as overlay data).
+    expect(await unit("Grade 7")).toMatchObject({ teams: 0, approved: 3, expected: 0 })
+    expect((await unit("Grade 7"))!.source).toBe("none")
   })
 
-  it("plans on the operator's number once they say a bigger one", async () => {
+  it("plans on the operator's number once they say one", async () => {
     expect((await estimate("Grade 7", [8])).status).toBe(200)
 
     expect(await unit("Grade 7")).toMatchObject({ teams: 8, approved: 3, expected: 8 })
     expect((await unit("Grade 7"))!.source).toBe("expected")
   })
 
-  it("never plans for fewer teams than have registered", async () => {
+  it("plans on the estimate even when more teams have registered", async () => {
     expect((await estimate("Grade 8", [2])).status).toBe(200)
 
-    // The estimate is saved and shown, but the plan holds the real five.
-    expect(await unit("Grade 8")).toMatchObject({ teams: 5, approved: 5, expected: 2 })
-    expect((await unit("Grade 8"))!.source).toBe("approved")
+    // Five are really in, the operator planned for two: the plan holds two
+    // and the five are what the over-the-estimate warning is drawn from.
+    expect(await unit("Grade 8")).toMatchObject({ teams: 2, approved: 5, expected: 2 })
+    expect((await unit("Grade 8"))!.source).toBe("expected")
   })
 
   it("plans on the estimate alone before anyone registers", async () => {
@@ -138,14 +145,14 @@ describe("the planning number", () => {
     expect((await unit("Grade 10"))!.source).toBe("none")
   })
 
-  it("floors the GRADE, not each division inside it", async () => {
+  it("counts the GRADE, not each division inside it", async () => {
     // Three teams registered across two divisions; the operator plans 2 + 2.
     expect((await estimate("Junior Girls", [2, 2])).status).toBe(200)
     expect(await unit("Junior Girls")).toMatchObject({ teams: 4, approved: 3, expected: 4 })
 
-    // Drop the estimate under the cluster: the three that are in still play.
+    // Drop the estimate under what registered: the plan follows the human.
     expect((await estimate("Junior Girls", [1, 1])).status).toBe(200)
-    expect(await unit("Junior Girls")).toMatchObject({ teams: 3, approved: 3, expected: 2 })
+    expect(await unit("Junior Girls")).toMatchObject({ teams: 2, approved: 3, expected: 2 })
   })
 })
 

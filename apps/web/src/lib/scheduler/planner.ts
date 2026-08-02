@@ -98,8 +98,10 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
       label: ageGroup,
       divisionIds: c.divisionIds,
       alternate: c.alternate,
-      // The operator's number leads, and never plans for fewer teams than
-      // have already registered (owner ruling 2026-08-02).
+      // The plan runs on the operator's estimate alone (owner ruling
+      // 2026-08-02): planning does not look at the real teams until real
+      // scheduling. Registration below the estimate is fine; over it is a
+      // warning on screen, not a bigger plan.
       teams: planningTeams(c.approved, c.expected),
       // Both halves ride along so the watch screen can draw registration
       // against the estimate without a second query. `teams` keeps its one

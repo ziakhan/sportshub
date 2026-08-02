@@ -14,19 +14,30 @@ import {
  * operator's own summer starts: a guess about how many teams show up, one
  * number per grade. No dates, no venues, no jargon.
  *
- * Two rules the screen is built around:
+ * Three rules the screen is built around:
  *   - last season is a HINT, never a default we quietly commit them to. It
  *     shows only where there is real history, and never as a zero.
- *   - planning is the operator's call (owner ruling 2026-08-02). Every grade
- *     stays editable while the season is unlocked, registered or not; the
- *     plan then runs on their number and never below what has registered
- *     (planningTeams), so a grade that fills up keeps its real floor.
+ *   - the plan is the operator's estimate and nothing else (owner ruling
+ *     2026-08-02: "the planning phase should not be looking at the real teams
+ *     until we get to the real scheduling"). Registration is an overlay on
+ *     these rows, never a floor under them.
+ *   - registration going PAST an estimate is worth a quiet warning, not a
+ *     silent bigger plan: that is the gold chip on the row, and the bars on
+ *     step 5.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
 /** Room for the biggest grade any real league runs, with headroom. */
 const MAX_PER_GRADE = 200
 const SAVE_DEBOUNCE_MS = 600
+/** A grade label is a label, not an essay. */
+const MAX_GRADE_LABEL = 40
+
+const CHIP = "rounded-full border px-2 py-0.5 text-[11px] font-bold"
+const CHIP_QUIET = `${CHIP} border-ink-100 bg-ink-50 text-ink-500`
+/** Caution, not failure: the season still works, the operator just planned
+ *  for fewer teams than showed up. */
+const CHIP_WARN = `${CHIP} border-gold-400 bg-gold-50 text-gold-600`
 
 export interface PlanHeaderInfo {
   leagueName?: string | null
@@ -55,6 +66,9 @@ export function TeamsStep({
   const [locked, setLocked] = useState(false)
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle")
   const [error, setError] = useState<string | null>(null)
+  const [newGrade, setNewGrade] = useState("")
+  const [addingGrade, setAddingGrade] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
 
   // Refs so the debounced save always sends the LATEST numbers without
   // re-arming itself on every keystroke of the stepper.
@@ -83,7 +97,8 @@ export function TeamsStep({
     unitsRef.current = next.units
     // The stepper edits the ESTIMATE. A grade that never got one starts from
     // the teams already registered, so + counts up from reality instead of
-    // from zero — seeded only, never saved until the operator moves it.
+    // from zero. A hint, never a floor: nothing is saved, and until it is
+    // saved the row says the grade is not in the plan yet.
     const seeded = Object.fromEntries(
       next.units.map((u) => [u.key, u.expected > 0 ? u.expected : u.approved])
     )
@@ -119,9 +134,29 @@ export function TeamsStep({
       setError("That didn't save. Try again.")
       return
     }
+    // The save answers with the whole planner state, so the rows learn which
+    // estimates are really saved (and stop saying "not in the plan yet")
+    // without a second round trip. Counts stay as typed: the operator may
+    // have moved a stepper again while this was in flight.
+    const data = await res.json().catch(() => null)
+    if (data?.state) {
+      const next = data.state as PlannerState
+      setState(next)
+      unitsRef.current = next.units
+    }
     setError(null)
     setSaving("saved")
   }, [seasonId])
+
+  /** Save whatever is pending right now, ahead of anything that reloads the
+   *  season from the server. */
+  const flushNow = useCallback(async () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    await flush()
+  }, [flush])
 
   // A pending change must not die with the screen when the operator jumps
   // straight to step 2.
@@ -151,10 +186,60 @@ export function TeamsStep({
     }, SAVE_DEBOUNCE_MS)
   }
 
+  /**
+   * One tap that turns the teams already in into an estimate, for the grades
+   * that have no estimate at all. Still the operator's decision, and still
+   * their number after: a grade they already put a number on is left exactly
+   * as they left it, even when more teams than that have registered.
+   */
+  const startFromRegistrations = () => {
+    if (locked || !state) return
+    const next = { ...countsRef.current }
+    for (const u of state.units) {
+      if (u.approved <= 0 || u.expected > 0) continue
+      next[u.key] = Math.min(MAX_PER_GRADE, u.approved)
+      dirtyRef.current.add(u.key)
+    }
+    setCounts(next)
+    countsRef.current = next
+    setSaving("saving")
+    void flushNow()
+  }
+
+  /**
+   * Add a grade without leaving the wizard. Same endpoint the season's
+   * settings tab posts to (POST /api/seasons/[id]/divisions), so a grade added
+   * here is the same object, named the same derived way. Single birth year
+   * (Canada): the field is one label, never a range.
+   */
+  const addGrade = async () => {
+    const ageGroup = newGrade.trim()
+    if (!ageGroup || addingGrade || locked) return
+    setAddingGrade(true)
+    setAddError(null)
+    // Anything half-typed into a stepper goes first: the reload below reads
+    // the season back and would otherwise drop it.
+    await flushNow()
+    const res = await fetch(`/api/seasons/${seasonId}/divisions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ageGroup, tier: 1 }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      setAddError(data?.error ?? "That grade didn't save. Try again.")
+      setAddingGrade(false)
+      return
+    }
+    setNewGrade("")
+    await load()
+    setAddingGrade(false)
+  }
+
   const totals = useMemo(
     () => ({
       // Same rule the server plans on, so the line matches the plan: the
-      // operator's number per grade, floored at the teams already in.
+      // operator's estimate per grade, and only that.
       teams: (state?.units ?? []).reduce(
         (sum, u) => sum + planningTeams(u.approved, counts[u.key] ?? 0),
         0
@@ -171,6 +256,10 @@ export function TeamsStep({
 
   const games = Math.round((totals.teams * totals.gamesPerTeam) / 2)
   const anyApproved = state.units.some((u) => u.approved > 0)
+  // Grades with teams in and no estimate at all: the season has entries the
+  // plan leaves out entirely. One tap fixes every one of them at once.
+  const unplanned = state.units.filter((u) => u.approved > 0 && u.expected === 0)
+  const allUnplanned = unplanned.length === state.units.length
 
   return (
     <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
@@ -199,17 +288,39 @@ export function TeamsStep({
           </p>
         )}
 
+        {/* Entries are in and nothing is planned. Offer the shortcut once,
+            as a suggestion the operator commits with one tap. */}
+        {!locked && unplanned.length > 0 && (
+          <div
+            data-testid="start-from-registrations"
+            className="border-court-200 bg-court-50 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
+          >
+            <p className="text-court-900 min-w-0 flex-1 text-sm">
+              {allUnplanned
+                ? "Teams have registered but no grade has an estimate yet, so the plan is still empty."
+                : `${unplanned.length} grade${unplanned.length === 1 ? " has" : "s have"} teams registered and no estimate, so the plan leaves ${unplanned.length === 1 ? "it" : "them"} out.`}{" "}
+              Start from the teams already in, then change any number.
+            </p>
+            <button
+              type="button"
+              onClick={startFromRegistrations}
+              className="border-court-200 text-court-900 hover:bg-court-100 shrink-0 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+            >
+              Start from registrations
+            </button>
+          </div>
+        )}
+
         {state.units.length === 0 ? (
           <div className="border-ink-200 rounded-xl border border-dashed px-4 py-6 text-center">
             <p className="text-ink-500 text-sm">
-              This season has no grades yet. Add them once and every grade shows up here as a
-              row.
+              This season has no grades yet. Add one below and it shows up here as a row.
             </p>
             <Link
               href={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=settings#divisions`}
               className="text-play-700 hover:text-play-800 mt-2 inline-block text-sm font-semibold"
             >
-              Add your grades →
+              Set gender and tier in season settings →
             </Link>
           </div>
         ) : (
@@ -232,10 +343,16 @@ export function TeamsStep({
                 // exactly how last season's counts come back.
                 const ageGroup = unit.key.startsWith("age:") ? unit.key.slice(4) : unit.label
                 const history = lastSeason?.[ageGroup]
-                // What this grade actually plans on, the way the server
-                // reads it: growth is measured against that, not against a
-                // number the season has already outgrown.
+                // What this grade actually plans on, the way the server reads
+                // it: the operator's estimate. Growth is measured against that.
                 const planned = planningTeams(unit.approved, value)
+                // More teams came than were planned for. Not an error, and it
+                // does not quietly grow the plan: the operator decides whether
+                // to raise the number.
+                const over = unit.approved > value
+                // The saved estimate is still zero, so this grade asks for no
+                // games yet, whatever the stepper is showing.
+                const notPlanned = unit.expected === 0
                 return (
                   <tr key={unit.key} className="border-ink-100 border-t">
                     <td className="text-ink-900 py-2.5 pr-4 text-sm font-bold">{unit.label}</td>
@@ -271,14 +388,31 @@ export function TeamsStep({
                         </button>
                       </span>
                     </td>
-                    <td className="text-ink-400 py-2.5 text-xs">
-                      {[
-                        unit.approved > 0 ? `${unit.approved} registered` : null,
-                        history !== undefined ? `${history} last season` : null,
-                        history !== undefined && planned > history ? "growing" : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+                    <td className="py-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {unit.approved > 0 && (
+                          <span
+                            data-testid="registered-chip"
+                            data-over={over ? "1" : "0"}
+                            className={over ? CHIP_WARN : CHIP_QUIET}
+                          >
+                            {over
+                              ? `${unit.approved} registered, over the estimate`
+                              : `${unit.approved} registered`}
+                          </span>
+                        )}
+                        {notPlanned && (
+                          <span data-testid="not-planned" className="text-ink-400 text-xs">
+                            Not in the plan yet
+                          </span>
+                        )}
+                        {history !== undefined && (
+                          <span className="text-ink-400 text-xs">
+                            {history} last season
+                            {planned > history ? " · growing" : ""}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -287,9 +421,51 @@ export function TeamsStep({
           </table>
         )}
 
+        {/* Add a grade here rather than sending the operator to a settings
+            tab mid-plan. Same endpoint the settings tab uses. */}
+        {!locked && (
+          <div className="border-ink-100 mt-4 border-t pt-4">
+            <label
+              htmlFor="add-grade"
+              className="text-ink-500 text-[11px] font-bold uppercase tracking-wide"
+            >
+              Add a grade
+            </label>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <input
+                id="add-grade"
+                value={newGrade}
+                maxLength={MAX_GRADE_LABEL}
+                placeholder="Grade 4"
+                onChange={(e) => setNewGrade(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    void addGrade()
+                  }
+                }}
+                className="border-ink-200 focus:border-play-500 text-ink-900 h-9 w-40 rounded-lg border px-3 text-sm outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => void addGrade()}
+                disabled={!newGrade.trim() || addingGrade}
+                className="border-ink-200 text-ink-700 hover:bg-ink-50 h-9 rounded-lg border px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {addingGrade ? "Adding…" : "Add"}
+              </button>
+              <span className="text-ink-400 text-xs">
+                One grade per row, counting from zero.
+              </span>
+            </div>
+            {addError && <p className="text-hoop-700 mt-1.5 text-xs">{addError}</p>}
+          </div>
+        )}
+
         {anyApproved && (
           <p className="text-ink-400 mt-3 text-xs">
-            Planning uses your number, and never less than the teams already registered.
+            Planning runs on your numbers. Teams that sign up past a grade&apos;s estimate show
+            up here and on the step 5 bars, so you can raise the number or leave it.
           </p>
         )}
 

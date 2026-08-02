@@ -45,7 +45,7 @@ const COPY = {
   noGrades:
     "There is nothing to watch yet. Say how many teams you expect in step 1 and every grade shows up here as a bar.",
   noEstimate:
-    "This season never saved an estimate, so there is no plan line to measure against. These are the teams that registered.",
+    "This season never saved an estimate, so nothing is planned for these grades yet. These bars are the teams that registered. Set a number per grade in step 1 and the plan follows it.",
   waiting:
     "You can wait for entries to lock, or schedule now with the teams already in. Either way the gyms, hours, weekends and groupings come from steps 2 and 3.",
   ready:

@@ -32,7 +32,9 @@ import {
 
 /** A registered grade: the teams are really in, and the estimate matched
  *  unless a test says otherwise. `teams` is what the board plans on, built
- *  the one way the server builds it. */
+ *  the one way the server builds it — the estimate alone since the 2026-08-02
+ *  ruling, so a test that passes a different `expected` is testing the gap
+ *  between the plan and reality, not a bigger plan. */
 function registered(label: string, approved: number, expected = approved): PlannerUnit {
   return {
     key: `age:${label}`,
@@ -420,10 +422,12 @@ describe("expectedTeamUpdates", () => {
 })
 
 /**
- * Owner ruling 2026-08-02: "I need to be able to edit every team count for
- * the planning mode even if teams are registered ... and you should plan
- * according to that number." The operator's number leads; registration is a
- * floor under it, never a ceiling over them.
+ * Owner ruling 2026-08-02, which SUPERSEDES the earlier max(approved,
+ * expected) rule these tests used to pin: "The planning phase should not be
+ * looking at the real teams until we get to the real scheduling. The estimate
+ * should be the number entered by the human, not what's in the database. If
+ * teams sign up below the estimates that's fine. If you go over, maybe a
+ * slight warning somewhere."
  */
 describe("planningTeams / planningSource", () => {
   it("plans on the operator's number when they planned bigger", () => {
@@ -431,20 +435,23 @@ describe("planningTeams / planningSource", () => {
     expect(planningSource(9, 14)).toBe("expected")
   })
 
-  it("never plans for fewer teams than have registered", () => {
-    expect(planningTeams(30, 27)).toBe(30)
-    expect(planningSource(30, 27)).toBe("approved")
+  it("plans on the estimate even when more teams have registered", () => {
+    // Was max() before the 2026-08-02 ruling: registration is now a warning
+    // on screen, not a bigger plan.
+    expect(planningTeams(30, 27)).toBe(27)
+    expect(planningSource(30, 27)).toBe("expected")
   })
 
-  it("falls back to whichever number exists", () => {
-    expect(planningTeams(12, 0)).toBe(12)
-    expect(planningSource(12, 0)).toBe("approved")
+  it("registration alone plans nothing", () => {
+    expect(planningTeams(12, 0)).toBe(0)
+    expect(planningSource(12, 0)).toBe("none")
     expect(planningTeams(0, 25)).toBe(25)
     expect(planningSource(0, 25)).toBe("expected")
   })
 
-  it("an equal estimate reads as registration, an empty grade as neither", () => {
-    expect(planningSource(8, 8)).toBe("approved")
+  it("an estimate is the plan whatever registration says, an empty grade is neither", () => {
+    expect(planningTeams(8, 8)).toBe(8)
+    expect(planningSource(8, 8)).toBe("expected")
     expect(planningTeams(0, 0)).toBe(0)
     expect(planningSource(0, 0)).toBe("none")
   })
@@ -454,6 +461,44 @@ describe("planningTeams / planningSource", () => {
     const unit = registered("Gr7", 9, 14)
     expect(unit.teams).toBe(14)
     expect(weekendDemand([unit], { targetGamesPerTeam: 2 }, [unit.key])).toBe(14)
+
+    // 30 registered against 27 expected: the weekend is sized for 27, and the
+    // three extra teams are the warning the watch screen draws.
+    const outgrown = registered("Gr9", 30, 27)
+    expect(outgrown.teams).toBe(27)
+    expect(weekendDemand([outgrown], { targetGamesPerTeam: 2 }, [outgrown.key])).toBe(27)
+    expect(registrationBars([outgrown])[0].over).toBe(true)
+  })
+
+  it("a grade nobody estimated asks for no games, however many teams are in", () => {
+    const unplanned = registered("Gr6", 12, 0)
+    expect(unplanned.teams).toBe(0)
+    expect(weekendDemand([unplanned], { targetGamesPerTeam: 2 }, [unplanned.key])).toBe(0)
+
+    // And it is not on the board at all: proposePlan only places grades the
+    // operator planned for.
+    const state = nphState()
+    state.units = [estimated("Gr7", 10), unplanned]
+    const plan = proposePlan(state, "balance")
+    expect(Object.values(plan).flat()).not.toContain(unplanned.key)
+    expect(Object.values(plan).flat()).toContain("age:Gr7")
+  })
+
+  it("a grade with an estimate and nobody registered is planned in full", () => {
+    const state = nphState()
+    state.units = [estimated("Gr7", 14)]
+    const plan = proposePlan(state, "balance")
+    // One weekend per window, and the weekend it lands on is sized for 14.
+    const placed = Object.entries(plan).filter(([, keys]) => keys.includes("age:Gr7"))
+    expect(placed).toHaveLength(state.windows.length)
+    // 14 teams at 2 games each: every weekend it lands on is sized for 14.
+    for (const win of state.windows) {
+      for (const w of win.weekends) {
+        expect(weekendDemand(state.units, w, plan[w.sessionId] ?? [])).toBe(
+          (plan[w.sessionId] ?? []).includes("age:Gr7") ? 14 : 0
+        )
+      }
+    }
   })
 })
 
