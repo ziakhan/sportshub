@@ -222,6 +222,71 @@ export function GymsWeekendsStep({
     )
   }
 
+  /**
+   * Which gym the league fills FIRST (owner 2026-08-02: "the gym that sits on
+   * top, we should be able to move them up or down and the one that is above
+   * should be filled up first"). The cards move on screen straight away, then
+   * every gym whose place changed is written 0..n-1 so the saved order and the
+   * order on screen can never disagree.
+   */
+  const moveVenue = async (index: number, direction: -1 | 1) => {
+    if (!grid || locked) return
+    const target = index + direction
+    if (target < 0 || target >= grid.venues.length) return
+
+    const next = [...grid.venues]
+    const [row] = next.splice(index, 1)
+    next.splice(target, 0, row)
+
+    setBusy(`${row.seasonVenueId}:order`)
+    setError(null)
+    setNotice(null)
+    setNoticeTone("court")
+    setGrid({ ...grid, venues: next })
+
+    const writes = next.map((v, i) => ({ v, i })).filter(({ v, i }) => v.fillOrder !== i)
+    const results = await Promise.all(
+      writes.map(({ v, i }) =>
+        fetch(`/api/seasons/${seasonId}/venues/${v.seasonVenueId}`, json({ fillOrder: i }, "PATCH"))
+          .then((res) => res.ok)
+          .catch(() => false)
+      )
+    )
+    setBusy(null)
+    if (results.some((ok) => !ok)) setError("That order didn't save. Try again.")
+    else if (target === 0) setNotice(`${row.name} fills first now.`)
+    else setNotice(`${row.name} is gym ${target + 1} in the fill order now.`)
+    await load()
+  }
+
+  /** A gym on, or off, for the whole season in one press. Turning it off
+   *  everywhere is how an operator asks what a one-gym season looks like. */
+  const toggleSeason = async (venue: VenueGridRow, on: boolean) => {
+    await call(
+      `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}/toggle-season`,
+      json({ on }),
+      `${venue.seasonVenueId}:season:${on ? "on" : "off"}`,
+      (data) => {
+        const changed = Number(data?.weekendsChanged ?? 0)
+        const blocked = Number(data?.weekendsBlocked ?? 0)
+        setNoticeTone(blocked > 0 ? "gold" : "court")
+        if (Number(data?.weekends ?? 0) === 0) {
+          return "This season has no weekends yet. Tap one on the grid and it gets created."
+        }
+        const lead =
+          changed === 0
+            ? `${venue.name} was already ${on ? "on" : "off"} for every weekend.`
+            : `${venue.name} is ${on ? "on" : "off"} for ${changed} weekend${
+                changed === 1 ? "" : "s"
+              }.`
+        if (blocked === 0) return lead
+        return `${lead} ${blocked} weekend${
+          blocked === 1 ? "" : "s"
+        } kept it because a game is already scheduled there.`
+      }
+    )
+  }
+
   const saveException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
     if (!exceptionDraft.start || !exceptionDraft.end) {
       setError("Set both a start and an end time.")
@@ -275,24 +340,27 @@ export function GymsWeekendsStep({
             This season is finalized, so gyms and weekends are read only now.
           </p>
         )}
-        {error && (
-          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {error}
-          </p>
-        )}
-        {notice && !error && (
+        {/* The message slot, and it is ALWAYS here (owner 2026-08-02: "when
+            I'm removing the gym on and off, I'm seeing a message on top which
+            is fluctuating and shifting the whole layout"). The line keeps its
+            space whether or not it has anything to say, so toggling a cell
+            never moves a card under the operator's finger. */}
+        <div className="mb-4">
           <p
             data-testid="step2-notice"
-            data-tone={noticeTone}
-            className={`mb-4 rounded-xl border px-4 py-2.5 text-sm ${
-              noticeTone === "gold"
-                ? "border-gold-200 bg-gold-50 text-gold-900"
-                : "border-court-200 bg-court-50 text-court-900"
-            }`}
+            data-tone={error ? "hoop" : noticeTone}
+            aria-live="polite"
+            className={`rounded-xl border px-4 py-2.5 text-sm transition-opacity duration-150 ${
+              error
+                ? "border-hoop-200 bg-hoop-50 text-hoop-900"
+                : noticeTone === "gold"
+                  ? "border-gold-200 bg-gold-50 text-gold-900"
+                  : "border-court-200 bg-court-50 text-court-900"
+            } ${error || notice ? "opacity-100" : "invisible opacity-0"}`}
           >
-            {notice}
+            {error ?? notice ?? " "}
           </p>
-        )}
+        </div>
 
         {weekends.length === 0 && (
           <p className="border-ink-200 text-ink-500 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
@@ -308,8 +376,9 @@ export function GymsWeekendsStep({
           </p>
         )}
 
-        {/* One card per gym: the WHOLE venue model for this season. */}
-        {grid.venues.map((venue) => {
+        {/* One card per gym, TOP CARD FIRST: the order here is the order the
+            planner fills them in. */}
+        {grid.venues.map((venue, venueIndex) => {
           const draft = hours[venue.seasonVenueId] ?? { start: "", end: "" }
           const dirty =
             draft.start !== (venue.simpleOpen ?? "") || draft.end !== (venue.simpleClose ?? "")
@@ -321,14 +390,48 @@ export function GymsWeekendsStep({
 
           return (
             <div key={venue.seasonVenueId} className="border-ink-100 mb-3.5 rounded-2xl border p-4">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className="text-ink-900 text-[15px] font-bold">
                   {venue.name}
                   {venue.city ? ` · ${venue.city}` : ""}
                 </span>
+                {/* Where this gym sits in the fill order, in words. The top
+                    card fills completely before the next one opens. */}
+                <span
+                  data-testid="fill-order-chip"
+                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                    venueIndex === 0
+                      ? "border-court-200 bg-court-50 text-court-800"
+                      : "border-ink-200 bg-ink-50 text-ink-500"
+                  }`}
+                >
+                  {venueIndex === 0 ? "Fills first" : `Overflow #${venueIndex + 1}`}
+                </span>
                 {venue.isPrimary && (
-                  <span className="border-court-200 bg-court-50 text-court-800 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
+                  <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
                     Home gym
+                  </span>
+                )}
+                {grid.venues.length > 1 && (
+                  <span className="ml-auto inline-flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={locked || busy !== null || venueIndex === 0}
+                      onClick={() => moveVenue(venueIndex, -1)}
+                      aria-label={`Move ${venue.name} up the fill order`}
+                      className="border-ink-200 text-ink-500 hover:border-ink-400 hover:text-ink-800 rounded-lg border px-2 py-0.5 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      disabled={locked || busy !== null || venueIndex === grid.venues.length - 1}
+                      onClick={() => moveVenue(venueIndex, 1)}
+                      aria-label={`Move ${venue.name} down the fill order`}
+                      className="border-ink-200 text-ink-500 hover:border-ink-400 hover:text-ink-800 rounded-lg border px-2 py-0.5 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↓
+                    </button>
                   </span>
                 )}
               </div>
@@ -425,6 +528,33 @@ export function GymsWeekendsStep({
                   ? "Saturday and Sunday run different hours right now. Saving makes them the same."
                   : "The same hours every weekend. You can fine tune a single weekend below."}
               </p>
+
+              {/* The whole season in one press (owner 2026-08-02: turning a
+                  gym off for every weekend is how you ask what the season
+                  looks like without it). */}
+              {!locked && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-ink-400 text-[11px] font-semibold uppercase tracking-[0.06em]">
+                    Every weekend
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy !== null}
+                    onClick={() => toggleSeason(venue, true)}
+                  >
+                    {busy === `${venue.seasonVenueId}:season:on` ? "Working…" : "On all weekends"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy !== null}
+                    onClick={() => toggleSeason(venue, false)}
+                  >
+                    {busy === `${venue.seasonVenueId}:season:off` ? "Working…" : "Off all weekends"}
+                  </Button>
+                </div>
+              )}
 
               {/* The weekend grid: month bands, then one cell per weekend. */}
               <div className="mt-3 overflow-x-auto pb-1">

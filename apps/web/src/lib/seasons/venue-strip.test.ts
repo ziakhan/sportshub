@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  resolveUnitVenue,
   resolveWeekendVenues,
   seasonVenueOrder,
   venueHueSlots,
@@ -126,6 +127,29 @@ describe("seasonVenueOrder and venueHueSlots", () => {
     expect(slots.get("e")).toBe(0)
     // Same list, same colours, every render.
     expect([...venueHueSlots([SIX, PLAY], 4)]).toEqual([...venueHueSlots([SIX, PLAY], 4)])
+  })
+})
+
+describe("resolveUnitVenue", () => {
+  const six = { venueId: SIX, name: "Six Park East", short: "Six Park" }
+  const play = { venueId: PLAY, name: "The Playground", short: "Playground" }
+
+  it("names the gym the plan put the grade in, even on a two-gym weekend", () => {
+    expect(resolveUnitVenue([six, play], PLAY)?.short).toBe("Playground")
+    expect(resolveUnitVenue([six, play], SIX)?.short).toBe("Six Park")
+  })
+
+  it("says nothing when nobody has decided, so the caller can fall back", () => {
+    expect(resolveUnitVenue([six, play], null)).toBeNull()
+    expect(resolveUnitVenue([six, play], undefined)).toBeNull()
+    expect(resolveUnitVenue([six, play], "")).toBeNull()
+  })
+
+  it("ignores a gym this weekend does not run", () => {
+    // The operator released the Playground for this weekend after the plan
+    // was saved: a stale claim is not an answer.
+    expect(resolveUnitVenue([six], PLAY)).toBeNull()
+    expect(resolveUnitVenue([], SIX)).toBeNull()
   })
 })
 

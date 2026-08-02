@@ -166,6 +166,23 @@ export function resolveWeekendVenues(
 }
 
 /**
+ * The ONE gym a grade plays in on one weekend (owner 2026-08-02: a grade plays
+ * one building per weekend, and a family drives to one address).
+ *
+ * The plan's own answer wins — what was saved, or what the operator switched
+ * the grade to. Null when nothing has been decided, or when the decided gym is
+ * not one this weekend runs (a leftover from before the operator released it),
+ * and the caller falls back to describing the weekend's gyms instead.
+ */
+export function resolveUnitVenue(
+  weekendVenues: StripVenue[],
+  assignedVenueId: string | null | undefined
+): StripVenue | null {
+  if (!assignedVenueId) return null
+  return weekendVenues.find((v) => v.venueId === assignedVenueId) ?? null
+}
+
+/**
  * A gym's colour slot: its place in the season's gym order, wrapped into
  * however many colour families the palette has. Deterministic, and two gyms
  * never share a colour until the season has more gyms than the palette does.

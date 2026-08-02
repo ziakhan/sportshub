@@ -4,6 +4,7 @@ import {
   packWeekendVenues,
   planningSource,
   proposePlan,
+  resolveWeekendGyms,
   weekendDemand,
   type PlannerState,
   type PlannerUnit,
@@ -216,6 +217,56 @@ describe("packWeekendVenues: more games than the building holds", () => {
     expect(packed.byUnit).toEqual({ "age:Gr10": "west" })
     expect(packed.opened).toEqual(["west"])
     expect(packed.overflow).toBe(10)
+  })
+})
+
+describe("resolveWeekendGyms", () => {
+  const UNITS = [unit("Gr7", 12), unit("Gr8", 12), unit("Gr9", 0)]
+
+  it("groups the weekend's grades under the gyms they play in, in fill order", () => {
+    const gyms = resolveWeekendGyms(
+      UNITS,
+      weekend("s1", "2026-10-24", [EAST, WEST]),
+      ["age:Gr7", "age:Gr8"]
+    )
+    expect(gyms.sections.map((s) => s.venueId)).toEqual(["east", "west"])
+    expect(gyms.sections[0].games).toBe(12)
+    expect(gyms.sections[0].capacityGames).toBe(20)
+    expect(gyms.overflow).toBe(0)
+    expect(gyms.unplaced).toEqual([])
+  })
+
+  it("a hand-picked gym wins, even when it puts that gym over its courts", () => {
+    const gyms = resolveWeekendGyms(
+      UNITS,
+      weekend("s1", "2026-10-24", [EAST, WEST]),
+      ["age:Gr7", "age:Gr8"],
+      { "age:Gr7": "east", "age:Gr8": "east" }
+    )
+    expect(gyms.byUnit).toEqual({ "age:Gr7": "east", "age:Gr8": "east" })
+    expect(gyms.sections).toHaveLength(1)
+    expect(gyms.sections[0].games).toBe(24)
+    expect(gyms.sections[0].over).toBe(4)
+    expect(gyms.overflow).toBe(4)
+  })
+
+  it("ignores a gym that is not on this weekend, and never loses a grade", () => {
+    const gyms = resolveWeekendGyms(UNITS, weekend("s1", "2026-10-24", [EAST]), ["age:Gr7"], {
+      "age:Gr7": "west",
+    })
+    expect(gyms.byUnit).toEqual({ "age:Gr7": "east" })
+
+    // A grade with no teams yet still has to be somewhere the board can draw.
+    const quiet = resolveWeekendGyms(UNITS, weekend("s1", "2026-10-24", [EAST, WEST]), ["age:Gr9"])
+    expect(quiet.byUnit).toEqual({ "age:Gr9": "east" })
+    expect(quiet.sections[0].games).toBe(0)
+  })
+
+  it("a weekend with no gym leaves its grades unplaced, and counts every game", () => {
+    const gyms = resolveWeekendGyms(UNITS, weekend("s1", "2026-10-24", []), ["age:Gr7"])
+    expect(gyms.sections).toEqual([])
+    expect(gyms.unplaced).toEqual(["age:Gr7"])
+    expect(gyms.overflow).toBe(12)
   })
 })
 

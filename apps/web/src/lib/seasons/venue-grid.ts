@@ -76,6 +76,10 @@ export interface VenueGridRow {
   name: string
   city: string | null
   isPrimary: boolean
+  /** Which gym the league fills FIRST (0 = first choice, null = nobody has
+   *  ordered it yet). The rows arrive in this order, so the top card on step
+   *  2 is the building the planner packs into before opening another. */
+  fillOrder: number | null
   courtsAvailable: number | null
   courtCount: number
   /** Full court list so the card can hand VenueEditor its usual props. */
@@ -279,11 +283,15 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
     }),
     (prisma as any).seasonVenue.findMany({
       where: { seasonId },
-      orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+      // Fill order leads (owner 2026-08-02: the gym on top is the one that
+      // fills first). Postgres sorts NULLs last on asc, so gyms nobody has
+      // ordered yet keep their old home-gym-first order underneath.
+      orderBy: [{ fillOrder: "asc" }, { isPrimary: "desc" }, { id: "asc" }],
       select: {
         id: true,
         venueId: true,
         isPrimary: true,
+        fillOrder: true,
         courtsAvailable: true,
         hours: {
           orderBy: { dayOfWeek: "asc" },
@@ -434,6 +442,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
       name: sv.venue.name,
       city: sv.venue.city ?? null,
       isPrimary: sv.isPrimary,
+      fillOrder: sv.fillOrder ?? null,
       courtsAvailable: sv.courtsAvailable ?? null,
       courtCount: sv.venue.courtList.length,
       courts: sv.venue.courtList,

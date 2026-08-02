@@ -143,8 +143,23 @@ export interface WeekendLoad {
    *  demand and no gym at all (callers clamp before painting a bar). */
   ratio: number
   tone: WeekendTone
-  /** The weekend spills past its biggest gym and a second one is attached. */
+  /** The weekend really opens a second building, as the packer places it.
+   *  Read from packWeekendVenues, never guessed from the biggest gym: a
+   *  guess and the packing disagreed, and the packing is what ships. */
   twoBuildings: boolean
+}
+
+/** The grades a weekend holds, deduped, in the order they were listed. */
+function unitsOn(units: PlannerUnit[], assigned: string[]): PlannerUnit[] {
+  const seen = new Set<string>()
+  const out: PlannerUnit[] = []
+  for (const key of assigned) {
+    if (seen.has(key)) continue
+    seen.add(key)
+    const u = units.find((x) => x.key === key)
+    if (u) out.push(u)
+  }
+  return out
 }
 
 /**
@@ -159,16 +174,17 @@ export interface WeekendLoad {
  */
 export function weekendLoad(
   units: PlannerUnit[],
-  weekend: Pick<
-    PlannerWeekend,
-    "targetGamesPerTeam" | "capacityGames" | "largestVenueCapacity" | "venues"
-  >,
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "capacityGames" | "venues"> &
+    Partial<Pick<PlannerWeekend, "assignedVenues">>,
   assigned: string[]
 ): WeekendLoad {
   const demand = weekendDemand(units, weekend, assigned)
   const capacity = weekend.capacityGames
   const ratio = capacity > 0 ? demand / capacity : demand > 0 ? Infinity : 0
-  const twoBuildings = demand > weekend.largestVenueCapacity && weekend.venues.length > 1
+  // Buildings come from the real packing, against whatever gyms the weekend
+  // already has saved — the same answer the board draws its sections from.
+  const packed = packWeekendVenues(unitsOn(units, assigned), weekend, weekend.assignedVenues ?? {})
+  const twoBuildings = packed.opened.length > 1
   const tone: WeekendTone =
     demand > capacity
       ? "over"
@@ -606,6 +622,98 @@ export function packWeekendVenues(
   return { byUnit, opened, overflow, violations }
 }
 
+export interface WeekendGymSection {
+  venueId: string
+  name: string
+  /** Grades playing here, in the order the caller listed them. */
+  unitKeys: string[]
+  /** Games these grades ask for. */
+  games: number
+  capacityGames: number
+  /** Games past what this gym holds (0 on a gym that fits its grades). */
+  over: number
+}
+
+export interface WeekendGyms {
+  /** unit key → venueId: the decided gym where there is one, the packed gym
+   *  everywhere else. A grade the weekend has no building for is absent. */
+  byUnit: Record<string, string>
+  /** One section per gym that takes a grade, in the weekend's fill order. */
+  sections: WeekendGymSection[]
+  /** Grades with no building at all, because the weekend has no gym. */
+  unplaced: string[]
+  /** Games no gym on this weekend can hold. */
+  overflow: number
+}
+
+/**
+ * One weekend's grades grouped by BUILDING, for a screen to draw (plan step 3,
+ * owner 2026-08-02: the board's chips sit under the gym they play in).
+ *
+ * `decided` is what somebody already chose — the plan as saved, or a gym the
+ * operator switched a grade to by hand — and it always wins, even when that
+ * gym then reads over its courts. Anything undecided is packed by the same
+ * rules the solver scored on (packWeekendVenues), with the decided grades
+ * seated first so the packer works around them.
+ *
+ * Every grade the weekend holds comes back somewhere: in a section, or in
+ * `unplaced` when the weekend has no gym at all. A grade with no teams yet
+ * asks for no games, so it rides along in the gym that fills first rather
+ * than vanishing off the board.
+ */
+export function resolveWeekendGyms(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  assigned: string[],
+  decided: Record<string, string> = {}
+): WeekendGyms {
+  const here = unitsOn(units, assigned)
+  const open = new Set(weekend.venues.map((v) => v.venueId))
+  // A gym that is not on this weekend is not a decision, it is a leftover.
+  const kept: Record<string, string> = {}
+  for (const u of here) {
+    const venueId = decided[u.key]
+    if (venueId && open.has(venueId)) kept[u.key] = venueId
+  }
+
+  const packed = packWeekendVenues(here, weekend, kept)
+  const fallback = weekend.venues[0]?.venueId
+  const byUnit: Record<string, string> = {}
+  const unplaced: string[] = []
+  for (const u of here) {
+    const venueId = kept[u.key] ?? packed.byUnit[u.key] ?? fallback
+    if (venueId) byUnit[u.key] = venueId
+    else unplaced.push(u.key)
+  }
+
+  const sections: WeekendGymSection[] = []
+  let overflow = 0
+  for (const venue of weekend.venues) {
+    const unitKeys = here.filter((u) => byUnit[u.key] === venue.venueId).map((u) => u.key)
+    if (unitKeys.length === 0) continue
+    const games = unitKeys.reduce(
+      (sum, key) => sum + unitGames(here.find((u) => u.key === key) as PlannerUnit, weekend.targetGamesPerTeam),
+      0
+    )
+    const over = Math.max(0, games - venue.capacityGames)
+    overflow += over
+    sections.push({
+      venueId: venue.venueId,
+      name: venue.name,
+      unitKeys,
+      games,
+      capacityGames: venue.capacityGames,
+      over,
+    })
+  }
+  for (const key of unplaced) {
+    const u = here.find((x) => x.key === key)
+    if (u) overflow += unitGames(u, weekend.targetGamesPerTeam)
+  }
+
+  return { byUnit, sections, unplaced, overflow }
+}
+
 /** Every weekend of a season in calendar order, windows flattened. */
 function chronologicalWeekends(state: PlannerState): PlannerWeekend[] {
   return state.windows
@@ -970,14 +1078,26 @@ export function suggestFor(
             text: `Moving ${smallest.label} to ${roomier.label} clears the shortage.`,
           })
         }
-      } else if (demand > w.largestVenueCapacity && w.venues.length > 1) {
-        suggestions.push({
-          kind: "two-building",
-          sessionId: w.sessionId,
-          text: `${w.label} spills past ${
-            w.venues.reduce((a, b) => (a.capacityGames >= b.capacityGames ? a : b)).name
-          } into a second gym (${demand} games).`,
-        })
+      } else {
+        // Buildings from the real packing, not from a guess at the biggest
+        // gym: the two used to disagree, and the packing is what the plan
+        // actually saves.
+        const packed = packWeekendVenues(
+          unitsOn(state.units, assigned),
+          w,
+          w.assignedVenues ?? {}
+        )
+        if (packed.opened.length > 1) {
+          const nameOf = new Map(w.venues.map((v) => [v.venueId, v.name]))
+          const [first, second] = packed.opened
+          suggestions.push({
+            kind: "two-building",
+            sessionId: w.sessionId,
+            text: `${w.label} fills ${nameOf.get(first) ?? "the first gym"} and spills into ${
+              nameOf.get(second) ?? "a second gym"
+            } (${demand} games).`,
+          })
+        }
       }
       if (assigned.length === 0 && w.capacityGames > 0) {
         suggestions.push({

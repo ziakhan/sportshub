@@ -6,6 +6,7 @@ import {
   currentAssignment,
   diffAssignments,
   planSummary,
+  resolveWeekendGyms,
   weekendLoad,
   weekendShortDays,
   type AssignmentDiffSummary,
@@ -18,6 +19,7 @@ import {
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
+import { venueShortName } from "@/lib/seasons/venue-strip"
 import { CARD_TONE, METER_TONE, PILL_TONE, type Armed } from "./plan-shared"
 import { Segmented, StripView, type StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
@@ -67,6 +69,41 @@ const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
+/** Drop a grade's gym on the given weekends: it moved, or it left. Weekends
+ *  that end up deciding nothing drop out, so an empty map stays empty. */
+function forgetGym(
+  venues: Record<string, Record<string, string>>,
+  unitKey: string,
+  sessionIds: Array<string | null>
+): Record<string, Record<string, string>> {
+  const touched = new Set(sessionIds.filter((id): id is string => Boolean(id)))
+  const next: Record<string, Record<string, string>> = {}
+  for (const [sessionId, byUnit] of Object.entries(venues)) {
+    if (!touched.has(sessionId)) {
+      next[sessionId] = byUnit
+      continue
+    }
+    const copy = { ...byUnit }
+    delete copy[unitKey]
+    if (Object.keys(copy).length > 0) next[sessionId] = copy
+  }
+  return next
+}
+
+/** Which building each grade plays in, as the plan has it SAVED: sessionId →
+ *  (unit key → venueId). The board carries this next to the assignment and
+ *  hands it back on Apply, so a kept calendar keeps its gyms too. */
+function savedVenueMap(state: PlannerState): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const byUnit = w.assignedVenues ?? {}
+      if (Object.keys(byUnit).length > 0) out[w.sessionId] = { ...byUnit }
+    }
+  }
+  return out
+}
+
 /** The header verdict: the loudest true thing about the plan on screen. */
 function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE; text: string } {
   if (summary.over > 0)
@@ -107,6 +144,9 @@ export function CalendarStep({
 }) {
   const [state, setState] = useState<PlannerState | null>(null)
   const [assignment, setAssignment] = useState<Record<string, string[]>>({})
+  /** The gym each grade plays in, weekend by weekend. Decisions only: a
+   *  weekend nobody has decided is absent and the board packs a preview. */
+  const [venues, setVenues] = useState<Record<string, Record<string, string>>>({})
   const [suggestions, setSuggestions] = useState<PlannerSuggestion[]>([])
   const [locked, setLocked] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -119,6 +159,9 @@ export function CalendarStep({
    *  Null until the league has kept one. This is what compare mode measures
    *  against, so it must never be the working assignment. */
   const [kept, setKept] = useState<Record<string, string[]> | null>(null)
+  /** The gyms that kept calendar was saved with, so the strip can show the
+   *  buildings you kept rather than the ones you are trying out. */
+  const [keptVenues, setKeptVenues] = useState<Record<string, Record<string, string>>>({})
   const [comparing, setComparing] = useState(false)
   /** Board by default: it is where a month gets rearranged. The strip is the
    *  season read left to right, and it is one tap away. */
@@ -138,6 +181,9 @@ export function CalendarStep({
       if (!res?.ok) return null
       return (await res.json()) as {
         assignment: Record<string, string[]>
+        /** The buildings the proposal was scored on. Apply sends them back
+         *  unchanged, so what you saw is what gets saved. */
+        venues?: Record<string, Record<string, string>>
         suggestions: PlannerSuggestion[]
       }
     },
@@ -173,14 +219,18 @@ export function CalendarStep({
     const opening =
       hasSaved || isLocked || !planningIsPossible ? null : await propose("balance")
 
+    const savedVenues = savedVenueMap(next)
+
     setState(next)
     setVenueGrid(venueData?.grid ?? null)
     setLocked(isLocked)
     setArmed(null)
     setKept(hasSaved ? saved : null)
+    setKeptVenues(hasSaved ? savedVenues : {})
     if (!hasSaved) setSide("proposal")
     onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
     setAssignment(opening ? opening.assignment : saved)
+    setVenues(opening ? (opening.venues ?? {}) : savedVenues)
     setSuggestions((opening ? opening.suggestions : data.suggestions) ?? [])
     setDirty(Boolean(opening))
     setNotice(opening ? COPY.opened : null)
@@ -210,6 +260,7 @@ export function CalendarStep({
       return
     }
     setAssignment(result.assignment)
+    setVenues(result.venues ?? {})
     setSuggestions(result.suggestions ?? [])
     setArmed(null)
     setDirty(true)
@@ -219,10 +270,27 @@ export function CalendarStep({
   const apply = async () => {
     setBusy("apply")
     setError(null)
+    // Save the buildings the board is SHOWING, not just the ones somebody
+    // pressed: a preview the operator kept is a promise about where a family
+    // drives, so it gets written down the same as a hand pick.
+    const shownGyms: Record<string, Record<string, string>> = {}
+    for (const win of state?.windows ?? []) {
+      for (const w of win.weekends) {
+        const keys = assignment[w.sessionId] ?? []
+        if (keys.length === 0) continue
+        const { byUnit } = resolveWeekendGyms(
+          state?.units ?? [],
+          w,
+          keys,
+          venues[w.sessionId] ?? {}
+        )
+        if (Object.keys(byUnit).length > 0) shownGyms[w.sessionId] = byUnit
+      }
+    }
     const res = await fetch(`/api/seasons/${seasonId}/planner/apply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignment }),
+      body: JSON.stringify({ assignment, venues: shownGyms }),
     }).catch(() => null)
     setBusy(null)
     if (!res?.ok) {
@@ -231,10 +299,13 @@ export function CalendarStep({
     }
     const data = await res.json()
     const savedNow = currentAssignment(data.state)
+    const savedVenuesNow = savedVenueMap(data.state)
     setState(data.state)
     setAssignment(savedNow)
+    setVenues(savedVenuesNow)
     // What was just kept becomes the calendar every later comparison is against.
     setKept(savedNow)
+    setKeptVenues(savedVenuesNow)
     setSuggestions(data.suggestions ?? [])
     setArmed(null)
     setDirty(false)
@@ -252,6 +323,9 @@ export function CalendarStep({
       next[toSessionId] = [...new Set([...(next[toSessionId] ?? []), unitKey])]
       return next
     })
+    // The gym travels with the chip: the weekend it left forgets it, and the
+    // weekend it lands on packs it fresh against whatever is already there.
+    setVenues((prev) => forgetGym(prev, unitKey, [fromSessionId, toSessionId]))
     setArmed(null)
     setDirty(true)
     setNotice(null)
@@ -262,6 +336,20 @@ export function CalendarStep({
     setAssignment((prev) => ({
       ...prev,
       [fromSessionId]: (prev[fromSessionId] ?? []).filter((k) => k !== unitKey),
+    }))
+    setVenues((prev) => forgetGym(prev, unitKey, [fromSessionId]))
+    setArmed(null)
+    setDirty(true)
+    setNotice(null)
+  }
+
+  /** The one place a grade changes BUILDING: the chip's gym switcher. A hand
+   *  pick is a decision, so it sticks even if that gym then reads full. */
+  const switchGym = (sessionId: string, unitKey: string, venueId: string) => {
+    if (locked) return
+    setVenues((prev) => ({
+      ...prev,
+      [sessionId]: { ...(prev[sessionId] ?? {}), [unitKey]: venueId },
     }))
     setArmed(null)
     setDirty(true)
@@ -311,30 +399,6 @@ export function CalendarStep({
     }
     return { line: compareLine(diff.summary), byWeekend, keptOn }
   }, [view, comparing, state, kept, assignment])
-
-  /** Most weekends run the same set of gyms. Naming one on every card is
-   *  noise, so a card only names its gyms when they differ from the season's
-   *  usual pair. */
-  const usualVenues = useMemo(() => {
-    if (!state) return ""
-    const counts = new Map<string, number>()
-    for (const win of state.windows) {
-      for (const w of win.weekends) {
-        if (w.capacityGames <= 0) continue
-        const sig = w.venues.map((v) => v.venueId).sort().join("|")
-        counts.set(sig, (counts.get(sig) ?? 0) + 1)
-      }
-    }
-    let best = ""
-    let bestCount = 0
-    for (const [sig, count] of counts) {
-      if (count > bestCount) {
-        best = sig
-        bestCount = count
-      }
-    }
-    return best
-  }, [state])
 
   if (!state) {
     return <p className="text-ink-500 p-6 text-sm">{error ?? "Working out your calendar…"}</p>
@@ -436,13 +500,14 @@ export function CalendarStep({
               <BoardView
                 state={state}
                 assignment={assignment}
+                venues={venues}
                 unitByKey={unitByKey}
-                usualVenues={usualVenues}
                 armed={armed}
                 interactive={interactive}
                 onArm={setArmed}
                 onMove={move}
                 onRemove={removeUnit}
+                onSwitchGym={switchGym}
                 onDrop={onDrop}
                 compare={compare}
               />
@@ -450,6 +515,7 @@ export function CalendarStep({
               <StripView
                 state={state}
                 shown={showingKept ? (kept ?? assignment) : assignment}
+                shownVenues={showingKept ? keptVenues : venues}
                 hasKept={Boolean(kept)}
                 side={side}
                 onSide={(next) => {
@@ -582,27 +648,28 @@ export function CalendarStep({
 function BoardView({
   state,
   assignment,
+  venues,
   unitByKey,
-  usualVenues,
   armed,
   interactive,
   onArm,
   onMove,
   onRemove,
+  onSwitchGym,
   onDrop,
   compare,
 }: {
   state: PlannerState
   assignment: Record<string, string[]>
+  /** The gyms already decided: sessionId → (unit key → venueId). */
+  venues: Record<string, Record<string, string>>
   unitByKey: Map<string, PlannerUnit>
-  /** The gym signature most weekends run, so a card only names its gyms when
-   *  that weekend differs. */
-  usualVenues: string
   armed: Armed | null
   interactive: boolean
   onArm: (armed: Armed | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onRemove: (unitKey: string, from: string) => void
+  onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   compare: { byWeekend: Map<string, WeekendDiff>; keptOn: Map<string, string> } | null
 }) {
@@ -633,16 +700,14 @@ function BoardView({
                   windowLabel={win.label}
                   units={state.units}
                   keys={assignment[w.sessionId] ?? []}
+                  decidedGyms={venues[w.sessionId] ?? {}}
                   unitByKey={unitByKey}
-                  namesGyms={
-                    w.venues.length > 0 &&
-                    w.venues.map((v) => v.venueId).sort().join("|") !== usualVenues
-                  }
                   armed={armed}
                   interactive={interactive}
                   onArm={onArm}
                   onMove={onMove}
                   onRemove={onRemove}
+                  onSwitchGym={onSwitchGym}
                   onDrop={onDrop}
                   onDisarm={() => onArm(null)}
                   diff={compare?.byWeekend.get(w.sessionId)}
@@ -680,20 +745,22 @@ function BoardView({
   )
 }
 
-/** One weekend: the date, its grades, and the court math in the mock's
- *  phrasing. Also the drop target, and the tap-move destination. */
+/** One weekend: the date, its grades UNDER THE GYM THEY PLAY IN, and the court
+ *  math in the mock's phrasing. Also the drop target, and the tap-move
+ *  destination. */
 function WeekendCard({
   weekend,
   windowLabel,
   units,
   keys,
+  decidedGyms,
   unitByKey,
-  namesGyms,
   armed,
   interactive,
   onArm,
   onMove,
   onRemove,
+  onSwitchGym,
   onDrop,
   onDisarm,
   diff,
@@ -703,13 +770,16 @@ function WeekendCard({
   windowLabel: string
   units: PlannerUnit[]
   keys: string[]
+  /** Gyms already decided for this weekend: unit key → venueId. Everything
+   *  else is packed for preview, the way the solver would pack it. */
+  decidedGyms: Record<string, string>
   unitByKey: Map<string, PlannerUnit>
-  namesGyms: boolean
   armed: Armed | null
   interactive: boolean
   onArm: (a: Armed | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onRemove: (unitKey: string, from: string) => void
+  onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDisarm: () => void
   /** Set only in compare mode: this weekend against the kept calendar. */
@@ -718,6 +788,10 @@ function WeekendCard({
   keptOn?: Map<string, string>
 }) {
   const load = weekendLoad(units, weekend, keys)
+  const gyms = resolveWeekendGyms(units, weekend, keys, decidedGyms)
+  // A weekend whose buildings cannot hold a grade whole is short of courts
+  // even when the totals say otherwise, and it reads red either way.
+  const tone = gyms.overflow > 0 ? "over" : load.tone
   const droppable = interactive && load.capacity > 0
   const canTakeArmed =
     Boolean(armed) &&
@@ -725,11 +799,49 @@ function WeekendCard({
     armed?.window === windowLabel &&
     armed?.fromSessionId !== weekend.sessionId
 
+  /** The next gym in fill order, for the chip's one-tap switch. */
+  const nextGym = (venueId: string | null) => {
+    if (weekend.venues.length < 2) return null
+    const at = weekend.venues.findIndex((v) => v.venueId === venueId)
+    return weekend.venues[(at + 1) % weekend.venues.length]
+  }
+
+  const spill = gyms.sections.slice(1).reduce((sum, s) => sum + s.games, 0)
   const captions: string[] = []
-  if (load.tone === "over") captions.push(`${load.demand - load.capacity} short`)
-  if (load.tone === "tight") captions.push("full house")
-  if (load.twoBuildings) captions.push("both gyms")
-  if (load.tone === "empty") captions.push("spare capacity")
+  if (gyms.overflow > 0) captions.push(`${gyms.overflow} short`)
+  else if (gyms.sections.length > 1)
+    captions.push(`opens ${venueShortName(gyms.sections[1].name)} (+${spill} games)`)
+  else if (gyms.sections.length === 1 && weekend.venues.length > 1)
+    captions.push(`fits in ${venueShortName(gyms.sections[0].name)} alone`)
+  if (tone === "tight" && gyms.overflow === 0) captions.push("full house")
+  if (tone === "empty") captions.push("spare capacity")
+
+  /** One grade, wherever it sits: in a gym section, or with no gym at all. */
+  const chipFor = (key: string, venueId: string | null) => {
+    const unit = unitByKey.get(key)
+    if (!unit) return null
+    const agreed = diff?.agreed.includes(key)
+    const changed = diff?.added.includes(key)
+    const keptDays = keptOn?.get(`${weekend.sessionId}|${key}`)
+    const next = interactive ? nextGym(venueId) : null
+    return (
+      <GradeChip
+        key={key}
+        unit={unit}
+        fromSessionId={weekend.sessionId}
+        windowLabel={windowLabel}
+        weekendLabel={weekend.label}
+        armed={armed}
+        interactive={interactive}
+        onArm={onArm}
+        onRemove={() => onRemove(key, weekend.sessionId)}
+        switchTo={next ? { venueId: next.venueId, short: venueShortName(next.name) } : undefined}
+        onSwitchGym={next ? () => onSwitchGym(weekend.sessionId, key, next.venueId) : undefined}
+        diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
+        caption={changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined}
+      />
+    )
+  }
 
   return (
     <div
@@ -743,57 +855,72 @@ function WeekendCard({
       }}
       onDrop={(e) => droppable && onDrop(e, weekend.sessionId, windowLabel)}
       data-session-id={weekend.sessionId}
-      className={`mb-2 rounded-xl border px-2.5 py-2 ${CARD_TONE[load.tone]} ${
+      className={`mb-2 rounded-xl border px-2.5 py-2 ${CARD_TONE[tone]} ${
         canTakeArmed ? "ring-play-400 ring-2" : ""
       }`}
     >
       <p
         className={`text-[12.5px] font-bold ${
-          load.tone === "unavailable" ? "text-ink-400" : "text-ink-900"
+          tone === "unavailable" ? "text-ink-400" : "text-ink-900"
         }`}
       >
         {weekend.label}
       </p>
 
-      <div className="my-1.5 flex flex-wrap items-start gap-1">
-        {keys.map((k) => {
-          const unit = unitByKey.get(k)
-          if (!unit) return null
-          const agreed = diff?.agreed.includes(k)
-          const changed = diff?.added.includes(k)
-          const keptDays = keptOn?.get(`${weekend.sessionId}|${k}`)
-          return (
-            <GradeChip
-              key={k}
-              unit={unit}
-              fromSessionId={weekend.sessionId}
-              windowLabel={windowLabel}
-              weekendLabel={weekend.label}
-              armed={armed}
-              interactive={interactive}
-              onArm={onArm}
-              onRemove={() => onRemove(k, weekend.sessionId)}
-              diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
-              caption={
-                changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined
-              }
-            />
-          )
-        })}
+      {/* Grades sit under the gym they play in: one building per grade, and
+          a family drives to one address (owner 2026-08-02). */}
+      <div className="my-1.5 space-y-1.5">
+        {gyms.sections.map((section) => (
+          <div key={section.venueId} data-testid="weekend-gym-section" data-venue-id={section.venueId}>
+            <div className="flex items-baseline justify-between gap-1.5">
+              <span className="text-ink-500 truncate text-[10px] font-bold uppercase tracking-[0.06em]">
+                {venueShortName(section.name)}
+              </span>
+              <span
+                className={`shrink-0 text-[10px] font-semibold ${
+                  section.over > 0 ? "text-hoop-700" : "text-ink-400"
+                }`}
+              >
+                {section.games}/{section.capacityGames}
+              </span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-start gap-1">
+              {section.unitKeys.map((k) => chipFor(k, section.venueId))}
+            </div>
+          </div>
+        ))}
+
+        {/* Grades on a weekend with no gym at all: still on the board, still
+            movable, and honestly labelled. */}
+        {gyms.unplaced.length > 0 && (
+          <div>
+            <span className="text-hoop-700 text-[10px] font-bold uppercase tracking-[0.06em]">
+              No gym
+            </span>
+            <div className="mt-1 flex flex-wrap items-start gap-1">
+              {gyms.unplaced.map((k) => chipFor(k, null))}
+            </div>
+          </div>
+        )}
+
         {/* Where the kept calendar plays a grade this weekend and the board
             no longer does: a hole you can see, in its place. */}
-        {(diff?.removed ?? []).map((k) => {
-          const unit = unitByKey.get(k)
-          if (!unit) return null
-          return (
-            <span
-              key={`kept-${k}`}
-              className="border-ink-300 text-ink-400 inline-flex items-center rounded-lg border border-dashed px-1.5 py-0.5 text-[11px] font-bold"
-            >
-              {unit.label} · kept here
-            </span>
-          )
-        })}
+        {(diff?.removed.length ?? 0) > 0 && (
+          <div className="flex flex-wrap items-start gap-1">
+            {(diff?.removed ?? []).map((k) => {
+              const unit = unitByKey.get(k)
+              if (!unit) return null
+              return (
+                <span
+                  key={`kept-${k}`}
+                  className="border-ink-300 text-ink-400 inline-flex items-center rounded-lg border border-dashed px-1.5 py-0.5 text-[11px] font-bold"
+                >
+                  {unit.label} · kept here
+                </span>
+              )
+            })}
+          </div>
+        )}
         {keys.length === 0 && (diff?.removed.length ?? 0) === 0 && (
           <span className="text-ink-300 text-[11px]">
             {load.capacity > 0 ? "No grades here" : "Gym not yours"}
@@ -801,13 +928,13 @@ function WeekendCard({
         )}
       </div>
 
-      <p className={`text-[11px] ${METER_TONE[load.tone]}`}>
+      <p className={`text-[11px] ${METER_TONE[tone]}`}>
         {load.capacity <= 0 && load.demand === 0 ? (
           "no gym this weekend"
         ) : (
           <>
-            {namesGyms ? `${weekend.venues.map((v) => v.name).join(" + ")} ` : "courts "}
-            <b className={load.tone === "roomy" || load.tone === "empty" ? "text-ink-900" : ""}>
+            {"courts "}
+            <b className={tone === "roomy" || tone === "empty" ? "text-ink-900" : ""}>
               {load.demand} / {load.capacity}
             </b>
             {captions.length > 0 && ` · ${captions.join(" · ")}`}
@@ -843,6 +970,8 @@ function GradeChip({
   interactive,
   onArm,
   onRemove,
+  switchTo,
+  onSwitchGym,
   muted,
   diffTone,
   caption,
@@ -855,6 +984,9 @@ function GradeChip({
   interactive: boolean
   onArm: (a: Armed | null) => void
   onRemove?: () => void
+  /** The next gym in fill order, when this weekend runs more than one. */
+  switchTo?: { venueId: string; short: string }
+  onSwitchGym?: () => void
   muted?: boolean
   /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
   diffTone?: "agreed" | "changed"
@@ -904,6 +1036,22 @@ function GradeChip({
       >
         {unit.label}
       </button>
+      {/* One tap sends the grade to the next gym of this weekend. The chip
+          already sits under the gym it plays in, so this is the move. */}
+      {interactive && switchTo && onSwitchGym && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onSwitchGym()
+          }}
+          aria-label={`Move ${unit.label} to ${switchTo.short}`}
+          title={`Move to ${switchTo.short}`}
+          className="text-court-500 hover:text-court-800 px-0.5 py-0.5 text-[10px] font-bold"
+        >
+          ⇄
+        </button>
+      )}
       {interactive && onRemove && (
         <button
           type="button"

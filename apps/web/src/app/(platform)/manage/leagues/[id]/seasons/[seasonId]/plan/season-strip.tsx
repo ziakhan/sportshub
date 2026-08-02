@@ -10,6 +10,7 @@ import {
   type PlannerWeekend,
 } from "@/lib/scheduler/planner-core"
 import {
+  resolveUnitVenue,
   resolveWeekendVenues,
   seasonVenueOrder,
   venueHueSlots,
@@ -45,7 +46,7 @@ const COPY = {
   proposal: "Tap a grade, then tap another weekend that month to move it.",
   readOnly: "Where every grade plays, left to right.",
   gyms:
-    "Turn a gym on or off for a weekend back in step 2. A weekend running two gyms names neither: grades are planned onto weekends, and the draw picks the courts later.",
+    "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is one nobody has picked a gym for yet.",
 }
 
 /**
@@ -113,6 +114,7 @@ export function Segmented<T extends string>({
 export function StripView({
   state,
   shown,
+  shownVenues,
   hasKept,
   side,
   onSide,
@@ -125,6 +127,10 @@ export function StripView({
   state: PlannerState
   /** The calendar on screen: the working proposal, or the one you kept. */
   shown: Record<string, string[]>
+  /** Which gym each grade plays, weekend by weekend, for the calendar on
+   *  screen: sessionId → (unit key → venueId). Empty until anything is
+   *  decided, and then the cell names the building instead of the weekend. */
+  shownVenues: Record<string, Record<string, string>>
   hasKept: boolean
   side: StripSide
   onSide: (side: StripSide) => void
@@ -310,6 +316,7 @@ export function StripView({
                     window={window}
                     assigned={(shown[weekend.sessionId] ?? []).includes(unit.key)}
                     gyms={gymsOn.get(weekend.sessionId) ?? []}
+                    playsAt={shownVenues[weekend.sessionId]?.[unit.key] ?? null}
                     seasonGyms={gymOrder.length}
                     hue={hue}
                     interactive={interactive}
@@ -353,6 +360,7 @@ function StripCell({
   window,
   assigned,
   gyms,
+  playsAt,
   seasonGyms,
   hue,
   interactive,
@@ -366,6 +374,8 @@ function StripCell({
   window: string
   assigned: boolean
   gyms: StripVenue[]
+  /** The building the plan puts this grade in, when it says. */
+  playsAt: string | null
   seasonGyms: number
   hue: Map<string, number>
   interactive: boolean
@@ -378,7 +388,9 @@ function StripCell({
 
   if (assigned) {
     const games = weekendDemand(units, weekend, [unit.key])
-    const single = gyms.length === 1 ? gyms[0] : null
+    // The gym the plan actually put this grade in leads. Only when nothing is
+    // decided does the cell fall back to describing the weekend's gyms.
+    const single = resolveUnitVenue(gyms, playsAt) ?? (gyms.length === 1 ? gyms[0] : null)
     const tone = single
       ? VENUE_HUES[hue.get(single.venueId) ?? 0]
       : gyms.length === 0
