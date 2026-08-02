@@ -36,17 +36,18 @@ interface CapacitySession {
  * season at once. Session mode scopes preview/commit to one session;
  * committed games elsewhere are never touched and seed matchup rotation.
  */
-/** Doorway to the drag-and-drop grade→weekend board (owner 2026-08-02). */
+/** Doorway to the grade→weekend calendar, now step 3 of the plan wizard
+ *  (owner 2026-08-02). */
 function PlannerLink({ seasonId }: { seasonId: string }) {
   const params = useParams()
   const leagueId = params?.id as string
   if (!leagueId) return null
   return (
     <Link
-      href={`/manage/leagues/${leagueId}/seasons/${seasonId}/planner`}
+      href={`/manage/leagues/${leagueId}/seasons/${seasonId}/plan?step=3`}
       className="border-court-200 bg-court-50 text-court-800 hover:bg-court-100 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors"
     >
-      Season planner →
+      Season calendar →
     </Link>
   )
 }

@@ -4,6 +4,7 @@ import { Suspense, useCallback, useState } from "react"
 import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
+import { CalendarStep } from "./calendar-step"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
 import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
 
@@ -15,8 +16,8 @@ import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
  *
  * The rail is always visible and every finished step stays clickable, because
  * after setup these same five steps become the season's home page. Steps 1
- * (teams) and 2 (gyms and weekends) are built for real; the rest land in
- * later waves and point at today's screens in the meantime.
+ * (teams), 2 (gyms and weekends) and 3 (the calendar) are built for real; the
+ * rest land in later waves and point at today's screens in the meantime.
  */
 
 // Hints carry real apostrophes: they render as JS expressions, not JSX text,
@@ -29,7 +30,7 @@ const STEPS = [
   { n: 5, label: "Schedule", hint: "when you're ready" },
 ] as const
 
-const BUILT = new Set<number>([1, 2])
+const BUILT = new Set<number>([1, 2, 3])
 
 // useSearchParams requires a Suspense boundary in Next 14 (same pattern as
 // manage/leagues/[id]/page.tsx).
@@ -118,6 +119,8 @@ function PlanWizard() {
           <TeamsStep seasonId={seasonId} leagueId={leagueId} onLoaded={onLoaded} />
         ) : step === 2 ? (
           <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
+        ) : step === 3 ? (
+          <CalendarStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : (
           <Placeholder step={step} leagueId={leagueId} seasonId={seasonId} />
         )}
@@ -139,11 +142,6 @@ function Placeholder({
 }) {
   const meta = STEPS.find((s) => s.n === step)
   const copy: Record<number, { body: string; href?: string; cta?: string }> = {
-    3: {
-      body: "The calendar, computed. Grade chips drag between weekends and the court math recomputes live.",
-      href: `/manage/leagues/${leagueId}/seasons/${seasonId}/planner`,
-      cta: "Open the planner board",
-    },
     4: {
       body: "Publish puts the calendar on the league page and freezes the plan as the season's baseline. The downloadable card is for everywhere else.",
     },

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest"
 import {
   expectedTeamUpdates,
+  planSummary,
   proposePlan,
   suggestFor,
+  TIGHT_RATIO,
   weekendDemand,
+  weekendLoad,
   type PlannerState,
   type PlannerUnit,
   type PlannerWeekend,
@@ -201,6 +204,159 @@ describe("weekendDemand", () => {
     expect(weekendDemand(UNITS, w, ["age:Gr9"])).toBe(25)
     expect(weekendDemand(UNITS, w, ["age:Gr9", "age:JrGirls"])).toBe(33)
     expect(weekendDemand(UNITS, { targetGamesPerTeam: 3 }, ["age:Gr9"])).toBe(38)
+  })
+})
+
+describe("weekendLoad", () => {
+  it("roomy below the tight line, tight exactly on it", () => {
+    // Gr9 = 25 teams × 2 games ÷ 2 = 25 games. A 100-slot weekend is 25%.
+    const roomy = weekendLoad(UNITS, wk("Roomy", "2026-11-07", 100), ["age:Gr9"])
+    expect(roomy.demand).toBe(25)
+    expect(roomy.ratio).toBeCloseTo(0.25)
+    expect(roomy.tone).toBe("roomy")
+
+    // Exactly TIGHT_RATIO is tight: the boundary belongs to the warning.
+    const onTheLine = weekendLoad(UNITS, wk("Line", "2026-11-07", 25 / TIGHT_RATIO), ["age:Gr9"])
+    expect(onTheLine.ratio).toBeCloseTo(TIGHT_RATIO)
+    expect(onTheLine.tone).toBe("tight")
+
+    // A hair more room and it is comfortable again.
+    const justUnder = weekendLoad(UNITS, wk("Under", "2026-11-07", 25 / TIGHT_RATIO + 1), [
+      "age:Gr9",
+    ])
+    expect(justUnder.tone).toBe("roomy")
+  })
+
+  it("full to the last court is tight, one game past it is over", () => {
+    expect(weekendLoad(UNITS, wk("Full", "2026-11-07", 25), ["age:Gr9"]).tone).toBe("tight")
+    const over = weekendLoad(UNITS, wk("Over", "2026-11-07", 24), ["age:Gr9"])
+    expect(over.tone).toBe("over")
+    expect(over.demand - over.capacity).toBe(1)
+  })
+
+  it("no gym that weekend reads unavailable, or over when grades are on it anyway", () => {
+    const idle = weekendLoad(UNITS, wk("Released", "2026-11-07", 0), [])
+    expect(idle.tone).toBe("unavailable")
+    expect(idle.ratio).toBe(0)
+
+    const stranded = weekendLoad(UNITS, wk("Released", "2026-11-07", 0), ["age:Gr7"])
+    expect(stranded.tone).toBe("over")
+    expect(stranded.ratio).toBe(Infinity)
+  })
+
+  it("an available weekend with no grades is empty, not tight", () => {
+    expect(weekendLoad(UNITS, wk("Open", "2026-11-07", 176, 96), []).tone).toBe("empty")
+  })
+
+  it("twoBuildings only when the load spills past the biggest gym AND a second exists", () => {
+    // 176 slots across Six Park (96) + Playground (80).
+    const spills = weekendLoad(UNITS, wk("Spill", "2026-11-07", 176, 96), [
+      "age:Gr10",
+      "age:Gr9",
+      "age:Gr11",
+      "age:Gr12",
+    ])
+    expect(spills.demand).toBe(117)
+    expect(spills.twoBuildings).toBe(true)
+
+    // Same grades, one building that holds them: no spill.
+    expect(weekendLoad(UNITS, wk("One gym", "2026-11-07", 176), [
+      "age:Gr10",
+      "age:Gr9",
+      "age:Gr11",
+      "age:Gr12",
+    ]).twoBuildings).toBe(false)
+
+    // Fits inside the big gym: no spill even with two venues attached.
+    expect(
+      weekendLoad(UNITS, wk("Fits", "2026-11-07", 176, 96), ["age:Gr9"]).twoBuildings
+    ).toBe(false)
+  })
+})
+
+describe("planSummary", () => {
+  it("a clean balance proposal fits: nothing over, nothing unplaced", () => {
+    const state = nphState()
+    const summary = planSummary(state, proposePlan(state, "balance"))
+    expect(summary.over).toBe(0)
+    expect(summary.unplaced).toBe(0)
+    expect(summary.fits).toBe(true)
+    // 173 teams × 2 games ÷ 2, once per window, across 5 windows.
+    expect(summary.games).toBe(5 * 146)
+  })
+
+  it("counts over, tight and unavailable weekends, and the grades left out", () => {
+    seq = 0
+    const state: PlannerState = {
+      seasonId: "s",
+      units: UNITS,
+      errors: [],
+      windows: [
+        {
+          label: "Nov 2026",
+          weekends: [
+            wk("Over", "2026-11-07", 24), // Gr9 = 25 games
+            wk("Tight", "2026-11-14", 12), // Gr7 = 12 games, exactly full
+            wk("Released", "2026-11-21", 0), // no gym, no grades
+            wk("Roomy", "2026-11-28", 100),
+          ],
+        },
+      ],
+    }
+    const [over, tight, released, roomy] = state.windows[0].weekends
+    const summary = planSummary(state, {
+      [over.sessionId]: ["age:Gr9"],
+      [tight.sessionId]: ["age:Gr7"],
+      [released.sessionId]: [],
+      [roomy.sessionId]: ["age:Gr8", "age:JrGirls"],
+    })
+    expect(summary.over).toBe(1)
+    expect(summary.tight).toBe(1)
+    expect(summary.unavailable).toBe(1)
+    expect(summary.games).toBe(25 + 12 + 0 + 9 + 8)
+    // Gr10, Gr11 and Gr12 never got a weekend this month.
+    expect(summary.unplaced).toBe(3)
+    expect(summary.fits).toBe(false)
+  })
+
+  it("a grade missing from ONE window of several is still unplaced", () => {
+    const state = nphState()
+    const plan = proposePlan(state, "balance")
+    const first = state.windows[0].weekends[0].sessionId
+    const dropped = (plan[first] ?? [])[0]
+    expect(dropped).toBeTruthy()
+    const holed = { ...plan, [first]: (plan[first] ?? []).filter((k) => k !== dropped) }
+    const summary = planSummary(state, holed)
+    expect(summary.unplaced).toBe(1)
+    expect(summary.fits).toBe(false)
+    expect(summary.over).toBe(0)
+  })
+
+  it("grades with no teams yet are not counted as unplaced", () => {
+    seq = 0
+    const state: PlannerState = {
+      seasonId: "s",
+      units: [...UNITS, { key: "age:Gr6", label: "Gr6", divisionIds: ["d6"], teams: 0, source: "none" }],
+      errors: [],
+      windows: [{ label: "Nov 2026", weekends: [wk("Only", "2026-11-07", 200)] }],
+    }
+    const summary = planSummary(state, {
+      [state.windows[0].weekends[0].sessionId]: UNITS.map((u) => u.key),
+    })
+    expect(summary.unplaced).toBe(0)
+    expect(summary.fits).toBe(true)
+  })
+
+  it("an empty season summarises as fitting rather than throwing", () => {
+    const summary = planSummary({ seasonId: "s", units: [], windows: [], errors: [] }, {})
+    expect(summary).toEqual({
+      fits: true,
+      over: 0,
+      tight: 0,
+      unavailable: 0,
+      unplaced: 0,
+      games: 0,
+    })
   })
 })
 

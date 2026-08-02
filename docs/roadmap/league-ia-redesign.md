@@ -309,3 +309,8 @@ Owner: "press a button in my admin console and load that demo… full-scale ever
   official calendar restored; board 36 chips; screenshots) — the short-court
   demo state correctly shows "Nov 21–22 needs 84 games but has 80 slots" with
   "Moving Junior Girls to Nov 14–15 clears the shortage."
+- **Superseded 2026-08-02 (plan wizard wave 3)**: the board is now step 3 of the
+  plan wizard (`.../seasons/[seasonId]/plan?step=3`, `calendar-step.tsx`) and
+  `.../planner` redirects there; the expected-teams editor moved to step 1. The
+  API routes did not move. Drive: `scripts/demo/verify-plan-step3.mjs`
+  (`locked` + `drive`), which replaces `verify-planner.mjs`.

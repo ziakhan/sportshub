@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { buildPlannerState } from "@/lib/scheduler/planner"
 import { currentAssignment, suggestFor } from "@/lib/scheduler/planner-core"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
+import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import { lastSeasonTeamCounts } from "@/lib/seasons/last-season"
 
 export const dynamic = "force-dynamic"
@@ -48,6 +49,14 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   try {
     const gate = await seasonPlannerAuth(params.id)
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
+    // Step 1 goes read-only when the season locks; the API must agree
+    // (wave 3 review, 2026-08-02 — the client was the only guard).
+    if (isSeasonLocked(gate.seasonStatus)) {
+      return NextResponse.json(
+        { error: SEASON_LOCKED_MESSAGE, status: gate.seasonStatus },
+        { status: 409 }
+      )
+    }
 
     const parsed = patchSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "expected[] required" }, { status: 400 })

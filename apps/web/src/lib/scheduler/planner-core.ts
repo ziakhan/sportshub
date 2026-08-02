@@ -82,6 +82,106 @@ export function weekendDemand(
 }
 
 /**
+ * Where a weekend stops being comfortable. Not a hard limit: at 85% of the
+ * courts an operator is out of room to absorb a late entry or a double
+ * booking, which is exactly when they want to see amber and think again.
+ */
+export const TIGHT_RATIO = 0.85
+
+export type WeekendTone = "unavailable" | "empty" | "roomy" | "tight" | "over"
+
+export interface WeekendLoad {
+  demand: number
+  capacity: number
+  /** demand ÷ capacity. 0 on an empty weekend, Infinity when there is
+   *  demand and no gym at all (callers clamp before painting a bar). */
+  ratio: number
+  tone: WeekendTone
+  /** The weekend spills past its biggest gym and a second one is attached. */
+  twoBuildings: boolean
+}
+
+/**
+ * One weekend's whole visual state, in one deterministic place: the board,
+ * the header pill and the published calendar card all read tone from here so
+ * amber means the same thing on every surface.
+ *
+ * Tone order matters. "over" wins over "unavailable" when a weekend somehow
+ * holds grades with no gym behind them, because that is a real problem the
+ * operator must see, not a quiet dashed cell. A weekend with no gym AND no
+ * grades is simply not theirs that weekend.
+ */
+export function weekendLoad(
+  units: PlannerUnit[],
+  weekend: Pick<
+    PlannerWeekend,
+    "targetGamesPerTeam" | "capacityGames" | "largestVenueCapacity" | "venues"
+  >,
+  assigned: string[]
+): WeekendLoad {
+  const demand = weekendDemand(units, weekend, assigned)
+  const capacity = weekend.capacityGames
+  const ratio = capacity > 0 ? demand / capacity : demand > 0 ? Infinity : 0
+  const twoBuildings = demand > weekend.largestVenueCapacity && weekend.venues.length > 1
+  const tone: WeekendTone =
+    demand > capacity
+      ? "over"
+      : capacity <= 0
+        ? "unavailable"
+        : demand === 0
+          ? "empty"
+          : ratio >= TIGHT_RATIO
+            ? "tight"
+            : "roomy"
+  return { demand, capacity, ratio, tone, twoBuildings }
+}
+
+export interface PlanSummary {
+  /** Nothing overflows and every grade has a weekend in every window. */
+  fits: boolean
+  over: number
+  tight: number
+  unavailable: number
+  /** Grades (not weekends) missing from at least one window. */
+  unplaced: number
+  /** Total games the whole plan asks for. */
+  games: number
+}
+
+/**
+ * The one-line verdict behind the header pill. A grade counts as unplaced
+ * when a window holds no weekend for it: the league promised that grade a
+ * weekend that month, so a hand edit that drops it is a hole, not a choice.
+ */
+export function planSummary(
+  state: PlannerState,
+  assignment: Record<string, string[]>
+): PlanSummary {
+  let over = 0
+  let tight = 0
+  let unavailable = 0
+  let games = 0
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const load = weekendLoad(state.units, w, assignment[w.sessionId] ?? [])
+      games += load.demand
+      if (load.tone === "over") over++
+      else if (load.tone === "tight") tight++
+      else if (load.tone === "unavailable") unavailable++
+    }
+  }
+
+  const playing = state.units.filter((u) => u.teams > 0)
+  const unplaced = playing.filter((u) =>
+    state.windows.some(
+      (win) => !win.weekends.some((w) => (assignment[w.sessionId] ?? []).includes(u.key))
+    )
+  ).length
+
+  return { fits: over === 0 && unplaced === 0, over, tight, unavailable, unplaced, games }
+}
+
+/**
  * A grade's estimate, split across the divisions that make up that grade.
  * The operator counts in grades ("14 Grade 7 teams"); the season stores the
  * number per division, so a cluster spanning two divisions splits evenly
