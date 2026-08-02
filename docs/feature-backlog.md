@@ -16,6 +16,19 @@ Legend: 🎯 owner-committed · 💡 owner-suggested · 🔬 researched · ⏸ p
 
 ## Near-term / high value
 
+### Venue hours: Google is the source, never assume 🎯 (owner-committed 2026-08-02)
+The three-layer model already reads in the right order (venue posted hours →
+season customization → per-weekend exception); what's wrong is sourcing and
+fallbacks. Build: ① at venue add via Places, fetch opening hours into
+VenueHours (+ one-time backfill for venues holding a placeId) ② season
+prefills from posted hours; a venue with none ASKS for hours instead of
+inventing them (kill the 09:00-18:00/21:00 constants in the add-gym card,
+season add-venue route, propagation fallback) ③ whole-season propagation
+consults posted hours like the one-weekend attach already does ④ label every
+hours value with provenance: Google default · your availability · this
+weekend only. Related, owner-flagged same day: scheduling curfew as a concept
+distinct from building hours; seed-journey still seeds fictional hours.
+
 ### Chat: photo sharing 💡 (owner-confirmed 2026-07-15)
 Blocked on the object-storage decision (no bucket yet — same gate as the
 content-feed creator uploads, see [[content-feed-strategy]] §9.2). When it

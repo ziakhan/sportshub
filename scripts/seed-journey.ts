@@ -9,7 +9,8 @@
  *      Showcase League mid-registration (~25 of 146 submitted).
  *   2  Everyone's in — every remaining census team submitted (PENDING).
  *   3  Ready to schedule — all approved, fees settled, league FINALIZED,
- *      venues attached ONE COURT SHORT on purpose (Six Park 5 of 6),
+ *      both gyms attached at full strength (Six Park 6 courts, Playground 3,
+ *      10:00-22:00 — owner 2026-08-02: the demo starts correct, no editing),
  *      far-team requests + a pending withdrawal seeded. Zero games.
  *   4  Game day — (wave 4, not yet implemented).
  */
@@ -270,8 +271,27 @@ export async function seedJourneyStage1() {
       courtIds.push(court.id)
     }
     venueByKey.set(v.key, { id: venue.id, courtIds })
+    // Posted hours = the building's REAL Google listing (owner 2026-08-02:
+    // never assume hours). Both run to midnight; the platform's time format
+    // tops out at 23:59, which costs no game slot. Haber has no verified
+    // listing, so it gets none rather than an invented one.
+    const posted =
+      v.key === "playground"
+        ? Array.from({ length: 7 }, (_, dow) => ({ dow, open: "08:00", close: "23:59" }))
+        : v.key === "sixpark"
+          ? [0, 6]
+              .map((dow) => ({ dow, open: "08:00", close: "23:59" }))
+              .concat([1, 2, 3, 4, 5].map((dow) => ({ dow, open: "16:00", close: "23:59" })))
+          : []
+    for (const h of posted) {
+      await p.venueHours.upsert({
+        where: { venueId_dayOfWeek: { venueId: venue.id, dayOfWeek: h.dow } },
+        create: { venueId: venue.id, dayOfWeek: h.dow, openTime: h.open, closeTime: h.close },
+        update: { openTime: h.open, closeTime: h.close },
+      })
+    }
   }
-  console.log(`✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 2)`)
+  console.log(`✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 2; Google hours posted)`)
 
   // Clubs: one tenant per census club (adopt-or-create). Demo logins only
   // for the clubs the pitch script drives.
@@ -335,8 +355,9 @@ export async function seedJourneyStage1() {
         endDate: new Date("2027-03-31T00:00:00Z"),
         gamesGuaranteed: guarantee,
         defaultWeekendStyle: "SAME_DAY",
-        defaultVenueOpenTime: "08:00",
-        defaultVenueCloseTime: "20:00",
+        // 10 to 10 (owner 2026-08-02): no youth game finishes after 10 PM.
+        defaultVenueOpenTime: "10:00",
+        defaultVenueCloseTime: "22:00",
         teamFee: 3950,
         rosterChangePolicy: "REQUEST_ONLY",
       },
@@ -373,7 +394,7 @@ export async function seedJourneyStage1() {
           const v = venueByKey.get(key)!
           const useCourts = v.courtIds.slice(0, courtsPerVenue?.[key] ?? v.courtIds.length)
           const dayVenue = await p.seasonSessionDayVenue.create({
-            data: { dayId: day.id, venueId: v.id, startTime: "08:00", endTime: "20:00" },
+            data: { dayId: day.id, venueId: v.id, startTime: "10:00", endTime: "22:00" },
             select: { id: true },
           })
           let order = 0
@@ -513,7 +534,7 @@ export async function seedJourneyStage1() {
       .filter(([name]) => grades.includes(gradeOfDivName(name)))
       .map(([, id]) => `division:${id}`)
   // Sessions carry their grade tracks from day one; venues attach at
-  // stage 3 (Six Park only, one court short — the live capacity beat).
+  // stage 3 (both gyms at full strength, 10:00-22:00 — owner 2026-08-02).
   for (const [i, track] of SL_TRACKS.entries()) {
     const label = new Date(`${track.sat}T12:00:00Z`).toLocaleDateString("en-CA", {
       month: "short",
@@ -734,36 +755,42 @@ export async function seedJourneyStage3() {
     data: { isLocked: true, lockedAt: new Date() },
   })
 
-  // Attach SIX PARK ONLY with 5 of its 6 courts (owner's beat): the
-  // busiest weekend (Feb 6-7 — four grades, 87 games) needs 87 slots but
-  // has 80 → the run fails naming that weekend; adding Court 6 live fixes
-  // it (96). The Playground + Haber stay unattached — the owner adds them
-  // live before the venue-distribution close.
-  const sixpark = await p.venue.findFirst({ where: { name: "Six Park East" }, select: { id: true } })
-  await p.seasonVenue.upsert({
-    where: { seasonId_venueId: { seasonId: season.id, venueId: sixpark.id } },
-    create: { seasonId: season.id, venueId: sixpark.id, courtsAvailable: 5 },
-    update: {},
-  })
-  const sixCourts = await p.court.findMany({
-    where: { venueId: sixpark.id },
-    orderBy: { displayOrder: "asc" },
-    take: 5,
-    select: { id: true },
-  })
+  // Attach BOTH gyms at full strength, 10:00-22:00 (owner 2026-08-02: "by
+  // default I shouldn't have to edit it" — the old one-court-short beat is
+  // retired). Six Park fills first; the Playground is the home gym and is
+  // always available. Haber stays unattached (satellite, added live if the
+  // story needs it).
+  const gyms = [
+    { name: "Six Park East", courts: 6 },
+    { name: "The Playground Burlington", courts: 3 },
+  ]
   const daysRows = await p.seasonSessionDay.findMany({
     where: { session: { seasonId: season.id } },
-    select: { id: true, dayVenues: { select: { id: true } } },
+    select: { id: true, dayVenues: { select: { id: true, venueId: true } } },
   })
-  for (const day of daysRows) {
-    if (day.dayVenues.length > 0) continue // already attached (idempotent)
-    const dayVenue = await p.seasonSessionDayVenue.create({
-      data: { dayId: day.id, venueId: sixpark.id, startTime: "08:00", endTime: "20:00" },
+  for (const gym of gyms) {
+    const venue = await p.venue.findFirst({ where: { name: gym.name }, select: { id: true } })
+    await p.seasonVenue.upsert({
+      where: { seasonId_venueId: { seasonId: season.id, venueId: venue.id } },
+      create: { seasonId: season.id, venueId: venue.id, courtsAvailable: gym.courts },
+      update: { courtsAvailable: gym.courts },
+    })
+    const courts = await p.court.findMany({
+      where: { venueId: venue.id },
+      orderBy: { displayOrder: "asc" },
+      take: gym.courts,
       select: { id: true },
     })
-    let order = 0
-    for (const c of sixCourts) {
-      await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ } })
+    for (const day of daysRows) {
+      if (day.dayVenues.some((dv: any) => dv.venueId === venue.id)) continue // idempotent
+      const dayVenue = await p.seasonSessionDayVenue.create({
+        data: { dayId: day.id, venueId: venue.id, startTime: "10:00", endTime: "22:00" },
+        select: { id: true },
+      })
+      let order = 0
+      for (const c of courts) {
+        await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ } })
+      }
     }
   }
 
@@ -831,7 +858,7 @@ export async function seedJourneyStage3() {
   }
 
   await writeDemoState("nph-pitch-journey", 3)
-  console.log(`✓ journey stage 3: ${updated.count} approvals finalized · venues one court short · requests + withdrawal staged`)
+  console.log(`✓ journey stage 3: ${updated.count} approvals finalized · both gyms full strength 10:00-22:00 · requests + withdrawal staged`)
 }
 
 // ═════════════════════════ STAGE 4 ═════════════════════════════════════
