@@ -19,6 +19,7 @@ import { loadSchedulerInput } from "./load"
 export * from "./planner-core"
 import {
   weekendDemand,
+  weekendLabel,
   type PlannerState,
   type PlannerUnit,
   type PlannerWeekend,
@@ -28,17 +29,6 @@ import {
 const monthKey = (iso: string): string => {
   const d = new Date(iso)
   return `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCFullYear()}`
-}
-
-const weekendLabel = (dates: string[]): string => {
-  const ds = dates.map((x) => new Date(x)).sort((a, b) => a.getTime() - b.getTime())
-  const fmt = (d: Date) =>
-    `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCDate()}`
-  if (ds.length === 0) return "No days"
-  if (ds.length === 1) return fmt(ds[0])
-  const last = ds[ds.length - 1]
-  const sameMonth = ds[0].getUTCMonth() === last.getUTCMonth()
-  return `${fmt(ds[0])}–${sameMonth ? last.getUTCDate() : fmt(last)}`
 }
 
 export async function buildPlannerState(seasonId: string): Promise<PlannerState> {

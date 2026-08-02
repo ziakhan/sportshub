@@ -49,6 +49,8 @@ import { getServerSession } from "next-auth"
  *   1135 coach scoping (team-scoped staff authz / tryout admin-only / finalize)
  *   1136 family invitations (CHILD_LOGIN / GUARDIAN create, accept/decline, signup auto-attach)
  *   1137 org season defaults (Phase A: resolver via season GET / approval fees / scheduler input)
+ *   1138 planner step 2 (one gym one weekend: attach/detach/custom hours + grid)
+ *   1139 planner step 2 routes (session venue POST/DELETE/PATCH hours + grid GET)
  */
 
 export function actAs(userId: string | null): void {

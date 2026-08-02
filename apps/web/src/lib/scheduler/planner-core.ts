@@ -7,6 +7,23 @@
  * (scripts/analysis/validate-nph-calendar.ts).
  */
 
+/**
+ * How a weekend is named everywhere an operator sees one: "Oct 24–25", or
+ * "Oct 31–Nov 1" when it straddles months. Lives in the pure core because
+ * the planner board, the gyms-and-weekends grid, and the published calendar
+ * card must all spell the same weekend the same way.
+ */
+export function weekendLabel(dates: Array<string | Date>): string {
+  const ds = dates.map((x) => new Date(x)).sort((a, b) => a.getTime() - b.getTime())
+  const fmt = (d: Date) =>
+    `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCDate()}`
+  if (ds.length === 0) return "No days"
+  if (ds.length === 1) return fmt(ds[0])
+  const last = ds[ds.length - 1]
+  const sameMonth = ds[0].getUTCMonth() === last.getUTCMonth()
+  return `${fmt(ds[0])}–${sameMonth ? last.getUTCDate() : fmt(last)}`
+}
+
 export interface PlannerUnit {
   key: string // "age:<ageGroup>"
   label: string

@@ -8,10 +8,17 @@ export async function seasonPlannerAuth(seasonId: string) {
   if (!auth) return { status: 401 as const, error: "Unauthorized" }
   const season = await (prisma as any).season.findUnique({
     where: { id: seasonId },
-    select: { league: { select: { ownerId: true } } },
+    select: { status: true, leagueId: true, league: { select: { ownerId: true } } },
   })
   if (!season) return { status: 404 as const, error: "Not found" }
   if (season.league.ownerId !== auth.userId && !auth.isPlatformAdmin)
     return { status: 403 as const, error: "Forbidden" }
-  return { status: 200 as const, auth }
+  // seasonStatus (not `status`, which is the HTTP code) so structural routes
+  // can run the isSeasonLocked check without a second season lookup.
+  return {
+    status: 200 as const,
+    auth,
+    seasonStatus: season.status as string,
+    leagueId: season.leagueId as string,
+  }
 }
