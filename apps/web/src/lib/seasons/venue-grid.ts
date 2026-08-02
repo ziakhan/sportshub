@@ -1,5 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { weekendLabel } from "@/lib/scheduler/planner-core"
+import { loadVenueUnavailability } from "@/lib/seasons/venue-propagation"
 
 /**
  * The gyms-and-weekends grid (planner step 2, owner 2026-08-02). One row per
@@ -7,9 +8,12 @@ import { weekendLabel } from "@/lib/scheduler/planner-core"
  *
  *   on      the gym is attached to that weekend's days
  *   off     it is not — either the operator released it, or nobody has turned
- *           that weekend on yet. Nothing here pre-marks a weekend unavailable.
+ *           that weekend on yet. Plain off, and nobody said why.
  *   custom  attached, but on a window that differs from the season's default
  *           for that weekday (a one-weekend exception)
+ *   taken   the season has this weekend marked unavailable at this gym, WITH
+ *           a reason ("Taken: NJC/NSC"). Attachment always wins: a marked
+ *           weekend the operator turned on anyway reads on, not taken.
  *
  * Owner ruling 2026-08-02: "you're only selecting one weekend per month. Let's
  * make it open for every month, all weekends, and people can choose because we
@@ -26,7 +30,7 @@ import { weekendLabel } from "@/lib/scheduler/planner-core"
  * dates or a gym.
  */
 
-export type VenueCellState = "on" | "off" | "custom"
+export type VenueCellState = "on" | "off" | "custom" | "taken"
 
 export interface VenueGridWeekend {
   /** Stable column key: the Saturday, or the session when it sits off-weekend. */
@@ -62,6 +66,9 @@ export interface VenueGridCell {
   endTime: string | null
   /** Short cell caption for a custom window: "to 21:00", "from 07:00". */
   hoursLabel: string | null
+  /** Why this weekend is not ours at this gym ("Taken: NJC/NSC"). Set only
+   *  on a `taken` cell, and it may still be null when nobody gave one. */
+  reason: string | null
 }
 
 export interface VenueGridHours {
@@ -249,6 +256,26 @@ export function enumerateSeasonWeekends(input: SeasonWeekendInput): VenueGridWee
   })
 }
 
+/**
+ * What one cell reads (pure — unit tested in venue-grid.test.ts).
+ *
+ * ATTACHMENT WINS is the whole rule: a weekend the season marked unavailable
+ * and the operator turned on anyway is simply on. The mark is a default, and
+ * the operator always outranks it (turning the cell on deletes the row, so
+ * this only decides what to draw between the click and the reload).
+ */
+export function venueCellState(input: {
+  /** Days of the weekend the gym is actually attached to. */
+  attachedDays: number
+  /** Attached on a window that differs from the season's default. */
+  custom: boolean
+  /** The season has this (gym, weekend) marked unavailable. */
+  marked: boolean
+}): VenueCellState {
+  if (input.attachedDays > 0) return input.custom ? "custom" : "on"
+  return input.marked ? "taken" : "off"
+}
+
 /** The window a weekend SHOULD have by default: the season's private hours
  *  at the gym, else the gym's posted hours. Anything else is an exception. */
 function defaultWindowFor(
@@ -271,7 +298,7 @@ function cellHoursLabel(
 }
 
 export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid> {
-  const [season, seasonVenues, sessions] = await Promise.all([
+  const [season, seasonVenues, sessions, marks] = await Promise.all([
     (prisma as any).season.findUnique({
       where: { id: seasonId },
       select: {
@@ -337,7 +364,15 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
         },
       },
     }),
+    loadVenueUnavailability(seasonId),
   ])
+
+  // (gym, Saturday) → the reason it is not ours. The value is legitimately
+  // null for a mark with no reason, so membership is the question, never
+  // truthiness.
+  const takenBy = new Map<string, string | null>(
+    marks.map((m) => [`${m.venueId}|${m.satDateISO}`, m.reason])
+  )
 
   const weekends = enumerateSeasonWeekends({
     start: season?.startDate ?? null,
@@ -401,17 +436,23 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
         }))
         .filter((x: any) => x.dv)
 
+      // Marked and not attached: the cell says WHY, instead of reading as
+      // one more weekend nobody has got to yet.
+      const markKey = w.satDateISO ? `${sv.venueId}|${w.satDateISO}` : null
+      const marked = markKey !== null && takenBy.has(markKey)
+
       if (mine.length === 0) {
         return {
           sessionId: w.sessionId,
           satDateISO: w.satDateISO,
-          state: "off" as const,
+          state: venueCellState({ attachedDays: 0, custom: false, marked }),
           daysOn: 0,
           dayCount: w.dayCount,
           courts: 0,
           startTime: null,
           endTime: null,
           hoursLabel: null,
+          reason: marked ? (takenBy.get(markKey!) ?? null) : null,
         }
       }
 
@@ -424,7 +465,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
       return {
         sessionId: w.sessionId,
         satDateISO: w.satDateISO,
-        state: custom ? ("custom" as const) : ("on" as const),
+        state: venueCellState({ attachedDays: mine.length, custom, marked }),
         daysOn: mine.length,
         dayCount: w.dayCount,
         courts: Math.max(...mine.map(({ dv }: any) => dv._count.courts)),
@@ -433,6 +474,9 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
         hoursLabel: custom
           ? cellHoursLabel(lead.dv.startTime, lead.dv.endTime, defaultWindowFor(lead.dow, seasonHours, venueHours))
           : null,
+        // Attachment wins: a marked weekend the operator turned on anyway is
+        // simply on, and carries no leftover reason.
+        reason: null,
       }
     })
 

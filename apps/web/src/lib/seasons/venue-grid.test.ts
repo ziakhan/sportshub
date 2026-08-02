@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { enumerateSeasonWeekends } from "./venue-grid"
+import { enumerateSeasonWeekends, venueCellState } from "./venue-grid"
 
 /**
  * Every weekend of the season, not just the ones that already exist (owner
@@ -199,5 +199,34 @@ describe("enumerateSeasonWeekends", () => {
     })
     expect(sats(cols)).toHaveLength(5)
     expect(cols.find((c) => c.sessionId === "s1")?.dayCount).toBe(2)
+  })
+})
+
+/**
+ * A gym the season does NOT have on a weekend, with the reason (owner ruling
+ * 2026-08-02: Six Park East is taken by the NJC/NSC circuits on six known
+ * 2026-27 weekends). The one rule worth pinning: the operator outranks the
+ * default, so an attachment beats a mark every time.
+ */
+describe("venueCellState", () => {
+  it("reads taken when the weekend is marked and the gym is not on it", () => {
+    expect(venueCellState({ attachedDays: 0, custom: false, marked: true })).toBe("taken")
+  })
+
+  it("reads off when nobody marked it and the gym is not on it", () => {
+    expect(venueCellState({ attachedDays: 0, custom: false, marked: false })).toBe("off")
+  })
+
+  it("reads on when the operator took a marked weekend anyway", () => {
+    expect(venueCellState({ attachedDays: 2, custom: false, marked: true })).toBe("on")
+  })
+
+  it("still reads custom on a marked weekend running its own hours", () => {
+    expect(venueCellState({ attachedDays: 2, custom: true, marked: true })).toBe("custom")
+    expect(venueCellState({ attachedDays: 1, custom: true, marked: false })).toBe("custom")
+  })
+
+  it("counts one day of a weekend as on, not off", () => {
+    expect(venueCellState({ attachedDays: 1, custom: false, marked: true })).toBe("on")
   })
 })

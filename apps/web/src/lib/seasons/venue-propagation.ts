@@ -1,6 +1,9 @@
 import { prisma } from "@youthbasketballhub/db"
-import { weekendLabel } from "@/lib/scheduler/planner-core"
-import { isSeasonLocked } from "@/lib/seasons/season-lock"
+// Relative (not "@/") imports: scripts/seed-journey.ts and
+// scripts/demo/apply-njc-defaults.ts pull this module straight through tsx,
+// which does not know the app's path alias.
+import { weekendLabel } from "../scheduler/planner-core"
+import { isSeasonLocked } from "./season-lock"
 
 /**
  * Venue → session propagation (owner 2026-07-31): a venue added to the
@@ -11,6 +14,10 @@ import { isSeasonLocked } from "@/lib/seasons/season-lock"
  * courts in preferred order. Sessions that already use the venue are left
  * exactly as the operator configured them.
  *
+ * Weekends this season has marked unavailable for the gym are skipped: a
+ * building the NJC/NSC circuits have that weekend does not become ours just
+ * because the season added it (owner ruling 2026-08-02).
+ *
  * Returns the number of SESSIONS touched (not days).
  */
 export async function propagateVenueToSessions(
@@ -20,23 +27,29 @@ export async function propagateVenueToSessions(
   fallbackHours: { startTime: string; endTime: string }
 ): Promise<number> {
   if (courtIds.length === 0) return 0
-  const sessions = await (prisma as any).seasonSession.findMany({
-    where: { seasonId },
-    select: {
-      id: true,
-      days: {
-        select: {
-          id: true,
-          dayVenues: { select: { id: true, venueId: true, startTime: true, endTime: true } },
+  const [sessions, unavailable] = await Promise.all([
+    (prisma as any).seasonSession.findMany({
+      where: { seasonId },
+      select: {
+        id: true,
+        days: {
+          select: {
+            id: true,
+            date: true,
+            dayVenues: { select: { id: true, venueId: true, startTime: true, endTime: true } },
+          },
         },
       },
-    },
-  })
+    }),
+    unavailableWeekendsFor(seasonId, venueId),
+  ])
 
   const touched = new Set<string>()
   for (const session of sessions) {
     for (const day of session.days) {
       if (day.dayVenues.some((dv: any) => dv.venueId === venueId)) continue
+      const key = weekendKeyOf(day.date)
+      if (key && unavailable.has(key.toISOString())) continue
       const sibling = day.dayVenues[0]
       const dayVenue = await (prisma as any).seasonSessionDayVenue.create({
         data: {
@@ -120,6 +133,118 @@ const DAY_MS = 24 * 60 * 60 * 1000
 function utcMidnight(value: Date | string): Date {
   const d = new Date(value)
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+}
+
+/**
+ * ── Weekends a gym is NOT available (owner ruling 2026-08-02) ─────────────
+ *
+ * "Off" and "we cannot have this gym that weekend, because the NJC/NSC
+ * circuits have it" are different facts, and only the second one has a
+ * reason worth showing. A released weekend leaves no row anywhere, so
+ * SeasonVenueUnavailability is where the reason lives: one row per
+ * (season, gym, Saturday).
+ *
+ * Two rules hold everywhere these are read:
+ *   - ATTACHMENT WINS. A weekend that is marked AND attached is simply on —
+ *     the operator overrode the mark, and turning a cell on deletes it.
+ *   - Only defaults and imports create marks. Turning a cell off is plain
+ *     off, never a reason nobody typed.
+ */
+
+/** The Saturday that owns a session day, UTC midnight — the weekend key.
+ *  Null for a Mon–Fri day, which belongs to no weekend. */
+export function weekendKeyOf(value: Date | string): Date | null {
+  const day = utcMidnight(value)
+  if (Number.isNaN(day.getTime())) return null
+  const dow = day.getUTCDay()
+  if (dow === 6) return day
+  if (dow === 0) return new Date(day.getTime() - DAY_MS)
+  return null
+}
+
+export interface VenueWeekendMark {
+  venueId: string
+  /** Saturday, UTC midnight ISO — the same key the grid columns use. */
+  satDateISO: string
+  reason: string | null
+}
+
+/** Every weekend this season has marked unavailable, for one gym or all. */
+export async function loadVenueUnavailability(
+  seasonId: string,
+  venueId?: string
+): Promise<VenueWeekendMark[]> {
+  const rows = await (prisma as any).seasonVenueUnavailability.findMany({
+    where: { seasonId, ...(venueId ? { venueId } : {}) },
+    orderBy: { satDate: "asc" },
+    select: { venueId: true, satDate: true, reason: true },
+  })
+  return rows.map((r: any) => ({
+    venueId: r.venueId,
+    satDateISO: utcMidnight(r.satDate).toISOString(),
+    reason: r.reason ?? null,
+  }))
+}
+
+/** Weekend key → reason, for one gym. The value may be null (marked, no
+ *  reason given); use `.has()`, never truthiness, to ask if it is marked. */
+export async function unavailableWeekendsFor(
+  seasonId: string,
+  venueId: string
+): Promise<Map<string, string | null>> {
+  const marks = await loadVenueUnavailability(seasonId, venueId)
+  return new Map(marks.map((m) => [m.satDateISO, m.reason]))
+}
+
+/** Mark a weekend unavailable, with the reason. Idempotent: re-running an
+ *  import re-states the reason rather than piling up rows. */
+export async function markVenueUnavailable(
+  seasonId: string,
+  venueId: string,
+  satDate: Date | string,
+  reason: string | null
+): Promise<{ satDateISO: string; created: boolean } | null> {
+  const sat = weekendKeyOf(satDate)
+  if (!sat || sat.getUTCDay() !== 6) return null
+  const existing = await (prisma as any).seasonVenueUnavailability.findUnique({
+    where: { seasonId_venueId_satDate: { seasonId, venueId, satDate: sat } },
+    select: { id: true },
+  })
+  await (prisma as any).seasonVenueUnavailability.upsert({
+    where: { seasonId_venueId_satDate: { seasonId, venueId, satDate: sat } },
+    create: { seasonId, venueId, satDate: sat, reason },
+    update: { reason },
+  })
+  return { satDateISO: sat.toISOString(), created: !existing }
+}
+
+/** The operator's override: putting the gym on a marked weekend drops the
+ *  mark, so an attachment and a reason never both stand for one weekend. */
+export async function clearVenueUnavailability(
+  seasonId: string,
+  venueId: string,
+  satDates: Array<Date | string>
+): Promise<number> {
+  const keys = satDates
+    .map(weekendKeyOf)
+    .filter((d): d is Date => d !== null)
+  if (keys.length === 0) return 0
+  const { count } = await (prisma as any).seasonVenueUnavailability.deleteMany({
+    where: { seasonId, venueId, satDate: { in: keys } },
+  })
+  return count
+}
+
+/** The same override, addressed by session: every weekend the session sits
+ *  on. Season-scoped, so a session id from another season clears nothing. */
+export async function clearSessionVenueUnavailability(
+  seasonId: string,
+  sessionId: string,
+  venueId: string
+): Promise<number> {
+  const days = await sessionDays(seasonId, sessionId)
+  if (!days) return 0
+  return clearVenueUnavailability(seasonId, venueId, days.map((d) => d.date))
 }
 
 /** What a new weekend should play: whatever its siblings play (the most

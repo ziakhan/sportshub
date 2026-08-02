@@ -25,7 +25,7 @@ export interface VenueGridLike {
     venueId: string
     name: string
     city?: string | null
-    cells: Array<{ sessionId: string | null; state: "on" | "off" | "custom" }>
+    cells: Array<{ sessionId: string | null; state: "on" | "off" | "custom" | "taken" }>
   }>
 }
 
@@ -146,7 +146,9 @@ export function resolveWeekendVenues(
     for (const cell of row.cells) {
       if (!cell.sessionId) continue
       known.add(cell.sessionId)
-      if (cell.state === "off") continue
+      // Off and taken both mean the season does not have that gym that
+      // weekend — a marked weekend is no more available than a released one.
+      if (cell.state === "off" || cell.state === "taken") continue
       onBySession.set(cell.sessionId, [...(onBySession.get(cell.sessionId) ?? []), row.venueId])
     }
   }

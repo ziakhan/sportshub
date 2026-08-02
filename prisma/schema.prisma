@@ -1429,6 +1429,7 @@ model Season {
   submissionRequests TeamSubmissionRequest[]
   sessions           SeasonSession[]
   seasonVenues       SeasonVenue[]
+  venueUnavailability SeasonVenueUnavailability[]
   rosters            SeasonRoster[]
   games              Game[]
   schedulingGroups   SchedulingGroup[]
@@ -1963,6 +1964,32 @@ model SeasonVenueHours {
   @@index([seasonVenueId])
 }
 
+// A gym this season does NOT have on one weekend, WITH the reason (owner
+// ruling 2026-08-02: Six Park East is taken by the NJC/NSC circuits on six
+// known 2026-27 weekends, and the platform has to be able to say so).
+// Releasing a weekend leaves no row anywhere, so before this there was
+// nowhere to hang a reason — the grid could only read "off".
+//
+// Defaults are pre-marked from real knowledge; the operator always wins.
+// Turning the cell on deletes the row (an override), so an attachment and a
+// row never both stand for the same weekend.
+model SeasonVenueUnavailability {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  venueId String
+  venue   Venue  @relation(fields: [venueId], references: [id])
+
+  satDate DateTime // Saturday UTC midnight — the weekend key
+  reason  String? // "Taken: NJC/NSC"
+
+  createdAt DateTime @default(now())
+
+  @@unique([seasonId, venueId, satDate])
+  @@index([seasonId])
+}
+
 model SchedulingGroup {
   id       String @id @default(uuid())
   seasonId String
@@ -2248,6 +2275,7 @@ model Venue {
   practices        Practice[]
   practiceSlots    PracticeSlot[]
   seasonVenues     SeasonVenue[]
+  seasonUnavailability SeasonVenueUnavailability[]
   dayVenues        SeasonSessionDayVenue[]
   courtList        Court[]
   venueHours       VenueHours[]

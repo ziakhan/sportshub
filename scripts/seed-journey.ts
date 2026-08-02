@@ -86,6 +86,21 @@ const SL_FINALS: Array<{ sat: string; label: string }> = [
 const D1_WEEKENDS = ["2026-11-14", "2026-12-12", "2027-01-16", "2027-02-13", "2027-03-13"]
 const PREP_WEEKENDS = ["2026-11-21", "2027-01-23", "2027-02-27"]
 
+// Weekends Six Park East is NOT ours (owner ruling 2026-08-02): the NJC and
+// NSC circuits have the building on these six 2026-27 Saturdays. Pre-marked
+// from real knowledge so the plan wizard tells the truth on day one — the
+// operator can still take any of them back with one tap on the grid. The
+// Playground gets nothing: it is NPH-managed, so the season always has it.
+export const SIXPARK_TAKEN_SATS = [
+  "2026-10-17",
+  "2026-11-14",
+  "2026-12-12",
+  "2027-01-16",
+  "2027-02-13",
+  "2027-03-13",
+]
+export const SIXPARK_TAKEN_REASON = "Taken: NJC/NSC"
+
 // Far teams (real Ottawa/Gatineau-region clubs) for the requests beat.
 const FAR_REQUEST_CLUBS = ["Ottawa Elite (incl. Prep)", "Capital Courts", "Dragons de Gatineau"]
 const WITHDRAWAL_CLUB = "Orillia Lakers"
@@ -648,6 +663,63 @@ export async function seedJourneyStage2() {
   console.log(`✓ journey stage 2: ${added} additional submissions (everyone's in)`)
 }
 
+// ══════════════ Six Park's NJC/NSC weekends (owner 2026-08-02) ══════════
+export interface NjcDefaultsReport {
+  /** Saturdays that now carry a mark (new ones listed in `created`). */
+  marked: string[]
+  created: string[]
+  /** Saturdays where the gym was actually released off the calendar. */
+  detached: string[]
+  /** Saturdays that kept the gym because a game is already scheduled. */
+  blocked: string[]
+}
+
+/**
+ * Six Park East is not ours on six 2026-27 weekends. Marking one is only
+ * half the job: a weekend the season already wired the gym onto has to be
+ * released too, or the grid would read "on" and the mark would be invisible.
+ * A weekend with games on it is never yanked out from under them — it is
+ * reported instead, the same way a one-weekend release behaves.
+ *
+ * Idempotent by construction: the mark upserts, and the release skips a
+ * weekend the gym is already off.
+ */
+export async function applyNjcDefaults(seasonId: string): Promise<NjcDefaultsReport> {
+  const { markVenueUnavailable, detachVenueFromSession } = await import(
+    "../apps/web/src/lib/seasons/venue-propagation"
+  )
+  const report: NjcDefaultsReport = { marked: [], created: [], detached: [], blocked: [] }
+  const sixpark = await p.venue.findFirst({
+    where: { name: "Six Park East" },
+    select: { id: true },
+  })
+  if (!sixpark) return report
+
+  for (const sat of SIXPARK_TAKEN_SATS) {
+    const satDate = new Date(`${sat}T00:00:00Z`)
+    const mark = await markVenueUnavailable(seasonId, sixpark.id, satDate, SIXPARK_TAKEN_REASON)
+    if (!mark) continue
+    report.marked.push(sat)
+    if (mark.created) report.created.push(sat)
+
+    // Every session sitting on that weekend (Sat or Sun) lets the gym go.
+    const monday = new Date(satDate.getTime() + days(2))
+    const sessions = await p.seasonSession.findMany({
+      where: { seasonId, days: { some: { date: { gte: satDate, lt: monday } } } },
+      select: { id: true },
+    })
+    for (const session of sessions) {
+      const res = await detachVenueFromSession(seasonId, session.id, sixpark.id)
+      if (res.gamesBlocking > 0) {
+        if (!report.blocked.includes(sat)) report.blocked.push(sat)
+      } else if (res.daysReleased > 0 && !report.detached.includes(sat)) {
+        report.detached.push(sat)
+      }
+    }
+  }
+  return report
+}
+
 // ═════════════════════════ STAGE 3 ═════════════════════════════════════
 export async function seedJourneyStage3() {
   const season = await journeySeason(SL_LEAGUE)
@@ -694,6 +766,16 @@ export async function seedJourneyStage3() {
       await p.seasonSessionDayVenueCourt.create({ data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ } })
     }
   }
+
+  // ...except the six weekends the NJC/NSC circuits have the building: those
+  // are marked with the reason and released again, so step 2 says WHY rather
+  // than showing a weekend nobody got to yet.
+  const njc = await applyNjcDefaults(season.id)
+  console.log(
+    `✓ Six Park unavailable on ${njc.marked.length} NJC/NSC weekends (${njc.detached.length} released${
+      njc.blocked.length > 0 ? `, ${njc.blocked.length} kept — games already scheduled` : ""
+    })`
+  )
 
   // League finalized — schedule creation is the live act.
   await p.season.update({ where: { id: season.id }, data: { status: "FINALIZED" } })

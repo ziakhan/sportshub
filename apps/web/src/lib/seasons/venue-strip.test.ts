@@ -18,7 +18,7 @@ import {
 const SIX = "venue-six"
 const PLAY = "venue-playground"
 
-const grid = (cells: Record<string, Array<"on" | "off" | "custom">>): VenueGridLike => ({
+const grid = (cells: Record<string, Array<"on" | "off" | "custom" | "taken">>): VenueGridLike => ({
   venues: [
     {
       venueId: SIX,
@@ -86,6 +86,15 @@ describe("resolveWeekendVenues", () => {
   it("counts a custom-hours weekend as on", () => {
     const map = resolveWeekendVenues(grid({ [SIX]: ["custom"], [PLAY]: ["off"] }), [weekend("s1")])
     expect(map.get("s1")?.map((v) => v.short)).toEqual(["Six Park"])
+  })
+
+  it("counts a weekend the gym is taken on as not available", () => {
+    // Six Park is the NJC/NSC circuits' that weekend, so the strip has to
+    // read one gym, exactly as it would if the operator had released it.
+    const map = resolveWeekendVenues(grid({ [SIX]: ["taken"], [PLAY]: ["on"] }), [
+      weekend("s1", [SIX, PLAY]),
+    ])
+    expect(map.get("s1")?.map((v) => v.short)).toEqual(["Playground"])
   })
 
   it("never fills a weekend the operator emptied", () => {

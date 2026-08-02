@@ -3,7 +3,12 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
-import { attachVenueToSession, defaultCourtIdsForVenue, ensureWeekendSession } from "@/lib/seasons/venue-propagation"
+import {
+  attachVenueToSession,
+  clearVenueUnavailability,
+  defaultCourtIdsForVenue,
+  ensureWeekendSession,
+} from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +22,10 @@ export const dynamic = "force-dynamic"
  *
  * Weekends that already exist keep using the per-session endpoint
  * (sessions/[sessionId]/venues/[venueId]); this one is idempotent either way.
+ *
+ * Same override rule as that endpoint: putting the gym on a weekend the
+ * season had marked unavailable ("Taken: NJC/NSC") drops the mark, because
+ * the operator has just said the season does have it after all.
  */
 
 const postSchema = z.object({
@@ -88,12 +97,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
+    const overrode = await clearVenueUnavailability(params.id, venueId, [satDate])
     const result = await attachVenueToSession(params.id, weekend.sessionId, venueId, courtIds)
     return NextResponse.json({
       success: true,
       sessionId: weekend.sessionId,
       createdSession: weekend.created,
       ...result,
+      overrodeUnavailable: overrode,
     })
   } catch (error) {
     console.error("Add weekend error:", error)

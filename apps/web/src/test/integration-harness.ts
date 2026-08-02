@@ -57,6 +57,8 @@ import { getServerSession } from "next-auth"
  *   1143 planner step 2 weekends (ensureWeekendSession + POST /weekends: create-on-toggle)
  *   1144 planner step 2 courts (applyVenueCourtsToSessionDays: rewire/add/blocked-by-game)
  *   1145 planner gyms (fillOrder PATCH without a court rewire, unitVenues round trip)
+ *   1146 planner step 2 taken weekends (unavailability marks: grid state,
+ *        toggle-season skip + report, attach-route override)
  */
 
 export function actAs(userId: string | null): void {

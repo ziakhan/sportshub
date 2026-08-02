@@ -7,6 +7,8 @@ import {
   attachVenueToSession,
   defaultCourtIdsForVenue,
   detachVenueFromSession,
+  unavailableWeekendsFor,
+  weekendKeyOf,
 } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
@@ -23,7 +25,11 @@ export const dynamic = "force-dynamic"
  *
  * On: every REGULAR weekend the season already has gets the gym, on the
  * season's own court count. Weekends that do not exist yet are not created —
- * this turns a gym on, it does not invent a calendar.
+ * this turns a gym on, it does not invent a calendar. Weekends the season has
+ * marked unavailable at this gym ("Taken: NJC/NSC") are left exactly as they
+ * are and reported back as `weekendsUnavailable`: one press meaning "every
+ * weekend" must never quietly claim a building somebody else has. Overriding
+ * one of those stays a deliberate, per-weekend tap on the grid.
  *
  * Off: every weekend releases it, except the ones where a game is already
  * scheduled at that gym. Those are reported back rather than silently
@@ -68,13 +74,20 @@ export async function POST(
 
     const sessions = await (prisma as any).seasonSession.findMany({
       where: { seasonId: params.id, phase: "REGULAR" },
-      select: { id: true },
+      select: {
+        id: true,
+        days: { select: { date: true, dayVenues: { select: { venueId: true } } } },
+      },
       orderBy: { id: "asc" },
     })
 
     let weekendsChanged = 0
     let weekendsBlocked = 0
+    let weekendsUnavailable = 0
     let gamesBlocking = 0
+    // The reason the operator gets told about, when every skipped weekend
+    // gives the same one — which is the real case (a whole circuit).
+    const reasons = new Set<string>()
 
     if (on) {
       const courtIds = await defaultCourtIdsForVenue(venueId, (seasonVenue as any).courtsAvailable)
@@ -84,7 +97,24 @@ export async function POST(
           { status: 400 }
         )
       }
+      const unavailable = await unavailableWeekendsFor(params.id, venueId)
       for (const session of sessions) {
+        // Attachment wins: a marked weekend the operator already took stays
+        // on, and is never reported as one we left behind.
+        const alreadyOn = session.days.some((d: any) =>
+          d.dayVenues.some((dv: any) => dv.venueId === venueId)
+        )
+        const marked = unavailable.size && !alreadyOn
+          ? session.days
+              .map((d: any) => weekendKeyOf(d.date))
+              .find((key: Date | null) => key && unavailable.has(key.toISOString()))
+          : null
+        if (marked) {
+          weekendsUnavailable++
+          const reason = unavailable.get(marked.toISOString())
+          if (reason) reasons.add(reason)
+          continue
+        }
         const res = await attachVenueToSession(params.id, session.id, venueId, courtIds)
         if (res.daysAttached > 0) weekendsChanged++
       }
@@ -107,6 +137,10 @@ export async function POST(
       weekends: sessions.length,
       weekendsChanged,
       weekendsBlocked,
+      weekendsUnavailable,
+      // One reason when they all agree, so the notice can name it; null when
+      // the skipped weekends were marked for different reasons.
+      unavailableReason: reasons.size === 1 ? [...reasons][0] : null,
       gamesBlocking,
     })
   } catch (error) {

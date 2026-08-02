@@ -5,6 +5,7 @@ import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
   attachVenueToSession,
+  clearSessionVenueUnavailability,
   defaultCourtIdsForVenue,
   detachVenueFromSession,
 } from "@/lib/seasons/venue-propagation"
@@ -16,6 +17,11 @@ export const dynamic = "force-dynamic"
  * venue endpoints stay where they are; these two only ever touch the days of
  * the session named in the path, so ticking a cell off releases that weekend
  * and nothing else.
+ *
+ * Turning a weekend ON is also the operator's override of a weekend the
+ * season had marked unavailable ("Taken: NJC/NSC"): the mark is dropped here,
+ * server side, so the grid can never show a gym both attached and taken.
+ * Turning one OFF stays plain off — only defaults and imports write reasons.
  */
 
 const postSchema = z.object({
@@ -99,8 +105,15 @@ export async function POST(request: NextRequest, { params }: Ctx) {
       return NextResponse.json({ error: "Those courts are not at this gym" }, { status: 400 })
     }
 
+    // The override, before the attach: whatever the season had said about
+    // this weekend, the operator has just said otherwise.
+    const overrode = await clearSessionVenueUnavailability(
+      params.id,
+      params.sessionId,
+      params.venueId
+    )
     const result = await attachVenueToSession(params.id, params.sessionId, params.venueId, courtIds)
-    return NextResponse.json({ success: true, ...result })
+    return NextResponse.json({ success: true, ...result, overrodeUnavailable: overrode })
   } catch (error) {
     console.error("Attach venue to session error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

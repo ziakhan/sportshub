@@ -18,12 +18,34 @@ import type { VenueGrid, VenueGridCell, VenueGridRow, VenueGridWeekend } from "@
  *      the estimate phase. A single weekend that runs different hours lives
  *      behind a quiet link, and shows up amber on the grid so it is never
  *      invisible.
+ *
+ * Owner ruling 2026-08-02 added a fourth state: a weekend the season does not
+ * have this gym on, WITH the reason (Six Park East is taken by the NJC/NSC
+ * circuits on six known 2026-27 weekends). It is pre-marked from what we
+ * know, it is dashed gold so it never reads as a weekend nobody got to yet,
+ * and tapping it is still just "turn the gym on" — the operator always wins,
+ * and the notice says what was overridden.
  */
 
 const CELL_CLS: Record<VenueGridCell["state"], string> = {
   on: "border-court-200 bg-court-50 text-court-800 hover:border-court-400",
   off: "border-ink-200 border-dashed bg-ink-50 text-ink-400 hover:border-ink-400",
   custom: "border-gold-200 bg-gold-50 text-gold-800 hover:border-gold-400",
+  // Dashed like off (the gym is not on this weekend) but gold like custom
+  // (there is something to read here).
+  taken: "border-gold-300 border-dashed bg-gold-50/70 text-gold-800 hover:border-gold-500",
+}
+
+/** Attached, however its hours read. Taken and off both mean not ours. */
+const isOn = (state: VenueGridCell["state"]) => state === "on" || state === "custom"
+
+/** What fits in a 62px cell: "Taken: NJC/NSC" reads as "NJC/NSC". */
+function shortReason(reason: string | null): string | null {
+  if (!reason) return null
+  const tail = reason.includes(":") ? reason.slice(reason.indexOf(":") + 1) : reason
+  const value = tail.trim()
+  if (!value) return null
+  return value.length > 9 ? `${value.slice(0, 8)}…` : value
 }
 
 interface HoursDraft {
@@ -134,11 +156,23 @@ export function GymsWeekendsStep({
   })
 
   /** One tap: on becomes off, off becomes on. A weekend that has no session
-   *  yet gets one created on the way in. */
+   *  yet gets one created on the way in. A weekend marked taken turns on the
+   *  same way — the tap IS the override — and the notice names what it
+   *  overrode, so nobody wonders where the reason went. */
   const toggleCell = async (venue: VenueGridRow, weekend: VenueGridWeekend, cell: VenueGridCell) => {
     const key = `${venue.venueId}:${weekend.key}`
-    if (cell.state === "off") {
-      const on = `${venue.name} is on for ${weekend.label}.`
+    if (!isOn(cell.state)) {
+      const on: string | (() => string) =
+        cell.state === "taken"
+          ? () => {
+              // Amber, not green: claiming a weekend somebody else had is
+              // worth reading twice.
+              setNoticeTone("gold")
+              return `${venue.name} is on for ${weekend.label}. It was marked ${
+                cell.reason ?? "unavailable"
+              }.`
+            }
+          : `${venue.name} is on for ${weekend.label}.`
       if (cell.sessionId) {
         await call(
           `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}`,
@@ -269,7 +303,8 @@ export function GymsWeekendsStep({
       (data) => {
         const changed = Number(data?.weekendsChanged ?? 0)
         const blocked = Number(data?.weekendsBlocked ?? 0)
-        setNoticeTone(blocked > 0 ? "gold" : "court")
+        const unavailable = Number(data?.weekendsUnavailable ?? 0)
+        setNoticeTone(blocked > 0 || unavailable > 0 ? "gold" : "court")
         if (Number(data?.weekends ?? 0) === 0) {
           return "This season has no weekends yet. Tap one on the grid and it gets created."
         }
@@ -279,10 +314,25 @@ export function GymsWeekendsStep({
             : `${venue.name} is ${on ? "on" : "off"} for ${changed} weekend${
                 changed === 1 ? "" : "s"
               }.`
-        if (blocked === 0) return lead
-        return `${lead} ${blocked} weekend${
-          blocked === 1 ? "" : "s"
-        } kept it because a game is already scheduled there.`
+        const parts = [lead]
+        if (blocked > 0) {
+          parts.push(
+            `${blocked} weekend${
+              blocked === 1 ? "" : "s"
+            } kept it because a game is already scheduled there.`
+          )
+        }
+        // "On all weekends" never claims a building somebody else has: the
+        // marked ones stayed put, and the operator gets told which and why.
+        if (unavailable > 0) {
+          const reason = data?.unavailableReason
+          parts.push(
+            `Left ${unavailable} weekend${unavailable === 1 ? "" : "s"} marked ${
+              reason ?? "unavailable"
+            }.`
+          )
+        }
+        return parts.join(" ")
       }
     )
   }
@@ -386,7 +436,7 @@ export function GymsWeekendsStep({
           const courtsDraft = courts[venue.seasonVenueId] ?? courtsNow
           const courtsDirty = courtsDraft !== courtsNow
           const exceptionOpen = exceptionFor === venue.seasonVenueId
-          const liveWeekends = weekends.filter((w, i) => venue.cells[i].state !== "off" && w.sessionId)
+          const liveWeekends = weekends.filter((w, i) => isOn(venue.cells[i].state) && w.sessionId)
 
           return (
             <div key={venue.seasonVenueId} className="border-ink-100 mb-3.5 rounded-2xl border p-4">
@@ -597,26 +647,38 @@ export function GymsWeekendsStep({
                               type="button"
                               disabled={locked || busy !== null}
                               onClick={() => toggleCell(venue, w, cell)}
-                              aria-pressed={cell.state !== "off"}
+                              aria-pressed={isOn(cell.state)}
                               aria-label={`${venue.name}, ${w.label}: ${
                                 cell.state === "off"
                                   ? "off, tap to turn it on"
-                                  : cell.state === "custom"
-                                    ? `on, ${cell.startTime} to ${cell.endTime}, tap to turn it off`
-                                    : "on, tap to turn it off"
+                                  : cell.state === "taken"
+                                    ? `not available, ${
+                                        cell.reason ?? "marked unavailable"
+                                      }, tap to turn it on anyway`
+                                    : cell.state === "custom"
+                                      ? `on, ${cell.startTime} to ${cell.endTime}, tap to turn it off`
+                                      : "on, tap to turn it off"
                               }`}
+                              title={cell.state === "taken" ? cell.reason ?? undefined : undefined}
                               className={`min-h-[40px] w-[62px] rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${CELL_CLS[cell.state]}`}
                             >
                               {busy === key ? (
                                 "…"
                               ) : cell.state === "off" ? (
                                 "Off"
+                              ) : cell.state === "taken" ? (
+                                <span className="block leading-tight">Taken</span>
                               ) : cell.state === "custom" ? (
                                 <span className="block leading-tight">{cell.hoursLabel ?? "Custom"}</span>
                               ) : (
                                 "Yes"
                               )}
-                              {cell.state !== "off" && cell.daysOn < cell.dayCount && (
+                              {cell.state === "taken" && shortReason(cell.reason) && (
+                                <span className="text-gold-700 block text-[9px] font-semibold">
+                                  {shortReason(cell.reason)}
+                                </span>
+                              )}
+                              {isOn(cell.state) && cell.daysOn < cell.dayCount && (
                                 <span className="text-ink-400 block text-[9px] font-semibold">
                                   {cell.daysOn} of {cell.dayCount} days
                                 </span>
@@ -779,6 +841,10 @@ export function GymsWeekendsStep({
           <span className="inline-flex items-center gap-1.5">
             <i className="border-gold-200 bg-gold-50 inline-block h-3 w-3 rounded border" />
             custom hours that weekend
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i className="border-gold-300 bg-gold-50/70 inline-block h-3 w-3 rounded border border-dashed" />
+            taken that weekend (tap to take it anyway)
           </span>
         </div>
 
