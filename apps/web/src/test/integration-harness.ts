@@ -51,6 +51,7 @@ import { getServerSession } from "next-auth"
  *   1137 org season defaults (Phase A: resolver via season GET / approval fees / scheduler input)
  *   1138 planner step 2 (one gym one weekend: attach/detach/custom hours + grid)
  *   1139 planner step 2 routes (session venue POST/DELETE/PATCH hours + grid GET)
+ *   1140 planner step 1 (last-season team counts: approved-only, per grade)
  */
 
 export function actAs(userId: string | null): void {

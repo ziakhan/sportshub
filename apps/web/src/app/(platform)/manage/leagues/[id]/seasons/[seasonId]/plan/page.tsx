@@ -4,8 +4,8 @@ import { Suspense, useCallback, useState } from "react"
 import Link from "next/link"
 import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
-import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
+import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
 
 /**
  * Plan your season (owner-approved mock, 2026-08-02). One guided flow that
@@ -14,9 +14,9 @@ import { GymsWeekendsStep } from "./gyms-weekends-step"
  * schedule when registration locks.
  *
  * The rail is always visible and every finished step stays clickable, because
- * after setup these same five steps become the season's home page. Wave 1
- * builds step 2 (gyms and weekends) for real; the rest land in later waves
- * and point at today's screens in the meantime.
+ * after setup these same five steps become the season's home page. Steps 1
+ * (teams) and 2 (gyms and weekends) are built for real; the rest land in
+ * later waves and point at today's screens in the meantime.
  */
 
 // Hints carry real apostrophes: they render as JS expressions, not JSX text,
@@ -29,7 +29,7 @@ const STEPS = [
   { n: 5, label: "Schedule", hint: "when you're ready" },
 ] as const
 
-const BUILT = new Set<number>([2])
+const BUILT = new Set<number>([1, 2])
 
 // useSearchParams requires a Suspense boundary in Next 14 (same pattern as
 // manage/leagues/[id]/page.tsx).
@@ -48,12 +48,13 @@ function PlanWizard() {
   const seasonId = params?.seasonId as string
 
   const fromUrl = Number(searchParams?.get("step") ?? "")
-  const [step, setStep] = useState(fromUrl >= 1 && fromUrl <= 5 ? fromUrl : 2)
-  const [grid, setGrid] = useState<VenueGrid | null>(null)
+  const [step, setStep] = useState(fromUrl >= 1 && fromUrl <= 5 ? fromUrl : 1)
+  const [header, setHeader] = useState<PlanHeaderInfo | null>(null)
 
-  const onLoaded = useCallback((g: VenueGrid) => setGrid(g), [])
+  // Whichever step loads first names the season in the page header.
+  const onLoaded = useCallback((info: PlanHeaderInfo) => setHeader(info), [])
 
-  const seasonLine = [grid?.leagueName, grid?.seasonLabel].filter(Boolean).join(" · ")
+  const seasonLine = [header?.leagueName, header?.seasonLabel].filter(Boolean).join(" · ")
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
@@ -113,7 +114,9 @@ function PlanWizard() {
       </p>
 
       <div className="mt-6">
-        {step === 2 ? (
+        {step === 1 ? (
+          <TeamsStep seasonId={seasonId} leagueId={leagueId} onLoaded={onLoaded} />
+        ) : step === 2 ? (
           <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : (
           <Placeholder step={step} leagueId={leagueId} seasonId={seasonId} />
@@ -136,11 +139,6 @@ function Placeholder({
 }) {
   const meta = STEPS.find((s) => s.n === step)
   const copy: Record<number, { body: string; href?: string; cta?: string }> = {
-    1: {
-      body: "How many teams do you expect, one number per grade, pre-filled from last season where there is history. Nothing else: no dates, no venues.",
-      href: `/manage/leagues/${leagueId}/seasons/${seasonId}/planner`,
-      cta: "Edit expected teams on the planner board",
-    },
     3: {
       body: "The calendar, computed. Grade chips drag between weekends and the court math recomputes live.",
       href: `/manage/leagues/${leagueId}/seasons/${seasonId}/planner`,

@@ -53,6 +53,10 @@ export interface PlannerState {
   units: PlannerUnit[]
   windows: PlannerWindow[]
   errors: string[]
+  /** Games each team is promised across the whole season — the season's
+   *  guarantee, not a weekend's share. Absent when the season has not said
+   *  yet (step 1 then leaves the games clause off its summary). */
+  gamesPerTeam?: number
 }
 
 export type PlannerLever = "balance" | "compact" | "spread"
@@ -75,6 +79,27 @@ export function weekendDemand(
     if (u) games += Math.ceil((u.teams * weekend.targetGamesPerTeam) / 2)
   }
   return games
+}
+
+/**
+ * A grade's estimate, split across the divisions that make up that grade.
+ * The operator counts in grades ("14 Grade 7 teams"); the season stores the
+ * number per division, so a cluster spanning two divisions splits evenly
+ * and the remainder lands on the first ones. Per-division precision is not
+ * the point of a pre-registration estimate — the grade total is.
+ */
+export function expectedTeamUpdates(
+  divisionIds: string[],
+  total: number
+): Array<{ divisionId: string; expectedTeams: number }> {
+  if (divisionIds.length === 0) return []
+  const per = Math.floor(total / divisionIds.length)
+  let remainder = total - per * divisionIds.length
+  return divisionIds.map((divisionId) => {
+    const expectedTeams = per + (remainder > 0 ? 1 : 0)
+    remainder--
+    return { divisionId, expectedTeams }
+  })
 }
 
 /**

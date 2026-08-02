@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { Button, SmartBack } from "@/components/ui"
 import {
   currentAssignment,
+  expectedTeamUpdates,
   weekendDemand,
   type PlannerLever,
   type PlannerState,
@@ -103,18 +104,13 @@ export default function SeasonPlannerPage() {
   const saveExpected = async () => {
     if (!state) return
     setBusy("expected")
-    // Cluster estimates split evenly across the cluster's divisions — it's
-    // a pre-registration estimate; per-division precision isn't the point.
+    // Cluster estimates split evenly across the cluster's divisions — the
+    // same mapping the plan wizard's step 1 saves through.
     const updates: Array<{ divisionId: string; expectedTeams: number }> = []
     for (const u of state.units) {
       const v = expectedDraft[u.key]
       if (v === undefined) continue
-      const per = Math.floor(v / u.divisionIds.length)
-      let remainder = v - per * u.divisionIds.length
-      for (const id of u.divisionIds) {
-        updates.push({ divisionId: id, expectedTeams: per + (remainder > 0 ? 1 : 0) })
-        remainder--
-      }
+      updates.push(...expectedTeamUpdates(u.divisionIds, v))
     }
     if (updates.length === 0) {
       setBusy(null)

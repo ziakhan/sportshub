@@ -137,7 +137,18 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
     weekends: wks,
   }))
 
-  return { seasonId, units, windows, errors }
+  // Games each team is promised for the SEASON. Not the sum of every
+  // weekend's target: a grade plays one weekend per window, so that sum
+  // counts weekends the grade never appears on. The league's guarantee is
+  // the number; failing that, one appearance per window.
+  const gamesPerTeam =
+    input.gamesGuaranteed ||
+    windows.reduce(
+      (sum, w) => sum + Math.max(0, ...w.weekends.map((x) => x.targetGamesPerTeam)),
+      0
+    )
+
+  return { seasonId, units, windows, errors, gamesPerTeam }
 }
 
 /** Persist an assignment: expand grade clusters to division keys on

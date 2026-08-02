@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  expectedTeamUpdates,
   proposePlan,
   suggestFor,
   weekendDemand,
@@ -200,5 +201,21 @@ describe("weekendDemand", () => {
     expect(weekendDemand(UNITS, w, ["age:Gr9"])).toBe(25)
     expect(weekendDemand(UNITS, w, ["age:Gr9", "age:JrGirls"])).toBe(33)
     expect(weekendDemand(UNITS, { targetGamesPerTeam: 3 }, ["age:Gr9"])).toBe(38)
+  })
+})
+
+describe("expectedTeamUpdates", () => {
+  it("keeps the grade total exact when it splits across divisions", () => {
+    expect(expectedTeamUpdates(["a", "b", "c"], 14)).toEqual([
+      { divisionId: "a", expectedTeams: 5 },
+      { divisionId: "b", expectedTeams: 5 },
+      { divisionId: "c", expectedTeams: 4 },
+    ])
+    expect(expectedTeamUpdates(["a"], 27)).toEqual([{ divisionId: "a", expectedTeams: 27 }])
+    expect(expectedTeamUpdates(["a", "b"], 0)).toEqual([
+      { divisionId: "a", expectedTeams: 0 },
+      { divisionId: "b", expectedTeams: 0 },
+    ])
+    expect(expectedTeamUpdates([], 9)).toEqual([])
   })
 })

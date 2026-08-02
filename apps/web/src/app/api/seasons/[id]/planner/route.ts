@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { buildPlannerState } from "@/lib/scheduler/planner"
 import { currentAssignment, suggestFor } from "@/lib/scheduler/planner-core"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
+import { lastSeasonTeamCounts } from "@/lib/seasons/last-season"
 
 export const dynamic = "force-dynamic"
 
@@ -13,11 +14,21 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     const gate = await seasonPlannerAuth(params.id)
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
 
-    const state = await buildPlannerState(params.id)
+    const [state, lastSeasonTeams] = await Promise.all([
+      buildPlannerState(params.id),
+      // Step 1's "13 last season" hint. Additive on this response rather
+      // than its own route: the step needs units, the lock and the hints
+      // together, and the PATCH below already answers with `state`.
+      lastSeasonTeamCounts(params.id),
+    ])
     const assignment = currentAssignment(state)
     return NextResponse.json({
       state,
       suggestions: suggestFor(state, assignment),
+      seasonStatus: gate.seasonStatus,
+      seasonLabel: gate.seasonLabel,
+      leagueName: gate.leagueName,
+      lastSeasonTeams,
     })
   } catch (error) {
     console.error("Planner state error:", error)
