@@ -82,13 +82,21 @@ function wk(
     capacityGames,
     largestVenueCapacity,
     venues: [
-      { venueId: "v1", name: "Six Park East", capacityGames: largestVenueCapacity },
+      { venueId: "v1", name: "Six Park East", capacityGames: largestVenueCapacity, fillOrder: 0 },
       ...(capacityGames > largestVenueCapacity
-        ? [{ venueId: "v2", name: "Playground", capacityGames: capacityGames - largestVenueCapacity }]
+        ? [
+            {
+              venueId: "v2",
+              name: "Playground",
+              capacityGames: capacityGames - largestVenueCapacity,
+              fillOrder: 1,
+            },
+          ]
         : []),
     ],
     targetGamesPerTeam: 2,
     assigned: [],
+    assignedVenues: {},
   }
 }
 

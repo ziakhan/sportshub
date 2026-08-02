@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { buildPlannerState } from "@/lib/scheduler/planner"
-import { proposePlan, suggestFor } from "@/lib/scheduler/planner-core"
+import { packPlanVenues, proposePlan, suggestFor } from "@/lib/scheduler/planner-core"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 
 export const dynamic = "force-dynamic"
@@ -25,6 +25,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({
       lever: parsed.data.lever,
       assignment,
+      // Which building each grade plays in, weekend by weekend. Apply sends
+      // this straight back so the saved plan keeps the gyms it was scored on.
+      venues: packPlanVenues(state, assignment),
       suggestions: suggestFor(state, assignment),
     })
   } catch (error) {

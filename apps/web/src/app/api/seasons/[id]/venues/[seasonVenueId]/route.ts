@@ -22,13 +22,23 @@ export const dynamic = "force-dynamic"
  *   3. every weekend the gym is already on is rewired to that court set, so
  *      planner capacity moves with it.
  *
+ * It also carries `fillOrder` — which gym the planner fills FIRST (owner
+ * 2026-08-02: the top gym fills completely before the next one opens).
+ * Ordering gyms is not a capacity edit, so a fillOrder-only PATCH never
+ * touches courts and never rewires a weekend.
+ *
  * Same gate as the wave-1 session-venue routes: league owner or platform
  * admin, and never on a finalized season.
  */
 
-const patchSchema = z.object({
-  courtsAvailable: z.number().int().min(1).max(30),
-})
+const patchSchema = z
+  .object({
+    courtsAvailable: z.number().int().min(1).max(30).optional(),
+    fillOrder: z.number().int().min(0).max(99).optional(),
+  })
+  .refine((v) => v.courtsAvailable !== undefined || v.fillOrder !== undefined, {
+    message: "courtsAvailable or fillOrder required",
+  })
 
 export async function PATCH(
   request: NextRequest,
@@ -51,7 +61,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    const { courtsAvailable } = parsed.data
+    const { courtsAvailable, fillOrder } = parsed.data
 
     // The link row must belong to THIS season (IDOR guard).
     const seasonVenue = await prisma.seasonVenue.findFirst({
@@ -62,6 +72,16 @@ export async function PATCH(
       return NextResponse.json({ error: "Season venue not found" }, { status: 404 })
     }
     const venueId = (seasonVenue as any).venueId as string
+    const venueName = (seasonVenue as any).venue?.name ?? null
+
+    // Ordering the gyms alone: no courts change, so nothing gets rewired.
+    if (courtsAvailable === undefined) {
+      await prisma.seasonVenue.update({
+        where: { id: params.seasonVenueId },
+        data: { fillOrder },
+      })
+      return NextResponse.json({ success: true, fillOrder, venueName })
+    }
 
     // Pick "6 courts" and Court 1…Court 6 exist immediately — the same
     // auto-create the season-venue setup card does (owner 2026-07-31).
@@ -78,7 +98,7 @@ export async function PATCH(
 
     await prisma.seasonVenue.update({
       where: { id: params.seasonVenueId },
-      data: { courtsAvailable },
+      data: fillOrder === undefined ? { courtsAvailable } : { courtsAvailable, fillOrder },
     })
 
     const courtIds = await defaultCourtIdsForVenue(venueId, courtsAvailable)
@@ -96,7 +116,8 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       courtsAvailable,
-      venueName: (seasonVenue as any).venue?.name ?? null,
+      fillOrder: fillOrder ?? null,
+      venueName,
       courtCount: courtIds.length,
       daysRewired: rewire.daysRewired,
       daysBlocked: rewire.daysBlocked,

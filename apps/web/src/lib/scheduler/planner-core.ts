@@ -28,6 +28,10 @@ export interface PlannerUnit {
   key: string // "age:<ageGroup>"
   label: string
   divisionIds: string[]
+  /** This grade should ALTERNATE buildings across weekends rather than keep
+   *  one gym all season (travel fairness, owner 2026-08-02). For an
+   *  alternating grade the carried gym is the one to AVOID next, not a home. */
+  alternate?: boolean
   /** What the board plans on: the operator's step-1 number, never below the
    *  teams already registered — `planningTeams(approved, expected)`.
    *  Everything that computes capacity reads THIS number. */
@@ -61,15 +65,28 @@ export function planningSource(
   return approved > 0 ? "approved" : "none"
 }
 
+export interface PlannerVenue {
+  venueId: string
+  name: string
+  capacityGames: number
+  /** Which gym the league fills FIRST (0 = first choice). A weekend's venue
+   *  array always arrives sorted by this then by name, and the packer walks
+   *  it in that order without re-sorting. */
+  fillOrder: number
+}
+
 export interface PlannerWeekend {
   sessionId: string
   label: string
   dateISO: string
   capacityGames: number
   largestVenueCapacity: number
-  venues: Array<{ venueId: string; name: string; capacityGames: number }>
+  venues: PlannerVenue[]
   targetGamesPerTeam: number
   assigned: string[] // unit keys
+  /** Which building each grade plays in this weekend, as saved:
+   *  unit key → venueId. Empty when nobody has decided yet. */
+  assignedVenues: Record<string, string>
 }
 
 export interface PlannerWindow {
@@ -452,6 +469,206 @@ export function expectedTeamUpdates(
   })
 }
 
+/* ------------------------- which gym a grade plays in -------------------- */
+
+export interface WeekendVenuePacking {
+  /** The one gym each grade plays in this weekend: unit key → venueId. */
+  byUnit: Record<string, string>
+  /** Gyms that took at least one grade, in fill order. One entry is the
+   *  goal; two means the league opened a second building that weekend. */
+  opened: string[]
+  /** Games no gym could hold. */
+  overflow: number
+  /** Placements that broke a gym promise: a grade bumped out of the building
+   *  it usually plays, or an alternating grade sent back to the building it
+   *  just played. Not fatal — a cost the search tries to avoid. */
+  violations: number
+}
+
+/** Games one grade asks for on one weekend. */
+function unitGames(unit: PlannerUnit, targetGamesPerTeam: number): number {
+  return Math.ceil((unit.teams * targetGamesPerTeam) / 2)
+}
+
+/**
+ * One weekend's grades sorted into buildings (owner ruling 2026-08-02).
+ *
+ * Three rules, in this order:
+ *  1. A grade plays ONE gym per weekend. Never split across buildings — the
+ *     whole point is that a family drives to one address.
+ *  2. A grade keeps the SAME gym all season. `prior` is where each grade
+ *     usually plays; it gets that gym back whenever the whole grade still
+ *     fits, and being bumped counts as a violation rather than a silent move.
+ *     For a grade flagged `alternate`, `prior` inverts: it is the building to
+ *     AVOID this weekend, and using it anyway is the violation.
+ *  3. Gyms fill in order. The top gym takes everything it can hold before the
+ *     next one opens, so a light weekend rents one building, not two halves.
+ *
+ * `weekend.venues` must already be in fill order (buildPlannerState sorts
+ * them); this walks that order and never re-sorts, because the exact search
+ * calls it hundreds of thousands of times.
+ */
+export function packWeekendVenues(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  prior: Record<string, string>
+): WeekendVenuePacking {
+  const byUnit: Record<string, string> = {}
+  const venues = weekend.venues
+  const target = weekend.targetGamesPerTeam
+
+  if (units.length === 0 || venues.length === 0) {
+    let stranded = 0
+    for (const u of units) stranded += Math.max(0, unitGames(u, target))
+    return { byUnit, opened: [], overflow: stranded, violations: 0 }
+  }
+
+  const remaining = venues.map((v) => v.capacityGames)
+  const used = venues.map(() => false)
+  const indexOf = new Map<string, number>()
+  venues.forEach((v, k) => indexOf.set(v.venueId, k))
+  let overflow = 0
+  let violations = 0
+
+  // Residents first, in key order — a deterministic answer to "which of two
+  // grades that both live here gets bumped".
+  const pool: PlannerUnit[] = []
+  const byKey = [...units].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+  for (const u of byKey) {
+    const demand = unitGames(u, target)
+    if (demand <= 0) continue // a grade with no teams claims no gym
+    if (u.alternate) {
+      pool.push(u)
+      continue
+    }
+    const home = prior[u.key]
+    const k = home == null ? undefined : indexOf.get(home)
+    // No home yet, or the home gym is not open this weekend: it is simply a
+    // grade looking for a room, not a broken promise.
+    if (k === undefined) {
+      pool.push(u)
+      continue
+    }
+    if (remaining[k] >= demand) {
+      byUnit[u.key] = venues[k].venueId
+      used[k] = true
+      remaining[k] -= demand
+    } else {
+      violations++
+      pool.push(u)
+    }
+  }
+
+  // Then the rest, biggest grade first: a big grade placed late is the one
+  // that opens a second building nobody needed.
+  pool.sort((a, b) => b.teams - a.teams || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+
+  for (const u of pool) {
+    const demand = unitGames(u, target)
+    const avoid = u.alternate ? prior[u.key] : undefined
+    let pick = -1
+    for (let k = 0; k < venues.length; k++) {
+      if (remaining[k] >= demand && venues[k].venueId !== avoid) {
+        pick = k
+        break
+      }
+    }
+    if (pick < 0 && avoid != null) {
+      // Only the gym this grade just played still has room. Playing it twice
+      // beats splitting the grade across two buildings — but it is a cost.
+      for (let k = 0; k < venues.length; k++) {
+        if (remaining[k] >= demand) {
+          pick = k
+          violations++
+          break
+        }
+      }
+    }
+    if (pick < 0) {
+      // Fits nowhere whole: the roomiest gym takes it and the games that do
+      // not fit are the weekend's overflow.
+      let big = 0
+      for (let k = 1; k < venues.length; k++) if (remaining[k] > remaining[big]) big = k
+      overflow += demand - Math.max(0, remaining[big])
+      remaining[big] = 0
+      if (avoid != null && venues[big].venueId === avoid) violations++
+      byUnit[u.key] = venues[big].venueId
+      used[big] = true
+      continue
+    }
+    byUnit[u.key] = venues[pick].venueId
+    used[pick] = true
+    remaining[pick] -= demand
+  }
+
+  const opened: string[] = []
+  for (let k = 0; k < venues.length; k++) if (used[k]) opened.push(venues[k].venueId)
+  return { byUnit, opened, overflow, violations }
+}
+
+/** Every weekend of a season in calendar order, windows flattened. */
+function chronologicalWeekends(state: PlannerState): PlannerWeekend[] {
+  return state.windows
+    .flatMap((win) => win.weekends)
+    .sort(
+      (a, b) =>
+        new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime() ||
+        (a.sessionId < b.sessionId ? -1 : a.sessionId > b.sessionId ? 1 : 0)
+    )
+}
+
+/**
+ * Pack a run of weekends in order, carrying each grade's building forward:
+ * where a grade played last time is where it wants to play next time (or,
+ * when it alternates, the one place it does not want to play next time).
+ * Mutates `resident` so the caller can keep carrying it.
+ */
+function carryResidency(
+  unitByKey: Map<string, PlannerUnit>,
+  weekends: PlannerWeekend[],
+  assignment: Record<string, string[]>,
+  resident: Record<string, string>,
+  collect?: Record<string, Record<string, string>>
+): void {
+  for (const w of weekends) {
+    const seen = new Set<string>()
+    const units: PlannerUnit[] = []
+    for (const key of assignment[w.sessionId] ?? []) {
+      if (seen.has(key)) continue
+      seen.add(key)
+      const u = unitByKey.get(key)
+      if (u) units.push(u)
+    }
+    const packed = packWeekendVenues(units, w, resident)
+    for (const key of Object.keys(packed.byUnit)) resident[key] = packed.byUnit[key]
+    if (collect && Object.keys(packed.byUnit).length > 0) collect[w.sessionId] = packed.byUnit
+  }
+}
+
+/**
+ * The whole season's buildings: sessionId → (unit key → venueId).
+ *
+ * Walks the calendar once, in order, so residency is real — a grade's gym in
+ * February is the one it has been playing since October, not a fresh guess.
+ * Weekends that place nobody are left out entirely, so a caller can tell
+ * "no grades here" from "grades here with no gym decided".
+ */
+export function packPlanVenues(
+  state: PlannerState,
+  assignment: Record<string, string[]>
+): Record<string, Record<string, string>> {
+  const unitByKey = new Map(state.units.map((u) => [u.key, u]))
+  const resident: Record<string, string> = {}
+  const out: Record<string, Record<string, string>> = {}
+  carryResidency(unitByKey, chronologicalWeekends(state), assignment, resident, out)
+  return out
+}
+
+/** What opening a second building, and breaking a gym promise, cost the
+ *  search. One number so the scoring line below stays readable. */
+const SECOND_BUILDING_COST = 150
+const GYM_VIOLATION_COST = 60
+
 /**
  * Deterministic per-window search. Every unit appears exactly once per
  * window (NPH's real rule: each grade plays one weekend per monthly
@@ -461,6 +678,12 @@ export function expectedTeamUpdates(
  *  - balance: flattest peak utilization
  *  - compact: fewest weekends used, then flattest
  *  - spread: every weekend used, then flattest
+ *
+ * Buildings are part of the score, not an afterthought: every candidate is
+ * really packed into gyms (packWeekendVenues), and a month pays for each
+ * second building it opens and each gym promise it breaks. Months are decided
+ * in calendar order, so October's answer shapes November's residency and
+ * never the other way round.
  */
 export function proposePlan(
   state: PlannerState,
@@ -469,12 +692,18 @@ export function proposePlan(
   const units = state.units.filter((u) => u.teams > 0)
   const out: Record<string, string[]> = {}
   const giants = [...units].sort((a, b) => b.teams - a.teams).slice(0, 2).map((u) => u.key)
+  const unitByKey = new Map(units.map((u) => [u.key, u]))
+  // Where each grade has been playing, as decided by the months already
+  // settled. A window scores against THIS snapshot: no weekend of a month
+  // feeds residency back into another weekend of the same month.
+  const resident: Record<string, string> = {}
 
   for (const win of state.windows) {
     const n = win.weekends.length
     if (n === 0) continue
     if (n === 1) {
       out[win.weekends[0].sessionId] = units.map((u) => u.key)
+      carryResidency(unitByKey, win.weekends, out, resident)
       continue
     }
     let best: number[] | null = null
@@ -509,24 +738,34 @@ export function proposePlan(
       win.weekends.forEach((w, k) => {
         out[w.sessionId] = units.filter((_, i) => greedy[i] === k).map((u) => u.key)
       })
+      carryResidency(unitByKey, win.weekends, out, resident)
       continue
     }
+    // Packing every candidate is only worth it when buildings can actually
+    // differ: one gym a weekend, nobody alternating and nobody with a gym to
+    // keep means the venue terms are zero for every candidate alike.
+    const venueAware =
+      win.weekends.some((w) => w.venues.length > 1) ||
+      units.some((u) => u.alternate || resident[u.key] != null)
+    const loads = new Array(n).fill(0)
+    const buckets: PlannerUnit[][] = Array.from({ length: n }, () => [])
     for (let mask = 0; mask < combos; mask++) {
       let m = mask
       for (let i = 0; i < units.length; i++) {
         assign[i] = m % n
         m = Math.floor(m / n)
       }
-      const loads = new Array(n).fill(0)
+      loads.fill(0)
+      for (let k = 0; k < n; k++) buckets[k].length = 0
       for (let i = 0; i < units.length; i++) {
         loads[assign[i]] += Math.ceil(
           (units[i].teams * win.weekends[assign[i]].targetGamesPerTeam) / 2
         )
+        buckets[assign[i]].push(units[i])
       }
       let overflow = 0
       let peakGames = 0
       let used = 0
-      let multiBuilding = 0
       for (let k = 0; k < n; k++) {
         const cap = win.weekends[k].capacityGames
         if (loads[k] > 0) used++
@@ -536,7 +775,18 @@ export function proposePlan(
         }
         if (loads[k] > cap) overflow += loads[k] - cap
         peakGames = Math.max(peakGames, loads[k])
-        if (loads[k] > win.weekends[k].largestVenueCapacity) multiBuilding++
+      }
+      // What this month costs in buildings: every extra gym opened on a
+      // weekend, and every grade moved out of the gym it should have kept.
+      let venueCost = 0
+      if (venueAware) {
+        for (let k = 0; k < n; k++) {
+          if (buckets[k].length === 0) continue
+          const packed = packWeekendVenues(buckets[k], win.weekends[k], resident)
+          venueCost +=
+            Math.max(0, packed.opened.length - 1) * SECOND_BUILDING_COST +
+            packed.violations * GYM_VIOLATION_COST
+        }
       }
       // Courts are the cost: rank by ABSOLUTE peak games (a flat 42% of a
       // huge weekend still rents more courts than a flat 74-game one).
@@ -547,7 +797,7 @@ export function proposePlan(
       const gi = units.findIndex((u) => u.key === giants[0])
       const gj = units.findIndex((u) => u.key === giants[1])
       if (gi >= 0 && gj >= 0 && assign[gi] === assign[gj]) score += 40
-      score += multiBuilding * 150 // NPH runs one building per weekend
+      score += venueCost
       if (score < bestScore) {
         bestScore = score
         best = [...assign]
@@ -556,6 +806,7 @@ export function proposePlan(
     win.weekends.forEach((w, k) => {
       out[w.sessionId] = units.filter((_, i) => best![i] === k).map((u) => u.key)
     })
+    carryResidency(unitByKey, win.weekends, out, resident)
   }
   return out
 }

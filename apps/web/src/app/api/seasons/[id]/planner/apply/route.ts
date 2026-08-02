@@ -9,6 +9,10 @@ export const dynamic = "force-dynamic"
 
 const bodySchema = z.object({
   assignment: z.record(z.string(), z.array(z.string()).max(50)),
+  // sessionId → (unit key → venueId). Seeds use non-UUID ids, so plain
+  // strings only. Absent means "this plan says nothing about gyms", and the
+  // sessions in `assignment` have their saved gyms cleared.
+  venues: z.record(z.string(), z.record(z.string(), z.string())).optional(),
 })
 
 /** POST /api/seasons/[id]/planner/apply {assignment} — persist a plan onto
@@ -30,7 +34,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const parsed = bodySchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "assignment required" }, { status: 400 })
 
-    const { updated } = await applyAssignment(params.id, parsed.data.assignment)
+    const { updated } = await applyAssignment(
+      params.id,
+      parsed.data.assignment,
+      parsed.data.venues
+    )
     const state = await buildPlannerState(params.id)
     return NextResponse.json({
       success: true,

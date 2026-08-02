@@ -1480,6 +1480,9 @@ model Division {
   // Season planner (owner 2026-08-02): the operator's pre-registration
   // estimate — planning runs off this until real approved teams exist.
   expectedTeams Int?
+  // Travel fairness (owner 2026-08-02): this grade should ALTERNATE buildings
+  // across weekends instead of keeping one gym all season.
+  alternateVenues Boolean @default(false)
 
   teamSubmissions  TeamSubmission[]
   schedulingGroups SchedulingGroupDivision[]
@@ -1776,6 +1779,11 @@ model SeasonSession {
   // calendar gives every grade its OWN weekends). Unit keys as the engine
   // knows them ("division:<id>" / "group:<id>"); empty = every unit.
   unitKeys String[] @default([])
+  // Which BUILDING each unit plays in this session: { "division:<id>":
+  // "<venueId>" } (owner 2026-08-02: every grade-weekend placement lives in
+  // exactly one gym). Same semantics as unitKeys — empty/null = no venue
+  // preference, the engine picks.
+  unitVenues Json?
 
   // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
   playoffPlan Json?
@@ -1929,6 +1937,9 @@ model SeasonVenue {
 
   isPrimary       Boolean @default(false)
   courtsAvailable Int?
+  // Which gym the planner fills FIRST (owner 2026-08-02: the top gym fills
+  // completely before the next one opens). 0 = fill first; null sorts last.
+  fillOrder Int?
 
   hours SeasonVenueHours[]
 

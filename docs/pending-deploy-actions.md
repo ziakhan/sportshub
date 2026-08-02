@@ -970,3 +970,9 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - 95d2004: every grade editable in planning — plan = max(registered, estimate) via shared planningTeams(); floor at grade-cluster level; stepper seeds from registration, hint "N registered".
 - 725ed7a: grid = EVERY Sat–Sun of the season (union of declared dates + session days, whole months) under month bands; virtual weekends created on first tap (ensureWeekendSession + POST /api/seasons/[id]/weekends, phase-aware, full auth gate); one-tap cells; ONE hours range per gym card (exceptions + full editor behind quiet links).
 - Gates: unit 379/379 · int 460/460 · tsc clean · all 12 step-drive runs PASS. Neon pending with #24+.
+
+## #63 — 2026-08-02: PLANNER GYMS (fill order + residency) — ⏳ NOT DEPLOYED (local DB pushed only; box + Neon pending)
+- SCHEMA (additive, package P1a): `SeasonVenue.fillOrder Int?` (0 = fill first, null sorts last) · `SeasonSession.unitVenues Json?` ("division:<id>" → venueId, same semantics as unitKeys: empty/null = no preference) · `Division.alternateVenues Boolean @default(false)`.
+- Local pushed 2026-08-02 (`prisma db push`, columns verified: integer / jsonb / boolean-default-false). Box needs `prisma db push` at deploy; Neon pending with #24+.
+- Code: planner-core packWeekendVenues/packPlanVenues (gyms fill in order, one gym per grade per weekend, residency carried across months, alternate = gym to avoid) + proposePlan scores real packing instead of the old multiBuilding guess · buildPlannerState exposes venue fillOrder / weekend assignedVenues / unit.alternate · applyAssignment persists unitVenues · propose POST returns `venues` · apply POST accepts `venues` · season-venue PATCH takes fillOrder (courtsAvailable now optional; fillOrder-only never rewires courts).
+- No backfill needed: every new column is nullable or defaulted, and an unset fillOrder just sorts last.

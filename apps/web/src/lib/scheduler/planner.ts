@@ -37,25 +37,57 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
   const { input, errors } = await loadSchedulerInput(seasonId)
   if (!input) return { seasonId, units: [], windows: [], errors }
 
-  const [divisions, sessions] = await Promise.all([
+  const [divisions, sessions, seasonVenues] = await Promise.all([
     (prisma as any).division.findMany({
       where: { seasonId },
-      select: { id: true, name: true, ageGroup: true, expectedTeams: true },
+      select: {
+        id: true,
+        name: true,
+        ageGroup: true,
+        expectedTeams: true,
+        alternateVenues: true,
+      },
       orderBy: { id: "asc" },
     }),
     (prisma as any).seasonSession.findMany({
       where: { seasonId },
-      select: { id: true, unitKeys: true, targetGamesPerTeam: true },
+      select: { id: true, unitKeys: true, unitVenues: true, targetGamesPerTeam: true },
       orderBy: { id: "asc" },
+    }),
+    // Which gym the league fills first (owner 2026-08-02). Postgres sorts
+    // NULLs last on asc, so gyms nobody ordered land after the ordered ones.
+    (prisma as any).seasonVenue.findMany({
+      where: { seasonId },
+      select: { venueId: true, fillOrder: true },
+      orderBy: [{ fillOrder: "asc" }, { venueId: "asc" }],
     }),
   ])
 
+  // A total order, always: an unset fillOrder takes its place in the query's
+  // own ordering rather than tying with every other unset gym.
+  const UNRANKED = 1000
+  const fillOrderOf = new Map<string, number>()
+  seasonVenues.forEach((sv: any, i: number) =>
+    fillOrderOf.set(sv.venueId, sv.fillOrder ?? UNRANKED + i)
+  )
+
   // Grade clusters: divisions sharing ageGroup act as one draggable unit.
-  const byAge = new Map<string, { divisionIds: string[]; approved: number; expected: number }>()
+  const byAge = new Map<
+    string,
+    { divisionIds: string[]; approved: number; expected: number; alternate: boolean }
+  >()
   for (const d of divisions) {
-    const c = byAge.get(d.ageGroup) ?? { divisionIds: [], approved: 0, expected: 0 }
+    const c = byAge.get(d.ageGroup) ?? {
+      divisionIds: [],
+      approved: 0,
+      expected: 0,
+      alternate: false,
+    }
     c.divisionIds.push(d.id)
     c.expected += d.expectedTeams ?? 0
+    // The cluster is one draggable thing, so one division asking to move
+    // buildings makes the whole grade alternate.
+    c.alternate = c.alternate || Boolean(d.alternateVenues)
     const engineDiv = input.divisions.find((x) => x.id === d.id)
     c.approved += engineDiv?.teams.length ?? 0
     byAge.set(d.ageGroup, c)
@@ -65,6 +97,7 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
       key: `age:${ageGroup}`,
       label: ageGroup,
       divisionIds: c.divisionIds,
+      alternate: c.alternate,
       // The operator's number leads, and never plans for fewer teams than
       // have already registered (owner ruling 2026-08-02).
       teams: planningTeams(c.approved, c.expected),
@@ -96,8 +129,21 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
     : []
   const venueName = new Map<string, string>(venueRows.map((v: any) => [v.id, v.name]))
 
-  const sessionMeta = new Map<string, { unitKeys: string[]; target: number | null }>(
-    sessions.map((s: any) => [s.id, { unitKeys: s.unitKeys ?? [], target: s.targetGamesPerTeam }])
+  const sessionMeta = new Map<
+    string,
+    { unitKeys: string[]; unitVenues: Record<string, string>; target: number | null }
+  >(
+    sessions.map((s: any) => [
+      s.id,
+      {
+        unitKeys: s.unitKeys ?? [],
+        unitVenues:
+          s.unitVenues && typeof s.unitVenues === "object" && !Array.isArray(s.unitVenues)
+            ? (s.unitVenues as Record<string, string>)
+            : {},
+        target: s.targetGamesPerTeam,
+      },
+    ])
   )
   const divisionAge = new Map<string, string>(divisions.map((d: any) => [d.id, d.ageGroup]))
 
@@ -105,11 +151,21 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
     .filter((s) => s.phase === "REGULAR" && s.days.length > 0)
     .map((s) => {
       const venueSlots = bySession.get(s.id) ?? new Map<string, number>()
-      const venues = [...venueSlots.entries()].map(([venueId, capacityGames]) => ({
-        venueId,
-        name: venueName.get(venueId) ?? venueId,
-        capacityGames,
-      }))
+      const venues = [...venueSlots.entries()]
+        .map(([venueId, capacityGames]) => ({
+          venueId,
+          name: venueName.get(venueId) ?? venueId,
+          capacityGames,
+          fillOrder: fillOrderOf.get(venueId) ?? UNRANKED + seasonVenues.length,
+        }))
+        // Fill order first, then name: the packer walks this array as given,
+        // so the order here IS the league's "fill this gym first" rule.
+        .sort(
+          (a, b) =>
+            a.fillOrder - b.fillOrder ||
+            a.name.localeCompare(b.name, "en") ||
+            (a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : 0)
+        )
       const meta = sessionMeta.get(s.id)
       // unitKeys hold "division:<id>" — fold back to grade clusters.
       const assigned = [
@@ -120,6 +176,21 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
             .map((age) => `age:${age}`)
         ),
       ]
+      // Same fold for the saved buildings. Divisions of one grade should all
+      // name the same gym (that is how the planner writes them); if they ever
+      // disagree, the first key wins rather than the board showing two gyms
+      // for one chip.
+      const assignedVenues: Record<string, string> = {}
+      const savedVenues = Object.entries(meta?.unitVenues ?? {}).sort(([a], [b]) =>
+        a < b ? -1 : a > b ? 1 : 0
+      )
+      for (const [key, venueId] of savedVenues) {
+        if (!key.startsWith("division:") || typeof venueId !== "string") continue
+        const age = divisionAge.get(key.slice(9))
+        if (!age) continue
+        const unitKey = `age:${age}`
+        if (assignedVenues[unitKey] === undefined) assignedVenues[unitKey] = venueId
+      }
       return {
         sessionId: s.id,
         label: weekendLabel(s.days.map((d) => d.date)),
@@ -129,6 +200,7 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
         venues,
         targetGamesPerTeam: meta?.target ?? s.targetGamesPerTeam ?? 2,
         assigned,
+        assignedVenues,
       }
     })
     .sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime())
@@ -157,11 +229,19 @@ export async function buildPlannerState(seasonId: string): Promise<PlannerState>
   return { seasonId, units, windows, errors, gamesPerTeam }
 }
 
-/** Persist an assignment: expand grade clusters to division keys on
- *  SeasonSession.unitKeys. Only sessions present in the payload change. */
+/**
+ * Persist an assignment: expand grade clusters to division keys on
+ * SeasonSession.unitKeys. Only sessions present in the payload change.
+ *
+ * `venues` carries the building each grade plays in that weekend (from
+ * packPlanVenues). A session in the assignment with nothing in `venues` has
+ * its unitVenues cleared: re-applying a plan that says nothing about gyms
+ * must not leave last plan's gym claims standing.
+ */
 export async function applyAssignment(
   seasonId: string,
-  assignment: Record<string, string[]>
+  assignment: Record<string, string[]>,
+  venues?: Record<string, Record<string, string>>
 ): Promise<{ updated: number }> {
   const divisions = await (prisma as any).division.findMany({
     where: { seasonId },
@@ -176,15 +256,33 @@ export async function applyAssignment(
   })
   const valid = new Set(sessions.map((s: any) => s.id))
 
+  const expand = (key: string): string[] =>
+    key.startsWith("age:") ? (byAge.get(key.slice(4)) ?? []).map((id) => `division:${id}`) : [key]
+
   let updated = 0
   for (const [sessionId, unitKeys] of Object.entries(assignment)) {
     if (!valid.has(sessionId)) continue
-    const divisionKeys = unitKeys.flatMap((k) =>
-      k.startsWith("age:") ? (byAge.get(k.slice(4)) ?? []).map((id) => `division:${id}`) : [k]
-    )
+    const divisionKeys = unitKeys.flatMap(expand)
+    const playing = new Set(divisionKeys)
+
+    // Grades expand the same way here as above, so a gym claim always lands
+    // on a division key the weekend actually plays. Anything else is stale.
+    const unitVenues: Record<string, string> = {}
+    for (const [key, venueId] of Object.entries(venues?.[sessionId] ?? {})) {
+      if (typeof venueId !== "string" || venueId.length === 0) continue
+      for (const divisionKey of expand(key)) {
+        if (playing.has(divisionKey)) unitVenues[divisionKey] = venueId
+      }
+    }
+
     await (prisma as any).seasonSession.update({
       where: { id: sessionId },
-      data: { unitKeys: divisionKeys },
+      data: {
+        unitKeys: divisionKeys,
+        // Empty reads the same as null everywhere ("no gym decided"), and
+        // null keeps the column honest about it.
+        unitVenues: Object.keys(unitVenues).length > 0 ? unitVenues : null,
+      },
     })
     updated++
   }

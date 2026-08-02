@@ -56,6 +56,7 @@ import { getServerSession } from "next-auth"
  *   1142 planner step 1 saves (planning number = max(approved, expected), editable while open)
  *   1143 planner step 2 weekends (ensureWeekendSession + POST /weekends: create-on-toggle)
  *   1144 planner step 2 courts (applyVenueCourtsToSessionDays: rewire/add/blocked-by-game)
+ *   1145 planner gyms (fillOrder PATCH without a court rewire, unitVenues round trip)
  */
 
 export function actAs(userId: string | null): void {
