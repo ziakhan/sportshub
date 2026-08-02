@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import {
+  resolveWeekendGyms,
   weekendDemand,
   weekendLoad,
   weekendShortDays,
@@ -14,7 +15,6 @@ import {
   resolveWeekendVenues,
   seasonVenueOrder,
   venueHueSlots,
-  venueLine,
   type StripVenue,
 } from "@/lib/seasons/venue-strip"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
@@ -35,9 +35,14 @@ import { METER_TONE, type Armed } from "./plan-shared"
  *   3. The kept calendar and the working proposal are one tap apart, in the
  *      same shape, so they can be read against each other.
  *
- * It never invents a fact: we plan grades onto weekends, not onto buildings,
- * so a weekend running two gyms says "both gyms available" rather than
- * claiming a grade plays in one of them.
+ * Every cell names ONE gym, because one gym per grade-weekend is the model
+ * (owner 2026-08-02) and the board already draws it that way: the decided
+ * building where somebody picked one, and otherwise the building
+ * resolveWeekendGyms packs the grade into. The board and the strip call the
+ * same resolver on the same inputs, so the two views of one weekend can never
+ * give different answers — the strip used to shrug and say "both gyms", which
+ * reads as a grade double booked across two buildings. A weekend with no gym
+ * on it at all still says exactly that, and names nothing.
  */
 
 /** Copy with real apostrophes lives here, as JS, so nothing needs escaping. */
@@ -46,7 +51,7 @@ const COPY = {
   proposal: "Tap a grade, then tap another weekend that month to move it.",
   readOnly: "Where every grade plays, left to right.",
   gyms:
-    "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is one nobody has picked a gym for yet.",
+    "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is a weekend with no gym booked.",
 }
 
 /**
@@ -127,9 +132,9 @@ export function StripView({
   state: PlannerState
   /** The calendar on screen: the working proposal, or the one you kept. */
   shown: Record<string, string[]>
-  /** Which gym each grade plays, weekend by weekend, for the calendar on
-   *  screen: sessionId → (unit key → venueId). Empty until anything is
-   *  decided, and then the cell names the building instead of the weekend. */
+  /** The gyms already DECIDED for the calendar on screen: sessionId → (unit
+   *  key → venueId), saved or hand picked. Everything else the strip packs,
+   *  with the board's resolver, from these same two inputs. */
   shownVenues: Record<string, Record<string, string>>
   hasKept: boolean
   side: StripSide
@@ -157,6 +162,39 @@ export function StripView({
     () => venueHueSlots(gymOrder.map((v) => v.venueId), VENUE_HUES.length),
     [gymOrder]
   )
+
+  /**
+   * The ONE gym each grade plays in, weekend by weekend: sessionId → (unit key
+   * → gym). Resolved by the board's own resolver on the board's own inputs
+   * (the calendar on screen and the gyms already decided for it), so a cell
+   * here and a chip over there always name the same building.
+   *
+   * Step 2 still outranks the plan on availability: a weekend the operator has
+   * released both gyms for names none, whatever capacity the planner last
+   * cached for it.
+   */
+  const playsAt = useMemo(() => {
+    const byId = new Map(gymOrder.map((v) => [v.venueId, v]))
+    const out = new Map<string, Map<string, StripVenue>>()
+    for (const { weekend } of weekends) {
+      const keys = shown[weekend.sessionId] ?? []
+      const open = gymsOn.get(weekend.sessionId) ?? []
+      if (keys.length === 0 || open.length === 0) continue
+      const { byUnit } = resolveWeekendGyms(
+        state.units,
+        weekend,
+        keys,
+        shownVenues[weekend.sessionId] ?? {}
+      )
+      const here = new Map<string, StripVenue>()
+      for (const [unitKey, venueId] of Object.entries(byUnit)) {
+        const gym = resolveUnitVenue(open, venueId) ?? byId.get(venueId)
+        if (gym) here.set(unitKey, gym)
+      }
+      out.set(weekend.sessionId, here)
+    }
+    return out
+  }, [gymOrder, gymsOn, shown, shownVenues, state, weekends])
 
   const note = !interactive ? (side === "kept" ? COPY.kept : COPY.readOnly) : COPY.proposal
 
@@ -316,8 +354,7 @@ export function StripView({
                     window={window}
                     assigned={(shown[weekend.sessionId] ?? []).includes(unit.key)}
                     gyms={gymsOn.get(weekend.sessionId) ?? []}
-                    playsAt={shownVenues[weekend.sessionId]?.[unit.key] ?? null}
-                    seasonGyms={gymOrder.length}
+                    playsAt={playsAt.get(weekend.sessionId)?.get(unit.key) ?? null}
                     hue={hue}
                     interactive={interactive}
                     armed={armed}
@@ -361,7 +398,6 @@ function StripCell({
   assigned,
   gyms,
   playsAt,
-  seasonGyms,
   hue,
   interactive,
   armed,
@@ -374,9 +410,9 @@ function StripCell({
   window: string
   assigned: boolean
   gyms: StripVenue[]
-  /** The building the plan puts this grade in, when it says. */
-  playsAt: string | null
-  seasonGyms: number
+  /** The one building this grade plays in that weekend, decided or packed.
+   *  Null only when the weekend has no gym at all. */
+  playsAt: StripVenue | null
   hue: Map<string, number>
   interactive: boolean
   armed: Armed | null
@@ -388,31 +424,23 @@ function StripCell({
 
   if (assigned) {
     const games = weekendDemand(units, weekend, [unit.key])
-    // The gym the plan actually put this grade in leads. Only when nothing is
-    // decided does the cell fall back to describing the weekend's gyms.
-    const single = resolveUnitVenue(gyms, playsAt) ?? (gyms.length === 1 ? gyms[0] : null)
-    const tone = single
-      ? VENUE_HUES[hue.get(single.venueId) ?? 0]
-      : gyms.length === 0
-        ? { fill: "bg-hoop-50", stripe: "border-l-hoop-500" }
-        : { fill: "bg-ink-50", stripe: "border-l-ink-400" }
-    // Names the gym only when the weekend HAS one gym. Two gyms means the
-    // grade's building is not decided yet, and the strip does not pretend.
-    const lead = single ? single.short : `${games} games`
-    const note = single
-      ? `${games} games`
-      : gyms.length === 0
-        ? "no gym booked"
-        : gyms.length === 2
-          ? "both gyms"
-          : `${gyms.length} gyms`
+    // One gym per grade-weekend, always: the cell either names the building
+    // the plan puts this grade in — the same one the board draws it under —
+    // or says the weekend has no gym at all. There is no third answer, and a
+    // packed gym reads exactly like a picked one, because on the board it is
+    // exactly as real.
+    const tone = playsAt
+      ? VENUE_HUES[hue.get(playsAt.venueId) ?? 0]
+      : { fill: "bg-hoop-50", stripe: "border-l-hoop-500" }
+    const lead = playsAt ? playsAt.short : `${games} games`
+    const note = playsAt ? `${games} games` : "no gym booked"
     const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === weekend.sessionId
     const body = (
       <>
         <span className="text-ink-900 block truncate text-[11.5px] font-bold">{lead}</span>
         <span
           className={`block truncate text-[10px] font-semibold ${
-            gyms.length === 0 ? "text-hoop-700" : "text-ink-500"
+            playsAt ? "text-ink-500" : "text-hoop-700"
           }`}
         >
           {note}
@@ -422,11 +450,7 @@ function StripCell({
     const cls = `border-ink-100 block w-full min-h-[44px] rounded-lg border border-l-[3px] px-1.5 py-1 text-left ${tone.fill} ${tone.stripe} ${
       isArmed ? "ring-play-500 ring-2" : ""
     }`
-    const where = single
-      ? `at ${single.short}`
-      : gyms.length === 0
-        ? "with no gym booked"
-        : `across ${venueLine(gyms, seasonGyms)}`
+    const where = playsAt ? `at ${playsAt.short}` : "with no gym booked"
 
     return (
       <td className={cell}>

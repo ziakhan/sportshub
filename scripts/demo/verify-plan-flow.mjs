@@ -78,7 +78,19 @@ ok(
   "step 1 marks unestimated grades as not in the plan",
   step1.includes("Not in the plan yet")
 )
-ok("step 1 offers start-from-registrations", /Start from registrations/i.test(step1))
+// The banner only shows while some registered grade lacks an estimate; once
+// the operator has numbers everywhere, its absence is the correct state.
+const plannerForBanner = await page.request
+  .get(`${BASE}/api/seasons/${SEASON}/planner`)
+  .then((r) => r.json())
+const allEstimated = (plannerForBanner?.state?.units ?? [])
+  .filter((u) => u.approved > 0)
+  .every((u) => u.expected > 0)
+ok(
+  "step 1 start-from-registrations state is honest",
+  /Start from registrations/i.test(step1) || allEstimated,
+  allEstimated ? "every registered grade already estimated" : "banner shown"
+)
 ok("step 1 offers add-a-grade", /Add a grade/i.test(step1))
 await page.screenshot({ path: `${SHOTS}/2-step1-teams.png`, fullPage: true })
 
@@ -133,10 +145,31 @@ ok(
   venueMaps.length > 0 && venueMaps.every((m) => Object.values(m).every((v) => typeof v === "string")),
   `${venueMaps.length} weekends carry gym maps`
 )
-const twoBuildingWeekends = venueMaps.filter(
-  (m) => new Set(Object.values(m)).size > 1
-).length
-ok("one-gym keeps weekends in one building here", twoBuildingWeekends === 0)
+// One-gym may open a second building ONLY where the weekend's assigned load
+// exceeds what its biggest gym can hold (overflow always beats a split).
+const teamsOf = Object.fromEntries(
+  (plannerForBanner?.state?.units ?? []).map((u) => [u.key, u.teams])
+)
+const weekendsBySession = Object.fromEntries(
+  (plannerForBanner?.state?.windows ?? [])
+    .flatMap((w) => w.weekends)
+    .map((w) => [w.sessionId, w])
+)
+const unjustified = Object.entries(propose?.venues ?? {}).filter(([sessionId, m]) => {
+  if (new Set(Object.values(m)).size <= 1) return false
+  const w = weekendsBySession[sessionId]
+  if (!w) return true
+  const demand = (propose.assignment?.[sessionId] ?? []).reduce(
+    (sum, k) => sum + Math.ceil(((teamsOf[k] ?? 0) * w.targetGamesPerTeam) / 2),
+    0
+  )
+  return demand <= w.largestVenueCapacity
+})
+ok(
+  "one-gym splits a weekend only when no single gym holds it",
+  unjustified.length === 0,
+  unjustified.length ? `unjustified: ${unjustified.map(([s]) => s).join(", ")}` : ""
+)
 
 const preview = await page.request
   .post(`${BASE}/api/seasons/${SEASON}/planner/preview-hours`, {
