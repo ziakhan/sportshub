@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
 import { CalendarStep } from "./calendar-step"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
+import { PublishStep } from "./publish-step"
 import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
 
 /**
@@ -16,8 +17,9 @@ import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
  *
  * The rail is always visible and every finished step stays clickable, because
  * after setup these same five steps become the season's home page. Steps 1
- * (teams), 2 (gyms and weekends) and 3 (the calendar) are built for real; the
- * rest land in later waves and point at today's screens in the meantime.
+ * (teams), 2 (gyms and weekends), 3 (the calendar) and 4 (publish) are built
+ * for real; the rest land in later waves and point at today's screens in the
+ * meantime.
  */
 
 // Hints carry real apostrophes: they render as JS expressions, not JSX text,
@@ -30,7 +32,7 @@ const STEPS = [
   { n: 5, label: "Schedule", hint: "when you're ready" },
 ] as const
 
-const BUILT = new Set<number>([1, 2, 3])
+const BUILT = new Set<number>([1, 2, 3, 4])
 
 // useSearchParams requires a Suspense boundary in Next 14 (same pattern as
 // manage/leagues/[id]/page.tsx).
@@ -121,6 +123,8 @@ function PlanWizard() {
           <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : step === 3 ? (
           <CalendarStep seasonId={seasonId} onLoaded={onLoaded} />
+        ) : step === 4 ? (
+          <PublishStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
         ) : (
           <Placeholder step={step} leagueId={leagueId} seasonId={seasonId} />
         )}
@@ -142,9 +146,6 @@ function Placeholder({
 }) {
   const meta = STEPS.find((s) => s.n === step)
   const copy: Record<number, { body: string; href?: string; cta?: string }> = {
-    4: {
-      body: "Publish puts the calendar on the league page and freezes the plan as the season's baseline. The downloadable card is for everywhere else.",
-    },
     5: {
       body: "While registration runs this is a watch screen: real sign-ups against the step 1 estimate. When entries lock, one button generates the schedule from everything already entered.",
       href: `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`,

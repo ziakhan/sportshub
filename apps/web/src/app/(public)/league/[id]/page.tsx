@@ -17,6 +17,7 @@ import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
+import { SeasonCalendarSection } from "./season-calendar-section"
 
 export const dynamic = "force-dynamic"
 
@@ -371,6 +372,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
               </div>
             </section>
           )}
+
+          {/* The published season plan (plan wizard step 4). Sits between the
+              games and the standings: once a schedule exists those lead, and
+              before one does this is the whole page for a family deciding
+              whether to sign up. Strictly gated on planPublishedAt. */}
+          {season.planPublishedAt && <SeasonCalendarSection seasonId={params.id} />}
 
           {standings && standings.divisions.some((d) => d.rows.length > 0) && (
             <section>

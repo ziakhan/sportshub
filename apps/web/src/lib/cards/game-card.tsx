@@ -1,34 +1,8 @@
 import React from "react"
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
 import { ImageResponse } from "next/og"
-
-/**
- * Embedded card fonts (bug 2026-07-25): the box's standalone build never
- * loaded ImageResponse's bundled default font — every prod card rendered
- * TEXTLESS (the "three vertical bars"). We now pass Outfit TTFs explicitly,
- * which also puts the brand display font on every card. Resolved from the
- * workspace node_modules wherever the server's cwd happens to be.
- */
-function loadFont(rel: string): Buffer | null {
-  for (const base of [process.cwd(), join(process.cwd(), "../.."), join(process.cwd(), "..")]) {
-    try {
-      return readFileSync(join(base, "node_modules", rel))
-    } catch {
-      /* try next base */
-    }
-  }
-  console.error(`card fonts: could not load ${rel}`)
-  return null
-}
-const outfit700 = loadFont("@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf")
-const outfit800 = loadFont("@expo-google-fonts/outfit/800ExtraBold/Outfit_800ExtraBold.ttf")
-const CARD_FONTS = [
-  ...(outfit700 ? [{ name: "Outfit", data: outfit700, weight: 700 as const }] : []),
-  ...(outfit800 ? [{ name: "Outfit", data: outfit800, weight: 800 as const }] : []),
-]
-const FONT_OPTS = CARD_FONTS.length ? { fonts: CARD_FONTS } : {}
-const FAMILY = CARD_FONTS.length ? "Outfit" : "sans-serif"
+// The self-loaded Outfit TTFs (2026-07-25 textless-card bug) now live in
+// lib/cards/fonts.ts so every renderer shares one copy.
+import { FAMILY, FONT_OPTS } from "./fonts"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
 import { monogram } from "@/lib/content/matchup-cover"

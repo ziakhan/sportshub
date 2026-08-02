@@ -1395,6 +1395,13 @@ model Season {
 
   status SeasonStatus @default(DRAFT)
 
+  // The season plan went public (plan wizard step 4, owner-approved mock
+  // 2026-08-02). Set by POST /api/seasons/[id]/planner/publish: the kept
+  // calendar becomes the season's baseline, the living calendar appears on
+  // the public league page, and the shareable card stops 404ing for anyone
+  // without an operator session. Null = planned but never published.
+  planPublishedAt DateTime?
+
   playoffFormat String?
   playoffTeams  Int?
   // Playoff eligibility (owner 2026-07-29): minimum games played (from the

@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest"
 import {
   expectedTeamUpdates,
+  gradeAbbrev,
+  gradeLine,
   planSummary,
   proposePlan,
+  seasonCalendarMonths,
   suggestFor,
+  weekendDays,
   TIGHT_RATIO,
   weekendDemand,
   weekendLoad,
@@ -373,5 +377,88 @@ describe("expectedTeamUpdates", () => {
       { divisionId: "b", expectedTeams: 0 },
     ])
     expect(expectedTeamUpdates([], 9)).toEqual([])
+  })
+})
+
+describe("gradeAbbrev", () => {
+  it("writes grades the way a poster writes them", () => {
+    expect(gradeAbbrev("Grade 7")).toBe("Gr7")
+    expect(gradeAbbrev("Grade 12")).toBe("Gr12")
+    expect(gradeAbbrev("grade10")).toBe("Gr10")
+    expect(gradeAbbrev("U14")).toBe("U14")
+    expect(gradeAbbrev("u 16")).toBe("U16")
+  })
+
+  it("keeps named groups readable and short", () => {
+    expect(gradeAbbrev("Junior Girls")).toBe("JrG")
+    expect(gradeAbbrev("Senior")).toBe("Sr")
+    // Unknown words fall back to a clean truncation, capped so a month
+    // column never has to wrap.
+    expect(gradeAbbrev("Elite")).toBe("Eli")
+    expect(gradeAbbrev("Elite Boys")).toBe("ElB")
+    expect(gradeAbbrev("Senior Boys Tier One Extra")).toBe("SrBTO")
+  })
+})
+
+describe("gradeLine", () => {
+  it("says Gr once for a run of numbered grades", () => {
+    expect(gradeLine(["Grade 7", "Grade 8", "Grade 9", "Grade 11", "Junior Girls"])).toBe(
+      "Gr7 8 9 11 JrG"
+    )
+  })
+
+  it("says it again after something that is not a numbered grade", () => {
+    expect(gradeLine(["Grade 7", "Junior Girls", "Grade 10"])).toBe("Gr7 JrG Gr10")
+    expect(gradeLine([])).toBe("")
+  })
+})
+
+describe("weekendDays", () => {
+  it("drops the month a column header already carries", () => {
+    expect(weekendDays("Oct 24–25")).toBe("24–25")
+    expect(weekendDays("Oct 31–Nov 1")).toBe("31–1")
+    expect(weekendDays("Feb 6")).toBe("6")
+  })
+})
+
+describe("seasonCalendarMonths", () => {
+  const state = nphState()
+  const weekendsOf = (label: string) =>
+    state.windows.find((w) => w.label === label)!.weekends
+
+  it("lists only the weekends that actually hold grades", () => {
+    const nov = weekendsOf("Nov 2026")
+    const months = seasonCalendarMonths(state, {
+      [nov[0].sessionId]: ["age:Gr7", "age:Gr9"],
+      // nov[1] deliberately empty: an idle weekend is not on the poster.
+    })
+    expect(months).toHaveLength(1)
+    expect(months[0].month).toBe("Nov")
+    expect(months[0].weekends).toHaveLength(1)
+    expect(months[0].weekends[0].grades).toBe("Gr7 9")
+    expect(months[0].weekends[0].gradeList).toEqual(["Gr7", "Gr9"])
+  })
+
+  it("orders grades the way the board does, not the way they were dropped", () => {
+    const nov = weekendsOf("Nov 2026")
+    const months = seasonCalendarMonths(state, {
+      [nov[0].sessionId]: ["age:JrGirls", "age:Gr9", "age:Gr7"],
+    })
+    expect(months[0].weekends[0].gradeList).toEqual(["Gr7", "Gr9", "JrG"])
+  })
+
+  it("ignores keys for grades this season does not have", () => {
+    const nov = weekendsOf("Nov 2026")
+    const months = seasonCalendarMonths(state, {
+      [nov[0].sessionId]: ["age:Gr7", "age:GradeNobodyRuns"],
+    })
+    expect(months[0].weekends[0].gradeList).toEqual(["Gr7"])
+  })
+
+  it("returns nothing at all for a season with no kept plan", () => {
+    expect(seasonCalendarMonths(state, {})).toEqual([])
+    expect(seasonCalendarMonths({ seasonId: "s", units: [], windows: [], errors: [] }, {})).toEqual(
+      []
+    )
   })
 })

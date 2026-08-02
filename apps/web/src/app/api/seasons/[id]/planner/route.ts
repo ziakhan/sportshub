@@ -29,6 +29,9 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       seasonStatus: gate.seasonStatus,
       seasonLabel: gate.seasonLabel,
       leagueName: gate.leagueName,
+      // Step 4 asks one question of this response: is the calendar public
+      // yet? Additive, same reasoning as the fields above.
+      planPublishedAt: gate.planPublishedAt,
       lastSeasonTeams,
     })
   } catch (error) {

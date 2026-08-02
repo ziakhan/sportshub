@@ -214,6 +214,16 @@ export function SeasonChecklist({
         <Button size="sm" onClick={() => onStatusChange("REGISTRATION")}>
           Open registration
         </Button>
+      ) : reached("REGISTRATION") ? (
+        // Registration is open, so the next thing families need is the
+        // season calendar (plan wizard step 4, 2026-08-02). A link, not a
+        // status button: this checklist stays the only place status changes.
+        <Link
+          href={`/manage/leagues/${league?.leagueId}/seasons/${seasonId}/plan?step=4`}
+          className="text-play-600 hover:text-play-700 shrink-0 text-xs font-semibold"
+        >
+          Publish calendar &rarr;
+        </Link>
       ) : undefined,
   })
 

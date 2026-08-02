@@ -181,6 +181,120 @@ export function planSummary(
   return { fits: over === 0 && unplaced === 0, over, tight, unavailable, unplaced, games }
 }
 
+/** The words youth sport already abbreviates a particular way. Cutting
+ *  "Junior" to its first two letters would read "Ju", which nobody writes. */
+const KNOWN_HEADS: Record<string, string> = {
+  junior: "Jr",
+  senior: "Sr",
+  juvenile: "Juv",
+  varsity: "Var",
+  novice: "Nov",
+  intermediate: "Int",
+  development: "Dev",
+}
+
+/**
+ * A grade in poster shorthand: "Grade 7" → "Gr7", "U14" → "U14", "Junior
+ * Girls" → "JrG". Published calendars have five columns and no room for
+ * "Grade 11 Boys", and this is how operators already abbreviate on the
+ * posters they hand-build today (owner-approved mock, 2026-08-02).
+ */
+export function gradeAbbrev(label: string): string {
+  const trimmed = label.trim()
+  const grade = trimmed.match(/^grade\s*(\d+)/i)
+  if (grade) return `Gr${grade[1]}`
+  const under = trimmed.match(/^u\s*(\d+)$/i)
+  if (under) return `U${under[1]}`
+  const words = trimmed.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return trimmed
+  const raw = words[0].slice(0, words.length > 1 ? 2 : 3)
+  const head = KNOWN_HEADS[words[0].toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1)
+  const rest = words.slice(1).map((w) => w[0].toUpperCase())
+  // Five characters is what a month column can hold without wrapping.
+  return `${head}${rest.join("")}`.slice(0, 5)
+}
+
+/**
+ * The grades on one weekend, the way a poster writes them: "Gr7 8 9 11 JrG".
+ * A run of numbered grades keeps the "Gr" only on the first — repeating it
+ * five times is noise, and this is exactly how the approved mock reads.
+ */
+export function gradeLine(labels: string[]): string {
+  const out: string[] = []
+  let previousWasGrade = false
+  for (const label of labels) {
+    const abbrev = gradeAbbrev(label)
+    const numbered = abbrev.match(/^Gr(\d+)$/)
+    out.push(numbered && previousWasGrade ? numbered[1] : abbrev)
+    previousWasGrade = Boolean(numbered)
+  }
+  return out.join(" ")
+}
+
+/**
+ * The day half of a weekend label, for surfaces that already say the month
+ * in a column header: "Oct 24–25" → "24–25", "Oct 31–Nov 1" → "31–1".
+ * Reads the numbers out of the label rather than reformatting dates, so it
+ * can never disagree with weekendLabel() about which days a weekend is.
+ */
+export function weekendDays(label: string): string {
+  return label
+    .split("–")
+    .map((part) => part.match(/\d+/)?.[0] ?? part.trim())
+    .join("–")
+}
+
+export interface CalendarMonth {
+  /** "Oct" — the window's month, which heads the column. */
+  month: string
+  weekends: Array<{
+    sessionId: string
+    /** "24–25" (the month lives in the column header). */
+    days: string
+    /** "Gr7 8 9 11 JrG" — the poster line, run-compressed. */
+    grades: string
+    /** ["Gr7", "Gr8", "Gr9", "Gr11", "JrG"] — one per chip on the web page,
+     *  where each grade is its own thing a parent scans for. */
+    gradeList: string[]
+  }>
+}
+
+/**
+ * The published season calendar: month columns, each listing only the
+ * weekends that actually hold grades. ONE function behind both renderings —
+ * the PNG card that travels to Instagram and the living view on the public
+ * league page — so the poster and the page can never drift apart.
+ */
+export function seasonCalendarMonths(
+  state: PlannerState,
+  assignment: Record<string, string[]>
+): CalendarMonth[] {
+  const order = new Map(state.units.map((u, i) => [u.key, i]))
+  const labelOf = new Map(state.units.map((u) => [u.key, u.label]))
+  const months: CalendarMonth[] = []
+  for (const win of state.windows) {
+    const weekends: CalendarMonth["weekends"] = []
+    for (const w of win.weekends) {
+      const keys = (assignment[w.sessionId] ?? [])
+        .filter((k) => labelOf.has(k))
+        .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
+      if (keys.length === 0) continue
+      const labels = keys.map((k) => labelOf.get(k) as string)
+      weekends.push({
+        sessionId: w.sessionId,
+        days: weekendDays(w.label),
+        grades: gradeLine(labels),
+        gradeList: labels.map(gradeAbbrev),
+      })
+    }
+    if (weekends.length === 0) continue
+    // Windows are keyed "Oct 2026"; the card and the page head the column
+    // with the month alone, the way the board already does.
+    months.push({ month: win.label.split(" ")[0], weekends })
+  }
+  return months
+}
+
 /**
  * A grade's estimate, split across the divisions that make up that grade.
  * The operator counts in grades ("14 Grade 7 teams"); the season stores the
