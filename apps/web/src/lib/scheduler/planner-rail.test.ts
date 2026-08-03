@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   assignmentWithMove,
   gradeGymStrip,
+  gradeHomeGym,
   gymCountsSentence,
   planningSource,
   railSuggestions,
@@ -134,6 +135,27 @@ describe("gradeGymStrip: a grade's season in miniature", () => {
   })
 })
 
+describe("gradeHomeGym: the building a grade calls home", () => {
+  it("is the one it plays most, whatever the last weekend does", () => {
+    // A hand pick on the final weekend, and only that weekend: five weekends of
+    // The Playground still decide where Grade 8 lives.
+    const cells = gradeGymStrip(season(), calendar(), { b5: { "age:Gr8": "sixpark" } }, "age:Gr8")
+    expect(cells.map((c) => c.venueId)).toEqual([
+      "playground",
+      "playground",
+      "playground",
+      "playground",
+      "playground",
+      "sixpark",
+    ])
+    expect(gradeHomeGym(cells)).toBe("playground")
+  })
+
+  it("is nothing at all for a grade the calendar never places", () => {
+    expect(gradeHomeGym([])).toBeNull()
+  })
+})
+
 describe("the strip after a move: Grade 8 in December", () => {
   const move = { unitKey: "age:Gr8", fromSessionId: "b2", toSessionId: "a2" }
 
@@ -261,5 +283,101 @@ describe("railSuggestions: what belongs in the rail", () => {
     const all = suggestFor(oneWeekend, { only: ["age:Gr7", "age:Gr8", "age:Gr10"] }, {})
     expect(all.some((s) => s.kind === "two-building" && !s.move)).toBe(true)
     expect(railSuggestions(all)).toEqual([])
+  })
+})
+
+/**
+ * One grade keeps one gym all season, and that outranks keeping a weekend
+ * inside one building (owner rule 2026-08-02). So a note about a second
+ * building only carries a button when the move leaves the grade in its own gym.
+ * Feasibility still outranks both: a shortage move ships whatever it costs the
+ * grade's residency, and says what it costs.
+ *
+ * The shape below is the owner's: Grade 8 plays The Playground from October,
+ * December shrinks it, Grade 10 takes what is left and Grade 8 is bumped into
+ * Six Park. December's first weekend now runs two buildings, and the only grade
+ * whose leaving would close the second one is Grade 8.
+ */
+describe("suggestFor: residency vetoes a tidy-up move", () => {
+  const SMALL_PLAYGROUND = gym("playground", "The Playground", 24, 0)
+
+  /** `second` is what December's other weekend has open, which is what decides
+   *  where the move would stand Grade 8. */
+  function december(second: PlannerVenue[]): PlannerState {
+    return {
+      seasonId: "season",
+      units: [unit("Gr8", 10), unit("Gr10", 20)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct", "2026-10-03", [PLAYGROUND, SIXPARK])] },
+        { label: "Nov 2026", weekends: [weekend("nov", "2026-11-07", [PLAYGROUND, SIXPARK])] },
+        {
+          label: "Dec 2026",
+          weekends: [
+            weekend("dec1", "2026-12-05", [SMALL_PLAYGROUND, SIXPARK]),
+            weekend("dec2", "2026-12-19", second),
+          ],
+        },
+      ],
+    }
+  }
+
+  const CALENDAR: Record<string, string[]> = {
+    oct: ["age:Gr8", "age:Gr10"],
+    nov: ["age:Gr8", "age:Gr10"],
+    dec1: ["age:Gr8", "age:Gr10"],
+    dec2: [],
+  }
+
+  it("says nothing to press when the move would park the grade off its gym", () => {
+    // December's other weekend runs both buildings, so Grade 8 would stand in
+    // Six Park there too: a tidier weekend bought with the gym it plays.
+    const all = suggestFor(december([PLAYGROUND, SIXPARK]), CALENDAR, {})
+    const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
+    expect(two).toBeDefined()
+    expect(two?.move).toBeUndefined()
+    // The recap still ships, and it still says what December is doing.
+    expect(two?.text).toContain("opens Six Park")
+    expect(two?.text).not.toContain("Move Gr8")
+    expect(railSuggestions(all).some((s) => s.kind === "two-building")).toBe(false)
+  })
+
+  it("keeps the move when it sends the grade back to its own gym", () => {
+    // The other weekend is Playground only, so the move is also Grade 8 coming
+    // home: the one tidy-up worth a button.
+    const all = suggestFor(december([gym("playground", "The Playground", 32, 0)]), CALENDAR, {})
+    const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
+    expect(two?.move?.unitKey).toBe("age:Gr8")
+    expect(two?.move?.toSessionId).toBe("dec2")
+    expect(two?.move?.resolves).toBe("two-building")
+    // Home again, so there is no landing to warn anybody about.
+    expect(two?.move?.lands).toBe("")
+    expect(railSuggestions(all).some((s) => s.kind === "two-building")).toBe(true)
+  })
+
+  it("ships a shortage move even when it lands the grade off its gym", () => {
+    // November's first weekend cannot hold Grade 8 at all. Moving it is the
+    // only way the weekend gets played, and the row has to say the cost.
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr8", 10)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct", "2026-10-03", [PLAYGROUND, SIXPARK])] },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov1", "2026-11-07", [gym("playground", "The Playground", 8, 0)]),
+            weekend("nov2", "2026-11-21", [gym("playground", "The Playground", 6, 0), SIXPARK]),
+          ],
+        },
+      ],
+    }
+    const all = suggestFor(state, { oct: ["age:Gr8"], nov1: ["age:Gr8"], nov2: [] }, {})
+    const move = all.find((s) => s.kind === "move-unit")
+    expect(move?.move?.unitKey).toBe("age:Gr8")
+    expect(move?.move?.toSessionId).toBe("nov2")
+    // The cost the rail has to state out loud: Grade 8 does not keep its gym.
+    expect(move?.move?.lands).toContain("Lands at Six Park")
   })
 })

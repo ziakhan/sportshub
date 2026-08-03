@@ -354,19 +354,9 @@ export function StripView({
         </table>
       </div>
 
-      {/* Which colour is which gym, in words. */}
-      <div className="border-ink-100 flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-3 py-2">
-        {gymOrder.map((gym) => (
-          <span key={gym.venueId} className="text-ink-500 inline-flex items-center gap-1.5 text-[11px]">
-            <i
-              aria-hidden
-              className={`h-2.5 w-2.5 rounded-full ${VENUE_HUES[hue.get(gym.venueId) ?? 0].swatch}`}
-            />
-            <b className="text-ink-700">{gym.short}</b>
-            <span className="text-ink-400">{gym.name}</span>
-          </span>
-        ))}
-      </div>
+      {/* Which colour is which gym is answered ONCE for the whole step, in the
+          legend above both views, so this footer only has to say how the
+          cells work. */}
       <p className="text-ink-400 border-ink-100 border-t px-3 py-2 text-[11px]">
         {COPY.gyms}
       </p>

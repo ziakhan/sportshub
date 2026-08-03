@@ -7,6 +7,7 @@ import {
   currentAssignment,
   diffAssignments,
   gradeGymStrip,
+  gradeHomeGym,
   gymCountsSentence,
   hoursPreviewSentence,
   packShownPlacements,
@@ -34,7 +35,7 @@ import {
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
-import { venueShortName } from "@/lib/seasons/venue-strip"
+import { venueShortName, type StripVenue } from "@/lib/seasons/venue-strip"
 import {
   CARD_TONE,
   FRACTION_FOR_TONE,
@@ -45,6 +46,7 @@ import {
   type Armed,
 } from "./plan-shared"
 import {
+  CountChip,
   Fraction,
   GLYPH_LEGEND,
   REASON_GLYPH,
@@ -374,6 +376,20 @@ export function CalendarStep({
       ),
     [venueGrid, state]
   )
+  /** The gym the league fills BEFORE it opens another one, by the season's own
+   *  fill order. The legend says so, because "why is that one always full"
+   *  is the first question the colours raise. */
+  const fillsFirst = useMemo(() => {
+    let best: { venueId: string; fillOrder: number } | null = null
+    for (const win of state?.windows ?? []) {
+      for (const w of win.weekends) {
+        for (const v of w.venues) {
+          if (!best || v.fillOrder < best.fillOrder) best = { venueId: v.venueId, fillOrder: v.fillOrder }
+        }
+      }
+    }
+    return best?.venueId ?? null
+  }, [state])
   /** A gym in the words the columns have room for, by id. */
   const gymShort = useCallback(
     (venueId: string) => gyms.order.find((v) => v.venueId === venueId)?.short ?? "another gym",
@@ -706,6 +722,10 @@ export function CalendarStep({
               </p>
             )}
 
+            {/* The colour key for the whole step, above the calendar in both
+                views: which gym is which colour, in full names. */}
+            <GymLegend order={gyms.order} hue={gyms.hue} fillsFirst={fillsFirst} />
+
             {view === "board" ? (
               <BoardView
                 state={state}
@@ -945,6 +965,47 @@ export function CalendarStep({
   )
 }
 
+/**
+ * Which colour is which gym (owner 2026-08-02: "there is no clear indication
+ * that blue is Burlington and the green is Six Park"). It sits ABOVE the
+ * calendar, in both views, because a key nobody scrolls to is not a key, and it
+ * names the gyms in full: the columns and the strip abbreviate, this does not.
+ *
+ * The glyph legend under the board answers a different question, so the two
+ * stay apart.
+ */
+function GymLegend({
+  order,
+  hue,
+  fillsFirst,
+}: {
+  order: StripVenue[]
+  hue: Map<string, number>
+  /** The gym the league fills before it opens another one, if it has one. */
+  fillsFirst: string | null
+}) {
+  if (order.length === 0) return null
+  return (
+    <div
+      className="mb-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
+      data-testid="gym-legend"
+    >
+      {order.map((gym) => {
+        const paint = hueFor(hue, gym.venueId)
+        return (
+          <span key={gym.venueId} className="inline-flex items-center gap-1.5 text-[11.5px]">
+            <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
+            <b className={`font-bold ${paint.name}`}>{gym.name}</b>
+            {gym.venueId === fillsFirst && (
+              <span className="text-ink-400 font-semibold">fills first</span>
+            )}
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 /** The board: one column per month window, weekends stacked inside. Where a
  *  month gets rearranged, which is what a column is good at. */
 function BoardView({
@@ -992,11 +1053,15 @@ function BoardView({
       <div
         className="grid gap-2.5"
         style={{
-          gridTemplateColumns: `repeat(${state.windows.length}, minmax(200px, 1fr))`,
-          minWidth: `${state.windows.length * 200}px`,
+          // 260 is the narrowest a column can be and still read (owner
+          // 2026-08-02: "the meters are barely visible, the lines are too
+          // short"). A long season scrolls sideways on purpose; it does not
+          // crush its own columns to fit.
+          gridTemplateColumns: `repeat(${state.windows.length}, minmax(260px, 1fr))`,
+          minWidth: `${state.windows.length * 260}px`,
           // A two-month season should not stretch its columns across the whole
           // page just because there is room.
-          maxWidth: `${state.windows.length * 280}px`,
+          maxWidth: `${state.windows.length * 320}px`,
         }}
       >
         {state.windows.map((win, i) => {
@@ -1262,16 +1327,15 @@ function WeekendCard({
             >
               <div className="flex items-center gap-1.5">
                 <i aria-hidden className={`h-2 w-2 flex-none rounded-full ${paint.swatch}`} />
-                {/* The gym's NAME, never shortened away to make room for its
-                    own meter: the meter gives up its width first. */}
-                <span
-                  className={`max-w-[104px] flex-none truncate text-[11px] font-bold ${paint.name}`}
-                >
+                {/* The gym's NAME takes the width it needs and truncates only
+                    once the meter is down to its floor, so the two things this
+                    row is for are both readable at 260px. */}
+                <span className={`min-w-0 max-w-[150px] truncate text-[11px] font-bold ${paint.name}`}>
                   {venueShortName(section.name)}
                 </span>
                 <span
                   aria-hidden
-                  className="bg-ink-100 h-[5px] min-w-[14px] flex-1 overflow-hidden rounded-full"
+                  className="bg-ink-100 h-1.5 min-w-[48px] flex-1 overflow-hidden rounded-full"
                 >
                   <i
                     className={`block h-full rounded-full ${
@@ -1365,11 +1429,12 @@ const OUTCOME: Record<SuggestionMove["resolves"], { words: string; tone: string 
 /**
  * The rail: problems first, then the moves worth taking, one row each.
  *
- * Every row is the same sentence the core composes, laid out instead of read:
- * which grade, from which weekend at what load, to which weekend at what load,
- * what it buys, and what it does to that grade's season. The recap rows that
- * only described what a card already draws are gone (railSuggestions), and the
- * ideas past the first two fold away.
+ * Every row leads with the move as a sentence and carries only the two numbers
+ * that decide it: what is wrong where the grade is now, and what is left where
+ * it would go. The full capacity maths is one tap away in the row's popover,
+ * and every row says what the move COSTS as well as what it buys. The recap
+ * rows that only described what a card already draws are gone
+ * (railSuggestions), and the ideas past the first two fold away.
  */
 function SuggestionRail({
   state,
@@ -1379,6 +1444,7 @@ function SuggestionRail({
   suggestions,
   hue,
   gymShort,
+  aboutLabel = "this calendar",
   interactive,
   onMove,
 }: {
@@ -1391,6 +1457,9 @@ function SuggestionRail({
   suggestions: PlannerSuggestion[]
   hue: Map<string, number>
   gymShort: (venueId: string) => string
+  /** Whose calendar this is critiquing, in the operator's own words. The rail
+   *  is read next to a board that could be any season, so it says which one. */
+  aboutLabel?: string
   interactive: boolean
   onMove: (unitKey: string, from: string | null, to: string) => void
 }) {
@@ -1411,6 +1480,11 @@ function SuggestionRail({
 
   return (
     <div className="mt-4 space-y-1.5" aria-live="polite" data-testid="suggestion-rail">
+      {/* Whose calendar the rail is talking about. Said even when every row is
+          a problem, because a problem belongs to a season too. */}
+      <p className="text-ink-500 px-1 text-[11.5px] font-semibold" data-testid="rail-about">
+        Ideas for {aboutLabel}
+      </p>
       {problems.map((s, i) => {
         const weekend = weekendById.get(s.sessionId)
         if (!weekend) return null
@@ -1446,6 +1520,8 @@ function SuggestionRail({
           venues={venues}
           playsIn={playsIn}
           move={s.move as SuggestionMove}
+          text={s.text}
+          toWeekend={weekendById.get((s.move as SuggestionMove).toSessionId)}
           hue={hue}
           gymShort={gymShort}
           interactive={interactive}
@@ -1485,14 +1561,27 @@ function SuggestionRail({
   )
 }
 
-/** One move, laid out: the grade, both weekends with their loads, what it
- *  buys, the grade's season before and after, and the button that does it. */
+/**
+ * One move, as a sentence with the two numbers that decide it (owner
+ * 2026-08-02: "it's not very clear that 27 is a number of games... do we
+ * really have to put the capacity, the current capacity, the usage of the
+ * gym").
+ *
+ * The lead says what would happen and the number wears its unit. Beside it,
+ * only what is load bearing: what is wrong where the grade is now, and what is
+ * left where it would go. Under it, what the move COSTS, because a row that
+ * reads like free money is a lie: the games the destination takes on, and the
+ * building the grade ends up in when that is not its own. The full capacity
+ * maths is in the lead's popover, in the words the core composed.
+ */
 function SuggestionRow({
   state,
   assignment,
   venues,
   playsIn,
   move,
+  text,
+  toWeekend,
   hue,
   gymShort,
   interactive,
@@ -1503,6 +1592,12 @@ function SuggestionRow({
   venues: Record<string, Record<string, string>>
   playsIn: Record<string, Record<string, string>>
   move: SuggestionMove
+  /** The whole thing in prose, composed in the pure core. The row lays out the
+   *  headline; this is what the popover says. */
+  text: string
+  /** The weekend the grade would land on, for the games it brings there. A
+   *  weekend can run a different games-per-team than the one it leaves. */
+  toWeekend?: PlannerWeekend
   hue: Map<string, number>
   gymShort: (venueId: string) => string
   interactive: boolean
@@ -1526,62 +1621,93 @@ function SuggestionRow({
   )
   const paint = hueFor(hue, playsIn[move.fromSessionId]?.[move.unitKey])
   const outcome = OUTCOME[move.resolves]
+  /** The building this grade plays most: its home, by the core's own rule.
+   *  The miniature outlines against it and the cost line names it. */
+  const home = gradeHomeGym(before)
+  /** Where the move stands the grade on the weekend it lands on. */
+  const lands = after.find((c) => c.sessionId === move.toSessionId)?.venueId ?? null
   const story = `${gymCountsSentence(before, after, gymShort)}${move.lands ? ` ${move.lands}` : ""}`
 
+  const lead = `Move ${move.unitLabel}'s ${plural(move.games, "game", "games")}`
+  const over = Math.max(0, move.fromBefore.demand - move.fromBefore.capacity)
+  const left = move.toAfter.capacity - move.toAfter.demand
+  /** Games the destination takes on, counted on ITS own weekend. */
+  const takes = toWeekend ? weekendDemand(state.units, toWeekend, [move.unitKey]) : move.games
+  const cost = [
+    `${move.toLabel} takes ${plural(takes, "more game", "more games")}.`,
+    // The move.lands data says the same thing in the popover; the row says it
+    // in the words a parent would use.
+    lands && home && lands !== home
+      ? `${move.unitLabel} plays at ${gymShort(lands)} that weekend.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+
   return (
-    <div className="border-ink-100 flex flex-wrap items-center gap-2 rounded-xl border bg-white px-3 py-2">
-      <span
-        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[12px] font-bold ${paint.chip}`}
-      >
-        {move.unitLabel}
-        <span className={`text-[11px] tabular-nums ${paint.chipQuiet}`} aria-hidden>
-          {move.games}
-        </span>
-      </span>
-      <span className="text-ink-700 whitespace-nowrap text-[12px] font-bold">
-        {move.fromLabel}
-      </span>
-      <Fraction
-        is={move.fromBefore.demand}
-        of={move.fromBefore.capacity}
-        tone={fractionTone(move.fromBefore.demand, move.fromBefore.capacity)}
-        title={`${move.fromLabel} now: ${move.fromBefore.demand} games of ${move.fromBefore.capacity}`}
-      />
-      <span aria-hidden className="text-ink-300 font-bold">
-        →
-      </span>
-      <span className="text-ink-700 whitespace-nowrap text-[12px] font-bold">{move.toLabel}</span>
-      <Fraction
-        is={move.toAfter.demand}
-        of={move.toAfter.capacity}
-        tone={fractionTone(move.toAfter.demand, move.toAfter.capacity)}
-        title={`${move.toLabel} after the move: ${move.toAfter.demand} games of ${move.toAfter.capacity}`}
-      />
-      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${outcome.tone}`}>
-        {outcome.words}
-      </span>
-      <ImpactStrip
-        before={before}
-        after={after}
-        hue={hue}
-        story={story}
-        unitLabel={move.unitLabel}
-      />
-      {interactive && (
-        <button
-          type="button"
-          data-testid="suggestion-move"
-          data-unit-key={move.unitKey}
-          onClick={(e) => {
-            e.stopPropagation()
-            onMove(move.unitKey, move.fromSessionId, move.toSessionId)
-          }}
-          aria-label={`Move ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}`}
-          className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 ml-auto min-h-[40px] shrink-0 cursor-pointer rounded-lg border px-3 text-[12px] font-bold"
+    <div className="border-ink-100 rounded-xl border bg-white px-3 py-2" data-testid="rail-idea">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
+        <WhyPopover
+          text={text}
+          label={`${lead}. The numbers behind this move.`}
+          testId="idea-why"
+          className="text-ink-900 inline-flex min-h-[32px] items-center px-0.5 text-[12.5px] font-bold"
         >
-          Move
-        </button>
-      )}
+          {lead}
+        </WhyPopover>
+        <span className="text-ink-600 whitespace-nowrap text-[12px] font-semibold">
+          {move.fromLabel}
+        </span>
+        {over > 0 && (
+          <CountChip tone="over" words={`${plural(over, "game", "games")} over`} testId="idea-problem" />
+        )}
+        <span aria-hidden className="text-ink-300 font-bold">
+          →
+        </span>
+        <span className="text-ink-600 whitespace-nowrap text-[12px] font-semibold">
+          {move.toLabel}
+        </span>
+        <CountChip
+          tone={fractionTone(move.toAfter.demand, move.toAfter.capacity)}
+          words={
+            left >= 0
+              ? `fits, ${plural(left, "slot", "slots")} left`
+              : `${plural(-left, "game", "games")} over`
+          }
+          testId="idea-destination"
+        />
+        <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${outcome.tone}`}>
+          {outcome.words}
+        </span>
+        <ImpactStrip
+          before={before}
+          after={after}
+          home={home}
+          hue={hue}
+          story={story}
+          unitLabel={move.unitLabel}
+        />
+        {interactive && (
+          <button
+            type="button"
+            data-testid="suggestion-move"
+            data-unit-key={move.unitKey}
+            onClick={(e) => {
+              e.stopPropagation()
+              onMove(move.unitKey, move.fromSessionId, move.toSessionId)
+            }}
+            aria-label={`Move ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}`}
+            className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 ml-auto min-h-[40px] shrink-0 cursor-pointer rounded-lg border px-3 text-[12px] font-bold"
+          >
+            Move
+          </button>
+        )}
+      </div>
+      {/* What it costs, every time. */}
+      <p className="text-ink-500 mt-1 px-0.5 text-[11.5px]" data-testid="idea-cost">
+        {cost}
+      </p>
     </div>
   )
 }
@@ -1596,25 +1722,20 @@ function SuggestionRow({
 function ImpactStrip({
   before,
   after,
+  home,
   hue,
   story,
   unitLabel,
 }: {
   before: GradeStripCell[]
   after: GradeStripCell[]
+  /** The grade's own gym, worked out by the row so the outline here and the
+   *  cost line under it can never mean different buildings. */
+  home: string | null
   hue: Map<string, number>
   story: string
   unitLabel: string
 }) {
-  /** The building this grade plays most: its home, whatever one weekend does. */
-  const home = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const c of before) counts.set(c.venueId, (counts.get(c.venueId) ?? 0) + 1)
-    let best: string | null = null
-    for (const [venueId, n] of counts) if (!best || n > (counts.get(best) ?? 0)) best = venueId
-    return best
-  }, [before])
-
   const cells = (list: GradeStripCell[], mark: boolean) => (
     <span className="inline-flex gap-[2px]">
       {list.map((cell, i) => {

@@ -1627,15 +1627,39 @@ export function hoursPreviewSentence(label: string, preview: HoursPreview): stri
 }
 
 /**
+ * The destination weekend packed with this grade added: where everybody stands
+ * once the move is taken. ONE packing, so the clause that names the landing and
+ * the rule that vetoes the move can never disagree about where the grade ends
+ * up.
+ *
+ * An approximation, and deliberately so: the destination is packed against the
+ * residency the season already had going INTO it, not against a re-walk of
+ * every later weekend. A move can ripple forward through residency; this
+ * describes the weekend the operator is looking at.
+ */
+function packLanding(
+  unit: PlannerUnit,
+  to: PlannerWeekend,
+  keysThere: string[],
+  unitByKey: Map<string, PlannerUnit>,
+  homes: Record<string, string>,
+  decidedThere: Record<string, string>
+): { there: PlannerUnit[]; packed: WeekendVenuePacking; landed: string | null } {
+  const there = unitsFor(unitByKey, [...keysThere.filter((k) => k !== unit.key), unit.key])
+  const packed = packWeekendVenues(
+    there,
+    to,
+    { ...homes, ...decidedThere },
+    new Set(Object.keys(decidedThere))
+  )
+  return { there, packed, landed: packed.byUnit[unit.key] ?? null }
+}
+
+/**
  * Where a grade would LAND if it were moved onto a weekend, when that is not
  * the gym it has been playing: "Lands at Six Park (The Playground holds Grade
  * 10, 42 of 48)." Empty when the grade keeps its own building, which is the
  * quiet, ordinary case nobody needs told about.
- *
- * An approximation, and deliberately so: the destination weekend is packed
- * against the residency the season already had going INTO it, not against a
- * re-walk of every later weekend. A move can ripple forward through residency;
- * this sentence describes the weekend the operator is looking at.
  */
 function landingClause(
   unit: PlannerUnit,
@@ -1648,14 +1672,14 @@ function landingClause(
   const home = homes[unit.key]
   const open = new Map(to.venues.map((v) => [v.venueId, v]))
   if (!home || !open.has(home)) return ""
-  const there = unitsFor(unitByKey, [...keysThere.filter((k) => k !== unit.key), unit.key])
-  const packed = packWeekendVenues(
-    there,
+  const { there, packed, landed } = packLanding(
+    unit,
     to,
-    { ...homes, ...decidedThere },
-    new Set(Object.keys(decidedThere))
+    keysThere,
+    unitByKey,
+    homes,
+    decidedThere
   )
-  const landed = packed.byUnit[unit.key]
   if (!landed || landed === home) return ""
   const shortOf = (venueId: string) => venueShortName(open.get(venueId)?.name ?? "")
   const holders = there.filter(
@@ -1668,6 +1692,40 @@ function landingClause(
   return `${lands} (${shortOf(home)} holds ${nameList(
     holders.map((u) => u.label)
   )}, ${held} of ${capacity}).`
+}
+
+/**
+ * A grade's HOME gym, the one rule, in one place: the building it plays most
+ * across the season (owner rule 2026-08-02 — one grade keeps one gym all
+ * season). Ties go to the gym it plays first, so the answer is stable and a
+ * grade that splits its season evenly still has a home to be sent back to.
+ */
+function mostPlayed(venueIds: string[]): string | null {
+  const counts = new Map<string, number>()
+  let best: string | null = null
+  for (const id of venueIds) {
+    const n = (counts.get(id) ?? 0) + 1
+    counts.set(id, n)
+    if (!best || n > (counts.get(best) ?? 0)) best = id
+  }
+  return best
+}
+
+/** Every grade's home gym across the calendar on screen, in one pass over the
+ *  buildings the board is already drawing. */
+function homeGyms(state: PlannerState, placement: ShownPlacements): Map<string, string> {
+  const played = new Map<string, string[]>()
+  for (const w of chronologicalWeekends(state)) {
+    for (const [key, venueId] of Object.entries(placement.venues[w.sessionId] ?? {})) {
+      played.set(key, [...(played.get(key) ?? []), venueId])
+    }
+  }
+  const home = new Map<string, string>()
+  for (const [key, venueIds] of played) {
+    const best = mostPlayed(venueIds)
+    if (best) home.set(key, best)
+  }
+  return home
 }
 
 /**
@@ -1684,6 +1742,12 @@ function landingClause(
  * `decided` is the gyms the caller has on screen, per weekend; where it says
  * nothing, the plan as saved stands. That is what makes the rail's buildings
  * the same buildings the board is drawing.
+ *
+ * Two rules decide which notes carry a button. Feasibility first: a shortage
+ * move is always offered, because a weekend that cannot be played beats every
+ * other consideration. Then residency: a move made only to close a second
+ * building is offered ONLY when it leaves the grade in its own gym, so tidying
+ * a weekend can never quietly cost a grade the building it plays in.
  */
 export function suggestFor(
   state: PlannerState,
@@ -1702,6 +1766,9 @@ export function suggestFor(
   // ONE chronological pass for the whole calendar, the same one the board
   // draws from, so a suggestion never names a building the screen does not.
   const placement = packShownPlacements(state, assignment, decidedAll)
+  /** Where each grade lives across this calendar, so a tidy-up move can be
+   *  measured against the promise it would break. */
+  const homeGym = homeGyms(state, placement)
   const demandOn = (w: PlannerWeekend) =>
     weekendDemand(state.units, w, assignment[w.sessionId] ?? [])
   const gamesOn = (unit: PlannerUnit, w: PlannerWeekend) =>
@@ -1791,6 +1858,8 @@ export function suggestFor(
           if (demand - gamesOn(unit, w) > w.capacityGames) continue
           const to = roomFor(unit)[0]
           if (!to) continue
+          // Feasibility outranks residency: a shortage move ships even when it
+          // takes the grade off its own gym, and `lands` is what says so.
           const { move, text } = moveFor(unit, to, "shortage", "Clears the shortage.")
           suggestions.push({ kind: "move-unit", sessionId: w.sessionId, text, move })
           break
@@ -1832,6 +1901,21 @@ export function suggestFor(
             if (without.opened.length > 1 || without.overflow > 0) continue
             const to = roomFor(unit)[0]
             if (!to) continue
+            // Residency outranks one building a weekend (owner rule
+            // 2026-08-02): a grade keeps one gym all season, and tidying a
+            // weekend is not worth breaking that. Sending the grade back to its
+            // own gym is the case worth a button; parking it anywhere else ships
+            // as the recap alone, with nothing to press.
+            const home = homeGym.get(unit.key)
+            const { landed } = packLanding(
+              unit,
+              to,
+              assignment[to.sessionId] ?? [],
+              unitByKey,
+              homesArriving(to, unit, w.sessionId),
+              decidedAll[to.sessionId] ?? {}
+            )
+            if (home && landed && landed !== home) continue
             const built = moveFor(unit, to, "two-building", `Keeps ${w.label} in one building.`)
             move = built.move
             text = `${text} ${built.text}`
@@ -1942,6 +2026,16 @@ export function gradeGymStrip(
     if (venueId) out.push({ sessionId: w.sessionId, dateISO: w.dateISO, venueId })
   }
   return out
+}
+
+/**
+ * A grade's home gym read off its own season in cells: the building it plays
+ * most. The same rule the suggestions are vetoed by (one grade, one gym), so
+ * the row that draws a move and the core that offers it agree on which
+ * building the grade would be giving up.
+ */
+export function gradeHomeGym(cells: GradeStripCell[]): string | null {
+  return mostPlayed(cells.map((c) => c.venueId))
 }
 
 /**

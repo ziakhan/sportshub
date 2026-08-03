@@ -155,6 +155,35 @@ export function Fraction({
   )
 }
 
+/**
+ * A number that wears its unit: "7 games over", "fits, 73 slots left" (owner
+ * 2026-08-02: "it's not very clear that 27 is a number of games"). The same
+ * three tones as the fraction, for the places a fraction is too much arithmetic
+ * to read: the rail says what is wrong and what is left, and keeps the full
+ * capacity maths for the popover.
+ */
+export function CountChip({
+  words,
+  tone,
+  className = "",
+  testId,
+}: {
+  /** The number and its unit, already said: this chip never adds a noun. */
+  words: string
+  tone: FractionTone
+  className?: string
+  testId?: string
+}) {
+  return (
+    <span
+      data-testid={testId}
+      className={`inline-flex shrink-0 items-center rounded-full border px-2 py-[1.5px] text-[12px] font-bold tabular-nums ${FRACTION_TONE[tone]} ${className}`}
+    >
+      {words}
+    </span>
+  )
+}
+
 /* ------------------------------ the popover ------------------------------ */
 
 /** Where a panel sits, in viewport coordinates: the trigger's own rectangle,
