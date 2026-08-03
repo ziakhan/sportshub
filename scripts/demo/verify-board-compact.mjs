@@ -53,10 +53,31 @@ ok(
   "no card carries a sentence: the caption line is gone",
   (await page.locator('[data-testid="weekend-caption"]').count()) === 0
 )
-const boardText = await page.locator("[data-session-id]").allInnerTexts()
+// RE-PINNED 2026-08-03 (venue model v2). "Courts" used to be dead on the board,
+// because a court count was a worse way of saying what a fraction already said.
+// It is back for one reason only, and it is the owner's: a court is what you
+// RENT. So courts may appear where a rental is being asked for — a rented
+// section saying how many courts it takes, or an empty slot saying how many it
+// needs — and nowhere else. A capacity meter still never counts courts.
+const courtsOutsideRentals = await page.evaluate(() => {
+  const bad = []
+  for (const card of document.querySelectorAll("[data-session-id]")) {
+    const clone = card.cloneNode(true)
+    for (const el of clone.querySelectorAll(
+      '[data-testid="rental-mark"],[data-testid="rental-slot-empty"]'
+    )) {
+      el.remove()
+    }
+    if ((clone.textContent ?? "").toLowerCase().includes("court")) {
+      bad.push((clone.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 120))
+    }
+  }
+  return bad
+})
 ok(
-  'the word "courts" is dead on the board',
-  !boardText.join(" ").toLowerCase().includes("courts")
+  'the word "courts" is only ever a rental ask on the board',
+  courtsOutsideRentals.length === 0,
+  courtsOutsideRentals[0] ?? "every mention sits in a rented section or an empty slot"
 )
 
 const fractions = await page.locator('[data-testid="weekend-fraction"]').count()

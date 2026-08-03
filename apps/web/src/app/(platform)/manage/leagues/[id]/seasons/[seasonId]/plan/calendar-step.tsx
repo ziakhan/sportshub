@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui"
 import {
+  assignBlocksFromPool,
   assignmentWithMove,
+  courtsNeeded,
   currentAssignment,
   diffAssignments,
   gradeGymStrip,
@@ -13,6 +15,7 @@ import {
   packShownPlacements,
   planSummary,
   railSuggestions,
+  rentalAsk,
   resolveWeekendGyms,
   shiftClock,
   suggestFor,
@@ -32,6 +35,8 @@ import {
   type PlannerVenue,
   type PlannerWeekend,
   type PlanSummary,
+  type RentalBlock,
+  type ShownPlacements,
   type SuggestionMove,
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
@@ -58,12 +63,18 @@ import {
   type Armed,
 } from "./plan-shared"
 import {
+  AskSheet,
+  BlockStatusMark,
+  BlockSummary,
   CountChip,
   Fraction,
   GLYPH_LEGEND,
   REASON_GLYPH,
   ReasonGlyph,
+  VenueTray,
   WhyPopover,
+  type BlockStatus,
+  type TrayGym,
 } from "./plan-ui"
 import { PlanPicker, PlanSaveControls } from "./plan-picker"
 import { Segmented, StripView, type StripSide } from "./season-strip"
@@ -128,6 +139,14 @@ const COPY = {
     "Green agrees with what you kept, amber moved to another weekend that month, and a dashed chip is where the kept calendar had that grade.",
   hours:
     "These change WHEN your gyms are open, not who plays which weekend. One hour, every weekend, every gym. Nothing is booked until you apply it.",
+  /** The two ways a weekend that needs a rented gym gets one (owner ruling
+   *  2026-08-03). Both act on the calendar in front of you and neither books
+   *  anything. */
+  assignSolve: "We take the cheapest gym in your pool that can hold the games. Nothing is booked.",
+  assignPlace:
+    "Drag a gym onto a weekend that needs one, or tap the gym and then tap the weekend.",
+  nothingToFill: "Every weekend already has a building. There is nothing to fill.",
+  noPool: "Your pool has no gym free on those weekends. Turn one on for them back in step 2.",
 }
 
 const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
@@ -177,6 +196,17 @@ const HOURS_CHIPS: HoursChip[] = [
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
+/** Courts in a phrase, because a rental is quoted in them. */
+const courtsWord = (n: number) => plural(n, "court", "courts")
+
+/** Things in a sentence: "a", "a and b", "a, b and c". */
+function nameList(parts: string[]): string {
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+}
+
 /** How many boards back an operator can step. Ten is more than anybody has
  *  ever wanted, and it costs two small objects a move. */
 const UNDO_DEPTH = 10
@@ -186,10 +216,17 @@ const UNDO_DEPTH = 10
 interface BoardSnapshot {
   assignment: Record<string, string[]>
   venues: Record<string, Record<string, string>>
+  /** Where each rental stood: "<sessionId>|<venueId>" → assumed | confirmed.
+   *  Filling the gaps from the pool is one step back, gyms and statuses
+   *  together, because those two are one decision. */
+  blockStatus: Record<string, BlockStatus>
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean
 }
+
+/** One rental, keyed the way the working copy remembers it. */
+const blockKey = (sessionId: string, venueId: string) => `${sessionId}|${venueId}`
 
 /** Which building each grade plays in, as the plan has it SAVED: sessionId →
  *  (unit key → venueId). The board carries this next to the assignment and
@@ -310,6 +347,23 @@ export function CalendarStep({
    *  from undone. Local only: the plan is temporary until Keep, and leaving
    *  the page throws the whole thing away, stack included. */
   const [undoStack, setUndoStack] = useState<BoardSnapshot[]>([])
+  /**
+   * WHERE EACH RENTAL STANDS, in the working copy only (owner ruling
+   * 2026-08-03): "<sessionId>|<venueId>" → assumed | confirmed.
+   *
+   * A rental the pool answered is "assumed" — a gym nobody has phoned. One the
+   * operator placed by hand is "confirmed", because they asserted it. What is
+   * NOT in this map falls back to the gym's attachment as step 2 saved it, so
+   * the board never invents a booking.
+   */
+  const [blockStatus, setBlockStatus] = useState<Record<string, BlockStatus>>({})
+  /** Which way rentals get filled: the pool answers, or the operator places.
+   *  Two modes, said out loud, because "who chose this gym" is the question an
+   *  operator has about every rented weekend. */
+  const [assignMode, setAssignMode] = useState<"solve" | "place">("solve")
+  /** A gym picked up from the tray, waiting for a weekend. The touch half of
+   *  the drag, and the same arm-then-tap pattern the grade chips use. */
+  const [armedVenue, setArmedVenue] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -439,6 +493,10 @@ export function CalendarStep({
     setVenueGrid(venueData?.grid ?? null)
     setLocked(isLocked)
     setArmed(null)
+    setArmedVenue(null)
+    // Statuses come back from the gyms themselves on a fresh load: whatever
+    // the working copy was thinking is gone with the board it was thinking on.
+    setBlockStatus({})
     setKept(hasSaved ? saved : null)
     setKeptVenues(hasSaved ? savedVenues : {})
     if (!hasSaved) setSide("proposal")
@@ -461,15 +519,17 @@ export function CalendarStep({
     load()
   }, [load])
 
-  // Escape always cancels an armed chip, wherever the focus went.
+  // Escape always cancels an armed chip or an armed gym, wherever focus went.
   useEffect(() => {
-    if (!armed) return
+    if (!armed && !armedVenue) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setArmed(null)
+      if (e.key !== "Escape") return
+      setArmed(null)
+      setArmedVenue(null)
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed])
+  }, [armed, armedVenue])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -482,20 +542,20 @@ export function CalendarStep({
    * a grade had been playing, so the biggest grade took the gym that fills
    * first and a resident was quietly moved out of its own building.
    */
-  const shown = useMemo(
+  const shown: ShownPlacements = useMemo(
     () =>
       state
         ? packShownPlacements(state, assignment, venues)
-        : { venues: {}, reasons: {}, homes: {} },
+        : { venues: {}, reasons: {}, homes: {}, blocks: [] },
     [state, assignment, venues]
   )
   /** The same walk over the calendar the league KEPT, so the strip's kept side
    *  names the buildings that were saved rather than the ones on trial. */
-  const keptShown = useMemo(
+  const keptShown: ShownPlacements = useMemo(
     () =>
       state && kept
         ? packShownPlacements(state, kept, keptVenues)
-        : { venues: {}, reasons: {}, homes: {} },
+        : { venues: {}, reasons: {}, homes: {}, blocks: [] },
     [state, kept, keptVenues]
   )
 
@@ -541,6 +601,120 @@ export function CalendarStep({
     [gyms]
   )
 
+  /* --------------------------- what this rents --------------------------- */
+
+  /** Every weekend of the season, by id. The rentals, the ask sheet and the
+   *  tray all have to name a weekend, and none of them holds the columns. */
+  const weekendById = useMemo(() => {
+    const out = new Map<string, PlannerWeekend>()
+    for (const win of state?.windows ?? []) for (const w of win.weekends) out.set(w.sessionId, w)
+    return out
+  }, [state])
+
+  /**
+   * The rentals behind the calendar ON SCREEN (owner ruling 2026-08-03), read
+   * off the same chronological pass the board draws its sections from, so the
+   * blocks, the sections and the ask sheet can never disagree. The planner APIs
+   * hand blocks back too; the board deliberately ignores them, because a
+   * working copy is not what the server last said.
+   */
+  const blocks = shown.blocks
+  const ask = useMemo(() => (state ? rentalAsk(state, blocks) : null), [state, blocks])
+
+  /** How the gyms themselves stand, from step 2's own grid: the base every
+   *  status reads from, so the board never invents a booking. */
+  const bookedStatus = useMemo(() => {
+    const out = new Map<string, BlockStatus>()
+    for (const row of venueGrid?.venues ?? []) {
+      for (const cell of row.cells) {
+        if (!cell.sessionId || !cell.bookingStatus) continue
+        out.set(blockKey(cell.sessionId, row.venueId), cell.bookingStatus)
+      }
+    }
+    return out
+  }, [venueGrid])
+
+  /** Where one rental stands: what the working copy decided, else what the gym
+   *  itself says, else booked (a gym on a weekend nobody has questioned). */
+  const statusOf = useCallback(
+    (sessionId: string, venueId: string): BlockStatus =>
+      blockStatus[blockKey(sessionId, venueId)] ??
+      bookedStatus.get(blockKey(sessionId, venueId)) ??
+      "confirmed",
+    [blockStatus, bookedStatus]
+  )
+
+  /** The blocks as the ask sheet reads them out: weekend, building, standing. */
+  const blockRows = useMemo(
+    () =>
+      blocks.map((b, i) => ({
+        key: `${b.sessionId}-${b.venueId ?? "none"}-${i}`,
+        weekend: weekendById.get(b.sessionId)?.label ?? "",
+        gym: b.venueId ? gymShort(b.venueId) : null,
+        status: b.venueId ? statusOf(b.sessionId, b.venueId) : ("needed" as BlockStatus),
+      })),
+    [blocks, weekendById, gymShort, statusOf]
+  )
+
+  const blockCounts = useMemo(
+    () => ({
+      total: blockRows.length,
+      confirmed: blockRows.filter((b) => b.status === "confirmed").length,
+      assumed: blockRows.filter((b) => b.status === "assumed").length,
+      needed: blockRows.filter((b) => b.status === "needed").length,
+    }),
+    [blockRows]
+  )
+
+  /**
+   * Why each grade is where it is, with the ONE correction the working copy
+   * owes the operator: a gym the POOL answered is not "your pick". The venues
+   * map is the only channel a placement travels on, so the pass calls every
+   * entry decided; the status map is what knows the difference.
+   */
+  const whyIn = useMemo(() => {
+    if (Object.keys(blockStatus).length === 0) return shown.reasons
+    const out: Record<string, Record<string, PlacementReason>> = {}
+    for (const [sessionId, byUnit] of Object.entries(shown.reasons)) {
+      const next: Record<string, PlacementReason> = { ...byUnit }
+      for (const [key, reason] of Object.entries(byUnit)) {
+        const venueId = venues[sessionId]?.[key]
+        if (!venueId || reason !== "decided") continue
+        if (blockStatus[blockKey(sessionId, venueId)] === "assumed") next[key] = "rented"
+      }
+      out[sessionId] = next
+    }
+    return out
+  }, [shown.reasons, venues, blockStatus])
+
+  /**
+   * The pool, as something you can pick up: the gyms this season RENTS, with
+   * the courts they have and the weekends they are free on. Availability is
+   * counted off the planner's own weekends, which is exactly the set a drop can
+   * land on, so the tray never offers a weekend the board would refuse.
+   */
+  const trayGyms: TrayGym[] = useMemo(() => {
+    const seen = new Map<string, { courts: number; weekends: number }>()
+    for (const w of weekendById.values()) {
+      for (const v of w.venues) {
+        if (v.role !== "pool") continue
+        const at = seen.get(v.venueId) ?? { courts: 0, weekends: 0 }
+        at.courts = Math.max(at.courts, v.courts ?? v.courtDays ?? 0)
+        at.weekends += 1
+        seen.set(v.venueId, at)
+      }
+    }
+    return gyms.order
+      .filter((g) => seen.has(g.venueId))
+      .map((g) => ({
+        venueId: g.venueId,
+        name: g.name,
+        short: g.short,
+        courts: seen.get(g.venueId)?.courts ?? 0,
+        weekends: seen.get(g.venueId)?.weekends ?? 0,
+      }))
+  }, [gyms.order, weekendById])
+
   const runLever = async (lever: PlannerLever) => {
     setBusy(lever)
     setError(null)
@@ -552,10 +726,14 @@ export function CalendarStep({
     }
     setAssignment(result.assignment)
     setVenues(result.venues ?? {})
+    // A whole new calendar rents different weekends, so what the working copy
+    // was thinking about the old ones is not an opinion about these.
+    setBlockStatus({})
     // A whole new calendar is not a move, so it is not something to step back
     // through one grade at a time. "Undo changes" reloads the saved plan.
     setUndoStack([])
     setArmed(null)
+    setArmedVenue(null)
     setDirty(true)
     // Straight off the solver and untouched, so a save can say so.
     setFromLever(true)
@@ -693,10 +871,14 @@ export function CalendarStep({
     else if (liveState) setState(liveState)
     setAssignment(plan.assignment ?? {})
     setVenues(plan.venues ?? {})
+    // A plan document holds a calendar, not bookings: the statuses come back
+    // from the gyms themselves (step 2's grid) the moment a plan is opened.
+    setBlockStatus({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
     setArmed(null)
+    setArmedVenue(null)
     setNaming(null)
     setNotice(
       plan.isActive
@@ -762,15 +944,53 @@ export function CalendarStep({
     setOnPlanWorld(false)
     setAssignment(proposal.assignment)
     setVenues(proposedVenues)
+    setBlockStatus({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
     setArmed(null)
+    setArmedVenue(null)
     setNaming(null)
     setBusy(null)
     setNotice(
       `${plan.name} is a fresh calendar from the planner. Adjust anything, then use it for the season.`
     )
+  }
+
+  /**
+   * WHERE "ASSUMED" IS WRITTEN DOWN (the 2026-08-03 wiring decision, and the
+   * one place this file writes anything about a booking).
+   *
+   * A plan document holds a calendar and its gyms; where a BOOKING stands lives
+   * on the gym's attachment to the weekend (SeasonSessionDayVenue.bookingStatus),
+   * which is step 2's own truth and what the grid reads back. So:
+   *
+   *  - while an operator is thinking, the statuses live in the working copy;
+   *  - they are written through only for the plan the season actually RUNS,
+   *    where "this rented weekend is not booked yet" is a true fact about the
+   *    season. A plan the season does not run must never mark anybody's gym;
+   *  - the grid is re-read afterwards, so the base every status falls back to
+   *    is the one the season just recorded.
+   */
+  const writeBookingStatus = async () => {
+    const rows = Object.entries(blockStatus)
+    if (rows.length === 0) return
+    await Promise.all(
+      rows.map(([key, bookingStatus]) => {
+        const [sessionId, venueId] = key.split("|")
+        if (!sessionId || !venueId) return Promise.resolve(null)
+        return fetch(`/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingStatus }),
+        }).catch(() => null)
+      })
+    )
+    const res = await fetch(`/api/seasons/${seasonId}/planner/venues`, { cache: "no-store" }).catch(
+      () => null
+    )
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    if (data?.grid) setVenueGrid(data.grid)
   }
 
   /** Back to what the selected plan says, or to the saved calendar when this
@@ -821,6 +1041,9 @@ export function CalendarStep({
       await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, { method: "POST" }).catch(
         () => null
       )
+      // The season runs this calendar now, so where its rentals stand is a fact
+      // about the season and not only about the board.
+      await writeBookingStatus()
       setKept(assignment)
       setKeptVenues(shown.venues)
     }
@@ -831,11 +1054,13 @@ export function CalendarStep({
     setOnPlanWorld(false)
     if (liveState) setState(liveState)
     setVenues(shown.venues)
+    setBlockStatus({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
     setNaming(null)
     setArmed(null)
+    setArmedVenue(null)
     setBusy(null)
     setNotice(
       takesOver
@@ -873,6 +1098,10 @@ export function CalendarStep({
       return
     }
     const wasOnPlanWorld = onPlanWorld
+    // The active plan IS the season's calendar, so where its rentals stand is
+    // written through with it. A plan the season does not run leaves the gyms
+    // alone (writeBookingStatus explains why).
+    if (plan.isActive) await writeBookingStatus()
     // The calendar was just rewritten in the world the operator is standing in,
     // so the plan's memory of its world moved with it (the server re-snapshots
     // on any content change) and the board goes back to the season's numbers.
@@ -880,10 +1109,12 @@ export function CalendarStep({
     setOnPlanWorld(false)
     if (liveState) setState(liveState)
     setVenues(shown.venues)
+    setBlockStatus({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
     setArmed(null)
+    setArmedVenue(null)
     setPlans(await fetchPlans())
     if (plan.isActive) {
       // The write-through happened, so this is what every later comparison is
@@ -934,8 +1165,10 @@ export function CalendarStep({
     setVenues(savedVenuesNow)
     setKept(savedNow)
     setKeptVenues(savedVenuesNow)
+    setBlockStatus({})
     setUndoStack([])
     setArmed(null)
+    setArmedVenue(null)
     setDirty(false)
     setFromLever(false)
     setPlans(await fetchPlans())
@@ -944,7 +1177,7 @@ export function CalendarStep({
 
   /** The board as it stands, remembered before something changes it. */
   const remember = () =>
-    setUndoStack((prev) => [...prev, { assignment, venues, dirty }].slice(-UNDO_DEPTH))
+    setUndoStack((prev) => [...prev, { assignment, venues, blockStatus, dirty }].slice(-UNDO_DEPTH))
 
   /** The one place a chip changes weekends: drag, tap and the suggestion rail
    *  all land here, so every route through the board is undoable and every one
@@ -970,9 +1203,11 @@ export function CalendarStep({
     if (!last) return
     setAssignment(last.assignment)
     setVenues(last.venues)
+    setBlockStatus(last.blockStatus)
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
+    setArmedVenue(null)
     setNotice(null)
   }
 
@@ -1003,6 +1238,136 @@ export function CalendarStep({
     setDirty(true)
     setFromLever(false)
     setNotice(null)
+  }
+
+  /* ----------------------- filling the rental blocks ---------------------- */
+
+  /** Which grades a rental block houses, in the operator's own words. */
+  const gradeList = (unitKeys: string[]) =>
+    unitKeys.map((k) => unitByKey.get(k)?.label ?? k).join(", ")
+
+  /**
+   * FILL THE GAPS FROM THE POOL (owner ruling 2026-08-03, the "assign gyms for
+   * me" half). The same pure function the season solves with, run on the board
+   * in front of you: every weekend whose spill has no building takes the
+   * cheapest gym in the pool that is free that weekend.
+   *
+   * It lands on the WORKING COPY and nothing else: the gyms go in beside a hand
+   * pick, the statuses say "assumed" because nobody has phoned anybody, and one
+   * Undo puts the whole thing back. Saving is still the only thing that writes.
+   */
+  const fillFromPool = () => {
+    if (!state || locked) return
+    const empty = blocks.filter((b) => b.venueId === null && b.games > 0)
+    if (empty.length === 0) {
+      setNotice(COPY.nothingToFill)
+      return
+    }
+    const picks = assignBlocksFromPool(state, blocks)
+    const nextVenues: Record<string, Record<string, string>> = { ...venues }
+    const nextStatus: Record<string, BlockStatus> = { ...blockStatus }
+    const took: string[] = []
+    /** Weekends where the pool could answer but there is no whole grade to
+     *  move: the spill is games past what a building holds. Said separately,
+     *  because "no gym is free" would be a lie about those. */
+    const noCohort: string[] = []
+    for (const block of empty) {
+      const pick = picks[block.sessionId]
+      const weekend = weekendById.get(block.sessionId)
+      if (!pick) continue
+      if (block.unitKeys.length === 0) {
+        noCohort.push(weekend?.label ?? "that weekend")
+        continue
+      }
+      nextVenues[block.sessionId] = { ...(nextVenues[block.sessionId] ?? {}) }
+      for (const key of block.unitKeys) nextVenues[block.sessionId][key] = pick.venueId
+      nextStatus[blockKey(block.sessionId, pick.venueId)] = "assumed"
+      took.push(`${gymShort(pick.venueId)} on ${weekend?.label ?? "that weekend"}`)
+    }
+    if (took.length === 0) {
+      setNotice(
+        noCohort.length > 0
+          ? `${nameList(noCohort)} has more games than its buildings hold, and no whole grade to move. Move a grade or add courts back in step 2.`
+          : COPY.noPool
+      )
+      return
+    }
+    remember()
+    setVenues(nextVenues)
+    setBlockStatus(nextStatus)
+    setArmed(null)
+    setArmedVenue(null)
+    setDirty(true)
+    // The pool answered it, so this board is no longer a plain solver answer.
+    setFromLever(false)
+    setNotice(
+      `Took ${took.join(", ")}. Nothing is booked yet, so these read as assumed until a gym says yes.`
+    )
+  }
+
+  /**
+   * PLACE A GYM BY HAND (owner ruling 2026-08-03, the "I will place them"
+   * half): a gym dropped on a weekend takes the whole block sitting there.
+   *
+   * The two things that make a drop impossible are said out loud rather than
+   * swallowed: a gym the season does not have that weekend, and a gym with
+   * fewer courts than the games need. Anything that lands is CONFIRMED, because
+   * an operator who placed it is asserting the building is theirs.
+   */
+  const placeVenue = (sessionId: string, venueId: string, unitKeys: string[], games: number) => {
+    if (!state || locked) return
+    setArmedVenue(null)
+    const weekend = weekendById.get(sessionId)
+    if (!weekend) return
+    const short = gymShort(venueId)
+    const venue = weekend.venues.find((v) => v.venueId === venueId)
+    if (!venue) {
+      setNotice(`${short} is not on ${weekend.label}. Turn it on for that weekend back in step 2.`)
+      return
+    }
+    const needed = courtsNeeded(venue, games)
+    const have = venue.courts ?? venue.courtDays ?? 0
+    if (have > 0 && needed > have) {
+      setNotice(`${short} has ${have} of the ${needed} courts needed on ${weekend.label}.`)
+      return
+    }
+    if (unitKeys.length === 0) {
+      setNotice(
+        `${weekend.label} has more games than its buildings hold, and no whole grade to move. Add courts at ${short} back in step 2.`
+      )
+      return
+    }
+    remember()
+    setVenues((prev) => {
+      const next = { ...prev, [sessionId]: { ...(prev[sessionId] ?? {}) } }
+      for (const key of unitKeys) next[sessionId][key] = venueId
+      return next
+    })
+    setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
+    setArmed(null)
+    setDirty(true)
+    setFromLever(false)
+    setNotice(
+      `${gradeList(unitKeys)} plays ${short} on ${weekend.label}. You placed it, so it counts as confirmed.`
+    )
+  }
+
+  /** A gym dragged out of the tray and dropped on a weekend. */
+  const onDropVenue = (
+    e: React.DragEvent,
+    sessionId: string,
+    unitKeys: string[],
+    games: number
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const payload = JSON.parse(e.dataTransfer.getData("text/plain"))
+      if (!payload?.venueId) return
+      placeVenue(sessionId, payload.venueId, unitKeys, games)
+    } catch {
+      /* not one of our gyms */
+    }
   }
 
   const onDrop = (e: React.DragEvent, toSessionId: string, toWindow: string) => {
@@ -1062,7 +1427,10 @@ export function CalendarStep({
   return (
     <div
       className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white"
-      onClick={() => setArmed(null)}
+      onClick={() => {
+        setArmed(null)
+        setArmedVenue(null)
+      }}
     >
       {/* Screen head */}
       <div className="border-ink-100 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
@@ -1147,7 +1515,11 @@ export function CalendarStep({
           </div>
         )}
         {notice && !error && !compare && (
-          <p className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
+          <p
+            className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm"
+            data-testid="board-notice"
+            aria-live="polite"
+          >
             {notice}
           </p>
         )}
@@ -1167,6 +1539,16 @@ export function CalendarStep({
                 {armed.label} is ready to move. Tap another weekend that month, or press Escape.
               </p>
             )}
+            {armedVenue && (
+              <p
+                className="text-play-700 mb-3 text-xs font-semibold"
+                aria-live="polite"
+                data-testid="armed-venue"
+              >
+                {gymShort(armedVenue)} is ready to place. Tap a weekend that needs a gym, or press
+                Escape.
+              </p>
+            )}
 
             {/* The world this plan was saved in, where it is not the world the
                 season is in now. Above the calendar, because it is a fact about
@@ -1177,22 +1559,77 @@ export function CalendarStep({
                 views: which gym is which colour, in full names. */}
             <GymLegend order={gyms.order} hue={gyms.hue} fillsFirst={fillsFirst} />
 
+            {/* WHO CHOOSES THE RENTED GYMS (owner ruling 2026-08-03). Two modes,
+                above the board, because the answer changes what the board is
+                for: reading the pool's answer, or placing gyms yourself. */}
+            {view === "board" && interactive && !showingKept && (
+              <div className="mb-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Segmented
+                    label="How rented gyms get chosen"
+                    value={assignMode}
+                    testId="assign-mode"
+                    options={[
+                      { value: "solve" as const, label: "Assign gyms for me" },
+                      { value: "place" as const, label: "I will place them" },
+                    ]}
+                    onChange={(next) => {
+                      setAssignMode(next)
+                      setArmed(null)
+                      setArmedVenue(null)
+                    }}
+                  />
+                  {assignMode === "solve" && (
+                    <button
+                      type="button"
+                      data-testid="assign-from-pool"
+                      disabled={busy !== null}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        fillFromPool()
+                      }}
+                      className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 rounded-lg border px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                    >
+                      Fill the gaps from my pool
+                    </button>
+                  )}
+                  <span className="text-ink-400 text-[11.5px]">
+                    {assignMode === "solve" ? COPY.assignSolve : COPY.assignPlace}
+                  </span>
+                </div>
+                {assignMode === "place" && (
+                  <VenueTray
+                    gyms={trayGyms}
+                    hue={gyms.hue}
+                    armedVenueId={armedVenue}
+                    onArm={setArmedVenue}
+                  />
+                )}
+              </div>
+            )}
+
             {view === "board" ? (
               <BoardView
                 state={state}
                 assignment={assignment}
                 playsIn={shown.venues}
-                whyIn={shown.reasons}
+                whyIn={whyIn}
                 cameFrom={shown.homes}
+                blocks={blocks}
+                statusOf={statusOf}
                 unitByKey={unitByKey}
                 hue={gyms.hue}
                 armed={armed}
+                armedVenue={assignMode === "place" ? armedVenue : null}
+                placing={interactive && assignMode === "place"}
                 interactive={interactive}
                 onArm={setArmed}
                 onMove={move}
                 onRemove={removeUnit}
                 onSwitchGym={switchGym}
                 onDrop={onDrop}
+                onDropVenue={onDropVenue}
+                onPlaceVenue={placeVenue}
                 compare={compare}
               />
             ) : (
@@ -1200,7 +1637,7 @@ export function CalendarStep({
                 state={state}
                 shown={showingKept ? (kept ?? assignment) : assignment}
                 playsIn={showingKept ? keptShown.venues : shown.venues}
-                whyIn={showingKept ? keptShown.reasons : shown.reasons}
+                whyIn={showingKept ? keptShown.reasons : whyIn}
                 hasKept={Boolean(kept)}
                 side={side}
                 onSide={(next) => {
@@ -1213,6 +1650,14 @@ export function CalendarStep({
                 onArm={setArmed}
                 onMove={move}
               />
+            )}
+
+            {/* WHAT YOU NEED TO BOOK (owner ruling 2026-08-03): the season's
+                whole off-home ask, with no dates in it, sitting above the rail
+                where an operator picks up the phone. Nothing to rent, nothing
+                to read: it stays away entirely. */}
+            {!showingKept && ask && blocks.length > 0 && (
+              <AskSheet ask={ask} blocks={blockRows} />
             )}
 
             {/* What the math noticed. It describes the proposal, so it stays
@@ -1287,6 +1732,14 @@ export function CalendarStep({
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* The rentals behind this plan, counted, next to the button
+                        that keeps it (owner ruling 2026-08-03). */}
+                    <BlockSummary
+                      total={blockCounts.total}
+                      confirmed={blockCounts.confirmed}
+                      assumed={blockCounts.assumed}
+                      needed={blockCounts.needed}
+                    />
                     <span className="text-ink-400 text-xs" data-testid="plan-state">
                       {planStateLine({ selected: selectedPlan, active: activePlan, dirty })}
                     </span>
@@ -1550,15 +2003,21 @@ function BoardView({
   playsIn,
   whyIn,
   cameFrom,
+  blocks,
+  statusOf,
   unitByKey,
   hue,
   armed,
+  armedVenue,
+  placing,
   interactive,
   onArm,
   onMove,
   onRemove,
   onSwitchGym,
   onDrop,
+  onDropVenue,
+  onPlaceVenue,
   compare,
 }: {
   state: PlannerState
@@ -1571,19 +2030,38 @@ function BoardView({
   /** The gym each grade was playing BEFORE that weekend, so a caption can
    *  name the building somebody was moved out of. */
   cameFrom: Record<string, Record<string, string>>
+  /** Every rental the calendar needs, from the same pass: what each weekend
+   *  rents, and where it has nothing at all. */
+  blocks: RentalBlock[]
+  /** Where a rental stands, so a section can wear it. */
+  statusOf: (sessionId: string, venueId: string) => BlockStatus
   unitByKey: Map<string, PlannerUnit>
   /** venueId → colour family. The step's one mapping, so a gym is the same
    *  colour here as it is on the strip. */
   hue: Map<string, number>
   armed: Armed | null
+  /** A gym picked up from the tray, waiting for a weekend. */
+  armedVenue: string | null
+  /** True while the operator is placing gyms by hand, which is what turns the
+   *  slots and the rented sections into drop targets. */
+  placing: boolean
   interactive: boolean
   onArm: (armed: Armed | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onRemove: (unitKey: string, from: string) => void
   onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
+  onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
+  onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   compare: { byWeekend: Map<string, WeekendDiff>; keptOn: Map<string, string> } | null
 }) {
+  /** The rentals of each weekend, so a card never filters the whole season. */
+  const blocksBySession = useMemo(() => {
+    const out = new Map<string, RentalBlock[]>()
+    for (const b of blocks) out.set(b.sessionId, [...(out.get(b.sessionId) ?? []), b])
+    return out
+  }, [blocks])
+
   return (
     <div className="overflow-x-auto pb-2">
       <div
@@ -1618,15 +2096,21 @@ function BoardView({
                   playsIn={playsIn[w.sessionId] ?? {}}
                   whyIn={whyIn[w.sessionId] ?? {}}
                   cameFrom={cameFrom[w.sessionId] ?? {}}
+                  blocks={blocksBySession.get(w.sessionId) ?? []}
+                  statusOf={statusOf}
                   unitByKey={unitByKey}
                   hue={hue}
                   armed={armed}
+                  armedVenue={armedVenue}
+                  placing={placing}
                   interactive={interactive}
                   onArm={onArm}
                   onMove={onMove}
                   onRemove={onRemove}
                   onSwitchGym={onSwitchGym}
                   onDrop={onDrop}
+                  onDropVenue={onDropVenue}
+                  onPlaceVenue={onPlaceVenue}
                   onDisarm={() => onArm(null)}
                   diff={compare?.byWeekend.get(w.sessionId)}
                   keptOn={compare?.keptOn}
@@ -1634,7 +2118,10 @@ function BoardView({
               ))}
 
               {missing.length > 0 && (
-                <div className="border-ink-200 rounded-xl border border-dashed p-2">
+                <div
+                  className="border-ink-200 rounded-xl border border-dashed p-2"
+                  data-testid="bench-group"
+                >
                   <p className="text-ink-400 text-[10px] font-bold uppercase tracking-wide">
                     Not playing this month
                   </p>
@@ -1690,15 +2177,21 @@ function WeekendCard({
   playsIn,
   whyIn,
   cameFrom,
+  blocks,
+  statusOf,
   unitByKey,
   hue,
   armed,
+  armedVenue,
+  placing,
   interactive,
   onArm,
   onMove,
   onRemove,
   onSwitchGym,
   onDrop,
+  onDropVenue,
+  onPlaceVenue,
   onDisarm,
   diff,
   keptOn,
@@ -1715,16 +2208,23 @@ function WeekendCard({
   whyIn: Record<string, PlacementReason>
   /** The gym each grade played before this weekend. */
   cameFrom: Record<string, string>
+  /** What this weekend rents, and what it has no building for. */
+  blocks: RentalBlock[]
+  statusOf: (sessionId: string, venueId: string) => BlockStatus
   unitByKey: Map<string, PlannerUnit>
   /** venueId → colour family, the step's one mapping. */
   hue: Map<string, number>
   armed: Armed | null
+  armedVenue: string | null
+  placing: boolean
   interactive: boolean
   onArm: (a: Armed | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onRemove: (unitKey: string, from: string) => void
   onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
+  onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
+  onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onDisarm: () => void
   /** Set only in compare mode: this weekend against the kept calendar. */
   diff?: WeekendDiff
@@ -1757,6 +2257,20 @@ function WeekendCard({
   // only rendered here (owner 2026-08-02: which gym filled, which grade
   // spilled where, how many games, and why anybody stayed put).
   const story = weekendStory(units, weekend, gyms, cameFrom)
+
+  /**
+   * WHAT THIS WEEKEND RENTS, and what it has nowhere to put (owner ruling
+   * 2026-08-03). The block with no building is the EMPTY SLOT somebody has to
+   * go and rent, and the grades it names are drawn inside it rather than in the
+   * gym the packing parked them in for want of anywhere else to draw them.
+   */
+  const emptyBlock = blocks.find((b) => b.venueId === null && (b.games > 0 || b.courts > 0)) ?? null
+  const slotKeys = new Set(emptyBlock?.unitKeys ?? [])
+  const rentedBlock = new Map(
+    blocks.filter((b) => b.venueId !== null).map((b) => [b.venueId as string, b])
+  )
+  /** A gym is picked up and this weekend can be told to take it. */
+  const canTakeVenue = placing && Boolean(armedVenue)
 
   /** One grade, wherever it sits: in a gym section, or with no gym at all. */
   const chipFor = (key: string, venueId: string | null) => {
@@ -1855,11 +2369,42 @@ function WeekendCard({
             section.capacityGames > 0
               ? Math.min(100, Math.round((section.games / section.capacityGames) * 100))
               : 100
+          const block = rentedBlock.get(section.venueId)
+          // The home gym is nobody's to book, so only a rented section has a
+          // standing at all.
+          const status = section.role === "pool" ? statusOf(weekend.sessionId, section.venueId) : null
+          const chips = section.unitKeys.filter((k) => !slotKeys.has(k))
+          const games = block?.games ?? section.games
+          // Only a RENTED section takes a gym from the tray. The gym you own is
+          // not a rental to re-let, and ringing it as a target would say the
+          // opposite; a grade leaves the home gym through its own switch.
+          const takesGym = canTakeVenue && section.role === "pool"
           return (
             <div
               key={section.venueId}
               data-testid="weekend-gym-section"
               data-venue-id={section.venueId}
+              data-role={section.role}
+              data-status={status ?? undefined}
+              // A rented section is a place to put a gym: dropping one here
+              // moves this block into that building.
+              onClick={
+                takesGym && armedVenue
+                  ? (e) => {
+                      e.stopPropagation()
+                      onPlaceVenue(weekend.sessionId, armedVenue, section.unitKeys, games)
+                    }
+                  : undefined
+              }
+              onDragOver={
+                placing && section.role === "pool" ? (e) => e.preventDefault() : undefined
+              }
+              onDrop={
+                placing && section.role === "pool"
+                  ? (e) => onDropVenue(e, weekend.sessionId, section.unitKeys, games)
+                  : undefined
+              }
+              className={takesGym ? "ring-play-400 rounded-lg ring-2" : undefined}
             >
               <div className="flex items-center gap-1.5">
                 <i aria-hidden className={`h-2 w-2 flex-none rounded-full ${paint.swatch}`} />
@@ -1891,22 +2436,97 @@ function WeekendCard({
                   testId="gym-fraction"
                 />
               </div>
+              {/* WHAT THIS SECTION IS (owner ruling 2026-08-03): the building
+                  you own wears a quiet mark, and a building you rent says how
+                  many courts of it this weekend takes, with where that booking
+                  stands. */}
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
+                {section.role === "home" ? (
+                  <span
+                    data-testid="home-mark"
+                    className="text-ink-400 text-[10px] font-bold uppercase tracking-[0.06em]"
+                  >
+                    home
+                  </span>
+                ) : (
+                  <>
+                    {/* The courts of the BLOCK, not of the section: on a gym
+                        somebody has crammed past its courts, the block is what
+                        this building can actually give and the empty slot below
+                        carries the rest. Two numbers that add up to the ask,
+                        instead of two readings of the whole of it. */}
+                    <span data-testid="rental-mark" className="text-ink-500 text-[10px] font-bold">
+                      rented {courtsWord(block?.courts ?? section.rentedCourts)}
+                    </span>
+                    {status && <BlockStatusMark status={status} />}
+                  </>
+                )}
+              </div>
               <div className="mt-1 flex flex-wrap items-start gap-1">
-                {section.unitKeys.map((k) => chipFor(k, section.venueId))}
+                {chips.map((k) => chipFor(k, section.venueId))}
               </div>
             </div>
           )
         })}
 
+        {/* NO BUILDING FOR IT (owner ruling 2026-08-03): the slot somebody has
+            to go and rent, sized in the units a gym quotes on, with the grades
+            that have nowhere to play sitting inside it. */}
+        {emptyBlock && (
+          <div
+            data-testid="rental-slot-empty"
+            onClick={
+              canTakeVenue && armedVenue
+                ? (e) => {
+                    e.stopPropagation()
+                    onPlaceVenue(
+                      weekend.sessionId,
+                      armedVenue,
+                      emptyBlock.unitKeys,
+                      emptyBlock.games
+                    )
+                  }
+                : undefined
+            }
+            onDragOver={placing ? (e) => e.preventDefault() : undefined}
+            onDrop={
+              placing
+                ? (e) =>
+                    onDropVenue(e, weekend.sessionId, emptyBlock.unitKeys, emptyBlock.games)
+                : undefined
+            }
+            className={`border-hoop-300 bg-hoop-50/70 rounded-lg border border-dashed px-1.5 py-1 ${
+              canTakeVenue ? "ring-play-400 ring-2" : ""
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-1.5">
+              <i
+                aria-hidden
+                className="border-hoop-400 h-2 w-2 flex-none rounded-full border border-dashed"
+              />
+              <span className="text-hoop-800 text-[11px] font-bold">
+                Needs {courtsWord(emptyBlock.courts)} · {plural(emptyBlock.games, "game", "games")}{" "}
+                · ~{Math.round(emptyBlock.hoursNeeded)} hours
+              </span>
+            </div>
+            {emptyBlock.unitKeys.length > 0 && (
+              <div className="mt-1 flex flex-wrap items-start gap-1">
+                {emptyBlock.unitKeys.map((k) => chipFor(k, null))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Grades on a weekend with no gym at all: still on the board, still
-            movable, and honestly labelled. */}
-        {gyms.unplaced.length > 0 && (
+            movable, and honestly labelled. The empty slot above says it in
+            court-days, so anything it already names is not repeated here. */}
+        {gyms.unplaced.filter((k) => !slotKeys.has(k)).length > 0 && (
           <div>
             <span className="text-hoop-700 text-[10px] font-bold uppercase tracking-[0.06em]">
               No gym
             </span>
             <div className="mt-1 flex flex-wrap items-start gap-1">
-              {gyms.unplaced.map((k) => chipFor(k, null))}
+              {gyms.unplaced.filter((k) => !slotKeys.has(k)).map((k) => chipFor(k, null))}
             </div>
           </div>
         )}
@@ -1939,6 +2559,7 @@ function WeekendCard({
       {canTakeArmed && armed && (
         <button
           type="button"
+          data-testid="move-here"
           onClick={(e) => {
             e.stopPropagation()
             onMove(armed.unitKey, armed.fromSessionId, weekend.sessionId)
