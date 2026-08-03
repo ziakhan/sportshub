@@ -145,8 +145,11 @@ ok(
   venueMaps.length > 0 && venueMaps.every((m) => Object.values(m).every((v) => typeof v === "string")),
   `${venueMaps.length} weekends carry gym maps`
 )
-// One-gym may open a second building ONLY where the weekend's assigned load
-// exceeds what its biggest gym can hold (overflow always beats a split).
+// One-gym may open a second building only for a reason that outranks it:
+// the weekend's load exceeds what its biggest gym holds (overflow beats a
+// split), or every grade on the weekend is standing in its own season-long
+// building (residency, 25,000, beats a second building, 1,500 — the owner's
+// hierarchy; two cohorts sharing a weekend from their own homes is correct).
 const teamsOf = Object.fromEntries(
   (plannerForBanner?.state?.units ?? []).map((u) => [u.key, u.teams])
 )
@@ -154,6 +157,19 @@ const weekendsBySession = Object.fromEntries(
   (plannerForBanner?.state?.windows ?? [])
     .flatMap((w) => w.weekends)
     .map((w) => [w.sessionId, w])
+)
+const gymCounts = {}
+for (const m of Object.values(propose?.venues ?? {})) {
+  for (const [k, v] of Object.entries(m)) {
+    gymCounts[k] = gymCounts[k] ?? {}
+    gymCounts[k][v] = (gymCounts[k][v] ?? 0) + 1
+  }
+}
+const homeOf = Object.fromEntries(
+  Object.entries(gymCounts).map(([k, counts]) => [
+    k,
+    Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0],
+  ])
 )
 const unjustified = Object.entries(propose?.venues ?? {}).filter(([sessionId, m]) => {
   if (new Set(Object.values(m)).size <= 1) return false
@@ -163,10 +179,11 @@ const unjustified = Object.entries(propose?.venues ?? {}).filter(([sessionId, m]
     (sum, k) => sum + Math.ceil(((teamsOf[k] ?? 0) * w.targetGamesPerTeam) / 2),
     0
   )
-  return demand <= w.largestVenueCapacity
+  if (demand > w.largestVenueCapacity) return false
+  return !Object.entries(m).every(([k, v]) => homeOf[k] === v)
 })
 ok(
-  "one-gym splits a weekend only when no single gym holds it",
+  "one-gym splits a weekend only for capacity or residency",
   unjustified.length === 0,
   unjustified.length ? `unjustified: ${unjustified.map(([s]) => s).join(", ")}` : ""
 )

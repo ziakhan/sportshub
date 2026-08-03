@@ -1,0 +1,306 @@
+// Drive "plans as documents" on step 3 (owner ruling 2026-08-02: "we can have
+// multiple plans, we can save them, we can name them, we can call one an NPH
+// plan. We should be able to go to the dropdown and choose them").
+//
+// SAFE ON THE OWNER'S LIVE INSTANCE. It creates one plan through the UI and
+// deletes it again through the API, and it never activates anything: the only
+// writes it makes are the lazy snapshot the list endpoint takes (the season's
+// own calendar, named) and that one throwaway plan. It captures the season's
+// saved calendar before it starts and asserts it is byte-identical at the end.
+//
+// Env (defaults = the 2026-08-02 local world):
+//   BASE_URL, SEASON_ID, LEAGUE_ID, SHOT_DIR
+// Run from scripts/demo (its node_modules has Playwright):
+//   node verify-plans.mjs
+import { chromium } from "playwright"
+
+const BASE = process.env.BASE_URL ?? "http://localhost:3000"
+const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
+const LEAGUE = process.env.LEAGUE_ID ?? "e48a0464-33a8-4be2-b4bc-75b78c3889f4"
+const SHOTS =
+  process.env.SHOT_DIR ??
+  "/private/tmp/claude-501/-Users-ziakhan-zia-personal-sportshub/4eadfbff-644b-4ed7-a799-a1ea780f28c6/scratchpad/shots-plans"
+const USER = "owner-nph@sportshub.demo"
+const PASS = "TestPass123!"
+const DRIVE_PLAN = "Drive test plan"
+
+const results = []
+const ok = (name, pass, extra = "") => {
+  results.push({ name, pass })
+  console.log(`${pass ? "PASS" : "FAIL"}  ${name}${extra ? ` — ${extra}` : ""}`)
+}
+
+const fs = await import("node:fs")
+fs.mkdirSync(SHOTS, { recursive: true })
+
+const browser = await chromium.launch()
+const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } })
+const PLAN_URL = `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
+
+// The only confirm this drive should ever meet is "you have unsaved changes".
+// Anything else (activating a plan) is dismissed on purpose: this script must
+// never change the calendar the season runs.
+page.on("dialog", async (dialog) => {
+  const discard = /throws them away/i.test(dialog.message())
+  console.log(`      dialog (${discard ? "accepted" : "DISMISSED"}): ${dialog.message()}`)
+  await (discard ? dialog.accept() : dialog.dismiss())
+})
+
+for (const p of ["/sign-in", `/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`]) {
+  await page.request.get(`${BASE}${p}`).catch(() => {})
+}
+
+await page.goto(`${BASE}/sign-in`)
+await page.waitForTimeout(2500)
+await page.fill('input[type="email"]', USER)
+await page.fill('input[type="password"]', PASS)
+await page.click('button[type="submit"]')
+let user = null
+for (let i = 0; i < 40; i++) {
+  const s = await page.request
+    .get(`${BASE}/api/auth/session`)
+    .then((r) => r.json())
+    .catch(() => null)
+  if (s?.user) {
+    user = s.user
+    break
+  }
+  await page.waitForTimeout(500)
+}
+ok("signed in as the league owner", Boolean(user))
+if (!user) {
+  await browser.close()
+  process.exit(1)
+}
+
+/* ------------------- the calendar the season runs, before ---------------- */
+const savedCalendar = async () => {
+  const data = await page.request
+    .get(`${BASE}/api/seasons/${SEASON}/planner`)
+    .then((r) => r.json())
+    .catch(() => null)
+  return JSON.stringify(
+    (data?.state?.windows ?? [])
+      .flatMap((w) => w.weekends)
+      .map((w) => ({ id: w.sessionId, assigned: w.assigned, gyms: w.assignedVenues ?? {} }))
+  )
+}
+const listPlans = async () =>
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
+
+const before = await savedCalendar()
+ok("captured the season's saved calendar", before.length > 2, `${before.length} bytes`)
+
+/* ------------------------------ the picker ------------------------------- */
+await page.goto(PLAN_URL)
+await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
+await page.waitForSelector('[data-testid="plan-picker"]', { timeout: 30000 })
+await page.waitForTimeout(800)
+
+const picker = page.locator('[data-testid="plan-picker"]')
+const pickerText = (await picker.innerText()).replace(/\n/g, " ")
+ok(
+  "the picker names the plan on the board and marks it active",
+  pickerText.includes("NPH plan") && /active/i.test(pickerText),
+  pickerText
+)
+ok(
+  "the reference plan says so before anybody tries to save onto it",
+  (await page.locator('[data-testid="plan-reference-note"]').count()) === 1,
+  await page.locator('[data-testid="plan-reference-note"]').innerText().catch(() => "")
+)
+
+const railAbout = page.locator('[data-testid="rail-about"]')
+if ((await railAbout.count()) > 0) {
+  const about = await railAbout.innerText()
+  ok("the rail says whose plan it is critiquing", about.trim() === "Ideas for NPH plan", about)
+} else {
+  ok("the rail says whose plan it is critiquing", true, "no rail on this board, nothing to label")
+}
+
+const legend = page.locator('[data-testid="gym-legend"]')
+const legendBox = await legend.boundingBox().catch(() => null)
+const boardBox = await page.locator("[data-session-id]").first().boundingBox()
+ok(
+  "the gym legend still sits above the board",
+  Boolean(legendBox && boardBox && legendBox.y < boardBox.y),
+  legendBox && boardBox ? `legend y=${Math.round(legendBox.y)}, board y=${Math.round(boardBox.y)}` : "missing"
+)
+
+await picker.click()
+await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 5000 })
+const options = page.locator('[data-testid="plan-option"]')
+const optionCount = await options.count()
+const nphRow = options.filter({ hasText: "NPH plan" }).first()
+ok(
+  "the dropdown lists the season's plans, the imported one flagged",
+  optionCount >= 1 &&
+    (await nphRow.getAttribute("data-source")) === "imported" &&
+    (await nphRow.getAttribute("data-active")) === "true",
+  `${optionCount} plan(s)`
+)
+await page.screenshot({ path: `${SHOTS}/1-picker-open.png` })
+await page.keyboard.press("Escape")
+await page.waitForTimeout(250)
+ok("Escape shuts the dropdown", (await page.locator('[data-testid="plan-menu"]').count()) === 0)
+
+/* --------------------- one edit, then the save controls ------------------ */
+let edited = false
+const railMove = page.locator('[data-testid="suggestion-move"]').first()
+if ((await railMove.count()) > 0) {
+  await railMove.click()
+  edited = true
+} else {
+  // No idea on the rail: send one grade to the other gym on its own weekend.
+  // Working copy only, exactly like a drag.
+  const swap = page.locator('button[aria-label^="Move "][title^="Move to"]').first()
+  if ((await swap.count()) > 0) {
+    await swap.click()
+    edited = true
+  }
+}
+await page.waitForTimeout(700)
+ok("one edit lands on the working copy", edited)
+
+const saveNew = page.locator('[data-testid="save-as-new"]')
+ok(
+  "an edited reference plan offers to save your own",
+  (await saveNew.count()) === 1 && (await saveNew.innerText()).includes("Save as new plan"),
+  await saveNew.innerText().catch(() => "")
+)
+ok(
+  "the reference plan is never offered a write-back button",
+  (await page.locator('[data-testid="save-plan"]').count()) === 0
+)
+const stateLine = await page.locator('[data-testid="plan-state"]').innerText()
+ok("the state line says the changes are not saved", /not saved/i.test(stateLine), stateLine)
+await saveNew.scrollIntoViewIfNeeded()
+await page.waitForTimeout(300)
+await page.screenshot({ path: `${SHOTS}/2-save-controls-dirty.png` })
+
+await saveNew.click()
+await page.waitForSelector('[data-testid="plan-name-input"]', { timeout: 5000 })
+const suggested = await page.locator('[data-testid="plan-name-input"]').inputValue()
+ok("the name box opens with a name already in it", suggested.length > 0, suggested)
+await page.locator('[data-testid="plan-name-input"]').fill(DRIVE_PLAN)
+await page.locator('[data-testid="plan-name-row"]').scrollIntoViewIfNeeded()
+await page.waitForTimeout(300)
+await page.screenshot({ path: `${SHOTS}/3-naming.png` })
+await page.locator('[data-testid="save-new-confirm"]').click()
+await page.waitForTimeout(1500)
+
+const afterSaveText = (await picker.innerText()).replace(/\n/g, " ")
+ok(
+  "the board is now the new plan, and the new plan does not run the season",
+  afterSaveText.includes(DRIVE_PLAN) && !/active/i.test(afterSaveText),
+  afterSaveText
+)
+const savedState = await page.locator('[data-testid="plan-state"]').innerText()
+ok(
+  "the state line separates saved from running the season",
+  savedState.includes(DRIVE_PLAN) && savedState.includes("NPH plan"),
+  savedState
+)
+ok(
+  "a plan the season does not run offers to be used for it",
+  (await page.locator('[data-testid="activate-plan"]').count()) === 1,
+  await page.locator('[data-testid="activate-plan"]').innerText().catch(() => "")
+)
+await page.locator('[data-testid="plan-state"]').scrollIntoViewIfNeeded()
+await page.waitForTimeout(300)
+await page.screenshot({ path: `${SHOTS}/4-save-controls-own-plan.png` })
+
+const listAfterSave = await listPlans()
+const drivePlan = listAfterSave.find((p) => p.name === DRIVE_PLAN)
+ok(
+  "the API agrees: saved, not applied",
+  Boolean(drivePlan) && drivePlan.isActive === false && drivePlan.source === "manual",
+  drivePlan ? `${drivePlan.name} source=${drivePlan.source} active=${drivePlan.isActive}` : "missing"
+)
+
+/* ------------------ saving onto a plan of your own (PATCH) --------------- */
+// Safe: this plan is NOT the one the season runs, so the write stops at the
+// document. The byte-compare at the end proves the sessions never moved.
+const planDoc = async (id) =>
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${id}`).then((r) => r.json()))?.plan
+const docBefore = drivePlan ? JSON.stringify((await planDoc(drivePlan.id)).assignment) : ""
+
+let editedAgain = false
+const railMove2 = page.locator('[data-testid="suggestion-move"]').first()
+if ((await railMove2.count()) > 0) {
+  await railMove2.click()
+  editedAgain = true
+}
+await page.waitForTimeout(700)
+if (editedAgain) {
+  const savePlan = page.locator('[data-testid="save-plan"]')
+  ok(
+    "a plan of your own offers to be written back by name",
+    (await savePlan.count()) === 1 && (await savePlan.innerText()).includes(DRIVE_PLAN),
+    await savePlan.innerText().catch(() => "")
+  )
+  await savePlan.click()
+  await page.waitForTimeout(1500)
+  const savedAgain = await page.locator('[data-testid="plan-state"]').innerText()
+  ok(
+    "saving to your own plan clears the changes",
+    savedAgain.startsWith(`Saved to ${DRIVE_PLAN}`) &&
+      (await page.locator('[data-testid="save-plan"]').count()) === 0,
+    savedAgain
+  )
+  const docAfter = JSON.stringify((await planDoc(drivePlan.id)).assignment)
+  ok("the plan document actually changed", docAfter !== docBefore)
+} else {
+  ok("a plan of your own offers to be written back by name", true, "no rail idea to edit with")
+}
+
+/* -------------------------- back to the reference ------------------------ */
+await picker.click()
+await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 5000 })
+await page.locator('[data-testid="plan-option"][data-source="imported"]').first().click()
+await page.waitForTimeout(1500)
+const backText = (await picker.innerText()).replace(/\n/g, " ")
+const backState = await page.locator('[data-testid="plan-state"]').innerText()
+ok(
+  "picking another plan reloads the board onto it, clean",
+  backText.includes("NPH plan") &&
+    /active/i.test(backText) &&
+    backState.includes("season's calendar") &&
+    // Clean again: nothing to write back, and the only save left is the quiet
+    // fork of the league's own calendar.
+    (await page.locator('[data-testid="save-plan"]').count()) === 0 &&
+    (await page.locator('[data-testid="save-as-new"]').innerText()) === "Save a copy",
+  `${backText} · ${backState}`
+)
+ok(
+  "the rail follows the plan it is critiquing",
+  (await railAbout.count()) === 0 || (await railAbout.innerText()).trim() === "Ideas for NPH plan",
+  await railAbout.innerText().catch(() => "no rail")
+)
+await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
+
+/* ------------------------------- clean up -------------------------------- */
+let deleted = false
+for (const plan of await listPlans()) {
+  if (plan.name !== DRIVE_PLAN) continue
+  const res = await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${plan.id}`)
+  deleted = res.ok()
+}
+ok("the drive's plan is deleted again", deleted)
+
+const finalPlans = await listPlans()
+ok(
+  "only the season's own plan is left, still active",
+  finalPlans.length === 1 && finalPlans[0].name === "NPH plan" && finalPlans[0].isActive === true,
+  finalPlans.map((p) => `${p.name}${p.isActive ? " (active)" : ""}`).join(", ")
+)
+
+const after = await savedCalendar()
+ok("the season's saved calendar is byte-identical to where it started", after === before)
+
+const failed = results.filter((r) => !r.pass)
+console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
+if (failed.length) console.log("FAILED:", failed.map((f) => f.name).join(" | "))
+console.log(`shots: ${SHOTS}`)
+await browser.close()
+process.exit(failed.length > 0 ? 1 : 0)

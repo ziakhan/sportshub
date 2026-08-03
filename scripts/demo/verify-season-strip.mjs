@@ -114,7 +114,9 @@ if (keptPills !== keptPlacements)
 // Read only: nothing on the kept side can be armed, and nothing offers to save.
 if ((await page.locator('[data-testid="strip-pill"]:is(button)').count()) > 0)
   fail("the kept calendar must not be editable")
-if ((await page.locator("button:has-text('Keep this calendar')").count()) > 0)
+// Re-pinned 2026-08-02 (plans as documents): the one Keep button became the
+// plan save controls, so the question is now whether ANY of them is offered.
+if ((await page.locator('[data-testid="save-as-new"], [data-testid="save-plan"]').count()) > 0)
   fail("the kept side must not offer to save the proposal")
 await page.screenshot({ path: "/tmp/season-strip-kept.png", fullPage: true })
 
@@ -122,7 +124,7 @@ await page.click('[data-testid="strip-side-proposal"]')
 await page.waitForTimeout(400)
 if ((await page.locator('[data-testid="strip-pill"]:is(button)').count()) === 0)
   fail("the proposal side should be editable")
-if ((await page.locator("button:has-text('Keep this calendar')").count()) !== 1)
+if ((await page.locator('[data-testid="save-as-new"]').count()) !== 1)
   fail("the proposal side keeps its save button")
 console.log("toggle works both ways: kept is read only, proposal is live")
 

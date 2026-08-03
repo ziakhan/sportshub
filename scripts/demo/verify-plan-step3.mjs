@@ -12,9 +12,13 @@
  *     A scratch season built through the API as the platform admin (grades,
  *     a gym, four weekends across two months), driven for real: the board
  *     opens ALREADY holding a recommendation with nothing saved, a grade is
- *     moved by tapping it and tapping a weekend, "Keep this calendar"
- *     persists it, a reload proves it, a lever makes it dirty again, and
- *     the whole scratch world is torn down afterwards.
+ *     moved by tapping it and tapping a weekend, saving it as the season's
+ *     first plan persists it, a reload proves it, a lever makes it dirty
+ *     again, and the whole scratch world is torn down afterwards.
+ *
+ * Re-pinned 2026-08-02 for plans as documents: the single "Keep this
+ * calendar" button is now the plan save controls (save-as-new / save-plan),
+ * and a season with no plans yet takes the first one saved as its calendar.
  *
  * Screenshots to /tmp/plan-step3-*.png.
  */
@@ -145,7 +149,7 @@ if (MODE === "locked") {
   if (draggable > 0) fail(`${draggable} chips still draggable on a finalized season`)
   const liveChip = await page.locator('[data-session-id] button[aria-label*=" on "]:not([disabled])').count()
   if (liveChip > 0) fail(`${liveChip} chips still tappable on a finalized season`)
-  if ((await page.locator("button:has-text('Keep this calendar')").count()) > 0)
+  if ((await page.locator('[data-testid="save-as-new"], [data-testid="save-plan"]').count()) > 0)
     fail("a finalized season must not offer to save")
   if ((await page.locator("button:has-text('Adjust grouping rules')").count()) > 0)
     fail("a finalized season must not offer the levers")
@@ -293,8 +297,13 @@ try {
   const openingChips = await page.locator('[data-session-id] span[draggable="true"]').count()
   if (openingChips < SCRATCH.grades.length * 2)
     fail(`expected every grade placed in both windows, got ${openingChips} chips`)
-  const keep = page.locator("button:has-text('Keep this calendar')")
-  if (await keep.isDisabled()) fail("the opening recommendation should be savable")
+  // Nothing has ever been saved here, so the one save control offers to make
+  // this the season's calendar.
+  const keep = page.locator('[data-testid="save-as-new"]')
+  if ((await keep.count()) !== 1 || (await keep.isDisabled()))
+    fail("the opening recommendation should be savable")
+  if ((await keep.innerText()) !== "Save this calendar")
+    fail(`a season with no plans should offer to keep this one, got "${await keep.innerText()}"`)
   console.log(`opens on a recommendation: ${openingChips} chips placed, nothing saved`)
   await page.screenshot({ path: "/tmp/plan-step3-opened.png", fullPage: true })
 
@@ -333,9 +342,12 @@ try {
   if ((await page.locator("text=is ready to move").count()) > 0) fail("Escape did not disarm the chip")
   console.log("Escape disarms an armed chip")
 
-  // 4) Keep it, and check the API agrees.
+  // 4) Keep it as this season's first plan, and check the API agrees.
   await keep.click()
-  await page.waitForSelector("text=Everything after this step follows this calendar", { timeout: 20000 })
+  await page.waitForSelector('[data-testid="plan-name-input"]', { timeout: 10000 })
+  await page.locator('[data-testid="plan-name-input"]').fill("Scratch plan")
+  await page.locator('[data-testid="save-new-confirm"]').click()
+  await page.waitForSelector("text=It is the calendar this season runs", { timeout: 20000 })
   const saved = await plannerState()
   const savedWhere = whereInApi(saved.state, grade).sort()
   if (JSON.stringify(savedWhere) !== JSON.stringify([...after].sort()))
@@ -347,7 +359,8 @@ try {
   await openBoard()
   title = await headTitle()
   if (title !== "Your calendar") fail(`a saved plan should read "Your calendar", got "${title}"`)
-  if (!(await page.locator("button:has-text('Keep this calendar')").isDisabled()))
+  // Saved and unedited: nothing to write back, only the quiet copy.
+  if ((await page.locator('[data-testid="save-plan"]').count()) > 0)
     fail("a saved, unedited board has nothing to keep")
   const reloaded = await whereOnBoard(grade)
   if (JSON.stringify(reloaded.sort()) !== JSON.stringify([...after].sort()))
@@ -359,7 +372,8 @@ try {
   await page.waitForSelector("text=oldest grades together", { timeout: 10000 })
   await page.click("button:has-text('Fewest weekends')")
   await page.waitForSelector("text=as few weekends in use", { timeout: 20000 })
-  if (await page.locator("button:has-text('Keep this calendar')").isDisabled())
+  // Dirty against the plan it came from, so it can be written straight back.
+  if ((await page.locator('[data-testid="save-plan"]').count()) !== 1)
     fail("a lever proposal should be savable")
   if ((await headTitle()) !== "Proposed calendar") fail("a lever proposal should read as proposed")
   console.log("levers propose without saving")
@@ -370,7 +384,7 @@ try {
   const undone = await whereOnBoard(grade)
   if (JSON.stringify(undone.sort()) !== JSON.stringify([...after].sort()))
     fail("undo did not return to the saved calendar")
-  if (!(await page.locator("button:has-text('Keep this calendar')").isDisabled()))
+  if ((await page.locator('[data-testid="save-plan"]').count()) > 0)
     fail("after undo there is nothing to keep")
   console.log("undo returns to the saved calendar")
 

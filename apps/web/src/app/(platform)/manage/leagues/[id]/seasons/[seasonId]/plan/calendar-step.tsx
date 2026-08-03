@@ -34,6 +34,14 @@ import {
   type SuggestionMove,
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
+import {
+  isReferencePlan,
+  PLAN_COPY,
+  planStateLine,
+  suggestPlanName,
+  type PlanDocument,
+  type PlanRow,
+} from "@/lib/scheduler/plan-documents"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { venueShortName, type StripVenue } from "@/lib/seasons/venue-strip"
 import {
@@ -53,6 +61,7 @@ import {
   ReasonGlyph,
   WhyPopover,
 } from "./plan-ui"
+import { PlanPicker, PlanSaveControls } from "./plan-picker"
 import { Segmented, StripView, type StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
 
@@ -73,6 +82,14 @@ import type { PlanHeaderInfo } from "./teams-step"
  * a month gets rearranged, and the season strip, which reads a grade's whole
  * season left to right and names the gyms each weekend. This component owns
  * every piece of state; the views only draw it.
+ *
+ * PLANS AS DOCUMENTS (owner 2026-08-02: "we can have multiple plans, we can
+ * save them, we can name them ... when I do it fresh it should be our own").
+ * The board is a working copy of ONE named plan, chosen in the picker. Saving
+ * writes to that plan and nowhere else, which is why the direct planner/apply
+ * call is gone: a plan the season runs is written through on save, a plan it
+ * does not run waits for "Use for the season", and the league's own imported
+ * calendar is read only so there is always something to compare against.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -84,8 +101,6 @@ const COPY = {
     "We placed every grade for you, balanced across your gym time. Drag anything you'd do differently, then keep it.",
   rules:
     "Grouping is automatic because these are league truths, not choices: oldest grades together, youngest together, the middle split by size, the two biggest grades kept apart, and each grade leaning to the gym it usually plays in. These three only change how tightly the weekends pack.",
-  saved: "Saved. Everything after this step follows this calendar.",
-  unsaved: "Nothing is saved until you keep it.",
   oneWeekendPerMonth:
     "Every grade gets one weekend a month, so move it to another weekend in the same month.",
   compareSame: "This is the kept calendar, unchanged.",
@@ -244,6 +259,18 @@ export function CalendarStep({
   /** Step 2's gyms-and-weekends answer, so the strip can say which gyms you
    *  actually have each weekend instead of assuming both. */
   const [venueGrid, setVenueGrid] = useState<VenueGrid | null>(null)
+  /** Every calendar this season holds, active first. The board is a working
+   *  copy of one of them. */
+  const [plans, setPlans] = useState<PlanRow[]>([])
+  /** Which one the board is a copy OF. Null only while a season has no plans
+   *  at all, which is the state a brand new season opens in. */
+  const [planId, setPlanId] = useState<string | null>(null)
+  /** True while the board is a solver's answer nobody has touched by hand, so
+   *  a save can honestly call itself "proposed" rather than the operator's own
+   *  work. Any hand edit clears it. */
+  const [fromLever, setFromLever] = useState(false)
+  /** What is in the name box, or null while the box is shut. */
+  const [naming, setNaming] = useState<string | null>(null)
 
   const propose = useCallback(
     async (lever: PlannerLever) => {
@@ -264,15 +291,28 @@ export function CalendarStep({
     [seasonId]
   )
 
+  /** Every plan this season holds. The first call also snapshots the calendar
+   *  already on the sessions as the league's own reference plan, so a season
+   *  planned before plans existed opens with its history intact. */
+  const fetchPlans = useCallback(async (): Promise<PlanRow[]> => {
+    const res = await fetch(`/api/seasons/${seasonId}/plans`, { cache: "no-store" }).catch(
+      () => null
+    )
+    if (!res?.ok) return []
+    const data = await res.json().catch(() => null)
+    return (data?.plans ?? []) as PlanRow[]
+  }, [seasonId])
+
   /** Load, then open on an answer: the saved plan when there is one, the
    *  balanced proposal when there is not. A locked season only ever shows
    *  what was actually saved. */
   const load = useCallback(async () => {
-    // no-store on both: capacity moves when a gym or a court does, and this
-    // screen must never draw a weekend on a cached court count.
-    const [res, venueRes] = await Promise.all([
+    // no-store on all three: capacity moves when a gym or a court does, and
+    // this screen must never draw a weekend on a cached court count.
+    const [res, venueRes, planRows] = await Promise.all([
       fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(() => null),
       fetch(`/api/seasons/${seasonId}/planner/venues`, { cache: "no-store" }).catch(() => null),
+      fetchPlans(),
     ])
     if (!res?.ok) {
       setError("Couldn't load your calendar")
@@ -307,8 +347,15 @@ export function CalendarStep({
     setVenues(opening ? (opening.venues ?? {}) : savedVenues)
     setUndoStack([])
     setDirty(Boolean(opening))
+    setNaming(null)
+    // The board opens on the plan the season is RUNNING, which is the same
+    // calendar the sessions just handed back, so nothing has to be fetched
+    // twice to agree with itself.
+    setPlans(planRows)
+    setPlanId(planRows.find((p) => p.isActive)?.id ?? null)
+    setFromLever(Boolean(opening))
     setNotice(opening ? COPY.opened : null)
-  }, [seasonId, onLoaded, propose])
+  }, [seasonId, onLoaded, propose, fetchPlans])
 
   useEffect(() => {
     load()
@@ -412,6 +459,8 @@ export function CalendarStep({
     setUndoStack([])
     setArmed(null)
     setDirty(true)
+    // Straight off the solver and untouched, so a save can say so.
+    setFromLever(true)
     setNotice(LEVERS.find((l) => l.lever === lever)?.note ?? null)
   }
 
@@ -492,35 +541,183 @@ export function CalendarStep({
     )
   }
 
-  const apply = async () => {
-    setBusy("apply")
+  /* ------------------------- plans as documents ------------------------- */
+
+  const selectedPlan = useMemo(
+    () => plans.find((p) => p.id === planId) ?? null,
+    [plans, planId]
+  )
+  const activePlan = useMemo(() => plans.find((p) => p.isActive) ?? null, [plans])
+
+  /** Open a plan on the board: its calendar, its gyms, and a clean slate. The
+   *  working copy is thrown away, so an operator who has unsaved work is asked
+   *  first — unless they asked for this themselves ("Undo changes"). */
+  const openPlan = async (id: string, { ask = true }: { ask?: boolean } = {}) => {
+    if (ask && dirty && !window.confirm(PLAN_COPY.discard)) return
+    setBusy(`plan:${id}`)
+    setError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/plans/${id}`, { cache: "no-store" }).catch(
+      () => null
+    )
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    setBusy(null)
+    if (!data?.plan) {
+      setError("Couldn't open that plan. Try again.")
+      return
+    }
+    const plan = data.plan as PlanDocument
+    setPlanId(plan.id)
+    setAssignment(plan.assignment ?? {})
+    setVenues(plan.venues ?? {})
+    setUndoStack([])
+    setDirty(false)
+    setFromLever(false)
+    setArmed(null)
+    setNaming(null)
+    setNotice(
+      plan.isActive
+        ? `${plan.name} is on the board. This is the calendar the season runs.`
+        : `${plan.name} is on the board.`
+    )
+  }
+
+  /** Back to what the selected plan says, or to the saved calendar when this
+   *  season has no plans yet. */
+  const revert = async () => {
+    if (planId) {
+      await openPlan(planId, { ask: false })
+      return
+    }
+    await load()
+  }
+
+  /** Save the board as a NEW plan. Nothing is applied: the plan lands beside
+   *  the others until somebody uses it for the season — except on a season
+   *  that runs nothing yet, where the first plan saved IS the calendar. */
+  const saveAsNew = async () => {
+    const name = (naming ?? "").trim()
+    if (!name) return
+    setBusy("save-new")
     setError(null)
     // Save the buildings the board is SHOWING — the same chronological pass
     // both views draw from. A preview the operator kept is a promise about
     // where a family drives, so it is written down like a hand pick.
-    const res = await fetch(`/api/seasons/${seasonId}/planner/apply`, {
+    const res = await fetch(`/api/seasons/${seasonId}/plans`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        assignment,
+        venues: shown.venues,
+        source: fromLever ? "proposed" : "manual",
+      }),
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
+    if (!res?.ok || !data?.plan) {
+      setBusy(null)
+      setError(data?.error ?? "That didn't save. Try again.")
+      return
+    }
+    const plan = data.plan as PlanRow
+    const takesOver = !plans.some((p) => p.isActive)
+    if (takesOver) {
+      await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, { method: "POST" }).catch(
+        () => null
+      )
+      setKept(assignment)
+      setKeptVenues(shown.venues)
+    }
+    setPlans(await fetchPlans())
+    setPlanId(plan.id)
+    setVenues(shown.venues)
+    setUndoStack([])
+    setDirty(false)
+    setFromLever(false)
+    setNaming(null)
+    setArmed(null)
+    setBusy(null)
+    setNotice(
+      takesOver
+        ? `Saved as ${plan.name}. It is the calendar this season runs.`
+        : `Saved as ${plan.name}. Use it for the season when you are ready.`
+    )
+  }
+
+  /** Save the board onto the plan it came from. On the plan the season runs,
+   *  the server writes it through to the calendar everyone sees. */
+  const savePlan = async () => {
+    const plan = selectedPlan
+    if (!plan) return
+    setBusy("save-plan")
+    setError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/plans/${plan.id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ assignment, venues: shown.venues }),
     }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
     setBusy(null)
-    if (!res?.ok) {
-      setError("That didn't save. Try again.")
+    if (!res?.ok || !data?.plan) {
+      // The reference plan refuses content and says why. Say it in the
+      // operator's own words and open the one door that is not shut: a plan
+      // of their own, with these changes in it.
+      if (res?.status === 409 && data?.error) {
+        setNotice(data.error)
+        setNaming(suggestPlanName(plans))
+        return
+      }
+      setError(data?.error ?? "That didn't save. Try again.")
       return
     }
-    const data = await res.json()
-    const savedNow = currentAssignment(data.state)
-    const savedVenuesNow = savedVenueMap(data.state)
-    setState(data.state)
+    setVenues(shown.venues)
+    setUndoStack([])
+    setDirty(false)
+    setFromLever(false)
+    setArmed(null)
+    setPlans(await fetchPlans())
+    if (plan.isActive) {
+      // The write-through happened, so this is what every later comparison is
+      // against.
+      setKept(assignment)
+      setKeptVenues(shown.venues)
+    }
+    setNotice(
+      plan.isActive
+        ? `Saved to ${plan.name}. Everything after this step follows this calendar.`
+        : `Saved to ${plan.name}.`
+    )
+  }
+
+  /** Make the selected plan the one the season runs. */
+  const activatePlan = async () => {
+    const plan = selectedPlan
+    if (!plan || plan.isActive) return
+    if (!window.confirm(PLAN_COPY.activate(plan.name))) return
+    setBusy("activate")
+    setError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, {
+      method: "POST",
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
+    setBusy(null)
+    if (!res?.ok || !data?.state) {
+      setError(data?.error ?? "That didn't take. Try again.")
+      return
+    }
+    const next = data.state as PlannerState
+    const savedNow = currentAssignment(next)
+    const savedVenuesNow = savedVenueMap(next)
+    setState(next)
     setAssignment(savedNow)
     setVenues(savedVenuesNow)
-    // What was just kept becomes the calendar every later comparison is against.
     setKept(savedNow)
     setKeptVenues(savedVenuesNow)
     setUndoStack([])
     setArmed(null)
     setDirty(false)
-    setNotice(COPY.saved)
+    setFromLever(false)
+    setPlans(await fetchPlans())
+    setNotice(`${plan.name} is the season's calendar now. Everything after this step follows it.`)
   }
 
   /** The board as it stands, remembered before something changes it. */
@@ -539,6 +736,8 @@ export function CalendarStep({
     setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId, toSessionId]))
     setArmed(null)
     setDirty(true)
+    // A hand edit: whatever the solver said, this board is the operator's now.
+    setFromLever(false)
     setNotice(null)
   }
 
@@ -565,6 +764,7 @@ export function CalendarStep({
     setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId]))
     setArmed(null)
     setDirty(true)
+    setFromLever(false)
     setNotice(null)
   }
 
@@ -579,6 +779,7 @@ export function CalendarStep({
     }))
     setArmed(null)
     setDirty(true)
+    setFromLever(false)
     setNotice(null)
   }
 
@@ -649,32 +850,51 @@ export function CalendarStep({
           </p>
           <p className="text-ink-500 text-xs">
             {!interactive
-              ? "The calendar this season was finalized on"
+              ? // A locked season can still be read through the picker, and a
+                // plan it never ran must not be described as the one it did.
+                selectedPlan && !selectedPlan.isActive
+                ? `${selectedPlan.name}: a plan this season did not run`
+                : "The calendar this season was finalized on"
               : view === "board"
                 ? "Drag a grade to move it · math updates live"
                 : "Every grade across the season · math updates live"}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Segmented
-            label="How to view the calendar"
-            value={view}
-            testId="calendar-view"
-            options={[
-              { value: "board" as const, label: "Board" },
-              { value: "strip" as const, label: "Strip" },
-            ]}
-            onChange={(next) => {
-              setView(next)
-              setArmed(null)
-            }}
-          />
-          {pill && (
-            <span
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${PILL_TONE[pill.tone]}`}
-            >
-              {pill.text}
-            </span>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            {/* Which of this season's plans the board is a copy of. */}
+            <PlanPicker
+              plans={plans}
+              selectedId={planId}
+              busy={busy !== null}
+              onSelect={(id) => openPlan(id)}
+            />
+            <Segmented
+              label="How to view the calendar"
+              value={view}
+              testId="calendar-view"
+              options={[
+                { value: "board" as const, label: "Board" },
+                { value: "strip" as const, label: "Strip" },
+              ]}
+              onChange={(next) => {
+                setView(next)
+                setArmed(null)
+              }}
+            />
+            {pill && (
+              <span
+                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${PILL_TONE[pill.tone]}`}
+              >
+                {pill.text}
+              </span>
+            )}
+          </div>
+          {/* Said before anybody tries to save onto it, not after. */}
+          {isReferencePlan(selectedPlan) && (
+            <p className="text-ink-400 text-[11px]" data-testid="plan-reference-note">
+              {PLAN_COPY.reference}
+            </p>
           )}
         </div>
       </div>
@@ -775,6 +995,9 @@ export function CalendarStep({
                 suggestions={suggestions}
                 hue={gyms.hue}
                 gymShort={gymShort}
+                // The rail critiques the plan on the board, and now the plan
+                // has a name the operator chose.
+                aboutLabel={selectedPlan?.name}
                 interactive={interactive}
                 onMove={move}
               />
@@ -833,8 +1056,8 @@ export function CalendarStep({
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-ink-400 text-xs">
-                      {dirty ? COPY.unsaved : "This calendar is saved."}
+                    <span className="text-ink-400 text-xs" data-testid="plan-state">
+                      {planStateLine({ selected: selectedPlan, active: activePlan, dirty })}
                     </span>
                     {/* One step back through the moves, however they were
                         made: dragged, tapped, or taken from a suggestion. */}
@@ -857,19 +1080,34 @@ export function CalendarStep({
                         size="sm"
                         variant="secondary"
                         disabled={busy !== null}
-                        onClick={load}
+                        onClick={revert}
                       >
                         Undo changes
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      tone="court"
-                      disabled={busy !== null || !dirty}
-                      onClick={apply}
-                    >
-                      {busy === "apply" ? "Saving…" : "Keep this calendar"}
-                    </Button>
+                    {/* The one way to persist this board: onto a plan. */}
+                    <PlanSaveControls
+                      plans={plans}
+                      selected={selectedPlan}
+                      dirty={dirty}
+                      busy={busy}
+                      naming={naming}
+                      onNamingChange={setNaming}
+                      onStartNaming={() =>
+                        setNaming(
+                          suggestPlanName(
+                            plans,
+                            selectedPlan && !isReferencePlan(selectedPlan) && !dirty
+                              ? `${selectedPlan.name} copy`
+                              : "Our plan"
+                          )
+                        )
+                      }
+                      onCancelNaming={() => setNaming(null)}
+                      onSaveNew={saveAsNew}
+                      onSavePlan={savePlan}
+                      onActivate={activatePlan}
+                    />
                   </div>
                 </div>
 
