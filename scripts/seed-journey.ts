@@ -8,10 +8,12 @@
  *   1  Registration in flight — D1/NPA/WNPA approved + schedule-ready;
  *      Showcase League mid-registration (~25 of 146 submitted).
  *   2  Everyone's in — every remaining census team submitted (PENDING).
- *   3  Ready to schedule — all approved, fees settled, league FINALIZED,
- *      both gyms attached at full strength (Six Park 6 courts, Playground 3,
- *      10:00-22:00 — owner 2026-08-02: the demo starts correct, no editing),
- *      far-team requests + a pending withdrawal seeded. Zero games.
+ *   3  Ready to schedule — all approved, fees settled, league FINALIZED, the
+ *      two gyms the league has attached at full strength (Playground 3 = the
+ *      home gym, Six Park 6 = pool, 10:00-22:00 — owner 2026-08-02: the demo
+ *      starts correct, no editing), Haber in the pool on no weekend for the
+ *      owner to switch on, far-team requests + a pending withdrawal seeded.
+ *      Zero games.
  *   4  Game day — (wave 4, not yet implemented).
  */
 import bcrypt from "bcryptjs"
@@ -41,8 +43,26 @@ const ADULT_NAMES = ["Andre", "Bianca", "Carlos", "Dawn", "Errol", "Farah", "Gle
 const JOURNEY_VENUES = [
   { key: "sixpark", name: "Six Park East", address: "1000 Thornton Rd S", city: "Oshawa", zipCode: "L1J 7E2", courts: 6 },
   { key: "playground", name: "The Playground Burlington", address: "952 Century Dr", city: "Burlington", zipCode: "L7L 5P2", courts: 3 },
-  { key: "haber", name: "Haber Recreation Centre", address: "3040 Tim Dobbie Dr", city: "Burlington", zipCode: "L7M 0M3", courts: 2 },
+  // courts per owner's Google-review reading 2026-08-03, UNCONFIRMED — verify
+  // with the facility before any pitch.
+  { key: "haber", name: "Haber Recreation Centre", address: "3040 Tim Dobbie Dr", city: "Burlington", zipCode: "L7M 0M3", courts: 6 },
 ]
+
+// What each building IS to NPH (venue model v2, owner ruling 2026-08-03: fill
+// order is dead, a gym is either yours or rented):
+//   The Playground Burlington — NPH-managed, their own morning programming
+//     runs there. The HOME gym: games in it cost nothing and it fills first.
+//   Six Park East — rented by the court-day, and a SHARED building (the
+//     NJC/NSC circuits hold it six 2026-27 weekends). Pool.
+//   Haber Recreation Centre — rented, zero NPH games in all of 2025-26 and a
+//     Summer 2026 appearance only. Pool, and unattached until an operator says
+//     they have it (see the pool-only note in buildSessions).
+// Evidence: docs/research/nph-operations-intel-2026-08.md.
+const VENUE_ROLE: Record<string, "home" | "pool"> = {
+  playground: "home",
+  sixpark: "pool",
+  haber: "pool",
+}
 
 const SL_LEAGUE = "NPH Showcase League"
 const SL_SEASON = "Fall/Winter 2026-27"
@@ -291,7 +311,9 @@ export async function seedJourneyStage1() {
       })
     }
   }
-  console.log(`✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 2; Google hours posted)`)
+  console.log(
+    `✓ ${JOURNEY_VENUES.length} real venues (Six Park 6 courts, Playground 3, Haber 6 — unconfirmed; Google hours posted)`
+  )
 
   // Clubs: one tenant per census club (adopt-or-create). Demo logins only
   // for the clubs the pitch script drives.
@@ -364,19 +386,29 @@ export async function seedJourneyStage1() {
       select: { id: true },
     })
 
+  /**
+   * A season's gyms and the weekends they are on.
+   *
+   * `venueKeys` are attached to every weekend. `poolOnlyKeys` join the season's
+   * POOL and are attached to nothing (venue model v2, owner 2026-08-03): a
+   * rented gym's weekend availability is operator knowledge, so the seed never
+   * pretends to know the league has it — the operator turns the weekends on.
+   */
   const buildSessions = async (
     seasonId: string,
     weekends: string[],
     venueKeys: string[],
     courtsPerVenue: Record<string, number> | null,
-    targetGamesPerTeam: number
+    targetGamesPerTeam: number,
+    poolOnlyKeys: string[] = []
   ) => {
-    for (const key of venueKeys) {
+    for (const key of [...venueKeys, ...poolOnlyKeys]) {
       const v = venueByKey.get(key)!
+      const courtsAvailable = courtsPerVenue?.[key] ?? v.courtIds.length
       await p.seasonVenue.upsert({
         where: { seasonId_venueId: { seasonId, venueId: v.id } },
-        create: { seasonId, venueId: v.id, courtsAvailable: courtsPerVenue?.[key] ?? v.courtIds.length },
-        update: {},
+        create: { seasonId, venueId: v.id, courtsAvailable, role: VENUE_ROLE[key] ?? "pool" },
+        update: { role: VENUE_ROLE[key] ?? "pool" },
       })
     }
     let i = 0
@@ -394,7 +426,15 @@ export async function seedJourneyStage1() {
           const v = venueByKey.get(key)!
           const useCourts = v.courtIds.slice(0, courtsPerVenue?.[key] ?? v.courtIds.length)
           const dayVenue = await p.seasonSessionDayVenue.create({
-            data: { dayId: day.id, venueId: v.id, startTime: "10:00", endTime: "22:00" },
+            // A seeded weekend is a booking the league HAS, not one a solver
+            // guessed at (venue model v2) — so it says so.
+            data: {
+              dayId: day.id,
+              venueId: v.id,
+              startTime: "10:00",
+              endTime: "22:00",
+              bookingStatus: "confirmed",
+            },
             select: { id: true },
           })
           let order = 0
@@ -500,11 +540,14 @@ export async function seedJourneyStage1() {
   const d1League = await mkLeague(D1_LEAGUE, "NPH's development circuit — Junior/Senior Girls, Junior Boys, Scholastic and Academy divisions.")
   const d1Season = await mkSeason(d1League.id, SL_SEASON, "FINALIZED", 10)
   const d1Divs = await mkDivisions(d1Season.id, "D1")
-  await buildSessions(d1Season.id, D1_WEEKENDS, ["playground", "haber"], null, 2)
+  // Haber is in D1's pool but on none of its weekends — nobody has booked it.
+  await buildSessions(d1Season.id, D1_WEEKENDS, ["playground"], null, 2, ["haber"])
 
   const npaLeague = await mkLeague(NPA_LEAGUE, "National Prep Association — Canada's national prep circuit.")
   const npaSeason = await mkSeason(npaLeague.id, "Season 8", "FINALIZED", 6)
   const npaDivs = await mkDivisions(npaSeason.id, "NPA")
+  // NPA plays its prep weekends at Six Park, which NPH rents — so this season
+  // deliberately has no home gym, and step 2 saying so is the truth about it.
   await buildSessions(npaSeason.id, PREP_WEEKENDS, ["sixpark"], { sixpark: 3 }, 2)
 
   const wnpaLeague = await mkLeague(WNPA_LEAGUE, "Women's National Prep Association — Season 3.")
@@ -755,14 +798,20 @@ export async function seedJourneyStage3() {
     data: { isLocked: true, lockedAt: new Date() },
   })
 
-  // Attach BOTH gyms at full strength, 10:00-22:00 (owner 2026-08-02: "by
-  // default I shouldn't have to edit it" — the old one-court-short beat is
-  // retired). Six Park fills first; the Playground is the home gym and is
-  // always available. Haber stays unattached (satellite, added live if the
-  // story needs it).
+  // The two gyms the season HAS are on every weekend at full strength,
+  // 10:00-22:00 (owner 2026-08-02: "by default I shouldn't have to edit it" —
+  // the old one-court-short beat is retired). Roles are venue model v2 (owner
+  // 2026-08-03): the Playground is the home gym, so its weekends cost nothing;
+  // Six Park is rented by the court-day.
+  //
+  // Haber joins the POOL and is on NO weekend. A rented gym's weekend
+  // availability is the operator's knowledge, never the seed's — so the row is
+  // there for the owner to switch on for the short weekends himself, and until
+  // he does, the season is honest that nobody has booked it.
   const gyms = [
-    { name: "Six Park East", courts: 6 },
-    { name: "The Playground Burlington", courts: 3 },
+    { name: "Six Park East", courts: 6, role: "pool", weekends: true },
+    { name: "The Playground Burlington", courts: 3, role: "home", weekends: true },
+    { name: "Haber Recreation Centre", courts: 6, role: "pool", weekends: false },
   ]
   const daysRows = await p.seasonSessionDay.findMany({
     where: { session: { seasonId: season.id } },
@@ -772,9 +821,15 @@ export async function seedJourneyStage3() {
     const venue = await p.venue.findFirst({ where: { name: gym.name }, select: { id: true } })
     await p.seasonVenue.upsert({
       where: { seasonId_venueId: { seasonId: season.id, venueId: venue.id } },
-      create: { seasonId: season.id, venueId: venue.id, courtsAvailable: gym.courts },
-      update: { courtsAvailable: gym.courts },
+      create: {
+        seasonId: season.id,
+        venueId: venue.id,
+        courtsAvailable: gym.courts,
+        role: gym.role,
+      },
+      update: { courtsAvailable: gym.courts, role: gym.role },
     })
+    if (!gym.weekends) continue
     const courts = await p.court.findMany({
       where: { venueId: venue.id },
       orderBy: { displayOrder: "asc" },
@@ -784,7 +839,14 @@ export async function seedJourneyStage3() {
     for (const day of daysRows) {
       if (day.dayVenues.some((dv: any) => dv.venueId === venue.id)) continue // idempotent
       const dayVenue = await p.seasonSessionDayVenue.create({
-        data: { dayId: day.id, venueId: venue.id, startTime: "10:00", endTime: "22:00" },
+        // Seeded weekends are bookings the league has, not a solver's guess.
+        data: {
+          dayId: day.id,
+          venueId: venue.id,
+          startTime: "10:00",
+          endTime: "22:00",
+          bookingStatus: "confirmed",
+        },
         select: { id: true },
       })
       let order = 0
@@ -858,7 +920,9 @@ export async function seedJourneyStage3() {
   }
 
   await writeDemoState("nph-pitch-journey", 3)
-  console.log(`✓ journey stage 3: ${updated.count} approvals finalized · both gyms full strength 10:00-22:00 · requests + withdrawal staged`)
+  console.log(
+    `✓ journey stage 3: ${updated.count} approvals finalized · Playground (home) + Six Park (pool) full strength 10:00-22:00 · Haber in the pool on no weekend · requests + withdrawal staged`
+  )
 }
 
 // ═════════════════════════ STAGE 4 ═════════════════════════════════════
