@@ -59,6 +59,8 @@ import { getServerSession } from "next-auth"
  *   1145 planner gyms (fillOrder PATCH without a court rewire, unitVenues round trip)
  *   1146 planner step 2 taken weekends (unavailability marks: grid state,
  *        toggle-season skip + report, attach-route override)
+ *   1148 season plans as documents (lazy NPH snapshot, create/list order,
+ *        rename vs imported-content 409, activate write-through, delete rules)
  */
 
 export function actAs(userId: string | null): void {

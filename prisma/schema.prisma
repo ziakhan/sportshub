@@ -1441,6 +1441,7 @@ model Season {
   waiverSignatures   WaiverSignature[]
   playoffEligibilityOverrides PlayoffEligibilityOverride[]
   clubEntries                 ClubSeasonEntry[]
+  plans                       SeasonPlan[]
 
   @@unique([leagueId, label])
   @@index([leagueId])
@@ -1766,6 +1767,36 @@ model GameGuestPlayer {
   createdAt DateTime @default(now())
 
   @@index([gameId])
+}
+
+// Plans as documents (owner 2026-08-02): a season holds MANY named calendars
+// — the one imported from the league's published schedule ("NPH plan"), plus
+// whatever the operator saves off the solver. Exactly one is active, and the
+// active one is the one written onto SeasonSession.unitKeys/unitVenues, so
+// everything downstream keeps reading the column it always has. A plan row is
+// a SNAPSHOT, never a live view: switching plans re-applies it.
+model SeasonPlan {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  name String
+  // "imported" (the league's own published calendar, read-only reference) |
+  // "proposed" (straight off the solver) | "manual" (the operator's edit).
+  source String @default("manual")
+
+  // sessionId → unit keys ("age:<ageGroup>"), and sessionId → { unitKey →
+  // venueId }. Grade clusters, exactly as the board speaks them — applying a
+  // plan expands them to division keys (lib/scheduler/planner applyAssignment).
+  assignment Json
+  venues     Json
+
+  isActive Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([seasonId])
 }
 
 model SeasonSession {
