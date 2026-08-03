@@ -352,7 +352,11 @@ export async function attachVenueToSession(
   sessionId: string,
   venueId: string,
   courtIds: string[],
-  fallbackHours: { startTime: string; endTime: string } = { startTime: "09:00", endTime: "18:00" }
+  fallbackHours: { startTime: string; endTime: string } = { startTime: "09:00", endTime: "18:00" },
+  /** Where the booking stands (owner ruling 2026-08-03). An operator ticking a
+   *  cell on is asserting the gym is theirs, so "confirmed" is the default; the
+   *  solver assigning a block from the pool passes "assumed". */
+  bookingStatus: "assumed" | "confirmed" = "confirmed"
 ): Promise<{ daysAttached: number; alreadyAttached: number }> {
   const days = await sessionDays(seasonId, sessionId)
   if (!days || courtIds.length === 0) return { daysAttached: 0, alreadyAttached: 0 }
@@ -375,6 +379,7 @@ export async function attachVenueToSession(
         venueId,
         startTime: sibling?.startTime ?? inherited?.startTime ?? fallbackHours.startTime,
         endTime: sibling?.endTime ?? inherited?.endTime ?? fallbackHours.endTime,
+        bookingStatus,
       },
     })
     await (prisma as any).seasonSessionDayVenueCourt.createMany({
@@ -453,6 +458,35 @@ export async function setSessionVenueWindow(
     updated++
   }
   return { updated }
+}
+
+/**
+ * Where a rented weekend stands as a BOOKING (owner ruling 2026-08-03): the
+ * solver assigns a gym from the pool ("assumed"), and the operator asserts
+ * that the gym said yes ("confirmed"). One weekend, one answer — every day of
+ * the session at that gym moves together, because a gym does not rent you
+ * Saturday and think about Sunday.
+ *
+ * The home gym is implicitly confirmed: nobody books the building they own.
+ * Callers may still set it, and it is harmless.
+ */
+export async function setSessionVenueBookingStatus(
+  seasonId: string,
+  sessionId: string,
+  venueId: string,
+  bookingStatus: "assumed" | "confirmed"
+): Promise<{ updated: number }> {
+  const days = await sessionDays(seasonId, sessionId)
+  if (!days) return { updated: 0 }
+  const ids = days
+    .flatMap((d) => d.dayVenues.filter((dv) => dv.venueId === venueId))
+    .map((dv) => dv.id)
+  if (ids.length === 0) return { updated: 0 }
+  const { count } = await (prisma as any).seasonSessionDayVenue.updateMany({
+    where: { id: { in: ids } },
+    data: { bookingStatus },
+  })
+  return { updated: count }
 }
 
 /**

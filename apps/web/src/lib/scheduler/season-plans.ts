@@ -100,8 +100,14 @@ export function snapshotSettings(state: PlannerState): PlanSettings {
             venueId: v.venueId,
             name: v.name,
             capacityGames: v.capacityGames,
+            // Owned or rented (owner ruling 2026-08-03) — the fact that
+            // decides what a weekend costs, so a plan has to remember it.
+            role: v.role,
             fillOrder: v.fillOrder,
             courtDays: v.courtDays ?? 0,
+            courts: v.courts ?? 0,
+            days: v.days ?? 0,
+            hoursPerCourtDay: v.hoursPerCourtDay ?? 0,
           })),
         })),
       })),

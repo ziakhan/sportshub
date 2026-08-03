@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@youthbasketballhub/db"
 import { buildPlannerState } from "@/lib/scheduler/planner"
-import { currentAssignment, suggestFor } from "@/lib/scheduler/planner-core"
+import {
+  currentAssignment,
+  planRentalBlocks,
+  rentalAsk,
+  suggestFor,
+} from "@/lib/scheduler/planner-core"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import { lastSeasonTeamCounts } from "@/lib/seasons/last-season"
@@ -23,8 +28,19 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
       lastSeasonTeamCounts(params.id),
     ])
     const assignment = currentAssignment(state)
+    // What the season as saved has to RENT (owner ruling 2026-08-03), read off
+    // the same chronological pass the board draws from.
+    const saved: Record<string, Record<string, string>> = {}
+    for (const win of state.windows) {
+      for (const w of win.weekends) {
+        if (Object.keys(w.assignedVenues ?? {}).length > 0) saved[w.sessionId] = w.assignedVenues
+      }
+    }
+    const blocks = planRentalBlocks(state, assignment, saved)
     return NextResponse.json({
       state,
+      blocks,
+      ask: rentalAsk(state, blocks),
       suggestions: suggestFor(state, assignment),
       seasonStatus: gate.seasonStatus,
       seasonLabel: gate.seasonLabel,

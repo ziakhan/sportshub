@@ -29,6 +29,7 @@ import {
   type PlannerState,
   type PlannerSuggestion,
   type PlannerUnit,
+  type PlannerVenue,
   type PlannerWeekend,
   type PlanSummary,
   type SuggestionMove,
@@ -229,7 +230,14 @@ function stateFromSettings(seasonId: string, settings: PlanSettings): PlannerSta
       label: win.label,
       weekends: (win.weekends ?? []).map((w) => ({
         ...w,
-        venues: (w.venues ?? []).map((v) => ({ ...v })),
+        venues: (w.venues ?? []).map((v) => ({
+          ...v,
+          // A snapshot from before the 2026-08-03 venue ruling carries no
+          // roles. The gym that filled first is the one the league owned —
+          // that is what fill order meant in practice — so an old plan opens
+          // as itself instead of as a season that rents everything.
+          role: (v as Partial<PlannerVenue>).role ?? (v.fillOrder === 0 ? "home" : "pool"),
+        })),
         largestVenueCapacity:
           w.largestVenueCapacity ?? Math.max(0, ...(w.venues ?? []).map((v) => v.capacityGames)),
         // The plan's own two columns say where the grades go; the world says
@@ -515,19 +523,17 @@ export function CalendarStep({
       ),
     [venueGrid, state]
   )
-  /** The gym the league fills BEFORE it opens another one, by the season's own
-   *  fill order. The legend says so, because "why is that one always full"
-   *  is the first question the colours raise. */
+  /** The building the league OWNS (owner ruling 2026-08-03). It fills before
+   *  anything is rented, and the legend says so, because "why is that one
+   *  always full" is the first question the colours raise. */
   const fillsFirst = useMemo(() => {
-    let best: { venueId: string; fillOrder: number } | null = null
     for (const win of state?.windows ?? []) {
       for (const w of win.weekends) {
-        for (const v of w.venues) {
-          if (!best || v.fillOrder < best.fillOrder) best = { venueId: v.venueId, fillOrder: v.fillOrder }
-        }
+        const home = w.venues.find((v) => v.role === "home")
+        if (home) return home.venueId
       }
     }
-    return best?.venueId ?? null
+    return null
   }, [state])
   /** A gym in the words the columns have room for, by id. */
   const gymShort = useCallback(
@@ -1511,7 +1517,7 @@ function GymLegend({
 }: {
   order: StripVenue[]
   hue: Map<string, number>
-  /** The gym the league fills before it opens another one, if it has one. */
+  /** The building the league owns, if it has one. */
   fillsFirst: string | null
 }) {
   if (order.length === 0) return null
@@ -1527,7 +1533,7 @@ function GymLegend({
             <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
             <b className={`font-bold ${paint.name}`}>{gym.name}</b>
             {gym.venueId === fillsFirst && (
-              <span className="text-ink-400 font-semibold">fills first</span>
+              <span className="text-ink-400 font-semibold">home gym</span>
             )}
           </span>
         )

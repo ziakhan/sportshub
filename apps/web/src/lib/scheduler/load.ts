@@ -96,12 +96,11 @@ export async function loadSchedulerInput(
           divisions: { select: { divisionId: true } },
         },
       },
-      // Which gym the league fills FIRST (owner 2026-08-02). Postgres sorts
-      // NULLs last on asc, so gyms nobody ordered land after the ordered ones
-      // and keep a stable order of their own.
+      // What each gym IS to the league (owner ruling 2026-08-03): the home
+      // building it owns, or one of the pool it rents by the court-day.
       seasonVenues: {
-        select: { venueId: true, fillOrder: true },
-        orderBy: [{ fillOrder: "asc" }, { venueId: "asc" }],
+        select: { venueId: true, role: true },
+        orderBy: [{ venueId: "asc" }],
       },
       league: {
         select: { organization: { select: { seasonDefaults: true } } },
@@ -293,14 +292,16 @@ export async function loadSchedulerInput(
     input.sessionUnitFilter = { ...unitFilter, ...(input.sessionUnitFilter ?? {}) }
   }
 
-  // The plan's BUILDINGS (owner 2026-08-02). fillOrder is the league's gym
-  // priority (0 fills first); unitVenues says which gym each grade plays in
-  // that weekend. Both are preferences the engine honors while it can.
-  const fillOrder: Record<string, number> = {}
+  // The plan's BUILDINGS (owner ruling 2026-08-03). The home gym is the one
+  // the league owns and the one the engine packs into first; the pool is
+  // rented, so nothing about it is a ranking. unitVenues then says which gym
+  // each grade plays in that weekend — a preference the engine honors while
+  // it can.
+  const venueRoles: Record<string, "home" | "pool"> = {}
   for (const sv of season.seasonVenues ?? []) {
-    if (typeof sv.fillOrder === "number") fillOrder[sv.venueId] = sv.fillOrder
+    venueRoles[sv.venueId] = sv.role === "home" ? "home" : "pool"
   }
-  if (Object.keys(fillOrder).length > 0) input.venueFillOrder = fillOrder
+  if (Object.keys(venueRoles).length > 0) input.venueRoles = venueRoles
 
   // unitVenues is keyed by unit key ("division:<id>"); the engine wants plain
   // division ids. Anything else in there is stale and simply ignored.

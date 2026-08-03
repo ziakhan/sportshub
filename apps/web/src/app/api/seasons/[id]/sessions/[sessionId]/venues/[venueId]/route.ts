@@ -8,6 +8,7 @@ import {
   clearSessionVenueUnavailability,
   defaultCourtIdsForVenue,
   detachVenueFromSession,
+  setSessionVenueBookingStatus,
 } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
@@ -27,6 +28,14 @@ export const dynamic = "force-dynamic"
 const postSchema = z.object({
   /** Explicit courts for this weekend; defaults to the season's court set. */
   courtIds: z.array(z.string()).optional(),
+  /** Where the booking stands (owner ruling 2026-08-03). An operator ticking
+   *  a cell on asserts the gym is theirs, so this defaults to "confirmed";
+   *  the solver assigning a rental block from the pool sends "assumed". */
+  bookingStatus: z.enum(["assumed", "confirmed"]).optional(),
+})
+
+const patchSchema = z.object({
+  bookingStatus: z.enum(["assumed", "confirmed"]),
 })
 
 type Ctx = { params: { id: string; sessionId: string; venueId: string } }
@@ -112,10 +121,68 @@ export async function POST(request: NextRequest, { params }: Ctx) {
       params.sessionId,
       params.venueId
     )
-    const result = await attachVenueToSession(params.id, params.sessionId, params.venueId, courtIds)
-    return NextResponse.json({ success: true, ...result, overrodeUnavailable: overrode })
+    const bookingStatus = parsed.data.bookingStatus ?? "confirmed"
+    const result = await attachVenueToSession(
+      params.id,
+      params.sessionId,
+      params.venueId,
+      courtIds,
+      undefined,
+      bookingStatus
+    )
+    return NextResponse.json({
+      success: true,
+      ...result,
+      bookingStatus,
+      overrodeUnavailable: overrode,
+    })
   } catch (error) {
     console.error("Attach venue to session error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH — where this rental stands (owner ruling 2026-08-03). A block goes
+ * needed → assumed (the solver picked a gym from the pool) → confirmed (the
+ * operator says the gym said yes), and this is the step that moves it.
+ *
+ * Every day of the weekend moves together: a gym does not rent you Saturday
+ * and think about Sunday. 404 when the gym is not on this weekend at all,
+ * because there is no booking to have an opinion about.
+ */
+export async function PATCH(request: NextRequest, { params }: Ctx) {
+  try {
+    const gate = await gateFor(params)
+    if (gate.error) return gate.error
+
+    const parsed = patchSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "bookingStatus must be assumed or confirmed", details: parsed.error?.errors ?? [] },
+        { status: 400 }
+      )
+    }
+
+    const { updated } = await setSessionVenueBookingStatus(
+      params.id,
+      params.sessionId,
+      params.venueId,
+      parsed.data.bookingStatus
+    )
+    if (updated === 0) {
+      return NextResponse.json(
+        { error: "That gym is not on this weekend, so there is nothing to book." },
+        { status: 404 }
+      )
+    }
+    return NextResponse.json({
+      success: true,
+      bookingStatus: parsed.data.bookingStatus,
+      daysUpdated: updated,
+    })
+  } catch (error) {
+    console.error("Session venue booking status error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

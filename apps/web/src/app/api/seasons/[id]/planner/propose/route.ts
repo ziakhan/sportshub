@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { buildPlannerState } from "@/lib/scheduler/planner"
-import { packPlanVenues, proposePlan, suggestFor } from "@/lib/scheduler/planner-core"
+import {
+  packPlanVenues,
+  planRentalBlocks,
+  proposePlan,
+  rentalAsk,
+  suggestFor,
+} from "@/lib/scheduler/planner-core"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 
 export const dynamic = "force-dynamic"
@@ -24,12 +30,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const state = await buildPlannerState(params.id)
     const assignment = proposePlan(state, parsed.data.lever)
+    const venues = packPlanVenues(state, assignment)
+    // What the plan RENTS (owner ruling 2026-08-03). Derived, never stored:
+    // the plan document keeps the calendar and the gyms, and the blocks are
+    // read off them so they can never drift.
+    const blocks = planRentalBlocks(state, assignment, venues)
     return NextResponse.json({
       lever: parsed.data.lever,
       assignment,
       // Which building each grade plays in, weekend by weekend. Apply sends
       // this straight back so the saved plan keeps the gyms it was scored on.
-      venues: packPlanVenues(state, assignment),
+      venues,
+      blocks,
+      ask: rentalAsk(state, blocks),
       suggestions: suggestFor(state, assignment),
     })
   } catch (error) {

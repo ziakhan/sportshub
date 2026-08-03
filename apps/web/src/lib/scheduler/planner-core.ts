@@ -95,19 +95,142 @@ export function planningSource(
   return expected > 0 ? "expected" : "none"
 }
 
+/**
+ * What a gym IS to the league (owner ruling 2026-08-03, venue model v2 —
+ * "fill order is dead"):
+ *
+ *  - "home": the building you own. It always fills first and it costs
+ *    nothing, so every game it holds is a game nobody pays for. At most one
+ *    per season.
+ *  - "pool": a gym you rent by the court-day. The pool is UNORDERED — which
+ *    one you take is a cost question the packer answers each weekend, not a
+ *    ranking somebody set in a settings screen.
+ */
+export type VenueRole = "home" | "pool"
+
 export interface PlannerVenue {
   venueId: string
   name: string
   capacityGames: number
-  /** Which gym the league fills FIRST (0 = first choice). A weekend's venue
-   *  array always arrives sorted by this then by name, and the packer walks
-   *  it in that order without re-sorting. */
+  /** Owned or rented. The packer reads THIS, never the order of the array. */
+  role: VenueRole
+  /** DEAD since 2026-08-03 (the fill-order ruling). Still carried because a
+   *  plan snapshot saved under the old model has it, and the drift sentence
+   *  has to be able to read what that plan was made under. Nothing scores on
+   *  it. */
   fillOrder: number
   /** Court-days behind `capacityGames` this weekend: how many (day × court)
    *  pairs the gym opens. Set by buildPlannerState; absent in hand-built
    *  states. It is what turns a capacity change into the number an operator
    *  thinks in — games per court per day — when the hours move. */
   courtDays?: number
+  /** Courts wired at this gym for this weekend. With `days` it splits
+   *  `courtDays` into the two numbers a rental is actually quoted in: how
+   *  many courts, for how many days. */
+  courts?: number
+  /** Days of this weekend the gym is open (2 for a Sat–Sun). */
+  days?: number
+  /** Hours one court is open per day here. What turns a court-day into the
+   *  number a gym manager answers ("we need 24 court-hours"). */
+  hoursPerCourtDay?: number
+}
+
+/** Courts wired at a gym. A hand-built venue that only knows its court-days
+ *  is read as a single day's worth of courts, which is the honest reading of
+ *  "one number, no days behind it". */
+function courtsAt(venue: PlannerVenue): number {
+  return Math.max(1, venue.courts ?? venue.courtDays ?? 1)
+}
+
+/** Days of the weekend a gym is open. */
+function daysAt(venue: PlannerVenue): number {
+  if (venue.days != null) return Math.max(1, venue.days)
+  if (venue.courts != null && venue.courtDays != null && venue.courts > 0) {
+    return Math.max(1, Math.round(venue.courtDays / venue.courts))
+  }
+  return 1
+}
+
+/** Games ONE court holds across the whole weekend at this gym. */
+function gamesPerCourt(venue: PlannerVenue): number {
+  return Math.max(1, venue.capacityGames / courtsAt(venue))
+}
+
+/**
+ * Courts a run of games needs at a gym, rounded up: the demand-sized rental
+ * (owner ruling 2026-08-03, and the shape NPH's own Six Park bookings take —
+ * court-contiguous, courts 1..N, sized to the weekend).
+ *
+ * Deliberately NOT clamped to the courts currently wired. A cohort that needs
+ * eight courts at a gym we have six of is an ask for eight, and hiding that
+ * behind the wiring is how a season ends up short of courts in February.
+ */
+export function courtsNeeded(venue: PlannerVenue, games: number): number {
+  if (games <= 0) return 0
+  return Math.ceil(games / gamesPerCourt(venue))
+}
+
+/** What renting those courts costs, in the unit the owner prices: court-days. */
+export function courtDaysNeeded(venue: PlannerVenue, games: number): number {
+  return courtsNeeded(venue, games) * daysAt(venue)
+}
+
+/** The home gym of a weekend, when the season has one on it. */
+function homeVenueOf(venues: PlannerVenue[]): PlannerVenue | undefined {
+  return venues.find((v) => v.role === "home")
+}
+
+function venueOf(venues: PlannerVenue[], venueId: string): PlannerVenue | undefined {
+  return venues.find((v) => v.venueId === venueId)
+}
+
+/**
+ * The ONE order gyms are listed in, everywhere an operator sees them: the
+ * home gym, then the pool biggest first, then by name. The pool is unordered
+ * as a preference (2026-08-03) — this is presentation and determinism, not a
+ * fill rule, and the packer never reads it.
+ */
+export function orderedVenues(venues: PlannerVenue[]): PlannerVenue[] {
+  return [...venues].sort(
+    (a, b) =>
+      (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
+      b.capacityGames - a.capacityGames ||
+      a.name.localeCompare(b.name, "en") ||
+      (a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : 0)
+  )
+}
+
+/**
+ * The rate a weekend rents at when nothing better is known: the home gym's
+ * own numbers, else the first gym on the weekend. It is what lets a weekend
+ * with no pool gym still say how many courts it would need.
+ */
+export interface VenueRate {
+  gamesPerCourt: number
+  days: number
+  hoursPerCourtDay: number
+}
+
+function rateOf(venue: PlannerVenue): VenueRate {
+  return {
+    gamesPerCourt: gamesPerCourt(venue),
+    days: daysAt(venue),
+    hoursPerCourtDay: venue.hoursPerCourtDay ?? 0,
+  }
+}
+
+/** The gym whose numbers stand for "the rate this league runs at": the home
+ *  gym, else the first gym that actually has capacity. A gym open zero hours
+ *  is not a rate, and reading one off it produced a one-game court. */
+function rateSource(venues: PlannerVenue[]): PlannerVenue | undefined {
+  const home = homeVenueOf(venues)
+  if (home && home.capacityGames > 0) return home
+  return venues.find((v) => v.capacityGames > 0)
+}
+
+function weekendRate(venues: PlannerVenue[], fallback?: VenueRate): VenueRate | null {
+  const venue = rateSource(venues)
+  return venue ? rateOf(venue) : (fallback ?? null)
 }
 
 export interface PlannerWeekend {
@@ -561,21 +684,57 @@ export function expectedTeamUpdates(
  * neither has to guess whether a gym was picked, kept, or forced.
  *
  *  - "decided":  somebody chose this gym. The saved plan, or a hand switch.
- *  - "resident": the grade went back to the gym it has been playing.
- *  - "fill":     the gyms filled in order and this is where it landed.
+ *  - "home":     it is in the building the league owns, which costs nothing.
+ *  - "rented":   the home gym was full, so this cohort is in a gym we pay for.
+ *  - "resident": the grade went back to the rented gym it has been playing.
  *  - "bumped":   its own gym could not hold it, so it moved. For a grade that
  *                alternates buildings the same word means the mirror miss: it
  *                had to repeat the building it just played.
  *  - "avoided":  an alternating grade steered off the building it just played.
  *  - "overflow": no gym on the weekend can hold it whole.
+ *  - "fill":     LEGACY, from the days when gyms filled in a fixed order. No
+ *                packing produces it any more; the member stays so a caller
+ *                that switches on the union still compiles.
  */
 export type PlacementReason =
   | "decided"
+  | "home"
+  | "rented"
   | "resident"
   | "fill"
   | "bumped"
   | "avoided"
   | "overflow"
+
+/**
+ * One building a weekend RENTS: cohort-atomic (whole grades, never halves),
+ * demand-sized (the courts those grades' games actually need), and priced in
+ * the unit the owner buys — court-days.
+ *
+ * `venueId` is null when the demand is real and there is no pool gym to put
+ * it in: the weekend has none attached, or the ones it has are full. That is
+ * the empty slot an operator has to go and rent.
+ */
+export interface RentalBlock {
+  /** The weekend. Set by planRentalBlocks; blocks from one weekend's own
+   *  packing carry the session they were packed for. */
+  sessionId: string
+  /** The pool gym, or null when nothing on this weekend can take it. */
+  venueId: string | null
+  /** Courts to rent, for the whole weekend. Court numbers are not our
+   *  concern — gyms rent contiguous courts and we ask for a count. */
+  courts: number
+  /** Days of the weekend those courts are needed. */
+  days: number
+  /** courts × days: what the rental costs. */
+  courtDays: number
+  /** Court-hours behind those court-days, which is what a gym quotes on. */
+  hoursNeeded: number
+  /** Games the cohorts in this block bring. */
+  games: number
+  /** The whole cohorts this block houses. */
+  unitKeys: string[]
+}
 
 export interface WeekendVenuePacking {
   /** The one gym each grade plays in this weekend: unit key → venueId. */
@@ -583,15 +742,21 @@ export interface WeekendVenuePacking {
   /** Why each grade is where it is: unit key → reason. Same keys as `byUnit`,
    *  plus any grade the weekend stranded with no gym at all. */
   reasonByUnit: Record<string, PlacementReason>
-  /** Gyms that took at least one grade, in fill order. One entry is the
-   *  goal; two means the league opened a second building that weekend. */
+  /** Gyms that took at least one grade: the home gym first when it was used,
+   *  then the pool buildings in the order they were opened. */
   opened: string[]
   /** Games no gym could hold. */
   overflow: number
-  /** Placements that broke a gym promise: a grade bumped out of the building
-   *  it usually plays, or an alternating grade sent back to the building it
-   *  just played. Not fatal — a cost the search tries to avoid. */
+  /** Residency switches: grades that did not get the building they had been
+   *  playing. Since 2026-08-03 this is a soft tiebreak, never worth an extra
+   *  rented court-day — the number is kept because the sentences read it. */
   violations: number
+  /** Court-days this weekend RENTS. The home gym is free, so this is the
+   *  whole cost of the weekend. */
+  rentedCourtDays: number
+  /** The rentals behind that number, one per pool building opened, plus one
+   *  with a null venue for demand nothing could house. */
+  blocks: RentalBlock[]
 }
 
 /** Games one grade asks for on one weekend. */
@@ -600,33 +765,118 @@ function unitGames(unit: PlannerUnit, targetGamesPerTeam: number): number {
 }
 
 /**
- * One weekend's grades sorted into buildings (owner ruling 2026-08-02).
+ * The rentals behind a finished placement: whole cohorts grouped by the POOL
+ * building they landed in, plus one block for demand nothing could house.
  *
- * Three rules, in this order:
+ * ONE function derives every rental number in the product — the packer's own
+ * cost, the board's blocks, and the ask sheet — from a placement map. That is
+ * why the board and the blocks can never disagree: they are the same numbers,
+ * read off the same answer.
+ */
+function rentalBlocksFrom(
+  sessionId: string,
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  byUnit: Record<string, string>,
+  /** Whole cohorts no building took. Cohort-atomic, so these are exact. */
+  unhousedKeys: string[],
+  fallback?: VenueRate
+): RentalBlock[] {
+  const target = weekend.targetGamesPerTeam
+  const blocks: RentalBlock[] = []
+  const gamesOf = (u: PlannerUnit) => unitGames(u, target)
+  const byKey = new Map(units.map((u) => [u.key, u]))
+  /** Games with nowhere to play: whole cohorts nothing could take, plus what
+   *  spills past the courts of a building somebody put too much into. */
+  let homeless = unhousedKeys.reduce((sum, key) => {
+    const u = byKey.get(key)
+    return sum + (u ? gamesOf(u) : 0)
+  }, 0)
+
+  const nowhere = new Set(unhousedKeys)
+  for (const venue of orderedVenues(weekend.venues)) {
+    // A cohort in `unhousedKeys` has no building. It may still appear in
+    // `byUnit`, because the board has to draw it somewhere, and counting it
+    // both as a rental here and as an empty slot would bill it twice.
+    const here = units.filter(
+      (u) => byUnit[u.key] === venue.venueId && !nowhere.has(u.key) && gamesOf(u) > 0
+    )
+    if (here.length === 0) continue
+    const games = here.reduce((sum, u) => sum + gamesOf(u), 0)
+    // A building can only be rented up to the courts it has. Anything past
+    // that is not a bigger block here, it is demand with nowhere to go.
+    const housed = Math.min(games, venue.capacityGames)
+    homeless += games - housed
+    if (venue.role !== "pool") continue
+    const courts = courtsNeeded(venue, housed)
+    const days = daysAt(venue)
+    blocks.push({
+      sessionId,
+      venueId: venue.venueId,
+      courts,
+      days,
+      courtDays: courts * days,
+      hoursNeeded: courts * days * (venue.hoursPerCourtDay ?? 0),
+      games,
+      unitKeys: here.map((u) => u.key),
+    })
+  }
+
+  if (homeless > 0) {
+    // No gym for it: size the ask at the rate the league already runs at, so
+    // "we need three more courts" is a number somebody can phone a gym with.
+    // The keys are the whole cohorts nothing could take; games can be larger
+    // than those cohorts when a building is also over its courts, and that
+    // extra is real demand with no cohort of its own to name.
+    const rate = weekendRate(weekend.venues, fallback)
+    const courts = rate ? Math.ceil(homeless / rate.gamesPerCourt) : 0
+    const days = rate?.days ?? 1
+    blocks.push({
+      sessionId,
+      venueId: null,
+      courts,
+      days,
+      courtDays: courts * days,
+      hoursNeeded: courts * days * (rate?.hoursPerCourtDay ?? 0),
+      games: homeless,
+      unitKeys: unhousedKeys,
+    })
+  }
+
+  return blocks
+}
+
+/**
+ * One weekend's grades sorted into buildings (owner ruling 2026-08-03, venue
+ * model v2 — fill order is dead).
+ *
+ * The rules, in the order they now outrank each other:
  *  1. A grade plays ONE gym per weekend. Never split across buildings — the
  *     whole point is that a family drives to one address.
- *  2. A grade keeps the SAME gym all season. `prior` is where each grade
- *     usually plays; it gets that gym back whenever the whole grade still
- *     fits, and being bumped counts as a violation rather than a silent move.
- *     For a grade flagged `alternate`, `prior` inverts: it is the building to
- *     AVOID this weekend, and using it anyway is the violation.
- *  3. Gyms fill in order. The top gym takes everything it can hold before the
- *     next one opens, so a light weekend rents one building, not two halves.
+ *  2. THE HOME GYM FILLS FIRST. It is the building the league owns, so every
+ *     whole cohort it can hold is a cohort nobody pays for. Biggest cohort
+ *     first, because a big one placed late is the one that opens a rental.
+ *  3. What does not fit becomes RENTAL BLOCKS, and the packer buys the
+ *     cheapest ones: fewest rented court-days first, then fewest buildings
+ *     opened (adding a cohort to a building already rented usually costs
+ *     nothing extra), and only then residency.
+ *  4. CONSOLIDATION OUTRANKS RESIDENCY (the 2026-08-03 reversal). A grade
+ *     going back to the building it has been playing is a tiebreak between
+ *     equally priced answers, never a reason to rent another court-day. A
+ *     grade flagged `alternate` inverts `prior`: that is the building to
+ *     AVOID, and taking it anyway is the cost.
  *
- * `weekend.venues` must already be in fill order (buildPlannerState sorts
- * them); this walks that order and never re-sorts, because the exact search
- * calls it hundreds of thousands of times.
- *
- * `decided` names the grades somebody already chose a gym for, so the packing
- * can say "your pick" instead of guessing at a reason. It changes no
- * placement: a decided gym reaches the packer as that grade's `prior`, which
- * is what makes it win.
+ * `decided` names the grades somebody already chose a gym for. A decided gym
+ * is seated first and unconditionally — even where it puts that building over
+ * its courts — so the packing agrees with what the board draws.
  */
 export function packWeekendVenues(
   units: PlannerUnit[],
-  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues"> &
+    Partial<Pick<PlannerWeekend, "sessionId">>,
   prior: Record<string, string>,
-  decided?: ReadonlySet<string>
+  decided?: ReadonlySet<string>,
+  fallbackRate?: VenueRate
 ): WeekendVenuePacking {
   const byUnit: Record<string, string> = {}
   const reasonByUnit: Record<string, PlacementReason> = {}
@@ -639,119 +889,194 @@ export function packWeekendVenues(
   }
 
   if (units.length === 0 || venues.length === 0) {
-    let stranded = 0
+    const strandedKeys: string[] = []
     for (const u of units) {
-      const games = Math.max(0, unitGames(u, target))
-      stranded += games
-      if (games > 0) reasonByUnit[u.key] = "overflow"
+      if (unitGames(u, target) > 0) {
+        reasonByUnit[u.key] = "overflow"
+        strandedKeys.push(u.key)
+      }
     }
-    return { byUnit, reasonByUnit, opened: [], overflow: stranded, violations: 0 }
+    const blocks = rentalBlocksFrom(
+      weekend.sessionId ?? "",
+      units,
+      weekend,
+      byUnit,
+      strandedKeys,
+      fallbackRate
+    )
+    return {
+      byUnit,
+      reasonByUnit,
+      opened: [],
+      overflow: blocks.find((b) => b.venueId === null)?.games ?? 0,
+      violations: 0,
+      rentedCourtDays: 0,
+      blocks,
+    }
   }
 
   const remaining = venues.map((v) => v.capacityGames)
-  const used = venues.map(() => false)
+  const opened = venues.map(() => false)
   const indexOf = new Map<string, number>()
   venues.forEach((v, k) => indexOf.set(v.venueId, k))
-  let overflow = 0
+  const homeIndex = venues.findIndex((v) => v.role === "home")
   let violations = 0
-  /** Grades whose own gym could not hold them this weekend. They go back in
-   *  the pool, and wherever they land, the reason is the bump. */
-  const bumped = new Set<string>()
+  const unhousedKeys: string[] = []
 
-  // Residents first, in key order — a deterministic answer to "which of two
-  // grades that both live here gets bumped".
-  const pool: PlannerUnit[] = []
-  const byKey = [...units].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
-  for (const u of byKey) {
-    const demand = unitGames(u, target)
-    if (demand <= 0) continue // a grade with no teams claims no gym
-    if (u.alternate) {
-      pool.push(u)
-      continue
-    }
-    const home = prior[u.key]
-    const k = home == null ? undefined : indexOf.get(home)
-    // No home yet, or the home gym is not open this weekend: it is simply a
-    // grade looking for a room, not a broken promise.
-    if (k === undefined) {
-      pool.push(u)
-      continue
-    }
-    if (remaining[k] >= demand) {
-      byUnit[u.key] = venues[k].venueId
-      mark(u.key, "resident")
-      used[k] = true
-      remaining[k] -= demand
-    } else {
-      violations++
-      bumped.add(u.key)
-      pool.push(u)
-    }
+  /** Games already sitting in each building, so a marginal court-day is a
+   *  real marginal: the sixth cohort into a building we already rent six
+   *  courts of costs nothing at all. */
+  const load = venues.map(() => 0)
+  const seat = (k: number, u: PlannerUnit, games: number, reason: PlacementReason) => {
+    byUnit[u.key] = venues[k].venueId
+    mark(u.key, reason)
+    opened[k] = true
+    remaining[k] -= games
+    load[k] += games
   }
 
-  // Then the rest, biggest grade first: a big grade placed late is the one
-  // that opens a second building nobody needed.
-  pool.sort((a, b) => b.teams - a.teams || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+  // 1. Decided gyms, seated before anything competes for the room. They win
+  //    outright: an operator who pinned a grade to a building meant it.
+  const queue: PlannerUnit[] = []
+  const byKey = [...units].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+  for (const u of byKey) {
+    const games = unitGames(u, target)
+    if (games <= 0) continue // a grade with no teams claims no gym
+    const pinned = decided?.has(u.key) ? indexOf.get(prior[u.key] ?? "") : undefined
+    if (pinned === undefined) {
+      queue.push(u)
+      continue
+    }
+    seat(pinned, u, games, "decided")
+  }
 
-  for (const u of pool) {
-    const demand = unitGames(u, target)
+  // 2. Everybody else, biggest cohort first. Ties by key, so two grades of
+  //    the same size always sort out the same way.
+  queue.sort((a, b) => b.teams - a.teams || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+
+  for (const u of queue) {
+    const games = unitGames(u, target)
     const avoid = u.alternate ? prior[u.key] : undefined
-    // Steering only counts as steering when the gym to dodge is actually open
-    // this weekend; otherwise the grade is simply filling in order.
+    const was = u.alternate ? undefined : prior[u.key]
+    const wasIndex = was == null ? undefined : indexOf.get(was)
     const steered = avoid != null && indexOf.has(avoid)
+
+    // The home gym, first and free, whenever the whole cohort fits.
+    if (
+      homeIndex >= 0 &&
+      remaining[homeIndex] >= games &&
+      venues[homeIndex].venueId !== avoid
+    ) {
+      // Being in the building the league OWNS is the whole reason; whether
+      // the grade was also here last weekend is not a second fact worth a
+      // different word. The switch is still counted, for the tiebreak.
+      if (wasIndex !== undefined && wasIndex !== homeIndex) violations++
+      seat(homeIndex, u, games, "home")
+      continue
+    }
+
+    // Otherwise it is a rental, and the packer buys the cheapest one. The
+    // marginal cost of adding this cohort to a building is what matters: a
+    // gym already rented at four courts absorbs a small grade for nothing.
     let pick = -1
+    let pickCost = Infinity
+    let pickOpen = false
+    let pickResident = false
+    let pickName = ""
     for (let k = 0; k < venues.length; k++) {
-      if (remaining[k] >= demand && venues[k].venueId !== avoid) {
+      const venue = venues[k]
+      if (venue.role !== "pool") continue
+      if (remaining[k] < games) continue
+      if (venue.venueId === avoid) continue
+      const cost =
+        courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
+      const isOpen = opened[k]
+      const isResident = wasIndex === k
+      const better =
+        cost < pickCost ||
+        // Same money: keep the buildings count down, then honour residency,
+        // then the gym whose name sorts first, so the answer never wobbles.
+        (cost === pickCost &&
+          (isOpen !== pickOpen
+            ? isOpen
+            : isResident !== pickResident
+              ? isResident
+              : venue.name.localeCompare(pickName, "en") < 0))
+      if (pick < 0 || better) {
         pick = k
-        break
+        pickCost = cost
+        pickOpen = isOpen
+        pickResident = isResident
+        pickName = venue.name
       }
     }
+
     if (pick < 0 && avoid != null) {
       // Only the gym this grade just played still has room. Playing it twice
       // beats splitting the grade across two buildings — but it is a cost.
       for (let k = 0; k < venues.length; k++) {
-        if (remaining[k] >= demand) {
-          pick = k
+        if (remaining[k] >= games) {
           violations++
-          bumped.add(u.key)
+          seat(k, u, games, "bumped")
+          pick = -2
           break
         }
       }
+      if (pick === -2) continue
     }
+
     if (pick < 0) {
-      // Fits nowhere whole: the roomiest gym takes it and the games that do
-      // not fit are the weekend's overflow.
-      let big = 0
-      for (let k = 1; k < venues.length; k++) if (remaining[k] > remaining[big]) big = k
-      overflow += demand - Math.max(0, remaining[big])
-      remaining[big] = 0
-      if (avoid != null && venues[big].venueId === avoid) violations++
-      byUnit[u.key] = venues[big].venueId
-      mark(u.key, "overflow")
-      used[big] = true
+      // Fits nowhere whole, and a cohort is atomic: half a grade cannot play.
+      // So the WHOLE cohort is demand with nowhere to go — an empty rental
+      // slot the operator has to fill, not games that quietly disappear into
+      // a building that never had room for them. The rooms it could not use
+      // stay free for the smaller cohorts still to come.
+      unhousedKeys.push(u.key)
+      reasonByUnit[u.key] = decided?.has(u.key) ? "decided" : "overflow"
       continue
     }
-    byUnit[u.key] = venues[pick].venueId
-    mark(
-      u.key,
-      bumped.has(u.key)
-        ? "bumped"
+
+    if (wasIndex !== undefined && wasIndex !== pick) violations++
+    seat(
+      pick,
+      u,
+      games,
+      wasIndex === pick
+        ? "resident"
         : steered && venues[pick].venueId !== avoid
           ? "avoided"
-          : "fill"
+          : "rented"
     )
-    used[pick] = true
-    remaining[pick] -= demand
   }
 
-  const opened: string[] = []
-  for (let k = 0; k < venues.length; k++) if (used[k]) opened.push(venues[k].venueId)
-  return { byUnit, reasonByUnit, opened, overflow, violations }
+  const openedIds: string[] = []
+  for (let k = 0; k < venues.length; k++) if (opened[k]) openedIds.push(venues[k].venueId)
+  const blocks = rentalBlocksFrom(
+    weekend.sessionId ?? "",
+    units,
+    weekend,
+    byUnit,
+    unhousedKeys,
+    fallbackRate
+  )
+  return {
+    byUnit,
+    reasonByUnit,
+    opened: openedIds,
+    // Overflow IS the empty block: one number, read off the blocks, so the
+    // meter and the ask sheet can never disagree about what has no room.
+    overflow: blocks.find((b) => b.venueId === null)?.games ?? 0,
+    violations,
+    rentedCourtDays: blocks.reduce((sum, b) => sum + (b.venueId ? b.courtDays : 0), 0),
+    blocks,
+  }
 }
 
 export interface WeekendGymSection {
   venueId: string
   name: string
+  /** Owned or rented — what decides whether this section costs anything. */
+  role: VenueRole
   /** Grades playing here, in the order the caller listed them. */
   unitKeys: string[]
   /** Games these grades ask for. */
@@ -759,6 +1084,10 @@ export interface WeekendGymSection {
   capacityGames: number
   /** Games past what this gym holds (0 on a gym that fits its grades). */
   over: number
+  /** Courts this section rents. 0 at the home gym, which costs nothing. */
+  rentedCourts: number
+  /** courts × days: what those courts cost. 0 at the home gym. */
+  rentedCourtDays: number
 }
 
 export interface WeekendGyms {
@@ -768,12 +1097,15 @@ export interface WeekendGyms {
   /** unit key → why it is in that building. Every grade the weekend holds has
    *  one, so a caption or a chip can always say what happened. */
   reasonByUnit: Record<string, PlacementReason>
-  /** One section per gym that takes a grade, in the weekend's fill order. */
+  /** One section per gym that takes a grade: the home gym first, then the
+   *  buildings the weekend rents. */
   sections: WeekendGymSection[]
   /** Grades with no building at all, because the weekend has no gym. */
   unplaced: string[]
   /** Games no gym on this weekend can hold. */
   overflow: number
+  /** Court-days this weekend rents, across every pool building it opens. */
+  rentedCourtDays: number
 }
 
 /**
@@ -814,7 +1146,10 @@ export function resolveWeekendGyms(
   }
 
   const packed = packWeekendVenues(here, weekend, kept, new Set(Object.keys(kept)))
-  const fallback = weekend.venues[0]?.venueId
+  // A grade the packer could not house still has to be drawn somewhere, and
+  // the home gym is where it belongs on screen: that is the building whose
+  // meter should be reading over its courts.
+  const fallback = (homeVenueOf(weekend.venues) ?? weekend.venues[0])?.venueId
   const byUnit: Record<string, string> = {}
   const reasonByUnit: Record<string, PlacementReason> = {}
   const unplaced: string[] = []
@@ -823,12 +1158,15 @@ export function resolveWeekendGyms(
     if (venueId) byUnit[u.key] = venueId
     else unplaced.push(u.key)
     reasonByUnit[u.key] =
-      given?.[u.key] ?? packed.reasonByUnit[u.key] ?? (venueId ? "fill" : "overflow")
+      given?.[u.key] ??
+      packed.reasonByUnit[u.key] ??
+      (venueId ? (venueOf(weekend.venues, venueId)?.role === "home" ? "home" : "rented") : "overflow")
   }
 
   const sections: WeekendGymSection[] = []
   let overflow = 0
-  for (const venue of weekend.venues) {
+  let rentedCourtDays = 0
+  for (const venue of orderedVenues(weekend.venues)) {
     const unitKeys = here.filter((u) => byUnit[u.key] === venue.venueId).map((u) => u.key)
     if (unitKeys.length === 0) continue
     const games = unitKeys.reduce(
@@ -837,13 +1175,19 @@ export function resolveWeekendGyms(
     )
     const over = Math.max(0, games - venue.capacityGames)
     overflow += over
+    const rentedCourts = venue.role === "pool" ? courtsNeeded(venue, games) : 0
+    const courtDays = rentedCourts * daysAt(venue)
+    rentedCourtDays += courtDays
     sections.push({
       venueId: venue.venueId,
       name: venue.name,
+      role: venue.role,
       unitKeys,
       games,
       capacityGames: venue.capacityGames,
       over,
+      rentedCourts,
+      rentedCourtDays: courtDays,
     })
   }
   for (const key of unplaced) {
@@ -851,7 +1195,7 @@ export function resolveWeekendGyms(
     if (u) overflow += unitGames(u, weekend.targetGamesPerTeam)
   }
 
-  return { byUnit, reasonByUnit, sections, unplaced, overflow }
+  return { byUnit, reasonByUnit, sections, unplaced, overflow, rentedCourtDays }
 }
 
 /* ------------------------- saying it in numbers -------------------------- */
@@ -877,10 +1221,14 @@ export function reasonPhrase(reason: PlacementReason): string | null {
   switch (reason) {
     case "decided":
       return "your pick"
-    case "resident":
+    case "home":
       return "home gym"
+    case "rented":
+      return "rented, home gym full"
+    case "resident":
+      return "same gym as last time"
     case "bumped":
-      return "moved, home gym full"
+      return "moved, its gym was full"
     case "avoided":
       return "not the gym it just played"
     case "overflow":
@@ -889,6 +1237,9 @@ export function reasonPhrase(reason: PlacementReason): string | null {
       return null
   }
 }
+
+/** Courts in a sentence, so "1 courts" never happens. */
+const courtsWord = (n: number) => `${n} court${n === 1 ? "" : "s"}`
 
 export interface WeekendStory {
   /** The weekend's one line under its meter, with the numbers in it. Empty
@@ -931,7 +1282,8 @@ export function weekendStory(
     (venueId && shortOf.get(venueId)) || "another gym"
 
   const parts: string[] = []
-  const [first, ...spill] = gyms.sections
+  const home = gyms.sections.find((s) => s.role === "home") ?? null
+  const rented = gyms.sections.filter((s) => s.role === "pool")
 
   // 1. Short of courts, which outranks everything else the weekend can say.
   for (const s of gyms.sections) {
@@ -945,90 +1297,83 @@ export function weekendStory(
     parts.push(`no gym for ${nameList(gyms.unplaced.map(labelOf))}`)
   }
 
-  // 2. The buildings: what filled, what spilled, and by how much. A grade
-  //    named here carries its own reason, so nothing is said twice.
+  // 2. The buildings: what the home gym holds, and what the weekend had to
+  //    rent to hold the rest (owner ruling 2026-08-03 — the rented courts ARE
+  //    the cost, so they are what the sentence is about). A grade named here
+  //    carries its own reason, so nothing is said twice.
   const named = new Set<string>()
-  if (first && spill.length > 0) {
-    const room = Math.max(0, first.capacityGames - first.games)
-    const all = spill.flatMap((s) => s.unitKeys).filter((k) => gamesOf(k) > 0)
-    const forced = all.some((k) => gamesOf(k) > room)
-    parts.push(
-      `${venueShortName(first.name)} ${forced ? "full at " : ""}${first.games} of ${
-        first.capacityGames
-      }`
-    )
-    for (const s of spill) {
-      const movers = s.unitKeys.filter((k) => gamesOf(k) > 0)
-      const numbers = `${s.games} of ${s.capacityGames}`
-      if (movers.length === 0) {
-        parts.push(`also open: ${venueShortName(s.name)} (${numbers})`)
-        continue
-      }
-      const reasons = new Set(movers.map((k) => gyms.reasonByUnit[k]))
-      const only = reasons.size === 1 ? [...reasons][0] : null
-      const kept = !forced && (only === "resident" || only === "decided")
-      // Two grades spill, one grade spills: the sentence has to agree with
-      // however many of them there are.
-      const many = movers.length > 1
-      const verb = forced
-        ? many
-          ? "spill to"
-          : "spills to"
-        : kept
-          ? many
-            ? "stay in"
-            : "stays in"
-          : many
-            ? "also run in"
-            : "also runs in"
-      const tag = kept ? (only === "resident" ? ", home gym" : ", your pick") : ""
-      for (const k of movers) named.add(k)
+  if (home) {
+    const room = Math.max(0, home.capacityGames - home.games)
+    const spilled = rented.flatMap((s) => s.unitKeys).filter((k) => gamesOf(k) > 0)
+    const forced = spilled.some((k) => gamesOf(k) > room)
+    if (rented.length > 0) {
       parts.push(
-        `${nameList(movers.map((k) => `${labelOf(k)} (${gamesWord(gamesOf(k))})`))} ${verb} ${venueShortName(
-          s.name
-        )} (${numbers}${tag})`
+        `${venueShortName(home.name)} ${forced ? "full at " : ""}${home.games} of ${
+          home.capacityGames
+        }`
       )
+    } else if (weekend.venues.length > 1) {
+      parts.push(`fits in ${venueShortName(home.name)} alone, ${home.games} of ${home.capacityGames}`)
     }
-  } else if (first && weekend.venues.length > 1) {
-    parts.push(
-      `fits in ${venueShortName(first.name)} alone, ${first.games} of ${first.capacityGames}`
-    )
+  }
+  for (const s of rented) {
+    const movers = s.unitKeys.filter((k) => gamesOf(k) > 0)
+    const numbers = `${s.games} of ${s.capacityGames}`
+    const at = `${courtsWord(s.rentedCourts)} at ${venueShortName(s.name)}`
+    if (movers.length === 0) {
+      parts.push(`also open: ${venueShortName(s.name)} (${numbers})`)
+      continue
+    }
+    for (const k of movers) named.add(k)
+    const who = nameList(movers.map((k) => `${labelOf(k)} (${gamesWord(gamesOf(k))})`))
+    const pick = movers.every((k) => gyms.reasonByUnit[k] === "decided") ? ", your pick" : ""
+    parts.push(`${who} rented: ${at} (${numbers}${pick})`)
+  }
+  if (!home && rented.length === 0 && gyms.sections.length > 0) {
+    const only = gyms.sections[0]
+    parts.push(`${venueShortName(only.name)} ${only.games} of ${only.capacityGames}`)
   }
 
   // 3. ONE per-grade why, for a grade the buildings clause did not already
-  //    explain: a grade moved out of its gym first, then a grade that stayed
-  //    in its own gym where fill order would have moved it.
+  //    explain: a grade moved out of the gym it was in first, then a grade
+  //    that kept a rented building the home gym could have taken.
   const chipCaptions: Record<string, string> = {}
   let moved: string | null = null
   let stayed: string | null = null
   for (const key of Object.keys(gyms.reasonByUnit)) {
     const reason = gyms.reasonByUnit[key]
     const at = gyms.byUnit[key]
-    const home = homes[key]
-    const homeSection = home ? sectionOf.get(home) : undefined
+    const was = homes[key]
+    const wasSection = was ? sectionOf.get(was) : undefined
     // A grade the buildings clause already named has had its say.
     const told = named.has(key)
     if (reason === "decided") {
       chipCaptions[key] = "your pick"
     } else if (reason === "bumped") {
-      const homeShort = home ? gymName(home) : null
-      chipCaptions[key] = homeShort ? `moved, ${homeShort} full` : "moved, home gym full"
+      const wasShort = was ? gymName(was) : null
+      chipCaptions[key] = wasShort ? `moved, ${wasShort} full` : "moved, its gym was full"
       if (!told && moved === null) {
-        moved = homeSection
-          ? `${labelOf(key)} moved to ${gymName(at)} (${homeShort} full, ${
-              homeSection.games
-            } of ${homeSection.capacityGames})`
-          : homeShort
-            ? `${labelOf(key)} moved to ${gymName(at)} (${homeShort} could not hold ${gamesWord(
+        moved = wasSection
+          ? `${labelOf(key)} moved to ${gymName(at)} (${wasShort} full, ${
+              wasSection.games
+            } of ${wasSection.capacityGames})`
+          : wasShort
+            ? `${labelOf(key)} moved to ${gymName(at)} (${wasShort} could not hold ${gamesWord(
                 gamesOf(key)
               )})`
             : `${labelOf(key)} moved to ${gymName(at)}, its own gym was full`
       }
-    } else if (reason === "resident" && first && at !== first.venueId) {
-      // Fill order would have put it in the first gym; it is here because it
-      // has been here all season, and that is worth saying out loud.
+    } else if (reason === "home") {
       chipCaptions[key] = "home gym"
-      if (!told && stayed === null) stayed = `${labelOf(key)} stays at ${gymName(at)} (home gym)`
+    } else if (reason === "resident") {
+      // It kept a building the league RENTS. Worth saying out loud, because
+      // consolidation would otherwise have brought it home.
+      chipCaptions[key] = "same gym as last time"
+      if (!told && stayed === null) {
+        stayed = `${labelOf(key)} stays at ${gymName(at)} (same gym as last time)`
+      }
+    } else if (reason === "rented") {
+      chipCaptions[key] = "rented"
     } else if (reason === "avoided") {
       chipCaptions[key] = "alternating"
     } else if (reason === "overflow") {
@@ -1132,10 +1477,16 @@ export function packPlanVenues(
  */
 function packWeekendShown(
   units: PlannerUnit[],
-  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues">,
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "venues"> &
+    Partial<Pick<PlannerWeekend, "sessionId">>,
   resident: Record<string, string>,
-  decided: Record<string, string>
-): { byUnit: Record<string, string>; reasonByUnit: Record<string, PlacementReason> } {
+  decided: Record<string, string>,
+  fallbackRate?: VenueRate
+): {
+  byUnit: Record<string, string>
+  reasonByUnit: Record<string, PlacementReason>
+  blocks: RentalBlock[]
+} {
   const open = new Set(weekend.venues.map((v) => v.venueId))
   // A gym that is not on this weekend is not a decision, it is a leftover.
   const picked: Record<string, string> = {}
@@ -1147,17 +1498,19 @@ function packWeekendShown(
     units,
     weekend,
     { ...resident, ...picked },
-    new Set(Object.keys(picked))
+    new Set(Object.keys(picked)),
+    fallbackRate
   )
-  const fallback = weekend.venues[0]?.venueId
+  const homeVenue = homeVenueOf(weekend.venues)
+  const fallback = (homeVenue ?? weekend.venues[0])?.venueId
   const byUnit: Record<string, string> = {}
   const reasonByUnit: Record<string, PlacementReason> = {}
   for (const u of units) {
     // For a grade that alternates, the gym it carries is the one to AVOID, so
-    // it is no fallback: that grade takes the gym that fills first instead.
-    const home = u.alternate ? undefined : resident[u.key]
-    const homeIsOpen = Boolean(home && open.has(home))
-    const venueId = picked[u.key] ?? packed.byUnit[u.key] ?? (homeIsOpen ? home : fallback)
+    // it is no fallback: that grade takes the home gym instead.
+    const was = u.alternate ? undefined : resident[u.key]
+    const wasIsOpen = Boolean(was && open.has(was))
+    const venueId = picked[u.key] ?? packed.byUnit[u.key] ?? (wasIsOpen ? was : fallback)
     if (!venueId) continue
     byUnit[u.key] = venueId
     reasonByUnit[u.key] =
@@ -1165,10 +1518,33 @@ function packWeekendShown(
         ? "decided"
         : // A grade the packer seated has its own reason; one it skipped (no
           // teams, so no games to place) is simply riding along in the gym it
-          // already plays, or in the one that fills first.
-          (packed.reasonByUnit[u.key] ?? (homeIsOpen ? "resident" : "fill"))
+          // already plays, or in the home gym.
+          (packed.reasonByUnit[u.key] ??
+            (wasIsOpen
+              ? was === homeVenue?.venueId
+                ? "home"
+                : "resident"
+              : venueId === homeVenue?.venueId
+                ? "home"
+                : "rented"))
   }
-  return { byUnit, reasonByUnit }
+  // The blocks are derived from the placement the SCREEN ends up with, not
+  // from the packer's private answer, so a hand pick moves the rental with it.
+  // The packer is cohort-atomic, so a cohort it never seated is exactly the
+  // demand with no building. byUnit's own fallback (the home gym) is for
+  // DRAWING; it must not make an unhoused cohort look housed.
+  const unhoused = units.filter(
+    (u) => !packed.byUnit[u.key] && unitGames(u, weekend.targetGamesPerTeam) > 0
+  )
+  const blocks = rentalBlocksFrom(
+    weekend.sessionId ?? "",
+    units,
+    weekend,
+    byUnit,
+    unhoused.map((u) => u.key),
+    fallbackRate
+  )
+  return { byUnit, reasonByUnit, blocks }
 }
 
 /**
@@ -1204,12 +1580,34 @@ export interface ShownPlacements {
    *  weekend). Empty for a grade the season has not placed yet. This is what
    *  lets a sentence name the building a grade was moved out of. */
   homes: Record<string, Record<string, string>>
+  /** Every rental this calendar needs, in weekend order. Derived from the
+   *  SAME placements above, which is why the board and the blocks can never
+   *  disagree (owner ruling 2026-08-03). */
+  blocks: RentalBlock[]
 }
 
 /**
- * The same chronological walk as packShownVenues, with the two things a
- * sentence needs on top of the buildings: why each grade is where it is, and
- * which gym it was in before that weekend.
+ * The rate the season rents at, for a weekend that has no gym of its own to
+ * measure against: the home gym anywhere in the season, else the first gym
+ * anywhere. Without it a weekend with every gym released could only say "some
+ * games have no room", which is not something anybody can act on.
+ */
+function seasonRate(state: PlannerState): VenueRate | undefined {
+  let first: PlannerVenue | undefined
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const home = homeVenueOf(w.venues)
+      if (home && home.capacityGames > 0) return rateOf(home)
+      if (!first) first = w.venues.find((v) => v.capacityGames > 0)
+    }
+  }
+  return first ? rateOf(first) : undefined
+}
+
+/**
+ * The same chronological walk as packShownVenues, with the three things a
+ * sentence needs on top of the buildings: why each grade is where it is, which
+ * gym it was in before that weekend, and what the weekend has to rent.
  */
 export function packShownPlacements(
   state: PlannerState,
@@ -1218,74 +1616,279 @@ export function packShownPlacements(
 ): ShownPlacements {
   const unitByKey = new Map(state.units.map((u) => [u.key, u]))
   const resident: Record<string, string> = {}
-  const out: ShownPlacements = { venues: {}, reasons: {}, homes: {} }
+  const rate = seasonRate(state)
+  const out: ShownPlacements = { venues: {}, reasons: {}, homes: {}, blocks: [] }
   for (const w of chronologicalWeekends(state)) {
     const units = unitsFor(unitByKey, shown[w.sessionId])
     if (units.length === 0) continue
     const home: Record<string, string> = {}
     for (const u of units) if (resident[u.key]) home[u.key] = resident[u.key]
-    const packed = packWeekendShown(units, w, resident, decided[w.sessionId] ?? {})
-    if (Object.keys(packed.byUnit).length === 0) continue
+    const packed = packWeekendShown(units, w, resident, decided[w.sessionId] ?? {}, rate)
+    if (Object.keys(packed.byUnit).length === 0 && packed.blocks.length === 0) continue
     for (const key of Object.keys(packed.byUnit)) resident[key] = packed.byUnit[key]
-    out.venues[w.sessionId] = packed.byUnit
-    out.reasons[w.sessionId] = packed.reasonByUnit
-    out.homes[w.sessionId] = home
+    if (Object.keys(packed.byUnit).length > 0) {
+      out.venues[w.sessionId] = packed.byUnit
+      out.reasons[w.sessionId] = packed.reasonByUnit
+      out.homes[w.sessionId] = home
+    }
+    out.blocks.push(...packed.blocks)
   }
   return out
 }
 
-/** What opening a second building cost the search. One number so the scoring
- *  line below stays readable. */
-const SECOND_BUILDING_COST = 150
+/**
+ * WHAT THE SEASON HAS TO RENT, weekend by weekend (owner ruling 2026-08-03).
+ *
+ * One entry per pool building a weekend opens, cohort-atomic and demand-sized,
+ * plus one entry with a null venue wherever the demand is real and no gym on
+ * that weekend can take it — the empty slot somebody has to go and book.
+ *
+ * The home gym never appears: it is owned, so it costs nothing and there is
+ * nothing to ask anyone for.
+ *
+ * Built on the same chronological pass the board draws from, so a block can
+ * never claim a building the calendar does not.
+ */
+export function planRentalBlocks(
+  state: PlannerState,
+  assignment: Record<string, string[]>,
+  venues: Record<string, Record<string, string>> = {}
+): RentalBlock[] {
+  return packShownPlacements(state, assignment, venues).blocks
+}
+
+export interface AssignBlocksOptions {
+  /** Gyms the operator has ruled out, whatever the availability says. */
+  excludeVenueIds?: string[]
+}
+
+/** One weekend's answer: which pool gym takes the empty block, and how many
+ *  courts of it. */
+export interface BlockAssignment {
+  venueId: string
+  courts: number
+  days: number
+  courtDays: number
+  hoursNeeded: number
+}
 
 /**
- * What breaking a gym promise costs, priced above every other lever the search
- * has (owner rule 2026-08-02): "a grade keeps the SAME gym all season and is
- * moved out of it only when capacity genuinely forces it."
+ * Fill the empty rental slots from the POOL (owner ruling 2026-08-03: a block
+ * goes needed → assumed → confirmed, and this is the "assumed" step).
  *
- * It used to be 60 — less than one game of peak, which is 100 — so the search
- * would bump a grade out of its home gym to flatten a weekend by a game or
- * two. That is exactly the trade the rule forbids. At 25,000 a violation
- * outranks BOTH peak (a whole month's peak runs to about 170 games, so 17,000)
- * and the one-gym lever's second building (1,500), so the solver now opens
- * another building rather than move a resident — the same order of preference
- * packWeekendVenues already applies inside a single weekend.
+ * Only blocks with no venue are answered; a block that already names a
+ * building is the solver's or the operator's answer and is left alone. The
+ * pool is unordered, so the choice is pure cost: fewest rented court-days
+ * first, then the building the weekend has already opened (one more cohort in
+ * a gym we are already renting beats a second address), then the gym whose
+ * name sorts first so two equal answers never wobble.
  *
- * It does NOT outrank feasibility. Overflow is 1,000,000 a game, and a window
- * can only break as many promises as it has grades × weekends (under 40 at any
- * size the exact search runs, since the greedy path takes over past 300k
- * candidates), so one stranded game still costs more than every broken promise
- * of that month put together.
+ * Availability is honoured by construction: a weekend's `venues` are only the
+ * gyms that are attached and not blocked out, which is what the season's
+ * grid and the NJC/NSC marks already decided. A gym that is not on the
+ * weekend can never be chosen here.
  */
-const GYM_VIOLATION_COST = 25_000
+export function assignBlocksFromPool(
+  state: PlannerState,
+  blocks: RentalBlock[],
+  opts?: AssignBlocksOptions
+): Record<string, BlockAssignment> {
+  const excluded = new Set(opts?.excludeVenueIds ?? [])
+  const weekendById = new Map<string, PlannerWeekend>()
+  for (const w of chronologicalWeekends(state)) weekendById.set(w.sessionId, w)
+
+  const out: Record<string, BlockAssignment> = {}
+  for (const w of chronologicalWeekends(state)) {
+    const here = blocks.filter((b) => b.sessionId === w.sessionId)
+    const empty = here.find((b) => b.venueId === null)
+    if (!empty || empty.games <= 0) continue
+    const taken = new Set(here.map((b) => b.venueId).filter((id): id is string => Boolean(id)))
+
+    let pick: PlannerVenue | null = null
+    let pickCost = Infinity
+    for (const venue of orderedVenues(w.venues)) {
+      if (venue.role !== "pool") continue
+      if (excluded.has(venue.venueId)) continue
+      const cost = courtDaysNeeded(venue, empty.games)
+      const better =
+        cost < pickCost ||
+        (cost === pickCost &&
+          pick != null &&
+          taken.has(venue.venueId) &&
+          !taken.has(pick.venueId))
+      if (!pick || better) {
+        pick = venue
+        pickCost = cost
+      }
+    }
+    if (!pick) continue
+    const courts = courtsNeeded(pick, empty.games)
+    const days = daysAt(pick)
+    out[w.sessionId] = {
+      venueId: pick.venueId,
+      courts,
+      days,
+      courtDays: courts * days,
+      hoursNeeded: courts * days * (pick.hoursPerCourtDay ?? 0),
+    }
+  }
+  return out
+}
+
+/* ------------------------- the ask, without dates ------------------------ */
+
+export interface RentalAskMonth {
+  /** The window's own label, "Nov 2026". */
+  label: string
+  courtDays: number
+  courtHours: number
+  /** Weekends of the month that need a rental at all. */
+  weekendsNeedingRent: number
+  /** The SHAPE of the need in words, for a gym that wants to pick its own
+   *  days: "two weekends of 3 courts, or one weekend of 6 courts". */
+  chunks: string
+}
+
+export interface RentalAsk {
+  season: {
+    courtDays: number
+    courtHours: number
+    /** Games with no building at all: the part of the ask that is not a
+     *  preference but a hole in the season. */
+    gamesUnhoused: number
+  }
+  months: RentalAskMonth[]
+}
+
+/** Small counts read as words, because "2 weekends of 3 courts" next to
+ *  "3 courts" makes an operator read the numbers twice. */
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight"]
+const countWord = (n: number): string => COUNT_WORDS[n] ?? String(n)
 
 /**
- * How much harder "one-gym" leans on buildings than "balance" does (owner
- * 2026-08-02: "pack one gym" is one of the options an operator gets). Ten
- * times the normal price of a second building, so 1,500 a weekend: past the
- * point where a flatter peak can buy one, since peak games cost 100 each. It
- * buys buildings with peak, never with overflow — that term is a million and
- * stays untouched.
+ * THE ASK, with no dates in it (owner 2026-08-03: "tell the gym how many
+ * hours we need, they pick the days, we re-solve around their offer").
+ *
+ * Every rental block counts, assigned or not: the ask is the whole off-home
+ * demand, and the screen captions which part of it is already spoken for.
+ *
+ * HOW THE CHUNK PHRASE IS DERIVED, and the one rule it obeys — never describe
+ * a shape the cohort maths cannot produce:
+ *   1. Group the month's blocks by weekend. A weekend's ask is the courts of
+ *      its blocks added up, because one building per grade per weekend still
+ *      holds and two buildings on one weekend really are that many courts.
+ *   2. The phrase lists those per-weekend court counts, fewest weekends last:
+ *      "two weekends of 3 courts and one weekend of 5 courts".
+ *   3. The alternative is the SAME cohorts collapsed onto one weekend of the
+ *      month, sized at the rate the season already rents at: courts =
+ *      ceil(month games ÷ games one court holds). It is offered only when the
+ *      month really has two or more renting weekends (so there is something
+ *      to collapse) and only when collapsing asks for fewer courts in total
+ *      than the spread does. Cohorts stay whole in both readings, and a grade
+ *      plays one weekend per month either way, so both shapes are plannable.
  */
-const ONE_GYM_BUILDING_WEIGHT = 10
+export function rentalAsk(state: PlannerState, blocks: RentalBlock[]): RentalAsk {
+  const rate = seasonRate(state)
+  const season = { courtDays: 0, courtHours: 0, gamesUnhoused: 0 }
+  for (const b of blocks) {
+    season.courtDays += b.courtDays
+    season.courtHours += b.hoursNeeded
+    if (b.venueId === null) season.gamesUnhoused += b.games
+  }
+
+  const months: RentalAskMonth[] = []
+  for (const win of state.windows) {
+    const ids = new Set(win.weekends.map((w) => w.sessionId))
+    const mine = blocks.filter((b) => ids.has(b.sessionId))
+    if (mine.length === 0) continue
+
+    const byWeekend = new Map<string, { courts: number; games: number }>()
+    for (const b of mine) {
+      const seen = byWeekend.get(b.sessionId) ?? { courts: 0, games: 0 }
+      seen.courts += b.courts
+      seen.games += b.games
+      byWeekend.set(b.sessionId, seen)
+    }
+    const courtDays = mine.reduce((sum, b) => sum + b.courtDays, 0)
+    const courtHours = mine.reduce((sum, b) => sum + b.hoursNeeded, 0)
+    const games = mine.reduce((sum, b) => sum + b.games, 0)
+
+    // Same-size weekends collapse into one clause: "two weekends of 3 courts".
+    const tally = new Map<number, number>()
+    for (const { courts } of byWeekend.values()) {
+      if (courts <= 0) continue
+      tally.set(courts, (tally.get(courts) ?? 0) + 1)
+    }
+    const clauses = [...tally.entries()]
+      .sort((a, b) => b[1] - a[1] || b[0] - a[0])
+      .map(([courts, weekends]) =>
+        `${countWord(weekends)} weekend${weekends === 1 ? "" : "s"} of ${courtsWord(courts)}`
+      )
+    let chunks = nameList(clauses)
+
+    const spreadCourts = [...byWeekend.values()].reduce((sum, w) => sum + w.courts, 0)
+    if (byWeekend.size > 1 && rate && games > 0) {
+      const together = Math.ceil(games / rate.gamesPerCourt)
+      if (together < spreadCourts) {
+        chunks = `${chunks}, or one weekend of ${courtsWord(together)}`
+      }
+    }
+
+    months.push({
+      label: win.label,
+      courtDays,
+      courtHours,
+      weekendsNeedingRent: byWeekend.size,
+      chunks: chunks || "nothing to rent",
+    })
+  }
+
+  return { season, months }
+}
+
+/**
+ * WHAT A RENTED COURT-DAY COSTS THE SEARCH (owner ruling 2026-08-03: the
+ * money is the rented courts, and consolidation outranks residency).
+ *
+ * It is the dominant term under feasibility. A court-day at 1,000 beats ten
+ * games of peak (100 each), so the search will happily take a heavier weekend
+ * in the home gym over a flatter one that rents another court. Overflow stays
+ * a million a game, so nothing here can buy a game that cannot be played.
+ *
+ * This replaces the pair that used to run the score: SECOND_BUILDING_COST
+ * (150, or 1,500 under the one-gym lever) and GYM_VIOLATION_COST (25,000).
+ * The 25,000 made residency outrank everything except overflow, which is
+ * exactly the trade the owner reversed on 2026-08-03 after the NPH waste
+ * audit: 17-30 Six Park court-days a season were being rented to keep grades
+ * in the building they were used to.
+ */
+const RENTED_COURT_DAY_COST = 1_000
+
+/**
+ * What a residency switch costs now: a tiebreak, and nothing more. Five is
+ * under a twentieth of one game of peak, so it can separate two answers that
+ * cost the same money and can never buy one that does not.
+ */
+const RESIDENCY_SWITCH_COST = 5
 
 /**
  * Deterministic per-window search. Every unit appears exactly once per
  * window (NPH's real rule: each grade plays one weekend per monthly
  * session). Overflow is forbidden when any overflow-free assignment
- * exists; ties break toward the two largest units on different weekends
- * and single-building weekends. Levers:
+ * exists; ties break toward the two largest units on different weekends.
+ * Levers:
  *  - balance: flattest peak utilization
  *  - compact: fewest weekends used, then flattest
  *  - spread: every weekend used, then flattest
- *  - one-gym: balance, with a second building priced ten times higher, so a
- *    heavier weekend inside one building beats a flatter weekend across two
+ *  - one-gym: kept for callers that still send it (the API accepts it), and
+ *    now the SAME objective as balance. Consolidation is no longer a lever an
+ *    operator has to reach for: rented court-days are the dominant term of
+ *    every solve, so "pack one gym" is what the search already does.
  *
- * Buildings are part of the score, not an afterthought: every candidate is
- * really packed into gyms (packWeekendVenues), and a month pays for each
- * second building it opens and each gym promise it breaks. Months are decided
- * in calendar order, so October's answer shapes November's residency and
- * never the other way round.
+ * Rentals are the score, not an afterthought: every candidate is really packed
+ * into buildings (packWeekendVenues), and a month pays 1,000 for every court-
+ * day it rents. Months are decided in calendar order, so October's answer
+ * shapes November's residency and never the other way round.
  */
 export function proposePlan(
   state: PlannerState,
@@ -1293,9 +1896,6 @@ export function proposePlan(
 ): Record<string, string[]> {
   const units = state.units.filter((u) => u.teams > 0)
   const out: Record<string, string[]> = {}
-  // The only thing "one-gym" changes: what a second building costs.
-  const buildingCost =
-    lever === "one-gym" ? SECOND_BUILDING_COST * ONE_GYM_BUILDING_WEIGHT : SECOND_BUILDING_COST
   const giants = [...units].sort((a, b) => b.teams - a.teams).slice(0, 2).map((u) => u.key)
   const unitByKey = new Map(units.map((u) => [u.key, u]))
   // Where each grade has been playing, as decided by the months already
@@ -1346,11 +1946,11 @@ export function proposePlan(
       carryResidency(unitByKey, win.weekends, out, resident)
       continue
     }
-    // Packing every candidate is only worth it when buildings can actually
-    // differ: one gym a weekend, nobody alternating and nobody with a gym to
-    // keep means the venue terms are zero for every candidate alike.
+    // Packing every candidate is only worth it when the RENT can actually
+    // differ: a month whose every weekend is the home gym alone, with nobody
+    // alternating and nobody with a gym to keep, costs the same either way.
     const venueAware =
-      win.weekends.some((w) => w.venues.length > 1) ||
+      win.weekends.some((w) => w.venues.some((v) => v.role === "pool")) ||
       units.some((u) => u.alternate || resident[u.key] != null)
     const loads = new Array(n).fill(0)
     const buckets: PlannerUnit[][] = Array.from({ length: n }, () => [])
@@ -1381,16 +1981,17 @@ export function proposePlan(
         if (loads[k] > cap) overflow += loads[k] - cap
         peakGames = Math.max(peakGames, loads[k])
       }
-      // What this month costs in buildings: every extra gym opened on a
-      // weekend, and every grade moved out of the gym it should have kept.
+      // What this month costs in MONEY: the court-days it rents, plus the
+      // small tiebreak for grades that changed building (owner ruling
+      // 2026-08-03 — consolidation outranks residency).
       let venueCost = 0
       if (venueAware) {
         for (let k = 0; k < n; k++) {
           if (buckets[k].length === 0) continue
           const packed = packWeekendVenues(buckets[k], win.weekends[k], resident)
           venueCost +=
-            Math.max(0, packed.opened.length - 1) * buildingCost +
-            packed.violations * GYM_VIOLATION_COST
+            packed.rentedCourtDays * RENTED_COURT_DAY_COST +
+            packed.violations * RESIDENCY_SWITCH_COST
         }
       }
       // Courts are the cost: rank by ABSOLUTE peak games (a flat 42% of a
@@ -1681,6 +2282,11 @@ function landingClause(
     decidedThere
   )
   if (!landed || landed === home) return ""
+  // Landing in the building the league OWNS is not a displacement worth
+  // warning about (owner ruling 2026-08-03): it is the cheapest place a grade
+  // can be, and saying "Playground has no room" of a gym that has plenty
+  // would be a straight lie about why the grade went there.
+  if (homeVenueOf(to.venues)?.venueId === landed) return ""
   const shortOf = (venueId: string) => venueShortName(open.get(venueId)?.name ?? "")
   const holders = there.filter(
     (u) => u.key !== unit.key && packed.byUnit[u.key] === home
@@ -1695,10 +2301,13 @@ function landingClause(
 }
 
 /**
- * A grade's HOME gym, the one rule, in one place: the building it plays most
- * across the season (owner rule 2026-08-02 — one grade keeps one gym all
- * season). Ties go to the gym it plays first, so the answer is stable and a
- * grade that splits its season evenly still has a home to be sent back to.
+ * A grade's USUAL gym: the building it plays most across the season. Ties go
+ * to the gym it plays first, so the answer is stable and a grade that splits
+ * its season evenly still has one building to be sent back to.
+ *
+ * Not to be confused with the league's HOME gym since 2026-08-03 — that is
+ * the building the league owns (PlannerVenue.role === "home"). This is only
+ * "where has this grade been playing", which is now a tiebreak.
  */
 function mostPlayed(venueIds: string[]): string | null {
   const counts = new Map<string, number>()
@@ -1711,9 +2320,9 @@ function mostPlayed(venueIds: string[]): string | null {
   return best
 }
 
-/** Every grade's home gym across the calendar on screen, in one pass over the
- *  buildings the board is already drawing. */
-function homeGyms(state: PlannerState, placement: ShownPlacements): Map<string, string> {
+/** Every grade's usual gym across the calendar on screen, in one pass over
+ *  the buildings the board is already drawing. */
+function usualGyms(state: PlannerState, placement: ShownPlacements): Map<string, string> {
   const played = new Map<string, string[]>()
   for (const w of chronologicalWeekends(state)) {
     for (const [key, venueId] of Object.entries(placement.venues[w.sessionId] ?? {})) {
@@ -1766,9 +2375,9 @@ export function suggestFor(
   // ONE chronological pass for the whole calendar, the same one the board
   // draws from, so a suggestion never names a building the screen does not.
   const placement = packShownPlacements(state, assignment, decidedAll)
-  /** Where each grade lives across this calendar, so a tidy-up move can be
-   *  measured against the promise it would break. */
-  const homeGym = homeGyms(state, placement)
+  /** Where each grade has been playing across this calendar, so a tidy-up
+   *  move can be measured against the building it would give up. */
+  const homeGym = usualGyms(state, placement)
   const demandOn = (w: PlannerWeekend) =>
     weekendDemand(state.units, w, assignment[w.sessionId] ?? [])
   const gamesOn = (unit: PlannerUnit, w: PlannerWeekend) =>
@@ -1875,17 +2484,24 @@ export function suggestFor(
           placement.venues[w.sessionId] ?? {},
           placement.reasons[w.sessionId]
         )
-        if (gyms.sections.length > 1) {
-          const [first, ...spill] = gyms.sections
-          const opens = nameList(
-            spill.map((s) => `${venueShortName(s.name)} (${s.games} of ${s.capacityGames})`)
+        const rentedHere = gyms.sections.filter((s) => s.role === "pool")
+        if (rentedHere.length > 0 && gyms.sections.length > 1) {
+          const ownGym = gyms.sections.find((s) => s.role === "home")
+          const rents = nameList(
+            rentedHere.map(
+              (s) =>
+                `${courtsWord(s.rentedCourts)} at ${venueShortName(s.name)} (${s.games} of ${
+                  s.capacityGames
+                })`
+            )
           )
-          let text = `${w.label} fills ${venueShortName(first.name)} (${first.games} of ${
-            first.capacityGames
-          }) and opens ${opens}, ${gamesWord(demand)} in all.`
-          // The one grade whose leaving would close the second building.
+          const owned = ownGym
+            ? `fills ${venueShortName(ownGym.name)} (${ownGym.games} of ${ownGym.capacityGames}) and `
+            : ""
+          let text = `${w.label} ${owned}rents ${rents}, ${gamesWord(demand)} in all.`
+          // The one grade whose leaving would end the rental.
           let move: SuggestionMove | undefined
-          const spillUnits = spill
+          const spillUnits = rentedHere
             .flatMap((s) => s.unitKeys)
             .map((k) => unitByKey.get(k))
             .filter((u): u is PlannerUnit => Boolean(u && u.teams > 0))
@@ -1898,15 +2514,15 @@ export function suggestFor(
               ...(placement.homes[w.sessionId] ?? {}),
               ...(decidedAll[w.sessionId] ?? {}),
             })
-            if (without.opened.length > 1 || without.overflow > 0) continue
+            if (without.rentedCourtDays > 0 || without.overflow > 0) continue
             const to = roomFor(unit)[0]
             if (!to) continue
-            // Residency outranks one building a weekend (owner rule
-            // 2026-08-02): a grade keeps one gym all season, and tidying a
-            // weekend is not worth breaking that. Sending the grade back to its
-            // own gym is the case worth a button; parking it anywhere else ships
-            // as the recap alone, with nothing to press.
-            const home = homeGym.get(unit.key)
+            // The residency veto stays (owner 2026-08-02): tidying a weekend
+            // must not quietly cost a grade the building it plays in. What it
+            // no longer covers is a landing in the league's OWN gym — that is
+            // the move the 2026-08-03 ruling exists to make, since it takes a
+            // grade off a rented court and costs nobody anything.
+            const usual = homeGym.get(unit.key)
             const { landed } = packLanding(
               unit,
               to,
@@ -1915,8 +2531,18 @@ export function suggestFor(
               homesArriving(to, unit, w.sessionId),
               decidedAll[to.sessionId] ?? {}
             )
-            if (home && landed && landed !== home) continue
-            const built = moveFor(unit, to, "two-building", `Keeps ${w.label} in one building.`)
+            const landsAtOwnGym =
+              landed != null && homeVenueOf(to.venues)?.venueId === landed
+            if (usual && landed && landed !== usual && !landsAtOwnGym) continue
+            const saved = rentedHere.reduce((sum, s) => sum + s.rentedCourtDays, 0)
+            const built = moveFor(
+              unit,
+              to,
+              "two-building",
+              saved > 0
+                ? `Saves ${saved} rented court-day${saved === 1 ? "" : "s"} on ${w.label}.`
+                : `Keeps ${w.label} in the home gym.`
+            )
             move = built.move
             text = `${text} ${built.text}`
             break
@@ -2029,10 +2655,11 @@ export function gradeGymStrip(
 }
 
 /**
- * A grade's home gym read off its own season in cells: the building it plays
- * most. The same rule the suggestions are vetoed by (one grade, one gym), so
- * the row that draws a move and the core that offers it agree on which
- * building the grade would be giving up.
+ * A grade's USUAL gym read off its own season in cells: the building it plays
+ * most. The same rule the suggestions are vetoed by, so the row that draws a
+ * move and the core that offers it agree on which building the grade would be
+ * giving up. Named for the old model; it has never meant the league's own
+ * building, and since 2026-08-03 that distinction matters.
  */
 export function gradeHomeGym(cells: GradeStripCell[]): string | null {
   return mostPlayed(cells.map((c) => c.venueId))

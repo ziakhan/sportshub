@@ -4,6 +4,7 @@ import { buildWorld, destroyWorld, type BuiltWorld } from "@youthbasketballhub/t
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { applyAssignment, buildPlannerState } from "@/lib/scheduler/planner"
 import { PATCH as PATCH_VENUE } from "../venues/[seasonVenueId]/route"
+import { PATCH as PATCH_BOOKING } from "../sessions/[sessionId]/venues/[venueId]/route"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
@@ -194,8 +195,128 @@ describe("PATCH /seasons/[id]/venues/[seasonVenueId] — which gym fills first",
   })
 })
 
+/**
+ * WHAT A GYM IS TO THE LEAGUE (owner ruling 2026-08-03, venue model v2). Home
+ * is exclusive: naming one building home makes every other gym of the season
+ * pool, in one transaction, because two free buildings would make every rental
+ * number a guess.
+ */
+describe("PATCH /seasons/[id]/venues/[seasonVenueId] — home and pool", () => {
+  let poolVenueId: string
+  let poolSeasonVenueId: string
+
+  const roleOf = async (id: string): Promise<string> =>
+    (
+      await (prisma as any).seasonVenue.findUnique({ where: { id }, select: { role: true } })
+    ).role
+
+  beforeAll(async () => {
+    const venue = await (prisma as any).venue.create({
+      data: {
+        name: "Rented Hall 1145",
+        address: "1 Rental Way",
+        city: "Burlington",
+        state: "ON",
+      },
+      select: { id: true },
+    })
+    poolVenueId = venue.id
+    const link = await (prisma as any).seasonVenue.create({
+      data: { seasonId, venueId: poolVenueId },
+      select: { id: true, role: true },
+    })
+    poolSeasonVenueId = link.id
+    // A gym nobody has said anything about is rented. That is the default, and
+    // it is the safe one: it costs money until somebody says otherwise.
+    expect(link.role).toBe("pool")
+  })
+
+  it("names one building home and pushes every other gym into the pool", async () => {
+    actAs(ownerId)
+    const res = await PATCH_VENUE(
+      jsonRequest("/x", { role: "home" }, "PATCH"),
+      ctx(seasonId, seasonVenueId)
+    )
+    expect(res.status).toBe(200)
+    expect((await res.json()).role).toBe("home")
+    expect(await roleOf(seasonVenueId)).toBe("home")
+    expect(await roleOf(poolSeasonVenueId)).toBe("pool")
+
+    // Naming the OTHER one home moves the home gym: still exactly one.
+    expect(
+      (
+        await PATCH_VENUE(
+          jsonRequest("/x", { role: "home" }, "PATCH"),
+          ctx(seasonId, poolSeasonVenueId)
+        )
+      ).status
+    ).toBe(200)
+    expect(await roleOf(poolSeasonVenueId)).toBe("home")
+    expect(await roleOf(seasonVenueId)).toBe("pool")
+  })
+
+  it("lets a league give the home gym up, and rent everything", async () => {
+    actAs(ownerId)
+    expect(
+      (
+        await PATCH_VENUE(
+          jsonRequest("/x", { role: "pool" }, "PATCH"),
+          ctx(seasonId, poolSeasonVenueId)
+        )
+      ).status
+    ).toBe(200)
+    expect(await roleOf(poolSeasonVenueId)).toBe("pool")
+    expect(await roleOf(seasonVenueId)).toBe("pool")
+  })
+
+  it("refuses a role nobody defined, and keeps the season's gate", async () => {
+    actAs(ownerId)
+    expect(
+      (
+        await PATCH_VENUE(
+          jsonRequest("/x", { role: "rented" }, "PATCH"),
+          ctx(seasonId, seasonVenueId)
+        )
+      ).status
+    ).toBe(400)
+    actAs(strangerId)
+    expect(
+      (
+        await PATCH_VENUE(
+          jsonRequest("/x", { role: "home" }, "PATCH"),
+          ctx(seasonId, seasonVenueId)
+        )
+      ).status
+    ).toBe(403)
+  })
+
+  it("reaches the board: the home gym is the one the packer fills first", async () => {
+    actAs(ownerId)
+    await PATCH_VENUE(
+      jsonRequest("/x", { role: "home" }, "PATCH"),
+      ctx(seasonId, seasonVenueId)
+    )
+    const state = await buildPlannerState(seasonId)
+    const venues = state.windows.flatMap((w) => w.weekends).flatMap((w) => w.venues)
+    expect(venues.length).toBeGreaterThan(0)
+    for (const v of venues) {
+      expect(v.venueId).toBe(venueId)
+      expect(v.role).toBe("home")
+      // The courts and days behind the capacity, which is what a rental is
+      // quoted in — and the hours behind a court-day.
+      expect(v.courts).toBeGreaterThan(0)
+      expect(v.days).toBeGreaterThan(0)
+      expect(v.courtDays).toBe((v.courts ?? 0) * (v.days ?? 0))
+      expect(v.hoursPerCourtDay).toBeGreaterThan(0)
+    }
+    // The rented hall is on the season but on no weekend, so the planner never
+    // sees it: availability is the attachment, exactly as before.
+    expect(venues.some((v) => v.venueId === poolVenueId)).toBe(false)
+  })
+})
+
 describe("the planner state carries gyms and grades that alternate", () => {
-  it("hands the board each gym's fill order", async () => {
+  it("hands the board each gym's dead fill order, untouched", async () => {
     const state = await buildPlannerState(seasonId)
     const venues = state.windows.flatMap((w) => w.weekends).flatMap((w) => w.venues)
     expect(venues.length).toBeGreaterThan(0)
@@ -221,6 +342,73 @@ describe("the planner state carries gyms and grades that alternate", () => {
       where: { seasonId },
       data: { alternateVenues: false },
     })
+  })
+})
+
+/**
+ * PATCH /seasons/[id]/sessions/[sessionId]/venues/[venueId] — the step that
+ * moves a rental from "the solver assigned it" to "the gym said yes" (owner
+ * ruling 2026-08-03).
+ */
+describe("a rental's booking lifecycle, over the wire", () => {
+  const bookingCtx = (sessionId: string) => ({
+    params: { id: seasonId, sessionId, venueId },
+  })
+  const statusesFor = (sessionId: string): Promise<string[]> =>
+    (prisma as any).seasonSessionDayVenue
+      .findMany({
+        where: { venueId, day: { sessionId } },
+        orderBy: { id: "asc" },
+        select: { bookingStatus: true },
+      })
+      .then((rows: any[]) => rows.map((r) => r.bookingStatus))
+
+  it("moves the whole weekend, and answers with where it stands", async () => {
+    actAs(ownerId)
+    const state = await buildPlannerState(seasonId)
+    const sessionId = state.windows[0].weekends[0].sessionId
+
+    const assumed = await PATCH_BOOKING(
+      jsonRequest("/x", { bookingStatus: "assumed" }, "PATCH"),
+      bookingCtx(sessionId)
+    )
+    expect(assumed.status).toBe(200)
+    const body = await assumed.json()
+    expect(body.bookingStatus).toBe("assumed")
+    expect(body.daysUpdated).toBeGreaterThan(0)
+    expect(new Set(await statusesFor(sessionId))).toEqual(new Set(["assumed"]))
+
+    expect(
+      (
+        await PATCH_BOOKING(
+          jsonRequest("/x", { bookingStatus: "confirmed" }, "PATCH"),
+          bookingCtx(sessionId)
+        )
+      ).status
+    ).toBe(200)
+    expect(new Set(await statusesFor(sessionId))).toEqual(new Set(["confirmed"]))
+  })
+
+  it("refuses a status nobody defined, and keeps the season's gate", async () => {
+    const state = await buildPlannerState(seasonId)
+    const sessionId = state.windows[0].weekends[0].sessionId
+
+    actAs(ownerId)
+    expect(
+      (
+        await PATCH_BOOKING(jsonRequest("/x", { bookingStatus: "maybe" }, "PATCH"), bookingCtx(sessionId))
+      ).status
+    ).toBe(400)
+
+    actAs(strangerId)
+    expect(
+      (
+        await PATCH_BOOKING(
+          jsonRequest("/x", { bookingStatus: "assumed" }, "PATCH"),
+          bookingCtx(sessionId)
+        )
+      ).status
+    ).toBe(403)
   })
 })
 

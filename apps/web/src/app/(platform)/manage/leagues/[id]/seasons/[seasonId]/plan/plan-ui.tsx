@@ -63,7 +63,10 @@ const GLYPHS: Record<ReasonGlyphName, React.ReactNode> = {
  *  draws nothing; overflow wears the overage marker instead, because "no room"
  *  is a shortage, not a reason. */
 export const REASON_GLYPH: Partial<Record<PlacementReason, ReasonGlyphName>> = {
-  resident: "home",
+  // The building the league owns (owner ruling 2026-08-03). "resident" now
+  // means it kept a RENTED gym, which is a different fact and wears no glyph:
+  // the caption says it in words.
+  home: "home",
   bumped: "moved",
   decided: "picked",
   avoided: "alternates",
@@ -71,7 +74,7 @@ export const REASON_GLYPH: Partial<Record<PlacementReason, ReasonGlyphName>> = {
 
 /** The four glyphs and their words, for the one quiet legend line. */
 export const GLYPH_LEGEND: Array<{ glyph: ReasonGlyphName; words: string }> = [
-  { glyph: "home", words: "home gym" },
+  { glyph: "home", words: "home gym, no rent" },
   { glyph: "moved", words: "moved, its building was full" },
   { glyph: "picked", words: "your pick" },
   { glyph: "alternates", words: "alternates buildings" },

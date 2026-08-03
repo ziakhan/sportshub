@@ -47,8 +47,13 @@ export interface PlanWorldVenue {
   venueId: string
   name: string
   capacityGames: number
-  /** Which gym the league fills first (0 = first choice). */
+  /** DEAD since the 2026-08-03 venue ruling, and only ever read to describe a
+   *  plan saved under the old fill-order model. */
   fillOrder: number
+  /** Owned ("home") or rented ("pool"). Absent on snapshots taken before the
+   *  2026-08-03 ruling, which is exactly how the drift sentence knows to fall
+   *  back to talking about fill order. */
+  role?: "home" | "pool"
 }
 
 export interface PlanWorldWeekend {
@@ -145,6 +150,28 @@ function fillOrderOf(world: PlanWorld): Map<string, { name: string; order: numbe
     }
   }
   return out
+}
+
+/**
+ * The building a world OWNS. `known` is false on a world saved before roles
+ * existed — which is a different thing from a world that owns nothing, and the
+ * drift sentence has to be able to tell those apart.
+ */
+function homeGymOf(world: PlanWorld): {
+  known: boolean
+  home: { venueId: string; name: string } | null
+} {
+  let known = false
+  for (const win of world.windows ?? []) {
+    for (const w of win.weekends ?? []) {
+      for (const v of w.venues ?? []) {
+        if (v.role === undefined) continue
+        known = true
+        if (v.role === "home") return { known: true, home: { venueId: v.venueId, name: v.name } }
+      }
+    }
+  }
+  return { known, home: null }
 }
 
 /** How many differences the operator reads before the rest becomes a count. */
@@ -286,22 +313,40 @@ export function planDrift(saved: PlanWorld, live: PlanWorld): string[] {
     }
   }
 
-  /* 4. Which gym the league fills first, for the gyms both worlds have. */
-  const savedOrder = fillOrderOf(saved)
-  const liveOrder = fillOrderOf(live)
-  const common = [...savedOrder.keys()].filter((id) => liveOrder.has(id))
-  if (common.length > 1) {
-    const sequence = (from: Map<string, { name: string; order: number }>) =>
-      common
-        .map((id) => from.get(id) as { name: string; order: number })
-        .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "en"))
-        .map((v) => v.name)
-    const before = sequence(savedOrder)
-    const after = sequence(liveOrder)
-    if (before.join("|") !== after.join("|")) {
-      out.push(
-        `This plan fills ${before.join(", then ")}; the season now fills ${after.join(", then ")}.`
-      )
+  /* 4. Which building the league OWNS (owner ruling 2026-08-03) — the one
+        thing about gyms that changes every number on the board, because the
+        home gym is the only one that costs nothing. A snapshot from before
+        that ruling has no roles, and then the honest comparison is the one it
+        was saved under: which gym filled first. */
+  const savedRoles = homeGymOf(saved)
+  const liveRoles = homeGymOf(live)
+  if (savedRoles.known && liveRoles.known) {
+    const was = savedRoles.home
+    const now = liveRoles.home
+    if (was && now && was.venueId !== now.venueId) {
+      out.push(`This plan treats ${was.name} as the home gym; the season now owns ${now.name}.`)
+    } else if (was && !now) {
+      out.push(`This plan treats ${was.name} as the home gym; the season now rents every gym.`)
+    } else if (!was && now) {
+      out.push(`The season now owns ${now.name}; this plan rents every gym.`)
+    }
+  } else {
+    const savedOrder = fillOrderOf(saved)
+    const liveOrder = fillOrderOf(live)
+    const common = [...savedOrder.keys()].filter((id) => liveOrder.has(id))
+    if (common.length > 1) {
+      const sequence = (from: Map<string, { name: string; order: number }>) =>
+        common
+          .map((id) => from.get(id) as { name: string; order: number })
+          .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, "en"))
+          .map((v) => v.name)
+      const before = sequence(savedOrder)
+      const after = sequence(liveOrder)
+      if (before.join("|") !== after.join("|")) {
+        out.push(
+          `This plan fills ${before.join(", then ")}; the season now fills ${after.join(", then ")}.`
+        )
+      }
     }
   }
 

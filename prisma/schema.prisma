@@ -1946,6 +1946,17 @@ model SeasonSessionDayVenue {
   startTime String?
   endTime   String?
 
+  // Where this gym-on-this-day stands as a BOOKING (owner ruling 2026-08-03,
+  // venue model v2). A rented block has a lifecycle the plan has to be honest
+  // about, because "the solver put us here" and "the gym said yes" are not the
+  // same fact:
+  //   "assumed"   — the solver assigned it from the pool. Nobody has booked it.
+  //   "confirmed" — the operator asserted the booking is real.
+  // The home gym is implicitly confirmed, and so is every row written before
+  // this column existed, which is why the default is "confirmed": an existing
+  // season must not wake up looking unbooked.
+  bookingStatus String @default("confirmed")
+
   courts SeasonSessionDayVenueCourt[]
   games  Game[]
 
@@ -1980,9 +1991,18 @@ model SeasonVenue {
 
   isPrimary       Boolean @default(false)
   courtsAvailable Int?
-  // Which gym the planner fills FIRST (owner 2026-08-02: the top gym fills
-  // completely before the next one opens). 0 = fill first; null sorts last.
+  // DEAD COLUMN (owner ruling 2026-08-03: "fill order is dead"). Kept so old
+  // plan snapshots and the drift sentence can still read what a plan was
+  // saved under; nothing in the planner scores on it any more. `role` below
+  // is the live truth.
   fillOrder Int?
+  // What this gym IS to the league (owner ruling 2026-08-03, venue model v2):
+  //   "home" — the building you own. Fills first, costs nothing, and there is
+  //            at most one of it per season.
+  //   "pool" — a gym you rent by the court-day when the home gym runs out.
+  //            An unordered pool: which one you rent is a cost question, not
+  //            a ranking.
+  role String @default("pool")
 
   hours SeasonVenueHours[]
 

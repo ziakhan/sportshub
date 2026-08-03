@@ -117,11 +117,12 @@ export interface SchedulerInput {
    */
   sessionUnitFilter?: Record<string, string[]>
   /**
-   * The league's gym priority (SeasonVenue.fillOrder, owner 2026-08-02):
-   * venueId → order, 0 fills first. A gym missing from the map is unranked
-   * and sorts after every ranked one, in plan order.
+   * What each gym IS to the league (SeasonVenue.role, owner ruling
+   * 2026-08-03): "home" is the building it owns and the one games pack into
+   * first, "pool" is a gym it rents. A gym missing from the map is pool. This
+   * REPLACES venueFillOrder, which died with the fill-order model.
    */
-  venueFillOrder?: Record<string, number>
+  venueRoles?: Record<string, "home" | "pool">
   /**
    * Which BUILDING a grade plays in on a given weekend (SeasonSession
    * .unitVenues, owner 2026-08-02): sessionId → divisionId → venueId. A soft
@@ -230,31 +231,56 @@ function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
 // ---------- slot inventory ----------
 
 /**
- * The league's building order (owner 2026-08-02: "the top gym fills
- * completely before the next one opens"). SeasonVenue.fillOrder ranks the
- * gyms; a gym nobody ordered keeps its plan order and sorts after every
- * ordered one. Returns a DENSE rank (0 = fills first) so callers can compare
- * ranks directly and ties never interleave two buildings.
+ * The order games pack into buildings (owner ruling 2026-08-03, venue model
+ * v2): the HOME gym first, because it is owned and costs nothing, then the
+ * rented pool biggest first so a weekend that has to rent rents as few
+ * buildings as it can. Returns a DENSE rank (0 = packs first) so callers can
+ * compare ranks directly and ties never interleave two buildings.
+ *
+ * The pool tie-breaks on capacity, then on venueId: the engine's input carries
+ * no venue NAMES, so the id stands in for the name-ascending rule the planner
+ * uses. Either way it is deterministic, which is the point.
  */
 export function venueRanks(input: SchedulerInput): Map<string, number> {
   const appearance: string[] = []
+  const capacity = new Map<string, number>()
+  const fallbackOpen = parseHHMM(input.defaultVenueOpenTime) ?? { h: 9, m: 0 }
+  const fallbackClose = parseHHMM(input.defaultVenueCloseTime) ?? { h: 20, m: 0 }
+  const windowOpen = parseHHMM(input.dayWindow?.startTime ?? null)
+  const windowClose = parseHHMM(input.dayWindow?.endTime ?? null)
+  const minutes = (t: { h: number; m: number }) => t.h * 60 + t.m
   for (const s of input.sessions) {
     for (const d of s.days) {
       for (const dv of d.dayVenues) {
         if (!appearance.includes(dv.venueId)) appearance.push(dv.venueId)
+        const open = Math.max(
+          minutes(parseHHMM(dv.startTime) ?? fallbackOpen),
+          windowOpen ? minutes(windowOpen) : 0
+        )
+        const close = Math.min(
+          minutes(parseHHMM(dv.endTime) ?? fallbackClose),
+          windowClose ? minutes(windowClose) : 24 * 60
+        )
+        const perCourt = Math.max(0, Math.floor((close - open) / input.gameSlotMinutes))
+        capacity.set(
+          dv.venueId,
+          (capacity.get(dv.venueId) ?? 0) + perCourt * dv.courts.length
+        )
       }
     }
   }
-  const fill = input.venueFillOrder ?? {}
-  const orderOf = (venueId: string): number =>
-    typeof fill[venueId] === "number" ? fill[venueId] : Infinity
+  const roles = input.venueRoles ?? {}
+  const isHome = (venueId: string): boolean => roles[venueId] === "home"
   const ordered = appearance
     .map((venueId, i) => ({ venueId, i }))
     .sort((a, b) => {
-      const fa = orderOf(a.venueId)
-      const fb = orderOf(b.venueId)
-      if (fa !== fb) return fa < fb ? -1 : 1
-      return a.i - b.i
+      const ha = isHome(a.venueId) ? 0 : 1
+      const hb = isHome(b.venueId) ? 0 : 1
+      if (ha !== hb) return ha - hb
+      const ca = capacity.get(a.venueId) ?? 0
+      const cb = capacity.get(b.venueId) ?? 0
+      if (ca !== cb) return cb - ca
+      return a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : a.i - b.i
     })
   return new Map(ordered.map((v, rank) => [v.venueId, rank]))
 }
@@ -310,12 +336,12 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
       }
     }
   }
-  // Day by day chronologically; within a day the PRIORITY GYM's whole
-  // inventory comes first (owner 2026-08-02: the next building only opens
-  // when the top one is full), and inside a gym the PREFERRED court's whole
-  // timeline, so games pack onto court 1 and only overflow to court 2 when
-  // needed (owner 2026-07-30). Same-order courts (legacy rows, order 0
-  // everywhere) degrade to the old pure-time sort.
+  // Day by day chronologically; within a day the HOME GYM's whole inventory
+  // comes first (owner ruling 2026-08-03: the building the league owns is free,
+  // so it fills before anything is rented), and inside a gym the PREFERRED
+  // court's whole timeline, so games pack onto court 1 and only overflow to
+  // court 2 when needed (owner 2026-07-30). Same-order courts (legacy rows,
+  // order 0 everywhere) degrade to the old pure-time sort.
   const dayKey = (d: Date) => {
     const c = new Date(d)
     c.setHours(0, 0, 0, 0)

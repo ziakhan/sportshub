@@ -1,8 +1,8 @@
 /**
- * Buildings (owner 2026-08-02): the season plan decides WHICH GYM a grade
- * plays in, and the engine has to honor it.
- *   1. Gyms fill in the league's order: the top gym's courts before the next
- *      building opens.
+ * Buildings (owner ruling 2026-08-03, venue model v2):
+ *   1. The HOME gym packs first — the building the league owns is free, so its
+ *      courts fill before anything is rented. The rented pool is unordered and
+ *      tie-breaks on capacity, biggest first.
  *   2. A grade with a gym for the weekend plays there, and leaves it only
  *      when that gym has nothing left to give (never a dropped game).
  *
@@ -30,7 +30,7 @@ interface TwoGymOptions {
   closeB?: string
   divisions?: SchedulerInput["divisions"]
   gamesGuaranteed?: number
-  venueFillOrder?: Record<string, number>
+  venueRoles?: SchedulerInput["venueRoles"]
   venueAssignments?: SchedulerInput["venueAssignments"]
 }
 
@@ -92,7 +92,7 @@ function twoGymInput(opts: TwoGymOptions = {}): SchedulerInput {
         }),
       }
     }),
-    venueFillOrder: opts.venueFillOrder,
+    venueRoles: opts.venueRoles,
     venueAssignments: opts.venueAssignments,
   }
 }
@@ -106,7 +106,7 @@ const venuesOf = (games: Array<{ venueId: string }>): Set<string> =>
 // ---------- slot order ----------
 
 describe("buildSlots — gyms fill in the league's order", () => {
-  it("lays the priority gym's whole inventory before the next building", () => {
+  it("lays the home gym's whole inventory before anything is rented", () => {
     const input = twoGymInput({
       days: 1,
       courtsA: 2,
@@ -115,7 +115,7 @@ describe("buildSlots — gyms fill in the league's order", () => {
       closeA: "12:00",
       openB: "09:00",
       closeB: "12:00",
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
     })
     const slots = buildSlots(input)
     expect(slots.map((s) => `${s.courtId}@${hhmm(s.startAt)}`)).toEqual([
@@ -136,7 +136,7 @@ describe("buildSlots — gyms fill in the league's order", () => {
     expect(slots[slots.length - 1].venueRank).toBe(1)
   })
 
-  it("follows fillOrder, not the plan order, when the league re-ranks gyms", () => {
+  it("follows the home gym, not the plan order", () => {
     const input = twoGymInput({
       days: 1,
       courtsA: 1,
@@ -145,7 +145,7 @@ describe("buildSlots — gyms fill in the league's order", () => {
       closeA: "11:00",
       openB: "09:00",
       closeB: "11:00",
-      venueFillOrder: { [GYM_A]: 1, [GYM_B]: 0 },
+      venueRoles: { [GYM_A]: "pool", [GYM_B]: "home" },
     })
     const slots = buildSlots(input)
     expect(slots.map((s) => s.courtId)).toEqual(["vb-c1", "vb-c1", "va-c1", "va-c1"])
@@ -153,7 +153,7 @@ describe("buildSlots — gyms fill in the league's order", () => {
     expect(venueRanks(input).get(GYM_A)).toBe(1)
   })
 
-  it("ranks gyms with no fill order after every ranked gym, in plan order", () => {
+  it("treats a gym nobody named as pool, so the home gym still leads", () => {
     const input = twoGymInput({
       days: 1,
       courtsA: 1,
@@ -162,8 +162,8 @@ describe("buildSlots — gyms fill in the league's order", () => {
       closeA: "11:00",
       openB: "09:00",
       closeB: "11:00",
-      // Only the SECOND gym is ranked — the unranked first gym sorts after it.
-      venueFillOrder: { [GYM_B]: 3 },
+      // Only the SECOND gym is named, and it is the one they own.
+      venueRoles: { [GYM_B]: "home" },
     })
     expect(venueRanks(input).get(GYM_B)).toBe(0)
     expect(venueRanks(input).get(GYM_A)).toBe(1)
@@ -175,7 +175,9 @@ describe("buildSlots — gyms fill in the league's order", () => {
     ])
   })
 
-  it("keeps plan order when no gym is ranked", () => {
+  it("ranks a league that owns nothing by capacity, then by id", () => {
+    // No home gym: both are rented, equal capacity, so the id decides and the
+    // answer never wobbles between two runs.
     const input = twoGymInput({ days: 1, courtsA: 1, courtsB: 1, closeA: "11:00", closeB: "11:00" })
     expect(buildSlots(input).map((s) => s.courtId)).toEqual([
       "va-c1",
@@ -183,19 +185,30 @@ describe("buildSlots — gyms fill in the league's order", () => {
       "vb-c1",
       "vb-c1",
     ])
+
+    // The bigger rented building leads when they differ.
+    const uneven = twoGymInput({
+      days: 1,
+      courtsA: 1,
+      courtsB: 2,
+      closeA: "11:00",
+      closeB: "11:00",
+    })
+    expect(venueRanks(uneven).get(GYM_B)).toBe(0)
+    expect(venueRanks(uneven).get(GYM_A)).toBe(1)
   })
 })
 
 // ---------- packing ----------
 
-describe("generateSchedule — the top gym fills first", () => {
-  it("leaves the second building closed when the season fits in the first", () => {
+describe("generateSchedule — the home gym fills first", () => {
+  it("rents nothing when the season fits in the building they own", () => {
     const input = twoGymInput({
       days: 2,
       courtsA: 2,
       courtsB: 2,
       gamesGuaranteed: 3,
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
     })
     const result = generateSchedule(input)
     expect(result.unscheduled).toHaveLength(0)
@@ -204,13 +217,13 @@ describe("generateSchedule — the top gym fills first", () => {
     expect(result.venueFallbacks).toBe(0)
   })
 
-  it("packs into whichever gym the league ranked first", () => {
+  it("packs into whichever gym the league OWNS", () => {
     const input = twoGymInput({
       days: 2,
       courtsA: 2,
       courtsB: 2,
       gamesGuaranteed: 3,
-      venueFillOrder: { [GYM_A]: 1, [GYM_B]: 0 },
+      venueRoles: { [GYM_A]: "pool", [GYM_B]: "home" },
     })
     const result = generateSchedule(input)
     expect(result.unscheduled).toHaveLength(0)
@@ -233,7 +246,7 @@ describe("generateSchedule — a grade plays in the gym its weekend was given", 
       courtsB: 2,
       gamesGuaranteed: 3,
       divisions: twoDivisions,
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
       venueAssignments: { s1: { d2: GYM_B } },
     })
     const result = generateSchedule(input)
@@ -258,7 +271,7 @@ describe("generateSchedule — a grade plays in the gym its weekend was given", 
       courtsB: 2,
       gamesGuaranteed: 4,
       divisions: [twoDivisions[0]],
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
       // Weekend 1 in the second gym, weekend 2 wherever the plan packs.
       venueAssignments: { s1: { d1: GYM_B } },
     })
@@ -280,7 +293,7 @@ describe("generateSchedule — a grade plays in the gym its weekend was given", 
       courtsB: 2,
       gamesGuaranteed: 3,
       divisions: [twoDivisions[0]],
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
       venueAssignments: { s1: { d1: GYM_B } },
     })
     const result = generateSchedule(input)
@@ -302,7 +315,7 @@ describe("generateSchedule — a gym too small for its grade", () => {
       openB: "09:00",
       closeB: "11:00",
       gamesGuaranteed: 3,
-      venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+      venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
       venueAssignments: withAssignment ? { s1: { d1: GYM_B } } : undefined,
     })
 
@@ -346,7 +359,7 @@ describe("generateSchedule — buildings are deterministic", () => {
           { id: "d1", name: "Division 1", teams: makeTeams(4, "d1") },
           { id: "d2", name: "Division 2", teams: makeTeams(6, "d2") },
         ],
-        venueFillOrder: { [GYM_A]: 0, [GYM_B]: 1 },
+        venueRoles: { [GYM_A]: "home", [GYM_B]: "pool" },
         venueAssignments: { s1: { d2: GYM_B } },
       })
     const first = generateSchedule(build())

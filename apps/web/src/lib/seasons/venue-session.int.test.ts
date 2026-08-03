@@ -5,6 +5,7 @@ import { buildVenueWeekendGrid } from "./venue-grid"
 import {
   attachVenueToSession,
   detachVenueFromSession,
+  setSessionVenueBookingStatus,
   setSessionVenueWindow,
 } from "./venue-propagation"
 
@@ -225,6 +226,65 @@ describe("attachVenueToSession", () => {
 
     await attachVenueToSession(seasonId, sessionA, venueId, courtIds)
     expect(await dayVenueCount(sessionA)).toBe(2)
+  })
+})
+
+/**
+ * WHERE A RENTAL STANDS (owner ruling 2026-08-03): needed → assumed (the
+ * solver picked a gym from the pool) → confirmed (the gym said yes). One
+ * weekend, one answer, because a gym does not rent you Saturday and think
+ * about Sunday.
+ */
+describe("setSessionVenueBookingStatus", () => {
+  const statuses = (sessionId: string): Promise<string[]> =>
+    (prisma as any).seasonSessionDayVenue
+      .findMany({
+        where: { venueId, day: { sessionId } },
+        orderBy: { id: "asc" },
+        select: { bookingStatus: true },
+      })
+      .then((rows: any[]) => rows.map((r) => r.bookingStatus))
+
+  it("attaches confirmed by default: ticking a cell on asserts the gym is ours", async () => {
+    await detachVenueFromSession(seasonId, sessionA, venueId)
+    await attachVenueToSession(seasonId, sessionA, venueId, courtIds)
+    expect(await statuses(sessionA)).toEqual(["confirmed", "confirmed"])
+    expect((await cellFor(sessionA)).cell.bookingStatus).toBe("confirmed")
+  })
+
+  it("attaches assumed when the solver is the one choosing", async () => {
+    await detachVenueFromSession(seasonId, sessionA, venueId)
+    await attachVenueToSession(seasonId, sessionA, venueId, courtIds, undefined, "assumed")
+    expect(await statuses(sessionA)).toEqual(["assumed", "assumed"])
+    // One weekend, one answer: any day still assumed and the weekend is.
+    expect((await cellFor(sessionA)).cell.bookingStatus).toBe("assumed")
+  })
+
+  it("moves every day of the weekend together, and only that weekend", async () => {
+    const before = await statuses(sessionB)
+    const { updated } = await setSessionVenueBookingStatus(
+      seasonId,
+      sessionA,
+      venueId,
+      "confirmed"
+    )
+    expect(updated).toBe(2)
+    expect(await statuses(sessionA)).toEqual(["confirmed", "confirmed"])
+    expect(await statuses(sessionB)).toEqual(before)
+  })
+
+  it("says nothing changed when the gym is not on that weekend, or the season is not ours", async () => {
+    await detachVenueFromSession(seasonId, sessionA, venueId)
+    expect(await setSessionVenueBookingStatus(seasonId, sessionA, venueId, "assumed")).toEqual({
+      updated: 0,
+    })
+    expect(
+      await setSessionVenueBookingStatus("not-this-season", sessionB, venueId, "assumed")
+    ).toEqual({ updated: 0 })
+
+    // And a released weekend has no booking to have an opinion about.
+    expect((await cellFor(sessionA)).cell.bookingStatus).toBeNull()
+    await attachVenueToSession(seasonId, sessionA, venueId, courtIds)
   })
 })
 

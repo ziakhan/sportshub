@@ -19,6 +19,7 @@ import { loadSchedulerInput } from "./load"
 export * from "./planner-core"
 import {
   currentAssignment,
+  orderedVenues,
   packWeekendVenues,
   planningSource,
   planningTeams,
@@ -31,6 +32,7 @@ import {
   type PlannerUnit,
   type PlannerWeekend,
   type PlannerWindow,
+  type VenueRole,
 } from "./planner-core"
 import type { SchedulerInput } from "./generate"
 
@@ -100,22 +102,22 @@ export async function buildPlannerState(
       select: { id: true, unitKeys: true, unitVenues: true, targetGamesPerTeam: true },
       orderBy: { id: "asc" },
     }),
-    // Which gym the league fills first (owner 2026-08-02). Postgres sorts
-    // NULLs last on asc, so gyms nobody ordered land after the ordered ones.
+    // What each gym IS to the league (owner ruling 2026-08-03): the home
+    // building it owns, or one of the pool it rents. fillOrder rides along
+    // dead, only so a plan snapshot keeps round-tripping.
     (prisma as any).seasonVenue.findMany({
       where: { seasonId },
-      select: { venueId: true, fillOrder: true },
-      orderBy: [{ fillOrder: "asc" }, { venueId: "asc" }],
+      select: { venueId: true, role: true, fillOrder: true },
+      orderBy: [{ venueId: "asc" }],
     }),
   ])
 
-  // A total order, always: an unset fillOrder takes its place in the query's
-  // own ordering rather than tying with every other unset gym.
-  const UNRANKED = 1000
+  const roleOf = new Map<string, VenueRole>()
   const fillOrderOf = new Map<string, number>()
-  seasonVenues.forEach((sv: any, i: number) =>
-    fillOrderOf.set(sv.venueId, sv.fillOrder ?? UNRANKED + i)
-  )
+  seasonVenues.forEach((sv: any, i: number) => {
+    roleOf.set(sv.venueId, sv.role === "home" ? "home" : "pool")
+    fillOrderOf.set(sv.venueId, sv.fillOrder ?? 1000 + i)
+  })
 
   // Grade clusters: divisions sharing ageGroup act as one draggable unit.
   const byAge = new Map<
@@ -164,17 +166,31 @@ export async function buildPlannerState(
   const slots = buildSlots(input)
   const bySession = new Map<string, Map<string, number>>()
   // How many (day × court) pairs stand behind that capacity, so a capacity
-  // change can be read back as games per court per day.
+  // change can be read back as games per court per day — and, since the
+  // 2026-08-03 venue ruling, so a rental can be quoted in the two numbers a
+  // gym actually asks for: how many COURTS, for how many DAYS.
   const courtDaysBySession = new Map<string, Map<string, Set<string>>>()
+  const courtsBySession = new Map<string, Map<string, Set<string>>>()
+  const daysBySession = new Map<string, Map<string, Set<string>>>()
+  const track = (
+    into: Map<string, Map<string, Set<string>>>,
+    sessionId: string,
+    venueId: string,
+    value: string
+  ) => {
+    const per = into.get(sessionId) ?? new Map<string, Set<string>>()
+    const seen = per.get(venueId) ?? new Set<string>()
+    seen.add(value)
+    per.set(venueId, seen)
+    into.set(sessionId, per)
+  }
   for (const s of slots) {
     const v = bySession.get(s.sessionId) ?? new Map<string, number>()
     v.set(s.venueId, (v.get(s.venueId) ?? 0) + 1)
     bySession.set(s.sessionId, v)
-    const cd = courtDaysBySession.get(s.sessionId) ?? new Map<string, Set<string>>()
-    const seen = cd.get(s.venueId) ?? new Set<string>()
-    seen.add(`${s.dayId}|${s.courtId}`)
-    cd.set(s.venueId, seen)
-    courtDaysBySession.set(s.sessionId, cd)
+    track(courtDaysBySession, s.sessionId, s.venueId, `${s.dayId}|${s.courtId}`)
+    track(courtsBySession, s.sessionId, s.venueId, s.courtId)
+    track(daysBySession, s.sessionId, s.venueId, s.dayId)
   }
   const venueIds = [...new Set(slots.map((s) => s.venueId))]
   const venueRows = venueIds.length
@@ -208,22 +224,28 @@ export async function buildPlannerState(
     .map((s) => {
       const venueSlots = bySession.get(s.id) ?? new Map<string, number>()
       const courtDaysHere = courtDaysBySession.get(s.id)
-      const venues = [...venueSlots.entries()]
-        .map(([venueId, capacityGames]) => ({
-          venueId,
-          name: venueName.get(venueId) ?? venueId,
-          capacityGames,
-          fillOrder: fillOrderOf.get(venueId) ?? UNRANKED + seasonVenues.length,
-          courtDays: courtDaysHere?.get(venueId)?.size ?? 0,
-        }))
-        // Fill order first, then name: the packer walks this array as given,
-        // so the order here IS the league's "fill this gym first" rule.
-        .sort(
-          (a, b) =>
-            a.fillOrder - b.fillOrder ||
-            a.name.localeCompare(b.name, "en") ||
-            (a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : 0)
-        )
+      const courtsHere = courtsBySession.get(s.id)
+      const daysHere = daysBySession.get(s.id)
+      const venues = orderedVenues(
+        [...venueSlots.entries()].map(([venueId, capacityGames]) => {
+          const courtDays = courtDaysHere?.get(venueId)?.size ?? 0
+          return {
+            venueId,
+            name: venueName.get(venueId) ?? venueId,
+            capacityGames,
+            role: roleOf.get(venueId) ?? "pool",
+            fillOrder: fillOrderOf.get(venueId) ?? 1000,
+            courtDays,
+            courts: courtsHere?.get(venueId)?.size ?? 0,
+            days: daysHere?.get(venueId)?.size ?? 0,
+            // What one court is open for, per day, in hours: the games it
+            // holds times the slot length. This is what turns a court-day
+            // into the number a gym manager quotes on.
+            hoursPerCourtDay:
+              courtDays > 0 ? (capacityGames / courtDays) * (input.gameSlotMinutes / 60) : 0,
+          }
+        })
+      )
       const meta = sessionMeta.get(s.id)
       // unitKeys hold "division:<id>" — fold back to grade clusters.
       const assigned = [

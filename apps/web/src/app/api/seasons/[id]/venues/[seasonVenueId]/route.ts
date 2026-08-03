@@ -22,10 +22,17 @@ export const dynamic = "force-dynamic"
  *   3. every weekend the gym is already on is rewired to that court set, so
  *      planner capacity moves with it.
  *
- * It also carries `fillOrder` — which gym the planner fills FIRST (owner
- * 2026-08-02: the top gym fills completely before the next one opens).
- * Ordering gyms is not a capacity edit, so a fillOrder-only PATCH never
- * touches courts and never rewires a weekend.
+ * It also carries `role` — what this gym IS to the league (owner ruling
+ * 2026-08-03): "home" is the building it owns, which fills first and costs
+ * nothing, and "pool" is a gym it rents by the court-day. HOME IS EXCLUSIVE:
+ * naming one gym home makes every other gym of the season pool, in one
+ * transaction, because a league owns one building and two home gyms would
+ * make every rental number a guess.
+ *
+ * `fillOrder` is still accepted so an older client does not 400, but it is a
+ * dead column: nothing in the planner reads it. Neither a role change nor a
+ * fill-order write is a capacity edit, so neither touches courts or rewires a
+ * weekend.
  *
  * Same gate as the wave-1 session-venue routes: league owner or platform
  * admin, and never on a finalized season.
@@ -34,11 +41,14 @@ export const dynamic = "force-dynamic"
 const patchSchema = z
   .object({
     courtsAvailable: z.number().int().min(1).max(30).optional(),
+    role: z.enum(["home", "pool"]).optional(),
     fillOrder: z.number().int().min(0).max(99).optional(),
   })
-  .refine((v) => v.courtsAvailable !== undefined || v.fillOrder !== undefined, {
-    message: "courtsAvailable or fillOrder required",
-  })
+  .refine(
+    (v) =>
+      v.courtsAvailable !== undefined || v.role !== undefined || v.fillOrder !== undefined,
+    { message: "courtsAvailable, role or fillOrder required" }
+  )
 
 export async function PATCH(
   request: NextRequest,
@@ -61,7 +71,7 @@ export async function PATCH(
         { status: 400 }
       )
     }
-    const { courtsAvailable, fillOrder } = parsed.data
+    const { courtsAvailable, role, fillOrder } = parsed.data
 
     // The link row must belong to THIS season (IDOR guard).
     const seasonVenue = await prisma.seasonVenue.findFirst({
@@ -74,14 +84,42 @@ export async function PATCH(
     const venueId = (seasonVenue as any).venueId as string
     const venueName = (seasonVenue as any).venue?.name ?? null
 
-    // Ordering the gyms alone: no courts change, so nothing gets rewired.
-    if (courtsAvailable === undefined) {
-      await prisma.seasonVenue.update({
-        where: { id: params.seasonVenueId },
-        data: { fillOrder },
-      })
-      return NextResponse.json({ success: true, fillOrder, venueName })
+    /** Naming the home gym is exclusive: one building, one owner. Every other
+     *  gym of the season becomes pool in the same transaction, so there is
+     *  never a moment where two gyms are free. */
+    const writeRole = async () => {
+      if (role === undefined) return
+      if (role !== "home") {
+        await prisma.seasonVenue.update({
+          where: { id: params.seasonVenueId },
+          data: { role: "pool" },
+        })
+        return
+      }
+      await (prisma as any).$transaction([
+        (prisma as any).seasonVenue.updateMany({
+          where: { seasonId: params.id, id: { not: params.seasonVenueId } },
+          data: { role: "pool" },
+        }),
+        (prisma as any).seasonVenue.update({
+          where: { id: params.seasonVenueId },
+          data: { role: "home" },
+        }),
+      ])
     }
+
+    // Roles and ordering alone: no courts change, so nothing gets rewired.
+    if (courtsAvailable === undefined) {
+      await writeRole()
+      if (fillOrder !== undefined) {
+        await prisma.seasonVenue.update({
+          where: { id: params.seasonVenueId },
+          data: { fillOrder },
+        })
+      }
+      return NextResponse.json({ success: true, role: role ?? null, fillOrder, venueName })
+    }
+    await writeRole()
 
     // Pick "6 courts" and Court 1…Court 6 exist immediately — the same
     // auto-create the season-venue setup card does (owner 2026-07-31).
@@ -116,6 +154,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       courtsAvailable,
+      role: role ?? null,
       fillOrder: fillOrder ?? null,
       venueName,
       courtCount: courtIds.length,

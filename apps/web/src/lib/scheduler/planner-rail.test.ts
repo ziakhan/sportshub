@@ -26,12 +26,15 @@ import {
  * count and the numbers read straight off the page.
  */
 
+/** One court, one day, so a court-day is the whole building and a rental of
+ *  any size reads as "1 court" — these tests are about which building, not
+ *  about how many courts of it. */
 const gym = (
   venueId: string,
   name: string,
   capacityGames: number,
-  fillOrder: number
-): PlannerVenue => ({ venueId, name, capacityGames, fillOrder })
+  role: "home" | "pool"
+): PlannerVenue => ({ venueId, name, capacityGames, role, fillOrder: 0 })
 
 function unit(label: string, teams: number): PlannerUnit {
   return {
@@ -46,7 +49,9 @@ function unit(label: string, teams: number): PlannerUnit {
 }
 
 function weekend(sessionId: string, dateISO: string, venues: PlannerVenue[]): PlannerWeekend {
-  const ordered = [...venues].sort((a, b) => a.fillOrder - b.fillOrder)
+  const ordered = [...venues].sort(
+    (a, b) => (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1)
+  )
   return {
     sessionId,
     label: sessionId,
@@ -60,10 +65,10 @@ function weekend(sessionId: string, dateISO: string, venues: PlannerVenue[]): Pl
   }
 }
 
-/** The Playground fills first and is the small building; Six Park is the big
- *  one. The shape of the owner's real season. */
-const PLAYGROUND = gym("playground", "The Playground", 32, 0)
-const SIXPARK = gym("sixpark", "Six Park East", 96, 1)
+/** The Playground is the building the league OWNS and it is the small one;
+ *  Six Park is the big rented hub. The shape of the owner's real season. */
+const PLAYGROUND = gym("playground", "The Playground", 32, "home")
+const SIXPARK = gym("sixpark", "Six Park East", 96, "pool")
 const SHORT: Record<string, string> = { playground: "Playground", sixpark: "Six Park" }
 const nameOf = (venueId: string) => SHORT[venueId] ?? venueId
 
@@ -173,16 +178,18 @@ describe("the strip after a move: Grade 8 in December", () => {
     const now = after()
     expect(before.map((c) => c.venueId)).toEqual(Array(6).fill("playground"))
     // December's first weekend is already Grade 7 and Grade 10, 32 of 32, so
-    // Grade 8 lands in the other building — and a grade keeps the gym it
-    // plays, so Six Park is where the rest of its season is now. That ripple
-    // is the whole reason the strip shows the season and not the weekend.
+    // Grade 8 has to be rented a court at Six Park for THAT weekend. Every
+    // weekend after it, the building the league owns has room again, and
+    // consolidation brings Grade 8 straight back home (owner ruling
+    // 2026-08-03: residency is never worth a rented court-day). Under the old
+    // rule the grade stayed at Six Park for the rest of the season.
     expect(now.map((c) => c.venueId)).toEqual([
       "playground",
       "playground",
       "sixpark",
-      "sixpark",
-      "sixpark",
-      "sixpark",
+      "playground",
+      "playground",
+      "playground",
     ])
     expect(now.map((c) => c.sessionId)).toEqual(["b0", "b1", "a2", "b3", "b4", "b5"])
   })
@@ -190,7 +197,7 @@ describe("the strip after a move: Grade 8 in December", () => {
   it("says the same thing in words", () => {
     const before = gradeGymStrip(season(), calendar(), {}, "age:Gr8")
     expect(gymCountsSentence(before, after(), nameOf)).toBe(
-      "Playground 6 weekends becomes Playground 2, Six Park 4."
+      "Playground 6 weekends becomes Playground 5, Six Park 1."
     )
   })
 
@@ -231,7 +238,7 @@ describe("railSuggestions: what belongs in the rail", () => {
   const recap: PlannerSuggestion = {
     kind: "two-building",
     sessionId: "a3",
-    text: "a3 fills The Playground and opens Six Park, 80 games in all.",
+    text: "a3 fills Playground and rents 2 courts at Six Park, 80 games in all.",
   }
   const doable: PlannerSuggestion = {
     kind: "move-unit",
@@ -266,9 +273,10 @@ describe("railSuggestions: what belongs in the rail", () => {
   })
 
   it("leaves suggestFor itself alone, because other surfaces read it", () => {
-    // One weekend, all three grades: The Playground fills and Six Park opens,
-    // and no other weekend that month can take the spill — so the recap has no
-    // move on it. The API still composes it; the rail simply does not show it.
+    // One weekend, all three grades: the owned building fills and a court is
+    // rented at Six Park, and no other weekend that month can take the spill —
+    // so the recap has no move on it. The API still composes it; the rail
+    // simply does not show it.
     const oneWeekend: PlannerState = {
       seasonId: "season",
       units: [unit("Gr7", 12), unit("Gr8", 10), unit("Gr10", 20)],
@@ -287,19 +295,23 @@ describe("railSuggestions: what belongs in the rail", () => {
 })
 
 /**
- * One grade keeps one gym all season, and that outranks keeping a weekend
- * inside one building (owner rule 2026-08-02). So a note about a second
- * building only carries a button when the move leaves the grade in its own gym.
- * Feasibility still outranks both: a shortage move ships whatever it costs the
+ * A tidy-up move must not quietly cost a grade the building it plays in, so a
+ * rental note only carries a button when the move leaves the grade somewhere
+ * it already belongs. What the 2026-08-03 ruling changed is what "belongs"
+ * means: landing in the building the league OWNS is always allowed, because it
+ * takes the grade off a rented court and costs nobody anything. Landing on
+ * some OTHER rented building is still vetoed.
+ *
+ * Feasibility outranks both: a shortage move ships whatever it costs the
  * grade's residency, and says what it costs.
  *
  * The shape below is the owner's: Grade 8 plays The Playground from October,
- * December shrinks it, Grade 10 takes what is left and Grade 8 is bumped into
- * Six Park. December's first weekend now runs two buildings, and the only grade
- * whose leaving would close the second one is Grade 8.
+ * December shrinks it, Grade 10 takes what is left and Grade 8 is rented a
+ * court at Six Park. December's first weekend now rents, and the only grade
+ * whose leaving would end that rental is Grade 8.
  */
-describe("suggestFor: residency vetoes a tidy-up move", () => {
-  const SMALL_PLAYGROUND = gym("playground", "The Playground", 24, 0)
+describe("suggestFor: what a tidy-up move is allowed to cost", () => {
+  const SMALL_PLAYGROUND = gym("playground", "The Playground", 24, "home")
 
   /** `second` is what December's other weekend has open, which is what decides
    *  where the move would stand Grade 8. */
@@ -329,23 +341,24 @@ describe("suggestFor: residency vetoes a tidy-up move", () => {
     dec2: [],
   }
 
-  it("says nothing to press when the move would park the grade off its gym", () => {
-    // December's other weekend runs both buildings, so Grade 8 would stand in
-    // Six Park there too: a tidier weekend bought with the gym it plays.
-    const all = suggestFor(december([PLAYGROUND, SIXPARK]), CALENDAR, {})
+  it("says nothing to press when the move would park the grade in ANOTHER rental", () => {
+    // December's other weekend has no home gym at all, only a rented hall, so
+    // the move would trade one rented court for another and take Grade 8 off
+    // the building it plays. Nothing to press.
+    const all = suggestFor(december([gym("north", "North Arena", 32, "pool")]), CALENDAR, {})
     const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
     expect(two).toBeDefined()
     expect(two?.move).toBeUndefined()
     // The recap still ships, and it still says what December is doing.
-    expect(two?.text).toContain("opens Six Park")
+    expect(two?.text).toContain("rents 1 court at Six Park")
     expect(two?.text).not.toContain("Move Gr8")
     expect(railSuggestions(all).some((s) => s.kind === "two-building")).toBe(false)
   })
 
-  it("keeps the move when it sends the grade back to its own gym", () => {
-    // The other weekend is Playground only, so the move is also Grade 8 coming
-    // home: the one tidy-up worth a button.
-    const all = suggestFor(december([gym("playground", "The Playground", 32, 0)]), CALENDAR, {})
+  it("keeps the move when it brings the grade home", () => {
+    // The other weekend is the owned building only, so the move is also Grade
+    // 8 coming home: the tidy-up the ruling exists to make.
+    const all = suggestFor(december([gym("playground", "The Playground", 32, "home")]), CALENDAR, {})
     const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
     expect(two?.move?.unitKey).toBe("age:Gr8")
     expect(two?.move?.toSessionId).toBe("dec2")
@@ -367,8 +380,11 @@ describe("suggestFor: residency vetoes a tidy-up move", () => {
         {
           label: "Nov 2026",
           weekends: [
-            weekend("nov1", "2026-11-07", [gym("playground", "The Playground", 8, 0)]),
-            weekend("nov2", "2026-11-21", [gym("playground", "The Playground", 6, 0), SIXPARK]),
+            weekend("nov1", "2026-11-07", [gym("playground", "The Playground", 8, "home")]),
+            weekend("nov2", "2026-11-21", [
+              gym("playground", "The Playground", 6, "home"),
+              SIXPARK,
+            ]),
           ],
         },
       ],

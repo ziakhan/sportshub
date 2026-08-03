@@ -69,6 +69,11 @@ export interface VenueGridCell {
   /** Why this weekend is not ours at this gym ("Taken: NJC/NSC"). Set only
    *  on a `taken` cell, and it may still be null when nobody gave one. */
   reason: string | null
+  /** Where the BOOKING stands at a rented gym (owner ruling 2026-08-03):
+   *  "assumed" is the solver's answer, "confirmed" is the operator asserting
+   *  the gym said yes. Null on a cell with nothing attached, and always
+   *  "confirmed" at the home gym, which is nobody's to book. */
+  bookingStatus: "assumed" | "confirmed" | null
 }
 
 export interface VenueGridHours {
@@ -83,9 +88,12 @@ export interface VenueGridRow {
   name: string
   city: string | null
   isPrimary: boolean
-  /** Which gym the league fills FIRST (0 = first choice, null = nobody has
-   *  ordered it yet). The rows arrive in this order, so the top card on step
-   *  2 is the building the planner packs into before opening another. */
+  /** Owned or rented (owner ruling 2026-08-03). Exactly one row of a season
+   *  should be "home": the building the league owns, which fills first and
+   *  costs nothing. The rows arrive home first. */
+  role: "home" | "pool"
+  /** DEAD since 2026-08-03 (the fill-order ruling). Still returned so an old
+   *  client keeps working; nothing reads it to decide anything. */
   fillOrder: number | null
   courtsAvailable: number | null
   courtCount: number
@@ -310,14 +318,16 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
     }),
     (prisma as any).seasonVenue.findMany({
       where: { seasonId },
-      // Fill order leads (owner 2026-08-02: the gym on top is the one that
-      // fills first). Postgres sorts NULLs last on asc, so gyms nobody has
-      // ordered yet keep their old home-gym-first order underneath.
-      orderBy: [{ fillOrder: "asc" }, { isPrimary: "desc" }, { id: "asc" }],
+      // The home gym leads (owner ruling 2026-08-03: the building the league
+      // owns is the one that fills first, and the pool underneath it is
+      // unordered). "home" sorts before "pool" alphabetically, which is the
+      // whole ordering.
+      orderBy: [{ role: "asc" }, { isPrimary: "desc" }, { id: "asc" }],
       select: {
         id: true,
         venueId: true,
         isPrimary: true,
+        role: true,
         fillOrder: true,
         courtsAvailable: true,
         hours: {
@@ -357,6 +367,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
                 venueId: true,
                 startTime: true,
                 endTime: true,
+                bookingStatus: true,
                 _count: { select: { courts: true } },
               },
             },
@@ -453,6 +464,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
           endTime: null,
           hoursLabel: null,
           reason: marked ? (takenBy.get(markKey!) ?? null) : null,
+          bookingStatus: null,
         }
       }
 
@@ -477,6 +489,11 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
         // Attachment wins: a marked weekend the operator turned on anyway is
         // simply on, and carries no leftover reason.
         reason: null,
+        // One weekend, one answer: any day of it still "assumed" means the
+        // gym has not said yes to the weekend.
+        bookingStatus: (mine.some(({ dv }: any) => dv.bookingStatus === "assumed")
+          ? "assumed"
+          : "confirmed") as "assumed" | "confirmed",
       }
     })
 
@@ -486,6 +503,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
       name: sv.venue.name,
       city: sv.venue.city ?? null,
       isPrimary: sv.isPrimary,
+      role: sv.role === "home" ? "home" : "pool",
       fillOrder: sv.fillOrder ?? null,
       courtsAvailable: sv.courtsAvailable ?? null,
       courtCount: sv.venue.courtList.length,

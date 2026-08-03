@@ -20,6 +20,7 @@ import {
   weekendLoad,
   type PlannerState,
   type PlannerUnit,
+  type PlannerVenue,
   type PlannerWeekend,
 } from "./planner"
 
@@ -83,14 +84,25 @@ function wk(
     dateISO,
     capacityGames,
     largestVenueCapacity,
+    // Venue model v2 (owner ruling 2026-08-03): the big building is the one
+    // the league OWNS, so it fills first and costs nothing, and the second is
+    // rented by the court-day. One court a day each, so a court-day is the
+    // whole building and "1 court" is its whole capacity.
     venues: [
-      { venueId: "v1", name: "Six Park East", capacityGames: largestVenueCapacity, fillOrder: 0 },
+      {
+        venueId: "v1",
+        name: "Six Park East",
+        capacityGames: largestVenueCapacity,
+        role: "home" as const,
+        fillOrder: 0,
+      },
       ...(capacityGames > largestVenueCapacity
         ? [
             {
               venueId: "v2",
               name: "Playground",
               capacityGames: capacityGames - largestVenueCapacity,
+              role: "pool" as const,
               fillOrder: 1,
             },
           ]
@@ -285,8 +297,8 @@ describe("suggestFor", () => {
     }
     const two = suggestFor(state, assignment).find((s) => s.kind === "two-building")
     expect(two?.text).toBe(
-      "Feb 6–7 fills Six Park (93 of 96) and opens Playground (24 of 80), 117 games in all. " +
-        "Move Gr11 (24 games) from Feb 6–7 (117 of 176) to Feb 13–14 (24 of 80 after). Keeps Feb 6–7 in one building."
+      "Feb 6–7 fills Six Park (93 of 96) and rents 1 court at Playground (24 of 80), 117 games in all. " +
+        "Move Gr11 (24 games) from Feb 6–7 (117 of 176) to Feb 13–14 (24 of 80 after). Saves 1 rented court-day on Feb 6–7."
     )
     expect(two?.move?.unitKey).toBe("age:Gr11")
     expect(two?.move?.toSessionId).toBe(feb13.sessionId)
@@ -330,17 +342,24 @@ describe("suggestFor", () => {
     // October hands both grades The Playground. November's first weekend is
     // Playground-only and too small; the second still has room for one of
     // them, so the grade that moves ends up in the other building.
-    const gymAt = (venueId: string, name: string, capacityGames: number, fillOrder: number) => ({
+    // The Playground is the building the league OWNS; Six Park is rented.
+    const gymAt = (
+      venueId: string,
+      name: string,
+      capacityGames: number,
+      role: "home" | "pool"
+    ): PlannerVenue => ({
       venueId,
       name,
       capacityGames,
-      fillOrder,
+      role,
+      fillOrder: 0,
     })
     const weekendAt = (
       sessionId: string,
       label: string,
       dateISO: string,
-      venues: Array<{ venueId: string; name: string; capacityGames: number; fillOrder: number }>
+      venues: PlannerVenue[]
     ): PlannerWeekend => ({
       sessionId,
       label,
@@ -361,8 +380,8 @@ describe("suggestFor", () => {
           label: "Oct 2026",
           weekends: [
             weekendAt("oct1", "Oct 24–25", "2026-10-24", [
-              gymAt("playground", "The Playground", 96, 0),
-              gymAt("sixpark", "Six Park East", 96, 1),
+              gymAt("playground", "The Playground", 96, "home"),
+              gymAt("sixpark", "Six Park East", 96, "pool"),
             ]),
           ],
         },
@@ -370,11 +389,11 @@ describe("suggestFor", () => {
           label: "Nov 2026",
           weekends: [
             weekendAt("nov1", "Nov 14–15", "2026-11-14", [
-              gymAt("playground", "The Playground", 20, 0),
+              gymAt("playground", "The Playground", 20, "home"),
             ]),
             weekendAt("nov2", "Nov 21–22", "2026-11-21", [
-              gymAt("playground", "The Playground", 48, 0),
-              gymAt("sixpark", "Six Park East", 96, 1),
+              gymAt("playground", "The Playground", 48, "home"),
+              gymAt("sixpark", "Six Park East", 96, "pool"),
             ]),
           ],
         },

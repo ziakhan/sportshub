@@ -89,6 +89,14 @@ const gym = (venueId: string, capacityGames: number, fillOrder = 0): PlanWorldVe
   fillOrder,
 })
 
+/** The same gym under venue model v2, which names what the league OWNS
+ *  (owner ruling 2026-08-03). A world built from these carries roles, so the
+ *  drift sentence talks about the home gym instead of fill order. */
+const roled = (venueId: string, capacityGames: number, role: "home" | "pool"): PlanWorldVenue => ({
+  ...gym(venueId, capacityGames),
+  role,
+})
+
 /** Three weekends across two months, both gyms open, the shape the board
  *  actually hands around. */
 function world(
@@ -198,10 +206,33 @@ describe("planDrift", () => {
     ])
   })
 
-  it("says which gym the league fills first when the order flips", () => {
+  it("says which gym the league fills first when a PRE-ROLES plan flips it", () => {
+    // Neither world names what the league owns, so the honest comparison is
+    // the one the plan was saved under: which gym filled first.
     const flipped = world({ venues: () => [gym(PARK, 108, 1), gym(PLAYGROUND, 48, 0)] })
     expect(planDrift(world(), flipped)).toEqual([
       "This plan fills Six Park, then The Playground; the season now fills The Playground, then Six Park.",
+    ])
+  })
+
+  it("says the home gym moved, which is what a weekend now costs", () => {
+    const owned = (home: string) =>
+      world({
+        venues: () => [
+          roled(PARK, 108, home === PARK ? "home" : "pool"),
+          roled(PLAYGROUND, 48, home === PLAYGROUND ? "home" : "pool"),
+        ],
+      })
+    expect(planDrift(owned(PARK), owned(PLAYGROUND))).toEqual([
+      "This plan treats Six Park as the home gym; the season now owns The Playground.",
+    ])
+    // And a season that used to own a building and now rents everything.
+    const rented = world({ venues: () => [roled(PARK, 108, "pool"), roled(PLAYGROUND, 48, "pool")] })
+    expect(planDrift(owned(PARK), rented)).toEqual([
+      "This plan treats Six Park as the home gym; the season now rents every gym.",
+    ])
+    expect(planDrift(rented, owned(PARK))).toEqual([
+      "The season now owns Six Park; this plan rents every gym.",
     ])
   })
 
