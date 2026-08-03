@@ -94,13 +94,46 @@ ok(
 ok("step 1 offers add-a-grade", /Add a grade/i.test(step1))
 await page.screenshot({ path: `${SHOTS}/2-step1-teams.png`, fullPage: true })
 
-// ── Step 2: gym order, taken weekends, reserved notice ────────────────────
+// ── Step 2: gym roles, taken weekends, reserved notice ────────────────────
+// Re-pinned 2026-08-03 (venue model v2): fill order is dead on this screen, so
+// the checks read the home gym tag and the pool language instead of ranking.
 await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=2`)
-await page.waitForTimeout(3000)
+// Wait for the grid itself, not a guessed number of seconds: on a cold dev
+// server this step compiles for a while and a flat timeout screenshots a
+// half-painted page. The notice slot is deliberately invisible when it has
+// nothing to say, so this waits for it to be ATTACHED.
+await page.waitForSelector('[data-testid="step2-notice"]', {
+  state: "attached",
+  timeout: 60000,
+})
+const roleChips = page.locator('[data-testid="venue-role-chip"]')
+// A season with no gyms has no chip to wait for; the assertions below say so.
+await roleChips.first().waitFor({ state: "visible", timeout: 30000 }).catch(() => {})
+await page.waitForTimeout(1000)
 const step2 = await page.locator("main").innerText()
-ok("step 2 shows the fill order chip", /Fills first/.test(step2))
+const homeChips = page.locator('[data-testid="venue-role-chip"][data-role="home"]')
+const gymCards = await roleChips.count()
+const homeCards = await homeChips.count()
+ok("step 2 tags the home gym", homeCards === 1 && /Home gym/.test(step2), `${gymCards} gyms`)
+ok("step 2 puts every other gym in the pool", gymCards > homeCards && /In the pool/.test(step2))
+const chipTexts = (await roleChips.allInnerTexts()).map((t) => t.trim())
+ok(
+  "step 2 has no fill-order vocabulary left",
+  !/fills? first|overflow #|fill order/i.test(step2) &&
+    chipTexts.every((t) => t === "Home gym" || t === "In the pool"),
+  chipTexts.join(" · ")
+)
+ok(
+  "step 2 offers make-home on every gym that is not home",
+  (await page.locator('[data-testid="make-home"]').count()) === gymCards - homeCards
+)
+ok(
+  "step 2 has no reorder arrows",
+  (await page.getByRole("button", { name: /move .* (up|down)/i }).count()) === 0
+)
 ok("step 2 shows taken weekends", /Taken|NJC/.test(step2))
 ok("step 2 has whole-season toggles", /all weekends/i.test(step2))
+ok("step 2 still edits courts", (await page.getByLabel(/ courts$/).count()) >= gymCards)
 ok(
   "step 2 notice slot is mounted even when empty",
   (await page.locator('[data-testid="step2-notice"]').count()) === 1
@@ -131,9 +164,14 @@ const planner = await page.request
   .then((r) => r.json())
 const someWeekend = planner?.state?.windows?.flatMap((w) => w.weekends)?.[0]
 ok(
-  "planner state carries venue fill order",
-  typeof someWeekend?.venues?.[0]?.fillOrder === "number",
+  "planner state leads with the home gym",
+  someWeekend?.venues?.[0]?.role === "home",
   `first venue: ${someWeekend?.venues?.[0]?.name}`
+)
+ok(
+  "planner state gives every gym a role",
+  (someWeekend?.venues ?? []).length > 0 &&
+    (someWeekend?.venues ?? []).every((v) => v.role === "home" || v.role === "pool")
 )
 
 const propose = await page.request
@@ -145,11 +183,11 @@ ok(
   venueMaps.length > 0 && venueMaps.every((m) => Object.values(m).every((v) => typeof v === "string")),
   `${venueMaps.length} weekends carry gym maps`
 )
-// One-gym may open a second building only for a reason that outranks it:
-// the weekend's load exceeds what its biggest gym holds (overflow beats a
-// split), or every grade on the weekend is standing in its own season-long
-// building (residency, 25,000, beats a second building, 1,500 — the owner's
-// hierarchy; two cohorts sharing a weekend from their own homes is correct).
+// Re-pinned 2026-08-03 (venue model v2): the building a weekend has to fit
+// into is the one the league OWNS, not the biggest gym on the season. One-gym
+// may open a second building only when the home gym cannot hold the weekend
+// (the spill becomes a rental), or when every grade on the weekend is standing
+// in the gym it lives in all season (residency, now a small tiebreak).
 const teamsOf = Object.fromEntries(
   (plannerForBanner?.state?.units ?? []).map((u) => [u.key, u.teams])
 )
@@ -179,13 +217,28 @@ const unjustified = Object.entries(propose?.venues ?? {}).filter(([sessionId, m]
     (sum, k) => sum + Math.ceil(((teamsOf[k] ?? 0) * w.targetGamesPerTeam) / 2),
     0
   )
-  if (demand > w.largestVenueCapacity) return false
+  const homeGym = (w.venues ?? []).find((v) => v.role === "home")
+  if (demand > (homeGym?.capacityGames ?? w.largestVenueCapacity)) return false
   return !Object.entries(m).every(([k, v]) => homeOf[k] === v)
 })
 ok(
-  "one-gym splits a weekend only for capacity or residency",
+  "one-gym splits a weekend only when the home gym is full, or for residency",
   unjustified.length === 0,
   unjustified.length ? `unjustified: ${unjustified.map(([s]) => s).join(", ")}` : ""
+)
+// The v2 law behind every rental number: nothing gets rented while the
+// building the league owns still has room, so the home gym is used on every
+// weekend that opens a gym at all.
+const idleHome = Object.entries(propose?.venues ?? {}).filter(([sessionId, m]) => {
+  const w = weekendsBySession[sessionId]
+  const homeGym = (w?.venues ?? []).find((v) => v.role === "home")
+  if (!homeGym) return false
+  return !Object.values(m).includes(homeGym.venueId)
+})
+ok(
+  "no weekend rents a gym while the home gym sits empty",
+  idleHome.length === 0,
+  idleHome.length ? `idle home on: ${idleHome.map(([s]) => s).join(", ")}` : ""
 )
 
 const preview = await page.request
@@ -205,6 +258,24 @@ const sixPark = (gridBefore?.grid?.venues ?? gridBefore?.venues ?? []).find((v) 
 )
 const takenCells = (sixPark?.cells ?? []).filter((c) => c.state === "taken").length
 ok("Six Park carries taken weekends in the grid", takenCells >= 5, `${takenCells} taken`)
+// Every weekend we have says where the booking stands, and every weekend we do
+// not have says nothing — that is what the hatch and the Booked it tap read.
+const gridRows = gridBefore?.grid?.venues ?? gridBefore?.venues ?? []
+const attached = gridRows.flatMap((v) => v.cells.filter((c) => c.daysOn > 0))
+ok(
+  "attached weekends carry a booking status",
+  attached.length > 0 &&
+    attached.every((c) => c.bookingStatus === "assumed" || c.bookingStatus === "confirmed") &&
+    gridRows
+      .flatMap((v) => v.cells.filter((c) => c.daysOn === 0))
+      .every((c) => c.bookingStatus === null),
+  `${attached.filter((c) => c.bookingStatus === "assumed").length} assumed of ${attached.length}`
+)
+ok(
+  "the grid names exactly one home gym",
+  gridRows.filter((v) => v.role === "home").length === 1 &&
+    gridRows.every((v) => v.role === "home" || v.role === "pool")
+)
 
 // ── Strip: one gym per grade ──────────────────────────────────────────────
 const stripToggle = page.getByRole("button", { name: /strip/i }).first()

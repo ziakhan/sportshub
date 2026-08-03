@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, type CSSProperties } from "react"
 import { Button, DateTimePicker } from "@/components/ui"
 import { VenueEditor } from "@/components/venue-editor"
 import { VenueSelector } from "@/components/venue-selector"
@@ -25,6 +25,21 @@ import type { VenueGrid, VenueGridCell, VenueGridRow, VenueGridWeekend } from "@
  * know, it is dashed gold so it never reads as a weekend nobody got to yet,
  * and tapping it is still just "turn the gym on" — the operator always wins,
  * and the notice says what was overridden.
+ *
+ * Owner rulings 2026-08-03 (venue model v2) replaced ranking with roles:
+ *
+ *   4. FILL ORDER IS GONE from this screen. No arrows, no "fills first", no
+ *      "overflow #2". A gym is either the building the league owns or a gym it
+ *      rents, and that is the only thing a card says about it.
+ *   5. Each card wears its ROLE. The home gym costs nothing and always fills
+ *      first; every other gym is in the pool, rented by the court when a
+ *      weekend needs it. One quiet action per card names a new home gym, and
+ *      because home is exclusive the operator is asked first: the server sends
+ *      the old home gym to the pool in the same write.
+ *   6. A weekend can be ours on paper without being booked. An assumed
+ *      attachment is hatched and says "assumed"; one tap per weekend confirms
+ *      it once the gym has said yes. No bulk confirm — a booking is a phone
+ *      call, and pretending otherwise is how a season ends up double-booked.
  */
 
 const CELL_CLS: Record<VenueGridCell["state"], string> = {
@@ -36,8 +51,34 @@ const CELL_CLS: Record<VenueGridCell["state"], string> = {
   taken: "border-gold-300 border-dashed bg-gold-50/70 text-gold-800 hover:border-gold-500",
 }
 
+/** An assumed booking keeps its colour and gains a texture: the weekend still
+ *  reads as one we are counting on, it just stops looking like a weekend the
+ *  gym has already said yes to. */
+const ASSUMED_HATCH: CSSProperties = {
+  backgroundImage:
+    "repeating-linear-gradient(135deg, rgba(20,83,45,0.16) 0 2px, transparent 2px 5px)",
+}
+
 /** Attached, however its hours read. Taken and off both mean not ours. */
 const isOn = (state: VenueGridCell["state"]) => state === "on" || state === "custom"
+
+/** Ours on paper, nobody has booked it yet. */
+const isAssumed = (cell: VenueGridCell) => isOn(cell.state) && cell.bookingStatus === "assumed"
+
+/** What a cell says out loud. Booking status only ever qualifies a weekend we
+ *  have — "off, assumed" would be nonsense. */
+function cellLabel(venueName: string, weekend: string, cell: VenueGridCell): string {
+  const head = `${venueName}, ${weekend}: `
+  if (cell.state === "off") return `${head}off, tap to turn it on`
+  if (cell.state === "taken") {
+    return `${head}not available, ${
+      cell.reason ?? "marked unavailable"
+    }, tap to turn it on anyway`
+  }
+  const booking = cell.bookingStatus === "assumed" ? ", assumed, not booked yet" : ""
+  const hours = cell.state === "custom" ? `, ${cell.startTime} to ${cell.endTime}` : ""
+  return `${head}on${hours}${booking}, tap to turn it off`
+}
 
 /** What fits in a 62px cell: "Taken: NJC/NSC" reads as "NJC/NSC". */
 function shortReason(reason: string | null): string | null {
@@ -257,40 +298,45 @@ export function GymsWeekendsStep({
   }
 
   /**
-   * Which gym the league fills FIRST (owner 2026-08-02: "the gym that sits on
-   * top, we should be able to move them up or down and the one that is above
-   * should be filled up first"). The cards move on screen straight away, then
-   * every gym whose place changed is written 0..n-1 so the saved order and the
-   * order on screen can never disagree.
+   * Name the building the league OWNS (owner ruling 2026-08-03). Home is
+   * exclusive — one league, one building — so the server sends whichever gym
+   * held the role into the pool in the same write. That is a real consequence
+   * (the old home gym's weekends start reading as rentals), so the operator is
+   * asked before anything moves.
    */
-  const moveVenue = async (index: number, direction: -1 | 1) => {
-    if (!grid || locked) return
-    const target = index + direction
-    if (target < 0 || target >= grid.venues.length) return
-
-    const next = [...grid.venues]
-    const [row] = next.splice(index, 1)
-    next.splice(target, 0, row)
-
-    setBusy(`${row.seasonVenueId}:order`)
-    setError(null)
-    setNotice(null)
-    setNoticeTone("court")
-    setGrid({ ...grid, venues: next })
-
-    const writes = next.map((v, i) => ({ v, i })).filter(({ v, i }) => v.fillOrder !== i)
-    const results = await Promise.all(
-      writes.map(({ v, i }) =>
-        fetch(`/api/seasons/${seasonId}/venues/${v.seasonVenueId}`, json({ fillOrder: i }, "PATCH"))
-          .then((res) => res.ok)
-          .catch(() => false)
-      )
+  const makeHome = async (venue: VenueGridRow) => {
+    if (!grid || locked || busy !== null) return
+    const current = grid.venues.find((v) => v.role === "home")
+    const replacing = current && current.seasonVenueId !== venue.seasonVenueId ? current : null
+    const question = replacing
+      ? `Make ${venue.name} your home gym? ${replacing.name} goes into the pool, so its weekends get priced as gym you rent.`
+      : `Make ${venue.name} your home gym? Games there cost you nothing, and it gets used before anything you rent.`
+    if (!window.confirm(question)) return
+    await call(
+      `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}`,
+      json({ role: "home" }, "PATCH"),
+      `${venue.seasonVenueId}:role`,
+      replacing
+        ? `${venue.name} is your home gym now. ${replacing.name} is in the pool, rented when you need it.`
+        : `${venue.name} is your home gym now. Its games cost you nothing.`
     )
-    setBusy(null)
-    if (results.some((ok) => !ok)) setError("That order didn't save. Try again.")
-    else if (target === 0) setNotice(`${row.name} fills first now.`)
-    else setNotice(`${row.name} is gym ${target + 1} in the fill order now.`)
-    await load()
+  }
+
+  /** The gym said yes. One weekend, one tap, and every day of that weekend
+   *  moves together — a gym does not rent you Saturday and think about
+   *  Sunday. */
+  const confirmBooking = async (
+    venue: VenueGridRow,
+    weekend: VenueGridWeekend,
+    cell: VenueGridCell
+  ) => {
+    if (!cell.sessionId) return
+    await call(
+      `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}`,
+      json({ bookingStatus: "confirmed" }, "PATCH"),
+      `${venue.venueId}:${weekend.key}:booked`,
+      `${venue.name} is booked for ${weekend.label}.`
+    )
   }
 
   /** A gym on, or off, for the whole season in one press. Turning it off
@@ -368,6 +414,8 @@ export function GymsWeekendsStep({
 
   const weekends = grid.weekends
   const months = monthGroups(weekends)
+  // Exactly one home gym at a time, and a season is allowed to have none yet.
+  const noHome = grid.venues.length > 0 && !grid.venues.some((v) => v.role === "home")
 
   return (
     <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
@@ -426,9 +474,22 @@ export function GymsWeekendsStep({
           </p>
         )}
 
-        {/* One card per gym, TOP CARD FIRST: the order here is the order the
-            planner fills them in. */}
-        {grid.venues.map((venue, venueIndex) => {
+        {/* A season with no home gym yet is one tick away from pricing every
+            weekend as a rental, so the screen says so once, quietly. */}
+        {noHome && (
+          <p
+            data-testid="step2-home-nudge"
+            className="border-ink-200 bg-ink-50/60 text-ink-600 mb-3.5 rounded-xl border border-dashed px-4 py-2.5 text-sm"
+          >
+            Pick your home gym, the building you own or control. Every other gym stays in the pool,
+            rented by the court when a weekend needs it.
+          </p>
+        )}
+
+        {/* One card per gym, the home gym first and the pool under it. */}
+        {grid.venues.map((venue) => {
+          const isHome = venue.role === "home"
+          const assumedCount = venue.cells.filter(isAssumed).length
           const draft = hours[venue.seasonVenueId] ?? { start: "", end: "" }
           const dirty =
             draft.start !== (venue.simpleOpen ?? "") || draft.end !== (venue.simpleClose ?? "")
@@ -445,46 +506,38 @@ export function GymsWeekendsStep({
                   {venue.name}
                   {venue.city ? ` · ${venue.city}` : ""}
                 </span>
-                {/* Where this gym sits in the fill order, in words. The top
-                    card fills completely before the next one opens. */}
+                {/* What this gym IS to the league: the building it owns, or a
+                    gym it rents by the court. */}
                 <span
-                  data-testid="fill-order-chip"
+                  data-testid="venue-role-chip"
+                  data-role={venue.role}
                   className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                    venueIndex === 0
+                    isHome
                       ? "border-court-200 bg-court-50 text-court-800"
                       : "border-ink-200 bg-ink-50 text-ink-500"
                   }`}
                 >
-                  {venueIndex === 0 ? "Fills first" : `Overflow #${venueIndex + 1}`}
+                  {isHome ? "Home gym" : "In the pool"}
                 </span>
-                {venue.isPrimary && (
-                  <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
-                    Home gym
-                  </span>
-                )}
-                {grid.venues.length > 1 && (
-                  <span className="ml-auto inline-flex items-center gap-1">
-                    <button
-                      type="button"
-                      disabled={locked || busy !== null || venueIndex === 0}
-                      onClick={() => moveVenue(venueIndex, -1)}
-                      aria-label={`Move ${venue.name} up the fill order`}
-                      className="border-ink-200 text-ink-500 hover:border-ink-400 hover:text-ink-800 rounded-lg border px-2 py-0.5 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      disabled={locked || busy !== null || venueIndex === grid.venues.length - 1}
-                      onClick={() => moveVenue(venueIndex, 1)}
-                      aria-label={`Move ${venue.name} down the fill order`}
-                      className="border-ink-200 text-ink-500 hover:border-ink-400 hover:text-ink-800 rounded-lg border px-2 py-0.5 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      ↓
-                    </button>
-                  </span>
+                {!isHome && !locked && (
+                  <button
+                    type="button"
+                    data-testid="make-home"
+                    disabled={busy !== null}
+                    onClick={() => makeHome(venue)}
+                    className="text-play-700 hover:text-play-800 ml-auto text-xs font-semibold disabled:opacity-50"
+                  >
+                    {busy === `${venue.seasonVenueId}:role`
+                      ? "Working…"
+                      : "Make this the home gym"}
+                  </button>
                 )}
               </div>
+              <p className="text-ink-400 mt-1 text-[11.5px]">
+                {isHome
+                  ? "You own this one. Its games cost you nothing, so it gets used before anything you rent."
+                  : "In the pool. You rent it by the court when a weekend needs the space."}
+              </p>
 
               {/* Courts stay a fact; hours are ONE range for the whole season. */}
               <div
@@ -641,6 +694,7 @@ export function GymsWeekendsStep({
                       {venue.cells.map((cell, i) => {
                         const w = weekends[i]
                         const key = `${venue.venueId}:${w.key}`
+                        const assumed = isAssumed(cell)
                         return (
                           <td key={w.key} className="p-0 align-top">
                             <button
@@ -648,19 +702,18 @@ export function GymsWeekendsStep({
                               disabled={locked || busy !== null}
                               onClick={() => toggleCell(venue, w, cell)}
                               aria-pressed={isOn(cell.state)}
-                              aria-label={`${venue.name}, ${w.label}: ${
-                                cell.state === "off"
-                                  ? "off, tap to turn it on"
-                                  : cell.state === "taken"
-                                    ? `not available, ${
-                                        cell.reason ?? "marked unavailable"
-                                      }, tap to turn it on anyway`
-                                    : cell.state === "custom"
-                                      ? `on, ${cell.startTime} to ${cell.endTime}, tap to turn it off`
-                                      : "on, tap to turn it off"
-                              }`}
-                              title={cell.state === "taken" ? cell.reason ?? undefined : undefined}
-                              className={`min-h-[40px] w-[62px] rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${CELL_CLS[cell.state]}`}
+                              aria-label={cellLabel(venue.name, w.label, cell)}
+                              title={
+                                cell.state === "taken"
+                                  ? cell.reason ?? undefined
+                                  : assumed
+                                    ? "Assumed for now. Nobody has booked this weekend with the gym yet."
+                                    : undefined
+                              }
+                              style={assumed ? ASSUMED_HATCH : undefined}
+                              className={`min-h-[40px] w-[62px] rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                CELL_CLS[cell.state]
+                              } ${assumed ? "border-dashed" : ""}`}
                             >
                               {busy === key ? (
                                 "…"
@@ -683,14 +736,52 @@ export function GymsWeekendsStep({
                                   {cell.daysOn} of {cell.dayCount} days
                                 </span>
                               )}
+                              {assumed && (
+                                <span className="text-ink-500 block text-[9px] font-semibold">
+                                  assumed
+                                </span>
+                              )}
                             </button>
                           </td>
                         )
                       })}
                     </tr>
+                    {/* One tap per assumed weekend, and only under the weekends
+                        that have something to confirm. Never a bulk button:
+                        every one of these is its own phone call. */}
+                    {assumedCount > 0 && !locked && (
+                      <tr>
+                        {venue.cells.map((cell, i) => {
+                          const w = weekends[i]
+                          const key = `${venue.venueId}:${w.key}:booked`
+                          if (!isAssumed(cell)) return <td key={w.key} className="p-0" />
+                          return (
+                            <td key={w.key} className="p-0 pt-1 align-top">
+                              <button
+                                type="button"
+                                disabled={busy !== null}
+                                onClick={() => confirmBooking(venue, w, cell)}
+                                aria-label={`${venue.name} is booked for ${w.label}`}
+                                title={`The gym said yes to ${w.label}`}
+                                className="border-court-300 text-court-800 hover:border-court-500 hover:bg-court-50 w-[62px] rounded-lg border px-1 py-0.5 text-[9.5px] font-bold disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {busy === key ? "…" : "Booked it"}
+                              </button>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+              {assumedCount > 0 && (
+                <p className="text-ink-500 mt-1.5 text-[11.5px]">
+                  {assumedCount === 1
+                    ? "One weekend here is assumed. Tap Booked it once the gym says yes."
+                    : `${assumedCount} weekends here are assumed. Tap Booked it under each one the gym says yes to.`}
+                </p>
+              )}
 
               {/* Quiet links: the exception, and the full venue editor. */}
               <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
@@ -837,6 +928,13 @@ export function GymsWeekendsStep({
           <span className="inline-flex items-center gap-1.5">
             <i className="border-ink-200 bg-ink-100 inline-block h-3 w-3 rounded border border-dashed" />
             off (tap any weekend to turn it on)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <i
+              style={ASSUMED_HATCH}
+              className="border-court-200 bg-court-50 inline-block h-3 w-3 rounded border border-dashed"
+            />
+            assumed, nobody has booked it yet
           </span>
           <span className="inline-flex items-center gap-1.5">
             <i className="border-gold-200 bg-gold-50 inline-block h-3 w-3 rounded border" />
