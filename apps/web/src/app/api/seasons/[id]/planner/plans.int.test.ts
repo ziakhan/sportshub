@@ -3,6 +3,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { buildWorld, destroyWorld, type BuiltWorld } from "@youthbasketballhub/test-worlds"
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { applyAssignment } from "@/lib/scheduler/planner"
+import { planDrift } from "@/lib/scheduler/plan-documents"
 import {
   ACTIVE_PLAN_DELETE_MESSAGE,
   IMPORTED_PLAN_NAME,
@@ -26,6 +27,13 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
  *     record of what the league actually published
  *   - activating writes the plan onto SeasonSession.unitKeys/unitVenues and
  *     moves the flag; the active plan cannot be deleted out from under it
+ *
+ * And a fifth, added 2026-08-02 (owner: "a new plan also could have different
+ * venues. It could have different settings, so how are you going to save it
+ * and how do you remember? It could be a different team combination"): every
+ * plan carries the WORLD it was saved in — the gyms and their capacity, the
+ * fill order, the team estimate per grade — snapshotted on the server so a
+ * client can never claim a world the season was not in.
  */
 
 let world: BuiltWorld
@@ -68,6 +76,37 @@ const activeFlags = async () =>
 /** @updatedAt lands on a JS millisecond, so two saves inside the same tick
  *  would tie and the "newest first" assertion would flap. */
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
+
+/** Every weekend of a saved world, by sessionId. */
+const weekendsOf = (settings: any): Record<string, any> =>
+  Object.fromEntries(
+    (settings?.state?.windows ?? []).flatMap((win: any) =>
+      (win.weekends ?? []).map((w: any) => [w.sessionId, w])
+    )
+  )
+
+/** A settings blob that actually describes this season: when it was taken,
+ *  the grades with the numbers they plan on, and the weekends with their gyms.
+ *  Asserted in one place because four routes have to produce the same thing. */
+function expectWorld(settings: any) {
+  expect(typeof settings?.capturedAt).toBe("string")
+  expect(Number.isNaN(Date.parse(settings.capturedAt))).toBe(false)
+
+  const grades = Object.fromEntries(
+    (settings.state.units ?? []).map((u: any) => [u.key, u])
+  )
+  expect(Object.keys(grades).sort()).toEqual(["age:Grade 7", "age:Grade 8"])
+  expect(grades["age:Grade 7"].label).toBe("Grade 7")
+
+  const weekends = weekendsOf(settings)
+  expect(Object.keys(weekends).sort()).toEqual([weekendOne, weekendTwo].sort())
+  const one = weekends[weekendOne]
+  expect(one.capacityGames).toBeGreaterThan(0)
+  expect(one.targetGamesPerTeam).toBeGreaterThan(0)
+  expect(one.venues.map((v: any) => v.venueId)).toEqual([venueId])
+  expect(one.venues[0].capacityGames).toBeGreaterThan(0)
+  expect(typeof one.venues[0].fillOrder).toBe("number")
+}
 
 beforeAll(async () => {
   world = await buildWorld({
@@ -173,6 +212,18 @@ describe("the lazy NPH snapshot", () => {
     })
   })
 
+  it("remembers the world that calendar was published in", async () => {
+    actAs(ownerId)
+    const { plan } = await (
+      await GET_PLAN(jsonRequest("/x", undefined, "GET"), planCtx(importedPlanId))
+    ).json()
+    expectWorld(plan.settings)
+    // The calendar is the plan's own two columns; the world carries none of it.
+    const weekend = weekendsOf(plan.settings)[weekendOne]
+    expect(weekend.assigned).toBeUndefined()
+    expect(weekend.assignedVenues).toBeUndefined()
+  })
+
   it("happens once, not on every read", async () => {
     actAs(ownerId)
     await listPlans()
@@ -202,6 +253,9 @@ describe("POST /seasons/[id]/plans — saving is not applying", () => {
     const { plan } = await res.json()
     expect(plan).toMatchObject({ name: "Solver A", source: "proposed", isActive: false })
     solverAId = plan.id
+
+    // The world it was saved in rides along, read off the season by the server.
+    expectWorld(plan.settings)
 
     // The sessions still run the imported calendar: nothing was applied.
     expect((await sessionRow(weekendOne)).unitKeys).toEqual([`division:${grade7Division}`])
@@ -366,5 +420,65 @@ describe("DELETE /seasons/[id]/plans/[planId]", () => {
     )
     expect(res.status).toBe(404)
     expect(await (prisma as any).seasonPlan.count({ where: { id: solverAId } })).toBe(1)
+  })
+})
+
+describe("the world a plan remembers", () => {
+  const read = async (planId: string) =>
+    (await (await GET_PLAN(jsonRequest("/x", undefined, "GET"), planCtx(planId))).json()).plan
+
+  it("leaves the snapshot alone on a rename, because a rename changes no season", async () => {
+    actAs(ownerId)
+    const before = (await read(solverAId)).settings.capturedAt
+    await PATCH_PLAN(jsonRequest("/x", { name: "Solver A renamed" }, "PATCH"), planCtx(solverAId))
+    expect((await read(solverAId)).settings.capturedAt).toBe(before)
+  })
+
+  it("re-reads the world when the calendar is rewritten, and the drift says what moved", async () => {
+    actAs(ownerId)
+    const was = (await read(solverAId)).settings
+
+    // The season changes underneath the plan: a grade is now planned bigger.
+    await (prisma as any).division.update({
+      where: { id: grade8Division },
+      data: { expectedTeams: 9 },
+    })
+
+    const res = await PATCH_PLAN(
+      jsonRequest("/x", { assignment: { [weekendOne]: ["age:Grade 7", "age:Grade 8"] } }, "PATCH"),
+      planCtx(solverAId)
+    )
+    expect(res.status).toBe(200)
+    const now = (await res.json()).plan.settings
+    expectWorld(now)
+    expect(now.capturedAt).not.toBe(was.capturedAt)
+
+    // The old snapshot against the new one: exactly the sentence the board
+    // puts above the calendar.
+    expect(planDrift(was.state, now.state)).toEqual([
+      "Grade 8 planned at 0 teams; the season now expects 9.",
+    ])
+    // And a plan saved in the season as it stands has nothing to say.
+    expect(planDrift(now.state, now.state)).toEqual([])
+  })
+
+  it("gives a plan saved after the change the world it was actually saved in", async () => {
+    actAs(ownerId)
+    const created = await CREATE_PLAN(
+      jsonRequest("/x", { name: "After the change", assignment: { [weekendTwo]: ["age:Grade 8"] } }),
+      ctx()
+    )
+    const plan = (await created.json()).plan
+    expectWorld(plan.settings)
+    const grade8 = plan.settings.state.units.find((u: any) => u.key === "age:Grade 8")
+    expect(grade8.teams).toBe(9)
+
+    // The imported reference still remembers the world it was published in, so
+    // there is always something honest to compare against.
+    const imported = await read(importedPlanId)
+    const gone = imported.settings.state.units.find((u: any) => u.key === "age:Grade 8")
+    expect(gone.teams).toBe(0)
+
+    await DELETE_PLAN(jsonRequest("/x", undefined, "DELETE"), planCtx(plan.id))
   })
 })

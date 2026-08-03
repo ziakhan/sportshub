@@ -7,6 +7,7 @@ import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock
 import {
   ACTIVE_PLAN_DELETE_MESSAGE,
   assignmentSchema,
+  currentSettings,
   findOwnedPlan,
   IMPORTED_PLAN_READONLY_MESSAGE,
   venuesSchema,
@@ -23,7 +24,9 @@ const bodySchema = z.object({
 })
 
 /** GET — the whole document, assignment and gyms included, for loading a plan
- *  onto the board. */
+ *  onto the board. `settings` rides along: the world the plan was saved in, so
+ *  the board can draw it under its own numbers and name the drift. Null on
+ *  rows written before plans remembered one. */
 export async function GET(_request: NextRequest, { params }: { params: { id: string; planId: string } }) {
   try {
     const gate = await seasonPlannerAuth(params.id)
@@ -70,12 +73,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: IMPORTED_PLAN_READONLY_MESSAGE }, { status: 409 })
     }
 
+    // A rewritten calendar was drawn in the world the operator is standing in
+    // now, so the plan's memory of that world moves with it. A rename changes
+    // nothing about the season, so it leaves the snapshot alone.
+    const settings = rewritesContent ? await currentSettings(params.id) : undefined
+
     const updated = await (prisma as any).seasonPlan.update({
       where: { id: plan.id },
       data: {
         ...(name === undefined ? {} : { name }),
         ...(assignment === undefined ? {} : { assignment }),
         ...(venues === undefined ? {} : { venues }),
+        ...(settings === undefined ? {} : { settings }),
       },
     })
 

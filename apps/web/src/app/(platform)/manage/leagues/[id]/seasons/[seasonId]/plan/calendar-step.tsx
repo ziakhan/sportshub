@@ -35,12 +35,15 @@ import {
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import {
+  activateConfirmText,
   isReferencePlan,
   PLAN_COPY,
+  planDrift,
   planStateLine,
   suggestPlanName,
   type PlanDocument,
   type PlanRow,
+  type PlanSettings,
 } from "@/lib/scheduler/plan-documents"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { venueShortName, type StripVenue } from "@/lib/seasons/venue-strip"
@@ -90,6 +93,22 @@ import type { PlanHeaderInfo } from "./teams-step"
  * call is gone: a plan the season runs is written through on save, a plan it
  * does not run waits for "Use for the season", and the league's own imported
  * calendar is read only so there is always something to compare against.
+ *
+ * A PLAN REMEMBERS ITS WORLD (owner 2026-08-02: "a new plan also could have
+ * different venues. It could have different settings, so how are you going to
+ * save it and how do you remember? It could be a different team combination").
+ * Every plan carries the gyms, hours, fill order and team estimates it was
+ * drawn under, so opening one puts the board back in THAT world: the fractions,
+ * the meters and the ideas are the ones the operator saw when they saved it,
+ * not this month's. Where the season has since moved on, the board says so
+ * above the calendar instead of quietly re-drawing the plan under new numbers.
+ *
+ * Two things follow from that, and both are deliberate:
+ *  - the levers and the hours chips are DISABLED on a plan drawn in its own
+ *    saved world. They solve against the season as it stands, so their answer
+ *    would be in a different world from the board it landed on.
+ *  - activating still applies the CALENDAR only. The season keeps its own
+ *    gyms, hours and estimates, and the confirmation says so out loud.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -185,6 +204,45 @@ function savedVenueMap(state: PlannerState): Record<string, Record<string, strin
   return out
 }
 
+/**
+ * A plan's saved world, back in the shape the board computes on. The snapshot
+ * deliberately holds no calendar — the plan's assignment and venues columns are
+ * the calendar — so every weekend comes back empty and the board fills it from
+ * the document it just opened.
+ *
+ * Anything the snapshot is missing (a row written by an older shape) falls back
+ * to something harmless rather than throwing: a plan that cannot be read is
+ * still a plan the operator has to be able to open.
+ */
+function stateFromSettings(seasonId: string, settings: PlanSettings): PlannerState {
+  const world = settings.state as unknown as PlannerState
+  return {
+    seasonId,
+    units: (world.units ?? []).map((u) => ({
+      ...u,
+      divisionIds: u.divisionIds ?? [],
+      approved: u.approved ?? 0,
+      expected: u.expected ?? 0,
+      source: u.source ?? (u.teams > 0 ? "expected" : "none"),
+    })),
+    windows: (world.windows ?? []).map((win) => ({
+      label: win.label,
+      weekends: (win.weekends ?? []).map((w) => ({
+        ...w,
+        venues: (w.venues ?? []).map((v) => ({ ...v })),
+        largestVenueCapacity:
+          w.largestVenueCapacity ?? Math.max(0, ...(w.venues ?? []).map((v) => v.capacityGames)),
+        // The plan's own two columns say where the grades go; the world says
+        // nothing about it on purpose.
+        assigned: [],
+        assignedVenues: {},
+      })),
+    })),
+    errors: [],
+    gamesPerTeam: world.gamesPerTeam || undefined,
+  }
+}
+
 /** The header verdict: the loudest true thing about the plan on screen. */
 function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE; text: string } {
   if (summary.over > 0)
@@ -223,7 +281,19 @@ export function CalendarStep({
   seasonId: string
   onLoaded?: (info: PlanHeaderInfo) => void
 }) {
+  /** The world the board computes in: the season's, or the plan's own saved
+   *  one while a snapshot plan is open. */
   const [state, setState] = useState<PlannerState | null>(null)
+  /** The season as it stands right now, always. Kept next to `state` because
+   *  drift is the difference between the two, and because the levers, the
+   *  hours and every write still act on THIS world. */
+  const [liveState, setLiveState] = useState<PlannerState | null>(null)
+  /** The world the selected plan was saved in, or null when it predates
+   *  world-tracking (an older row) or no plan is selected. */
+  const [planSettings, setPlanSettings] = useState<PlanSettings | null>(null)
+  /** True while the board is drawn in the plan's saved world rather than the
+   *  season's. The levers go quiet, and the board says which world it is in. */
+  const [onPlanWorld, setOnPlanWorld] = useState(false)
   const [assignment, setAssignment] = useState<Record<string, string[]>>({})
   /** The gym each grade plays in, weekend by weekend. Decisions only: a
    *  weekend nobody has decided is absent and the board packs a preview. */
@@ -303,6 +373,19 @@ export function CalendarStep({
     return (data?.plans ?? []) as PlanRow[]
   }, [seasonId])
 
+  /** One plan's whole document. The list row deliberately carries no world, so
+   *  this is the only way to learn the one a plan was saved in. */
+  const fetchPlanDoc = useCallback(
+    async (id: string): Promise<PlanDocument | null> => {
+      const res = await fetch(`/api/seasons/${seasonId}/plans/${id}`, { cache: "no-store" }).catch(
+        () => null
+      )
+      const data = res?.ok ? await res.json().catch(() => null) : null
+      return (data?.plan ?? null) as PlanDocument | null
+    },
+    [seasonId]
+  )
+
   /** Load, then open on an answer: the saved plan when there is one, the
    *  balanced proposal when there is not. A locked season only ever shows
    *  what was actually saved. */
@@ -334,8 +417,17 @@ export function CalendarStep({
       hasSaved || isLocked || !planningIsPossible ? null : await propose("balance")
 
     const savedVenues = savedVenueMap(next)
+    // The board opens on the plan the season RUNS, and that plan is shown in
+    // the season's own world (it is the world the season is in). Its snapshot
+    // is still read, because "saved under different settings" is worth saying
+    // about the calendar everyone is looking at.
+    const active = planRows.find((p) => p.isActive) ?? null
+    const activeDoc = active ? await fetchPlanDoc(active.id) : null
 
     setState(next)
+    setLiveState(next)
+    setPlanSettings(activeDoc?.settings ?? null)
+    setOnPlanWorld(false)
     setVenueGrid(venueData?.grid ?? null)
     setLocked(isLocked)
     setArmed(null)
@@ -352,10 +444,10 @@ export function CalendarStep({
     // calendar the sessions just handed back, so nothing has to be fetched
     // twice to agree with itself.
     setPlans(planRows)
-    setPlanId(planRows.find((p) => p.isActive)?.id ?? null)
+    setPlanId(active?.id ?? null)
     setFromLever(Boolean(opening))
     setNotice(opening ? COPY.opened : null)
-  }, [seasonId, onLoaded, propose, fetchPlans])
+  }, [seasonId, onLoaded, propose, fetchPlans, fetchPlanDoc])
 
   useEffect(() => {
     load()
@@ -549,24 +641,50 @@ export function CalendarStep({
   )
   const activePlan = useMemo(() => plans.find((p) => p.isActive) ?? null, [plans])
 
-  /** Open a plan on the board: its calendar, its gyms, and a clean slate. The
-   *  working copy is thrown away, so an operator who has unsaved work is asked
-   *  first — unless they asked for this themselves ("Undo changes"). */
+  /**
+   * Where the plan on screen and the season have parted company: the gyms, the
+   * courts, the hours, the fill order and the estimates it was saved under,
+   * against the ones the season holds now. Empty when they still agree, which
+   * is the ordinary case and says nothing.
+   */
+  const drift = useMemo(
+    () =>
+      selectedPlan && planSettings && liveState
+        ? planDrift(planSettings.state, liveState)
+        : [],
+    [selectedPlan, planSettings, liveState]
+  )
+  /** A plan saved before plans remembered their world. Not drift: an absence,
+   *  and the board says so once, quietly, instead of pretending to compare. */
+  const worldUnknown = Boolean(selectedPlan) && planSettings === null
+
+  /**
+   * Open a plan on the board: its calendar, its gyms, its WORLD, and a clean
+   * slate. The working copy is thrown away, so an operator who has unsaved work
+   * is asked first — unless they asked for this themselves ("Undo changes").
+   *
+   * A plan the season does not run is drawn under the settings it was SAVED
+   * with, so every fraction, meter and idea on screen is the one the operator
+   * saw when they saved it. The plan the season runs is drawn under the
+   * season's own world, because that world is the one it is running in.
+   */
   const openPlan = async (id: string, { ask = true }: { ask?: boolean } = {}) => {
     if (ask && dirty && !window.confirm(PLAN_COPY.discard)) return
     setBusy(`plan:${id}`)
     setError(null)
-    const res = await fetch(`/api/seasons/${seasonId}/plans/${id}`, { cache: "no-store" }).catch(
-      () => null
-    )
-    const data = res?.ok ? await res.json().catch(() => null) : null
+    const plan = await fetchPlanDoc(id)
     setBusy(null)
-    if (!data?.plan) {
+    if (!plan) {
       setError("Couldn't open that plan. Try again.")
       return
     }
-    const plan = data.plan as PlanDocument
+    const settings = plan.settings ?? null
+    const ownWorld = Boolean(settings) && !plan.isActive
     setPlanId(plan.id)
+    setPlanSettings(settings)
+    setOnPlanWorld(ownWorld)
+    if (ownWorld && settings) setState(stateFromSettings(seasonId, settings))
+    else if (liveState) setState(liveState)
     setAssignment(plan.assignment ?? {})
     setVenues(plan.venues ?? {})
     setUndoStack([])
@@ -577,7 +695,9 @@ export function CalendarStep({
     setNotice(
       plan.isActive
         ? `${plan.name} is on the board. This is the calendar the season runs.`
-        : `${plan.name} is on the board.`
+        : ownWorld
+          ? `${plan.name} is on the board, under the settings it was saved with.`
+          : `${plan.name} is on the board.`
     )
   }
 
@@ -588,12 +708,20 @@ export function CalendarStep({
    * of the operator's own with a name nobody had to invent, and the board opens
    * on it, clean. Nothing is applied to the season — a season that already runs
    * a calendar keeps running it until somebody says otherwise.
+   *
+   * It is built in the LIVE world, which is the whole point of a new plan: the
+   * solver reads the season as it stands now, so the plan's saved settings are
+   * this month's gyms, hours and estimates and the board stays in them.
    */
   const newPlan = async () => {
     if (dirty && !window.confirm(PLAN_COPY.discard)) return
     setBusy("new-plan")
     setError(null)
     setNotice(null)
+    // Back to the season's own world first: a proposal built from the live
+    // season must not land on a board still drawing an older one.
+    if (liveState) setState(liveState)
+    setOnPlanWorld(false)
     const proposal = await propose("balance")
     if (!proposal) {
       setBusy(null)
@@ -619,9 +747,13 @@ export function CalendarStep({
       setError(data?.error ?? "That plan didn't save. Try again.")
       return
     }
-    const plan = data.plan as PlanRow
+    const plan = data.plan as PlanDocument
     setPlans(await fetchPlans())
     setPlanId(plan.id)
+    // Saved from the live world, so its settings ARE the season's and the
+    // drift line has nothing to say about it.
+    setPlanSettings(plan.settings ?? null)
+    setOnPlanWorld(false)
     setAssignment(proposal.assignment)
     setVenues(proposedVenues)
     setUndoStack([])
@@ -647,7 +779,12 @@ export function CalendarStep({
 
   /** Save the board as a NEW plan. Nothing is applied: the plan lands beside
    *  the others until somebody uses it for the season — except on a season
-   *  that runs nothing yet, where the first plan saved IS the calendar. */
+   *  that runs nothing yet, where the first plan saved IS the calendar.
+   *
+   *  The world it records is the season's, read on the server at save time. So
+   *  a copy taken while an older plan's world was on the board comes back in
+   *  today's world, and the board follows it there rather than keeping numbers
+   *  the new plan does not claim. */
   const saveAsNew = async () => {
     const name = (naming ?? "").trim()
     if (!name) return
@@ -672,7 +809,7 @@ export function CalendarStep({
       setError(data?.error ?? "That didn't save. Try again.")
       return
     }
-    const plan = data.plan as PlanRow
+    const plan = data.plan as PlanDocument
     const takesOver = !plans.some((p) => p.isActive)
     if (takesOver) {
       await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, { method: "POST" }).catch(
@@ -681,8 +818,12 @@ export function CalendarStep({
       setKept(assignment)
       setKeptVenues(shown.venues)
     }
+    const wasOnPlanWorld = onPlanWorld
     setPlans(await fetchPlans())
     setPlanId(plan.id)
+    setPlanSettings(plan.settings ?? null)
+    setOnPlanWorld(false)
+    if (liveState) setState(liveState)
     setVenues(shown.venues)
     setUndoStack([])
     setDirty(false)
@@ -693,7 +834,9 @@ export function CalendarStep({
     setNotice(
       takesOver
         ? `Saved as ${plan.name}. It is the calendar this season runs.`
-        : `Saved as ${plan.name}. Use it for the season when you are ready.`
+        : wasOnPlanWorld
+          ? `Saved as ${plan.name}, in the season's current settings. The board is showing those now.`
+          : `Saved as ${plan.name}. Use it for the season when you are ready.`
     )
   }
 
@@ -723,6 +866,13 @@ export function CalendarStep({
       setError(data?.error ?? "That didn't save. Try again.")
       return
     }
+    const wasOnPlanWorld = onPlanWorld
+    // The calendar was just rewritten in the world the operator is standing in,
+    // so the plan's memory of its world moved with it (the server re-snapshots
+    // on any content change) and the board goes back to the season's numbers.
+    setPlanSettings((data.plan as PlanDocument).settings ?? null)
+    setOnPlanWorld(false)
+    if (liveState) setState(liveState)
     setVenues(shown.venues)
     setUndoStack([])
     setDirty(false)
@@ -738,15 +888,22 @@ export function CalendarStep({
     setNotice(
       plan.isActive
         ? `Saved to ${plan.name}. Everything after this step follows this calendar.`
-        : `Saved to ${plan.name}.`
+        : wasOnPlanWorld
+          ? `Saved to ${plan.name}, in the season's current settings. The board is showing those now.`
+          : `Saved to ${plan.name}.`
     )
   }
 
-  /** Make the selected plan the one the season runs. */
+  /**
+   * Make the selected plan the one the season runs. The CALENDAR is all that
+   * moves: the season keeps its own gyms, hours and estimates, so a plan drawn
+   * in an older world is asked about first, with the differences named, and the
+   * confirmation says plainly what will not change.
+   */
   const activatePlan = async () => {
     const plan = selectedPlan
     if (!plan || plan.isActive) return
-    if (!window.confirm(PLAN_COPY.activate(plan.name))) return
+    if (!window.confirm(activateConfirmText(plan.name, drift))) return
     setBusy("activate")
     setError(null)
     const res = await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, {
@@ -762,6 +919,11 @@ export function CalendarStep({
     const savedNow = currentAssignment(next)
     const savedVenuesNow = savedVenueMap(next)
     setState(next)
+    setLiveState(next)
+    // The season did not take the plan's settings, only its calendar, so the
+    // board goes back to the season's world. The plan keeps the snapshot it
+    // was saved with, and the drift line keeps saying so.
+    setOnPlanWorld(false)
     setAssignment(savedNow)
     setVenues(savedVenuesNow)
     setKept(savedNow)
@@ -1000,6 +1162,11 @@ export function CalendarStep({
               </p>
             )}
 
+            {/* The world this plan was saved in, where it is not the world the
+                season is in now. Above the calendar, because it is a fact about
+                every number below it. */}
+            <DriftLine drift={drift} unknown={worldUnknown} onPlanWorld={onPlanWorld} />
+
             {/* The colour key for the whole step, above the calendar in both
                 views: which gym is which colour, in full names. */}
             <GymLegend order={gyms.order} hue={gyms.hue} fillsFirst={fillsFirst} />
@@ -1178,13 +1345,21 @@ export function CalendarStep({
                           key={l.lever}
                           size="sm"
                           variant="secondary"
-                          disabled={busy !== null}
+                          disabled={busy !== null || onPlanWorld}
                           onClick={() => runLever(l.lever)}
                         >
                           {busy === l.lever ? "Working…" : l.label}
                         </Button>
                       ))}
                     </div>
+                    {/* Said where the buttons are, not after they fail: a
+                        proposal is solved against the SEASON, so it would land
+                        on a board drawn in a different world. */}
+                    {onPlanWorld && (
+                      <p className="text-ink-400 mt-2 text-[11px]" data-testid="lever-snapshot-note">
+                        {PLAN_COPY.leverSnapshot}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1206,13 +1381,21 @@ export function CalendarStep({
                           size="sm"
                           variant="secondary"
                           tone={hoursChip?.key === chip.key ? "play" : "brand"}
-                          disabled={busy !== null}
+                          disabled={busy !== null || onPlanWorld}
                           onClick={() => previewHours(chip)}
                         >
                           {busy === `hours:${chip.key}` ? "Working…" : chip.label}
                         </Button>
                       ))}
                     </div>
+                    {/* The preview measures the SEASON's hours, and applying
+                        writes them, so neither belongs on a board showing an
+                        older plan's world. */}
+                    {onPlanWorld && (
+                      <p className="text-ink-400 mt-2 text-[11px]" data-testid="hours-snapshot-note">
+                        {PLAN_COPY.leverSnapshot}
+                      </p>
+                    )}
                     {hoursError && (
                       <p className="text-hoop-700 mt-2 text-xs font-semibold">{hoursError}</p>
                     )}
@@ -1258,6 +1441,57 @@ export function CalendarStep({
         )}
       </div>
     </div>
+  )
+}
+
+/**
+ * The one line that says this plan was drawn in a different world (owner
+ * 2026-08-02: "a new plan also could have different venues. It could have
+ * different settings, so how are you going to save it and how do you
+ * remember?").
+ *
+ * Quiet gold, above the calendar, leading with the difference that matters
+ * most and counting the rest; the whole list is one tap away. It is never an
+ * alarm: a plan saved in October under October's gyms is not broken, it is
+ * simply older than the season it sits in, and the operator is the one who
+ * decides whether that matters.
+ */
+function DriftLine({
+  drift,
+  unknown,
+  onPlanWorld,
+}: {
+  drift: string[]
+  /** The plan predates world-tracking, so there is nothing to compare. */
+  unknown: boolean
+  /** The board is drawing the plan's own settings rather than the season's. */
+  onPlanWorld: boolean
+}) {
+  if (!unknown && drift.length === 0) return null
+  const lead = unknown ? PLAN_COPY.driftUnknown : PLAN_COPY.drift(drift[0], drift.length - 1)
+  const whole = [
+    ...(unknown ? [PLAN_COPY.driftUnknown] : drift),
+    onPlanWorld ? PLAN_COPY.driftBoard : PLAN_COPY.driftActive,
+  ].join(" ")
+  return (
+    // A thin gold spine over a pale wash, the same gold the step's other
+    // notices wear. Deliberately NOT gold TEXT: the palette stops at gold-600,
+    // which is too light to read at this size.
+    <p
+      className="border-gold-400 bg-gold-50 text-ink-800 mb-2.5 flex flex-wrap items-center gap-2 rounded-lg border-l-[3px] px-2.5 py-1.5 text-[11.5px]"
+      data-testid="plan-drift"
+    >
+      <span className="font-semibold">{lead}</span>
+      <WhyPopover
+        text={whole}
+        label="What is different about this plan's settings"
+        testId="plan-drift-why"
+      >
+        <span className="text-play-700 font-semibold underline decoration-dotted underline-offset-2">
+          What changed
+        </span>
+      </WhyPopover>
+    </p>
   )
 }
 

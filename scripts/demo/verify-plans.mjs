@@ -88,6 +88,14 @@ const savedCalendar = async () => {
 const listPlans = async () =>
   (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
 
+/** The quiet gold line above the board, or null when the plan on screen was
+ *  saved in the world the season is still in. */
+const driftLine = async () => {
+  const line = page.locator('[data-testid="plan-drift"]')
+  if ((await line.count()) === 0) return null
+  return (await line.innerText()).replace(/\n/g, " ").trim()
+}
+
 const before = await savedCalendar()
 ok("captured the season's saved calendar", before.length > 2, `${before.length} bytes`)
 
@@ -108,6 +116,24 @@ ok(
   "the reference plan says so before anybody tries to save onto it",
   (await page.locator('[data-testid="plan-reference-note"]').count()) === 1,
   await page.locator('[data-testid="plan-reference-note"]').innerText().catch(() => "")
+)
+
+// A plan remembers the WORLD it was made in (owner 2026-08-02). The reference
+// plan either carries one and the board is honest about the difference, or it
+// predates world-tracking and says so quietly. Both are correct; claiming
+// nothing changed while carrying no world is not.
+const referenceDoc = await page.request
+  .get(`${BASE}/api/seasons/${SEASON}/plans/${(await listPlans()).find((p) => p.isActive)?.id}`)
+  .then((r) => r.json())
+  .catch(() => null)
+const referenceSettings = referenceDoc?.plan?.settings ?? null
+const referenceDrift = await driftLine()
+ok(
+  "the plan on the board says where its own settings stand",
+  referenceSettings
+    ? referenceDrift === null || /Saved under different settings/.test(referenceDrift)
+    : referenceDrift !== null && /Saved before plans remembered/.test(referenceDrift),
+  `${referenceSettings ? "has a saved world" : "predates world-tracking"} · ${referenceDrift ?? "no drift line"}`
 )
 
 const railAbout = page.locator('[data-testid="rail-about"]')
@@ -216,6 +242,36 @@ ok(
   "the API agrees: saved, not applied",
   Boolean(drivePlan) && drivePlan.isActive === false && drivePlan.source === "manual",
   drivePlan ? `${drivePlan.name} source=${drivePlan.source} active=${drivePlan.isActive}` : "missing"
+)
+
+/* ------------------- the world the plan was saved in --------------------- */
+const savedDoc = drivePlan
+  ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${drivePlan.id}`).then((r) => r.json()))?.plan
+  : null
+const savedWorld = savedDoc?.settings?.state ?? null
+const savedWeekends = (savedWorld?.windows ?? []).flatMap((w) => w.weekends ?? [])
+ok(
+  "the saved plan carries the world it was made in",
+  Boolean(savedDoc?.settings?.capturedAt) &&
+    !Number.isNaN(Date.parse(savedDoc.settings.capturedAt)) &&
+    (savedWorld?.units ?? []).length > 0 &&
+    savedWeekends.length > 0 &&
+    savedWeekends.every((w) => Array.isArray(w.venues)) &&
+    savedWeekends.some((w) => w.venues.length > 0),
+  savedWorld
+    ? `${savedWorld.units.length} grades, ${savedWeekends.length} weekends, ${
+        new Set(savedWeekends.flatMap((w) => w.venues.map((v) => v.venueId))).size
+      } gyms, captured ${savedDoc.settings.capturedAt}`
+    : "no settings on the saved plan"
+)
+ok(
+  "the world holds no calendar: that is what the plan's own columns are for",
+  savedWeekends.every((w) => w.assigned === undefined && w.assignedVenues === undefined)
+)
+ok(
+  "a plan saved from the season's own world shows no drift line",
+  (await driftLine()) === null,
+  (await driftLine()) ?? "no drift line"
 )
 
 /* ------------------ saving onto a plan of your own (PATCH) --------------- */
@@ -331,6 +387,14 @@ ok(
 )
 const newNotice = await page.locator("text=fresh calendar from the planner").count()
 ok("the step says in plain words what just happened", newNotice >= 1)
+const madeDoc = made
+  ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`).then((r) => r.json()))?.plan
+  : null
+ok(
+  "the plan the system made remembers today's world, so it has no drift to report",
+  Boolean(madeDoc?.settings?.state?.windows?.length) && (await driftLine()) === null,
+  `${madeDoc?.settings?.state?.windows?.length ?? 0} months captured · ${(await driftLine()) ?? "no drift line"}`
+)
 ok(
   "the rail follows the plan it is critiquing",
   (await railAbout.count()) === 0 || (await railAbout.innerText()).trim() === `Ideas for ${madeName}`,

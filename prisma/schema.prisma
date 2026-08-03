@@ -1791,6 +1791,17 @@ model SeasonPlan {
   assignment Json
   venues     Json
 
+  // The WORLD the plan was made in (owner 2026-08-02: "a new plan also could
+  // have different venues, it could have different settings — how are you
+  // going to save it and how do you remember? It could be a different team
+  // combination"). { capturedAt, state } where state is the planner's own
+  // serializable input — team estimates per grade, the gyms each weekend with
+  // their capacity and fill order, hours-derived capacity, games per team —
+  // minus the per-weekend assignment, which is what the two columns above
+  // already are. Null on rows saved before world-tracking existed; every
+  // reader falls back to the season's live settings.
+  settings Json?
+
   isActive Boolean @default(false)
 
   createdAt DateTime @default(now())

@@ -5,6 +5,7 @@ import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
   assignmentSchema,
+  currentSettings,
   ensureImportedPlan,
   planSourceSchema,
   PLAN_LIST_SELECT,
@@ -73,6 +74,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // would be lost behind the plan that replaced it.
     await ensureImportedPlan(params.id)
 
+    // The world it was made in, read from the season HERE rather than taken
+    // from the client (owner 2026-08-02): a plan opened next month is drawn
+    // under its own gyms, hours and estimates, and the board can say out loud
+    // where the season has moved on since.
+    const settings = await currentSettings(params.id)
+
     const plan = await (prisma as any).seasonPlan.create({
       data: {
         seasonId: params.id,
@@ -80,6 +87,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         source: parsed.data.source,
         assignment: parsed.data.assignment,
         venues: parsed.data.venues ?? {},
+        settings,
         isActive: false,
       },
     })

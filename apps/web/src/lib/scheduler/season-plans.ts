@@ -1,7 +1,8 @@
 import { z } from "zod"
 import { prisma } from "@youthbasketballhub/db"
 import { buildPlannerState } from "./planner"
-import { currentAssignment } from "./planner-core"
+import { currentAssignment, type PlannerState } from "./planner-core"
+import type { PlanSettings } from "./plan-documents"
 
 /**
  * Plans as documents (owner 2026-08-02). A season holds MANY named calendars
@@ -54,14 +55,98 @@ export const PLAN_LIST_SELECT = {
 } as const
 
 /**
+ * The WORLD a plan is being saved in (owner 2026-08-02: "a new plan also could
+ * have different venues. It could have different settings, so how are you
+ * going to save it and how do you remember? It could be a different team
+ * combination").
+ *
+ * The planner's own state IS the world — it is already the pure, serializable
+ * input every number on the board is computed from: the estimate per grade,
+ * the gyms each weekend with their capacity and fill order, the games each
+ * team is promised. Snapshotting anything else would be a second description
+ * of the season to drift from the one the board runs on.
+ *
+ * The per-weekend calendar is stripped out: `assigned` and `assignedVenues`
+ * are what the plan's OWN assignment and venues columns hold, and a plan must
+ * never carry two answers to where a grade plays.
+ */
+export function snapshotSettings(state: PlannerState): PlanSettings {
+  return {
+    capturedAt: new Date().toISOString(),
+    state: {
+      seasonId: state.seasonId,
+      units: state.units.map((u) => ({
+        key: u.key,
+        label: u.label,
+        divisionIds: [...u.divisionIds],
+        // JSON drops undefined, so an unflagged grade is written as false
+        // rather than as a key that quietly disappears.
+        alternate: Boolean(u.alternate),
+        teams: u.teams,
+        approved: u.approved,
+        expected: u.expected,
+        source: u.source,
+      })),
+      windows: state.windows.map((win) => ({
+        label: win.label,
+        weekends: win.weekends.map((w) => ({
+          sessionId: w.sessionId,
+          label: w.label,
+          dateISO: w.dateISO,
+          capacityGames: w.capacityGames,
+          largestVenueCapacity: w.largestVenueCapacity,
+          targetGamesPerTeam: w.targetGamesPerTeam,
+          venues: w.venues.map((v) => ({
+            venueId: v.venueId,
+            name: v.name,
+            capacityGames: v.capacityGames,
+            fillOrder: v.fillOrder,
+            courtDays: v.courtDays ?? 0,
+          })),
+        })),
+      })),
+      gamesPerTeam: state.gamesPerTeam ?? 0,
+    },
+  }
+}
+
+/** The season's world as it stands right now, for a plan about to be written
+ *  down. Built server-side on every save so a plan can never claim a world the
+ *  client made up. */
+export async function currentSettings(seasonId: string): Promise<PlanSettings> {
+  return snapshotSettings(await buildPlannerState(seasonId))
+}
+
+/**
+ * Rows written before plans remembered their world. Only the ACTIVE imported
+ * plan can be healed late without inventing anything: its calendar is what the
+ * sessions run right now, so the season's live world IS its world. Any other
+ * null-settings plan keeps its quiet "saved before" line — pretending to know
+ * the world it was drawn in would be a lie.
+ */
+async function healImportedSettings(seasonId: string): Promise<void> {
+  const plan = await (prisma as any).seasonPlan.findFirst({
+    where: { seasonId, source: "imported", isActive: true },
+  })
+  if (!plan || plan.settings != null) return
+  await (prisma as any).seasonPlan.update({
+    where: { id: plan.id },
+    data: { settings: await currentSettings(seasonId) },
+  })
+}
+
+/**
  * Read the season's saved calendar back out as a plan document. The board
  * already folds division keys up into grade clusters and gyms into unit
  * keys, so buildPlannerState IS the reader — no second interpretation of the
  * columns to drift from the one the wizard shows.
  */
-export async function snapshotSavedCalendar(
-  seasonId: string
-): Promise<{ assignment: PlanAssignment; venues: PlanVenues; placements: number }> {
+export async function snapshotSavedCalendar(seasonId: string): Promise<{
+  assignment: PlanAssignment
+  venues: PlanVenues
+  placements: number
+  settings: PlanSettings
+}> {
   const state = await buildPlannerState(seasonId)
   const assignment = currentAssignment(state)
   const venues: PlanVenues = {}
@@ -74,7 +159,9 @@ export async function snapshotSavedCalendar(
       }
     }
   }
-  return { assignment, venues, placements }
+  // The same state the calendar was read out of, so the imported plan's world
+  // is exactly the one its calendar was published in.
+  return { assignment, venues, placements, settings: snapshotSettings(state) }
 }
 
 /**
@@ -91,9 +178,12 @@ export async function snapshotSavedCalendar(
  */
 export async function ensureImportedPlan(seasonId: string): Promise<void> {
   const existing = await (prisma as any).seasonPlan.count({ where: { seasonId } })
-  if (existing > 0) return
+  if (existing > 0) {
+    await healImportedSettings(seasonId)
+    return
+  }
 
-  const { assignment, venues, placements } = await snapshotSavedCalendar(seasonId)
+  const { assignment, venues, placements, settings } = await snapshotSavedCalendar(seasonId)
   if (placements === 0) return
 
   try {
@@ -106,6 +196,7 @@ export async function ensureImportedPlan(seasonId: string): Promise<void> {
           source: "imported",
           assignment,
           venues,
+          settings,
           isActive: true,
         },
       })
