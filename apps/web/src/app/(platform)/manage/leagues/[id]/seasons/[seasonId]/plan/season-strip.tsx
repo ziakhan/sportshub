@@ -14,12 +14,11 @@ import {
 import {
   resolveUnitVenue,
   resolveWeekendVenues,
-  seasonVenueOrder,
-  venueHueSlots,
   type StripVenue,
 } from "@/lib/seasons/venue-strip"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
-import { METER_TONE, type Armed } from "./plan-shared"
+import { METER_TONE, VENUE_HUES, planVenueHues, type Armed } from "./plan-shared"
+import { REASON_GLYPH, ReasonGlyph } from "./plan-ui"
 
 /**
  * The season strip (owner 2026-08-02: "show me some sort of great view from
@@ -54,18 +53,6 @@ const COPY = {
   gyms:
     "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is a weekend with no gym booked.",
 }
-
-/**
- * A gym's colour, from the families the design system already uses. Pale fill,
- * saturated stripe, ink text — and the gym's NAME travels with it everywhere,
- * because colour never carries the fact on its own.
- */
-const VENUE_HUES = [
-  { fill: "bg-court-50", stripe: "border-l-court-500", swatch: "bg-court-500" },
-  { fill: "bg-play-50", stripe: "border-l-play-500", swatch: "bg-play-500" },
-  { fill: "bg-gold-50", stripe: "border-l-gold-500", swatch: "bg-gold-500" },
-  { fill: "bg-hoop-50", stripe: "border-l-hoop-500", swatch: "bg-hoop-500" },
-]
 
 /** The first column stays put while the season scrolls under it. */
 const STICKY = "border-ink-100 sticky left-0 border-r bg-white text-left"
@@ -155,17 +142,15 @@ export function StripView({
     () => state.windows.flatMap((win) => win.weekends.map((w) => ({ weekend: w, window: win.label }))),
     [state]
   )
-  const gymOrder = useMemo(
-    () => seasonVenueOrder(venueGrid, weekends.map((c) => c.weekend)),
-    [venueGrid, weekends]
-  )
   const gymsOn = useMemo(
     () => resolveWeekendVenues(venueGrid, weekends.map((c) => c.weekend)),
     [venueGrid, weekends]
   )
-  const hue = useMemo(
-    () => venueHueSlots(gymOrder.map((v) => v.venueId), VENUE_HUES.length),
-    [gymOrder]
+  // The step's ONE gym colouring, from the same two inputs the board hands it,
+  // so a building is the same colour in both views.
+  const { order: gymOrder, hue } = useMemo(
+    () => planVenueHues(venueGrid, weekends.map((c) => c.weekend)),
+    [venueGrid, weekends]
   )
 
   /**
@@ -440,9 +425,15 @@ function StripCell({
     const lead = playsAt ? playsAt.short : `${games} games`
     const note = playsAt ? `${games} games` : "no gym booked"
     const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === weekend.sessionId
+    // The reason, drawn: the same four marks the board uses. The words stay in
+    // the cell's own label, so the mark is never the only place it is said.
+    const glyph = playsAt && why ? REASON_GLYPH[why] : undefined
     const body = (
       <>
-        <span className="text-ink-900 block truncate text-[11.5px] font-bold">{lead}</span>
+        <span className="text-ink-900 flex items-center gap-1 text-[11.5px] font-bold">
+          <span className="truncate">{lead}</span>
+          {glyph && <ReasonGlyph glyph={glyph} className="text-ink-400" />}
+        </span>
         <span
           className={`block truncate text-[10px] font-semibold ${
             playsAt ? "text-ink-500" : "text-hoop-700"

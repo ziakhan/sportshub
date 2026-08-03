@@ -270,6 +270,9 @@ describe("suggestFor", () => {
       fromBefore: { demand: 93, capacity: 80 },
       toAfter: { demand: 25, capacity: 176 },
       resolves: "shortage",
+      // Gr9 keeps its own building on the way over, so there is no landing
+      // clause to carry — the same quiet case the sentence leaves out.
+      lands: "",
     })
   })
 

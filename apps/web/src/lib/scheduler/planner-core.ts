@@ -162,6 +162,12 @@ export interface SuggestionMove {
   toAfter: { demand: number; capacity: number }
   /** What taking the move fixes. */
   resolves: "shortage" | "two-building" | "idle-weekend"
+  /** Where the grade ends up standing when it gets there, when that is not the
+   *  building it has been playing: "Lands at Six Park (The Playground holds
+   *  Grade 10, 42 of 48)." Empty for the ordinary case, where it keeps its own
+   *  gym. The same clause the sentence carries, handed over as data so a
+   *  surface can put it somewhere else without parsing prose. */
+  lands: string
 }
 
 export interface PlannerSuggestion {
@@ -1752,6 +1758,7 @@ export function suggestFor(
             fromBefore: { demand, capacity: w.capacityGames },
             toAfter: { demand: toAfter, capacity: to.capacityGames },
             resolves,
+            lands,
           },
           text: `Move ${unit.label} (${gamesWord(games)}) from ${w.label} (${fromNumbers}) to ${
             to.label
@@ -1850,6 +1857,14 @@ export function suggestFor(
             const from = demandOn(busiest)
             const games = gamesOn(giver, busiest)
             const landed = gamesOn(giver, w)
+            const lands = landingClause(
+              giver,
+              w,
+              assigned,
+              unitByKey,
+              homesArriving(w, giver, busiest.sessionId),
+              decidedAll[w.sessionId] ?? {}
+            )
             move = {
               unitKey: giver.key,
               unitLabel: giver.label,
@@ -1861,15 +1876,8 @@ export function suggestFor(
               fromBefore: { demand: from, capacity: busiest.capacityGames },
               toAfter: { demand: landed, capacity: w.capacityGames },
               resolves: "idle-weekend",
+              lands,
             }
-            const lands = landingClause(
-              giver,
-              w,
-              assigned,
-              unitByKey,
-              homesArriving(w, giver, busiest.sessionId),
-              decidedAll[w.sessionId] ?? {}
-            )
             text = `${text} Move ${giver.label} (${gamesWord(games)}) from ${busiest.label} (${from} of ${
               busiest.capacityGames
             }) to ${w.label} (${landed} of ${w.capacityGames} after). Puts the empty weekend to work.${
@@ -1882,5 +1890,137 @@ export function suggestFor(
     }
   }
   return suggestions
+}
+
+/**
+ * What the RAIL shows, out of everything the math noticed (owner-approved
+ * mock, 2026-08-02: the rail is for problems and for things you can do).
+ *
+ * A recap of what a weekend already draws — "fills The Playground and opens
+ * Six Park" — is not either of those, so it leaves the rail: the card says it
+ * in a meter and two chips. What stays is every shortage (the red problems,
+ * which sort first) and every suggestion that is one tap from being done.
+ *
+ * suggestFor keeps composing all of them, because the API hands its
+ * suggestions to callers this screen does not own.
+ */
+export function railSuggestions(all: PlannerSuggestion[]): PlannerSuggestion[] {
+  const problems = all.filter((s) => s.kind === "overflow")
+  const doable = all.filter((s) => s.kind !== "overflow" && s.move)
+  return [...problems, ...doable]
+}
+
+/* ------------------------- a grade's season, in cells -------------------- */
+
+/** One weekend of one grade's season: when it plays, and in which building. */
+export interface GradeStripCell {
+  sessionId: string
+  dateISO: string
+  venueId: string
+}
+
+/**
+ * One grade's whole season as cells, in date order: the weekends it plays and
+ * the building each one is in (owner-approved mock, 2026-08-02 — "the grade's
+ * season in miniature, before and after").
+ *
+ * Built on the same chronological pass the board and the strip draw from, so
+ * the miniature can never disagree with the calendar above it. Weekends the
+ * grade does not play are simply absent: the strip is the grade's season, not
+ * the season's weekends.
+ */
+export function gradeGymStrip(
+  state: PlannerState,
+  assignment: Record<string, string[]>,
+  decided: Record<string, Record<string, string>>,
+  unitKey: string
+): GradeStripCell[] {
+  const placed = packShownPlacements(state, assignment, decided)
+  const out: GradeStripCell[] = []
+  for (const w of chronologicalWeekends(state)) {
+    const venueId = placed.venues[w.sessionId]?.[unitKey]
+    if (venueId) out.push({ sessionId: w.sessionId, dateISO: w.dateISO, venueId })
+  }
+  return out
+}
+
+/**
+ * The calendar with one grade moved to another weekend, as a NEW object: the
+ * one place a move is spelled out, so the board's own move and the rail's
+ * preview of that move can never mean different things. Nothing passed in is
+ * touched.
+ */
+export function assignmentWithMove(
+  assignment: Record<string, string[]>,
+  unitKey: string,
+  fromSessionId: string | null,
+  toSessionId: string
+): Record<string, string[]> {
+  const next: Record<string, string[]> = {}
+  for (const [sessionId, keys] of Object.entries(assignment)) {
+    next[sessionId] = sessionId === fromSessionId ? keys.filter((k) => k !== unitKey) : [...keys]
+  }
+  next[toSessionId] = [...new Set([...(next[toSessionId] ?? []), unitKey])]
+  return next
+}
+
+/**
+ * Drop one grade's decided gym from the given weekends. The gym travels with
+ * the chip: the weekend it left forgets it, and the weekend it lands on packs
+ * it fresh against whatever is already there. Weekends that end up deciding
+ * nothing drop out, so an empty map stays empty and nothing is mutated.
+ */
+export function venuesWithoutUnit(
+  venues: Record<string, Record<string, string>>,
+  unitKey: string,
+  sessionIds: Array<string | null>
+): Record<string, Record<string, string>> {
+  const touched = new Set(sessionIds.filter((id): id is string => Boolean(id)))
+  const next: Record<string, Record<string, string>> = {}
+  for (const [sessionId, byUnit] of Object.entries(venues)) {
+    if (!touched.has(sessionId)) {
+      next[sessionId] = byUnit
+      continue
+    }
+    const copy = { ...byUnit }
+    delete copy[unitKey]
+    if (Object.keys(copy).length > 0) next[sessionId] = copy
+  }
+  return next
+}
+
+/** Which buildings a run of cells uses, and how often, in the order they first
+ *  appear — the order the season plays them in. */
+function gymTally(
+  cells: GradeStripCell[],
+  nameOf: (venueId: string) => string
+): Array<{ name: string; weekends: number }> {
+  const counts = new Map<string, number>()
+  for (const c of cells) counts.set(c.venueId, (counts.get(c.venueId) ?? 0) + 1)
+  return [...counts].map(([venueId, weekends]) => ({ name: nameOf(venueId), weekends }))
+}
+
+/**
+ * A grade's buildings before and after a move, counted in words: "Playground 6
+ * weekends becomes Playground 5, Six Park 1." What the miniature says in
+ * colour, said again for anybody the colour does not reach.
+ */
+export function gymCountsSentence(
+  before: GradeStripCell[],
+  after: GradeStripCell[],
+  nameOf: (venueId: string) => string
+): string {
+  // The noun rides on the first side only, and only when one building holds
+  // the whole season: "Playground 6 weekends becomes Playground 5, Six Park 1."
+  const side = (cells: GradeStripCell[], withNoun: boolean) => {
+    const tally = gymTally(cells, nameOf)
+    if (tally.length === 0) return "no weekends"
+    if (tally.length === 1 && withNoun) {
+      const one = tally[0]
+      return `${one.name} ${one.weekends} weekend${one.weekends === 1 ? "" : "s"}`
+    }
+    return tally.map((t) => `${t.name} ${t.weekends}`).join(", ")
+  }
+  return `${side(before, true)} becomes ${side(after, false)}.`
 }
 

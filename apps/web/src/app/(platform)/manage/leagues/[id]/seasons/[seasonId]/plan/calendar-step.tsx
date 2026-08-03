@@ -3,18 +3,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui"
 import {
+  assignmentWithMove,
   currentAssignment,
   diffAssignments,
+  gradeGymStrip,
+  gymCountsSentence,
   hoursPreviewSentence,
   packShownPlacements,
   planSummary,
+  railSuggestions,
   resolveWeekendGyms,
   shiftClock,
   suggestFor,
+  venuesWithoutUnit,
+  weekendDemand,
   weekendLoad,
   weekendShortDays,
   weekendStory,
   type AssignmentDiffSummary,
+  type GradeStripCell,
   type HoursPreview,
   type PlacementReason,
   type PlannerLever,
@@ -23,11 +30,27 @@ import {
   type PlannerUnit,
   type PlannerWeekend,
   type PlanSummary,
+  type SuggestionMove,
   type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { venueShortName } from "@/lib/seasons/venue-strip"
-import { CARD_TONE, METER_TONE, PILL_TONE, type Armed } from "./plan-shared"
+import {
+  CARD_TONE,
+  FRACTION_FOR_TONE,
+  PILL_TONE,
+  fractionTone,
+  hueFor,
+  planVenueHues,
+  type Armed,
+} from "./plan-shared"
+import {
+  Fraction,
+  GLYPH_LEGEND,
+  REASON_GLYPH,
+  ReasonGlyph,
+  WhyPopover,
+} from "./plan-ui"
 import { Segmented, StripView, type StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
 
@@ -129,27 +152,6 @@ interface BoardSnapshot {
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean
-}
-
-/** Drop a grade's gym on the given weekends: it moved, or it left. Weekends
- *  that end up deciding nothing drop out, so an empty map stays empty. */
-function forgetGym(
-  venues: Record<string, Record<string, string>>,
-  unitKey: string,
-  sessionIds: Array<string | null>
-): Record<string, Record<string, string>> {
-  const touched = new Set(sessionIds.filter((id): id is string => Boolean(id)))
-  const next: Record<string, Record<string, string>> = {}
-  for (const [sessionId, byUnit] of Object.entries(venues)) {
-    if (!touched.has(sessionId)) {
-      next[sessionId] = byUnit
-      continue
-    }
-    const copy = { ...byUnit }
-    delete copy[unitKey]
-    if (Object.keys(copy).length > 0) next[sessionId] = copy
-  }
-  return next
 }
 
 /** Which building each grade plays in, as the plan has it SAVED: sessionId →
@@ -359,6 +361,25 @@ export function CalendarStep({
     [state, assignment, venues]
   )
 
+  /**
+   * The gym is the colour, everywhere (owner-approved mock 2026-08-02). ONE
+   * mapping for the whole step, from the same two inputs the strip uses, so a
+   * building is the same colour on the board, on the strip and in the rail.
+   */
+  const gyms = useMemo(
+    () =>
+      planVenueHues(
+        venueGrid,
+        (state?.windows ?? []).flatMap((win) => win.weekends)
+      ),
+    [venueGrid, state]
+  )
+  /** A gym in the words the columns have room for, by id. */
+  const gymShort = useCallback(
+    (venueId: string) => gyms.order.find((v) => v.venueId === venueId)?.short ?? "another gym",
+    [gyms]
+  )
+
   const runLever = async (lever: PlannerLever) => {
     setBusy(lever)
     setError(null)
@@ -496,17 +517,10 @@ export function CalendarStep({
   const move = (unitKey: string, fromSessionId: string | null, toSessionId: string) => {
     if (locked || fromSessionId === toSessionId) return
     remember()
-    setAssignment((prev) => {
-      const next: Record<string, string[]> = {}
-      for (const [sid, keys] of Object.entries(prev)) {
-        next[sid] = sid === fromSessionId ? keys.filter((k) => k !== unitKey) : [...keys]
-      }
-      next[toSessionId] = [...new Set([...(next[toSessionId] ?? []), unitKey])]
-      return next
-    })
+    setAssignment((prev) => assignmentWithMove(prev, unitKey, fromSessionId, toSessionId))
     // The gym travels with the chip: the weekend it left forgets it, and the
     // weekend it lands on packs it fresh against whatever is already there.
-    setVenues((prev) => forgetGym(prev, unitKey, [fromSessionId, toSessionId]))
+    setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId, toSessionId]))
     setArmed(null)
     setDirty(true)
     setNotice(null)
@@ -532,7 +546,7 @@ export function CalendarStep({
       ...prev,
       [fromSessionId]: (prev[fromSessionId] ?? []).filter((k) => k !== unitKey),
     }))
-    setVenues((prev) => forgetGym(prev, unitKey, [fromSessionId]))
+    setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId]))
     setArmed(null)
     setDirty(true)
     setNotice(null)
@@ -700,6 +714,7 @@ export function CalendarStep({
                 whyIn={shown.reasons}
                 cameFrom={shown.homes}
                 unitByKey={unitByKey}
+                hue={gyms.hue}
                 armed={armed}
                 interactive={interactive}
                 onArm={setArmed}
@@ -729,48 +744,20 @@ export function CalendarStep({
               />
             )}
 
-            {/* What the math noticed, in plain language. It describes the
-                proposal, so it stays quiet while the kept calendar is up. */}
-            {suggestions.length > 0 && !showingKept && (
-              <div className="mt-4 space-y-1.5">
-                {suggestions.slice(0, 6).map((s, i) => (
-                  <div
-                    key={`${s.sessionId}-${s.kind}-${i}`}
-                    className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-xs ${
-                      s.kind === "overflow"
-                        ? "border-hoop-200 bg-hoop-50 text-hoop-900"
-                        : s.kind === "idle-weekend"
-                          ? "border-ink-100 bg-ink-50 text-ink-500"
-                          : "border-gold-200 bg-gold-50 text-gold-900"
-                    }`}
-                  >
-                    <span>{s.text}</span>
-                    {/* The suggestion does itself. Same state change as a
-                        drag, so it is undoable and nothing is written. */}
-                    {s.move && interactive && (
-                      <button
-                        type="button"
-                        data-testid="suggestion-move"
-                        data-unit-key={s.move.unitKey}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          const m = s.move!
-                          move(m.unitKey, m.fromSessionId, m.toSessionId)
-                        }}
-                        aria-label={`Move ${s.move.unitLabel} from ${s.move.fromLabel} to ${s.move.toLabel}`}
-                        className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 shrink-0 rounded-lg border px-2 py-1 text-[11px] font-bold"
-                      >
-                        Move to {s.move.toLabel}
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {suggestions.length > 6 && (
-                  <p className="text-ink-400 px-1 text-xs">
-                    and {suggestions.length - 6} more like these.
-                  </p>
-                )}
-              </div>
+            {/* What the math noticed. It describes the proposal, so it stays
+                quiet while the kept calendar is up. */}
+            {!showingKept && (
+              <SuggestionRail
+                state={state}
+                assignment={assignment}
+                venues={venues}
+                playsIn={shown.venues}
+                suggestions={suggestions}
+                hue={gyms.hue}
+                gymShort={gymShort}
+                interactive={interactive}
+                onMove={move}
+              />
             )}
 
             {/* The quiet door to the levers, and the one button that commits.
@@ -967,6 +954,7 @@ function BoardView({
   whyIn,
   cameFrom,
   unitByKey,
+  hue,
   armed,
   interactive,
   onArm,
@@ -987,6 +975,9 @@ function BoardView({
    *  name the building somebody was moved out of. */
   cameFrom: Record<string, Record<string, string>>
   unitByKey: Map<string, PlannerUnit>
+  /** venueId → colour family. The step's one mapping, so a gym is the same
+   *  colour here as it is on the strip. */
+  hue: Map<string, number>
   armed: Armed | null
   interactive: boolean
   onArm: (armed: Armed | null) => void
@@ -1001,11 +992,11 @@ function BoardView({
       <div
         className="grid gap-2.5"
         style={{
-          gridTemplateColumns: `repeat(${state.windows.length}, minmax(172px, 1fr))`,
-          minWidth: `${state.windows.length * 172}px`,
+          gridTemplateColumns: `repeat(${state.windows.length}, minmax(200px, 1fr))`,
+          minWidth: `${state.windows.length * 200}px`,
           // A two-month season should not stretch its columns across the whole
           // page just because there is room.
-          maxWidth: `${state.windows.length * 260}px`,
+          maxWidth: `${state.windows.length * 280}px`,
         }}
       >
         {state.windows.map((win, i) => {
@@ -1027,6 +1018,7 @@ function BoardView({
                   whyIn={whyIn[w.sessionId] ?? {}}
                   cameFrom={cameFrom[w.sessionId] ?? {}}
                   unitByKey={unitByKey}
+                  hue={hue}
                   armed={armed}
                   interactive={interactive}
                   onArm={onArm}
@@ -1066,13 +1058,29 @@ function BoardView({
           )
         })}
       </div>
+
+      {/* The glyphs, in words, once. A chip's mark is never the only place a
+          reason is said: it is also in the chip's own popover and in the aria
+          label the strip carries. */}
+      <div
+        className="text-ink-400 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px]"
+        data-testid="board-legend"
+      >
+        {GLYPH_LEGEND.map((entry) => (
+          <span key={entry.glyph} className="inline-flex items-center gap-1">
+            <ReasonGlyph glyph={entry.glyph} />
+            {entry.words}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
 
-/** One weekend: the date, its grades UNDER THE GYM THEY PLAY IN, and the court
- *  math in the mock's phrasing. Also the drop target, and the tap-move
- *  destination. */
+/** One weekend: the date, one fraction chip, and its grades UNDER THE GYM THEY
+ *  PLAY IN, each gym with its own colour, meter and chip. No sentences: the
+ *  red pill and the maxed meter already say "over by 7", and the story is one
+ *  tap away on the pill. Also the drop target, and the tap-move destination. */
 function WeekendCard({
   weekend,
   windowLabel,
@@ -1082,6 +1090,7 @@ function WeekendCard({
   whyIn,
   cameFrom,
   unitByKey,
+  hue,
   armed,
   interactive,
   onArm,
@@ -1106,6 +1115,8 @@ function WeekendCard({
   /** The gym each grade played before this weekend. */
   cameFrom: Record<string, string>
   unitByKey: Map<string, PlannerUnit>
+  /** venueId → colour family, the step's one mapping. */
+  hue: Map<string, number>
   armed: Armed | null
   interactive: boolean
   onArm: (a: Armed | null) => void
@@ -1158,6 +1169,13 @@ function WeekendCard({
       <GradeChip
         key={key}
         unit={unit}
+        games={weekendDemand(units, weekend, [key])}
+        tint={venueId ? hueFor(hue, venueId).chip : "border-hoop-200 bg-hoop-50 text-hoop-800"}
+        quiet={venueId ? hueFor(hue, venueId).chipQuiet : "text-hoop-600"}
+        reason={whyIn[key] ?? null}
+        // The sentence the core composed for this grade, now behind the mark
+        // rather than printed under the chip.
+        why={story.chipCaptions[key]}
         fromSessionId={weekend.sessionId}
         windowLabel={windowLabel}
         weekendLabel={weekend.label}
@@ -1168,18 +1186,23 @@ function WeekendCard({
         switchTo={next ? { venueId: next.venueId, short: venueShortName(next.name) } : undefined}
         onSwitchGym={next ? () => onSwitchGym(weekend.sessionId, key, next.venueId) : undefined}
         diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
-        // Comparing is a live question about this grade, so it outranks the
-        // standing explanation of which building the grade is in.
-        caption={
-          changed
-            ? keptDays
-              ? `kept: ${keptDays}`
-              : "not in the kept plan"
-            : story.chipCaptions[key]
-        }
+        // Comparing is a live question about this grade, and the answer is a
+        // date the card has nowhere else to put, so the lens keeps its caption.
+        caption={changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined}
       />
     )
   }
+
+  /** The whole weekend as one number. It wears the story when there is one. */
+  const headerChip = (
+    <Fraction
+      is={load.demand}
+      of={load.capacity}
+      tone={FRACTION_FOR_TONE[tone]}
+      title={`${weekend.label}: ${load.demand} games of ${load.capacity}`}
+      testId="weekend-fraction"
+    />
+  )
 
   return (
     <div
@@ -1197,36 +1220,83 @@ function WeekendCard({
         canTakeArmed ? "ring-play-400 ring-2" : ""
       }`}
     >
-      <p
-        className={`text-[12.5px] font-bold ${
-          tone === "unavailable" ? "text-ink-400" : "text-ink-900"
-        }`}
-      >
-        {weekend.label}
-      </p>
+      {/* The date, and the one number that describes the whole weekend. The
+          story behind that number is a tap away, and nowhere else. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <p
+          className={`whitespace-nowrap text-[13px] font-bold ${
+            tone === "unavailable" ? "text-ink-400" : "text-ink-900"
+          }`}
+        >
+          {weekend.label}
+        </p>
+        {(load.capacity > 0 || load.demand > 0) &&
+          (story.caption ? (
+            <WhyPopover
+              text={story.caption}
+              label={`What happens on ${weekend.label}`}
+              testId="weekend-why"
+            >
+              {headerChip}
+            </WhyPopover>
+          ) : (
+            headerChip
+          ))}
+      </div>
 
       {/* Grades sit under the gym they play in: one building per grade, and
-          a family drives to one address (owner 2026-08-02). */}
-      <div className="my-1.5 space-y-1.5">
-        {gyms.sections.map((section) => (
-          <div key={section.venueId} data-testid="weekend-gym-section" data-venue-id={section.venueId}>
-            <div className="flex items-baseline justify-between gap-1.5">
-              <span className="text-ink-500 truncate text-[10px] font-bold uppercase tracking-[0.06em]">
-                {venueShortName(section.name)}
-              </span>
-              <span
-                className={`shrink-0 text-[10px] font-semibold ${
-                  section.over > 0 ? "text-hoop-700" : "text-ink-400"
-                }`}
-              >
-                {section.games}/{section.capacityGames}
-              </span>
+          a family drives to one address (owner 2026-08-02). The gym owns a
+          colour, and its NAME is always in the header with it. */}
+      <div className="my-1.5 space-y-2">
+        {gyms.sections.map((section) => {
+          const paint = hueFor(hue, section.venueId)
+          const filled =
+            section.capacityGames > 0
+              ? Math.min(100, Math.round((section.games / section.capacityGames) * 100))
+              : 100
+          return (
+            <div
+              key={section.venueId}
+              data-testid="weekend-gym-section"
+              data-venue-id={section.venueId}
+            >
+              <div className="flex items-center gap-1.5">
+                <i aria-hidden className={`h-2 w-2 flex-none rounded-full ${paint.swatch}`} />
+                {/* The gym's NAME, never shortened away to make room for its
+                    own meter: the meter gives up its width first. */}
+                <span
+                  className={`max-w-[104px] flex-none truncate text-[11px] font-bold ${paint.name}`}
+                >
+                  {venueShortName(section.name)}
+                </span>
+                <span
+                  aria-hidden
+                  className="bg-ink-100 h-[5px] min-w-[14px] flex-1 overflow-hidden rounded-full"
+                >
+                  <i
+                    className={`block h-full rounded-full ${
+                      section.over > 0 ? "bg-hoop-600" : paint.bar
+                    }`}
+                    style={{ width: `${section.over > 0 ? 100 : filled}%` }}
+                  />
+                </span>
+                <Fraction
+                  is={section.games}
+                  of={section.capacityGames}
+                  tone={fractionTone(section.games, section.capacityGames)}
+                  title={`${venueShortName(section.name)}: ${section.games} games of ${
+                    section.capacityGames
+                  }`}
+                  className="px-1.5"
+                  testId="gym-fraction"
+                />
+              </div>
+              <div className="mt-1 flex flex-wrap items-start gap-1">
+                {section.unitKeys.map((k) => chipFor(k, section.venueId))}
+              </div>
             </div>
-            <div className="mt-1 flex flex-wrap items-start gap-1">
-              {section.unitKeys.map((k) => chipFor(k, section.venueId))}
-            </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* Grades on a weekend with no gym at all: still on the board, still
             movable, and honestly labelled. */}
@@ -1266,26 +1336,6 @@ function WeekendCard({
         )}
       </div>
 
-      <p className={`text-[11px] ${METER_TONE[tone]}`}>
-        {load.capacity <= 0 && load.demand === 0 ? (
-          "no gym this weekend"
-        ) : (
-          <>
-            {"courts "}
-            <b className={tone === "roomy" || tone === "empty" ? "text-ink-900" : ""}>
-              {load.demand} / {load.capacity}
-            </b>
-          </>
-        )}
-      </p>
-      {/* The story gets its own line: it names buildings and grades, and it
-          has to wrap without pushing the court count around. */}
-      {story.caption && (
-        <p className={`text-[10.5px] ${METER_TONE[tone]}`} data-testid="weekend-caption">
-          {story.caption}
-        </p>
-      )}
-
       {canTakeArmed && armed && (
         <button
           type="button"
@@ -1303,10 +1353,313 @@ function WeekendCard({
   )
 }
 
-/** A grade. Draggable for a mouse, tappable for everything else: one tap
- *  arms it, the next tap on a weekend moves it. */
+/* ----------------------------- the rail ---------------------------------- */
+
+/** What a move buys, in two words. Green fixes a problem, indigo tidies. */
+const OUTCOME: Record<SuggestionMove["resolves"], { words: string; tone: string }> = {
+  shortage: { words: "clears shortage", tone: "bg-court-50 text-court-800" },
+  "two-building": { words: "one building", tone: "bg-play-50 text-play-700" },
+  "idle-weekend": { words: "fills the weekend", tone: "bg-play-50 text-play-700" },
+}
+
+/**
+ * The rail: problems first, then the moves worth taking, one row each.
+ *
+ * Every row is the same sentence the core composes, laid out instead of read:
+ * which grade, from which weekend at what load, to which weekend at what load,
+ * what it buys, and what it does to that grade's season. The recap rows that
+ * only described what a card already draws are gone (railSuggestions), and the
+ * ideas past the first two fold away.
+ */
+function SuggestionRail({
+  state,
+  assignment,
+  venues,
+  playsIn,
+  suggestions,
+  hue,
+  gymShort,
+  interactive,
+  onMove,
+}: {
+  state: PlannerState
+  assignment: Record<string, string[]>
+  /** The gyms somebody DECIDED, which is what a move carries forward. */
+  venues: Record<string, Record<string, string>>
+  /** Where every grade plays on the board right now, for the row's tint. */
+  playsIn: Record<string, Record<string, string>>
+  suggestions: PlannerSuggestion[]
+  hue: Map<string, number>
+  gymShort: (venueId: string) => string
+  interactive: boolean
+  onMove: (unitKey: string, from: string | null, to: string) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const rows = useMemo(() => railSuggestions(suggestions), [suggestions])
+  const weekendById = useMemo(() => {
+    const out = new Map<string, PlannerWeekend>()
+    for (const win of state.windows) for (const w of win.weekends) out.set(w.sessionId, w)
+    return out
+  }, [state])
+
+  const problems = rows.filter((s) => !s.move)
+  const ideas = rows.filter((s) => s.move)
+  const shownIdeas = expanded ? ideas : ideas.slice(0, 2)
+  const folded = ideas.length - shownIdeas.length
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className="mt-4 space-y-1.5" aria-live="polite" data-testid="suggestion-rail">
+      {problems.map((s, i) => {
+        const weekend = weekendById.get(s.sessionId)
+        if (!weekend) return null
+        const load = weekendLoad(state.units, weekend, assignment[s.sessionId] ?? [])
+        return (
+          <div
+            key={`problem-${s.sessionId}-${i}`}
+            data-testid="rail-problem"
+            className="border-hoop-200 bg-hoop-50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-1.5"
+          >
+            <span className="text-hoop-800 text-[12.5px] font-bold">{weekend.label}</span>
+            <WhyPopover
+              text={s.text}
+              label={`What ${weekend.label} is short of`}
+              testId="problem-why"
+            >
+              <Fraction
+                is={load.demand}
+                of={load.capacity}
+                tone="over"
+                title={`${weekend.label}: ${load.demand} games of ${load.capacity}`}
+              />
+            </WhyPopover>
+          </div>
+        )
+      })}
+
+      {shownIdeas.map((s, i) => (
+        <SuggestionRow
+          key={`idea-${s.sessionId}-${s.move?.unitKey}-${i}`}
+          state={state}
+          assignment={assignment}
+          venues={venues}
+          playsIn={playsIn}
+          move={s.move as SuggestionMove}
+          hue={hue}
+          gymShort={gymShort}
+          interactive={interactive}
+          onMove={onMove}
+        />
+      ))}
+
+      {folded > 0 && (
+        <button
+          type="button"
+          data-testid="more-ideas"
+          aria-expanded={false}
+          onClick={(e) => {
+            e.stopPropagation()
+            setExpanded(true)
+          }}
+          className="text-ink-500 hover:text-ink-800 cursor-pointer px-1 py-1 text-[12.5px] font-semibold"
+        >
+          {folded} more {folded === 1 ? "idea" : "ideas"}
+        </button>
+      )}
+      {expanded && ideas.length > 2 && (
+        <button
+          type="button"
+          data-testid="more-ideas"
+          aria-expanded
+          onClick={(e) => {
+            e.stopPropagation()
+            setExpanded(false)
+          }}
+          className="text-ink-500 hover:text-ink-800 cursor-pointer px-1 py-1 text-[12.5px] font-semibold"
+        >
+          Fewer ideas
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** One move, laid out: the grade, both weekends with their loads, what it
+ *  buys, the grade's season before and after, and the button that does it. */
+function SuggestionRow({
+  state,
+  assignment,
+  venues,
+  playsIn,
+  move,
+  hue,
+  gymShort,
+  interactive,
+  onMove,
+}: {
+  state: PlannerState
+  assignment: Record<string, string[]>
+  venues: Record<string, Record<string, string>>
+  playsIn: Record<string, Record<string, string>>
+  move: SuggestionMove
+  hue: Map<string, number>
+  gymShort: (venueId: string) => string
+  interactive: boolean
+  onMove: (unitKey: string, from: string | null, to: string) => void
+}) {
+  const before = useMemo(
+    () => gradeGymStrip(state, assignment, venues, move.unitKey),
+    [state, assignment, venues, move.unitKey]
+  )
+  // The same calendar with this one move made, packed the same way the board
+  // will pack it the moment the button is pressed. Nothing here is mutated.
+  const after = useMemo(
+    () =>
+      gradeGymStrip(
+        state,
+        assignmentWithMove(assignment, move.unitKey, move.fromSessionId, move.toSessionId),
+        venuesWithoutUnit(venues, move.unitKey, [move.fromSessionId, move.toSessionId]),
+        move.unitKey
+      ),
+    [state, assignment, venues, move.unitKey, move.fromSessionId, move.toSessionId]
+  )
+  const paint = hueFor(hue, playsIn[move.fromSessionId]?.[move.unitKey])
+  const outcome = OUTCOME[move.resolves]
+  const story = `${gymCountsSentence(before, after, gymShort)}${move.lands ? ` ${move.lands}` : ""}`
+
+  return (
+    <div className="border-ink-100 flex flex-wrap items-center gap-2 rounded-xl border bg-white px-3 py-2">
+      <span
+        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[12px] font-bold ${paint.chip}`}
+      >
+        {move.unitLabel}
+        <span className={`text-[11px] tabular-nums ${paint.chipQuiet}`} aria-hidden>
+          {move.games}
+        </span>
+      </span>
+      <span className="text-ink-700 whitespace-nowrap text-[12px] font-bold">
+        {move.fromLabel}
+      </span>
+      <Fraction
+        is={move.fromBefore.demand}
+        of={move.fromBefore.capacity}
+        tone={fractionTone(move.fromBefore.demand, move.fromBefore.capacity)}
+        title={`${move.fromLabel} now: ${move.fromBefore.demand} games of ${move.fromBefore.capacity}`}
+      />
+      <span aria-hidden className="text-ink-300 font-bold">
+        →
+      </span>
+      <span className="text-ink-700 whitespace-nowrap text-[12px] font-bold">{move.toLabel}</span>
+      <Fraction
+        is={move.toAfter.demand}
+        of={move.toAfter.capacity}
+        tone={fractionTone(move.toAfter.demand, move.toAfter.capacity)}
+        title={`${move.toLabel} after the move: ${move.toAfter.demand} games of ${move.toAfter.capacity}`}
+      />
+      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${outcome.tone}`}>
+        {outcome.words}
+      </span>
+      <ImpactStrip
+        before={before}
+        after={after}
+        hue={hue}
+        story={story}
+        unitLabel={move.unitLabel}
+      />
+      {interactive && (
+        <button
+          type="button"
+          data-testid="suggestion-move"
+          data-unit-key={move.unitKey}
+          onClick={(e) => {
+            e.stopPropagation()
+            onMove(move.unitKey, move.fromSessionId, move.toSessionId)
+          }}
+          aria-label={`Move ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}`}
+          className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 ml-auto min-h-[40px] shrink-0 cursor-pointer rounded-lg border px-3 text-[12px] font-bold"
+        >
+          Move
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
+ * A grade's season in miniature, before and after: one cell per weekend it
+ * plays, in date order, coloured by the gym. A cell that the move sends
+ * somewhere other than the grade's home gym is outlined, so the one thing that
+ * changed is the one thing you see. Static, on purpose: nothing on this screen
+ * blinks at you.
+ */
+function ImpactStrip({
+  before,
+  after,
+  hue,
+  story,
+  unitLabel,
+}: {
+  before: GradeStripCell[]
+  after: GradeStripCell[]
+  hue: Map<string, number>
+  story: string
+  unitLabel: string
+}) {
+  /** The building this grade plays most: its home, whatever one weekend does. */
+  const home = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const c of before) counts.set(c.venueId, (counts.get(c.venueId) ?? 0) + 1)
+    let best: string | null = null
+    for (const [venueId, n] of counts) if (!best || n > (counts.get(best) ?? 0)) best = venueId
+    return best
+  }, [before])
+
+  const cells = (list: GradeStripCell[], mark: boolean) => (
+    <span className="inline-flex gap-[2px]">
+      {list.map((cell, i) => {
+        const moved = mark && before[i] && before[i].venueId !== cell.venueId
+        return (
+          <i
+            key={`${cell.sessionId}-${i}`}
+            aria-hidden
+            data-venue-id={cell.venueId}
+            className={`block h-3 w-[9px] rounded-[3px] ${hueFor(hue, cell.venueId).swatch} ${
+              moved && cell.venueId !== home ? "outline-gold-500 outline outline-2 outline-offset-1" : ""
+            }`}
+          />
+        )
+      })}
+    </span>
+  )
+
+  return (
+    <WhyPopover
+      text={story}
+      label={`${unitLabel}: its season before and after this move`}
+      testId="impact-strip"
+      className="inline-flex min-h-[32px] items-center gap-1.5 px-1"
+    >
+      {cells(before, false)}
+      <span aria-hidden className="text-ink-300 text-[11px] font-bold">
+        →
+      </span>
+      {cells(after, true)}
+    </WhyPopover>
+  )
+}
+
+/** A grade, in the colour of the gym it plays in. Draggable for a mouse,
+ *  tappable for everything else: one tap arms it, the next tap on a weekend
+ *  moves it. Its games ride on it as a number, and the reason it sits where it
+ *  sits rides on it as a mark you can tap for the sentence. */
 function GradeChip({
   unit,
+  games,
+  tint,
+  quiet,
+  reason,
+  why,
   fromSessionId,
   windowLabel,
   weekendLabel,
@@ -1321,6 +1674,16 @@ function GradeChip({
   caption,
 }: {
   unit: PlannerUnit
+  /** Games this grade brings to this weekend. Absent on the bench. */
+  games?: number
+  /** The gym's colour, as chip classes. */
+  tint?: string
+  /** The quieter ink inside the chip, from the same family. */
+  quiet?: string
+  /** Why it is in this building, for the mark it wears. */
+  reason?: PlacementReason | null
+  /** The sentence behind that mark. */
+  why?: string
   fromSessionId: string | null
   windowLabel: string
   weekendLabel: string
@@ -1334,9 +1697,7 @@ function GradeChip({
   muted?: boolean
   /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
   diffTone?: "agreed" | "changed"
-  /** The one small thing worth saying under this chip: in compare mode, where
-   *  the kept calendar plays the grade instead; otherwise why it is in the
-   *  building it is in ("home gym", "moved, Playground full"). */
+  /** Compare mode only: where the kept calendar plays this grade instead. */
   caption?: string
 }) {
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
@@ -1348,6 +1709,8 @@ function GradeChip({
       : diffTone === "changed"
         ? "ring-gold-500 ring-1"
         : ""
+  const ink = muted ? "text-ink-400" : (quiet ?? "text-ink-400")
+  const glyph = reason ? REASON_GLYPH[reason] : undefined
   const chip = (
     <span
       draggable={interactive}
@@ -1358,10 +1721,9 @@ function GradeChip({
         )
       }
       data-diff={diffTone}
-      className={`inline-flex items-center gap-0.5 rounded-lg border pl-1.5 text-[11px] font-bold ${
-        muted
-          ? "border-ink-200 bg-ink-50 text-ink-500"
-          : "border-court-200 bg-court-50 text-court-800"
+      data-reason={reason ?? undefined}
+      className={`inline-flex min-h-[32px] items-center gap-1 rounded-lg border pl-2 text-[12px] font-bold ${
+        muted ? "border-ink-200 bg-ink-50 text-ink-500" : (tint ?? "border-ink-200 bg-white")
       } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring}`}
     >
       <button
@@ -1378,10 +1740,27 @@ function GradeChip({
               : { unitKey: unit.key, label: unit.label, fromSessionId, window: windowLabel }
           )
         }}
-        className="py-0.5 pr-0.5 disabled:cursor-default"
+        className="min-h-[32px] pr-0.5 disabled:cursor-default"
       >
         {unit.label}
       </button>
+      {games != null && games > 0 && (
+        <span className={`text-[11px] font-bold tabular-nums ${ink}`} aria-hidden>
+          {games}
+        </span>
+      )}
+      {/* The reason, drawn. The tap target is the whole height of the chip,
+          never the 12px mark on its own, and the sentence is behind it. */}
+      {glyph && why && (
+        <WhyPopover
+          text={why}
+          label={`Why ${unit.label} plays here`}
+          testId="chip-why"
+          className={`inline-flex min-h-[32px] items-center px-0.5 ${ink}`}
+        >
+          <ReasonGlyph glyph={glyph} />
+        </WhyPopover>
+      )}
       {/* One tap sends the grade to the next gym of this weekend. The chip
           already sits under the gym it plays in, so this is the move. */}
       {interactive && switchTo && onSwitchGym && (
@@ -1393,7 +1772,7 @@ function GradeChip({
           }}
           aria-label={`Move ${unit.label} to ${switchTo.short}`}
           title={`Move to ${switchTo.short}`}
-          className="text-court-500 hover:text-court-800 px-0.5 py-0.5 text-[10px] font-bold"
+          className={`min-h-[32px] px-0.5 text-[11px] font-bold ${ink} hover:text-ink-900`}
         >
           ⇄
         </button>
@@ -1406,7 +1785,7 @@ function GradeChip({
             onRemove()
           }}
           aria-label={`Take ${unit.label} off ${weekendLabel}`}
-          className="text-court-500 hover:text-hoop-700 px-1 py-0.5"
+          className={`hover:text-hoop-700 min-h-[32px] px-1.5 ${ink}`}
         >
           ×
         </button>
@@ -1419,7 +1798,7 @@ function GradeChip({
     <span className="inline-flex flex-col items-start gap-0.5">
       {chip}
       <span
-        className={`pl-0.5 text-[9px] font-bold leading-none ${
+        className={`pl-0.5 text-[10px] font-bold leading-none ${
           diffTone === "changed" ? "text-gold-600" : "text-ink-400"
         }`}
       >
