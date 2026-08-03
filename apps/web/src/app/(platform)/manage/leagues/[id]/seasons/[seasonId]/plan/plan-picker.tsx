@@ -29,6 +29,11 @@ import {
 
 const PANEL_WIDTH = 288
 
+/** Every row of the panel is the same row, whether it opens a plan or makes
+ *  one, so the list reads as one list. */
+const ROW =
+  "flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-bold"
+
 /** A quiet fact next to a plan's name. Never colour alone, never an icon
  *  alone: the word itself is the marker. */
 function Marker({ word }: { word: string }) {
@@ -54,13 +59,22 @@ export function PlanPicker({
   plans,
   selectedId,
   busy,
+  creating,
   onSelect,
+  onNew,
 }: {
   plans: PlanRow[]
   selectedId: string | null
   /** True while the step is doing something; the picker waits its turn. */
   busy: boolean
+  /** The solver is building a plan right now, which takes a few seconds and
+   *  has to say so where the operator asked for it. */
+  creating?: boolean
   onSelect: (planId: string) => void
+  /** Make a fresh calendar and keep it as a plan (owner 2026-08-02: "I want
+   *  the system to make a new plan, not me manually generate it"). Null on a
+   *  locked season, where nothing new can be written. */
+  onNew?: (() => void) | null
 }) {
   const [open, setOpen] = useState(false)
   const [at, setAt] = useState<{ left: number; top: number } | null>(null)
@@ -103,8 +117,9 @@ export function PlanPicker({
   }, [open, place])
 
   // A season with no plans at all has nothing to pick between, and the rest of
-  // the step already says the calendar is unsaved.
-  if (plans.length === 0) return null
+  // the step already says the calendar is unsaved. It still opens when a plan
+  // can be MADE, because that is the one thing worth offering there.
+  if (plans.length === 0 && !onNew) return null
   const selected = plans.find((p) => p.id === selectedId) ?? null
 
   return (
@@ -128,8 +143,14 @@ export function PlanPicker({
         className="border-ink-200 hover:bg-ink-50 inline-flex max-w-[280px] items-center gap-1.5 rounded-lg border bg-white px-2.5 py-1 text-[11.5px] font-bold disabled:opacity-50"
       >
         <span className="text-ink-400 font-semibold">Plan</span>
-        <span className="text-ink-900 min-w-0 truncate">{selected?.name ?? "Pick one"}</span>
-        {selected && planMarkers(selected).map((word) => <Marker key={word} word={word} />)}
+        <span className="text-ink-900 min-w-0 truncate">
+          {creating
+            ? "Building a new plan…"
+            : (selected?.name ?? (plans.length === 0 ? "None yet" : "Pick one"))}
+        </span>
+        {!creating &&
+          selected &&
+          planMarkers(selected).map((word) => <Marker key={word} word={word} />)}
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -150,41 +171,69 @@ export function PlanPicker({
         createPortal(
           <div
             ref={panel}
-            role="listbox"
-            aria-label="Plans for this season"
             data-testid="plan-menu"
             onClick={(e) => e.stopPropagation()}
             style={{ position: "fixed", left: at.left, top: at.top, width: PANEL_WIDTH }}
             className="border-ink-200 z-50 max-h-[320px] overflow-y-auto rounded-xl border bg-white p-1 shadow-lg"
           >
-            {plans.map((plan) => {
-              const on = plan.id === selectedId
-              return (
-                <button
-                  key={plan.id}
-                  type="button"
-                  role="option"
-                  aria-selected={on}
-                  data-testid="plan-option"
-                  data-plan-id={plan.id}
-                  data-active={plan.isActive ? "true" : "false"}
-                  data-source={plan.source}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setOpen(false)
-                    if (!on) onSelect(plan.id)
-                  }}
-                  className={`flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-bold ${
-                    on ? "bg-ink-50 text-ink-900" : "text-ink-700 hover:bg-ink-50"
-                  }`}
+            <div role="listbox" aria-label="Plans for this season">
+              {plans.map((plan) => {
+                const on = plan.id === selectedId
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    role="option"
+                    aria-selected={on}
+                    data-testid="plan-option"
+                    data-plan-id={plan.id}
+                    data-active={plan.isActive ? "true" : "false"}
+                    data-source={plan.source}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOpen(false)
+                      if (!on) onSelect(plan.id)
+                    }}
+                    className={`${ROW} ${on ? "bg-ink-50 text-ink-900" : "text-ink-700 hover:bg-ink-50"}`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{plan.name}</span>
+                    {planMarkers(plan).map((word) => (
+                      <Marker key={word} word={word} />
+                    ))}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Not a document, so it sits under them behind a hairline: the
+                one row that MAKES a calendar instead of opening one. */}
+            {onNew && (
+              <button
+                type="button"
+                data-testid="plan-new"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setOpen(false)
+                  onNew()
+                }}
+                className={`${ROW} text-play-700 hover:bg-play-50 ${
+                  plans.length > 0 ? "border-ink-100 mt-1 border-t pt-2" : ""
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  aria-hidden
+                  className="h-3.5 w-3.5 shrink-0"
                 >
-                  <span className="min-w-0 flex-1 truncate">{plan.name}</span>
-                  {planMarkers(plan).map((word) => (
-                    <Marker key={word} word={word} />
-                  ))}
-                </button>
-              )
-            })}
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span className="min-w-0 flex-1 truncate">New plan</span>
+              </button>
+            )}
           </div>,
           document.body
         )}

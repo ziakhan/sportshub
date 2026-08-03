@@ -581,6 +581,60 @@ export function CalendarStep({
     )
   }
 
+  /**
+   * A brand new plan, made BY the system (owner 2026-08-02: "I want the system
+   * to make a new plan, not me manually generate it"). One tap does the whole
+   * errand: the solver builds a balanced calendar, it is written down as a plan
+   * of the operator's own with a name nobody had to invent, and the board opens
+   * on it, clean. Nothing is applied to the season — a season that already runs
+   * a calendar keeps running it until somebody says otherwise.
+   */
+  const newPlan = async () => {
+    if (dirty && !window.confirm(PLAN_COPY.discard)) return
+    setBusy("new-plan")
+    setError(null)
+    setNotice(null)
+    const proposal = await propose("balance")
+    if (!proposal) {
+      setBusy(null)
+      setError("Couldn't build a new plan. Try again.")
+      return
+    }
+    const proposedVenues = proposal.venues ?? {}
+    const res = await fetch(`/api/seasons/${seasonId}/plans`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: suggestPlanName(plans),
+        assignment: proposal.assignment,
+        venues: proposedVenues,
+        // The document itself records where the calendar came from, so the
+        // board does not have to keep calling it a proposal afterwards.
+        source: "proposed",
+      }),
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
+    if (!res?.ok || !data?.plan) {
+      setBusy(null)
+      setError(data?.error ?? "That plan didn't save. Try again.")
+      return
+    }
+    const plan = data.plan as PlanRow
+    setPlans(await fetchPlans())
+    setPlanId(plan.id)
+    setAssignment(proposal.assignment)
+    setVenues(proposedVenues)
+    setUndoStack([])
+    setDirty(false)
+    setFromLever(false)
+    setArmed(null)
+    setNaming(null)
+    setBusy(null)
+    setNotice(
+      `${plan.name} is a fresh calendar from the planner. Adjust anything, then use it for the season.`
+    )
+  }
+
   /** Back to what the selected plan says, or to the saved calendar when this
    *  season has no plans yet. */
   const revert = async () => {
@@ -867,7 +921,11 @@ export function CalendarStep({
               plans={plans}
               selectedId={planId}
               busy={busy !== null}
+              creating={busy === "new-plan"}
               onSelect={(id) => openPlan(id)}
+              // A finalized season is read only, so the list has nothing to
+              // offer but the plans it already holds.
+              onNew={locked ? null : newPlan}
             />
             <Segmented
               label="How to view the calendar"

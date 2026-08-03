@@ -279,6 +279,84 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
 
+/* ------------------- the system makes a plan (New plan) ------------------ */
+// Owner 2026-08-02: "I want the system to make a new plan, not me manually
+// generate it." One row in the dropdown: solve, save, open. Nothing is applied
+// to the season — the byte-compare at the end proves it.
+await picker.click()
+await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 5000 })
+const newRow = page.locator('[data-testid="plan-new"]')
+ok(
+  "the dropdown offers to make a plan, under the plans it holds",
+  (await newRow.count()) === 1 && (await newRow.innerText()).trim() === "New plan",
+  await newRow.innerText().catch(() => "missing")
+)
+await page.screenshot({ path: `${SHOTS}/6-new-plan-row.png` })
+
+const plansBeforeNew = await listPlans()
+await newRow.click()
+ok("the dropdown closes when the row is taken", (await page.locator('[data-testid="plan-menu"]').count()) === 0)
+
+let made = null
+for (let i = 0; i < 90; i++) {
+  const rows = await listPlans()
+  made = rows.find((p) => !plansBeforeNew.some((b) => b.id === p.id)) ?? null
+  if (made) break
+  await page.waitForTimeout(1000)
+}
+ok(
+  "one tap makes a plan: the solver builds it and it is saved, unapplied",
+  Boolean(made) && made.isActive === false && made.source === "proposed" && /^Our plan/.test(made.name),
+  made ? `${made.name} source=${made.source} active=${made.isActive}` : "no new plan appeared"
+)
+
+await page.waitForTimeout(1200)
+const madeName = made?.name ?? "Our plan"
+const newText = (await picker.innerText()).replace(/\n/g, " ")
+ok(
+  "the board opens on the new plan, and the season keeps the one it runs",
+  newText.includes(madeName) && !/active/i.test(newText),
+  newText
+)
+const newState = await page.locator('[data-testid="plan-state"]').innerText()
+ok(
+  "the state line says it is saved and the season still runs NPH plan",
+  newState.includes(madeName) && newState.includes("NPH plan"),
+  newState
+)
+ok(
+  "nothing is left unsaved: no write-back button, no naming dance",
+  (await page.locator('[data-testid="save-plan"]').count()) === 0 &&
+    (await page.locator('[data-testid="plan-name-row"]').count()) === 0
+)
+const newNotice = await page.locator("text=fresh calendar from the planner").count()
+ok("the step says in plain words what just happened", newNotice >= 1)
+ok(
+  "the rail follows the plan it is critiquing",
+  (await railAbout.count()) === 0 || (await railAbout.innerText()).trim() === `Ideas for ${madeName}`,
+  await railAbout.innerText().catch(() => "no rail")
+)
+ok(
+  "a fresh solve carries none of the reference plan's overloads",
+  (await page.locator('[data-testid="rail-problem"]').count()) === 0,
+  `${await page.locator('[data-testid="rail-problem"]').count()} problem row(s)`
+)
+ok(
+  "the board still draws",
+  (await page.locator("[data-session-id]").count()) > 0,
+  `${await page.locator("[data-session-id]").count()} weekends`
+)
+await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
+
+let madeDeleted = false
+if (made) {
+  madeDeleted = (await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`)).ok()
+}
+ok(
+  "the drive's made plan is deleted again",
+  madeDeleted && !(await listPlans()).some((p) => p.id === made.id)
+)
+
 /* ------------------------------- clean up -------------------------------- */
 let deleted = false
 for (const plan of await listPlans()) {
