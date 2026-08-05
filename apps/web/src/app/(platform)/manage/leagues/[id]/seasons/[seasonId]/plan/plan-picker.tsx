@@ -11,28 +11,29 @@ import {
 } from "@/lib/scheduler/plan-documents"
 
 /**
- * The two controls plans as documents adds to step 3 (owner 2026-08-02).
+ * The two controls plans as documents adds to the wizard (owner 2026-08-02,
+ * moved to step 1 by the 2026-08-05 entry ruling).
  *
- *  1. THE PICKER. The board is a view onto ONE named plan, and this says which
- *     one and swaps it. A plan that drives the season says "active"; the
- *     league's own imported calendar says "reference", and says it in the list
- *     rather than waiting for somebody to try saving onto it.
+ *  1. THE PICKER. The wizard works in ONE named plan, and this says which one
+ *     and swaps it. A plan that drives the season says "active"; the league's
+ *     own imported calendar says "reference", and says it in the list rather
+ *     than waiting for somebody to try saving onto it. Making a plan is a
+ *     sibling button now (PlanChooser), not a row hidden inside this list.
  *  2. THE SAVE CONTROLS. One way to persist: save these changes to the plan
  *     you are in, or save them as a plan of your own. Applying a plan to the
  *     season is a separate, quieter button, because it is a separate decision.
  *
- * Both are drawn here and driven from calendar-step.tsx, which owns every
- * piece of state on the screen.
+ * Both are drawn here and driven from the step that owns the state.
  */
 
 /* ------------------------------ the picker ------------------------------- */
 
 const PANEL_WIDTH = 288
 
-/** Every row of the panel is the same row, whether it opens a plan or makes
- *  one, so the list reads as one list. */
+/** Every row of the panel is the same row, so the list reads as one list. A
+ *  44px row: this is a list somebody taps on a laptop trackpad in a gym. */
 const ROW =
-  "flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-bold"
+  "flex w-full min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] font-bold"
 
 /** A quiet fact next to a plan's name. Never colour alone, never an icon
  *  alone: the word itself is the marker. */
@@ -60,8 +61,10 @@ export function PlanPicker({
   selectedId,
   busy,
   creating,
+  label,
+  variant = "field",
+  testId = "plan-picker",
   onSelect,
-  onNew,
 }: {
   plans: PlanRow[]
   selectedId: string | null
@@ -70,11 +73,13 @@ export function PlanPicker({
   /** The solver is building a plan right now, which takes a few seconds and
    *  has to say so where the operator asked for it. */
   creating?: boolean
+  /** Overrides the "Plan · <name>" face: what the empty state's button says. */
+  label?: string
+  /** `field` reads as the control it is; `button` is the outlined button the
+   *  empty state offers beside "Start a new plan". */
+  variant?: "field" | "button"
+  testId?: string
   onSelect: (planId: string) => void
-  /** Make a fresh calendar and keep it as a plan (owner 2026-08-02: "I want
-   *  the system to make a new plan, not me manually generate it"). Null on a
-   *  locked season, where nothing new can be written. */
-  onNew?: (() => void) | null
 }) {
   const [open, setOpen] = useState(false)
   const [at, setAt] = useState<{ left: number; top: number } | null>(null)
@@ -116,10 +121,9 @@ export function PlanPicker({
     }
   }, [open, place])
 
-  // A season with no plans at all has nothing to pick between, and the rest of
-  // the step already says the calendar is unsaved. It still opens when a plan
-  // can be MADE, because that is the one thing worth offering there.
-  if (plans.length === 0 && !onNew) return null
+  // A season with no plans at all has nothing to pick between. Making one is a
+  // button of its own now, so this control simply has nothing to say.
+  if (plans.length === 0) return null
   const selected = plans.find((p) => p.id === selectedId) ?? null
 
   return (
@@ -127,7 +131,7 @@ export function PlanPicker({
       <button
         ref={trigger}
         type="button"
-        data-testid="plan-picker"
+        data-testid={testId}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={busy}
@@ -140,15 +144,24 @@ export function PlanPicker({
           place()
           setOpen(true)
         }}
-        className="border-ink-200 hover:bg-ink-50 inline-flex max-w-[280px] items-center gap-1.5 rounded-lg border bg-white px-2.5 py-1 text-[11.5px] font-bold disabled:opacity-50"
+        className={`inline-flex min-h-[36px] max-w-[300px] cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          variant === "button"
+            ? "border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 bg-white"
+            : "border-ink-300 hover:border-ink-400 hover:bg-ink-50 bg-white"
+        }`}
       >
-        <span className="text-ink-400 font-semibold">Plan</span>
-        <span className="text-ink-900 min-w-0 truncate">
-          {creating
-            ? "Building a new plan…"
-            : (selected?.name ?? (plans.length === 0 ? "None yet" : "Pick one"))}
-        </span>
-        {!creating &&
+        {label ? (
+          <span className="text-ink-800">{label}</span>
+        ) : (
+          <>
+            <span className="text-ink-500 font-semibold">Plan</span>
+            <span className="text-ink-900 min-w-0 truncate">
+              {creating ? "Building a new plan…" : (selected?.name ?? "None open")}
+            </span>
+          </>
+        )}
+        {!label &&
+          !creating &&
           selected &&
           planMarkers(selected).map((word) => <Marker key={word} word={word} />)}
         <svg
@@ -204,36 +217,6 @@ export function PlanPicker({
                 )
               })}
             </div>
-
-            {/* Not a document, so it sits under them behind a hairline: the
-                one row that MAKES a calendar instead of opening one. */}
-            {onNew && (
-              <button
-                type="button"
-                data-testid="plan-new"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setOpen(false)
-                  onNew()
-                }}
-                className={`${ROW} text-play-700 hover:bg-play-50 ${
-                  plans.length > 0 ? "border-ink-100 mt-1 border-t pt-2" : ""
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  aria-hidden
-                  className="h-3.5 w-3.5 shrink-0"
-                >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-                <span className="min-w-0 flex-1 truncate">New plan</span>
-              </button>
-            )}
           </div>,
           document.body
         )}
@@ -244,9 +227,9 @@ export function PlanPicker({
 /* --------------------------- the save controls --------------------------- */
 
 const QUIET =
-  "border-ink-200 text-ink-700 hover:bg-ink-50 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+  "border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 const PRIMARY =
-  "bg-court-600 text-white hover:bg-court-700 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+  "border-court-600 bg-court-600 text-white hover:bg-court-700 hover:border-court-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 
 /**
  * One way to persist the board (owner 2026-08-02). What is offered depends on
@@ -406,7 +389,9 @@ export function PlanSaveControls({
           >
             Cancel
           </button>
-          {takesOver && <p className="text-ink-400 w-full text-right text-[11px]">{PLAN_COPY.takesOver}</p>}
+          {takesOver && (
+            <p className="text-ink-400 w-full text-right text-[11px]">{PLAN_COPY.takesOver}</p>
+          )}
         </div>
       )}
     </div>

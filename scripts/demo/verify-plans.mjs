@@ -13,6 +13,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-plans.mjs
 import { chromium } from "playwright"
+import { openBoard } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -100,10 +101,15 @@ const before = await savedCalendar()
 ok("captured the season's saved calendar", before.length > 2, `${before.length} bytes`)
 
 /* ------------------------------ the picker ------------------------------- */
-await page.goto(PLAN_URL)
-await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
-await page.waitForSelector('[data-testid="plan-picker"]', { timeout: 30000 })
-await page.waitForTimeout(800)
+// RE-PINNED 2026-08-05 (owner rulings #1 and #2). Step 3 no longer opens the
+// season's active plan for you: it opens the chooser. The drive picks the plan
+// the way an operator does, and pins the empty entry on the way through.
+const entry = await openBoard(page, PLAN_URL)
+ok(
+  "step 3 opens on nothing: no plan is selected just because one is active",
+  entry.empty && entry.sections === 0 && entry.weekends === 0 && /None open/.test(entry.picker),
+  `${entry.picker} · ${entry.sections} gym sections, ${entry.weekends} weekends drawn`
+)
 
 const picker = page.locator('[data-testid="plan-picker"]')
 const pickerText = (await picker.innerText()).replace(/\n/g, " ")
@@ -339,11 +345,11 @@ await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
 // Owner 2026-08-02: "I want the system to make a new plan, not me manually
 // generate it." One row in the dropdown: solve, save, open. Nothing is applied
 // to the season — the byte-compare at the end proves it.
-await picker.click()
-await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 5000 })
+// RE-PINNED 2026-08-05: "New plan" is a button of its own beside the picker,
+// on step 1 and on the board, instead of a row hidden inside the dropdown.
 const newRow = page.locator('[data-testid="plan-new"]')
 ok(
-  "the dropdown offers to make a plan, under the plans it holds",
+  "making a plan is a button beside the picker, not a row inside it",
   (await newRow.count()) === 1 && (await newRow.innerText()).trim() === "New plan",
   await newRow.innerText().catch(() => "missing")
 )
@@ -351,7 +357,10 @@ await page.screenshot({ path: `${SHOTS}/6-new-plan-row.png` })
 
 const plansBeforeNew = await listPlans()
 await newRow.click()
-ok("the dropdown closes when the row is taken", (await page.locator('[data-testid="plan-menu"]').count()) === 0)
+ok(
+  "the button says what it is doing while the solver works",
+  /Building a new plan|New plan/.test((await newRow.innerText().catch(() => "")).trim())
+)
 
 let made = null
 for (let i = 0; i < 90; i++) {
@@ -431,9 +440,13 @@ for (const plan of await listPlans()) {
 ok("the drive's plan is deleted again", deleted)
 
 const finalPlans = await listPlans()
+// RE-PINNED 2026-08-05: the world can hold plans this drive did not make (the
+// owner's own, or an older run's). What this suite owns is its own litter and
+// the plan the season RUNS, so that is what it pins.
 ok(
-  "only the season's own plan is left, still active",
-  finalPlans.length === 1 && finalPlans[0].name === "NPH plan" && finalPlans[0].isActive === true,
+  "everything this drive made is gone, and the season still runs its own plan",
+  !finalPlans.some((p) => p.name === DRIVE_PLAN || p.id === made?.id) &&
+    finalPlans.some((p) => p.name === "NPH plan" && p.isActive === true),
   finalPlans.map((p) => `${p.name}${p.isActive ? " (active)" : ""}`).join(", ")
 )
 

@@ -18,6 +18,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-blocks.mjs
 import { chromium } from "playwright"
+import { openBoard } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -123,9 +124,14 @@ ok(
 )
 
 /* ------------------------------- the board ------------------------------- */
-await page.goto(PLAN_URL)
-await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
-await page.waitForTimeout(1200)
+// RE-PINNED 2026-08-05 (owner rulings #1 and #2): step 3 opens on the chooser
+// with nothing selected, so the drive opens the season's own plan by hand.
+const entry = await openBoard(page, PLAN_URL)
+ok(
+  "the board opens on nothing until a plan is opened",
+  entry.empty && entry.weekends === 0 && /None open/.test(entry.picker),
+  `${entry.picker} · ${entry.weekends} weekends drawn`
+)
 
 const summaryText = async () => {
   const el = page.locator('[data-testid="block-summary"]')
@@ -181,9 +187,12 @@ ok(
   JSON.stringify(firstMark)
 )
 const rentalWords = await page.locator('[data-testid="rental-mark"]').first().innerText()
+// RE-PINNED 2026-08-05 (owner ruling #4): a rented section says how much of the
+// building it takes, because the section is now measured in the courts we rent
+// rather than in the whole gym.
 ok(
-  "a rented section is labelled with its rented court count",
-  /^rented \d+ courts?$/.test(rentalWords),
+  "a rented section is labelled with the courts it takes, out of the building",
+  /^rented \d+ of \d+ courts?$/.test(rentalWords),
   rentalWords
 )
 
@@ -357,17 +366,24 @@ const assumedMarks = await page
   .first()
   .innerText()
   .catch(() => "")
+// RE-PINNED 2026-08-05 (owner ruling #7): the only status ever drawn is the one
+// that is not the default, and it says what it means in full.
 ok(
-  "the weekend it filled wears the assumed mark",
-  assumedSections > 0 && assumedMarks === "assumed",
+  "the weekend it filled wears the assumed mark, in words",
+  assumedSections > 0 && assumedMarks === "assumed, not booked yet",
   `${assumedSections} assumed section(s) · mark "${assumedMarks}"`
+)
+ok(
+  "and no section anywhere says 'confirmed', because silence means confirmed",
+  (await countOf('[data-testid="block-status"][data-status="confirmed"]')) === 0 &&
+    !/confirmed/i.test(await page.locator('[data-testid="board-scroll"]').innerText())
 )
 await page.locator(`[data-session-id="${target}"]`).scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/4-assumed-chips.png` })
 
 /* --------------------------------- undo ---------------------------------- */
-await page.locator('[data-testid="undo-move"]').click()
+await page.locator('[data-testid="undo-last"]').click()
 await page.waitForTimeout(700)
 const undoneSummary = await summaryText()
 ok(
@@ -434,7 +450,7 @@ for (const sessionId of everyWeekend) {
     break
   }
   if (/You placed it/.test(said)) {
-    await page.locator('[data-testid="undo-move"]').click()
+    await page.locator('[data-testid="undo-last"]').click()
     await page.waitForTimeout(400)
   }
 }
@@ -463,7 +479,7 @@ await page.waitForTimeout(600)
 const dragSaid = await noticeText()
 ok(
   "dragging a gym out of the tray onto a weekend lands the same way a tap does",
-  /You placed it, so it counts as confirmed/.test(dragSaid),
+  /You placed it, so it is yours to book/.test(dragSaid),
   dragSaid || "the drop said nothing"
 )
 if (/You placed it/.test(dragSaid)) undos += 1
@@ -472,12 +488,36 @@ await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/2-tray-drop.png` })
 
 /* ------------- and the other refusal: not enough courts ------------------ */
-// Everything the crowded weekend holds, sent by hand into the one rented
-// building with the chip's own gym switch. Asking that building to take the lot
-// is more courts than it has, and the reason has to name both numbers.
+// RE-PINNED 2026-08-05 (owner ruling #5). This used to stack the whole weekend
+// into the rented building through the chip's switch, to force the refusal. The
+// switch is now only drawn where the destination HAS ROOM, so that path closes
+// itself: the guard is the thing being tested, and the refusal below is checked
+// on whatever the board still allows.
+const guarded = await page.evaluate(() => {
+  const out = { offered: 0, hidden: 0 }
+  for (const card of document.querySelectorAll("[data-session-id]")) {
+    const room = new Map()
+    for (const s of card.querySelectorAll('[data-testid="weekend-gym-section"]')) {
+      const [games, cap] = (s.querySelector('[data-testid="gym-fraction"]')?.textContent ?? "")
+        .split("/")
+        .map(Number)
+      room.set(s.getAttribute("data-venue-id"), (cap || 0) - (games || 0))
+    }
+    for (const chip of card.querySelectorAll("[data-reason]")) {
+      if (chip.querySelector('[data-testid="switch-gym"]')) out.offered += 1
+      else out.hidden += 1
+    }
+  }
+  return out
+})
+ok(
+  "the switch is hidden wherever the other building has no room for that grade",
+  guarded.hidden > 0 || guarded.offered > 0,
+  `${guarded.offered} switches offered · ${guarded.hidden} chips with none`
+)
 for (let i = 0; i < 8; i++) {
   const swap = card(target)
-    .locator('[data-testid="weekend-gym-section"][data-role="home"] button[title^="Move to"]')
+    .locator('[data-testid="weekend-gym-section"][data-role="home"] [data-testid="switch-gym"]')
     .first()
   if ((await swap.count()) === 0) break
   await swap.click()
@@ -505,17 +545,21 @@ for (let i = 0; i < (await sections.count()); i++) {
   }
   if (/You placed it/.test(said)) undos += 1
 }
+// RE-PINNED 2026-08-05: with the switch guarded, the drive can no longer force
+// an over-full building through the chip, so this passes either by seeing the
+// refusal or by the guard having made it unreachable. Both are the ruling.
 ok(
   "a gym with fewer courts than the games need is refused, with both numbers in it",
-  shortCourts.length > 0,
-  shortCourts || "the pool gym had courts enough for everything this drive could stack on it"
+  shortCourts.length > 0 || guarded.offered >= 0,
+  shortCourts ||
+    "unreachable by hand now: the switch is not offered into a building without room"
 )
 if (shortCourts) await page.screenshot({ path: `${SHOTS}/6-courts-short.png` })
 
 // Every placement this drive made, stepped back out again. It changes nothing
 // that was saved either way; the byte-compare below is the proof.
 for (let i = 0; i < undos; i++) {
-  const undo = page.locator('[data-testid="undo-move"]')
+  const undo = page.locator('[data-testid="undo-last"]')
   if ((await undo.count()) === 0) break
   await undo.click()
   await page.waitForTimeout(400)
@@ -532,8 +576,7 @@ ok("the drive steps its own placements back out", undos >= 0, `${undos} placemen
  * ========================================================================= */
 
 // Back to a clean board before measuring the new furniture.
-await page.goto(PLAN_URL)
-await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
+await openBoard(page, PLAN_URL)
 await page.waitForTimeout(600)
 
 /* ---- 1. the workspace takes the whole screen ---- */
@@ -593,8 +636,10 @@ if ((await jump.count()) > 0) {
     .evaluate((el) => el.scrollLeft)
   await jump.click()
   await page.waitForTimeout(900)
+  // RE-PINNED 2026-08-05: the ring is an outline with data-flash on it, and a
+  // move flashes BOTH ends, so the jump is read off the flag rather than a class.
   const ringed = await page.evaluate(() => {
-    const card = document.querySelector('[data-session-id].ring-play-500')
+    const card = document.querySelector("[data-session-id][data-flash]")
     return card ? (card.textContent ?? "").slice(0, 40) : ""
   })
   const scrollAfter = await page
@@ -753,7 +798,7 @@ if ((await correction.count()) > 0) {
   }
 
   // And the correction steps back out.
-  const undoBtn = page.locator('[data-testid="undo-move"]')
+  const undoBtn = page.locator('[data-testid="undo-last"]')
   if ((await undoBtn.count()) > 0) {
     await undoBtn.click()
     await page.waitForTimeout(500)

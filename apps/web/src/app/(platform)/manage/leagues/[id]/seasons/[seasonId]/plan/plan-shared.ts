@@ -38,13 +38,17 @@ export interface ArmedBlock {
   label: string
 }
 
-/** A weekend card's fill, by what its courts are doing. */
+/**
+ * A weekend card's fill, by what its courts are doing. Every tone carries a
+ * border that is actually visible on a white page (owner ruling 2026-08-05,
+ * the clarity pass): a column of cards with hairline edges reads as one blob.
+ */
 export const CARD_TONE: Record<WeekendLoad["tone"], string> = {
-  over: "border-hoop-300 bg-hoop-50",
-  tight: "border-gold-400 bg-gold-50",
-  unavailable: "border-ink-200 border-dashed bg-ink-50/70",
-  empty: "border-ink-100 bg-white",
-  roomy: "border-ink-100 bg-white",
+  over: "border-hoop-400 bg-hoop-50",
+  tight: "border-gold-500 bg-gold-50",
+  unavailable: "border-ink-300 border-dashed bg-ink-100/70",
+  empty: "border-ink-300 bg-white",
+  roomy: "border-ink-300 bg-white",
 }
 
 /** The demand / capacity readout, wherever it is written. */

@@ -59,22 +59,24 @@ const GLYPHS: Record<ReasonGlyphName, React.ReactNode> = {
   ),
 }
 
-/** Which glyph a placement reason wears. Fill order is the ordinary case and
- *  draws nothing; overflow wears the overage marker instead, because "no room"
- *  is a shortage, not a reason. */
+/**
+ * Which glyph a placement reason wears. Fill order is the ordinary case and
+ * draws nothing; overflow wears the overage marker instead, because "no room"
+ * is a shortage, not a reason.
+ *
+ * THE HOME GYM WEARS NOTHING (owner ruling 2026-08-05). A house on every chip
+ * in the building the league owns is an icon on the ordinary case: the gym
+ * legend above the calendar already tags that building "home gym", and the
+ * section says it too. Playing at home is the default, and defaults are silent.
+ */
 export const REASON_GLYPH: Partial<Record<PlacementReason, ReasonGlyphName>> = {
-  // The building the league owns (owner ruling 2026-08-03). "resident" now
-  // means it kept a RENTED gym, which is a different fact and wears no glyph:
-  // the caption says it in words.
-  home: "home",
   bumped: "moved",
   decided: "picked",
   avoided: "alternates",
 }
 
-/** The four glyphs and their words, for the one quiet legend line. */
+/** The glyphs and their words, for the one quiet legend line. */
 export const GLYPH_LEGEND: Array<{ glyph: ReasonGlyphName; words: string }> = [
-  { glyph: "home", words: "home gym, no rent" },
   { glyph: "moved", words: "moved, its building was full" },
   { glyph: "picked", words: "your pick" },
   { glyph: "alternates", words: "alternates buildings" },
@@ -311,7 +313,7 @@ export function WhyPopover({
         onBlur={() => {
           if (mode === "hover") shut()
         }}
-        className={`cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-1 ${className}`}
+        className={`focus-visible:ring-play-500 cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${className}`}
       >
         {children}
       </button>
@@ -440,7 +442,7 @@ export function ActionPopover({
           place()
           setOpen(true)
         }}
-        className={`cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-1 ${className}`}
+        className={`focus-visible:ring-play-500 cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${className}`}
       >
         {trigger}
       </button>
@@ -472,11 +474,15 @@ export function ActionPopover({
   )
 }
 
-/** The quiet action a correction and a split both hang off: small, grey, and
- *  unmistakably a button. */
+/**
+ * The quiet action a correction and a split both hang off: small, grey, and
+ * unmistakably a button (owner ruling 2026-08-05, the clarity pass). A border
+ * that is actually visible in light mode, a hover that changes the fill rather
+ * than the layout, and a 28px face so a thumb can find it.
+ */
 export function QuietAction({ children }: { children: React.ReactNode }) {
   return (
-    <span className="border-ink-200 text-ink-500 hover:border-ink-300 hover:text-ink-800 inline-flex min-h-[24px] items-center rounded-md border bg-white px-1.5 text-[10.5px] font-bold">
+    <span className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 inline-flex min-h-[28px] items-center rounded-md border bg-white px-2 text-[10.5px] font-bold shadow-sm transition-colors">
       {children}
     </span>
   )
@@ -499,12 +505,16 @@ export const BLOCK_STATUS_TONE: Record<BlockStatus, string> = {
   confirmed: "border-court-200 bg-court-50 text-court-800",
 }
 
-/** The status in words, in the owner's own vocabulary (2026-08-03): a rental
- *  is needed, assumed, or confirmed. */
+/**
+ * The status in words (2026-08-03), with the 2026-08-05 simplification: a
+ * CONFIRMED rental is the ordinary case and is never written down. Silence
+ * means confirmed. Only a rental with no building, or one nobody has booked
+ * yet, has anything to say.
+ */
 export const BLOCK_STATUS_WORDS: Record<BlockStatus, string> = {
   needed: "needs a building",
-  assumed: "assumed",
-  confirmed: "confirmed",
+  assumed: "assumed, not booked yet",
+  confirmed: "",
 }
 
 /** A number with no trailing zeros: court-hours divide by the hours a gym is
@@ -536,7 +546,7 @@ export function BlockStatusChip({
     >
       <span className="tabular-nums">{weekend}</span>
       <span className="font-semibold opacity-80">
-        {gym ? `${gym} · ${BLOCK_STATUS_WORDS[status]}` : BLOCK_STATUS_WORDS[status]}
+        {[gym, BLOCK_STATUS_WORDS[status]].filter(Boolean).join(" · ")}
       </span>
     </span>
   )
@@ -599,7 +609,7 @@ export function AskSheet({
           e.stopPropagation()
           setOpen((v) => !v)
         }}
-        className="text-play-700 hover:text-play-800 text-sm font-semibold"
+        className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors"
       >
         What you need to book
       </button>
@@ -607,7 +617,10 @@ export function AskSheet({
         {season}
       </span>
       {open && (
-        <div className="border-ink-100 bg-ink-50/60 mt-2 rounded-xl border p-3" data-testid="ask-sheet-body">
+        <div
+          className="border-ink-100 bg-ink-50/60 mt-2 rounded-xl border p-3"
+          data-testid="ask-sheet-body"
+        >
           <p className="text-ink-400 text-[11px] font-bold uppercase tracking-[0.06em]">
             Month by month
           </p>
@@ -677,9 +690,10 @@ export function BlockSummary({
   needed: number
 }) {
   if (total === 0) return null
+  // "Confirmed" is the default and is never written down (owner ruling
+  // 2026-08-05), so the line counts what is still open and nothing else.
   const parts = [
-    confirmed > 0 ? `${confirmed} confirmed` : null,
-    assumed > 0 ? `${assumed} assumed` : null,
+    assumed > 0 ? `${assumed} assumed, not booked yet` : null,
     needed > 0 ? `${needed} still need a building` : null,
   ].filter(Boolean)
   return (
@@ -722,9 +736,9 @@ export function VenueTray({
   onArm: (venueId: string | null) => void
 }) {
   return (
-    <div className="border-ink-100 bg-ink-50/60 mt-2 rounded-xl border p-2.5" data-testid="venue-tray">
-      <p className="text-ink-400 text-[11px] font-bold uppercase tracking-[0.06em]">
-        Gyms you rent
+    <div className="border-ink-300 bg-ink-50 mt-2 rounded-xl border p-2.5" data-testid="venue-tray">
+      <p className="text-ink-500 text-[11px] font-bold uppercase tracking-[0.06em]">
+        Gyms you rent · drag one onto a weekend
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {gyms.length === 0 && (
@@ -762,21 +776,40 @@ export function VenueTray({
                 if (unknown) return
                 onArm(on ? null : gym.venueId)
               }}
-              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-2 text-[12px] font-bold ${
+              className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border px-2 text-[12px] font-bold shadow-sm transition-colors ${
                 unknown
-                  ? "border-ink-200 border-dashed bg-ink-50 cursor-not-allowed"
-                  : `cursor-grab bg-white active:cursor-grabbing ${
-                      on ? "border-play-400 ring-play-400 ring-2" : "border-ink-200"
+                  ? "border-ink-300 bg-ink-100 cursor-not-allowed border-dashed"
+                  : `hover:border-ink-400 cursor-grab bg-white active:cursor-grabbing ${
+                      on ? "border-play-500 ring-play-400 ring-2" : "border-ink-300"
                     }`
               }`}
             >
+              {/* The same six dots the grade chips wear: if it can be picked
+                  up, it says so before anybody tries. */}
+              {!unknown && (
+                <svg
+                  viewBox="0 0 10 16"
+                  aria-hidden
+                  focusable="false"
+                  className="text-ink-400 h-3.5 w-2 shrink-0"
+                >
+                  <circle cx="3" cy="4" r="1.1" fill="currentColor" />
+                  <circle cx="7" cy="4" r="1.1" fill="currentColor" />
+                  <circle cx="3" cy="8" r="1.1" fill="currentColor" />
+                  <circle cx="7" cy="8" r="1.1" fill="currentColor" />
+                  <circle cx="3" cy="12" r="1.1" fill="currentColor" />
+                  <circle cx="7" cy="12" r="1.1" fill="currentColor" />
+                </svg>
+              )}
               <i
                 aria-hidden
                 className={`h-2.5 w-2.5 flex-none rounded-full ${
                   unknown ? "border-ink-300 border border-dashed" : paint.swatch
                 }`}
               />
-              <span className={unknown ? "text-ink-500" : paint.name}>{gym.short}</span>
+              <span className={`text-[13px] font-bold ${unknown ? "text-ink-500" : paint.name}`}>
+                {gym.short}
+              </span>
               <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
                 {courtsWord(gym.courts)}
               </span>
@@ -871,9 +904,7 @@ function CourtCorrectionBody({
   const step = (delta: number) => setCourts((n) => Math.max(0, Math.min(wired, n + delta)))
   return (
     <div>
-      <p className="text-ink-900 text-[12.5px] font-bold">
-        How many courts can you actually get?
-      </p>
+      <p className="text-ink-900 text-[12.5px] font-bold">How many courts can you actually get?</p>
       <p className="text-ink-500 mt-0.5 text-[11.5px]">
         {gymName} on {weekendLabel}. This weekend only.
       </p>
@@ -976,8 +1007,8 @@ export function SplitMenu({
         <div>
           <p className="text-ink-900 text-[12.5px] font-bold">Split {what}</p>
           <p className="text-ink-500 mt-0.5 text-[11.5px]">
-            The planner keeps a group together because two of anything costs
-            more. You can overrule it.
+            The planner keeps a group together because two of anything costs more. You can overrule
+            it.
           </p>
           <div className="mt-2 space-y-1.5">
             {axes().map((axis) => (
@@ -996,9 +1027,7 @@ export function SplitMenu({
                 >
                   {axis.label}
                 </p>
-                {axis.detail && (
-                  <p className="text-ink-500 mt-0.5 text-[11px]">{axis.detail}</p>
-                )}
+                {axis.detail && <p className="text-ink-500 mt-0.5 text-[11px]">{axis.detail}</p>}
                 {axis.price !== null && (
                   <>
                     <p

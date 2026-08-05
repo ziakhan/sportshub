@@ -5,6 +5,9 @@ import {
   gradeAbbrev,
   gradeLine,
   overPlanSentence,
+  packedCapacity,
+  packedWeekendLoad,
+  planRentalBlocks,
   planSummary,
   planningSource,
   planningTeams,
@@ -122,11 +125,41 @@ function nphState(): PlannerState {
     units: UNITS,
     errors: [],
     windows: [
-      { label: "Oct 2026", weekends: [wk("Oct 24–25", "2026-10-24", 176, 96), wk("Oct 31–Nov 1", "2026-10-31", 176, 96)] },
-      { label: "Nov 2026", weekends: [wk("Nov 14–15", "2026-11-14", 80, 48), wk("Nov 21–22", "2026-11-21", 176, 96), wk("Nov 28–29", "2026-11-28", 176, 96)] },
-      { label: "Dec 2026", weekends: [wk("Dec 12–13", "2026-12-12", 80, 48), wk("Dec 19–20", "2026-12-19", 176, 96)] },
-      { label: "Jan 2027", weekends: [wk("Jan 9–10", "2027-01-09", 176, 96), wk("Jan 16–17", "2027-01-16", 80, 48), wk("Jan 30–31", "2027-01-30", 176, 96)] },
-      { label: "Feb 2027", weekends: [wk("Feb 6–7", "2027-02-06", 176, 96), wk("Feb 13–14", "2027-02-13", 80, 48), wk("Feb 20–21", "2027-02-20", 176, 96)] },
+      {
+        label: "Oct 2026",
+        weekends: [
+          wk("Oct 24–25", "2026-10-24", 176, 96),
+          wk("Oct 31–Nov 1", "2026-10-31", 176, 96),
+        ],
+      },
+      {
+        label: "Nov 2026",
+        weekends: [
+          wk("Nov 14–15", "2026-11-14", 80, 48),
+          wk("Nov 21–22", "2026-11-21", 176, 96),
+          wk("Nov 28–29", "2026-11-28", 176, 96),
+        ],
+      },
+      {
+        label: "Dec 2026",
+        weekends: [wk("Dec 12–13", "2026-12-12", 80, 48), wk("Dec 19–20", "2026-12-19", 176, 96)],
+      },
+      {
+        label: "Jan 2027",
+        weekends: [
+          wk("Jan 9–10", "2027-01-09", 176, 96),
+          wk("Jan 16–17", "2027-01-16", 80, 48),
+          wk("Jan 30–31", "2027-01-30", 176, 96),
+        ],
+      },
+      {
+        label: "Feb 2027",
+        weekends: [
+          wk("Feb 6–7", "2027-02-06", 176, 96),
+          wk("Feb 13–14", "2027-02-13", 80, 48),
+          wk("Feb 20–21", "2027-02-20", 176, 96),
+        ],
+      },
     ],
   }
 }
@@ -238,7 +271,11 @@ describe("proposePlan on the NPH shape", () => {
       windows: [
         {
           label: "Nov",
-          weekends: [wk("A", "2026-11-07", 200), wk("B", "2026-11-14", 200), wk("C", "2026-11-21", 200)],
+          weekends: [
+            wk("A", "2026-11-07", 200),
+            wk("B", "2026-11-14", 200),
+            wk("C", "2026-11-21", 200),
+          ],
         },
       ],
     }
@@ -261,9 +298,13 @@ describe("suggestFor", () => {
     const nov14 = state.windows[1].weekends[0] // 80-cap
     assignment[nov14.sessionId] = ["age:Gr10", "age:Gr9", "age:Gr12"] // 93 > 80
     const suggestions = suggestFor(state, assignment)
-    expect(suggestions.some((s) => s.kind === "overflow" && s.sessionId === nov14.sessionId)).toBe(true)
+    expect(suggestions.some((s) => s.kind === "overflow" && s.sessionId === nov14.sessionId)).toBe(
+      true
+    )
     expect(suggestions.some((s) => s.kind === "move-unit")).toBe(true)
-    expect(suggestions.some((s) => s.kind === "idle-weekend" && s.sessionId === oct24.sessionId)).toBe(true)
+    expect(
+      suggestions.some((s) => s.kind === "idle-weekend" && s.sessionId === oct24.sessionId)
+    ).toBe(true)
   })
 
   it("flags a two-building weekend", () => {
@@ -273,7 +314,9 @@ describe("suggestFor", () => {
       [feb6.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr11", "age:Gr12"], // 117 > 96
     }
     const suggestions = suggestFor(state, assignment)
-    expect(suggestions.some((s) => s.kind === "two-building" && s.sessionId === feb6.sessionId)).toBe(true)
+    expect(
+      suggestions.some((s) => s.kind === "two-building" && s.sessionId === feb6.sessionId)
+    ).toBe(true)
   })
 
   it("spells the shortage out, and hands over a move that clears it", () => {
@@ -336,9 +379,7 @@ describe("suggestFor", () => {
     // Everybody hand-picked into the first gym: one building on screen, so
     // there is no second building to talk about.
     const decided = {
-      [feb6.sessionId]: Object.fromEntries(
-        assignment[feb6.sessionId].map((key) => [key, "v1"])
-      ),
+      [feb6.sessionId]: Object.fromEntries(assignment[feb6.sessionId].map((key) => [key, "v1"])),
     }
     const suggestions = suggestFor(state, assignment, decided)
     expect(suggestions.some((s) => s.kind === "two-building")).toBe(false)
@@ -507,17 +548,107 @@ describe("weekendLoad", () => {
     expect(spills.twoBuildings).toBe(true)
 
     // Same grades, one building that holds them: no spill.
-    expect(weekendLoad(UNITS, wk("One gym", "2026-11-07", 176), [
-      "age:Gr10",
-      "age:Gr9",
-      "age:Gr11",
-      "age:Gr12",
-    ]).twoBuildings).toBe(false)
+    expect(
+      weekendLoad(UNITS, wk("One gym", "2026-11-07", 176), [
+        "age:Gr10",
+        "age:Gr9",
+        "age:Gr11",
+        "age:Gr12",
+      ]).twoBuildings
+    ).toBe(false)
 
     // Fits inside the big gym: no spill even with two venues attached.
-    expect(
-      weekendLoad(UNITS, wk("Fits", "2026-11-07", 176, 96), ["age:Gr9"]).twoBuildings
-    ).toBe(false)
+    expect(weekendLoad(UNITS, wk("Fits", "2026-11-07", 176, 96), ["age:Gr9"]).twoBuildings).toBe(
+      false
+    )
+  })
+})
+
+describe("packedCapacity", () => {
+  /** A weekend the season really owns 3 courts of and rents 6 more from. */
+  const packedState = (): PlannerState => ({
+    seasonId: "season",
+    errors: [],
+    units: [registered("A", 20), registered("B", 16)],
+    windows: [
+      {
+        label: "Nov 2026",
+        weekends: [
+          {
+            sessionId: "w1",
+            label: "Nov 14–15",
+            dateISO: "2026-11-14",
+            capacityGames: 72,
+            largestVenueCapacity: 48,
+            targetGamesPerTeam: 2,
+            assigned: [],
+            assignedVenues: {},
+            venues: [
+              {
+                venueId: "home",
+                name: "The Playground",
+                capacityGames: 24,
+                role: "home",
+                fillOrder: 0,
+                courts: 3,
+                days: 2,
+                courtDays: 6,
+                hoursPerCourtDay: 4,
+              },
+              {
+                venueId: "pool",
+                name: "Six Park East",
+                capacityGames: 48,
+                role: "pool",
+                fillOrder: 1,
+                courts: 6,
+                days: 2,
+                courtDays: 12,
+                hoursPerCourtDay: 4,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  })
+
+  it("counts the home gym plus the courts the calendar rents, never the whole pool building", () => {
+    const state = packedState()
+    const weekend = state.windows[0].weekends[0]
+    const assignment = { w1: ["age:A", "age:B"] }
+    const blocks = planRentalBlocks(state, assignment)
+    // B spills out of the 24-game home gym and takes 2 of Six Park's 6 courts.
+    expect(blocks.map((b) => [b.venueId, b.courts])).toEqual([["pool", 2]])
+    expect(packedCapacity(weekend, blocks)).toBe(40)
+    // The attached wiring says 72, which is the number this ruling removes.
+    expect(weekendLoad(state.units, weekend, assignment.w1).capacity).toBe(72)
+  })
+
+  it("a weekend that rents nothing is worth its home gym alone", () => {
+    const state = packedState()
+    const weekend = state.windows[0].weekends[0]
+    const assignment = { w1: ["age:B"] }
+    const blocks = planRentalBlocks(state, assignment)
+    expect(blocks).toEqual([])
+    expect(packedCapacity(weekend, blocks)).toBe(24)
+    const load = packedWeekendLoad(state.units, weekend, assignment.w1, blocks)
+    expect(load.demand).toBe(16)
+    expect(load.capacity).toBe(24)
+    expect(load.tone).toBe("roomy")
+  })
+
+  it("games with no building read over the packed capacity", () => {
+    const state = packedState()
+    const weekend = state.windows[0].weekends[0]
+    // One cohort bigger than either building: nothing can house it.
+    state.units = [registered("A", 20), registered("Big", 60)]
+    const assignment = { w1: ["age:A", "age:Big"] }
+    const blocks = planRentalBlocks(state, assignment)
+    const load = packedWeekendLoad(state.units, weekend, assignment.w1, blocks)
+    expect(load.demand).toBe(80)
+    expect(load.capacity).toBeLessThan(load.demand)
+    expect(load.tone).toBe("over")
   })
 })
 
@@ -755,8 +886,7 @@ describe("weekendShortDays", () => {
 
 describe("seasonCalendarMonths", () => {
   const state = nphState()
-  const weekendsOf = (label: string) =>
-    state.windows.find((w) => w.label === label)!.weekends
+  const weekendsOf = (label: string) => state.windows.find((w) => w.label === label)!.weekends
 
   it("lists only the weekends that actually hold grades", () => {
     const nov = weekendsOf("Nov 2026")
@@ -1018,7 +1148,11 @@ describe("diffAssignments", () => {
     const novFree = state.windows[1].weekends.find(
       (w) => !(kept[w.sessionId] ?? []).includes("age:Gr11")
     )!.sessionId
-    const diff = diffAssignments(state, kept, add(drop(kept, octHome, "age:Gr11"), novFree, "age:Gr11"))
+    const diff = diffAssignments(
+      state,
+      kept,
+      add(drop(kept, octHome, "age:Gr11"), novFree, "age:Gr11")
+    )
 
     expect(diff.summary.moved).toHaveLength(0)
     expect(diff.summary.missing).toEqual(["age:Gr11"])

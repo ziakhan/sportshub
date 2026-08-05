@@ -396,6 +396,75 @@ export function weekendLoad(
   return { demand, capacity, ratio, tone, twoBuildings }
 }
 
+/**
+ * WHAT A WEEKEND ACTUALLY HAS (owner ruling 2026-08-05, capacity honesty).
+ *
+ * `weekend.capacityGames` adds up every gym ATTACHED to the weekend, which is
+ * not what the season holds: a pool building is not capacity until somebody
+ * rents courts in it. So the number a screen shows is the packed truth —
+ *
+ *    the home gym's usable courts  +  the courts this calendar rents
+ *
+ * and nothing else. The rentals come from the same blocks the ask sheet reads,
+ * so the fraction on a weekend card, the meters and the booking sheet can never
+ * tell three different stories. A rental is demand-sized, so a weekend whose
+ * spill is housed always reads at or under its capacity, and a weekend with an
+ * empty block reads over it, which is exactly the fact worth seeing.
+ */
+export function packedCapacity(
+  weekend: Pick<PlannerWeekend, "venues">,
+  blocks: RentalBlock[]
+): number {
+  const home = homeVenueOf(weekend.venues)
+  let capacity = home?.capacityGames ?? 0
+  for (const block of blocks) {
+    if (!block.venueId) continue
+    const venue = venueOf(weekend.venues, block.venueId)
+    if (!venue || venue.role !== "pool") continue
+    capacity += courtsCapacityAt(venue, block.courts)
+  }
+  return capacity
+}
+
+/**
+ * What N courts at this gym hold, in games: the unit a rented section is
+ * really measured in. Never past what the whole building could give, even
+ * where the rounding would say otherwise.
+ */
+export function courtsCapacityAt(venue: PlannerVenue, courts: number): number {
+  if (courts <= 0) return 0
+  return Math.min(venue.capacityGames, Math.round(courts * gamesPerCourt(venue)))
+}
+
+/**
+ * A weekend's load against the capacity it actually commits. Same tone ladder
+ * as weekendLoad — one vocabulary on this screen — read off the packed number
+ * so "over" means games with no court behind them rather than games past a
+ * building nobody has phoned.
+ */
+export function packedWeekendLoad(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam" | "capacityGames" | "venues"> &
+    Partial<Pick<PlannerWeekend, "assignedVenues">>,
+  assigned: string[],
+  blocks: RentalBlock[]
+): WeekendLoad {
+  const full = weekendLoad(units, weekend, assigned)
+  const capacity = packedCapacity(weekend, blocks)
+  const ratio = capacity > 0 ? full.demand / capacity : full.demand > 0 ? Infinity : 0
+  const tone: WeekendTone =
+    full.demand > capacity
+      ? "over"
+      : capacity <= 0
+        ? "unavailable"
+        : full.demand === 0
+          ? "empty"
+          : ratio >= TIGHT_RATIO
+            ? "tight"
+            : "roomy"
+  return { demand: full.demand, capacity, ratio, tone, twoBuildings: full.twoBuildings }
+}
+
 export interface PlanSummary {
   /** Nothing overflows and every grade has a weekend in every window. */
   fits: boolean
@@ -971,11 +1040,7 @@ export function packWeekendVenues(
     const steered = avoid != null && indexOf.has(avoid)
 
     // The home gym, first and free, whenever the whole cohort fits.
-    if (
-      homeIndex >= 0 &&
-      remaining[homeIndex] >= games &&
-      venues[homeIndex].venueId !== avoid
-    ) {
+    if (homeIndex >= 0 && remaining[homeIndex] >= games && venues[homeIndex].venueId !== avoid) {
       // Being in the building the league OWNS is the whole reason; whether
       // the grade was also here last weekend is not a second fact worth a
       // different word. The switch is still counted, for the tiebreak.
@@ -997,8 +1062,7 @@ export function packWeekendVenues(
       if (venue.role !== "pool") continue
       if (remaining[k] < games) continue
       if (venue.venueId === avoid) continue
-      const cost =
-        courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
+      const cost = courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
       const isOpen = opened[k]
       const isResident = wasIndex === k
       const better =
@@ -1169,7 +1233,11 @@ export function resolveWeekendGyms(
     reasonByUnit[u.key] =
       given?.[u.key] ??
       packed.reasonByUnit[u.key] ??
-      (venueId ? (venueOf(weekend.venues, venueId)?.role === "home" ? "home" : "rented") : "overflow")
+      (venueId
+        ? venueOf(weekend.venues, venueId)?.role === "home"
+          ? "home"
+          : "rented"
+        : "overflow")
   }
 
   const sections: WeekendGymSection[] = []
@@ -1179,7 +1247,8 @@ export function resolveWeekendGyms(
     const unitKeys = here.filter((u) => byUnit[u.key] === venue.venueId).map((u) => u.key)
     if (unitKeys.length === 0) continue
     const games = unitKeys.reduce(
-      (sum, key) => sum + unitGames(here.find((u) => u.key === key) as PlannerUnit, weekend.targetGamesPerTeam),
+      (sum, key) =>
+        sum + unitGames(here.find((u) => u.key === key) as PlannerUnit, weekend.targetGamesPerTeam),
       0
     )
     const over = Math.max(0, games - venue.capacityGames)
@@ -1314,9 +1383,7 @@ export function weekendStory(
   // 1. Short of courts, which outranks everything else the weekend can say.
   for (const s of gyms.sections) {
     if (s.over > 0) {
-      parts.push(
-        `${venueShortName(s.name)} over by ${s.over} (${s.games} of ${s.capacityGames})`
-      )
+      parts.push(`${venueShortName(s.name)} over by ${s.over} (${s.games} of ${s.capacityGames})`)
     }
   }
   if (gyms.unplaced.length > 0) {
@@ -1339,7 +1406,9 @@ export function weekendStory(
         }`
       )
     } else if (weekend.venues.length > 1) {
-      parts.push(`fits in ${venueShortName(home.name)} alone, ${home.games} of ${home.capacityGames}`)
+      parts.push(
+        `fits in ${venueShortName(home.name)} alone, ${home.games} of ${home.capacityGames}`
+      )
     }
   }
   for (const s of rented) {
@@ -1439,10 +1508,7 @@ function chronologicalWeekends(state: PlannerState): PlannerWeekend[] {
 
 /** The grades a weekend holds, deduped, in the order they were listed — the
  *  same rule as unitsOn, against a lookup the caller already built once. */
-function unitsFor(
-  unitByKey: Map<string, PlannerUnit>,
-  keys: string[] | undefined
-): PlannerUnit[] {
+function unitsFor(unitByKey: Map<string, PlannerUnit>, keys: string[] | undefined): PlannerUnit[] {
   const seen = new Set<string>()
   const out: PlannerUnit[] = []
   for (const key of keys ?? []) {
@@ -1551,13 +1617,13 @@ function packWeekendShown(
           // teams, so no games to place) is simply riding along in the gym it
           // already plays, or in the home gym.
           (packed.reasonByUnit[u.key] ??
-            (wasIsOpen
-              ? was === homeVenue?.venueId
-                ? "home"
-                : "resident"
-              : venueId === homeVenue?.venueId
-                ? "home"
-                : "rented"))
+          (wasIsOpen
+            ? was === homeVenue?.venueId
+              ? "home"
+              : "resident"
+            : venueId === homeVenue?.venueId
+              ? "home"
+              : "rented"))
   }
   // The blocks are derived from the placement the SCREEN ends up with, not
   // from the packer's private answer, so a hand pick moves the rental with it.
@@ -1743,10 +1809,7 @@ export function assignBlocksFromPool(
       const cost = courtDaysNeeded(venue, empty.games)
       const better =
         cost < pickCost ||
-        (cost === pickCost &&
-          pick != null &&
-          taken.has(venue.venueId) &&
-          !taken.has(pick.venueId))
+        (cost === pickCost && pick != null && taken.has(venue.venueId) && !taken.has(pick.venueId))
       if (!pick || better) {
         pick = venue
         pickCost = cost
@@ -1852,8 +1915,9 @@ export function rentalAsk(state: PlannerState, blocks: RentalBlock[]): RentalAsk
     }
     const clauses = [...tally.entries()]
       .sort((a, b) => b[1] - a[1] || b[0] - a[0])
-      .map(([courts, weekends]) =>
-        `${countWord(weekends)} weekend${weekends === 1 ? "" : "s"} of ${courtsWord(courts)}`
+      .map(
+        ([courts, weekends]) =>
+          `${countWord(weekends)} weekend${weekends === 1 ? "" : "s"} of ${courtsWord(courts)}`
       )
     let chunks = nameList(clauses)
 
@@ -1954,13 +2018,13 @@ const WEEKEND_IDLE_COST = 50_000
  * day it rents. Months are decided in calendar order, so October's answer
  * shapes November's residency and never the other way round.
  */
-export function proposePlan(
-  state: PlannerState,
-  lever: PlannerLever
-): Record<string, string[]> {
+export function proposePlan(state: PlannerState, lever: PlannerLever): Record<string, string[]> {
   const units = state.units.filter((u) => u.teams > 0)
   const out: Record<string, string[]> = {}
-  const giants = [...units].sort((a, b) => b.teams - a.teams).slice(0, 2).map((u) => u.key)
+  const giants = [...units]
+    .sort((a, b) => b.teams - a.teams)
+    .slice(0, 2)
+    .map((u) => u.key)
   const unitByKey = new Map(units.map((u) => [u.key, u]))
   // Where each grade has been playing, as decided by the months already
   // settled. A window scores against THIS snapshot: no weekend of a month
@@ -2022,9 +2086,7 @@ export function proposePlan(
           }
         }
         greedy[i] = pick
-        loads[pick] += Math.ceil(
-          (units[i].teams * win.weekends[pick].targetGamesPerTeam) / 2
-        )
+        loads[pick] += Math.ceil((units[i].teams * win.weekends[pick].targetGamesPerTeam) / 2)
       }
       win.weekends.forEach((w, k) => {
         out[w.sessionId] = units.filter((_, i) => greedy[i] === k).map((u) => u.key)
@@ -2108,8 +2170,7 @@ export function proposePlan(
 /** Read the current assignment as sessionId → unit keys (for diffs/UI). */
 export function currentAssignment(state: PlannerState): Record<string, string[]> {
   const out: Record<string, string[]> = {}
-  for (const win of state.windows)
-    for (const w of win.weekends) out[w.sessionId] = w.assigned
+  for (const win of state.windows) for (const w of win.weekends) out[w.sessionId] = w.assigned
   return out
 }
 
@@ -2170,8 +2231,7 @@ export function diffAssignments(
   current: Record<string, string[]>
 ): AssignmentDiff {
   const order = new Map(state.units.map((u, i) => [u.key, i]))
-  const known = (keys: string[] | undefined) =>
-    (keys ?? []).filter((k) => order.has(k))
+  const known = (keys: string[] | undefined) => (keys ?? []).filter((k) => order.has(k))
   const sorted = (keys: string[]) =>
     [...new Set(keys)].sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0))
 
@@ -2361,14 +2421,7 @@ function landingClause(
   const home = homes[unit.key]
   const open = new Map(to.venues.map((v) => [v.venueId, v]))
   if (!home || !open.has(home)) return ""
-  const { there, packed, landed } = packLanding(
-    unit,
-    to,
-    keysThere,
-    unitByKey,
-    homes,
-    decidedThere
-  )
+  const { there, packed, landed } = packLanding(unit, to, keysThere, unitByKey, homes, decidedThere)
   if (!landed || landed === home) return ""
   // Landing in the building the league OWNS is not a displacement worth
   // warning about (owner ruling 2026-08-03): it is the cheapest place a grade
@@ -2376,9 +2429,7 @@ function landingClause(
   // would be a straight lie about why the grade went there.
   if (homeVenueOf(to.venues)?.venueId === landed) return ""
   const shortOf = (venueId: string) => venueShortName(open.get(venueId)?.name ?? "")
-  const holders = there.filter(
-    (u) => u.key !== unit.key && packed.byUnit[u.key] === home
-  )
+  const holders = there.filter((u) => u.key !== unit.key && packed.byUnit[u.key] === home)
   const held = holders.reduce((sum, u) => sum + unitGames(u, to.targetGamesPerTeam), 0)
   const capacity = open.get(home)?.capacityGames ?? 0
   const lands = `Lands at ${shortOf(landed) || "another gym"}`
@@ -2619,8 +2670,7 @@ export function suggestFor(
               homesArriving(to, unit, w.sessionId),
               decidedAll[to.sessionId] ?? {}
             )
-            const landsAtOwnGym =
-              landed != null && homeVenueOf(to.venues)?.venueId === landed
+            const landsAtOwnGym = landed != null && homeVenueOf(to.venues)?.venueId === landed
             if (usual && landed && landed !== usual && !landsAtOwnGym) continue
             const saved = rentedHere.reduce((sum, s) => sum + s.rentedCourtDays, 0)
             const built = moveFor(
@@ -2833,7 +2883,6 @@ export function gymCountsSentence(
   return `${side(before, true)} becomes ${side(after, false)}.`
 }
 
-
 /* ======================================================================== *
  * THE FOUR VERBS (owner ruling 2026-08-04).
  *
@@ -2868,10 +2917,7 @@ export function courtsWiredAt(venue: PlannerVenue): number {
  * `caps` is keyed by courtCapKey. A cap at or above the wired courts is not a
  * correction and is ignored; a cap of 0 is a gym that gave nothing.
  */
-export function applyCourtCaps(
-  state: PlannerState,
-  caps: Record<string, number>
-): PlannerState {
+export function applyCourtCaps(state: PlannerState, caps: Record<string, number>): PlannerState {
   if (Object.keys(caps).length === 0) return state
   let touchedAny = false
   const windows = state.windows.map((win) => {
@@ -2999,7 +3045,9 @@ function priceClauses(price: PlanPrice): string[] {
 
 export function planPriceSentence(price: PlanPrice): string {
   const parts = priceClauses(price)
-  return parts.length === 0 ? "Costs nothing: same buildings, same court-days." : `${nameList(parts)}.`
+  return parts.length === 0
+    ? "Costs nothing: same buildings, same court-days."
+    : `${nameList(parts)}.`
 }
 
 /**
@@ -3137,9 +3185,7 @@ export function splitAcrossWeekends(
   unitKeys: string[]
 ): SplitResult | null {
   if (unitKeys.length < 2) return null
-  const window = state.windows.find((win) =>
-    win.weekends.some((w) => w.sessionId === sessionId)
-  )
+  const window = state.windows.find((win) => win.weekends.some((w) => w.sessionId === sessionId))
   const weekend = window?.weekends.find((w) => w.sessionId === sessionId)
   if (!window || !weekend) return null
 

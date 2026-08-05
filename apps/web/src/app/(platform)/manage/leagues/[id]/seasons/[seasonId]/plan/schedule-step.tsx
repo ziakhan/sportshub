@@ -163,9 +163,7 @@ export function ScheduleStep({
       )
       if (said.length > 0) out.push(...said.map((s) => s.text))
       else
-        out.push(
-          `${w.label} is nearly full: ${w.load.demand} games in ${w.load.capacity} slots.`
-        )
+        out.push(`${w.label} is nearly full: ${w.load.demand} games in ${w.load.capacity} slots.`)
     }
     return out
   }, [attention, suggestions])
@@ -262,11 +260,7 @@ export function ScheduleStep({
                       rather than posing as a target met. */}
                   <span
                     className={`block h-full rounded-full ${
-                      bar.expected === 0
-                        ? "bg-ink-300"
-                        : bar.over
-                          ? "bg-gold-500"
-                          : "bg-court-500"
+                      bar.expected === 0 ? "bg-ink-300" : bar.over ? "bg-gold-500" : "bg-court-500"
                     }`}
                     style={{ width: `${Math.round(bar.fill * 100)}%` }}
                   />

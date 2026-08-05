@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState, type CSSProperties } from "react"
 import { Button, DateTimePicker } from "@/components/ui"
 import { VenueEditor } from "@/components/venue-editor"
 import { VenueSelector } from "@/components/venue-selector"
-import type { VenueGrid, VenueGridCell, VenueGridRow, VenueGridWeekend } from "@/lib/seasons/venue-grid"
+import type {
+  VenueGrid,
+  VenueGridCell,
+  VenueGridRow,
+  VenueGridWeekend,
+} from "@/lib/seasons/venue-grid"
 
 /**
  * Step 2, gyms and weekends (owner-approved mock, 2026-08-02, revised the
@@ -71,9 +76,7 @@ function cellLabel(venueName: string, weekend: string, cell: VenueGridCell): str
   const head = `${venueName}, ${weekend}: `
   if (cell.state === "off") return `${head}off, tap to turn it on`
   if (cell.state === "taken") {
-    return `${head}not available, ${
-      cell.reason ?? "marked unavailable"
-    }, tap to turn it on anyway`
+    return `${head}not available, ${cell.reason ?? "marked unavailable"}, tap to turn it on anyway`
   }
   const booking = cell.bookingStatus === "assumed" ? ", assumed, not booked yet" : ""
   const hours = cell.state === "custom" ? `, ${cell.startTime} to ${cell.endTime}` : ""
@@ -204,7 +207,11 @@ export function GymsWeekendsStep({
    *  yet gets one created on the way in. A weekend marked taken turns on the
    *  same way — the tap IS the override — and the notice names what it
    *  overrode, so nobody wonders where the reason went. */
-  const toggleCell = async (venue: VenueGridRow, weekend: VenueGridWeekend, cell: VenueGridCell) => {
+  const toggleCell = async (
+    venue: VenueGridRow,
+    weekend: VenueGridWeekend,
+    cell: VenueGridCell
+  ) => {
     const key = `${venue.venueId}:${weekend.key}`
     if (!isOn(cell.state)) {
       const on: string | (() => string) =
@@ -291,9 +298,7 @@ export function GymsWeekendsStep({
         // Never both: claiming every weekend updated while some kept a court
         // would be the same half-truth this whole fix is about.
         if (blocked === 0) return `${count}, every weekend updated.`
-        const names = (data?.blockedCourts ?? [])
-          .map((c: { name: string }) => c.name)
-          .join(", ")
+        const names = (data?.blockedCourts ?? []).map((c: { name: string }) => c.name).join(", ")
         return `${count}. ${blocked} day${blocked === 1 ? "" : "s"} kept ${
           names || "a court"
         } because a game is already scheduled there.`
@@ -409,6 +414,83 @@ export function GymsWeekendsStep({
     )
   }
 
+  /**
+   * THE LEAGUE'S WEEKENDS, CHOSEN ONCE (owner ruling 2026-08-05, #3).
+   *
+   * "When do you want to run sessions?" is a league question, not a per-gym
+   * one: an operator should not have to paint the same eleven weekends across
+   * three gym cards to say the season runs on them. So the season calendar sits
+   * above the grid as one row of toggles, and the per-gym cells FOLLOW it:
+   *
+   *  - a weekend turned on attaches the HOME GYM, because that is the building
+   *    the league already has and does not have to ask anybody for;
+   *  - the pool is deliberately left alone. Nobody has phoned those gyms about
+   *    that Saturday, and a board that ticked them would be asserting
+   *    availability the league does not have.
+   *
+   * The grid underneath stays exactly as it was, because a gym really can be
+   * unavailable on a weekend the league wants to run.
+   */
+  const runWeekend = async (weekend: VenueGridWeekend, on: boolean) => {
+    if (locked || busy !== null || !grid) return
+    const index = grid.weekends.findIndex((w) => w.key === weekend.key)
+    if (index < 0) return
+    const key = `weekend:${weekend.key}`
+    const home = grid.venues.find((v) => v.role === "home")
+
+    if (on) {
+      if (!home) {
+        setError("Pick your home gym first, then choose the weekends you want to run.")
+        return
+      }
+      const cell = home.cells[index]
+      if (cell?.sessionId) {
+        await call(
+          `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${home.venueId}`,
+          { method: "POST" },
+          key,
+          `${weekend.label} is on, with ${home.name}. Gyms you rent stay off until you turn them on.`
+        )
+      } else if (weekend.satDateISO) {
+        await call(
+          `/api/seasons/${seasonId}/weekends`,
+          json({ satDate: weekend.satDateISO, venueId: home.venueId }),
+          key,
+          `${weekend.label} is on, with ${home.name}. Gyms you rent stay off until you turn them on.`
+        )
+      }
+      return
+    }
+
+    // Off means off: every gym the season has on that weekend comes off it, so
+    // "we are not running that weekend" is one tap and not one tap per gym.
+    const attached = grid.venues
+      .map((v) => ({ venue: v, cell: v.cells[index] }))
+      .filter((row) => isOn(row.cell.state) && row.cell.sessionId)
+    if (attached.length === 0) return
+    setBusy(key)
+    setError(null)
+    setNotice(null)
+    setNoticeTone("court")
+    const results = await Promise.all(
+      attached.map((row) =>
+        fetch(
+          `/api/seasons/${seasonId}/sessions/${row.cell.sessionId}/venues/${row.venue.venueId}`,
+          { method: "DELETE" }
+        )
+          .then((res) => res.ok)
+          .catch(() => false)
+      )
+    )
+    setBusy(null)
+    if (results.some((ok) => !ok)) {
+      setError("That weekend did not come off. Try again.")
+    } else {
+      setNotice(`${weekend.label} is off. No gym is on it.`)
+    }
+    await load()
+  }
+
   const saveException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
     if (!exceptionDraft.start || !exceptionDraft.end) {
       setError("Set both a start and an end time.")
@@ -442,18 +524,22 @@ export function GymsWeekendsStep({
   const months = monthGroups(weekends)
   // Exactly one home gym at a time, and a season is allowed to have none yet.
   const noHome = grid.venues.length > 0 && !grid.venues.some((v) => v.role === "home")
+  /** The league's own weekends: the ones some gym is really on. This is what
+   *  the row above the grid draws, and what the per-gym cells follow. */
+  const running = weekends.map((_, i) => grid.venues.some((v) => isOn(v.cells[i].state)))
+  const runningCount = running.filter(Boolean).length
 
   return (
-    <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+    <div className="border-ink-200 shadow-soft overflow-hidden rounded-2xl border bg-white">
       {/* Screen head */}
-      <div className="border-ink-100 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+      <div className="border-ink-200 bg-ink-50/60 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
           <p className="text-ink-900 text-[15px] font-bold">Gym time</p>
           <p className="text-ink-500 text-xs">
-            Every weekend of the season is here. Tap the ones you have the gym.
+            Choose the weekends the league runs, then say which gym you have on each one.
           </p>
         </div>
-        <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
+        <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
           Step 2 of 5
         </span>
       </div>
@@ -495,8 +581,7 @@ export function GymsWeekendsStep({
 
         {grid.venues.length === 0 && weekends.length > 0 && (
           <p className="border-ink-200 text-ink-500 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
-            No gyms on this season yet. Add the first one below, then tap the weekends you have
-            it.
+            No gyms on this season yet. Add the first one below, then tap the weekends you have it.
           </p>
         )}
 
@@ -518,14 +603,11 @@ export function GymsWeekendsStep({
             willing to use — and it is one number for every gym. */}
         {grid.venues.length > 0 && (
           <div className="border-ink-100 bg-ink-50/50 mb-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-2xl border px-4 py-3">
-            <label
-              htmlFor="court-buffer"
-              className="text-ink-700 text-xs font-semibold"
-            >
+            <label htmlFor="court-buffer" className="text-ink-700 text-xs font-semibold">
               Courts left empty
             </label>
             {locked ? (
-              <span className="border-ink-100 bg-white text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
+              <span className="border-ink-100 text-ink-700 rounded-lg border bg-white px-2.5 py-1 text-xs">
                 <b className="text-ink-900">{grid.courtBuffer}</b>
               </span>
             ) : (
@@ -554,14 +636,94 @@ export function GymsWeekendsStep({
               </>
             )}
             <p className="text-ink-400 w-full text-[11.5px]">
-              At every gym, every day. Games run long and teams turn up late, so a court held
-              back is a court you still have.{" "}
+              At every gym, every day. Games run long and teams turn up late, so a court held back
+              is a court you still have.{" "}
               {grid.courtBuffer > 0
                 ? `Your weekends plan on ${grid.courtBuffer} court${
                     grid.courtBuffer === 1 ? "" : "s"
                   } fewer than the gyms hold, and the calendar says so.`
                 : "Zero plans to the whole building."}
             </p>
+          </div>
+        )}
+
+        {/* WHEN THE LEAGUE RUNS (owner ruling 2026-08-05, #3). One row, chosen
+            once, above every gym card: the season's own weekends. */}
+        {weekends.length > 0 && (
+          <div
+            data-testid="league-weekends"
+            className="border-ink-300 mb-3.5 rounded-2xl border bg-white p-4 shadow-sm"
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <p className="text-ink-900 text-[14px] font-bold">
+                When do you want to run sessions?
+              </p>
+              <span
+                className="text-ink-500 text-[11.5px] font-bold tabular-nums"
+                data-testid="league-weekends-count"
+              >
+                {runningCount} of {weekends.length} weekends on
+              </span>
+            </div>
+            <p className="text-ink-500 mt-0.5 text-[11.5px]">
+              Tap the weekends this league plays. Your home gym goes on with them; gyms you rent
+              stay off until you have asked them, and the grid below is where a gym says it cannot
+              make one of these weekends.
+            </p>
+            <div className="mt-2.5 overflow-x-auto pb-1">
+              <table className="border-separate border-spacing-1">
+                <thead>
+                  <tr>
+                    {months.map((m, i) => (
+                      <th
+                        key={`league-${m.month}-${i}`}
+                        scope="colgroup"
+                        colSpan={m.span}
+                        className={`text-ink-500 px-1 pb-0.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] ${
+                          i > 0 ? "border-ink-200 border-l pl-2" : ""
+                        }`}
+                      >
+                        {m.month}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {weekends.map((w, i) => {
+                      const on = running[i]
+                      const key = `weekend:${w.key}`
+                      return (
+                        <td key={w.key} className="p-0 align-top">
+                          <button
+                            type="button"
+                            data-testid="league-weekend"
+                            data-on={on ? "1" : "0"}
+                            data-weekend={w.key}
+                            disabled={locked || busy !== null}
+                            aria-pressed={on}
+                            aria-label={`${w.label}: ${
+                              on ? "on, tap to turn the whole weekend off" : "off, tap to run it"
+                            }`}
+                            onClick={() => runWeekend(w, !on)}
+                            className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                              on
+                                ? "border-court-500 bg-court-100 text-court-900 hover:border-court-600"
+                                : "border-ink-300 text-ink-500 hover:border-ink-500 hover:bg-ink-50 border-dashed bg-white"
+                            }`}
+                          >
+                            <span className="block leading-tight">{w.dayLabel}</span>
+                            <span className="block text-[9.5px] font-semibold">
+                              {busy === key ? "…" : on ? "on" : "off"}
+                            </span>
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -579,9 +741,12 @@ export function GymsWeekendsStep({
           const liveWeekends = weekends.filter((w, i) => isOn(venue.cells[i].state) && w.sessionId)
 
           return (
-            <div key={venue.seasonVenueId} className="border-ink-100 mb-3.5 rounded-2xl border p-4">
+            <div
+              key={venue.seasonVenueId}
+              className="border-ink-300 mb-3.5 rounded-2xl border bg-white p-4 shadow-sm"
+            >
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="text-ink-900 text-[15px] font-bold">
+                <span className="text-ink-900 text-[16px] font-bold">
                   {venue.name}
                   {venue.city ? ` · ${venue.city}` : ""}
                 </span>
@@ -604,11 +769,9 @@ export function GymsWeekendsStep({
                     data-testid="make-home"
                     disabled={busy !== null}
                     onClick={() => makeHome(venue)}
-                    className="text-play-700 hover:text-play-800 ml-auto text-xs font-semibold disabled:opacity-50"
+                    className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 ml-auto inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {busy === `${venue.seasonVenueId}:role`
-                      ? "Working…"
-                      : "Make this the home gym"}
+                    {busy === `${venue.seasonVenueId}:role` ? "Working…" : "Make this the home gym"}
                   </button>
                 )}
               </div>
@@ -784,13 +947,13 @@ export function GymsWeekendsStep({
                               aria-label={cellLabel(venue.name, w.label, cell)}
                               title={
                                 cell.state === "taken"
-                                  ? cell.reason ?? undefined
+                                  ? (cell.reason ?? undefined)
                                   : assumed
                                     ? "Assumed for now. Nobody has booked this weekend with the gym yet."
                                     : undefined
                               }
                               style={assumed ? ASSUMED_HATCH : undefined}
-                              className={`min-h-[40px] w-[62px] rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                              className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                                 CELL_CLS[cell.state]
                               } ${assumed ? "border-dashed" : ""}`}
                             >
@@ -801,7 +964,9 @@ export function GymsWeekendsStep({
                               ) : cell.state === "taken" ? (
                                 <span className="block leading-tight">Taken</span>
                               ) : cell.state === "custom" ? (
-                                <span className="block leading-tight">{cell.hoursLabel ?? "Custom"}</span>
+                                <span className="block leading-tight">
+                                  {cell.hoursLabel ?? "Custom"}
+                                </span>
                               ) : (
                                 "Yes"
                               )}
@@ -842,7 +1007,7 @@ export function GymsWeekendsStep({
                                 onClick={() => confirmBooking(venue, w, cell)}
                                 aria-label={`${venue.name} is booked for ${w.label}`}
                                 title={`The gym said yes to ${w.label}`}
-                                className="border-court-300 text-court-800 hover:border-court-500 hover:bg-court-50 w-[62px] rounded-lg border px-1 py-0.5 text-[9.5px] font-bold disabled:cursor-not-allowed disabled:opacity-60"
+                                className="border-court-400 text-court-800 hover:border-court-600 hover:bg-court-50 min-h-[28px] w-[62px] cursor-pointer rounded-lg border bg-white px-1 text-[9.5px] font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                               >
                                 {busy === key ? "…" : "Booked it"}
                               </button>
@@ -879,7 +1044,7 @@ export function GymsWeekendsStep({
                       end: (idx >= 0 ? venue.cells[idx].endTime : null) ?? draft.end,
                     })
                   }}
-                  className="text-play-700 hover:text-play-800 text-xs font-semibold disabled:opacity-50"
+                  className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {exceptionOpen ? "Close" : "One weekend runs different hours?"}
                 </button>
@@ -889,7 +1054,7 @@ export function GymsWeekendsStep({
                     setAdvancedFor(advancedFor === venue.seasonVenueId ? null : venue.seasonVenueId)
                     setExceptionFor(null)
                   }}
-                  className="text-ink-500 hover:text-ink-700 text-xs font-semibold"
+                  className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors"
                 >
                   {advancedFor === venue.seasonVenueId ? "Close advanced" : "Advanced"}
                 </button>
@@ -1042,7 +1207,7 @@ export function GymsWeekendsStep({
               type="button"
               disabled={locked}
               onClick={() => setAddingGym(true)}
-              className="text-play-700 hover:text-play-800 text-sm font-semibold disabled:opacity-50"
+              className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               + Add a gym
             </button>

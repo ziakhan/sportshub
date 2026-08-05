@@ -106,10 +106,13 @@ export function PlanTab({
   const stageState = (i: number): StageState =>
     i === currentIndex ? "current" : done[i] ? "done" : "upcoming"
 
-  // Where "continue" drops you: the first step whose work is missing.
-  // Step 1 when no grade carries an estimate, step 2 when no weekend has a
-  // gym on it, otherwise step 3, which is where the calendar gets kept.
-  const resumeStep = gradesEstimated === 0 ? 1 : weekendsWithGym === 0 ? 2 : 3
+  /**
+   * THE PLANNER OPENS AT STEP 1, ALWAYS (owner ruling 2026-08-05, repeated).
+   * Launching from this tab used to drop an operator straight onto the board,
+   * which is the middle of the walk: the plan document is chosen at step 1, the
+   * teams are step 1, and the calendar only makes sense after both. So there is
+   * no "resume step" any more, and the one door into the flow is the top of it.
+   */
   const planStarted = gradesEstimated > 0 || weekendsWithGym > 0
 
   // --- What the current stage asks of you -------------------------------
@@ -128,8 +131,11 @@ export function PlanTab({
           ? "Your team estimates are saved. Next, choose which gyms run on which weekends."
           : "Your teams and gyms are in. Step 3 turns them into the season calendar."
       : "Start with how many teams you expect in each grade. Everything after that is computed, and you can change it later."
-    primary = { label: planStarted ? "Continue planning" : "Start planning", href: planHref(resumeStep) }
-    if (planStarted) secondary.push({ label: "Open the plan from the top", href: planHref(1) })
+    primary = {
+      label: planStarted ? "Continue planning" : "Start planning",
+      href: planHref(1),
+    }
+    if (planStarted) secondary.push({ label: "Jump to the calendar", href: planHref(3) })
   } else if (stage === "publish") {
     headline = "Your calendar is ready to post"
     detail =
@@ -144,7 +150,8 @@ export function PlanTab({
         : "Teams are in against these dates. Tweak the plan any time before you generate games."
     primary = { label: "Watch registration", href: planHref(5) }
     secondary.push({ label: "Open your published plan", href: planHref(4) })
-    if (status === "DRAFT") secondary.push({ label: "Season checklist", onClick: () => onGoToTab("overview") })
+    if (status === "DRAFT")
+      secondary.push({ label: "Season checklist", onClick: () => onGoToTab("overview") })
   } else if (stage === "schedule") {
     headline = "Ready to turn the plan into games"
     detail =
@@ -243,7 +250,7 @@ export function PlanTab({
             </>
           )
           const cls =
-            "brand-focus flex items-center gap-2 whitespace-nowrap rounded-xl px-1.5 py-1 hover:bg-white"
+            "brand-focus flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-1.5 py-1 transition-colors hover:bg-white"
           return (
             <li key={s.key} className="flex flex-none items-center">
               {s.key === "live" ? (
@@ -257,7 +264,7 @@ export function PlanTab({
                 </button>
               ) : (
                 <Link
-                  href={planHref(s.key === "plan" ? resumeStep : s.key === "publish" ? 4 : 5)}
+                  href={planHref(s.key === "plan" ? 1 : s.key === "publish" ? 4 : 5)}
                   className={cls}
                   aria-current={state === "current" ? "step" : undefined}
                 >

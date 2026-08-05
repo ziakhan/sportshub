@@ -11,5 +11,5 @@ export default function SeasonPlannerBoardRedirect({
 }: {
   params: { id: string; seasonId: string }
 }) {
-  redirect(`/manage/leagues/${params.id}/seasons/${params.seasonId}/plan?step=3`)
+  redirect(`/manage/leagues/${params.id}/seasons/${params.seasonId}/plan?step=1`)
 }

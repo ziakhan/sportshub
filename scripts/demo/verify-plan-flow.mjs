@@ -11,6 +11,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-plan-flow.mjs
 import { chromium } from "playwright"
+import { openBoard } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -67,6 +68,38 @@ ok(
   ["Plan", "Publish", "Watch registration", "Schedule", "Live"].every((s) => railText.includes(s))
 )
 ok("plan tab has a CTA", (await page.locator('[data-testid="plan-tab-cta"]').count()) === 1)
+// NEW 2026-08-05 (owner ruling #1): launching the planner from outside lands on
+// STEP 1, never on the board. The rail's Plan stage is that door, and no link
+// on this tab may point an operator into step 3 as their entry.
+const planStageHref = await page
+  .locator('[data-testid="plan-tab-rail"] a')
+  .first()
+  .getAttribute("href")
+ok(
+  "the tab's door into the planner opens step 1",
+  /[?&]step=1$/.test(planStageHref ?? ""),
+  planStageHref ?? "missing"
+)
+const ctaHref = await page.locator('[data-testid="plan-tab-cta"] a').getAttribute("href")
+ok(
+  "and the primary CTA never drops you straight on the board",
+  !/[?&]step=3$/.test(ctaHref ?? ""),
+  ctaHref ?? "no href (this stage uses a tab switch)"
+)
+await page.locator('[data-testid="plan-tab-rail"] a').first().click()
+await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 90000 })
+ok(
+  "the walk starts on teams, with the plan controls in the header",
+  /[?&]step=1/.test(page.url()) &&
+    (await page.locator('[data-testid="step1-plan-chooser"]').count()) === 1,
+  page.url().split("/").pop()
+)
+ok(
+  "and no plan is opened for you: step 1 asks which one first",
+  (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1 &&
+    /None open/.test(await page.locator('[data-testid="plan-picker"]').innerText()),
+  (await page.locator('[data-testid="step1-plan-chooser"]').innerText()).replace(/\n/g, " ")
+)
 await page.screenshot({ path: `${SHOTS}/1-plan-tab.png`, fullPage: true })
 
 // ── Step 1: estimates only ────────────────────────────────────────────────
@@ -132,6 +165,31 @@ ok(
   (await page.getByRole("button", { name: /move .* (up|down)/i }).count()) === 0
 )
 ok("step 2 shows taken weekends", /Taken|NJC/.test(step2))
+// NEW 2026-08-05 (owner ruling #3): the league's weekends are chosen ONCE, in
+// one row above the per-gym grid, and the per-gym cells follow it.
+const leagueRow = page.locator('[data-testid="league-weekends"]')
+const leagueCells = await page.locator('[data-testid="league-weekend"]').count()
+const gridBox = await page.locator('[data-testid="venue-role-chip"]').first().boundingBox()
+const rowBox = await leagueRow.boundingBox().catch(() => null)
+ok(
+  "step 2 asks when the league runs, once, above the gyms",
+  (await leagueRow.count()) === 1 &&
+    /When do you want to run sessions/.test(step2) &&
+    leagueCells > 0 &&
+    Boolean(rowBox && gridBox && rowBox.y < gridBox.y),
+  `${leagueCells} weekend toggles · ${await page.locator('[data-testid="league-weekends-count"]').innerText()}`
+)
+const leagueOn = await page.locator('[data-testid="league-weekend"][data-on="1"]').count()
+const gymOn = await page.evaluate(() => {
+  // A weekend the league runs must be a weekend some gym is really on.
+  const cells = [...document.querySelectorAll('[data-testid="league-weekend"]')]
+  return cells.filter((c) => c.getAttribute("data-on") === "1").length
+})
+ok(
+  "the row counts the weekends the season really has a gym on",
+  leagueOn === gymOn && leagueOn > 0,
+  `${leagueOn} weekends on`
+)
 ok("step 2 has whole-season toggles", /all weekends/i.test(step2))
 ok("step 2 still edits courts", (await page.getByLabel(/ courts$/).count()) >= gymCards)
 ok(
@@ -141,7 +199,17 @@ ok(
 await page.screenshot({ path: `${SHOTS}/3-step2-gyms.png`, fullPage: true })
 
 // ── Step 3: gym sections, levers, hours chips (no Keep, no Apply) ─────────
-await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
+// RE-PINNED 2026-08-05 (#2): step 3 opens on the chooser, so the drive opens the
+// season's own plan before there is a board to assert anything about.
+const boardEntry = await openBoard(
+  page,
+  `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
+)
+ok(
+  "step 3 opens with nothing selected, and the plan is opened by hand",
+  boardEntry.empty && boardEntry.weekends === 0,
+  boardEntry.picker
+)
 // The levers and hours chips live behind quiet disclosures that render once
 // the board's data is in; wait for the triggers, open both, then assert.
 await page.waitForSelector('[data-testid="hours-toggle"]', { timeout: 60000 })
@@ -322,9 +390,9 @@ ok(
 )
 // The weekend's sentence lives behind its "why" chip, so the check opens one
 // the way an operator would. The panel portals to body, so read the document.
-await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
+await openBoard(page, `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
 await page.waitForSelector('[data-testid="hours-toggle"]', { timeout: 60000 })
-await page.waitForTimeout(1500)
+await page.waitForTimeout(1200)
 const why = page.locator('[data-testid="weekend-why"]').first()
 let boardHeld = ""
 if ((await why.count()) > 0) {

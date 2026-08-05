@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
 import { CalendarStep } from "./calendar-step"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
+import { PlanSessionProvider } from "./plan-session"
 import { PublishStep } from "./publish-step"
 import { ScheduleStep } from "./schedule-step"
 import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
@@ -47,6 +48,13 @@ function PlanWizard() {
   const leagueId = params?.id as string
   const seasonId = params?.seasonId as string
 
+  /**
+   * THE WALK STARTS AT STEP 1, ALWAYS (owner ruling 2026-08-05, repeated).
+   * A launch from outside — the Plan Your Season tab, a bookmark, any link with
+   * no explicit ?step= on it — opens on teams, never on the board. Choosing or
+   * creating the plan document happens at step 1 too, so the order is: pick the
+   * plan, say who is coming, say where and when, then look at the calendar.
+   */
   const fromUrl = Number(searchParams?.get("step") ?? "")
   const [step, setStep] = useState(fromUrl >= 1 && fromUrl <= 5 ? fromUrl : 1)
   const [header, setHeader] = useState<PlanHeaderInfo | null>(null)
@@ -77,98 +85,100 @@ function PlanWizard() {
   }, [wide])
 
   return (
-    <div className={wide ? "w-full px-3 py-3" : "mx-auto max-w-5xl px-4 py-6"}>
-      <SmartBack
-        fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}
-        fallbackLabel="Back to Plan Your Season"
-      />
+    <PlanSessionProvider seasonId={seasonId}>
+      <div className={wide ? "w-full px-3 py-3" : "mx-auto max-w-5xl px-4 py-6"}>
+        <SmartBack
+          fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}
+          fallbackLabel="Back to Plan Your Season"
+        />
 
-      {/* On the board step the title and the step rail share one line, so the
+        {/* On the board step the title and the step rail share one line, so the
           calendar starts near the top of the screen instead of below a
           letterhead. Everywhere else the page keeps its ordinary heading. */}
-      <div className={wide ? "mt-1 flex flex-wrap items-center gap-x-5 gap-y-2" : ""}>
-        <div className={wide ? "" : "mt-2"}>
-          <h1 className={`text-ink-900 font-bold ${wide ? "text-base" : "text-2xl"}`}>
-            Plan your season
-          </h1>
-          <p className={`text-ink-500 ${wide ? "text-[11.5px]" : "text-sm"}`}>
-            {seasonLine || "Five steps: teams, gyms, calendar, publish, schedule."}
-          </p>
-        </div>
+        <div className={wide ? "mt-1 flex flex-wrap items-center gap-x-5 gap-y-2" : ""}>
+          <div className={wide ? "" : "mt-2"}>
+            <h1 className={`text-ink-900 font-bold ${wide ? "text-base" : "text-2xl"}`}>
+              Plan your season
+            </h1>
+            <p className={`text-ink-500 ${wide ? "text-[11.5px]" : "text-sm"}`}>
+              {seasonLine || "Five steps: teams, gyms, calendar, publish, schedule."}
+            </p>
+          </div>
 
-        {/* The rail, always visible. */}
-        <ol
-          className={`border-ink-100 shadow-soft flex items-center gap-0 overflow-x-auto rounded-2xl border bg-white ${
-            wide ? "px-3 py-1.5" : "mt-5 w-full px-5 py-4"
-          }`}
-        >
-          {STEPS.map((s, i) => {
-            // Every step is a real screen now, so the only distinction the rail
-            // draws is the one the operator is standing on.
-            const current = s.n === step
-            return (
-              <li key={s.n} className="flex flex-none items-center">
-                <button
-                  type="button"
-                  onClick={() => setStep(s.n)}
-                  className="brand-focus flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1 py-1"
-                  aria-current={current ? "step" : undefined}
-                >
-                  <span
-                    className={`flex flex-none items-center justify-center rounded-full font-bold ${
-                      wide ? "h-[22px] w-[22px] text-[11px]" : "h-[26px] w-[26px] text-xs"
-                    } ${current ? "bg-court-600 text-white" : "bg-court-100 text-court-700"}`}
+          {/* The rail, always visible. */}
+          <ol
+            className={`border-ink-100 shadow-soft flex items-center gap-0 overflow-x-auto rounded-2xl border bg-white ${
+              wide ? "px-3 py-1.5" : "mt-5 w-full px-5 py-4"
+            }`}
+          >
+            {STEPS.map((s, i) => {
+              // Every step is a real screen now, so the only distinction the rail
+              // draws is the one the operator is standing on.
+              const current = s.n === step
+              return (
+                <li key={s.n} className="flex flex-none items-center">
+                  <button
+                    type="button"
+                    onClick={() => setStep(s.n)}
+                    className="brand-focus flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1 py-1"
+                    aria-current={current ? "step" : undefined}
                   >
-                    {s.n}
-                  </span>
-                  <span className="text-left">
                     <span
-                      className={`block font-semibold ${wide ? "text-[12.5px]" : "text-sm"} ${
-                        current ? "text-ink-900" : "text-ink-600"
-                      }`}
+                      className={`flex flex-none items-center justify-center rounded-full font-bold ${
+                        wide ? "h-[22px] w-[22px] text-[11px]" : "h-[26px] w-[26px] text-xs"
+                      } ${current ? "bg-court-600 text-white" : "bg-court-100 text-court-700"}`}
                     >
-                      {s.label}
+                      {s.n}
                     </span>
-                    {/* The hint is orientation for somebody arriving; on the
+                    <span className="text-left">
+                      <span
+                        className={`block font-semibold ${wide ? "text-[12.5px]" : "text-sm"} ${
+                          current ? "text-ink-900" : "text-ink-600"
+                        }`}
+                      >
+                        {s.label}
+                      </span>
+                      {/* The hint is orientation for somebody arriving; on the
                         board it is a second line of chrome above the work. */}
-                    {!wide && <span className="text-ink-400 block text-[11.5px]">{s.hint}</span>}
-                  </span>
-                </button>
-                {i < STEPS.length - 1 && (
-                  <span
-                    className={`bg-ink-200 h-px flex-none ${wide ? "mx-2 w-4" : "mx-3 w-6"}`}
-                    aria-hidden
-                  />
-                )}
-              </li>
-            )
-          })}
-        </ol>
-      </div>
-      {!wide && (
-        <p className="text-ink-400 mt-2.5 px-1 text-xs">
-          Going back to edit a step never loses the work after it. It recomputes it.
-        </p>
-      )}
-
-      <div className={wide ? "mt-3" : "mt-6"}>
-        {step === 1 ? (
-          <TeamsStep seasonId={seasonId} onLoaded={onLoaded} />
-        ) : step === 2 ? (
-          <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
-        ) : step === 3 ? (
-          <CalendarStep seasonId={seasonId} onLoaded={onLoaded} />
-        ) : step === 4 ? (
-          <PublishStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
-        ) : (
-          <ScheduleStep
-            seasonId={seasonId}
-            leagueId={leagueId}
-            onLoaded={onLoaded}
-            onGoToStep={setStep}
-          />
+                      {!wide && <span className="text-ink-400 block text-[11.5px]">{s.hint}</span>}
+                    </span>
+                  </button>
+                  {i < STEPS.length - 1 && (
+                    <span
+                      className={`bg-ink-200 h-px flex-none ${wide ? "mx-2 w-4" : "mx-3 w-6"}`}
+                      aria-hidden
+                    />
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+        {!wide && (
+          <p className="text-ink-400 mt-2.5 px-1 text-xs">
+            Going back to edit a step never loses the work after it. It recomputes it.
+          </p>
         )}
+
+        <div className={wide ? "mt-3" : "mt-6"}>
+          {step === 1 ? (
+            <TeamsStep seasonId={seasonId} onLoaded={onLoaded} />
+          ) : step === 2 ? (
+            <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
+          ) : step === 3 ? (
+            <CalendarStep seasonId={seasonId} onLoaded={onLoaded} />
+          ) : step === 4 ? (
+            <PublishStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
+          ) : (
+            <ScheduleStep
+              seasonId={seasonId}
+              leagueId={leagueId}
+              onLoaded={onLoaded}
+              onGoToStep={setStep}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </PlanSessionProvider>
   )
 }

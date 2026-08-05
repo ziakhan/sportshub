@@ -7,6 +7,7 @@ import {
   type PlannerState,
   type PlannerUnit,
 } from "@/lib/scheduler/planner-core"
+import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
 
 /**
  * Step 1, teams (owner-approved mock, 2026-08-02). The flow opens where the
@@ -57,6 +58,8 @@ export function TeamsStep({
   seasonId: string
   onLoaded?: (info: PlanHeaderInfo) => void
 }) {
+  /** Which plan the wizard is working in. Chosen here, carried to every step. */
+  const session = usePlanSession()
   const [state, setState] = useState<PlannerState | null>(null)
   const [lastSeason, setLastSeason] = useState<Record<string, number> | null>(null)
   const [counts, setCounts] = useState<Record<string, number>>({})
@@ -259,19 +262,47 @@ export function TeamsStep({
   const allUnplanned = unplanned.length === state.units.length
 
   return (
-    <div className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white">
+    <div className="border-ink-200 shadow-soft overflow-hidden rounded-2xl border bg-white">
       {/* Screen head */}
-      <div className="border-ink-100 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+      <div className="border-ink-200 bg-ink-50/60 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
           <p className="text-ink-900 text-[15px] font-bold">How many teams do you expect?</p>
           <p className="text-ink-500 text-xs">
             One number per grade. Pre-filled from last season where there is history.
           </p>
         </div>
-        <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
-          Step 1 of 5
-        </span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* THE PLAN IS CHOSEN HERE (owner ruling 2026-08-05, #1). Opening or
+              creating the plan document is the first move of the walk, not
+              something to find on the board three steps later. */}
+          <PlanChooser locked={locked} testId="step1-plan-chooser" />
+          <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
+            Step 1 of 5
+          </span>
+        </div>
       </div>
+
+      {/* Nothing open yet: the same two buttons the board offers, at the top of
+          the walk where the choice belongs. */}
+      {!session.planId && (
+        <div className="px-5 pt-5">
+          <PlanEmptyState
+            locked={locked}
+            heading="Which plan are you working in?"
+            detail="A plan is one named calendar for this season. Open one of yours, or start a new one and the planner builds a balanced calendar you can change. The numbers below stay editable either way."
+            testId="step1-plan-empty"
+          />
+        </div>
+      )}
+      {session.planId && (
+        <p
+          className="border-ink-100 bg-court-50/60 text-court-900 border-b px-5 py-2 text-[12px]"
+          data-testid="step1-plan-line"
+        >
+          Working in <b>{session.chosen?.name ?? "your plan"}</b>. These numbers are the
+          season&apos;s own, and every step stays editable.
+        </p>
+      )}
 
       <div className="p-5">
         {locked && (
@@ -301,7 +332,7 @@ export function TeamsStep({
             <button
               type="button"
               onClick={startFromRegistrations}
-              className="border-court-200 text-court-900 hover:bg-court-100 shrink-0 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+              className="border-court-300 text-court-900 hover:bg-court-100 hover:border-court-400 inline-flex min-h-[36px] shrink-0 cursor-pointer items-center rounded-lg border bg-white px-3 text-xs font-bold transition-colors"
             >
               Start from registrations
             </button>
@@ -355,14 +386,14 @@ export function TeamsStep({
                       <span
                         role="group"
                         aria-label={`Expected teams for ${unit.label}`}
-                        className="border-ink-200 bg-ink-50 inline-flex h-9 items-center rounded-lg border"
+                        className="border-ink-300 inline-flex h-9 items-center rounded-lg border bg-white shadow-sm"
                       >
                         <button
                           type="button"
                           disabled={locked || value <= 0}
                           onClick={() => bump(unit, -1)}
                           aria-label={`One fewer ${unit.label} team`}
-                          className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                          className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full w-9 cursor-pointer rounded-l-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           −
                         </button>
@@ -377,7 +408,7 @@ export function TeamsStep({
                           disabled={locked || value >= MAX_PER_GRADE}
                           onClick={() => bump(unit, 1)}
                           aria-label={`One more ${unit.label} team`}
-                          className="text-ink-700 hover:text-ink-900 h-full w-9 text-base font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                          className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full w-9 cursor-pointer rounded-r-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           +
                         </button>
@@ -454,13 +485,11 @@ export function TeamsStep({
                 type="button"
                 onClick={() => void addGrade()}
                 disabled={!newGrade.trim() || addingGrade}
-                className="border-ink-200 text-ink-700 hover:bg-ink-50 h-9 rounded-lg border px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+                className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex h-9 cursor-pointer items-center rounded-lg border bg-white px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {addingGrade ? "Adding…" : "Add"}
               </button>
-              <span className="text-ink-400 text-xs">
-                One grade per row, counting from zero.
-              </span>
+              <span className="text-ink-400 text-xs">One grade per row, counting from zero.</span>
             </div>
             {addError && <p className="text-hoop-700 mt-1.5 text-xs">{addError}</p>}
           </div>
@@ -468,8 +497,8 @@ export function TeamsStep({
 
         {anyApproved && (
           <p className="text-ink-400 mt-3 text-xs">
-            Planning runs on your numbers. Teams that sign up past a grade&apos;s estimate show
-            up here and on the step 5 bars, so you can raise the number or leave it.
+            Planning runs on your numbers. Teams that sign up past a grade&apos;s estimate show up
+            here and on the step 5 bars, so you can raise the number or leave it.
           </p>
         )}
 

@@ -101,7 +101,9 @@ export function PublishStep({
     setBusy(method)
     setError(null)
     setNotice(null)
-    const res = await fetch(`/api/seasons/${seasonId}/planner/publish`, { method }).catch(() => null)
+    const res = await fetch(`/api/seasons/${seasonId}/planner/publish`, { method }).catch(
+      () => null
+    )
     setBusy(null)
     const data = await res?.json().catch(() => null)
     if (!res?.ok) {
@@ -191,7 +193,9 @@ export function PublishStep({
             ) : (
               <div className="border-ink-200 rounded-xl border border-dashed p-6">
                 <p className="text-ink-600 text-sm">
-                  {cardFailed ? "The card didn't render just now. Reload to try again." : COPY.noPlan}
+                  {cardFailed
+                    ? "The card didn't render just now. Reload to try again."
+                    : COPY.noPlan}
                 </p>
                 {!cardFailed && onGoToStep && (
                   <button

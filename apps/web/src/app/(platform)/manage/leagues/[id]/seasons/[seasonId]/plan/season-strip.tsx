@@ -11,11 +11,7 @@ import {
   type PlannerUnit,
   type PlannerWeekend,
 } from "@/lib/scheduler/planner-core"
-import {
-  resolveUnitVenue,
-  resolveWeekendVenues,
-  type StripVenue,
-} from "@/lib/seasons/venue-strip"
+import { resolveUnitVenue, resolveWeekendVenues, type StripVenue } from "@/lib/seasons/venue-strip"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { METER_TONE, VENUE_HUES, planVenueHues, type Armed } from "./plan-shared"
 import { REASON_GLYPH, ReasonGlyph } from "./plan-ui"
@@ -50,8 +46,7 @@ const COPY = {
   kept: "The calendar you kept. Switch to Proposal to change anything.",
   proposal: "Tap a grade, then tap another weekend that month to move it.",
   readOnly: "Where every grade plays, left to right.",
-  gyms:
-    "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is a weekend with no gym booked.",
+  gyms: "Turn a gym on or off for a weekend back in step 2. Each grade plays one gym per weekend, and keeps that gym all season whenever the courts allow. A cell that only counts games is a weekend with no gym booked.",
 }
 
 /** The first column stays put while the season scrolls under it. */
@@ -78,7 +73,7 @@ export function Segmented<T extends string>({
       role="group"
       aria-label={label}
       data-testid={testId}
-      className="border-ink-200 inline-flex rounded-lg border p-0.5"
+      className="border-ink-300 inline-flex rounded-lg border bg-white p-0.5"
     >
       {options.map((o) => {
         const on = o.value === value
@@ -92,8 +87,8 @@ export function Segmented<T extends string>({
               e.stopPropagation()
               onChange(o.value)
             }}
-            className={`rounded-md px-2.5 py-1 text-[11.5px] font-bold ${
-              on ? "bg-court-600 text-white" : "text-ink-500 hover:text-ink-800"
+            className={`min-h-[32px] cursor-pointer rounded-md px-2.5 text-[11.5px] font-bold transition-colors ${
+              on ? "bg-court-600 text-white" : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
             }`}
           >
             {o.label}
@@ -139,17 +134,26 @@ export function StripView({
   onMove: (unitKey: string, from: string | null, to: string) => void
 }) {
   const weekends = useMemo(
-    () => state.windows.flatMap((win) => win.weekends.map((w) => ({ weekend: w, window: win.label }))),
+    () =>
+      state.windows.flatMap((win) => win.weekends.map((w) => ({ weekend: w, window: win.label }))),
     [state]
   )
   const gymsOn = useMemo(
-    () => resolveWeekendVenues(venueGrid, weekends.map((c) => c.weekend)),
+    () =>
+      resolveWeekendVenues(
+        venueGrid,
+        weekends.map((c) => c.weekend)
+      ),
     [venueGrid, weekends]
   )
   // The step's ONE gym colouring, from the same two inputs the board hands it,
   // so a building is the same colour in both views.
   const { order: gymOrder, hue } = useMemo(
-    () => planVenueHues(venueGrid, weekends.map((c) => c.weekend)),
+    () =>
+      planVenueHues(
+        venueGrid,
+        weekends.map((c) => c.weekend)
+      ),
     [venueGrid, weekends]
   )
 
@@ -357,9 +361,7 @@ export function StripView({
       {/* Which colour is which gym is answered ONCE for the whole step, in the
           legend above both views, so this footer only has to say how the
           cells work. */}
-      <p className="text-ink-400 border-ink-100 border-t px-3 py-2 text-[11px]">
-        {COPY.gyms}
-      </p>
+      <p className="text-ink-400 border-ink-100 border-t px-3 py-2 text-[11px]">{COPY.gyms}</p>
     </div>
   )
 }

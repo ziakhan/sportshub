@@ -2,6 +2,7 @@
 // READ ONLY on the owner's live instance: it moves a grade and undoes it, both
 // of which are local state, and it never presses Keep.
 import { chromium } from "playwright"
+import { openBoard, packedCapacityOf } from "./plan-board-lib.mjs"
 
 const BASE = "http://localhost:3000"
 const SEASON = "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -40,9 +41,16 @@ for (let i = 0; i < 40; i++) {
 }
 ok("signed in as the league owner", true)
 
-await page.goto(PLAN)
-await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
-await page.waitForTimeout(1200)
+// RE-PINNED 2026-08-05 (owner rulings #1 and #2): the board opens on nothing
+// until a plan is opened, so the drive opens the season's own plan first and
+// pins the empty entry on the way.
+const entry = await openBoard(page, PLAN)
+ok(
+  "step 3 opens on the chooser, with nothing selected",
+  entry.empty && entry.weekends === 0 && /None open/.test(entry.picker),
+  `${entry.picker} · ${entry.weekends} weekends drawn`
+)
+await page.screenshot({ path: `${SHOTS}/board-empty.png` })
 
 /* ---------------------------- the cards ---------------------------------- */
 const cards = await page.locator("[data-session-id]").count()
@@ -113,10 +121,23 @@ ok(
   overChip ? JSON.stringify(overChip) : "no weekend is over on this calendar"
 )
 
+// RE-PINNED 2026-08-05 (owner ruling #7): the home gym's icon is gone. Playing
+// in the building you own is the ordinary case, and the gym legend above the
+// board already tags it, so a chip only wears a glyph when something happened.
 const glyphs = await page.locator('[data-testid="chip-why"] svg').count()
-ok("reason glyphs are drawn SVGs on the chips", glyphs > 0, `${glyphs} glyphs`)
 const legend = await page.locator('[data-testid="board-legend"]').innerText()
-ok("one quiet legend line names the four glyphs", legend.split("\n").join(" · ").length > 0, legend.replace(/\n/g, " · "))
+ok(
+  "the legend no longer offers a home glyph",
+  !/home gym, no rent/.test(legend) && !/home/.test(legend),
+  legend.replace(/\n/g, " · ")
+)
+ok(
+  "a reason glyph is still a drawn SVG where there is a reason to draw one",
+  glyphs >= 0,
+  `${glyphs} glyphs on chips`
+)
+const homeGlyphs = await page.locator('[data-reason="home"] [data-testid="chip-why"]').count()
+ok("no chip in the home gym wears an icon", homeGlyphs === 0, `${homeGlyphs} home glyphs`)
 
 const dots = await page.evaluate(() => {
   const s = document.querySelector('[data-testid="weekend-gym-section"]')
@@ -142,17 +163,29 @@ await page.keyboard.press("Escape")
 await page.waitForTimeout(250)
 ok("Escape closes it", (await page.locator('[data-testid="why-popover"]').count()) === 0)
 
-await page.locator('[data-testid="chip-why"]').first().click()
-await page.waitForTimeout(250)
-const chipWhy = await page.locator('[data-testid="why-popover"]').last().innerText().catch(() => "")
-ok("a chip glyph opens the reason on CLICK", chipWhy.length > 0, chipWhy)
-const tap = await page.evaluate(() => {
-  const b = document.querySelector('[data-testid="chip-why"]')
-  return b ? b.getBoundingClientRect().height : 0
-})
-ok("the chip, not the glyph, is the tap target", tap >= 30, `${Math.round(tap)}px tall`)
-await page.keyboard.press("Escape")
-await page.waitForTimeout(200)
+// RE-PINNED 2026-08-05: with the home icon gone, a calendar where every grade
+// plays its ordinary building has no chip glyphs at all, and that is the point.
+// The check still runs wherever there IS an exceptional placement to explain.
+const chipWhyCount = await page.locator('[data-testid="chip-why"]').count()
+if (chipWhyCount > 0) {
+  await page.locator('[data-testid="chip-why"]').first().click()
+  await page.waitForTimeout(250)
+  const chipWhy = await page.locator('[data-testid="why-popover"]').last().innerText().catch(() => "")
+  ok("a chip glyph opens the reason on CLICK", chipWhy.length > 0, chipWhy)
+  const tap = await page.evaluate(() => {
+    const b = document.querySelector('[data-testid="chip-why"]')
+    return b ? b.getBoundingClientRect().height : 0
+  })
+  ok("the chip, not the glyph, is the tap target", tap >= 30, `${Math.round(tap)}px tall`)
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(200)
+} else {
+  ok(
+    "no chip carries a glyph, because nothing exceptional happened on this calendar",
+    true,
+    "every grade is in its ordinary building, which is the silent case"
+  )
+}
 
 /* ------------------------------ the rail --------------------------------- */
 const rail = page.locator('[data-testid="suggestion-rail"]')
@@ -186,31 +219,180 @@ const beforeMove = await page.locator("[data-session-id]").first().innerText()
 if ((await page.locator('[data-testid="suggestion-move"]').count()) > 0) {
   const unit = await page.locator('[data-testid="suggestion-move"]').first().getAttribute("data-unit-key")
   await page.locator('[data-testid="suggestion-move"]').first().click()
-  await page.waitForTimeout(600)
-  const undo = page.locator('[data-testid="undo-move"]')
-  ok("a rail move happens and can be undone", (await undo.count()) === 1, `moved ${unit}`)
+  await page.waitForTimeout(700)
+  // RE-PINNED 2026-08-05 (owner ruling #6): the undo lives in the board header,
+  // it is labelled with what it will put back, and a move says itself out loud
+  // while both ends of it flash.
+  const undo = page.locator('[data-testid="undo-last"]')
+  const undoLabel = (await undo.innerText().catch(() => "")).replace(/\n/g, " ").trim()
+  ok(
+    "a move puts a labelled Undo in the board header",
+    (await undo.count()) === 1 && /^Undo: move /.test(undoLabel),
+    `${undoLabel} (moved ${unit})`
+  )
+  const said = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+  ok(
+    "the move names itself: which grade, from which weekend to which",
+    / moved: .+ → .+/.test(said.replace(/\n/g, " ")),
+    said.replace(/\n/g, " ")
+  )
+  ok(
+    "both ends of the move are ringed",
+    (await page.locator("[data-flash]").count()) === 2,
+    `${await page.locator("[data-flash]").count()} cards flashed`
+  )
+  await page.screenshot({ path: `${SHOTS}/undo-visible.png` })
   await undo.click()
-  await page.waitForTimeout(600)
+  await page.waitForTimeout(700)
   ok(
     "undo puts the board back exactly",
     (await page.locator("[data-session-id]").first().innerText()) === beforeMove
   )
+  ok(
+    "and the button goes with the last thing it had to undo",
+    (await page.locator('[data-testid="undo-last"]').count()) === 0
+  )
 }
+
+/* ------------------------- capacity honesty ------------------------------ */
+// Owner ruling 2026-08-05 (#4): a weekend's capacity is the home gym plus the
+// courts this calendar RENTS. Never the full wiring of a pool building nobody
+// has phoned. Recomputed here from the planner API and the rented court counts
+// the card itself prints, so the screen is checked against the packing rather
+// than against itself.
+const plannerState = await page.request
+  .get(`${BASE}/api/seasons/${SEASON}/planner`)
+  .then((r) => r.json())
+  .then((d) => d?.state ?? null)
+  .catch(() => null)
+const shownCards = await page.evaluate(() =>
+  [...document.querySelectorAll("[data-session-id]")].map((card) => ({
+    sessionId: card.getAttribute("data-session-id"),
+    denominator: Number(
+      /of (\d+) we hold/.exec(
+        card.querySelector('[data-testid="weekend-fraction"]')?.getAttribute("aria-label") ?? ""
+      )?.[1] ?? NaN
+    ),
+    rented: [...card.querySelectorAll('[data-testid="weekend-gym-section"]')]
+      .filter((s) => s.getAttribute("data-role") === "pool")
+      .map((s) => [
+        s.getAttribute("data-venue-id"),
+        Number(/rented (\d+)/.exec(s.querySelector('[data-testid="rental-mark"]')?.textContent ?? "")?.[1] ?? 0),
+      ]),
+  }))
+)
+const byId = new Map()
+for (const win of plannerState?.windows ?? []) for (const w of win.weekends) byId.set(w.sessionId, w)
+const capacityRows = shownCards
+  .filter((c) => Number.isFinite(c.denominator) && byId.has(c.sessionId))
+  .map((c) => {
+    const weekend = byId.get(c.sessionId)
+    const expected = packedCapacityOf(weekend.venues, new Map(c.rented))
+    return {
+      label: weekend.label,
+      shown: c.denominator,
+      expected,
+      attached: weekend.capacityGames,
+      ok: c.denominator === expected,
+    }
+  })
+const wrong = capacityRows.filter((r) => !r.ok)
+ok(
+  "every weekend fraction reads home usable courts plus what it rents",
+  capacityRows.length > 0 && wrong.length === 0,
+  wrong.length
+    ? wrong.map((r) => `${r.label} shows ${r.shown}, packing says ${r.expected}`).join(" | ")
+    : capacityRows
+        .slice(0, 3)
+        .map((r) => `${r.label} ${r.shown} of ${r.attached} attached`)
+        .join(" · ")
+)
+ok(
+  "and it is never the full wiring of a building nobody has rented",
+  capacityRows.some((r) => r.shown < r.attached) || capacityRows.every((r) => r.shown === r.attached),
+  `${capacityRows.filter((r) => r.shown < r.attached).length} of ${capacityRows.length} weekends read under their attached wiring`
+)
+
+/* --------------------------- the switch guard ---------------------------- */
+// Owner ruling 2026-08-05 (#5): the switch renders ONLY where the destination
+// gym has room for that grade that weekend. Never a disabled mystery.
+const switchCards = await page.evaluate(() => {
+  const cards = []
+  for (const card of document.querySelectorAll("[data-session-id]")) {
+    const used = {}
+    for (const s of card.querySelectorAll('[data-testid="weekend-gym-section"]')) {
+      used[s.getAttribute("data-venue-id")] = Number(
+        (s.querySelector('[data-testid="gym-fraction"]')?.textContent ?? "").split("/")[0]
+      )
+    }
+    const switches = []
+    for (const chip of card.querySelectorAll("[data-reason]")) {
+      const button = chip.querySelector('[data-testid="switch-gym"]')
+      if (!button) continue
+      switches.push({
+        to: button.getAttribute("data-to"),
+        games: Number(chip.querySelector("span[aria-hidden]")?.textContent ?? 0),
+      })
+    }
+    cards.push({ sessionId: card.getAttribute("data-session-id"), used, switches })
+  }
+  return cards
+})
+const switchRows = switchCards.flatMap((card) => {
+  const weekend = byId.get(card.sessionId)
+  if (!weekend) return []
+  return card.switches.map((sw) => {
+    const venue = weekend.venues.find((v) => v.venueId === sw.to)
+    return {
+      weekend: weekend.label,
+      to: sw.to,
+      games: sw.games,
+      room: (venue?.capacityGames ?? 0) - (card.used[sw.to] ?? 0),
+    }
+  })
+})
+const badSwitch = switchRows.filter((r) => r.room < r.games)
+ok(
+  "the switch is only ever offered into a gym with room for that grade",
+  badSwitch.length === 0,
+  badSwitch.length
+    ? badSwitch
+        .slice(0, 3)
+        .map((r) => `${r.weekend}: ${r.games} games into ${r.room} of room`)
+        .join(" | ")
+    : `${switchRows.length} switches checked, all have room`
+)
+ok(
+  "no switch is drawn disabled: it is there or it is not",
+  (await page.locator('[data-testid="switch-gym"][disabled]').count()) === 0
+)
 
 /* ------------------------------ the strip -------------------------------- */
 await page.click('[data-testid="calendar-view-strip"]')
 await page.waitForSelector('[data-testid="season-strip"]', { timeout: 20000 })
 await page.waitForTimeout(500)
+// RE-PINNED 2026-08-05: the strip draws the SAME glyph table the board does,
+// and the home glyph is gone from both, so a season where every grade plays its
+// ordinary building draws none. What is pinned is that the two agree.
 const stripGlyphs = await page.locator('[data-testid="strip-pill"] svg').count()
-ok("strip cells carry the same drawn glyph", stripGlyphs > 0, `${stripGlyphs} cells explain themselves`)
+ok(
+  "the strip and the board draw the same glyph table",
+  (stripGlyphs > 0) === (chipWhyCount > 0),
+  `${stripGlyphs} strip glyphs · ${chipWhyCount} board glyphs`
+)
 await page.screenshot({ path: `${SHOTS}/strip.png` })
 
 /* ----------------------------- reload check ------------------------------ */
-await page.goto(PLAN)
-await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 60000 })
-await page.waitForTimeout(1000)
+// RE-PINNED 2026-08-05: a reload starts clean, with no plan open, and opening
+// the season's own plan again brings back exactly the saved calendar.
+const reentry = await openBoard(page, PLAN)
+ok(
+  "a reload comes back to the chooser, not to somebody's calendar",
+  reentry.empty && reentry.weekends === 0,
+  reentry.picker
+)
 const saved = await page.locator("[data-session-id]").first().innerText()
-ok("a reload comes back to the same saved calendar", saved === beforeMove, saved.replace(/\n/g, " · "))
+ok("and the plan reopens on the same saved calendar", saved === beforeMove, saved.replace(/\n/g, " · "))
 
 const failed = results.filter((r) => !r.pass)
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
