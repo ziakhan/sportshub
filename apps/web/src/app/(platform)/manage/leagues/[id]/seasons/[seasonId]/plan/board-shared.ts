@@ -1,0 +1,250 @@
+import type {
+  AssignmentDiffSummary,
+  PlannerLever,
+  PlannerState,
+  PlanSummary,
+} from "@/lib/scheduler/planner-core"
+import { PILL_TONE, type GhostChip } from "./plan-shared"
+import type { BlockStatus } from "./plan-ui"
+
+/**
+ * WHAT THE WHOLE BOARD AGREES ON. Step 3 is one screen drawn by half a dozen
+ * modules — the board, the weekend card, the rail, the zoom, the chrome and the
+ * verbs behind them — and every one of them says "3 courts" or "2 weekends over"
+ * in the operator's own words.
+ *
+ * The copy, the counting words, the working copy's own shapes and the two
+ * verdict lines live here once, so a sentence can never come out two ways
+ * depending on which module wrote it.
+ */
+
+export const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
+
+/** Strings with real apostrophes live here as JS expressions, so nothing
+ *  needs escaping and the copy stays readable. */
+export const COPY = {
+  opened:
+    "We placed every grade for you, balanced across your gym time. Drag anything you'd do differently, then keep it.",
+  rules:
+    "Grouping is automatic because these are league truths, not choices: oldest grades together, youngest together, the middle split by size, the two biggest grades kept apart, and each grade leaning to the gym it usually plays in. These three only change how tightly the weekends pack.",
+  oneWeekendPerMonth:
+    "Every grade gets one weekend a month, so move it to another weekend in the same month.",
+  compareSame: "This is the kept calendar, unchanged.",
+  compareLegend:
+    "Green agrees with what you kept, amber moved to another weekend that month, and a dashed chip is where the kept calendar had that grade.",
+  hours:
+    "These change WHEN your gyms are open, not who plays which weekend. One hour, every weekend, every gym. Nothing is booked until you apply it.",
+  /** The two ways a weekend that needs a rented gym gets one (owner ruling
+   *  2026-08-03). Both act on the calendar in front of you and neither books
+   *  anything. */
+  assignSolve: "We take the cheapest gym in your pool that can hold the games. Nothing is booked.",
+  assignPlace: "Drag a gym onto a weekend that needs one, or tap the gym and then tap the weekend.",
+  nothingToFill: "Every weekend already has a building. There is nothing to fill.",
+  noPool: "Your pool has no gym free on those weekends. Turn one on for them back in step 2.",
+  /**
+   * THE EMPTY BOARD LEADS WITH ONE BUTTON (owner ruling 2026-08-05, #1). A plan
+   * that has its weekends and its gym time but no calendar yet is one tap from
+   * the answer, and that tap must not be hidden behind "adjust grouping rules".
+   */
+  drawTitle: "Draw the calendar",
+  drawHint:
+    "The planner fills your chosen weekends from your gyms. Nothing is booked or saved until you say so.",
+  /** The same board with no world to solve in. The fix is a step back, not a
+   *  button here, so the hero points at step 2 instead of pretending. */
+  worldFirst: "Pick your weekends and gym time in step 2 first",
+  worldFirstHint:
+    "A plan runs the weekends you choose, in the gyms you give it. Choose those and the calendar draws itself here.",
+  worldFirstLink: "Go to step 2",
+  /** Said once the solver has answered, whichever button asked it. */
+  drawn:
+    "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Nothing is saved until you save it.",
+  redrawn:
+    "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
+  resolved:
+    "Redrawn in this plan's world, so nothing is left in a gym this plan does not have. Nothing is saved until you save it.",
+  /** Before a redraw throws away hand work. */
+  redrawConfirm:
+    "Redraw replaces the calendar on the board. Your saved plan is untouched until you save.",
+  redraw: "Redraw calendar",
+}
+
+export const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
+  {
+    lever: "balance",
+    label: "Even weekends",
+    note: "Proposed: the flattest weekends. Keep it, or drag first.",
+  },
+  {
+    lever: "compact",
+    label: "Fewest weekends",
+    note: "Proposed: as few weekends in use as your gyms allow.",
+  },
+  {
+    lever: "spread",
+    label: "Use every weekend",
+    note: "Proposed: every weekend of the season in use.",
+  },
+  {
+    lever: "one-gym",
+    label: "Pack one gym",
+    note: "Proposed: every weekend inside one building, even where that makes a weekend heavier.",
+  },
+]
+
+/** Hours, not grouping (owner 2026-08-02). Each chip moves the day window an
+ *  hour and says what that does to this plan before anything is booked. */
+export interface HoursChip {
+  key: string
+  label: string
+  hint: string
+  deltaStartMinutes: number
+  deltaEndMinutes: number
+}
+
+export const HOURS_CHIPS: HoursChip[] = [
+  {
+    key: "start-early",
+    label: "Start early",
+    hint: "Every gym opens an hour earlier",
+    deltaStartMinutes: -60,
+    deltaEndMinutes: 0,
+  },
+  {
+    key: "start-late",
+    label: "Start late",
+    hint: "Every gym opens an hour later",
+    deltaStartMinutes: 60,
+    deltaEndMinutes: 0,
+  },
+  {
+    key: "finish-early",
+    label: "Finish early",
+    hint: "Every gym closes an hour earlier",
+    deltaStartMinutes: 0,
+    deltaEndMinutes: -60,
+  },
+]
+
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+
+/** Courts in a phrase, because a rental is quoted in them. */
+export const courtsWord = (n: number) => plural(n, "court", "courts")
+
+/** Things in a sentence: "a", "a and b", "a, b and c". */
+export function nameList(parts: string[]): string {
+  if (parts.length === 0) return ""
+  if (parts.length === 1) return parts[0]
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`
+}
+
+/** How many boards back an operator can step. Ten is more than anybody has
+ *  ever wanted, and it costs two small objects a move. */
+export const UNDO_DEPTH = 10
+
+/** The whole board, as it was before a move: the calendar and the gyms
+ *  somebody had decided. Everything else on screen is derived from these two. */
+export interface BoardSnapshot {
+  /** What the step back would put right, in the operator's own words: "move
+   *  Grade 8". The Undo button wears it, so nobody has to press it to find
+   *  out what it does (owner ruling 2026-08-05). */
+  label: string
+  assignment: Record<string, string[]>
+  venues: Record<string, Record<string, string>>
+  /** Where each rental stood: "<sessionId>|<venueId>" → assumed | confirmed.
+   *  Filling the gaps from the pool is one step back, gyms and statuses
+   *  together, because those two are one decision. */
+  blockStatus: Record<string, BlockStatus>
+  /** The courts each gym was giving that weekend, where somebody corrected it
+   *  ("<sessionId>|<venueId>" → courts). A correction repacks the whole board,
+   *  so undoing one has to put the courts back before anything else. */
+  courtCaps: Record<string, number>
+  /** The backup gyms the operator had asserted, weekend by weekend (owner ruling
+   *  2026-08-05, #1): sessionId → venueIds. Undoing a placement onto a backup gym
+   *  has to take the assertion back with it, or the board would keep computing on
+   *  gym time nobody claimed. */
+  assertedGyms: Record<string, string[]>
+  /** Whether the plan had unsaved changes at that point, so undoing back to
+   *  the saved calendar puts the Keep button back to sleep. */
+  dirty: boolean
+}
+
+/** One rental, keyed the way the working copy remembers it. */
+export const blockKey = (sessionId: string, venueId: string) => `${sessionId}|${venueId}`
+
+/**
+ * WHAT SOMEBODY IS DRAGGING. Three things travel on this board, all on the same
+ * one-line JSON payload: a grade chip, a gym out of the tray, and — since the
+ * 2026-08-05 section ruling — a whole gym section with every grade in it.
+ */
+export type DragPayload =
+  | {
+      unitKey?: string
+      fromSessionId?: string | null
+      venueId?: string
+      section?: boolean
+      sessionId?: string
+      unitKeys?: string[]
+      window?: string
+    }
+  | null
+
+/** One shared empty set, so a weekend with nothing stranded does not hand a new
+ *  object down on every repaint. */
+export const EMPTY_KEYS: Set<string> = new Set()
+
+/** The same, for a weekend nobody has just moved anything off. */
+export const EMPTY_GHOSTS: GhostChip[] = []
+
+/** Which building each grade plays in, as the plan has it SAVED: sessionId →
+ *  (unit key → venueId). The board carries this next to the assignment and
+ *  hands it back on Apply, so a kept calendar keeps its gyms too. */
+export function savedVenueMap(state: PlannerState): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const byUnit = w.assignedVenues ?? {}
+      if (Object.keys(byUnit).length > 0) out[w.sessionId] = { ...byUnit }
+    }
+  }
+  return out
+}
+
+/**
+ * A plan's world, back in the shape the board computes on, lives in
+ * lib/scheduler/plan-world.ts now (owner ruling 2026-08-05: "a pure
+ * planStateFrom(plan) ... so all three steps render any plan identically"). The
+ * board used to own that reading privately, which is exactly why step 2 and step
+ * 3 could disagree about the same plan.
+ */
+
+/** The header verdict: the loudest true thing about the plan on screen. */
+export function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE; text: string } {
+  if (summary.over > 0)
+    return { tone: "bad", text: `${plural(summary.over, "weekend", "weekends")} over` }
+  if (summary.unplaced > 0)
+    return { tone: "warn", text: `${plural(summary.unplaced, "grade", "grades")} not placed` }
+  if (summary.tight > 0)
+    return { tone: "warn", text: `${plural(summary.tight, "weekend", "weekends")} tight` }
+  return { tone: "ok", text: "All grades fit" }
+}
+
+/**
+ * The verdict on the board against the calendar the league kept: how much of
+ * their own plan we reproduce, and what we do differently. Zero clauses are
+ * left out, because "0 missing" is a sentence nobody needs to read.
+ */
+export function compareLine(summary: AssignmentDiffSummary): string {
+  const { placements, agreedCount, moved, missing, extra } = summary
+  const parts: string[] = []
+  if (moved.length > 0) parts.push(`${moved.length} moved`)
+  if (missing.length > 0) parts.push(`${missing.length} missing`)
+  if (extra.length > 0) parts.push(`${extra.length} added`)
+  if (parts.length === 0 && agreedCount === placements) return COPY.compareSame
+  const lead = `Agrees with the kept calendar on ${agreedCount} of ${plural(
+    placements,
+    "placement",
+    "placements"
+  )}.`
+  return parts.length > 0 ? `${lead} ${parts.join(", ")}.` : lead
+}
