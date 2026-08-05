@@ -750,72 +750,71 @@ export function VenueTray({
           const paint = hueFor(hue, gym.venueId)
           const on = armedVenueId === gym.venueId
           /**
-           * NOBODY HAS ASKED THIS GYM ANYTHING (owner ruling 2026-08-04, the
-           * Haber case). A pool gym attached to no weekend of the season is not
-           * a gym that is free every weekend, and it is not a gym that is busy:
-           * it is a gym nobody has phoned. Offering it as something to place
-           * would be the board asserting availability the league does not have,
-           * so it sits here unpickable and says exactly that.
+           * A BACKUP GYM IS USABLE (owner ruling 2026-08-05, #1, replacing the
+           * 2026-08-04 reading of the Haber case).
+           *
+           * A pool gym attached to no weekend of this plan is a gym nobody has
+           * phoned — and that is exactly what a league keeps one for. It used to
+           * sit here unpickable, which made the tray say "you have one gym to
+           * rent" when the truth was "you have two and you have not asked one of
+           * them". So it is enabled, and it wears a quiet tag saying what it is:
+           * dropping it on a weekend IS the operator asserting they have it (the
+           * owner's standing rule — a drag means they checked).
            */
-          const unknown = gym.weekends === 0
+          const backup = gym.weekends === 0
           return (
             <button
               key={gym.venueId}
               type="button"
-              draggable={!unknown}
-              disabled={unknown}
+              draggable
               data-testid="tray-gym"
               data-venue-id={gym.venueId}
-              data-availability={unknown ? "unknown" : "known"}
-              aria-pressed={unknown ? undefined : on}
+              data-availability={backup ? "backup" : "known"}
+              aria-pressed={on}
               onDragStart={(e) =>
                 e.dataTransfer.setData("text/plain", JSON.stringify({ venueId: gym.venueId }))
               }
               onClick={(e) => {
                 e.stopPropagation()
-                if (unknown) return
                 onArm(on ? null : gym.venueId)
               }}
-              className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border px-2 text-[12px] font-bold shadow-sm transition-colors ${
-                unknown
-                  ? "border-ink-300 bg-ink-100 cursor-not-allowed border-dashed"
-                  : `hover:border-ink-400 cursor-grab bg-white active:cursor-grabbing ${
-                      on ? "border-play-500 ring-play-400 ring-2" : "border-ink-300"
-                    }`
-              }`}
+              className={`hover:border-ink-400 inline-flex min-h-[40px] cursor-grab items-center gap-1.5 rounded-lg border bg-white px-2 text-[12px] font-bold shadow-sm transition-colors active:cursor-grabbing ${
+                on ? "border-play-500 ring-play-400 ring-2" : "border-ink-300"
+              } ${backup ? "border-dashed" : ""}`}
             >
               {/* The same six dots the grade chips wear: if it can be picked
                   up, it says so before anybody tries. */}
-              {!unknown && (
-                <svg
-                  viewBox="0 0 10 16"
-                  aria-hidden
-                  focusable="false"
-                  className="text-ink-400 h-3.5 w-2 shrink-0"
-                >
-                  <circle cx="3" cy="4" r="1.1" fill="currentColor" />
-                  <circle cx="7" cy="4" r="1.1" fill="currentColor" />
-                  <circle cx="3" cy="8" r="1.1" fill="currentColor" />
-                  <circle cx="7" cy="8" r="1.1" fill="currentColor" />
-                  <circle cx="3" cy="12" r="1.1" fill="currentColor" />
-                  <circle cx="7" cy="12" r="1.1" fill="currentColor" />
-                </svg>
-              )}
+              <svg
+                viewBox="0 0 10 16"
+                aria-hidden
+                focusable="false"
+                className="text-ink-400 h-3.5 w-2 shrink-0"
+              >
+                <circle cx="3" cy="4" r="1.1" fill="currentColor" />
+                <circle cx="7" cy="4" r="1.1" fill="currentColor" />
+                <circle cx="3" cy="8" r="1.1" fill="currentColor" />
+                <circle cx="7" cy="8" r="1.1" fill="currentColor" />
+                <circle cx="3" cy="12" r="1.1" fill="currentColor" />
+                <circle cx="7" cy="12" r="1.1" fill="currentColor" />
+              </svg>
               <i
                 aria-hidden
                 className={`h-2.5 w-2.5 flex-none rounded-full ${
-                  unknown ? "border-ink-300 border border-dashed" : paint.swatch
+                  backup ? "border-ink-400 border border-dashed" : paint.swatch
                 }`}
               />
-              <span className={`text-[13px] font-bold ${unknown ? "text-ink-500" : paint.name}`}>
+              <span className={`text-[13px] font-bold ${backup ? "text-ink-700" : paint.name}`}>
                 {gym.short}
               </span>
               <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
                 {courtsWord(gym.courts)}
               </span>
-              {unknown ? (
-                <span className="text-ink-400 text-[11px] font-semibold">
-                  availability unknown, ask them
+              {backup ? (
+                <span
+                  data-testid="tray-backup-tag"
+                  className="border-ink-300 text-ink-500 rounded-md border border-dashed px-1 text-[10.5px] font-semibold"
+                >
+                  backup, no weekends yet
                 </span>
               ) : (
                 <span className="text-ink-400 text-[11px] font-semibold tabular-nums">

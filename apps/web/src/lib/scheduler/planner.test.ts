@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
+  buildingCapacityAt,
+  courtsCapacityAt,
   diffAssignments,
   expectedTeamUpdates,
   gradeAbbrev,
@@ -649,6 +651,49 @@ describe("packedCapacity", () => {
     expect(load.demand).toBe(80)
     expect(load.capacity).toBeLessThan(load.demand)
     expect(load.tone).toBe("over")
+  })
+})
+
+/**
+ * WHAT A BUILDING COULD HOLD (owner ruling 2026-08-05, #2 — the switch-guard
+ * fix). The counterpart to packedCapacity above: that one asks what the calendar
+ * HAS, this one asks what a move could buy, and the difference between them is
+ * the whole bug. courtsCapacityAt clamps to the courts already attached, which is
+ * why every destination read full after one move.
+ */
+describe("buildingCapacityAt", () => {
+  /** Six Park with 2 of its 6 courts rented this weekend: 48 games attached,
+   *  24 games a court over the weekend. */
+  const rented: PlannerVenue = {
+    venueId: "pool",
+    name: "Six Park East",
+    capacityGames: 48,
+    role: "pool",
+    fillOrder: 1,
+    courts: 2,
+    days: 2,
+    courtDays: 4,
+    hoursPerCourtDay: 12,
+  }
+
+  it("is NOT clamped to the courts we already rent, because renting more is the move", () => {
+    // The rental is the ceiling courtsCapacityAt keeps…
+    expect(courtsCapacityAt(rented, 6)).toBe(48)
+    // …and the building is what a move can actually reach: 6 courts at 24 each.
+    expect(buildingCapacityAt(rented, 6)).toBe(144)
+    expect(buildingCapacityAt(rented, 2)).toBe(48)
+  })
+
+  it("holds nothing at no courts, and nothing at a gym that is shut", () => {
+    expect(buildingCapacityAt(rented, 0)).toBe(0)
+    expect(buildingCapacityAt(rented, -3)).toBe(0)
+    expect(buildingCapacityAt({ ...rented, capacityGames: 0 }, 6)).toBe(0)
+  })
+
+  it("never invents part of a game", () => {
+    // 25 games over 2 courts is 12.5 a court; three courts is 37, not 37.5.
+    const odd: PlannerVenue = { ...rented, capacityGames: 25 }
+    expect(buildingCapacityAt(odd, 3)).toBe(37)
   })
 })
 

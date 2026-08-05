@@ -39,6 +39,38 @@ export interface ArmedBlock {
 }
 
 /**
+ * A WHOLE GYM SECTION PICKED UP (owner-approved suggestion 2026-08-05, #4). The
+ * grades under one building on one weekend, moved as ONE action: onto another
+ * gym on the same weekend, or onto another weekend of the same month. Dragged by
+ * its grip for a mouse, armed by a tap for a thumb — the same two ways
+ * everything else on this board moves.
+ */
+export interface ArmedSection {
+  sessionId: string
+  /** The building they are in now. */
+  venueId: string
+  unitKeys: string[]
+  window: string
+  /** The gym in the words the board uses, for the line that says what is armed. */
+  gym: string
+  /** The weekend, for the same line. */
+  weekendLabel: string
+}
+
+/**
+ * WHERE IT WAS, for a moment (owner ruling 2026-08-05, #3b). A grade that just
+ * left leaves a dashed outline behind it saying so, because a move whose origin
+ * says nothing is a move an operator has to reconstruct from memory.
+ */
+export interface GhostChip {
+  sessionId: string
+  /** The gym it left, when it left one, so the ghost sits in that section. */
+  venueId: string | null
+  unitKey: string
+  label: string
+}
+
+/**
  * A weekend card's fill, by what its courts are doing. Every tone carries a
  * border that is actually visible on a white page (owner ruling 2026-08-05,
  * the clarity pass): a column of cards with hairline edges reads as one blob.

@@ -9,6 +9,9 @@ import type {
   PlanSettings,
 } from "./plan-documents"
 import {
+  buildingCapacityAt,
+  courtCapKey,
+  courtsWiredAt,
   orderedVenues,
   type PlannerGym,
   type PlannerState,
@@ -294,6 +297,178 @@ export function solvableState(state: PlannerState): PlannerState {
   }
 }
 
+/* ------------------- where a grade could actually go --------------------- */
+
+/**
+ * ONE BUILDING, ON ONE WEEKEND, as a destination (owner rulings 2026-08-05, #1
+ * and #2). Everything a move has to check before it is offered, in one row.
+ */
+/** A gym of the plan's roster, priced as a venue on one weekend in the shape the
+ *  board computes on. Same arithmetic venueOnWeekend gives step 2, so an
+ *  asserted gym reads exactly as it will once it is saved. */
+function plannerVenueOn(
+  gym: PlanWorldGym,
+  weekend: { dayCount?: number },
+  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes">
+): PlannerVenue {
+  const venue = venueOnWeekend(gym, weekend, world)
+  return { ...venue, role: venue.role ?? gym.role }
+}
+
+export interface BuildingRoom {
+  venueId: string
+  name: string
+  role: VenueRole
+  /** Courts this building could give here: its own wiring less the buffer,
+   *  never past a court correction somebody made for this weekend. */
+  courts: number
+  /** Games the WHOLE building could hold on this weekend at those courts. */
+  capacityGames: number
+  /** Games already sitting in it on the board. */
+  usedGames: number
+  /** capacityGames − usedGames, never below zero. */
+  freeGames: number
+  /** This plan has no gym time here on this weekend at all (owner ruling
+   *  2026-08-05, #1: the Haber case). It is still a legitimate destination —
+   *  taking it IS the operator asserting they have it — and a caller has to be
+   *  able to say so out loud before it acts. */
+  backup: boolean
+}
+
+/**
+ * WHERE A GRADE COULD GO ON THIS WEEKEND (owner ruling 2026-08-05, #2 — the
+ * switch-guard bug, and #1 — backup gyms are usable).
+ *
+ * The guard used to test a destination against the courts the calendar RENTS
+ * there. Those are demand-sized by construction, so every destination read full
+ * the moment anything moved and the ⇄ affordance vanished. What actually decides
+ * whether a grade can move is what the BUILDING could hold:
+ *
+ *  - the home gym: its usable capacity, less what is already in it;
+ *  - a pool gym attached this weekend: its WIRED courts × this weekend's slots,
+ *    less what is already in it — renting more of it is exactly what the move
+ *    does, so the current rental is not the ceiling;
+ *  - a pool gym this plan has no availability for (a backup): the same
+ *    arithmetic, marked `backup`, because dropping onto it is the assertion.
+ *
+ * A court correction ("Haber only gave us three that Saturday") is a real
+ * ceiling and is honoured. A gym with no hours holds nothing and is left out
+ * entirely: that is a true impossibility, not a room to offer.
+ */
+export function weekendRooms(
+  state: PlannerState,
+  weekend: PlannerWeekend,
+  /** Games each building already holds on this weekend, by venueId. */
+  used: Record<string, number> = {},
+  /** "<sessionId>|<venueId>" → courts that gym can really give that weekend. */
+  courtCaps: Record<string, number> = {}
+): BuildingRoom[] {
+  const buffer = state.courtBuffer ?? 0
+  const roster = state.gyms ?? []
+  const capFor = (venueId: string) => courtCaps[courtCapKey(weekend.sessionId, venueId)]
+  const rows: BuildingRoom[] = []
+
+  const row = (
+    venue: PlannerVenue,
+    courts: number,
+    capacityGames: number,
+    backup: boolean
+  ): BuildingRoom => {
+    const usedGames = Math.max(0, used[venue.venueId] ?? 0)
+    return {
+      venueId: venue.venueId,
+      name: venue.name,
+      role: venue.role,
+      courts,
+      capacityGames,
+      usedGames,
+      freeGames: Math.max(0, capacityGames - usedGames),
+      backup,
+    }
+  }
+
+  for (const venue of orderedVenues(weekend.venues)) {
+    const gym = roster.find((g) => g.venueId === venue.venueId)
+    // The building's own courts win over the ones this weekend happens to rent,
+    // and whichever is BIGGER is the honest ceiling: a season row that has
+    // fallen behind must never shrink a gym the weekend is already using.
+    const wired = gym ? usableCourtCount(gym.courts, buffer) : 0
+    const cap = capFor(venue.venueId)
+    const courts = Math.min(Math.max(wired, courtsWiredAt(venue)), cap ?? Number.POSITIVE_INFINITY)
+    rows.push(row(venue, courts, buildingCapacityAt(venue, courts), false))
+  }
+
+  // The gyms the plan HAS but has not asked about this weekend, in name order so
+  // the tray and the ⇄ walk them the same way twice.
+  const attached = new Set(weekend.venues.map((v) => v.venueId))
+  const backups = roster
+    .filter((g) => !attached.has(g.venueId))
+    .sort((a, b) => a.name.localeCompare(b.name, "en"))
+  for (const gym of backups) {
+    const venue = plannerVenueOn(gym, { dayCount: weekend.dayCount }, state)
+    const cap = capFor(gym.venueId)
+    const courts = Math.min(venue.courts ?? 0, cap ?? Number.POSITIVE_INFINITY)
+    const capacityGames = cap == null ? venue.capacityGames : buildingCapacityAt(venue, courts)
+    // A gym with no hours on it holds nothing. Offering it would be a mistake
+    // path with a mystery attached, which is the thing the guard exists to stop.
+    if (capacityGames <= 0) continue
+    rows.push(row(venue, courts, capacityGames, true))
+  }
+  return rows
+}
+
+/**
+ * A GYM THE OPERATOR ASSERTED, in the working copy (owner ruling 2026-08-05,
+ * #1). They dragged a backup gym onto a weekend, and by his standing rule a drag
+ * means they checked: the board now computes as though that gym is available
+ * there, so the placement becomes an ordinary rented block instead of a refusal.
+ *
+ * It lands on the STATE the board draws, so every number downstream follows at
+ * once — the sections, the fraction, the blocks, the ask sheet and the rail —
+ * and nothing has to know an assertion happened. Saving is what writes it into
+ * the plan's own world (withAssertedGymsInWorld) or, on the plan the season
+ * runs, onto the season's attachment.
+ */
+export function withAssertedGyms(
+  state: PlannerState,
+  asserted: Record<string, string[]>
+): PlannerState {
+  const rows = Object.entries(asserted).filter(([, venueIds]) => (venueIds ?? []).length > 0)
+  if (rows.length === 0) return state
+  const wanted = new Map(rows.map(([sessionId, venueIds]) => [sessionId, venueIds]))
+  const roster = state.gyms ?? []
+  let touchedAny = false
+  const windows = state.windows.map((win) => {
+    let touchedWindow = false
+    const weekends = win.weekends.map((w) => {
+      const venueIds = wanted.get(w.sessionId)
+      if (!venueIds) return w
+      const add: PlannerVenue[] = []
+      for (const venueId of venueIds) {
+        if (w.venues.some((v) => v.venueId === venueId)) continue
+        const gym = roster.find((g) => g.venueId === venueId)
+        if (!gym) continue
+        add.push(plannerVenueOn(gym, { dayCount: w.dayCount }, state))
+      }
+      if (add.length === 0) return w
+      touchedWindow = true
+      touchedAny = true
+      const venues = orderedVenues([...w.venues, ...add])
+      return {
+        ...w,
+        // A weekend with a gym on it is a weekend this plan runs, which is the
+        // same rule withGymOnWeekend keeps in the world itself.
+        chosen: true,
+        venues,
+        capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+        largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+      }
+    })
+    return touchedWindow ? { ...win, weekends } : win
+  })
+  return touchedAny ? { ...state, windows } : state
+}
+
 /* ---------------------------- writing a world ---------------------------- */
 
 /** Every editor goes through here: the weekends keep their own gyms, the
@@ -425,6 +600,24 @@ export function withGymOnWeekend(
       }),
     })),
   })
+}
+
+/**
+ * EVERY ASSERTION THE BOARD MADE, written into the plan's own world (owner
+ * ruling 2026-08-05, #1). The board lets an operator drop a backup gym onto a
+ * weekend and computes on it immediately; this is the other half of that
+ * promise, run when the plan document is saved, so reopening the plan finds the
+ * gym really on that weekend rather than the placement stranded again.
+ */
+export function withAssertedGymsInWorld(
+  world: PlanWorld,
+  asserted: Record<string, string[]>
+): PlanWorld {
+  let next = world
+  for (const [sessionId, venueIds] of Object.entries(asserted)) {
+    for (const venueId of venueIds ?? []) next = withGymOnWeekend(next, sessionId, venueId, true)
+  }
+  return next
 }
 
 /** One weekend at one gym, on hours of its own. `null` puts it back on the

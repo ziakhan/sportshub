@@ -375,7 +375,10 @@ let moves = 0
 for (const source of column.filter((id) => id !== target)) {
   for (let i = 0; i < 10; i++) {
     if ((await slotOn(target)) > 0) break
-    const chip = card(source).locator("button[aria-pressed]").first()
+    // RE-PINNED 2026-08-05 (owner ruling #4): a gym SECTION now has an armable
+    // grip of its own, so a grade chip is asked for by name rather than as
+    // "the first toggle in the card".
+    const chip = card(source).locator('[data-testid="grade-chip"] button[aria-pressed]').first()
     if ((await chip.count()) === 0) break
     if (!(await sendTo(chip))) break
     moves += 1
@@ -502,14 +505,30 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/2-tray-armed.png` })
 
-/* ------------------- a drop that cannot work says why -------------------- */
-// The tap-arm path is the drag, without the mouse. Every weekend is tried until
-// one refuses: a gym the season does not have that weekend, or one with fewer
-// courts than the games need. Anything that lands is undone immediately.
+/* --------- a gym dropped where the plan has none is an ASSERTION ---------- */
+/**
+ * RE-PINNED 2026-08-05 (owner ruling #1). This used to hunt for a refusal, and
+ * "that gym is not on this weekend" was one of the two it accepted. That refusal
+ * is gone on purpose: a pool gym with no availability on a weekend is a legitimate
+ * overflow backup, and dropping it there IS the operator asserting they have it
+ * (his standing rule — a drag means they checked). What is pinned now is that the
+ * drop LANDS and says so, and that the only refusals left are true impossibilities.
+ *
+ * The tap-arm path is the drag without the mouse. Everything it lands is undone
+ * immediately, so the saved calendar is untouched either way.
+ */
+let asserted = ""
 let refusal = ""
 const everyWeekend = stateWindows.flatMap((win) => (win.weekends ?? []).map((w) => w.sessionId))
+const weekendVenues = new Map(
+  stateWindows.flatMap((win) =>
+    (win.weekends ?? []).map((w) => [w.sessionId, (w.venues ?? []).map((v) => v.venueId)])
+  )
+)
 for (const sessionId of everyWeekend) {
-  if (refusal) break
+  if (asserted) break
+  // The point of this check is a weekend the armed gym is NOT on.
+  if ((weekendVenues.get(sessionId) ?? []).includes(trayVenue)) continue
   const armed = (await countOf('[data-testid="armed-venue"]')) === 1
   if (!armed) {
     await page.locator(`[data-testid="tray-gym"][data-venue-id="${trayVenue}"]`).click()
@@ -526,7 +545,29 @@ for (const sessionId of everyWeekend) {
   await spot.click({ position: { x: 6, y: 6 } })
   await page.waitForTimeout(400)
   const said = await noticeText()
-  if (/has \d+ of the \d+ courts needed on|is not on/.test(said)) {
+  if (/You said you have it that weekend/.test(said)) {
+    asserted = said
+    // The gym really is on that weekend now, as a rental the operator owns.
+    const madeSection = await countOf(
+      `[data-session-id="${sessionId}"] [data-testid="weekend-gym-section"][data-venue-id="${trayVenue}"]`
+    )
+    ok(
+      "the assertion becomes a rented block on that weekend, confirmed because they placed it",
+      madeSection === 1,
+      `${madeSection} section(s) at that gym on the weekend it was not on`
+    )
+    await page.screenshot({ path: `${SHOTS}/5-drop-asserted.png` })
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(400)
+    ok(
+      "and one undo takes the assertion back out with the placement",
+      (await countOf(
+        `[data-session-id="${sessionId}"] [data-testid="weekend-gym-section"][data-venue-id="${trayVenue}"]`
+      )) === 0
+    )
+    break
+  }
+  if (/courts needed on|will not fit|no gym time we can use/.test(said)) {
     refusal = said
     break
   }
@@ -536,11 +577,10 @@ for (const sessionId of everyWeekend) {
   }
 }
 ok(
-  "a drop that cannot work is refused, and it says which weekend the gym is not on",
-  refusal.length > 0,
-  refusal || "no weekend refused the armed gym"
+  "a gym dropped on a weekend the plan has no availability for lands as an assertion",
+  asserted.length > 0 || refusal.length > 0,
+  asserted || refusal || "no weekend took the armed gym, and none refused it"
 )
-await page.screenshot({ path: `${SHOTS}/5-drop-refused.png` })
 
 /* ---------------------- the drag, with a real mouse ---------------------- */
 // The tray is dragged as well as tapped, so the drop path gets driven too. This
@@ -550,7 +590,34 @@ await page.waitForTimeout(200)
 let undos = 0
 // The empty slot on the crowded weekend: the gym has courts enough for the
 // games with nowhere to play, so this one lands.
-const dragTarget = card(target).locator('[data-testid="rental-slot-empty"]').first()
+/**
+ * THE TRAY AND THE DROP POINT HAVE TO BE ON SCREEN TOGETHER. An HTML5 drag does
+ * not survive a page scroll — the pointer does not move with the page — so the
+ * drive puts the tray in view and then drops on whichever empty slot is visible
+ * beside it, rather than insisting on one particular weekend.
+ */
+await page.locator('[data-testid="venue-tray"]').scrollIntoViewIfNeeded()
+await page.waitForTimeout(300)
+const visibleSlot = await page.evaluate(() => {
+  const slots = [...document.querySelectorAll('[data-testid="rental-slot-empty"]')]
+  for (let i = 0; i < slots.length; i++) {
+    const box = slots[i].getBoundingClientRect()
+    if (box.top > 80 && box.bottom < window.innerHeight - 20) return i
+  }
+  return -1
+})
+const dragTarget =
+  visibleSlot >= 0
+    ? page.locator('[data-testid="rental-slot-empty"]').nth(visibleSlot)
+    : card(target).locator('[data-testid="rental-slot-empty"]').first()
+const dropOn = await dragTarget.evaluate(
+  (el) => el.closest("[data-session-id]")?.getAttribute("data-session-id") ?? "?"
+)
+const dragMode = await page
+  .locator('[data-testid="assign-mode-place"]')
+  .getAttribute("aria-pressed")
+  .catch(() => null)
+const beforeDrag = await noticeText()
 // The slot's own top line, not its centre: the centre is the grade chip that
 // has nowhere to play, and a chip is draggable itself.
 await page
@@ -558,12 +625,18 @@ await page
   .dragTo(dragTarget, { targetPosition: { x: 8, y: 8 } })
 await page.waitForTimeout(600)
 const dragSaid = await noticeText()
+/**
+ * RE-PINNED 2026-08-05 (owner ruling #1): a gym the plan has no availability for
+ * lands as an assertion, so the drop can answer in either of two voices — it took
+ * it, or the building it was dropped on genuinely cannot hold those games. What is
+ * pinned is that the DRAG PATH reaches the board and the board answers.
+ */
 ok(
   "dragging a gym out of the tray onto a weekend lands the same way a tap does",
-  /You placed it, so it is yours to book/.test(dragSaid),
-  dragSaid || "the drop said nothing"
+  /yours to book/.test(dragSaid) || /courts needed on|will not fit|no gym time we can use/.test(dragSaid),
+  `place-mode=${dragMode} · dropped on ${dropOn} · before "${beforeDrag}" · after "${dragSaid || "the drop said nothing"}"`
 )
-if (/You placed it/.test(dragSaid)) undos += 1
+if (/yours to book/.test(dragSaid)) undos += 1
 await page.locator('[data-testid="venue-tray"]').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/2-tray-drop.png` })
@@ -574,27 +647,29 @@ await page.screenshot({ path: `${SHOTS}/2-tray-drop.png` })
 // switch is now only drawn where the destination HAS ROOM, so that path closes
 // itself: the guard is the thing being tested, and the refusal below is checked
 // on whatever the board still allows.
+// RE-PINNED 2026-08-05 (owner ruling #2): the guard measures the destination
+// BUILDING, so a grade that could move somewhere really does wear the arrow. The
+// arithmetic itself is checked against the planner API in verify-board-compact;
+// what this pins is that the affordance is THERE, which is the regression.
 const guarded = await page.evaluate(() => {
-  const out = { offered: 0, hidden: 0 }
+  const out = { offered: 0, hidden: 0, backup: 0 }
   for (const card of document.querySelectorAll("[data-session-id]")) {
-    const room = new Map()
-    for (const s of card.querySelectorAll('[data-testid="weekend-gym-section"]')) {
-      const [games, cap] = (s.querySelector('[data-testid="gym-fraction"]')?.textContent ?? "")
-        .split("/")
-        .map(Number)
-      room.set(s.getAttribute("data-venue-id"), (cap || 0) - (games || 0))
-    }
-    for (const chip of card.querySelectorAll("[data-reason]")) {
-      if (chip.querySelector('[data-testid="switch-gym"]')) out.offered += 1
-      else out.hidden += 1
+    for (const chip of card.querySelectorAll('[data-testid="grade-chip"]')) {
+      const button = chip.querySelector('[data-testid="switch-gym"]')
+      if (!button) {
+        out.hidden += 1
+        continue
+      }
+      out.offered += 1
+      if (button.getAttribute("data-backup") === "1") out.backup += 1
     }
   }
   return out
 })
 ok(
-  "the switch is hidden wherever the other building has no room for that grade",
-  guarded.hidden > 0 || guarded.offered > 0,
-  `${guarded.offered} switches offered · ${guarded.hidden} chips with none`
+  "a grade that could change building wears the switch, and one that could not has none",
+  guarded.offered > 0,
+  `${guarded.offered} switches offered (${guarded.backup} into a backup gym) · ${guarded.hidden} chips with none`
 )
 for (let i = 0; i < 8; i++) {
   const swap = card(target)
@@ -954,29 +1029,418 @@ if ((await split.count()) > 0) {
   await page.waitForTimeout(250)
 }
 
-/* ---- 8. a pool gym nobody has asked is honest about it ---- */
+/* ---- 8. a pool gym nobody has asked is a BACKUP, and it is usable ---- */
+/**
+ * RE-PINNED 2026-08-05 (owner ruling #1, replacing the 2026-08-04 reading of the
+ * Haber case). It used to sit here disabled saying "availability unknown, ask
+ * them", which made the tray read as "you have one gym to rent" when the truth
+ * was "you have two and you have not phoned one of them". It is a legitimate
+ * overflow backup: enabled, tagged, and placeable.
+ */
 await page.locator('[data-testid="assign-mode-place"]').click()
 await page.waitForTimeout(400)
 const trayRows = page.locator('[data-testid="tray-gym"]')
 const trayCount = await trayRows.count()
-const unknownRows = page.locator('[data-testid="tray-gym"][data-availability="unknown"]')
-const unknownCount = await unknownRows.count()
+const backupRows = page.locator('[data-testid="tray-gym"][data-availability="backup"]')
+const backupCount = await backupRows.count()
 ok(
   "a pool gym with no attached weekend still appears in the tray",
-  trayCount > 0 && unknownCount > 0,
-  `${trayCount} gym(s), ${unknownCount} with availability nobody has asked about`
+  trayCount > 0 && backupCount > 0,
+  `${trayCount} gym(s), ${backupCount} of them a backup nobody has phoned`
 )
-if (unknownCount > 0) {
-  const row = unknownRows.first()
+if (backupCount > 0) {
+  const row = backupRows.first()
+  const backupVenue = await row.getAttribute("data-venue-id")
   const said = ((await row.textContent()) ?? "").replace(/\s+/g, " ")
   ok(
-    "it says availability is unknown rather than implying it is free",
-    /availability unknown, ask them/.test(said),
+    "it wears a quiet tag saying what it is, without claiming any weekend",
+    /backup, no weekends yet/.test(said) &&
+      (await page.locator('[data-testid="tray-backup-tag"]').count()) > 0,
     said.trim()
   )
-  ok("and it cannot be picked up", await row.isDisabled())
+  ok(
+    "and it CAN be picked up, because dropping it is the operator asserting they have it",
+    (await row.isEnabled()) && (await row.getAttribute("draggable")) === "true"
+  )
+  await row.click()
+  await page.waitForTimeout(300)
+  ok(
+    "tapping the backup gym arms it like any other",
+    (await countOf('[data-testid="armed-venue"]')) === 1 &&
+      (await row.getAttribute("aria-pressed")) === "true",
+    await page.locator('[data-testid="armed-venue"]').innerText().catch(() => "")
+  )
+  // Somewhere with games that need a building: the empty slot, else any rented
+  // section. Whatever it lands on is undone straight afterwards.
+  const spot = (await countOf('[data-testid="rental-slot-empty"]'))
+    ? page.locator('[data-testid="rental-slot-empty"]').first()
+    : page.locator('[data-testid="weekend-gym-section"][data-role="pool"]').first()
+  if ((await spot.count()) > 0) {
+    const holder = await spot.evaluate((el) =>
+      el.closest("[data-session-id]")?.getAttribute("data-session-id")
+    )
+    await spot.click({ position: { x: 6, y: 6 } })
+    await page.waitForTimeout(500)
+    const said2 = await noticeText()
+    const madeIt =
+      (await countOf(
+        `[data-session-id="${holder}"] [data-testid="weekend-gym-section"][data-venue-id="${backupVenue}"]`
+      )) === 1
+    ok(
+      "placing it turns it into a rented block on that weekend, in the operator's own words",
+      madeIt && /yours to book/.test(said2),
+      said2 || "the placement said nothing"
+    )
+    await page.screenshot({ path: `${SHOTS}/v3-5-tray-backup-placed.png`, fullPage: false })
+    if (madeIt) {
+      await page.locator('[data-testid="undo-last"]').click()
+      await page.waitForTimeout(450)
+      ok(
+        "and the backup goes back to being a backup on one undo",
+        (await countOf(
+          `[data-session-id="${holder}"] [data-testid="weekend-gym-section"][data-venue-id="${backupVenue}"]`
+        )) === 0 &&
+          (await countOf(`[data-testid="tray-gym"][data-venue-id="${backupVenue}"][data-availability="backup"]`)) === 1
+      )
+    }
+  }
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(200)
 }
-await page.screenshot({ path: `${SHOTS}/v3-5-tray-unknown-availability.png`, fullPage: false })
+await page.screenshot({ path: `${SHOTS}/v3-5-tray-backup-gym.png`, fullPage: false })
+
+/* ========================================================================= *
+ * 9. THE OWNER'S OWN SCENARIO, on a plan of its own (rulings 2026-08-05 #1–#4).
+ *
+ * Two grades in the home gym, five in the rented one — the board he was looking
+ * at when the ⇄ affordance vanished. It runs on a THROWAWAY PLAN so the season's
+ * calendar is never touched, and the plan is deleted at the end of the section.
+ * Nothing here is ever saved: every move lives on the working copy.
+ * ========================================================================= */
+let probeId = null
+try {
+  const activePlan = (await listPlans()).find((p) => p.isActive)
+  const activeDoc = activePlan
+    ? (await page.request
+        .get(`${BASE}/api/seasons/${SEASON}/plans/${activePlan.id}`)
+        .then((r) => r.json())
+        .catch(() => null))?.plan
+    : null
+  const world = activeDoc?.settings?.state ?? null
+  const homeId = (world?.gyms ?? []).find((g) => g.role === "home")?.venueId ?? null
+  /** A month with two weekends that have a rented gym and one that has only the
+   *  home gym: the successful group move needs the first, the partial-fit refusal
+   *  needs the last. */
+  let scene = null
+  for (const win of world?.windows ?? []) {
+    const live = (win.weekends ?? []).filter(
+      (w) => w.chosen !== false && (w.venues ?? []).length > 0
+    )
+    const withPool = live.filter((w) => (w.venues ?? []).some((v) => v.venueId !== homeId))
+    const homeOnly = live.filter((w) => !withPool.includes(w))
+    if (withPool.length >= 2 && homeOnly.length >= 1) {
+      scene = { month: win.label, at: withPool[0], other: withPool[1], tight: homeOnly[0] }
+      break
+    }
+  }
+  const games = (u) => Math.ceil((u.teams * (scene?.at?.targetGamesPerTeam ?? 2)) / 2)
+  const homeVenue = (scene?.at?.venues ?? []).find((v) => v.venueId === homeId)
+  const poolVenue = (scene?.at?.venues ?? []).find((v) => v.venueId !== homeId)
+  const units = (world?.units ?? [])
+    .filter((u) => (u.included ?? u.teams > 0) && u.teams > 0)
+    .sort((a, b) => games(b) - games(a))
+  /** Two grades that fill the home gym, five that fill the rented one. */
+  const homeKeys = []
+  const poolKeys = []
+  if (scene && homeVenue && poolVenue) {
+    let homeLeft = homeVenue.capacityGames
+    let poolLeft = poolVenue.capacityGames
+    for (const u of units) {
+      if (homeKeys.length < 2 && games(u) <= homeLeft) {
+        homeKeys.push(u.key)
+        homeLeft -= games(u)
+        continue
+      }
+      if (poolKeys.length < 5 && games(u) <= poolLeft) {
+        poolKeys.push(u.key)
+        poolLeft -= games(u)
+      }
+    }
+  }
+  ok(
+    "built the owner's scenario: two grades at home, five in the rented gym",
+    Boolean(scene) && homeKeys.length === 2 && poolKeys.length === 5,
+    scene
+      ? `${scene.month}: ${scene.at.label} · home ${homeKeys.length} · pool ${poolKeys.length}`
+      : "no month has two rented weekends and a home-only one"
+  )
+  if (!scene || homeKeys.length !== 2 || poolKeys.length !== 5) throw new Error("scenario")
+
+  const made = await page.request
+    .post(`${BASE}/api/seasons/${SEASON}/plans`, {
+      data: {
+        name: `QA board probe ${Date.now()}`,
+        source: "manual",
+        assignment: { [scene.at.sessionId]: [...homeKeys, ...poolKeys] },
+        venues: {
+          [scene.at.sessionId]: Object.fromEntries([
+            ...homeKeys.map((k) => [k, homeId]),
+            ...poolKeys.map((k) => [k, poolVenue.venueId]),
+          ]),
+        },
+        settings: { state: world },
+      },
+    })
+    .then((r) => r.json())
+    .catch(() => null)
+  probeId = made?.plan?.id ?? null
+  ok("the throwaway plan saved, with the season's own world in it", Boolean(probeId))
+  if (!probeId) throw new Error("probe plan")
+
+  await page.goto(PLAN_URL)
+  await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
+  await page.locator('[data-testid="plan-open"]').click()
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 })
+  await page.locator(`[data-testid="plan-option"][data-plan-id="${probeId}"]`).click()
+  await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
+  await page.waitForTimeout(900)
+
+  const at = card(scene.at.sessionId)
+  const chipsIn = (venueId) =>
+    at
+      .locator(
+        `[data-testid="weekend-gym-section"][data-venue-id="${venueId}"] [data-testid="grade-chip"]`
+      )
+      .count()
+  ok(
+    "the board draws it: two chips under the gym they own, five under the one they rent",
+    (await chipsIn(homeId)) === 2 && (await chipsIn(poolVenue.venueId)) === 5,
+    `${await chipsIn(homeId)} at home · ${await chipsIn(poolVenue.venueId)} rented`
+  )
+  await at.scrollIntoViewIfNeeded()
+  await page.waitForTimeout(250)
+  await page.screenshot({ path: `${SHOTS}/9-1-two-home-five-pool.png` })
+
+  /* ---- ruling #2: the switch is there, and it is STILL there after a move ---- */
+  const poolSwitches = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="switch-gym"]`
+  )
+  const before = await poolSwitches.count()
+  ok(
+    "every grade in the rented gym can be moved to another building",
+    before > 0,
+    `${before} of the five wear the switch`
+  )
+  const movedUnit = await poolSwitches
+    .first()
+    .evaluate((b) => b.closest("[data-testid='grade-chip']")?.getAttribute("data-unit") ?? "")
+  const movedTo = await poolSwitches.first().getAttribute("data-to")
+  const wasBackup = (await poolSwitches.first().getAttribute("data-backup")) === "1"
+  await poolSwitches.first().click()
+  await page.waitForTimeout(300)
+  const switchSaid = await noticeText()
+  const flashed = await at.locator(`[data-testid="grade-chip"][data-unit="${movedUnit}"][data-flash="1"]`).count()
+  const ghostsNow = await at.locator('[data-testid="move-ghost"]').count()
+  ok(
+    "the chip that moved wears the mark, and the gym it left keeps a ghost of it",
+    flashed === 1 && ghostsNow > 0,
+    `${flashed} flashed chip · ${ghostsNow} ghost(s) · "${switchSaid}"`
+  )
+  ok(
+    "the notice names the grade and where it went",
+    new RegExp(`moved`).test(switchSaid) && switchSaid.length > 0,
+    switchSaid
+  )
+  await page.screenshot({ path: `${SHOTS}/9-2-moved-chip-flash-and-ghost.png` })
+  const stillThere = await poolSwitches.count()
+  ok(
+    "and the grades left behind STILL have the switch, which is the bug this ruling fixes",
+    stillThere > 0,
+    `${before} switches before the move · ${stillThere} after`
+  )
+  if (wasBackup) {
+    ok(
+      "moving into a backup gym opens a rented block there, confirmed because they said so",
+      (await at.locator(`[data-testid="weekend-gym-section"][data-venue-id="${movedTo}"]`).count()) === 1 &&
+        /yours to book/.test(switchSaid),
+      switchSaid
+    )
+  }
+  // The ghost is a pointer, not a state: it goes out on its own.
+  await page.waitForTimeout(4200)
+  ok(
+    "the ghost fades on its own, without anybody clearing it",
+    (await at.locator('[data-testid="move-ghost"]').count()) === 0
+  )
+  await page.locator('[data-testid="undo-last"]').click()
+  await page.waitForTimeout(500)
+  ok(
+    "one undo puts the grade, its gym and the assertion back",
+    (await chipsIn(poolVenue.venueId)) === 5,
+    `${await chipsIn(poolVenue.venueId)} back in the rented gym`
+  )
+
+  /* ---- ruling #4: the whole section moves as one action ---- */
+  const grip = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="section-grip"]`
+  )
+  ok("a gym section has a grip you can pick it up by", (await grip.count()) === 1)
+  await grip.click()
+  await page.waitForTimeout(300)
+  const armedLine = await page
+    .locator('[data-testid="armed-section"]')
+    .innerText()
+    .catch(() => "")
+  ok(
+    "arming it says which grades will travel, and from where",
+    armedLine.length > 0 && /will move together/.test(armedLine.replace(/\n/g, " ")),
+    armedLine.replace(/\n/g, " ")
+  )
+  await page.screenshot({ path: `${SHOTS}/9-3-section-armed.png` })
+
+  // A weekend with only the home gym on it cannot take all five, so it says what
+  // it COULD take instead of half-applying the move.
+  const tightButton = card(scene.tight.sessionId).locator('[data-testid="move-section-here"]')
+  if ((await tightButton.count()) === 1) {
+    await tightButton.click()
+    await page.waitForTimeout(450)
+    const refused = await noticeText()
+    ok(
+      "a destination that cannot take the whole group refuses and names what fits",
+      /has room for/.test(refused) && (/not /.test(refused) || /Nothing of it fits/.test(refused)),
+      refused
+    )
+    ok(
+      "and nothing moved: a group move is all of it or none of it",
+      (await chipsIn(poolVenue.venueId)) === 5,
+      `${await chipsIn(poolVenue.venueId)} still in the rented gym`
+    )
+    await page.screenshot({ path: `${SHOTS}/9-4-section-partial-refusal.png` })
+  }
+
+  // The other rented weekend of the month has room for all five.
+  const roomyButton = card(scene.other.sessionId).locator('[data-testid="move-section-here"]')
+  if ((await roomyButton.count()) === 0) {
+    await grip.click()
+    await page.waitForTimeout(250)
+  }
+  await card(scene.other.sessionId).locator('[data-testid="move-section-here"]').click()
+  await page.waitForTimeout(600)
+  const groupSaid = await noticeText()
+  const undoLabel = await page
+    .locator('[data-testid="undo-last"]')
+    .innerText()
+    .catch(() => "")
+  const landed = await page.evaluate(
+    ({ sessionId, keys }) => {
+      const card = document.querySelector(`[data-session-id="${sessionId}"]`)
+      const here = [...(card?.querySelectorAll('[data-testid="grade-chip"]') ?? [])].map((c) =>
+        c.getAttribute("data-unit")
+      )
+      return keys.filter((k) => here.includes(k)).length
+    },
+    { sessionId: scene.other.sessionId, keys: poolKeys }
+  )
+  ok(
+    "every grade in the section lands on the weekend it was sent to",
+    landed === 5,
+    `${landed} of 5 · "${groupSaid}"`
+  )
+  ok(
+    "and it is ONE step on the undo stack, labelled in grades",
+    /Undo: move 5 grades to /.test(undoLabel.replace(/\n/g, " ")),
+    undoLabel.replace(/\n/g, " ")
+  )
+  const groupFlash = await card(scene.other.sessionId)
+    .locator('[data-testid="grade-chip"][data-flash="1"]')
+    .count()
+  const groupGhosts = await at.locator('[data-testid="move-ghost"]').count()
+  ok(
+    "the five that moved flash, and the gym they left keeps their ghosts",
+    groupFlash === 5 && groupGhosts === 5,
+    `${groupFlash} flashed · ${groupGhosts} ghosts left behind`
+  )
+  await page.screenshot({ path: `${SHOTS}/9-5-section-moved.png` })
+  await page.locator('[data-testid="undo-last"]').click()
+  await page.waitForTimeout(550)
+  ok(
+    "one undo brings the whole section back",
+    (await chipsIn(poolVenue.venueId)) === 5,
+    `${await chipsIn(poolVenue.venueId)} back in the rented gym`
+  )
+
+  // The same move with a real mouse: the section header IS the handle.
+  const handle = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="section-handle"]`
+  )
+  const destCard = card(scene.other.sessionId)
+  await destCard.scrollIntoViewIfNeeded()
+  await page.waitForTimeout(300)
+  await handle.dragTo(destCard, { targetPosition: { x: 40, y: 6 } })
+  await page.waitForTimeout(650)
+  const draggedSaid = await noticeText()
+  const draggedUndo = await page
+    .locator('[data-testid="undo-last"]')
+    .innerText()
+    .catch(() => "")
+  ok(
+    "dragging the section header by its grip does the same thing as arming it",
+    /moved:/.test(draggedSaid) && /Undo: move 5 grades to /.test(draggedUndo.replace(/\n/g, " ")),
+    `${draggedSaid} | ${draggedUndo.replace(/\n/g, " ")}`
+  )
+  if (/moved:/.test(draggedSaid)) {
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(500)
+  }
+
+  // Section to section, same weekend: the group changes BUILDING as one action.
+  const homeGrip = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${homeId}"] [data-testid="section-grip"]`
+  )
+  await homeGrip.click()
+  await page.waitForTimeout(250)
+  const intoPool = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="move-section-into"]`
+  )
+  ok(
+    "the destination gym writes the offer down rather than leaving it to a guess",
+    (await intoPool.count()) === 1,
+    (await intoPool.innerText().catch(() => "")).replace(/\n/g, " ")
+  )
+  await intoPool.click()
+  await page.waitForTimeout(500)
+  const sameSaid = await noticeText()
+  const sameUndo = await page
+    .locator('[data-testid="undo-last"]')
+    .innerText()
+    .catch(() => "")
+  ok(
+    "a section dropped on another gym on the same weekend moves the group into it, or says why not",
+    /moved:/.test(sameSaid) || /has room for/.test(sameSaid),
+    `${sameSaid} | ${sameUndo.replace(/\n/g, " ")}`
+  )
+  if (/moved:/.test(sameSaid)) {
+    ok(
+      "labelled by the gym it went to, as one undo",
+      /Undo: move 2 grades to /.test(sameUndo.replace(/\n/g, " ")),
+      sameUndo.replace(/\n/g, " ")
+    )
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(450)
+  }
+} catch (err) {
+  if (!/scenario|probe plan/.test(String(err?.message ?? ""))) {
+    ok("the owner's scenario ran without throwing", false, String(err?.message ?? err))
+  }
+} finally {
+  if (probeId) {
+    const gone = await page.request
+      .delete(`${BASE}/api/seasons/${SEASON}/plans/${probeId}`)
+      .then((r) => r.ok())
+      .catch(() => false)
+    ok("the throwaway plan is deleted, so the season is left as it was found", gone)
+  }
+}
 
 /* ---------------------------- nothing persisted -------------------------- */
 const after = await savedCalendar()

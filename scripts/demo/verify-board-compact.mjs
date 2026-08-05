@@ -236,10 +236,20 @@ if ((await page.locator('[data-testid="suggestion-move"]').count()) > 0) {
     / moved: .+ → .+/.test(said.replace(/\n/g, " ")),
     said.replace(/\n/g, " ")
   )
+  // RE-PINNED 2026-08-05 (owner ruling #3a): the CHIP that moved wears a mark of
+  // its own now, so the two cards are asked for as cards.
+  const flashedCards = await page.locator("[data-session-id][data-flash]").count()
+  const flashedChips = await page.locator('[data-testid="grade-chip"][data-flash]').count()
   ok(
-    "both ends of the move are ringed",
-    (await page.locator("[data-flash]").count()) === 2,
-    `${await page.locator("[data-flash]").count()} cards flashed`
+    "both ends of the move are ringed, and the grade that moved is ringed inside them",
+    flashedCards === 2 && flashedChips === 1,
+    `${flashedCards} cards · ${flashedChips} chip`
+  )
+  const ghosted = await page.locator('[data-testid="move-ghost"]').count()
+  ok(
+    "the weekend it left keeps a ghost of it for a moment",
+    ghosted === 1,
+    `${ghosted} ghost(s) at the origin`
   )
   await page.screenshot({ path: `${SHOTS}/undo-visible.png` })
   await undo.click()
@@ -314,8 +324,26 @@ ok(
 )
 
 /* --------------------------- the switch guard ---------------------------- */
-// Owner ruling 2026-08-05 (#5): the switch renders ONLY where the destination
-// gym has room for that grade that weekend. Never a disabled mystery.
+/**
+ * RE-PINNED 2026-08-05 (owner rulings #2 and #1, the switch-guard bug).
+ *
+ * The guard used to measure a destination against the courts the calendar RENTS
+ * there. Those are demand-sized, so every destination read full after one move
+ * and the ⇄ disappeared. What it measures now is what the BUILDING could hold:
+ * its own wired courts less the buffer, at the rate that weekend runs at — and a
+ * pool gym the plan has not asked about is a legitimate destination too, because
+ * taking it is the operator asserting they have it.
+ *
+ * So this check reproduces THAT arithmetic off the planner API, and the thing it
+ * refuses to allow is a switch into a building that could not hold the grade even
+ * if the league rented the whole thing.
+ */
+const wiring = new Map(
+  (plannerState?.gyms ?? []).map((g) => [
+    g.venueId,
+    Math.max(0, Math.floor(g.courts ?? 0) - Math.max(0, Math.floor(plannerState?.courtBuffer ?? 0))),
+  ])
+)
 const switchCards = await page.evaluate(() => {
   const cards = []
   for (const card of document.querySelectorAll("[data-session-id]")) {
@@ -326,11 +354,12 @@ const switchCards = await page.evaluate(() => {
       )
     }
     const switches = []
-    for (const chip of card.querySelectorAll("[data-reason]")) {
+    for (const chip of card.querySelectorAll('[data-testid="grade-chip"]')) {
       const button = chip.querySelector('[data-testid="switch-gym"]')
       if (!button) continue
       switches.push({
         to: button.getAttribute("data-to"),
+        backup: button.getAttribute("data-backup") === "1",
         games: Number(chip.querySelector("span[aria-hidden]")?.textContent ?? 0),
       })
     }
@@ -338,29 +367,59 @@ const switchCards = await page.evaluate(() => {
   }
   return cards
 })
+/** Minutes past midnight, or null when the clock is not one. */
+const clockAt = (time) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(time ?? "").trim())
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null
+}
+/** What the whole building could hold on this weekend, in games: the same courts
+ *  × days × floor(window ÷ slot) the board computes with, never the courts this
+ *  calendar happens to rent. */
+const buildingRoom = (weekend, venueId) => {
+  const attached = weekend.venues.find((v) => v.venueId === venueId)
+  const ceiling = Math.max(wiring.get(venueId) ?? 0, attached?.courts ?? 0)
+  if (attached) {
+    if (attached.capacityGames <= 0) return 0
+    const perCourt = attached.capacityGames / Math.max(1, attached.courts ?? 1)
+    return Math.floor(perCourt * ceiling)
+  }
+  // A BACKUP GYM (owner ruling #1): the plan has no gym time there, so its room
+  // is worked out from the gym's own hours the way venueOnWeekend does.
+  const gym = (plannerState?.gyms ?? []).find((g) => g.venueId === venueId)
+  if (!gym) return 0
+  const open = clockAt(gym.openTime ?? "09:00")
+  const close = clockAt(gym.closeTime ?? "21:00")
+  const slot = plannerState?.gameSlotMinutes || 60
+  const perCourtDay = Math.floor(Math.max(0, (close ?? 0) - (open ?? 0)) / slot)
+  const days = weekend.dayCount ?? 2
+  return ceiling * days * perCourtDay
+}
 const switchRows = switchCards.flatMap((card) => {
   const weekend = byId.get(card.sessionId)
   if (!weekend) return []
-  return card.switches.map((sw) => {
-    const venue = weekend.venues.find((v) => v.venueId === sw.to)
-    return {
-      weekend: weekend.label,
-      to: sw.to,
-      games: sw.games,
-      room: (venue?.capacityGames ?? 0) - (card.used[sw.to] ?? 0),
-    }
-  })
+  return card.switches.map((sw) => ({
+    weekend: weekend.label,
+    to: sw.to,
+    backup: sw.backup,
+    games: sw.games,
+    room: buildingRoom(weekend, sw.to) - (card.used[sw.to] ?? 0),
+  }))
 })
 const badSwitch = switchRows.filter((r) => r.room < r.games)
 ok(
-  "the switch is only ever offered into a gym with room for that grade",
+  "the switch is only ever offered into a BUILDING with room for that grade",
   badSwitch.length === 0,
   badSwitch.length
     ? badSwitch
         .slice(0, 3)
         .map((r) => `${r.weekend}: ${r.games} games into ${r.room} of room`)
         .join(" | ")
-    : `${switchRows.length} switches checked, all have room`
+    : `${switchRows.length} switches checked (${switchRows.filter((r) => r.backup).length} into a backup gym), all have room`
+)
+ok(
+  "and it is offered at all, which is the regression this ruling fixes",
+  switchRows.length > 0,
+  `${switchRows.length} grades can move building without leaving their weekend`
 )
 ok(
   "no switch is drawn disabled: it is there or it is not",

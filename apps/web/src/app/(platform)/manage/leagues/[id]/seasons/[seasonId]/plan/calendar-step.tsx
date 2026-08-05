@@ -72,6 +72,11 @@ import {
   solvableState,
   strandedPlacements,
   strandedSentence,
+  weekendRooms,
+  withAssertedGyms,
+  withAssertedGymsInWorld,
+  worldFromState,
+  type BuildingRoom,
   type StrandedPlacement,
 } from "@/lib/scheduler/plan-world"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
@@ -85,6 +90,8 @@ import {
   planVenueHues,
   type Armed,
   type ArmedBlock,
+  type ArmedSection,
+  type GhostChip,
 } from "./plan-shared"
 import {
   AskSheet,
@@ -292,6 +299,11 @@ interface BoardSnapshot {
    *  ("<sessionId>|<venueId>" → courts). A correction repacks the whole board,
    *  so undoing one has to put the courts back before anything else. */
   courtCaps: Record<string, number>
+  /** The backup gyms the operator had asserted, weekend by weekend (owner ruling
+   *  2026-08-05, #1): sessionId → venueIds. Undoing a placement onto a backup gym
+   *  has to take the assertion back with it, or the board would keep computing on
+   *  gym time nobody claimed. */
+  assertedGyms: Record<string, string[]>
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean
@@ -300,9 +312,29 @@ interface BoardSnapshot {
 /** One rental, keyed the way the working copy remembers it. */
 const blockKey = (sessionId: string, venueId: string) => `${sessionId}|${venueId}`
 
+/**
+ * WHAT SOMEBODY IS DRAGGING. Three things travel on this board, all on the same
+ * one-line JSON payload: a grade chip, a gym out of the tray, and — since the
+ * 2026-08-05 section ruling — a whole gym section with every grade in it.
+ */
+type DragPayload =
+  | {
+      unitKey?: string
+      fromSessionId?: string | null
+      venueId?: string
+      section?: boolean
+      sessionId?: string
+      unitKeys?: string[]
+      window?: string
+    }
+  | null
+
 /** One shared empty set, so a weekend with nothing stranded does not hand a new
  *  object down on every repaint. */
 const EMPTY_KEYS: Set<string> = new Set()
+
+/** The same, for a weekend nobody has just moved anything off. */
+const EMPTY_GHOSTS: GhostChip[] = []
 
 /** Which building each grade plays in, as the plan has it SAVED: sessionId →
  *  (unit key → venueId). The board carries this next to the assignment and
@@ -412,6 +444,17 @@ export function CalendarStep({
    * the season actually runs.
    */
   const [courtCaps, setCourtCaps] = useState<Record<string, number>>({})
+  /**
+   * BACKUP GYMS THE OPERATOR ASSERTED, in the working copy (owner ruling
+   * 2026-08-05, #1): sessionId → the venueIds they put on that weekend.
+   *
+   * A pool gym this plan has no availability for is a legitimate overflow
+   * backup, and dropping it on a weekend IS the assertion that they have it (his
+   * standing rule: a drag means they checked). The board computes on it at once,
+   * so the placement reads as an ordinary rented block; saving writes it into the
+   * plan's own world, or onto the season's attachment on the plan it runs.
+   */
+  const [assertedGyms, setAssertedGyms] = useState<Record<string, string[]>>({})
   /** The weekend the operator is standing inside, or null on the season board.
    *  Client state, not a route: the working copy IS the page, and a navigation
    *  would throw it away to show the same numbers bigger. */
@@ -423,9 +466,25 @@ export function CalendarStep({
    * Reduced motion is honoured — the ring appears, it just does not animate.
    */
   const [flashSessions, setFlashSessions] = useState<string[]>([])
+  /**
+   * THE CHIP THAT MOVED, ringed (owner ruling 2026-08-05, #3a): "<sessionId>|
+   * <unitKey>" for each grade the last edit put somewhere. Ringing the two cards
+   * was not enough on a card with eight chips on it — the thing that moved has to
+   * wear the mark itself.
+   */
+  const [flashUnits, setFlashUnits] = useState<string[]>([])
+  /**
+   * WHERE IT WAS (owner ruling 2026-08-05, #3b). A dashed "Grade 8 was here"
+   * left at the origin for a few seconds, so a move always reads as a move rather
+   * than as a grade that appeared somewhere.
+   */
+  const [ghosts, setGhosts] = useState<GhostChip[]>([])
   /** A whole rental block picked up, looking for a different weekend: the
    *  second half of the two-choice prompt a stranded block offers. */
   const [armedBlock, setArmedBlock] = useState<ArmedBlock | null>(null)
+  /** A whole gym section picked up, looking for another building or another
+   *  weekend (owner-approved suggestion 2026-08-05, #4). */
+  const [armedSection, setArmedSection] = useState<ArmedSection | null>(null)
   /** The board's horizontal scroller, so the rail can bring a weekend to the
    *  operator instead of asking them to go and find it. */
   const boardScroll = useRef<HTMLDivElement>(null)
@@ -545,6 +604,10 @@ export function CalendarStep({
     // the working copy was thinking is gone with the board it was thinking on.
     setBlockStatus({})
     setCourtCaps({})
+    setAssertedGyms({})
+    setFlashUnits([])
+    setGhosts([])
+    setArmedSection(null)
     setKept(hasSaved ? saved : null)
     setKeptVenues(hasSaved ? savedVenues : {})
     if (!hasSaved) setSide("proposal")
@@ -564,18 +627,22 @@ export function CalendarStep({
     load()
   }, [load])
 
-  // Escape always cancels an armed chip or an armed gym, wherever focus went.
+  // Escape always cancels an armed chip, gym, block or section, wherever focus
+  // went. It also clears the ghosts: pressing Escape is an interaction, and the
+  // ghosts last "until the next one" (owner ruling 2026-08-05, #3b).
   useEffect(() => {
-    if (!armed && !armedVenue && !armedBlock) return
+    if (!armed && !armedVenue && !armedBlock && !armedSection) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setArmed(null)
       setArmedVenue(null)
       setArmedBlock(null)
+      setArmedSection(null)
+      setGhosts([])
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed, armedVenue, armedBlock])
+  }, [armed, armedVenue, armedBlock, armedSection])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -598,7 +665,16 @@ export function CalendarStep({
    * downstream needs to know a correction exists, and a board with no
    * corrections gets the identical object back, so it costs nothing.
    */
-  const board = useMemo(() => (state ? applyCourtCaps(state, courtCaps) : null), [state, courtCaps])
+  /**
+   * The asserted backup gyms go in FIRST and the corrections on top of them
+   * (owner ruling 2026-08-05, #1 and #4): a gym somebody put on a weekend by hand
+   * is part of the world the board computes in, and "they only gave us three
+   * courts" is a correction to that world like any other.
+   */
+  const board = useMemo(
+    () => (state ? applyCourtCaps(withAssertedGyms(state, assertedGyms), courtCaps) : null),
+    [state, assertedGyms, courtCaps]
+  )
 
   /**
    * IS THERE A WORLD TO SOLVE IN (owner ruling 2026-08-05, #1)? One weekend this
@@ -1013,6 +1089,12 @@ export function CalendarStep({
     // from the gyms themselves (step 2's grid) the moment a plan is opened.
     setBlockStatus({})
     setCourtCaps({})
+    // The plan's own world says which gyms it has on which weekends, so nothing
+    // is asserted on a board that has only just opened.
+    setAssertedGyms({})
+    setFlashUnits([])
+    setGhosts([])
+    setArmedSection(null)
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
@@ -1134,8 +1216,11 @@ export function CalendarStep({
         // A COPY CARRIES THE WORLD IT WAS DRAWN IN (owner ruling 2026-08-05). A
         // plan owns its world, so a copy taken while that world is on the board
         // is a copy of the world too — otherwise the numbers would change under
-        // the operator the moment they pressed Save a copy.
-        ...(onPlanWorld && planSettings ? { settings: planSettings } : {}),
+        // the operator the moment they pressed Save a copy. Any backup gym the
+        // operator asserted is part of that world (ruling #1).
+        ...(onPlanWorld && planSettings
+          ? { settings: { ...planSettings, state: worldWithAssertions() ?? planSettings.state } }
+          : {}),
       }),
     }).catch(() => null)
     const data = res ? await res.json().catch(() => null) : null
@@ -1182,6 +1267,9 @@ export function CalendarStep({
     // A plan the season does not run never marked anybody's gym, so its
     // corrections are still only the board's opinion and they stay on it.
     if (takesOver) setCourtCaps({})
+    // The new plan's world carries the assertions (or the season does, where this
+    // save took over), so the working copy hands them over.
+    setAssertedGyms({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
@@ -1205,10 +1293,18 @@ export function CalendarStep({
     if (!plan) return
     setBusy("save-plan")
     setError(null)
+    // A gym the operator asserted travels with the calendar, EXCEPT on the plan
+    // the season runs: there it is the season's own attachment, written through
+    // by writeSeasonFacts below.
+    const assertedWorld = plan.isActive ? null : worldWithAssertions()
     const res = await fetch(`/api/seasons/${seasonId}/plans/${plan.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignment, venues: shown.venues }),
+      body: JSON.stringify({
+        assignment,
+        venues: shown.venues,
+        ...(assertedWorld ? { settings: { state: assertedWorld } } : {}),
+      }),
     }).catch(() => null)
     const data = res ? await res.json().catch(() => null) : null
     setBusy(null)
@@ -1248,11 +1344,15 @@ export function CalendarStep({
     setVenues(shown.venues)
     setBlockStatus({})
     if (plan.isActive) setCourtCaps({})
+    // The assertion is written down now — in the plan's world, or on the season's
+    // attachment — so the working copy stops carrying it.
+    setAssertedGyms({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
     setArmed(null)
     setArmedVenue(null)
+    setArmedSection(null)
     await session.refresh()
     if (plan.isActive) {
       // The write-through happened, so this is what every later comparison is
@@ -1310,9 +1410,11 @@ export function CalendarStep({
     setKeptVenues(savedVenuesNow)
     setBlockStatus({})
     setCourtCaps({})
+    setAssertedGyms({})
     setUndoStack([])
     setArmed(null)
     setArmedVenue(null)
+    setArmedSection(null)
     setDirty(false)
     setFromLever(false)
     await session.refresh()
@@ -1332,7 +1434,10 @@ export function CalendarStep({
    *  back (owner ruling 2026-08-05). */
   const remember = (label: string) =>
     setUndoStack((prev) =>
-      [...prev, { label, assignment, venues, blockStatus, courtCaps, dirty }].slice(-UNDO_DEPTH)
+      [
+        ...prev,
+        { label, assignment, venues, blockStatus, courtCaps, assertedGyms, dirty },
+      ].slice(-UNDO_DEPTH)
     )
 
   /**
@@ -1343,6 +1448,44 @@ export function CalendarStep({
    */
   const flashCards = (...sessionIds: Array<string | null | undefined>) =>
     setFlashSessions(sessionIds.filter((id): id is string => Boolean(id)))
+
+  /** One moved grade, keyed the way a chip asks whether it is the one that just
+   *  moved. */
+  const unitFlashKey = (sessionId: string, unitKey: string) => `${sessionId}|${unitKey}`
+
+  /**
+   * THE MOVE, AT GRADE LEVEL (owner ruling 2026-08-05, #3). Three things at
+   * once, for every route that moves anything: the cards ring, the CHIPS THAT
+   * MOVED wear a stronger ring of their own, and the origin keeps a dashed ghost
+   * saying which grade was there. Every verb on this board goes through here, so
+   * a switch, a drag, a tap, a rail click and a block move all read the same.
+   */
+  const flashMove = (
+    cards: Array<string | null | undefined>,
+    landed: Array<{ sessionId: string; unitKey: string }>,
+    left: GhostChip[]
+  ) => {
+    flashCards(...cards)
+    setFlashUnits(landed.map((m) => unitFlashKey(m.sessionId, m.unitKey)))
+    setGhosts(left)
+  }
+
+  /** The gym a grade was playing in on a weekend, as the board has it drawn. */
+  const gymOf = (sessionId: string | null | undefined, unitKey: string): string | null =>
+    (sessionId ? shown.venues[sessionId]?.[unitKey] : null) ?? null
+
+  /** The ghost a grade leaves behind on the weekend and in the gym it left. */
+  const ghostFor = (sessionId: string | null | undefined, unitKey: string): GhostChip[] =>
+    sessionId
+      ? [
+          {
+            sessionId,
+            venueId: gymOf(sessionId, unitKey),
+            unitKey,
+            label: unitByKey.get(unitKey)?.label ?? unitKey,
+          },
+        ]
+      : []
 
   /** A weekend in the words the notice uses. */
   const weekendName = (sessionId: string | null | undefined) =>
@@ -1363,7 +1506,11 @@ export function CalendarStep({
     setDirty(true)
     // A hand edit: whatever the solver said, this board is the operator's now.
     setFromLever(false)
-    flashCards(fromSessionId, toSessionId)
+    flashMove(
+      [fromSessionId, toSessionId],
+      [{ sessionId: toSessionId, unitKey }],
+      ghostFor(fromSessionId, unitKey)
+    )
     setNotice(`${label} moved: ${weekendName(fromSessionId)} → ${weekendName(toSessionId)}`)
   }
 
@@ -1376,11 +1523,17 @@ export function CalendarStep({
     setVenues(last.venues)
     setBlockStatus(last.blockStatus)
     setCourtCaps(last.courtCaps)
+    setAssertedGyms(last.assertedGyms)
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
+    setArmedSection(null)
+    // The board is back where it was, so the marks about the move that is no
+    // longer there go with it.
+    setFlashUnits([])
+    setGhosts([])
     setNotice(`Undone: ${last.label}.`)
   }
 
@@ -1392,20 +1545,52 @@ export function CalendarStep({
       ...prev,
       [fromSessionId]: (prev[fromSessionId] ?? []).filter((k) => k !== unitKey),
     }))
+    const left = ghostFor(fromSessionId, unitKey)
     setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId]))
     setArmed(null)
     setDirty(true)
     setFromLever(false)
-    flashCards(fromSessionId)
+    flashMove([fromSessionId], [], left)
     setNotice(`${label} came off ${weekendName(fromSessionId)}.`)
   }
 
+  /**
+   * A BACKUP GYM, ASSERTED (owner ruling 2026-08-05, #1). The operator put a gym
+   * this plan has no availability for onto a weekend, and by his standing rule
+   * that IS the assertion. The next map, ready to be set beside whatever else the
+   * verb is doing.
+   */
+  const withAssertion = (
+    prev: Record<string, string[]>,
+    sessionId: string,
+    venueId: string
+  ): Record<string, string[]> =>
+    (prev[sessionId] ?? []).includes(venueId)
+      ? prev
+      : { ...prev, [sessionId]: [...(prev[sessionId] ?? []), venueId] }
+
+  /** True when this plan has no gym time at that building on that weekend, so
+   *  putting something there is an assertion rather than a placement. */
+  const isBackupGym = (sessionId: string, venueId: string) =>
+    !weekendById.get(sessionId)?.venues.some((v) => v.venueId === venueId)
+
   /** The one place a grade changes BUILDING: the chip's gym switcher. A hand
-   *  pick is a decision, so it sticks even if that gym then reads full. */
+   *  pick is a decision, so it sticks even if that gym then reads full — and a
+   *  backup gym is a legitimate destination, which is what the assertion below
+   *  makes true on the board (owner ruling 2026-08-05, #1 and #2). */
   const switchGym = (sessionId: string, unitKey: string, venueId: string) => {
     if (locked) return
     const label = unitByKey.get(unitKey)?.label ?? "that grade"
-    remember(`move ${label} to ${gymShort(venueId)}`)
+    const backup = isBackupGym(sessionId, venueId)
+    const short = gymShort(venueId)
+    const left = ghostFor(sessionId, unitKey)
+    remember(`move ${label} to ${short}`)
+    if (backup) {
+      setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
+      // The operator asserted the building, so the rental in it is theirs to
+      // book rather than something the pool assumed.
+      setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
+    }
     setVenues((prev) => ({
       ...prev,
       [sessionId]: { ...(prev[sessionId] ?? {}), [unitKey]: venueId },
@@ -1413,8 +1598,12 @@ export function CalendarStep({
     setArmed(null)
     setDirty(true)
     setFromLever(false)
-    flashCards(sessionId)
-    setNotice(`${label} moved: ${gymShort(venueId)} on ${weekendName(sessionId)}`)
+    flashMove([sessionId], [{ sessionId, unitKey }], left)
+    setNotice(
+      backup
+        ? `${label} moved: ${short} on ${weekendName(sessionId)}. You placed it, so it is yours to book.`
+        : `${label} moved: ${short} on ${weekendName(sessionId)}`
+    )
   }
 
   /* --------------------------- the four verbs ----------------------------- */
@@ -1453,6 +1642,22 @@ export function CalendarStep({
     return () => window.clearTimeout(timer)
   }, [flashSessions])
 
+  // The chip's own ring, on the same clock as the card it landed on.
+  useEffect(() => {
+    if (flashUnits.length === 0) return
+    const timer = window.setTimeout(() => setFlashUnits([]), 1600)
+    return () => window.clearTimeout(timer)
+  }, [flashUnits])
+
+  /** The ghost outlives the ring on purpose (owner ruling 2026-08-05, #3b): the
+   *  eye follows the thing that moved first, and "Grade 8 was here" is the answer
+   *  to the question it asks next. Four seconds, or until the next interaction. */
+  useEffect(() => {
+    if (ghosts.length === 0) return
+    const timer = window.setTimeout(() => setGhosts([]), 4000)
+    return () => window.clearTimeout(timer)
+  }, [ghosts])
+
   /**
    * CORRECT — "I don't have this" (owner ruling 2026-08-04). The gym said three
    * courts, not six. It goes in the working copy, the whole board repacks
@@ -1477,6 +1682,7 @@ export function CalendarStep({
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
+    setArmedSection(null)
     setDirty(true)
     setFromLever(false)
     flashCards(sessionId)
@@ -1509,6 +1715,7 @@ export function CalendarStep({
   const moveBlock = (unitKeys: string[], fromSessionId: string, toSessionId: string) => {
     if (locked || unitKeys.length === 0 || fromSessionId === toSessionId) return
     remember(`move ${gradeList(unitKeys)}`)
+    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key))
     let nextAssignment = assignment
     let nextVenues = venues
     for (const key of unitKeys) {
@@ -1520,11 +1727,153 @@ export function CalendarStep({
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
+    setArmedSection(null)
     setDirty(true)
     setFromLever(false)
-    flashCards(fromSessionId, toSessionId)
+    flashMove(
+      [fromSessionId, toSessionId],
+      unitKeys.map((unitKey) => ({ sessionId: toSessionId, unitKey })),
+      left
+    )
     setNotice(
       `${gradeList(unitKeys)} moved: ${weekendName(fromSessionId)} → ${weekendName(toSessionId)}`
+    )
+  }
+
+  /* ----------------------- a whole section, as one move -------------------- */
+
+  /** Games each building on a weekend is holding as the board has it drawn,
+   *  optionally with some grades taken out of the count (the ones about to move
+   *  out of it). */
+  const usageOn = (sessionId: string, without: string[] = []): Record<string, number> => {
+    const weekend = weekendById.get(sessionId)
+    if (!board || !weekend) return {}
+    const skip = new Set(without)
+    const out: Record<string, number> = {}
+    for (const key of assignment[sessionId] ?? []) {
+      if (skip.has(key)) continue
+      const venueId = shown.venues[sessionId]?.[key]
+      if (!venueId) continue
+      out[venueId] = (out[venueId] ?? 0) + weekendDemand(board.units, weekend, [key])
+    }
+    return out
+  }
+
+  /** The grades that WOULD fit in a room, smallest first, for a refusal that
+   *  names what fits instead of only what does not (owner ruling 2026-08-05, #4). */
+  const fitsInside = (sessionId: string, unitKeys: string[], room: number): string[] => {
+    const weekend = weekendById.get(sessionId)
+    if (!board || !weekend) return []
+    const games = (key: string) => weekendDemand(board.units, weekend, [key])
+    let left = room
+    const fits: string[] = []
+    for (const key of [...unitKeys].sort((a, b) => games(a) - games(b))) {
+      const need = games(key)
+      if (need > left) continue
+      fits.push(key)
+      left -= need
+    }
+    return fits
+  }
+
+  /**
+   * MOVE A WHOLE GYM SECTION, AS ONE ACTION (owner-approved suggestion
+   * 2026-08-05, #4). Every grade under one building travels together: onto
+   * another building on the same weekend, or onto another weekend of the same
+   * month, by drag or by arm-then-tap.
+   *
+   * It is validated the way ruling #2 validates everything else — against what
+   * the destination BUILDING could hold, not against the courts we happen to rent
+   * there — and a destination that cannot take the whole group refuses and names
+   * what it could take, because a half-applied group move is not what anybody
+   * dragged. One entry on the undo stack, labelled in grades.
+   */
+  const moveSection = (
+    unitKeys: string[],
+    fromSessionId: string,
+    toSessionId: string,
+    /** The building it was dropped on, or null when it was dropped on the whole
+     *  weekend and the packer gets to choose. */
+    toVenueId: string | null
+  ) => {
+    if (!board || locked || unitKeys.length === 0) return
+    const to = weekendById.get(toSessionId)
+    if (!to) return
+    const sameWeekend = fromSessionId === toSessionId
+    if (sameWeekend && !toVenueId) return
+    const need = weekendDemand(board.units, to, unitKeys)
+    // A same-weekend move takes these grades OUT of the building they are in, so
+    // that room counts as free for the group that is moving.
+    const used = usageOn(toSessionId, sameWeekend ? unitKeys : [])
+    const rooms = weekendRooms(board, to, used, courtCaps)
+    const room = toVenueId ? rooms.find((r) => r.venueId === toVenueId) : null
+    const free = toVenueId
+      ? (room?.freeGames ?? 0)
+      : // A weekend, not a building: only the gyms this plan HAS there count.
+        // Asserting a backup gym is something the operator does by naming it.
+        rooms.reduce((sum, r) => sum + (r.backup ? 0 : r.freeGames), 0)
+    const where = toVenueId
+      ? `${gymShort(toVenueId)} on ${to.label}`
+      : `${to.label}`
+    if (toVenueId && !room) {
+      setNotice(`${gymShort(toVenueId)} is not a gym this plan has. Add it back in step 2.`)
+      return
+    }
+    if (free < need) {
+      const fits = fitsInside(toSessionId, unitKeys, free)
+      const rest = unitKeys.filter((k) => !fits.includes(k))
+      setNotice(
+        fits.length === 0
+          ? `${where} has room for ${plural(free, "game", "games")}, and this block is ${plural(need, "game", "games")}. Nothing of it fits.`
+          : `${where} has room for ${gradeList(fits)}, not ${gradeList(rest)}. Move those on their own, or correct the courts.`
+      )
+      return
+    }
+    const backup = Boolean(toVenueId && room?.backup)
+    remember(
+      `move ${plural(unitKeys.length, "grade", "grades")} to ${
+        toVenueId ? gymShort(toVenueId) : to.label
+      }`
+    )
+    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key))
+    let nextAssignment = assignment
+    let nextVenues = venues
+    for (const key of unitKeys) {
+      if (!sameWeekend) {
+        nextAssignment = assignmentWithMove(nextAssignment, key, fromSessionId, toSessionId)
+      }
+      nextVenues = venuesWithoutUnit(nextVenues, key, [fromSessionId, toSessionId])
+    }
+    if (toVenueId) {
+      nextVenues = {
+        ...nextVenues,
+        [toSessionId]: {
+          ...(nextVenues[toSessionId] ?? {}),
+          ...Object.fromEntries(unitKeys.map((key) => [key, toVenueId])),
+        },
+      }
+    }
+    if (backup && toVenueId) {
+      setAssertedGyms((prev) => withAssertion(prev, toSessionId, toVenueId))
+      setBlockStatus((prev) => ({ ...prev, [blockKey(toSessionId, toVenueId)]: "confirmed" }))
+    }
+    setAssignment(nextAssignment)
+    setVenues(nextVenues)
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setArmedSection(null)
+    setDirty(true)
+    setFromLever(false)
+    flashMove(
+      [fromSessionId, toSessionId],
+      unitKeys.map((unitKey) => ({ sessionId: toSessionId, unitKey })),
+      left
+    )
+    setNotice(
+      `${gradeList(unitKeys)} moved: ${sameWeekend ? where : `${weekendName(fromSessionId)} → ${where}`}${
+        backup ? ". You placed it, so it is yours to book." : ""
+      }`
     )
   }
 
@@ -1561,9 +1910,11 @@ export function CalendarStep({
    *
    * The court CORRECTIONS survive on purpose: "Haber only gave us three that
    * Saturday" is a fact about a gym, and a different calendar does not make it
-   * untrue. What the working copy thought about the OLD weekends' bookings does
-   * not survive, because those were opinions about weekends this calendar may not
-   * even use.
+   * untrue. So does an asserted backup gym (owner ruling 2026-08-05, #1), for
+   * exactly the same reason: "we have Haber that Saturday" is availability the
+   * operator checked, and the solver should get to use it. What the working copy
+   * thought about the OLD weekends' bookings does not survive, because those were
+   * opinions about weekends this calendar may not even use.
    */
   const drawCalendar = (lever: PlannerLever, said: string, undoLabel: string) => {
     if (!board || locked) return
@@ -1575,6 +1926,8 @@ export function CalendarStep({
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
+    setArmedSection(null)
+    setGhosts([])
     setZoomSession(null)
     setDirty(true)
     // Straight off the solver and untouched, so a save can honestly say so.
@@ -1628,6 +1981,7 @@ export function CalendarStep({
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
+    setArmedSection(null)
     setDirty(true)
     setFromLever(false)
     flashCards(...touched)
@@ -1703,14 +2057,56 @@ export function CalendarStep({
   }
 
   /**
+   * THE BACKUP GYMS THE OPERATOR ASSERTED, written onto the SEASON (owner ruling
+   * 2026-08-05, #1). Only for the plan the season runs, where "we have Haber that
+   * Saturday" is a fact about the season's own gym time — the same attachment
+   * step 2 makes when a cell is turned on. A plan the season does not run keeps
+   * its assertion in its own world instead (see savePlan).
+   */
+  const writeAssertedGyms = async () => {
+    const pairs = Object.entries(assertedGyms).flatMap(([sessionId, venueIds]) =>
+      (venueIds ?? []).map((venueId) => ({ sessionId, venueId }))
+    )
+    if (pairs.length === 0) return
+    await Promise.all(
+      pairs.map(({ sessionId, venueId }) =>
+        fetch(`/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}`, {
+          method: "POST",
+        }).catch(() => null)
+      )
+    )
+  }
+
+  /**
    * Everything the working copy owes the season, in one errand, handing back
    * the season's world if a correction moved it. The caller decides which world
    * the board lands in, so a stale `liveState` can never overwrite a capacity
    * the save just changed.
    */
   const writeSeasonFacts = async (): Promise<PlannerState | null> => {
+    // The gyms first: a correction to a gym the season did not have yet would
+    // otherwise be written against nothing.
+    await writeAssertedGyms()
     await writeBookingStatus()
     return writeCourtCaps()
+  }
+
+  /**
+   * THE PLAN'S WORLD, WITH THE ASSERTIONS IN IT (owner ruling 2026-08-05, #1).
+   * What a save sends for a plan the season does not run: the world the board has
+   * been drawing, plus every backup gym the operator put on a weekend, so
+   * reopening the plan finds that gym really there.
+   *
+   * A plan that never remembered a world gets one built from the state on screen.
+   * That is not a new claim: the server already re-snapshots the season over a
+   * world-less plan on any content write, so this only makes the snapshot include
+   * what the operator just told us.
+   */
+  const worldWithAssertions = () => {
+    if (Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)) return null
+    const base = planSettings?.state ?? (state ? worldFromState(state) : null)
+    if (!base) return null
+    return withAssertedGymsInWorld(base, assertedGyms)
   }
 
   /* ----------------------- filling the rental blocks ---------------------- */
@@ -1779,13 +2175,19 @@ export function CalendarStep({
   }
 
   /**
-   * PLACE A GYM BY HAND (owner ruling 2026-08-03, the "I will place them"
-   * half): a gym dropped on a weekend takes the whole block sitting there.
+   * PLACE A GYM BY HAND (owner ruling 2026-08-03, the "I will place them" half):
+   * a gym dropped on a weekend takes the whole block sitting there.
    *
-   * The two things that make a drop impossible are said out loud rather than
-   * swallowed: a gym the season does not have that weekend, and a gym with
-   * fewer courts than the games need. Anything that lands is CONFIRMED, because
-   * an operator who placed it is asserting the building is theirs.
+   * A BACKUP GYM IS A LEGITIMATE PLACE TO PUT GAMES (owner ruling 2026-08-05,
+   * #1). This used to refuse a gym the plan has no availability for — "turn it on
+   * back in step 2" — which is the board arguing with an operator who has just
+   * told it something it did not know. The drop IS the availability assertion, so
+   * it lands, and the working copy carries the assertion until the plan is saved.
+   *
+   * Refusals are down to true impossibilities: a building whose own courts cannot
+   * hold the games even if we rented all of them, and a weekend whose spill is
+   * games rather than a whole grade to move. Anything that lands is CONFIRMED,
+   * because an operator who placed it is asserting the building is theirs.
    */
   const placeVenue = (sessionId: string, venueId: string, unitKeys: string[], games: number) => {
     if (!board || locked) return
@@ -1793,15 +2195,28 @@ export function CalendarStep({
     const weekend = weekendById.get(sessionId)
     if (!weekend) return
     const short = gymShort(venueId)
-    const venue = weekend.venues.find((v) => v.venueId === venueId)
-    if (!venue) {
-      setNotice(`${short} is not on ${weekend.label}. Turn it on for that weekend back in step 2.`)
+    const backup = isBackupGym(sessionId, venueId)
+    // What the BUILDING could hold here, with the grades that are moving into it
+    // not counted against it (see weekendRooms: this is ruling #2's math).
+    const room = weekendRooms(board, weekend, usageOn(sessionId, unitKeys), courtCaps).find(
+      (r) => r.venueId === venueId
+    )
+    if (!room) {
+      setNotice(
+        `${short} has no gym time we can use on ${weekend.label}. Give it hours back in step 2.`
+      )
       return
     }
-    const needed = courtsNeeded(venue, games)
-    const have = venue.courts ?? venue.courtDays ?? 0
-    if (have > 0 && needed > have) {
-      setNotice(`${short} has ${have} of the ${needed} courts needed on ${weekend.label}.`)
+    if (games > 0 && room.freeGames < games) {
+      const venue = weekend.venues.find((v) => v.venueId === venueId)
+      const needed = venue ? courtsNeeded(venue, games) : 0
+      setNotice(
+        venue && needed > room.courts
+          ? `${short} has ${room.courts} of the ${needed} courts needed on ${weekend.label}.`
+          : `${short} is already holding ${plural(room.usedGames, "game", "games")} of the ${
+              room.capacityGames
+            } it can on ${weekend.label}, so ${plural(games, "game", "games")} will not fit.`
+      )
       return
     }
     if (unitKeys.length === 0) {
@@ -1811,6 +2226,7 @@ export function CalendarStep({
       return
     }
     remember(`placing ${short} on ${weekend.label}`)
+    if (backup) setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
     setVenues((prev) => {
       const next = { ...prev, [sessionId]: { ...(prev[sessionId] ?? {}) } }
       for (const key of unitKeys) next[sessionId][key] = venueId
@@ -1820,9 +2236,15 @@ export function CalendarStep({
     setArmed(null)
     setDirty(true)
     setFromLever(false)
-    flashCards(sessionId)
+    flashMove(
+      [sessionId],
+      unitKeys.map((unitKey) => ({ sessionId, unitKey })),
+      []
+    )
     setNotice(
-      `${gradeList(unitKeys)} plays ${short} on ${weekend.label}. You placed it, so it is yours to book.`
+      backup
+        ? `${gradeList(unitKeys)} plays ${short} on ${weekend.label}. You said you have it that weekend, so it is yours to book.`
+        : `${gradeList(unitKeys)} plays ${short} on ${weekend.label}. You placed it, so it is yours to book.`
     )
   }
 
@@ -1836,7 +2258,7 @@ export function CalendarStep({
     e.preventDefault()
     e.stopPropagation()
     try {
-      const payload = JSON.parse(e.dataTransfer.getData("text/plain"))
+      const payload = JSON.parse(e.dataTransfer.getData("text/plain")) as DragPayload
       if (!payload?.venueId) return
       placeVenue(sessionId, payload.venueId, unitKeys, games)
     } catch {
@@ -1847,7 +2269,17 @@ export function CalendarStep({
   const onDrop = (e: React.DragEvent, toSessionId: string, toWindow: string) => {
     e.preventDefault()
     try {
-      const payload = JSON.parse(e.dataTransfer.getData("text/plain"))
+      const payload = JSON.parse(e.dataTransfer.getData("text/plain")) as DragPayload
+      // A WHOLE SECTION, dropped on a weekend (owner ruling 2026-08-05, #4): every
+      // grade under that gym travels, and the packer picks their buildings here.
+      if (payload?.section && Array.isArray(payload.unitKeys) && payload.sessionId) {
+        if (payload.window !== toWindow) {
+          setNotice(COPY.oneWeekendPerMonth)
+          return
+        }
+        moveSection(payload.unitKeys, payload.sessionId, toSessionId, null)
+        return
+      }
       if (!payload?.unitKey) return
       if (payload.window !== toWindow) {
         setNotice(COPY.oneWeekendPerMonth)
@@ -1858,6 +2290,70 @@ export function CalendarStep({
       /* not one of our chips */
     }
   }
+
+  /**
+   * A DROP ON A GYM SECTION. Two payloads land here: a gym out of the tray (which
+   * the section takes for its block) and a whole section (which moves into this
+   * building). A grade chip is deliberately left to bubble up to the weekend card,
+   * where a plain move already lives.
+   */
+  const onDropSection = (
+    e: React.DragEvent,
+    sessionId: string,
+    windowLabel: string,
+    venueId: string,
+    unitKeys: string[],
+    games: number,
+    canPlaceGym: boolean
+  ) => {
+    let payload: DragPayload = null
+    try {
+      payload = JSON.parse(e.dataTransfer.getData("text/plain")) as DragPayload
+    } catch {
+      return
+    }
+    if (payload?.section && Array.isArray(payload.unitKeys) && payload.sessionId) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (payload.window !== windowLabel) {
+        setNotice(COPY.oneWeekendPerMonth)
+        return
+      }
+      if (payload.sessionId === sessionId && payload.venueId === venueId) return
+      moveSection(payload.unitKeys, payload.sessionId, sessionId, venueId)
+      return
+    }
+    if (payload?.venueId && canPlaceGym) {
+      e.preventDefault()
+      e.stopPropagation()
+      placeVenue(sessionId, payload.venueId, unitKeys, games)
+    }
+  }
+
+  /** Arming a section puts everything else down: one thing is in the operator's
+   *  hand at a time, whichever thing it is. */
+  const armSection = (section: ArmedSection | null) => {
+    setArmedSection(section)
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setGhosts([])
+  }
+
+  /**
+   * WHERE A GRADE COULD GO ON ONE WEEKEND (owner ruling 2026-08-05, #2). The card
+   * knows what each of its buildings is holding; this answers what each of them
+   * COULD hold, in the plan's own world, so the ⇄ is offered wherever a move is
+   * really possible — the home gym with room, a pool building we can rent more of,
+   * or a backup gym the operator is willing to assert.
+   */
+  const roomsOn = useCallback(
+    (sessionId: string, used: Record<string, number>): BuildingRoom[] => {
+      const weekend = weekendById.get(sessionId)
+      return board && weekend ? weekendRooms(board, weekend, used, courtCaps) : []
+    },
+    [board, weekendById, courtCaps]
+  )
 
   const unitByKey = useMemo(() => new Map((board?.units ?? []).map((u) => [u.key, u])), [board])
 
@@ -2013,6 +2509,10 @@ export function CalendarStep({
         setArmed(null)
         setArmedVenue(null)
         setArmedBlock(null)
+        setArmedSection(null)
+        // A click anywhere is the next interaction, and the ghost lasts until
+        // one (owner ruling 2026-08-05, #3b).
+        setGhosts([])
       }}
     >
       {/* Screen head */}
@@ -2210,6 +2710,17 @@ export function CalendarStep({
                 Tap a lighter one that month, or press Escape.
               </p>
             )}
+            {armedSection && (
+              <p
+                className="text-play-700 mb-3 text-xs font-semibold"
+                aria-live="polite"
+                data-testid="armed-section"
+              >
+                {gradeList(armedSection.unitKeys)} at {armedSection.gym} on{" "}
+                {armedSection.weekendLabel} will move together. Tap another gym that month, or a
+                weekend, or press Escape.
+              </p>
+            )}
 
             {/* AN EMPTY CALENDAR LEADS WITH THE BUTTON (owner ruling 2026-08-05,
                 #1). A plan with weekends and gym time is one tap from its
@@ -2400,22 +2911,29 @@ export function CalendarStep({
                       // for as long as one is armed.
                       armedVenue={armedVenue}
                       armedBlock={armedBlock}
+                      armedSection={armedSection}
                       placing={interactive && (assignMode === "place" || armedVenue !== null)}
                       interactive={interactive}
                       scrollRef={boardScroll}
                       flashSessions={flashSessions}
+                      flashUnits={flashUnits}
+                      ghosts={ghosts}
                       addable={addable}
                       courtCaps={courtCaps}
                       strandedAt={strandedAt}
                       poolOn={poolOn}
+                      roomsOn={roomsOn}
                       onArm={setArmed}
                       onArmBlock={setArmedBlock}
+                      onArmSection={armSection}
                       onMove={move}
                       onMoveBlock={moveBlock}
+                      onMoveSection={moveSection}
                       onRemove={removeUnit}
                       onSwitchGym={switchGym}
                       onDrop={onDrop}
                       onDropVenue={onDropVenue}
+                      onDropSection={onDropSection}
                       onPlaceVenue={placeVenue}
                       onCorrectCourts={correctCourts}
                       onOpenWeekend={setZoomSession}
@@ -2875,22 +3393,29 @@ function BoardView({
   armed,
   armedVenue,
   armedBlock,
+  armedSection,
   placing,
   interactive,
   scrollRef,
   flashSessions,
+  flashUnits,
+  ghosts,
   addable,
   courtCaps,
   strandedAt,
   poolOn,
+  roomsOn,
   onArm,
   onArmBlock,
+  onArmSection,
   onMove,
   onMoveBlock,
+  onMoveSection,
   onRemove,
   onSwitchGym,
   onDrop,
   onDropVenue,
+  onDropSection,
   onPlaceVenue,
   onCorrectCourts,
   onOpenWeekend,
@@ -2922,6 +3447,8 @@ function BoardView({
   armedVenue: string | null
   /** A whole block picked up and looking for a lighter weekend. */
   armedBlock: ArmedBlock | null
+  /** A whole gym section picked up, looking for a building or a weekend. */
+  armedSection: ArmedSection | null
   /** True while the operator is placing gyms by hand, which is what turns the
    *  slots and the rented sections into drop targets. */
   placing: boolean
@@ -2931,6 +3458,10 @@ function BoardView({
   /** Weekends ringed for a moment: where the rail just jumped, and both ends
    *  of the move that just happened. */
   flashSessions: string[]
+  /** The chips that just landed, keyed "<sessionId>|<unitKey>". */
+  flashUnits: string[]
+  /** "Grade 8 was here", for a few seconds, wherever a grade just left. */
+  ghosts: GhostChip[]
   /** Saturdays each month is not using yet, for the ghost card at the foot of
    *  the column. */
   addable: Map<string, Array<{ satDateISO: string; label: string }>>
@@ -2943,14 +3474,32 @@ function BoardView({
   /** The pool gyms a weekend actually holds, for the prompt a stranded block
    *  asks. */
   poolOn: (sessionId: string) => Array<{ venueId: string; short: string }>
+  /** What each building on a weekend could hold, given what it already has. */
+  roomsOn: (sessionId: string, used: Record<string, number>) => BuildingRoom[]
   onArm: (armed: Armed | null) => void
   onArmBlock: (block: ArmedBlock | null) => void
+  onArmSection: (section: ArmedSection | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onMoveBlock: (unitKeys: string[], from: string, to: string) => void
+  onMoveSection: (
+    unitKeys: string[],
+    from: string,
+    to: string,
+    toVenueId: string | null
+  ) => void
   onRemove: (unitKey: string, from: string) => void
   onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
+  onDropSection: (
+    e: React.DragEvent,
+    sessionId: string,
+    windowLabel: string,
+    venueId: string,
+    unitKeys: string[],
+    games: number,
+    canPlaceGym: boolean
+  ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
   onOpenWeekend: (sessionId: string) => void
@@ -2964,6 +3513,13 @@ function BoardView({
     for (const b of blocks) out.set(b.sessionId, [...(out.get(b.sessionId) ?? []), b])
     return out
   }, [blocks])
+
+  /** The ghosts of each weekend, same reason. */
+  const ghostsBySession = useMemo(() => {
+    const out = new Map<string, GhostChip[]>()
+    for (const g of ghosts) out.set(g.sessionId, [...(out.get(g.sessionId) ?? []), g])
+    return out
+  }, [ghosts])
 
   return (
     <div className="overflow-x-auto pb-2" ref={scrollRef} data-testid="board-scroll">
@@ -3018,20 +3574,27 @@ function BoardView({
                   armed={armed}
                   armedVenue={armedVenue}
                   armedBlock={armedBlock}
+                  armedSection={armedSection}
                   placing={placing}
                   interactive={interactive}
                   flash={flashSessions.includes(w.sessionId)}
+                  flashUnits={flashUnits}
+                  ghosts={ghostsBySession.get(w.sessionId) ?? EMPTY_GHOSTS}
                   courtCaps={courtCaps}
                   strandedKeys={strandedAt.get(w.sessionId) ?? EMPTY_KEYS}
                   poolGyms={poolOn(w.sessionId)}
+                  roomsFor={(used) => roomsOn(w.sessionId, used)}
                   onArm={onArm}
                   onArmBlock={onArmBlock}
+                  onArmSection={onArmSection}
                   onMove={onMove}
                   onMoveBlock={onMoveBlock}
+                  onMoveSection={onMoveSection}
                   onRemove={onRemove}
                   onSwitchGym={onSwitchGym}
                   onDrop={onDrop}
                   onDropVenue={onDropVenue}
+                  onDropSection={onDropSection}
                   onPlaceVenue={onPlaceVenue}
                   onCorrectCourts={onCorrectCourts}
                   onOpenWeekend={onOpenWeekend}
@@ -3121,20 +3684,27 @@ function WeekendCard({
   armed,
   armedVenue,
   armedBlock,
+  armedSection,
   placing,
   interactive,
   flash,
+  flashUnits,
+  ghosts,
   courtCaps,
   strandedKeys,
   poolGyms,
+  roomsFor,
   onArm,
   onArmBlock,
+  onArmSection,
   onMove,
   onMoveBlock,
+  onMoveSection,
   onRemove,
   onSwitchGym,
   onDrop,
   onDropVenue,
+  onDropSection,
   onPlaceVenue,
   onCorrectCourts,
   onOpenWeekend,
@@ -3164,10 +3734,17 @@ function WeekendCard({
   armed: Armed | null
   armedVenue: string | null
   armedBlock: ArmedBlock | null
+  /** A whole gym section picked up, waiting for a building or a weekend. */
+  armedSection: ArmedSection | null
   placing: boolean
   interactive: boolean
   /** The rail just sent somebody here. */
   flash: boolean
+  /** The grades that just landed here, keyed "<sessionId>|<unitKey>" (owner
+   *  ruling 2026-08-05, #3a): the chip itself wears the mark, not only its card. */
+  flashUnits: string[]
+  /** "Grade 8 was here", for the grades that just left this weekend. */
+  ghosts: GhostChip[]
   courtCaps: Record<string, number>
   /** Grades on THIS weekend whose building this plan no longer has (owner ruling
    *  2026-08-05, #4). Their games are already in the dashed block below; this is
@@ -3176,14 +3753,34 @@ function WeekendCard({
   /** The pool gyms this weekend actually holds, for the stranded block's own
    *  prompt. */
   poolGyms: Array<{ venueId: string; short: string }>
+  /** WHERE A GRADE COULD GO on this weekend, given what each building is already
+   *  holding (owner ruling 2026-08-05, #2). The card knows the usage; the board
+   *  knows the plan's whole world, so it answers. */
+  roomsFor: (used: Record<string, number>) => BuildingRoom[]
   onArm: (a: Armed | null) => void
   onArmBlock: (block: ArmedBlock | null) => void
+  onArmSection: (section: ArmedSection | null) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onMoveBlock: (unitKeys: string[], from: string, to: string) => void
+  onMoveSection: (
+    unitKeys: string[],
+    from: string,
+    to: string,
+    toVenueId: string | null
+  ) => void
   onRemove: (unitKey: string, from: string) => void
   onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
+  onDropSection: (
+    e: React.DragEvent,
+    sessionId: string,
+    windowLabel: string,
+    venueId: string,
+    unitKeys: string[],
+    games: number,
+    canPlaceGym: boolean
+  ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
   onOpenWeekend: (sessionId: string) => void
@@ -3228,23 +3825,38 @@ function WeekendCard({
   const gamesAt = new Map(gyms.sections.map((s) => [s.venueId, s.games]))
 
   /**
-   * WHERE A GRADE COULD ACTUALLY GO (owner ruling 2026-08-05). The switch is
-   * offered only when the gym on the other end has room for this grade this
-   * weekend. Otherwise it is not drawn at all: a disabled arrow with no reason
-   * on it is a mistake path with a mystery attached.
+   * WHERE A GRADE COULD ACTUALLY GO (owner rulings 2026-08-05, #2 and #1).
+   *
+   * The switch is offered where the building on the other end could HOLD this
+   * grade — the home gym with room left, a pool building we could rent more of,
+   * or a backup gym the operator is willing to assert. It used to test the courts
+   * this calendar already rents, which are demand-sized, so every destination read
+   * full after the first move and the arrow quietly disappeared.
+   *
+   * Where nothing has room it is still not drawn at all: a disabled arrow with no
+   * reason on it is a mistake path with a mystery attached.
    */
-  const switchTarget = (venueId: string | null, games: number) => {
-    const list = weekend.venues
-    if (list.length < 2) return null
-    const at = list.findIndex((v) => v.venueId === venueId)
+  const rooms = roomsFor(Object.fromEntries(gamesAt))
+  /** The next building along with room in it, wrapping round from where this
+   *  grade sits now. A gym the plan HAS is always offered before a backup: the
+   *  backup costs a phone call and a booking, so it is the answer only when
+   *  nothing the league already holds can take the grade. */
+  const nextWithRoom = (list: BuildingRoom[], venueId: string | null, games: number) => {
+    if (list.length === 0) return null
+    const at = list.findIndex((r) => r.venueId === venueId)
     for (let i = 1; i <= list.length; i++) {
-      const venue = list[(at + i + list.length) % list.length]
-      if (!venue || venue.venueId === venueId) continue
-      const used = gamesAt.get(venue.venueId) ?? 0
-      if (venue.capacityGames - used >= games) return venue
+      const room = list[(at + i + list.length) % list.length]
+      if (!room || room.venueId === venueId) continue
+      if (room.freeGames >= games) return room
     }
     return null
   }
+  const switchTarget = (venueId: string | null, games: number): BuildingRoom | null =>
+    nextWithRoom(
+      rooms.filter((r) => !r.backup),
+      venueId,
+      games
+    ) ?? nextWithRoom(rooms.filter((r) => r.backup), venueId, games)
 
   /**
    * WHAT THIS WEEKEND RENTS, and what it has nowhere to put (owner ruling
@@ -3267,6 +3879,23 @@ function WeekendCard({
     load.capacity > 0 &&
     armedBlock?.window === windowLabel &&
     armedBlock?.sessionId !== weekend.sessionId
+  /** A whole section is picked up and this weekend is one it could land on:
+   *  the same month, and not the weekend it is already on (owner ruling
+   *  2026-08-05, #4). Whether it FITS is answered when it lands, in one place,
+   *  with the refusal naming what would. */
+  const canTakeSection =
+    Boolean(armedSection) &&
+    interactive &&
+    load.capacity > 0 &&
+    armedSection?.window === windowLabel &&
+    armedSection?.sessionId !== weekend.sessionId
+  /** The grades that just left this weekend, by the gym they left. */
+  const ghostsAt = (venueId: string | null) =>
+    ghosts.filter((g) => (venueId === null ? g.venueId === null : g.venueId === venueId))
+  /** Ghosts whose gym is gone from the card, so they still have somewhere to sit. */
+  const orphanGhosts = ghosts.filter(
+    (g) => g.venueId !== null && !gyms.sections.some((s) => s.venueId === g.venueId)
+  )
 
   /** One grade, wherever it sits: in a gym section, or with no gym at all. */
   const chipFor = (key: string, venueId: string | null) => {
@@ -3293,9 +3922,15 @@ function WeekendCard({
         weekendLabel={weekend.label}
         armed={armed}
         interactive={interactive}
+        // THE CHIP THAT MOVED (owner ruling 2026-08-05, #3a).
+        flash={flashUnits.includes(`${weekend.sessionId}|${key}`)}
         onArm={onArm}
         onRemove={() => onRemove(key, weekend.sessionId)}
-        switchTo={next ? { venueId: next.venueId, short: venueShortName(next.name) } : undefined}
+        switchTo={
+          next
+            ? { venueId: next.venueId, short: venueShortName(next.name), backup: next.backup }
+            : undefined
+        }
         onSwitchGym={next ? () => onSwitchGym(weekend.sessionId, key, next.venueId) : undefined}
         diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
         // Comparing is a live question about this grade, and the answer is a
@@ -3320,7 +3955,14 @@ function WeekendCard({
     <div
       onClick={(e) => {
         e.stopPropagation()
-        if (armedBlock && canTakeBlock)
+        if (armedSection && canTakeSection)
+          onMoveSection(
+            armedSection.unitKeys,
+            armedSection.sessionId,
+            weekend.sessionId,
+            null
+          )
+        else if (armedBlock && canTakeBlock)
           onMoveBlock(armedBlock.unitKeys, armedBlock.sessionId, weekend.sessionId)
         else if (armed && canTakeArmed)
           onMove(armed.unitKey, armed.fromSessionId, weekend.sessionId)
@@ -3333,7 +3975,7 @@ function WeekendCard({
       data-session-id={weekend.sessionId}
       data-flash={flash ? "1" : undefined}
       className={`mb-2.5 rounded-xl border px-2.5 py-2 shadow-sm ${CARD_TONE[tone]} ${
-        canTakeArmed || canTakeBlock ? "ring-play-400 ring-2" : ""
+        canTakeArmed || canTakeBlock || canTakeSection ? "ring-play-400 ring-2" : ""
       } ${
         flash
           ? "outline-play-500 outline outline-2 outline-offset-2 motion-safe:transition-all"
@@ -3448,6 +4090,20 @@ function WeekendCard({
                 ? ("over" as const)
                 : ("fits" as const)
               : fractionTone(section.games, held)
+          /** This section is armed and looking for somewhere: is THIS the place?
+           *  Another building on this weekend, or this building on another
+           *  weekend of the same month (owner ruling 2026-08-05, #4). */
+          const takesSection =
+            Boolean(armedSection) &&
+            interactive &&
+            armedSection?.window === windowLabel &&
+            !(
+              armedSection?.sessionId === weekend.sessionId &&
+              armedSection?.venueId === section.venueId
+            )
+          const armedHere =
+            armedSection?.sessionId === weekend.sessionId &&
+            armedSection?.venueId === section.venueId
           return (
             <div
               key={section.venueId}
@@ -3456,28 +4112,117 @@ function WeekendCard({
               data-role={section.role}
               data-status={status ?? undefined}
               // A rented section is a place to put a gym: dropping one here
-              // moves this block into that building.
+              // moves this block into that building. It is also where a whole
+              // section lands.
               onClick={
-                takesGym && armedVenue
+                takesSection && armedSection
                   ? (e) => {
                       e.stopPropagation()
-                      onPlaceVenue(weekend.sessionId, armedVenue, section.unitKeys, games)
+                      onMoveSection(
+                        armedSection.unitKeys,
+                        armedSection.sessionId,
+                        weekend.sessionId,
+                        section.venueId
+                      )
                     }
-                  : undefined
+                  : takesGym && armedVenue
+                    ? (e) => {
+                        e.stopPropagation()
+                        onPlaceVenue(weekend.sessionId, armedVenue, section.unitKeys, games)
+                      }
+                    : undefined
               }
-              onDragOver={
-                placing && section.role === "pool" ? (e) => e.preventDefault() : undefined
-              }
+              onDragOver={interactive ? (e) => e.preventDefault() : undefined}
               onDrop={
-                placing && section.role === "pool"
-                  ? (e) => onDropVenue(e, weekend.sessionId, section.unitKeys, games)
+                interactive
+                  ? (e) =>
+                      onDropSection(
+                        e,
+                        weekend.sessionId,
+                        windowLabel,
+                        section.venueId,
+                        section.unitKeys,
+                        games,
+                        // The gym you OWN is not a rental to re-let, so only a
+                        // rented section takes a gym out of the tray.
+                        section.role === "pool"
+                      )
                   : undefined
               }
               className={`border-ink-200 rounded-lg border bg-white/70 px-1.5 py-1 ${
-                takesGym ? "ring-play-400 ring-2" : ""
-              }`}
+                takesGym || takesSection ? "ring-play-400 ring-2" : ""
+              } ${armedHere ? "ring-play-500 ring-2" : ""}`}
             >
-              <div className="flex items-center gap-1.5">
+              {/* THE SECTION IS ONE THING YOU CAN PICK UP (owner-approved
+                  suggestion 2026-08-05, #4): its header is the handle, so every
+                  grade under this gym moves as one action. Drag it for a mouse;
+                  tap the grip and then tap the destination for a thumb. */}
+              <div
+                className={`flex items-center gap-1.5 ${
+                  interactive && section.unitKeys.length > 0
+                    ? "cursor-grab active:cursor-grabbing"
+                    : ""
+                }`}
+                draggable={interactive && section.unitKeys.length > 0}
+                data-testid={
+                  interactive && section.unitKeys.length > 0 ? "section-handle" : undefined
+                }
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    "text/plain",
+                    JSON.stringify({
+                      section: true,
+                      sessionId: weekend.sessionId,
+                      venueId: section.venueId,
+                      unitKeys: section.unitKeys,
+                      window: windowLabel,
+                    })
+                  )
+                }}
+              >
+                {interactive && section.unitKeys.length > 0 && (
+                  <button
+                    type="button"
+                    data-testid="section-grip"
+                    aria-pressed={Boolean(armedHere)}
+                    aria-label={`Move every grade at ${venueShortName(section.name)} on ${weekend.label}`}
+                    title={`Move all ${section.unitKeys.length} grades at ${venueShortName(section.name)}`}
+                    onClick={(e) => {
+                      /**
+                       * ONE THING IN YOUR HAND AT A TIME. Something else is
+                       * already picked up — a gym from the tray, a grade, a block,
+                       * another section — so the grip gets out of the way and lets
+                       * the section itself take the tap. Without this the grip
+                       * would sit exactly where an operator taps to put a gym
+                       * down, and it would quietly steal it.
+                       */
+                      if (armedVenue || armed || armedBlock || (armedSection && !armedHere)) return
+                      e.stopPropagation()
+                      onArmSection(
+                        armedHere
+                          ? null
+                          : {
+                              sessionId: weekend.sessionId,
+                              venueId: section.venueId,
+                              unitKeys: section.unitKeys,
+                              window: windowLabel,
+                              gym: venueShortName(section.name),
+                              weekendLabel: weekend.label,
+                            }
+                      )
+                    }}
+                    className="text-ink-400 hover:text-ink-700 -ml-0.5 inline-flex min-h-[22px] cursor-grab items-center px-0.5"
+                  >
+                    <svg viewBox="0 0 10 16" aria-hidden focusable="false" className="h-3.5 w-2">
+                      <circle cx="3" cy="4" r="1.1" fill="currentColor" />
+                      <circle cx="7" cy="4" r="1.1" fill="currentColor" />
+                      <circle cx="3" cy="8" r="1.1" fill="currentColor" />
+                      <circle cx="7" cy="8" r="1.1" fill="currentColor" />
+                      <circle cx="3" cy="12" r="1.1" fill="currentColor" />
+                      <circle cx="7" cy="12" r="1.1" fill="currentColor" />
+                    </svg>
+                  </button>
+                )}
                 <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
                 {/* The gym's NAME is the thing this row is about, so it is read
                     at 13px and truncates only once the meter is at its floor
@@ -3571,7 +4316,34 @@ function WeekendCard({
               </div>
               <div className="mt-1 flex flex-wrap items-start gap-1">
                 {chips.map((k) => chipFor(k, section.venueId))}
+                {/* WHAT WAS HERE A MOMENT AGO (owner ruling 2026-08-05, #3b). */}
+                {ghostsAt(section.venueId).map((g) => (
+                  <GhostMark key={`ghost-${g.unitKey}`} label={g.label} />
+                ))}
               </div>
+              {/* A section is armed and this building could be where it goes: the
+                  offer is written down rather than left as "tap somewhere here"
+                  (owner ruling 2026-08-05, #4). */}
+              {takesSection && armedSection && (
+                <button
+                  type="button"
+                  data-testid="move-section-into"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMoveSection(
+                      armedSection.unitKeys,
+                      armedSection.sessionId,
+                      weekend.sessionId,
+                      section.venueId
+                    )
+                  }}
+                  aria-label={`Move all ${armedSection.unitKeys.length} grades from ${armedSection.gym} into ${venueShortName(section.name)} on ${weekend.label}`}
+                  className="border-play-300 bg-play-50 text-play-700 mt-1 w-full rounded-md border border-dashed px-1.5 py-0.5 text-[10.5px] font-bold"
+                >
+                  Move {plural(armedSection.unitKeys.length, "grade", "grades")} into{" "}
+                  {venueShortName(section.name)}
+                </button>
+              )}
             </div>
           )
         })}
@@ -3653,6 +4425,17 @@ function WeekendCard({
           </div>
         )}
 
+        {/* The grades that left a gym this card no longer draws, or left with no
+            gym at all: their ghost still belongs on this weekend, because this is
+            the weekend they were on (owner ruling 2026-08-05, #3b). */}
+        {[...ghostsAt(null), ...orphanGhosts].length > 0 && (
+          <div className="flex flex-wrap items-start gap-1">
+            {[...ghostsAt(null), ...orphanGhosts].map((g) => (
+              <GhostMark key={`ghost-loose-${g.unitKey}`} label={g.label} />
+            ))}
+          </div>
+        )}
+
         {/* Where the kept calendar plays a grade this weekend and the board
             no longer does: a hole you can see, in its place. */}
         {(diff?.removed.length ?? 0) > 0 && (
@@ -3692,7 +4475,43 @@ function WeekendCard({
           Move {armed.label} here
         </button>
       )}
+
+      {/* The same offer for a whole section: one tap, every grade in it (owner
+          ruling 2026-08-05, #4). */}
+      {canTakeSection && armedSection && (
+        <button
+          type="button"
+          data-testid="move-section-here"
+          onClick={(e) => {
+            e.stopPropagation()
+            onMoveSection(armedSection.unitKeys, armedSection.sessionId, weekend.sessionId, null)
+          }}
+          aria-label={`Move all ${armedSection.unitKeys.length} grades from ${armedSection.gym} to ${weekend.label}`}
+          className="border-play-300 bg-play-50 text-play-700 mt-1.5 w-full rounded-lg border border-dashed px-2 py-1 text-[11px] font-semibold"
+        >
+          Move {plural(armedSection.unitKeys.length, "grade", "grades")} here
+        </button>
+      )}
     </div>
+  )
+}
+
+/**
+ * "GRADE 8 WAS HERE" (owner ruling 2026-08-05, #3b). A dashed outline where a
+ * grade sat until a moment ago, so a move reads as a move from both ends. It
+ * fades on its own; the fade is motion-safe, and with reduced motion it simply
+ * appears and then goes.
+ */
+function GhostMark({ label }: { label: string }) {
+  return (
+    <span
+      data-testid="move-ghost"
+      data-unit={label}
+      aria-hidden
+      className="border-ink-400 text-ink-400 inline-flex min-h-[34px] items-center rounded-lg border border-dashed px-1.5 text-[11px] font-bold motion-safe:animate-pulse"
+    >
+      {label} was here
+    </span>
   )
 }
 
@@ -4276,6 +5095,7 @@ function GradeChip({
   weekendLabel,
   armed,
   interactive,
+  flash,
   onArm,
   onRemove,
   switchTo,
@@ -4302,10 +5122,16 @@ function GradeChip({
   weekendLabel: string
   armed: Armed | null
   interactive: boolean
+  /** THIS is the grade that just moved (owner ruling 2026-08-05, #3a). It wears a
+   *  stronger mark than the card it landed on, because the card is where to look
+   *  and the chip is what happened. */
+  flash?: boolean
   onArm: (a: Armed | null) => void
   onRemove?: () => void
-  /** The next gym in fill order, when this weekend runs more than one. */
-  switchTo?: { venueId: string; short: string }
+  /** The next building with room for this grade, when this weekend has one.
+   *  `backup` means the plan has no gym time there and taking it is the
+   *  operator's own assertion (owner ruling 2026-08-05, #1). */
+  switchTo?: { venueId: string; short: string; backup?: boolean }
   onSwitchGym?: () => void
   muted?: boolean
   /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
@@ -4314,14 +5140,18 @@ function GradeChip({
   caption?: string
 }) {
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
-  // Arming is a live action, so it outranks the compare ring while it lasts.
-  const ring = isArmed
-    ? "ring-play-500 ring-2"
-    : diffTone === "agreed"
-      ? "ring-court-400 ring-1"
-      : diffTone === "changed"
-        ? "ring-gold-500 ring-1"
-        : ""
+  // Arming is a live action, so it outranks the compare ring while it lasts, and
+  // the mark on the grade that JUST MOVED outranks everything: it is the answer
+  // to "what did I just do", and it is gone in a second and a half.
+  const ring = flash
+    ? "outline-play-600 outline outline-[3px] outline-offset-1 motion-safe:transition-all"
+    : isArmed
+      ? "ring-play-500 ring-2"
+      : diffTone === "agreed"
+        ? "ring-court-400 ring-1"
+        : diffTone === "changed"
+          ? "ring-gold-500 ring-1"
+          : ""
   const ink = muted ? "text-ink-400" : (quiet ?? "text-ink-400")
   const glyph = reason ? REASON_GLYPH[reason] : undefined
   const chip = (
@@ -4333,7 +5163,10 @@ function GradeChip({
           JSON.stringify({ unitKey: unit.key, fromSessionId, window: windowLabel })
         )
       }
+      data-testid="grade-chip"
       data-diff={diffTone}
+      data-flash={flash ? "1" : undefined}
+      data-unit={unit.key}
       data-reason={reason ?? undefined}
       className={`inline-flex min-h-[34px] items-center gap-1 rounded-lg border pl-1 text-[12px] font-bold shadow-sm ${
         muted ? "border-ink-200 bg-ink-50 text-ink-500" : (tint ?? "border-ink-300 bg-white")
@@ -4402,12 +5235,21 @@ function GradeChip({
           type="button"
           data-testid="switch-gym"
           data-to={switchTo.venueId}
+          data-backup={switchTo.backup ? "1" : undefined}
           onClick={(e) => {
             e.stopPropagation()
             onSwitchGym()
           }}
-          aria-label={`Move ${unit.label} to ${switchTo.short}`}
-          title={`Move to ${switchTo.short}`}
+          aria-label={
+            switchTo.backup
+              ? `Move ${unit.label} to ${switchTo.short}, a gym this plan has not asked about`
+              : `Move ${unit.label} to ${switchTo.short}`
+          }
+          title={
+            switchTo.backup
+              ? `Move to ${switchTo.short} — your backup gym. Taking it says you have it that weekend.`
+              : `Move to ${switchTo.short}`
+          }
           className={`border-ink-300 hover:border-ink-400 hover:text-ink-900 ml-0.5 inline-flex min-h-[26px] cursor-pointer items-center rounded-md border bg-white/70 px-1 text-[11px] font-bold transition-colors hover:bg-white ${ink}`}
         >
           ⇄

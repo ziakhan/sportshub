@@ -12,6 +12,9 @@ import {
   unitIncluded,
   usableCourtCount,
   weekendChosen,
+  weekendRooms,
+  withAssertedGyms,
+  withAssertedGymsInWorld,
   withCourtBuffer,
   withGym,
   withGymCourts,
@@ -26,6 +29,7 @@ import {
   worldFromState,
   worldGyms,
   worldWeekends,
+  type BuildingRoom,
 } from "./plan-world"
 
 /**
@@ -484,6 +488,162 @@ describe("the weekends the solver is allowed to fill", () => {
     const all = withWeekendChosen(withGymOnWeekend(world(), "w-nov", "v-home", true), "w-nov", true)
     const state = planStateFrom("s1", { settings: { capturedAt: "x", state: all } }) as PlannerState
     expect(solvableState(state)).toBe(state)
+  })
+})
+
+/**
+ * WHERE A GRADE COULD ACTUALLY GO (owner rulings 2026-08-05, #2 and #1).
+ *
+ * The contract the ⇄ affordance and every group move are guarded by:
+ *
+ *  - a destination is measured against what the BUILDING could hold, never
+ *    against the courts this calendar happens to rent there. Rentals are
+ *    demand-sized, so the old reading made every destination full after one move
+ *    and the affordance vanished.
+ *  - a pool gym this plan has not asked about is still a destination, marked
+ *    `backup`, because taking it is the operator asserting they have it.
+ *  - a court correction is a real ceiling, and a gym with no hours is no room.
+ */
+describe("where a grade could go on a weekend", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  const oct = (s: PlannerState) => s.windows[0].weekends[0]
+
+  it("measures the home gym as its own capacity less what is in it", () => {
+    const state = stateOf(world())
+    const rooms = weekendRooms(state, oct(state), { "v-home": 60 })
+    const home = rooms.find((r) => r.venueId === "v-home") as BuildingRoom
+    // 3 courts × 2 days × 12 games.
+    expect(home.capacityGames).toBe(72)
+    expect(home.usedGames).toBe(60)
+    expect(home.freeGames).toBe(12)
+    expect(home.backup).toBe(false)
+  })
+
+  it("reads an attached pool gym as the WHOLE building, not the courts we rent", () => {
+    // Six Park attached with 2 of its 6 courts: 48 games attached, and a rental
+    // that size is exactly what the old guard called full.
+    const base = world()
+    const octWeekend = base.windows[0].weekends[0]
+    const rentedThin: PlanWorld = {
+      ...base,
+      windows: [
+        {
+          ...base.windows[0],
+          weekends: [
+            {
+              ...octWeekend,
+              venues: [
+                ...octWeekend.venues,
+                {
+                  venueId: "v-pool",
+                  name: "Six Park East",
+                  capacityGames: 48,
+                  role: "pool" as const,
+                  fillOrder: 1,
+                  courts: 2,
+                  courtsHeld: 0,
+                  courtDays: 4,
+                  days: 2,
+                  hoursPerCourtDay: 12,
+                },
+              ],
+            },
+            base.windows[0].weekends[1],
+          ],
+        },
+      ],
+    }
+    const state = stateOf(rentedThin)
+    const rooms = weekendRooms(state, oct(state), { "v-pool": 48 })
+    const pool = rooms.find((r) => r.venueId === "v-pool") as BuildingRoom
+    expect(pool.courts).toBe(6)
+    // 24 games a court over the weekend × 6 courts.
+    expect(pool.capacityGames).toBe(144)
+    // Full on the rental, and still 96 games of room in the building.
+    expect(pool.freeGames).toBe(96)
+    expect(pool.backup).toBe(false)
+  })
+
+  it("offers a gym the plan has never asked about, and says it is a backup", () => {
+    const state = stateOf(world())
+    const rooms = weekendRooms(state, oct(state))
+    const pool = rooms.find((r) => r.venueId === "v-pool") as BuildingRoom
+    expect(pool.backup).toBe(true)
+    // 6 courts × 2 days × 12 games at its own 08:00–20:00 hours.
+    expect(pool.capacityGames).toBe(144)
+    expect(pool.freeGames).toBe(144)
+    // The gyms the plan HAS come first, so the ⇄ walks them before a backup.
+    expect(rooms.map((r) => r.venueId)).toEqual(["v-home", "v-pool"])
+  })
+
+  it("honours a court correction as the ceiling, on an attached gym and a backup", () => {
+    const state = stateOf(withGymEveryWeekend(world(), "v-pool", true))
+    const attached = weekendRooms(state, oct(state), {}, { "w-oct|v-pool": 3 })
+    expect((attached.find((r) => r.venueId === "v-pool") as BuildingRoom).courts).toBe(3)
+    expect((attached.find((r) => r.venueId === "v-pool") as BuildingRoom).capacityGames).toBe(72)
+    const backup = stateOf(world())
+    const capped = weekendRooms(backup, oct(backup), {}, { "w-oct|v-pool": 1 })
+    const pool = capped.find((r) => r.venueId === "v-pool") as BuildingRoom
+    expect(pool.backup).toBe(true)
+    expect(pool.capacityGames).toBe(24)
+  })
+
+  it("leaves out a gym with no hours: that is an impossibility, not a room", () => {
+    const shut = withGymHours(world(), "v-pool", "10:00", "10:00")
+    const state = stateOf(shut)
+    expect(weekendRooms(state, oct(state)).map((r) => r.venueId)).toEqual(["v-home"])
+  })
+})
+
+describe("a backup gym the operator asserted", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+
+  it("puts the gym on the weekend the board is computing on, and moves capacity with it", () => {
+    const state = stateOf(world())
+    const next = withAssertedGyms(state, { "w-oct": ["v-pool"] })
+    const oct = next.windows[0].weekends[0]
+    expect(oct.venues.map((v) => v.venueId)).toEqual(["v-home", "v-pool"])
+    // 72 the league owns plus 144 it has just said it can have.
+    expect(oct.capacityGames).toBe(216)
+    expect(oct.largestVenueCapacity).toBe(144)
+    // The original is untouched: the board's world is derived, never mutated.
+    expect(state.windows[0].weekends[0].venues).toHaveLength(1)
+  })
+
+  it("turns the weekend on, because a weekend with a gym is a weekend that runs", () => {
+    const state = stateOf(world())
+    const next = withAssertedGyms(state, { "w-nov": ["v-pool"] })
+    const nov = next.windows[0].weekends[1]
+    expect(nov.chosen).toBe(true)
+    expect(nov.venues.map((v) => v.venueId)).toEqual(["v-pool"])
+    expect(nov.capacityGames).toBe(144)
+  })
+
+  it("costs nothing and changes nothing when there is nothing asserted", () => {
+    const state = stateOf(world())
+    expect(withAssertedGyms(state, {})).toBe(state)
+    expect(withAssertedGyms(state, { "w-oct": [] })).toBe(state)
+    // A gym this plan does not have at all, and a gym already on the weekend.
+    expect(withAssertedGyms(state, { "w-oct": ["v-nobody"] })).toBe(state)
+    expect(withAssertedGyms(state, { "w-oct": ["v-home"] })).toBe(state)
+  })
+
+  it("is written into the plan's own world when the plan is saved", () => {
+    const next = withAssertedGymsInWorld(world(), { "w-oct": ["v-pool"], "w-nov": ["v-pool"] })
+    const oct = weekendOf(next, "w-oct") as NonNullable<ReturnType<typeof weekendOf>>
+    const nov = weekendOf(next, "w-nov") as NonNullable<ReturnType<typeof weekendOf>>
+    expect((oct.venues ?? []).map((v) => v.venueId).sort()).toEqual(["v-home", "v-pool"])
+    expect(oct.capacityGames).toBe(216)
+    // The weekend the plan was not running is running now, with that gym on it.
+    expect(nov.chosen).toBe(true)
+    expect((nov.venues ?? []).map((v) => v.venueId)).toEqual(["v-pool"])
+    // And the board reads the saved world exactly the way it read the assertion.
+    const saved = planStateFrom("s1", {
+      settings: { capturedAt: "x", state: next },
+    }) as PlannerState
+    expect(saved.windows[0].weekends[0].capacityGames).toBe(216)
   })
 })
 

@@ -471,6 +471,27 @@ export function courtsCapacityAt(venue: PlannerVenue, courts: number): number {
 }
 
 /**
+ * WHAT THE BUILDING COULD HOLD, at N courts of it (owner ruling 2026-08-05, #2 —
+ * the switch-guard fix).
+ *
+ * courtsCapacityAt answers the same question about the courts we ALREADY rent,
+ * and clamps to them. That clamp is exactly what made every destination read
+ * full: a rental is demand-sized, so "the courts we rent" minus "the games in
+ * them" is always about nothing, and the ⇄ affordance disappeared after the
+ * first move.
+ *
+ * This one is not clamped to the attachment. It asks what the building would
+ * give if we rented more of it — which is precisely what moving a grade into it
+ * does — at the rate the weekend already runs at (its hours, its days). A gym
+ * that is SHUT still holds nothing: no hours is not a big empty building, it is
+ * a closed one.
+ */
+export function buildingCapacityAt(venue: PlannerVenue, courts: number): number {
+  if (courts <= 0 || venue.capacityGames <= 0) return 0
+  return Math.max(0, Math.floor((venue.capacityGames / courtsAt(venue)) * courts))
+}
+
+/**
  * A weekend's load against the capacity it actually commits. Same tone ladder
  * as weekendLoad — one vocabulary on this screen — read off the packed number
  * so "over" means games with no court behind them rather than games past a
