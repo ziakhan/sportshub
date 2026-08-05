@@ -703,6 +703,87 @@ describe("assignBlocksFromPool", () => {
       assignBlocksFromPool(state(), [emptyBlock("nov21", 30)])
     )
   })
+
+  /* --- fewest BOOKINGS first (owner ruling 2026-08-05) --- */
+
+  /** One weekend with two pool gyms: six courts over two days at Six Park (72
+   *  games), and a three-court hall that only opens one of the two days, so its
+   *  court-day bill is always the cheaper one (36 games). */
+  function twoPoolGyms(): PlannerState {
+    const hall = {
+      ...gymOf("hall", "Village Hall", 3, "pool"),
+      days: 1,
+      courtDays: 3,
+      capacityGames: 36,
+    }
+    return {
+      seasonId: "season",
+      units: [unit("Gr9", 36), unit("Gr10", 36)],
+      errors: [],
+      windows: [
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov21", "2026-11-21", [
+              gymOf("playground", "The Playground", 0, "home"),
+              gymOf("sixpark", "Six Park East", 6, "pool"),
+              hall,
+            ]),
+          ],
+        },
+      ],
+    }
+  }
+
+  const booked = (sessionId: string, venueId: string, games: number, courts: number) => ({
+    sessionId,
+    venueId,
+    courts,
+    days: 2,
+    courtDays: courts * 2,
+    hoursNeeded: courts * 2 * 9,
+    games,
+    unitKeys: ["age:Gr9"],
+  })
+
+  it("makes the booking the weekend already has bigger instead of opening a second", () => {
+    // Three courts of Six Park are already going; the gap is another three. The
+    // hall is the cheaper court-day bill (3 against 6), so the old rule took it
+    // — two 3-court sessions, two phone calls. One 6-court booking is the answer
+    // now (owner: "make it as big as possible").
+    const chosen = assignBlocksFromPool(twoPoolGyms(), [
+      booked("nov21", "sixpark", 36, 3),
+      { ...emptyBlock("nov21", 36), unitKeys: ["age:Gr10"] },
+    ])
+    expect(chosen.nov21).toEqual({
+      venueId: "sixpark",
+      courts: 6,
+      days: 2,
+      courtDays: 12,
+      hoursNeeded: 108,
+      joins: true,
+    })
+  })
+
+  it("opens a second building rather than push one past its courts", () => {
+    // Six Park is already holding 60 of its 72 games, so the 36-game gap cannot
+    // join it: a merge past the courts is not one bigger booking, it is games
+    // with nowhere to play. The hall takes it whole instead.
+    const chosen = assignBlocksFromPool(twoPoolGyms(), [
+      booked("nov21", "sixpark", 60, 5),
+      { ...emptyBlock("nov21", 36), unitKeys: ["age:Gr10"] },
+    ])
+    expect(chosen.nov21).toMatchObject({ venueId: "hall", courts: 3, days: 1, courtDays: 3 })
+    expect(chosen.nov21.joins).toBeUndefined()
+  })
+
+  it("prefers a gym that can hold the whole gap to a cheaper one that cannot", () => {
+    // The hall is the cheaper court-day bill for 48 games (4 courts of it would
+    // be its whole building and more), but it only holds 36. An assumed answer
+    // that overflows on arrival is no answer.
+    const chosen = assignBlocksFromPool(twoPoolGyms(), [{ ...emptyBlock("nov21", 48) }])
+    expect(chosen.nov21).toMatchObject({ venueId: "sixpark", courts: 4, courtDays: 8 })
+  })
 })
 
 describe("rentalAsk: the ask with no dates in it", () => {
@@ -1431,6 +1512,249 @@ describe("proposePlan: the OLD residency dominance is gone", () => {
     const blocks = planRentalBlocks(state, plan)
     expect(blocks.filter((b) => b.sessionId === "nov14")).toHaveLength(1)
     expect(blocks.find((b) => b.sessionId === "nov14")).toMatchObject({ courts: 1, courtDays: 2 })
+  })
+})
+
+/**
+ * ONE BIG BOOKING, NOT SEVERAL SMALL ONES (owner ruling 2026-08-05):
+ *
+ *   "Just because I selected multiple weekends and Six Park is available, you
+ *    scheduled multiple smaller 2-3 court sessions on Six Park across weekends.
+ *    Make it as big as possible — they can split it later. It's a rental: two
+ *    smaller sessions on different weekends should combine into one bigger
+ *    session on one weekend."
+ *
+ * A booking is one rented building on one weekend, and it costs 25,000 —
+ * between a weekend (100,000) and a court-day (1,000). So the search gathers a
+ * month's rental onto as few weekends as its rooms allow, and never buys that
+ * shape with an extra weekend or a stranded game.
+ */
+describe("proposePlan: rentals gather onto as few weekends as the rooms allow", () => {
+  /** The owner's case, in numbers. The league owns two courts (24 games, two
+   *  grades) and can rent six at Six Park (72 games) on either of the two
+   *  weekends it chose. Nine grades of 12 games is 108, which is more than one
+   *  weekend holds, so BOTH weekends run either way — the only question left is
+   *  where the rental goes. */
+  function twoChosenWeekends(): PlannerState {
+    const gyms = () => [
+      gymOf("playground", "The Playground", 2, "home"),
+      gymOf("sixpark", "Six Park East", 6, "pool"),
+    ]
+    return {
+      seasonId: "season",
+      units: Array.from({ length: 9 }, (_, i) => unit(`Gr${i + 4}`, 12)),
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("oct17", "2026-10-17", gyms()),
+            weekend("oct31", "2026-10-31", gyms()),
+          ],
+        },
+      ],
+    }
+  }
+
+  it("books one big session instead of a small one on each weekend", () => {
+    const state = twoChosenWeekends()
+    const plan = proposePlan(state, "balance")
+    const blocks = planRentalBlocks(state, plan)
+    // ONE booking, five courts of Six Park, holding five whole grades. Under the
+    // old weights the flat answer won — 3 courts on one weekend and 2 on the
+    // other, two phone calls for the same ten court-days.
+    expect(blocks).toHaveLength(1)
+    expect(blocks[0]).toMatchObject({
+      venueId: "sixpark",
+      courts: 5,
+      days: 2,
+      courtDays: 10,
+      games: 60,
+    })
+    expect(blocks[0].unitKeys).toHaveLength(5)
+    // And the weekend that is not renting still runs its own games at home.
+    const rentingOn = blocks[0].sessionId
+    const other = rentingOn === "oct17" ? "oct31" : "oct17"
+    expect((plan[other] ?? []).length).toBeGreaterThan(0)
+  })
+
+  it("gathers the rental without stranding a game or opening a weekend", () => {
+    const state = twoChosenWeekends()
+    const plan = proposePlan(state, "balance")
+    for (const w of state.windows[0].weekends) {
+      expect(weekendDemand(state.units, w, plan[w.sessionId] ?? [])).toBeLessThanOrEqual(
+        w.capacityGames
+      )
+    }
+    // Nothing homeless, and no third weekend invented to keep the rental small.
+    expect(planRentalBlocks(state, plan).filter((b) => b.venueId === null)).toEqual([])
+    const busy = state.windows[0].weekends.filter((w) => (plan[w.sessionId] ?? []).length > 0)
+    expect(busy).toHaveLength(2)
+    // Every grade plays exactly once in the month, as always.
+    const all = state.windows[0].weekends.flatMap((w) => plan[w.sessionId] ?? [])
+    expect(all.sort()).toEqual(state.units.map((u) => u.key).sort())
+  })
+
+  it("the packer agrees with the solve: one weekend, one building", () => {
+    // The same law inside one weekend. Six cohorts spill out of the home gym
+    // and they all go to ONE pool building, rather than two buildings being
+    // opened to shave a court-day off the bill.
+    const packed = packWeekendVenues(
+      Array.from({ length: 6 }, (_, i) => unit(`Gr${i + 4}`, 12)),
+      weekend("oct17", "2026-10-17", [
+        gymOf("playground", "The Playground", 2, "home"),
+        gymOf("sixpark", "Six Park East", 6, "pool"),
+        gymOf("hall", "Village Hall", 6, "pool"),
+      ]),
+      {}
+    )
+    const rentals = packed.blocks.filter((b) => b.venueId)
+    expect(rentals).toHaveLength(1)
+    expect(rentals[0]).toMatchObject({ courts: 4, courtDays: 8 })
+    expect(packed.overflow).toBe(0)
+  })
+
+  it("is deterministic: the same month gathers the same way twice", () => {
+    expect(proposePlan(twoChosenWeekends(), "balance")).toEqual(
+      proposePlan(twoChosenWeekends(), "balance")
+    )
+  })
+})
+
+/**
+ * NO BACK-TO-BACK WEEKENDS (owner ruling 2026-08-05): a grade must not play two
+ * adjacent Saturdays, and the month boundary is not an excuse — Oct 31 then
+ * Nov 7 is two weekends in a row to the family driving to both.
+ *
+ * It is ranked at 10,000: under a booking (25,000), a weekend (100,000) and
+ * overflow (1,000,000), over every tiebreak beneath it. So the solver takes the
+ * far weekend whenever there is one, and plays the near one rather than rent a
+ * building, run an extra Saturday or strand a game.
+ */
+describe("proposePlan: no back-to-back weekends", () => {
+  const home = () => gymOf("playground", "The Playground", 4, "home") // 48 games
+
+  it("crosses the month boundary: Oct 31 then Nov 7 lands on Nov 21", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 12), unit("Gr8", 12)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct31", "2026-10-31", [home()])] },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov07", "2026-11-07", [home()]),
+            weekend("nov21", "2026-11-21", [home()]),
+          ],
+        },
+      ],
+    }
+    const plan = proposePlan(state, "balance")
+    expect((plan.oct31 ?? []).sort()).toEqual(["age:Gr7", "age:Gr8"])
+    // Both weekends of November are free and hold the whole month, so nothing
+    // but the spacing decides — and the next Saturday is not the answer.
+    expect(plan.nov07).toEqual([])
+    expect((plan.nov21 ?? []).sort()).toEqual(["age:Gr7", "age:Gr8"])
+  })
+
+  it("never rents a building to get the gap", () => {
+    // Nov 7 is the league's own gym and free; Nov 21 is a hall it would have to
+    // book. Playing two Saturdays running is the cheaper answer, so it wins.
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 12), unit("Gr8", 12)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct31", "2026-10-31", [home()])] },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov07", "2026-11-07", [home()]),
+            weekend("nov21", "2026-11-21", [gymOf("hall", "Village Hall", 4, "pool")]),
+          ],
+        },
+      ],
+    }
+    const plan = proposePlan(state, "balance")
+    expect((plan.nov07 ?? []).sort()).toEqual(["age:Gr7", "age:Gr8"])
+    expect(plan.nov21).toEqual([])
+    expect(planRentalBlocks(state, plan)).toEqual([])
+  })
+
+  it("never opens an extra weekend, or strands a game, to get the gap", () => {
+    // The far weekend holds one grade of the two. Splitting the month across
+    // both Saturdays would spare one grade the back-to-back and cost a whole
+    // weekend, which is four times the price; putting both on the far weekend
+    // would strand 24 games.
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 24), unit("Gr8", 24)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct31", "2026-10-31", [home()])] },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov07", "2026-11-07", [home()]),
+            weekend("nov21", "2026-11-21", [gymOf("playground", "The Playground", 2, "home")]),
+          ],
+        },
+      ],
+    }
+    const plan = proposePlan(state, "balance")
+    expect((plan.nov07 ?? []).sort()).toEqual(["age:Gr7", "age:Gr8"])
+    expect(plan.nov21).toEqual([])
+    for (const w of state.windows[1].weekends) {
+      expect(weekendDemand(state.units, w, plan[w.sessionId] ?? [])).toBeLessThanOrEqual(
+        w.capacityGames
+      )
+    }
+  })
+
+  it("plays the next Saturday when it is the only one the month runs", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 12)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct31", "2026-10-31", [home()])] },
+        { label: "Nov 2026", weekends: [weekend("nov07", "2026-11-07", [home()])] },
+      ],
+    }
+    expect(proposePlan(state, "balance").nov07).toEqual(["age:Gr7"])
+  })
+
+  it("the greedy fallback keeps the gap too", () => {
+    // 13 grades over 3 weekends is past the exact search (3^13), so this is the
+    // greedy path: it fits first, fills a weekend already in use second, and
+    // only then keeps off the Saturday after the one October ended on.
+    const units = Array.from({ length: 13 }, (_, i) => unit(`Gr${i + 4}`, 6))
+    const state: PlannerState = {
+      seasonId: "season",
+      units,
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("oct31", "2026-10-31", [gymOf("playground", "The Playground", 20, "home")]),
+          ],
+        },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov07", "2026-11-07", [gymOf("playground", "The Playground", 20, "home")]),
+            weekend("nov21", "2026-11-21", [gymOf("playground", "The Playground", 20, "home")]),
+            weekend("nov28", "2026-11-28", [gymOf("playground", "The Playground", 20, "home")]),
+          ],
+        },
+      ],
+    }
+    const plan = proposePlan(state, "balance")
+    expect(plan.nov07).toEqual([])
+    const all = state.windows[1].weekends.flatMap((w) => plan[w.sessionId] ?? [])
+    expect(all.sort()).toEqual(units.map((u) => u.key).sort())
   })
 })
 

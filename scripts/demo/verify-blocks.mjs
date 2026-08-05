@@ -123,6 +123,43 @@ ok(
   `${plannerRes?.blocks?.length ?? 0} blocks · ${plannerRes?.ask?.season?.courtDays ?? "?"} court-days`
 )
 
+/* ---- ONE BIG BOOKING, and no back-to-back weekends (owner rulings 2026-08-05).
+        Both read off the proposal the solver just made on the owner's own world,
+        which has several chosen weekends a month and Six Park free on most of
+        them: exactly the case that used to come back as a 2-court session on
+        every Saturday. Read-only — a propose writes nothing. ---- */
+const askMonths = proposal?.ask?.months ?? []
+const spreadMonths = askMonths.filter((m) => (m.weekendsNeedingRent ?? 0) > 1)
+ok(
+  "a month's rental lands on ONE weekend, as big as the rooms allow",
+  askMonths.length > 0 && spreadMonths.length === 0,
+  askMonths.map((m) => `${m.label}: ${m.chunks}`).join(" · ") || "no months in the ask"
+)
+
+const weekendDates = new Map()
+for (const win of plannerRes?.state?.windows ?? []) {
+  for (const w of win.weekends ?? []) weekendDates.set(w.sessionId, w.dateISO)
+}
+const playedBy = new Map()
+for (const [sessionId, keys] of Object.entries(proposal?.assignment ?? {})) {
+  const dateISO = weekendDates.get(sessionId)
+  if (!dateISO) continue
+  for (const key of keys) playedBy.set(key, [...(playedBy.get(key) ?? []), dateISO])
+}
+const backToBack = []
+for (const [key, dates] of playedBy) {
+  const sorted = [...dates].sort()
+  for (let i = 1; i < sorted.length; i++) {
+    const days = (new Date(sorted[i]) - new Date(sorted[i - 1])) / 86400000
+    if (days <= 8) backToBack.push(`${key} ${sorted[i - 1].slice(5, 10)}→${sorted[i].slice(5, 10)}`)
+  }
+}
+ok(
+  "no grade plays two Saturdays running, month boundaries included",
+  playedBy.size > 0 && backToBack.length === 0,
+  backToBack.length ? backToBack.join(" · ") : `${playedBy.size} grades, every gap over a week`
+)
+
 /* ------------------------------- the board ------------------------------- */
 // RE-PINNED 2026-08-05 (owner rulings #1 and #2): step 3 opens on the chooser
 // with nothing selected, so the drive opens the season's own plan by hand.
@@ -246,6 +283,40 @@ await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/3-ask-sheet.png` })
 await page.locator('[data-testid="ask-sheet-toggle"]').click()
 await page.waitForTimeout(250)
+
+/* ---- a benched grade chip carries the games it would bring (owner ruling
+       2026-08-05). Working copy only: a grade is taken off its weekend so the
+       bench definitely has one, read, and put straight back with Undo. ---- */
+const benchTexts = async () =>
+  page.evaluate(() => {
+    const group = document.querySelector('[data-testid="bench-group"]')
+    if (!group) return []
+    return [...group.querySelectorAll("button[aria-pressed]")].map((b) =>
+      (b.parentElement?.textContent ?? "").replace(/\s+/g, " ").trim()
+    )
+  })
+let benched = await benchTexts()
+let benchUndos = 0
+if (benched.length === 0) {
+  const take = page.locator('button[aria-label^="Take "]').first()
+  if ((await take.count()) > 0) {
+    await take.click()
+    await page.waitForTimeout(400)
+    benchUndos += 1
+    benched = await benchTexts()
+  }
+}
+ok(
+  "a chip on the bench says how many games it would bring, like a placed one",
+  benched.length > 0 && benched.every((t) => /\d/.test(t)),
+  benched.slice(0, 4).join(" · ") || "no bench chip to read"
+)
+for (let i = 0; i < benchUndos; i++) {
+  const undo = page.locator('[data-testid="undo-last"]')
+  if ((await undo.count()) === 0) break
+  await undo.click()
+  await page.waitForTimeout(350)
+}
 
 /* --------------- make a weekend that has nowhere to play ----------------- */
 // Working copy only: a month's grades tapped onto one of its weekends. That is

@@ -787,6 +787,152 @@ export function expectedTeamUpdates(
   })
 }
 
+/* ----------------------------- WHAT THINGS COST -------------------------- */
+
+/**
+ * ONE PRICE LIST, read by both things that choose: the per-weekend packer
+ * (packWeekendVenues) and the per-window search (proposePlan). They used to
+ * score in different currencies — the packer in court-days, the search in
+ * court-days plus weekends — and a board fill could therefore disagree with a
+ * solve about the same weekend. Now they buy with the same money.
+ *
+ * The order the terms outrank each other, and WHY each gap is the size it is:
+ *
+ *   1. overflow            1,000,000 a game   a game with no court is not a plan
+ *   2. a weekend used        100,000 a weekend bundle the month up
+ *   3. A RENTAL BOOKING       25,000 a booking one big rental, not three small
+ *   4. a rented court-day      1,000 a court-day then buy the cheapest rooms
+ *   5. back-to-back weekends  10,000 a grade   never two Saturdays in a row
+ *   6. peak games                100 a game    then keep the busiest day sane
+ *   7. the two giants apart        40          then the small courtesies
+ *   8. a residency switch            5
+ *
+ * (5 sits out of numeric order on purpose: it is ranked between a booking and
+ * a court-day by INTENT — it may spend courts to separate two weekends, never a
+ * booking — and its number only has to beat the tiebreaks under it.)
+ */
+
+/**
+ * WHAT A RENTED COURT-DAY COSTS THE SEARCH (owner ruling 2026-08-03: the
+ * money is the rented courts, and consolidation outranks residency).
+ *
+ * A court-day at 1,000 beats ten games of peak (100 each), so the search will
+ * happily take a heavier weekend in the home gym over a flatter one that rents
+ * another court. Overflow stays a million a game, so nothing here can buy a
+ * game that cannot be played.
+ *
+ * This replaces the pair that used to run the score: SECOND_BUILDING_COST
+ * (150, or 1,500 under the one-gym lever) and GYM_VIOLATION_COST (25,000).
+ * The 25,000 made residency outrank everything except overflow, which is
+ * exactly the trade the owner reversed on 2026-08-03 after the NPH waste
+ * audit: 17-30 Six Park court-days a season were being rented to keep grades
+ * in the building they were used to.
+ */
+const RENTED_COURT_DAY_COST = 1_000
+
+/**
+ * WHAT A BOOKING COSTS (owner ruling 2026-08-05): "Just because I selected
+ * multiple weekends and Six Park is available, you scheduled multiple smaller
+ * 2-3 court sessions across weekends. Make it as big as possible — they can
+ * split it later. Two smaller sessions on different weekends should combine
+ * into one bigger session on one weekend."
+ *
+ * A booking is ONE rented building on ONE weekend: the phone call, the deposit,
+ * the crew, the caretaker, the sign on the door. Court-days alone could not see
+ * it — 3 courts twice and 6 courts once are the same twelve court-days — so the
+ * search kept spreading a rental thin across a month and the operator kept
+ * having to phone twice for it.
+ *
+ * WHY 25,000, between a weekend (100,000) and a court-day (1,000):
+ *  (a) At equal court-days one booking always beats two, and by a margin no
+ *      tiebreak under it can close: 25,000 is 250 games of peak and 5,000
+ *      residency switches, so a 6-court booking wins over two 3-court ones even
+ *      when consolidating doubles the busiest weekend's load.
+ *  (b) It can never buy a weekend. Splitting a rental across two Saturdays is
+ *      the only way one weekend's demand ever needs FEWER buildings, and a
+ *      weekend costs four bookings, more than any real weekend opens (no world
+ *      here has four pool gyms free on one Saturday).
+ *  (c) It can never buy an overflow: a game with no court is forty bookings.
+ *  (d) The home gym is not in it. Bookings are counted off the rental blocks,
+ *      and the building the league owns never produces one, so a weekend that
+ *      never leaves home still costs nothing at all.
+ *  (e) It outranks court-days on purpose — fewest bookings, then court-days,
+ *      then buildings — so the search will rent up to 25 extra court-days to
+ *      keep a month's rental in one place. That is the ruling: make it big, and
+ *      let the operator split it later if the gym asks them to.
+ */
+const RENTAL_BLOCK_COST = 25_000
+
+/**
+ * What a residency switch costs now: a tiebreak, and nothing more. Five is
+ * under a twentieth of one game of peak, so it can separate two answers that
+ * cost the same money and can never buy one that does not.
+ */
+const RESIDENCY_SWITCH_COST = 5
+
+/**
+ * WHAT A WEEKEND COSTS (owner ruling 2026-08-03: compact-first is the
+ * default). A month that fits on one weekend runs on one weekend. Bundling big
+ * is how a league actually wants to run — one address, one setup, one crew,
+ * families out one Saturday instead of three — and everything else is a
+ * refinement inside that shape.
+ *
+ * 100,000 puts it exactly where the ruling puts it: far under overflow (a
+ * million a game, so a weekend is never bundled into a game that cannot be
+ * played) and far over a rented court-day (1,000, so the search WILL rent
+ * courts to keep the month on one weekend). A hundred court-days would have to
+ * ride on one extra weekend before renting became the cheaper answer, and no
+ * month rents anything like that.
+ */
+const WEEKEND_USED_COST = 100_000
+
+/** The spread lever's mirror: what an IDLE weekend costs when the operator has
+ *  asked for the season laid out flat. Left where it was, because spread is
+ *  the alternative shape and not the default any more. */
+const WEEKEND_IDLE_COST = 50_000
+
+/**
+ * NO BACK-TO-BACK WEEKENDS (owner ruling 2026-08-05): a grade must not play two
+ * adjacent Saturdays, and the month boundary is not an excuse — Oct 31 then
+ * Nov 7 is the same two weekends in a row to the family driving to both.
+ *
+ * WHY 10,000, and why it is ranked where it is:
+ *  - UNDER a booking (25,000), a weekend (100,000) and overflow (1,000,000), so
+ *    separating two weekends can never open a rental, run an extra Saturday, or
+ *    strand a game. When the only free weekend is the adjacent one, the grade
+ *    plays it: a plan that runs beats a plan that is polite.
+ *  - OVER every tiebreak under it: 100 games of peak, 250 giant-courtesies,
+ *    2,000 residency switches. No grade in any real league brings 100 games to
+ *    a weekend, so moving one grade off an adjacent Saturday always wins on
+ *    peak, which is the whole point — the solver must take the far weekend when
+ *    there is one.
+ *  - It may spend court-days (1,000) to get the gap, up to ten of them. That is
+ *    deliberate: a couple of extra courts is a cheaper answer than a family
+ *    playing two Saturdays running.
+ */
+const ADJACENT_WEEKEND_COST = 10_000
+
+/** How close two weekends have to be to count as back-to-back. Eight days, so
+ *  the next Saturday (7) is caught and the one after (14) is not, whichever day
+ *  of the weekend a session happens to be dated on. */
+const ADJACENT_DAYS = 8
+
+/** Whole days between two weekend dates, or Infinity when either side is a date
+ *  nobody has ("" on a world that never had one) — an unknown date is never
+ *  called back-to-back with anything. */
+function daysApart(a: string | undefined, b: string | undefined): number {
+  if (!a || !b) return Infinity
+  const ms = Math.abs(new Date(a).getTime() - new Date(b).getTime())
+  return Number.isFinite(ms) ? ms / 86_400_000 : Infinity
+}
+
+/** Are these two weekends the same grade's two Saturdays in a row? The same
+ *  weekend twice is not: that is one weekend, however it got here. */
+function backToBack(a: string | undefined, b: string | undefined): boolean {
+  const days = daysApart(a, b)
+  return days > 0 && days <= ADJACENT_DAYS
+}
+
 /* ------------------------- which gym a grade plays in -------------------- */
 
 /**
@@ -1088,7 +1234,6 @@ export function packWeekendVenues(
     // gym already rented at four courts absorbs a small grade for nothing.
     let pick = -1
     let pickCost = Infinity
-    let pickOpen = false
     let pickResident = false
     let pickName = ""
     for (let k = 0; k < venues.length; k++) {
@@ -1096,23 +1241,24 @@ export function packWeekendVenues(
       if (venue.role !== "pool") continue
       if (remaining[k] < games) continue
       if (venue.venueId === avoid) continue
-      const cost = courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
-      const isOpen = opened[k]
+      // THE SAME MONEY THE SEARCH SCORES IN (owner ruling 2026-08-05): a
+      // building this weekend has not opened yet is a whole booking, and the
+      // court-days inside it are the smaller number. So a cohort joins the
+      // rental the weekend already has rather than open a second address to
+      // save a court-day, and one weekend's answer is as few, as big bookings
+      // as its rooms allow.
+      const marginal = courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
+      const cost = marginal * RENTED_COURT_DAY_COST + (opened[k] ? 0 : RENTAL_BLOCK_COST)
       const isResident = wasIndex === k
       const better =
         cost < pickCost ||
-        // Same money: keep the buildings count down, then honour residency,
-        // then the gym whose name sorts first, so the answer never wobbles.
+        // Same money: honour residency, then the gym whose name sorts first, so
+        // the answer never wobbles.
         (cost === pickCost &&
-          (isOpen !== pickOpen
-            ? isOpen
-            : isResident !== pickResident
-              ? isResident
-              : venue.name.localeCompare(pickName, "en") < 0))
+          (isResident !== pickResident ? isResident : venue.name.localeCompare(pickName, "en") < 0))
       if (pick < 0 || better) {
         pick = k
         pickCost = cost
-        pickOpen = isOpen
         pickResident = isResident
         pickName = venue.name
       }
@@ -1575,6 +1721,24 @@ function carryResidency(
 }
 
 /**
+ * WHEN each grade last played, carried forward the same way its building is
+ * (owner ruling 2026-08-05, no back-to-back weekends). Mutates `lastPlayed`, and
+ * walks in date order so a month with several weekends leaves the LATEST one
+ * behind — that is the Saturday the next month has to keep its distance from.
+ */
+function carryLastPlayed(
+  weekends: PlannerWeekend[],
+  assignment: Record<string, string[]>,
+  lastPlayed: Record<string, string>
+): void {
+  const inOrder = [...weekends].sort((a, b) => String(a.dateISO).localeCompare(String(b.dateISO)))
+  for (const w of inOrder) {
+    if (!w.dateISO) continue
+    for (const key of assignment[w.sessionId] ?? []) lastPlayed[key] = w.dateISO
+  }
+}
+
+/**
  * The whole season's buildings: sessionId → (unit key → venueId).
  *
  * Walks the calendar once, in order, so residency is real — a grade's gym in
@@ -1794,13 +1958,18 @@ export interface AssignBlocksOptions {
 }
 
 /** One weekend's answer: which pool gym takes the empty block, and how many
- *  courts of it. */
+ *  courts of it. When the answer JOINS a booking this weekend already has, the
+ *  numbers are the whole merged booking — one bigger rental is the answer, and
+ *  that is the number somebody phones the gym with. */
 export interface BlockAssignment {
   venueId: string
   courts: number
   days: number
   courtDays: number
   hoursNeeded: number
+  /** The pick is a building this weekend already rents, so filling this gap
+   *  makes that booking bigger instead of opening a second one. */
+  joins?: boolean
 }
 
 /**
@@ -1809,10 +1978,15 @@ export interface BlockAssignment {
  *
  * Only blocks with no venue are answered; a block that already names a
  * building is the solver's or the operator's answer and is left alone. The
- * pool is unordered, so the choice is pure cost: fewest rented court-days
- * first, then the building the weekend has already opened (one more cohort in
- * a gym we are already renting beats a second address), then the gym whose
- * name sorts first so two equal answers never wobble.
+ * pool is unordered, so the choice is pure cost, in the order the price list
+ * ranks it (owner ruling 2026-08-05): FEWEST BOOKINGS first — a gap that can go
+ * into the building this weekend already rents makes that one booking bigger
+ * rather than opening a second address — then fewest rented court-days, then
+ * the gym whose name sorts first so two equal answers never wobble.
+ *
+ * Joining is only offered where the building can really hold both, because a
+ * merge past its courts is not one bigger booking, it is spill: consolidation
+ * must never manufacture a game with no court.
  *
  * Availability is honoured by construction: a weekend's `venues` are only the
  * gyms that are attached and not blocked out, which is what the season's
@@ -1833,24 +2007,49 @@ export function assignBlocksFromPool(
     const here = blocks.filter((b) => b.sessionId === w.sessionId)
     const empty = here.find((b) => b.venueId === null)
     if (!empty || empty.games <= 0) continue
-    const taken = new Set(here.map((b) => b.venueId).filter((id): id is string => Boolean(id)))
+    /** Games this weekend already sends to each building it rents, so a merge
+     *  can be priced as what it really adds — and refused where the building
+     *  cannot hold both. */
+    const already = new Map<string, number>()
+    for (const b of here) {
+      if (!b.venueId) continue
+      already.set(b.venueId, (already.get(b.venueId) ?? 0) + b.games)
+    }
 
     let pick: PlannerVenue | null = null
     let pickCost = Infinity
+    let pickJoins = false
+    let pickFits = false
     for (const venue of orderedVenues(w.venues)) {
       if (venue.role !== "pool") continue
       if (excluded.has(venue.venueId)) continue
-      const cost = courtDaysNeeded(venue, empty.games)
-      const better =
-        cost < pickCost ||
-        (cost === pickCost && pick != null && taken.has(venue.venueId) && !taken.has(pick.venueId))
+      const held = already.get(venue.venueId) ?? 0
+      // Can this building really take the gap on top of what it is already
+      // holding? An assumed answer that overflows the moment it lands is not an
+      // answer, and a merge past the courts is spill rather than one bigger
+      // booking. When nothing fits, the cheapest gym still gives the operator a
+      // number to phone with.
+      const fits = held + empty.games <= venue.capacityGames
+      const joins = fits && held > 0
+      const cost = joins
+        ? courtDaysNeeded(venue, held + empty.games) - courtDaysNeeded(venue, held)
+        : courtDaysNeeded(venue, empty.games)
+      // A gym that can hold it first, then fewest bookings, then the court-days.
+      // orderedVenues is stable, so the first gym to reach a cost keeps it and
+      // two equal answers never wobble.
+      const better = fits !== pickFits ? fits : joins !== pickJoins ? joins : cost < pickCost
       if (!pick || better) {
         pick = venue
         pickCost = cost
+        pickJoins = joins
+        pickFits = fits
       }
     }
     if (!pick) continue
-    const courts = courtsNeeded(pick, empty.games)
+    // A merge is quoted as the WHOLE booking: the gym is being asked for one
+    // rental of this size, not for two that happen to share an address.
+    const games = pickJoins ? (already.get(pick.venueId) ?? 0) + empty.games : empty.games
+    const courts = courtsNeeded(pick, games)
     const days = daysAt(pick)
     out[w.sessionId] = {
       venueId: pick.venueId,
@@ -1858,6 +2057,7 @@ export function assignBlocksFromPool(
       days,
       courtDays: courts * days,
       hoursNeeded: courts * days * (pick.hoursPerCourtDay ?? 0),
+      ...(pickJoins ? { joins: true } : {}),
     }
   }
   return out
@@ -1976,65 +2176,15 @@ export function rentalAsk(state: PlannerState, blocks: RentalBlock[]): RentalAsk
 }
 
 /**
- * WHAT A RENTED COURT-DAY COSTS THE SEARCH (owner ruling 2026-08-03: the
- * money is the rented courts, and consolidation outranks residency).
- *
- * It is the dominant term under feasibility. A court-day at 1,000 beats ten
- * games of peak (100 each), so the search will happily take a heavier weekend
- * in the home gym over a flatter one that rents another court. Overflow stays
- * a million a game, so nothing here can buy a game that cannot be played.
- *
- * This replaces the pair that used to run the score: SECOND_BUILDING_COST
- * (150, or 1,500 under the one-gym lever) and GYM_VIOLATION_COST (25,000).
- * The 25,000 made residency outrank everything except overflow, which is
- * exactly the trade the owner reversed on 2026-08-03 after the NPH waste
- * audit: 17-30 Six Park court-days a season were being rented to keep grades
- * in the building they were used to.
- */
-const RENTED_COURT_DAY_COST = 1_000
-
-/**
- * What a residency switch costs now: a tiebreak, and nothing more. Five is
- * under a twentieth of one game of peak, so it can separate two answers that
- * cost the same money and can never buy one that does not.
- */
-const RESIDENCY_SWITCH_COST = 5
-
-/**
- * WHAT A WEEKEND COSTS (owner ruling 2026-08-03: compact-first is the
- * default). A month that fits on one weekend runs on one weekend. Bundling big
- * is how a league actually wants to run — one address, one setup, one crew,
- * families out one Saturday instead of three — and everything else is a
- * refinement inside that shape.
- *
- * 100,000 puts it exactly where the ruling puts it: far under overflow (a
- * million a game, so a weekend is never bundled into a game that cannot be
- * played) and far over a rented court-day (1,000, so the search WILL rent
- * courts to keep the month on one weekend). A hundred court-days would have to
- * ride on one extra weekend before renting became the cheaper answer, and no
- * month rents anything like that.
- */
-const WEEKEND_USED_COST = 100_000
-
-/** The spread lever's mirror: what an IDLE weekend costs when the operator has
- *  asked for the season laid out flat. Left where it was, because spread is
- *  the alternative shape and not the default any more. */
-const WEEKEND_IDLE_COST = 50_000
-
-/**
  * Deterministic per-window search. Every unit appears exactly once per
  * window (NPH's real rule: each grade plays one weekend per monthly
  * session). Overflow is forbidden when any overflow-free assignment
  * exists; ties break toward the two largest units on different weekends.
  *
- * THE OBJECTIVE, in the order the terms outrank each other (owner ruling
- * 2026-08-03):
- *   1. overflow          1,000,000 a game — a game with no court is not a plan
- *   2. weekends used       100,000 a weekend — bundle the month up
- *   3. rented court-days     1,000 a court-day — then buy the cheapest rooms
- *   4. peak games              100 a game — then keep the busiest day sane
- *   5. the two giants apart       40 — then the small courtesies
- *   6. residency switch            5
+ * THE OBJECTIVE is the price list above (§WHAT THINGS COST), in the order those
+ * terms outrank each other: overflow, then weekends used, then RENTAL BOOKINGS,
+ * then rented court-days, then back-to-back weekends, then peak games, then the
+ * two giants apart, then residency.
  *
  * Levers:
  *  - balance: THE DEFAULT, and since 2026-08-03 it means compact-first —
@@ -2048,9 +2198,14 @@ const WEEKEND_IDLE_COST = 50_000
  *    every solve, so "pack one gym" is what the search already does.
  *
  * Rentals are the score, not an afterthought: every candidate is really packed
- * into buildings (packWeekendVenues), and a month pays 1,000 for every court-
- * day it rents. Months are decided in calendar order, so October's answer
- * shapes November's residency and never the other way round.
+ * into buildings (packWeekendVenues), and a month pays 25,000 for every
+ * building-weekend it books plus 1,000 for every court-day inside it. That
+ * booking term is what makes a month's rental gather onto as few weekends as its
+ * rooms allow (owner ruling 2026-08-05) instead of thinning out into a 3-court
+ * session on every Saturday the operator happened to choose.
+ *
+ * Months are decided in calendar order, so October's answer shapes November's
+ * residency AND November's spacing, never the other way round.
  */
 export function proposePlan(state: PlannerState, lever: PlannerLever): Record<string, string[]> {
   const units = state.units.filter((u) => u.teams > 0)
@@ -2064,6 +2219,11 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
   // settled. A window scores against THIS snapshot: no weekend of a month
   // feeds residency back into another weekend of the same month.
   const resident: Record<string, string> = {}
+  // And WHEN each grade last played, for the same reason: the month boundary is
+  // where back-to-back weekends hide (Oct 31 then Nov 7), so the spacing rule
+  // needs the carry the same way residency does. A grade plays one weekend per
+  // window, so its only neighbour is the weekend the previous month gave it.
+  const lastPlayed: Record<string, string> = {}
 
   for (const win of state.windows) {
     const n = win.weekends.length
@@ -2071,6 +2231,7 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
     if (n === 1) {
       out[win.weekends[0].sessionId] = units.map((u) => u.key)
       carryResidency(unitByKey, win.weekends, out, resident)
+      carryLastPlayed(win.weekends, out, lastPlayed)
       continue
     }
     let best: number[] | null = null
@@ -2095,16 +2256,23 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
         let pickUtil = Infinity
         let pickRank = -Infinity
         let pickTie = -Infinity
+        let pickGap = false
         for (let k = 0; k < n; k++) {
           const cap = win.weekends[k].capacityGames || 1
           const add = Math.ceil((units[i].teams * win.weekends[k].targetGamesPerTeam) / 2)
+          // The spacing rule, as a filter with a fallback: a weekend that is not
+          // this grade's second Saturday in a row wins, but only after the
+          // things that decide whether the plan runs at all. When every weekend
+          // of the month is adjacent, the grade plays anyway.
+          const gap = !backToBack(lastPlayed[units[i].key], win.weekends[k].dateISO)
           if (compactFirst) {
             const room = win.weekends[k].capacityGames - loads[k]
             const fits = add <= room
             // A weekend that can hold the grade beats one that cannot; among
-            // those, a weekend already in use beats opening a new one; then the
-            // tightest fit, so the roomy weekends stay whole for what is left.
-            const rank = (fits ? 2 : 0) + (fits && loads[k] > 0 ? 1 : 0)
+            // those, a weekend already in use beats opening a new one; then a
+            // weekend that is not back-to-back; then the tightest fit, so the
+            // roomy weekends stay whole for what is left.
+            const rank = (fits ? 4 : 0) + (fits && loads[k] > 0 ? 2 : 0) + (gap ? 1 : 0)
             const tie = fits ? -(room - add) : room
             if (rank > pickRank || (rank === pickRank && tie > pickTie)) {
               pickRank = rank
@@ -2114,8 +2282,9 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
             continue
           }
           const util = (loads[k] + add) / cap
-          if (util < pickUtil) {
+          if (gap !== pickGap ? gap : util < pickUtil) {
             pickUtil = util
+            pickGap = gap
             pick = k
           }
         }
@@ -2126,6 +2295,7 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
         out[w.sessionId] = units.filter((_, i) => greedy[i] === k).map((u) => u.key)
       })
       carryResidency(unitByKey, win.weekends, out, resident)
+      carryLastPlayed(win.weekends, out, lastPlayed)
       continue
     }
     // Packing every candidate is only worth it when the RENT can actually
@@ -2136,6 +2306,12 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
       units.some((u) => u.alternate || resident[u.key] != null)
     const loads = new Array(n).fill(0)
     const buckets: PlannerUnit[][] = Array.from({ length: n }, () => [])
+    // Which weekends of this month would be a grade's second Saturday running,
+    // worked out once per grade per weekend rather than per candidate: the
+    // answer only depends on the month already settled behind it.
+    const adjacent = units.map((u) =>
+      win.weekends.map((w) => backToBack(lastPlayed[u.key], w.dateISO))
+    )
     for (let mask = 0; mask < combos; mask++) {
       let m = mask
       for (let i = 0; i < units.length; i++) {
@@ -2144,11 +2320,13 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
       }
       loads.fill(0)
       for (let k = 0; k < n; k++) buckets[k].length = 0
+      let backToBacks = 0
       for (let i = 0; i < units.length; i++) {
         loads[assign[i]] += Math.ceil(
           (units[i].teams * win.weekends[assign[i]].targetGamesPerTeam) / 2
         )
         buckets[assign[i]].push(units[i])
+        if (adjacent[i][assign[i]]) backToBacks++
       }
       let overflow = 0
       let peakGames = 0
@@ -2163,15 +2341,22 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
         if (loads[k] > cap) overflow += loads[k] - cap
         peakGames = Math.max(peakGames, loads[k])
       }
-      // What this month costs in MONEY: the court-days it rents, plus the
-      // small tiebreak for grades that changed building (owner ruling
-      // 2026-08-03 — consolidation outranks residency).
+      // What this month costs in MONEY: the BOOKINGS it has to make, the
+      // court-days inside them, and the small tiebreak for grades that changed
+      // building (owner rulings 2026-08-03 — consolidation outranks residency —
+      // and 2026-08-05 — one big rental beats two small ones).
       let venueCost = 0
       if (venueAware) {
         for (let k = 0; k < n; k++) {
           if (buckets[k].length === 0) continue
           const packed = packWeekendVenues(buckets[k], win.weekends[k], resident)
+          // A booking is one rented building on one weekend. The empty block —
+          // demand with no building at all — is not one: it is already charged
+          // as overflow, and billing it twice would let the search buy its way
+          // out of a hole by leaving games homeless.
+          const bookings = packed.blocks.reduce((sum, b) => sum + (b.venueId ? 1 : 0), 0)
           venueCost +=
+            bookings * RENTAL_BLOCK_COST +
             packed.rentedCourtDays * RENTED_COURT_DAY_COST +
             packed.violations * RESIDENCY_SWITCH_COST
         }
@@ -2179,7 +2364,7 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
       // Courts are the cost: rank by ABSOLUTE peak games (a flat 42% of a
       // huge weekend still rents more courts than a flat 74-game one).
       // Availability stays hard via overflow.
-      let score = overflow * 1_000_000 + peakGames * 100
+      let score = overflow * 1_000_000 + backToBacks * ADJACENT_WEEKEND_COST + peakGames * 100
       // Compact-first is the default now: balance, compact and one-gym are one
       // objective, and only spread asks for the season laid out flat.
       if (lever === "spread") score += (n - used) * WEEKEND_IDLE_COST
@@ -2197,6 +2382,7 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
       out[w.sessionId] = units.filter((_, i) => best![i] === k).map((u) => u.key)
     })
     carryResidency(unitByKey, win.weekends, out, resident)
+    carryLastPlayed(win.weekends, out, lastPlayed)
   }
   return out
 }

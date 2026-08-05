@@ -2986,6 +2986,13 @@ function BoardView({
         {state.windows.map((win, i) => {
           const inWindow = new Set(win.weekends.flatMap((w) => assignment[w.sessionId] ?? []))
           const missing = state.units.filter((u) => u.teams > 0 && !inWindow.has(u.key))
+          /** WHAT A BENCHED GRADE WOULD BRING (owner ruling 2026-08-05). A chip
+           *  waiting to be dragged carries the same games count as a chip
+           *  already on a weekend, read off this month's own rate — so the
+           *  number an operator is about to move is on the thing they pick up,
+           *  not only on the thing they drop. */
+          const monthRate =
+            win.weekends.find((w) => w.chosen !== false && w.capacityGames > 0) ?? win.weekends[0]
           return (
             <section
               key={win.label}
@@ -3059,6 +3066,7 @@ function BoardView({
                       <GradeChip
                         key={u.key}
                         unit={u}
+                        games={monthRate ? weekendDemand(state.units, monthRate, [u.key]) : undefined}
                         fromSessionId={null}
                         windowLabel={win.label}
                         weekendLabel="the bench"
@@ -4277,7 +4285,9 @@ function GradeChip({
   caption,
 }: {
   unit: PlannerUnit
-  /** Games this grade brings to this weekend. Absent on the bench. */
+  /** Games this grade brings. On a weekend, what it brings there; on the bench,
+   *  what it would bring to that month (owner ruling 2026-08-05 — the count is
+   *  on the chip you pick up, not only on the one you put down). */
   games?: number
   /** The gym's colour, as chip classes. */
   tint?: string
