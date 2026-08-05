@@ -38,13 +38,15 @@ const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } })
 const PLAN_URL = `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
 
-// The only confirm this drive should ever meet is "you have unsaved changes".
-// Anything else (activating a plan) is dismissed on purpose: this script must
-// never change the calendar the season runs.
+// This script must never change the calendar the season runs.
+// The only confirms this drive should ever meet are "you have unsaved changes"
+// and "redraw replaces the calendar on the board". Both are board-local and
+// write nothing. Anything else (activating a plan) is dismissed on purpose.
+const EXPECTED_DIALOGS = /throws them away|Redraw replaces the calendar/i
 page.on("dialog", async (dialog) => {
-  const discard = /throws them away/i.test(dialog.message())
-  console.log(`      dialog (${discard ? "accepted" : "DISMISSED"}): ${dialog.message()}`)
-  await (discard ? dialog.accept() : dialog.dismiss())
+  const expected = EXPECTED_DIALOGS.test(dialog.message())
+  console.log(`      dialog (${expected ? "accepted" : "DISMISSED"}): ${dialog.message()}`)
+  await (expected ? dialog.accept() : dialog.dismiss())
 })
 
 for (const p of ["/sign-in", `/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`]) {
@@ -219,9 +221,16 @@ await page.locator('[data-testid="plan-name-row"]').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/3-naming.png` })
 await page.locator('[data-testid="save-new-confirm"]').click()
-await page.waitForTimeout(1500)
+// Saving a copy is a POST, a list refresh and a document fetch. On a cold route
+// that is well past a second and a half, so this waits for the answer instead of
+// guessing at it.
+let afterSaveText = ""
+for (let i = 0; i < 40; i++) {
+  afterSaveText = (await picker.innerText().catch(() => "")).replace(/\n/g, " ")
+  if (afterSaveText.includes(DRIVE_PLAN)) break
+  await page.waitForTimeout(500)
+}
 
-const afterSaveText = (await picker.innerText()).replace(/\n/g, " ")
 ok(
   "the board is now the new plan, and the new plan does not run the season",
   afterSaveText.includes(DRIVE_PLAN) && !/active/i.test(afterSaveText),
@@ -438,6 +447,249 @@ ok(
   `${await page.locator("[data-session-id]").count()} weekends`
 )
 await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
+
+/* ==================== drawing the calendar, from empty =================== */
+/**
+ * THE THREE 2026-08-05 RULINGS ABOUT AN EMPTY BOARD:
+ *
+ *  1. a plan with weekends and gym time and no calendar leads with one button,
+ *     "Draw the calendar"; a plan with NO gym time points at step 2 instead;
+ *  2. the "gym no longer available" banner offers a re-solve and a move;
+ *  3. "Redraw calendar" is in the board header whenever the world can hold one.
+ *
+ * All of it happens inside the drive's own throwaway plan. Every write is a PATCH
+ * on that plan document — its weekends, its gyms, its calendar — and the plan is
+ * deleted at the end, which is why the season's own calendar is byte-identical.
+ */
+const stepButton = (label) => page.locator("ol button").filter({ hasText: label }).first()
+const gridColumns = async () =>
+  (
+    await page.request.get(`${BASE}/api/seasons/${SEASON}/planner/venues`).then((r) => r.json())
+  )?.grid?.weekends ?? []
+/** Every weekend the board is drawing games on, by session. */
+const playedOn = async () =>
+  page
+    .locator('[data-session-id]:has([data-testid="weekend-gym-section"])')
+    .evaluateAll((cards) => cards.map((c) => c.getAttribute("data-session-id")))
+const weekendCell = (key) => page.locator(`[data-testid="league-weekend"][data-weekend="${key}"]`)
+/** One weekend on or off in THIS PLAN, waiting for the document to say so. */
+const setWeekend = async (weekend, on) => {
+  const cell = weekendCell(weekend.key)
+  await cell.scrollIntoViewIfNeeded()
+  if ((await cell.getAttribute("data-on")) === (on ? "1" : "0")) return true
+  await cell.click()
+  for (let i = 0; i < 60; i++) {
+    if ((await cell.getAttribute("data-on")) === (on ? "1" : "0")) return true
+    await page.waitForTimeout(400)
+  }
+  return false
+}
+
+/* --- 1a. no world to solve in: the hero names the step that gives it one -- */
+const hero = page.locator('[data-testid="draw-hero"]')
+ok(
+  "a fresh plan's empty board leads with step 2, not with a button that would draw nothing",
+  (await hero.count()) === 1 &&
+    (await hero.getAttribute("data-usable")) === "0" &&
+    (await page.locator('[data-testid="world-first"]').count()) === 1 &&
+    (await page.locator('[data-testid="draw-calendar"]').count()) === 0 &&
+    // Ruling #3's button is gated on the same fact, so it is not offered either.
+    (await page.locator('[data-testid="redraw"]').count()) === 0,
+  (await hero.innerText().catch(() => "")).replace(/\n/g, " ")
+)
+await page.screenshot({ path: `${SHOTS}/8-hero-world-first.png` })
+
+/* --- 1b. give the plan a world: one weekend, and gym time to hold it ----- */
+await page.locator('[data-testid="world-first"]').click()
+await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
+ok("the hero's link lands on step 2", (await page.locator('[data-testid="league-weekends"]').count()) === 1)
+
+const columns = await gridColumns()
+const monthsWithSessions = new Map()
+for (const w of columns) {
+  if (!w.sessionId) continue
+  monthsWithSessions.set(w.month, [...(monthsWithSessions.get(w.month) ?? []), w])
+}
+// Two weekends of the SAME month, both of which the season already has: the
+// drive must never create a session, because that would be a write to the season.
+const pair = [...monthsWithSessions.values()].find((list) => list.length >= 2) ?? []
+const [firstWeekend, secondWeekend] = pair
+ok(
+  "found two weekends of one month the season already has",
+  Boolean(firstWeekend && secondWeekend),
+  pair.map((w) => `${w.month} ${w.label}`).join(" · ")
+)
+if (!firstWeekend || !secondWeekend) {
+  await browser.close()
+  process.exit(1)
+}
+
+/**
+ * GYM TIME THE PLAN CAN ACTUALLY HOLD 175 TEAMS IN. The plan's home gym runs
+ * three courts, which is 54 games a weekend against a demand of 175, so a plan
+ * running one weekend a month would be in overflow everywhere and the "move
+ * these games" half of ruling #2 could never be true. This plan says twelve.
+ *
+ * It is a PLAN-ONLY write (withGymCourts on the plan's world, PATCHed onto the
+ * plan document), which is exactly the point: the season's own gyms never move.
+ */
+const gridVenues =
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/planner/venues`).then((r) => r.json()))
+    ?.grid?.venues ?? []
+const homeGym = gridVenues.find((v) => v.role === "home") ?? gridVenues[0]
+const homeCourts = page.getByLabel(`${homeGym.name} courts`)
+await homeCourts.scrollIntoViewIfNeeded()
+await homeCourts.fill("12")
+await page.locator("button", { hasText: "Save courts" }).first().click()
+await page.waitForTimeout(1500)
+const courtsNoticed = await page.locator('[data-testid="step2-notice"]').innerText().catch(() => "")
+ok(
+  "the plan's own courts are a plan write, and the step says so",
+  /in this plan/i.test(courtsNoticed),
+  courtsNoticed.replace(/\n/g, " ")
+)
+
+ok(`${firstWeekend.label} is on in this plan`, await setWeekend(firstWeekend, true))
+const runningLine = await page.locator('[data-testid="league-weekends-count"]').innerText()
+ok("exactly one weekend is on", /^1 of /.test(runningLine.trim()), runningLine.trim())
+await page.screenshot({ path: `${SHOTS}/9-step2-one-weekend.png` })
+
+/* ------------- 1c. back on the board: one button, and it works ----------- */
+await stepButton("Your calendar").click()
+await page.waitForSelector('[data-testid="draw-hero"]', { timeout: 60000 })
+await page.waitForTimeout(600)
+ok(
+  "a plan with weekends and gym time leads with Draw the calendar",
+  (await hero.getAttribute("data-usable")) === "1" &&
+    (await page.locator('[data-testid="draw-calendar"]').count()) === 1 &&
+    (await page.locator('[data-testid="world-first"]').count()) === 0 &&
+    /Nothing is booked or saved/.test(await hero.innerText()),
+  (await hero.innerText()).replace(/\n/g, " ")
+)
+ok(
+  "and Redraw calendar is in the board header from the moment the world can hold one",
+  (await page.locator('[data-testid="redraw"]').count()) === 1,
+  await page.locator('[data-testid="redraw"]').innerText().catch(() => "")
+)
+ok("nothing is drawn yet", (await playedOn()).length === 0)
+await page.screenshot({ path: `${SHOTS}/10-hero-draw-calendar.png` })
+
+await page.locator('[data-testid="draw-calendar"]').click()
+await page.waitForTimeout(1800)
+const drawnOn = await playedOn()
+ok(
+  "the draw fills the weekend this plan chose, and no other",
+  drawnOn.length === 1 && drawnOn[0] === firstWeekend.sessionId,
+  `${drawnOn.length} weekend(s) with games: ${drawnOn.join(", ")}`
+)
+const drawNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+ok(
+  "it says what it did, and that nothing is saved",
+  /Here is the calendar/.test(drawNotice) && /Nothing is saved/.test(drawNotice),
+  drawNotice.replace(/\n/g, " ")
+)
+const drawState = await page.locator('[data-testid="plan-state"]').innerText()
+ok("the board is dirty and says so", /not saved/i.test(drawState), drawState)
+ok(
+  "the whole draw is one step on the undo stack",
+  (await page.locator('[data-testid="undo-last"]').count()) === 1 &&
+    /drawing the calendar/i.test(await page.locator('[data-testid="undo-last"]').innerText()),
+  await page.locator('[data-testid="undo-last"]').innerText().catch(() => "")
+)
+await page.screenshot({ path: `${SHOTS}/11-drawn-on-one-weekend.png` })
+
+await page.locator('[data-testid="undo-last"]').click()
+await page.waitForTimeout(1200)
+ok(
+  "one undo puts the empty calendar back, hero and all",
+  (await playedOn()).length === 0 &&
+    (await page.locator('[data-testid="draw-calendar"]').count()) === 1,
+  `${(await playedOn()).length} weekend(s) with games`
+)
+
+/* ------------- 3. redraw, from the header, over hand work ---------------- */
+await page.locator('[data-testid="draw-calendar"]').click()
+await page.waitForTimeout(1500)
+await page.locator('[data-testid="redraw"]').click()
+await page.waitForTimeout(1800)
+const redrawNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+const redrawnOn = await playedOn()
+ok(
+  "Redraw asks first, then draws the same calendar again in the same world",
+  /Redrawn from your weekends/.test(redrawNotice) &&
+    redrawnOn.length === 1 &&
+    redrawnOn[0] === firstWeekend.sessionId,
+  `${redrawNotice.replace(/\n/g, " ")} · ${redrawnOn.length} weekend(s)`
+)
+
+/* --------- 2. the world moves under a SAVED calendar: two ways out ------- */
+await page.locator('[data-testid="save-plan"]').click()
+await page.waitForTimeout(2000)
+const savedDrawn = made ? await planDoc(made.id) : null
+const savedKeys = Object.entries(savedDrawn?.assignment ?? {})
+  .filter(([, keys]) => (keys ?? []).length > 0)
+  .map(([id]) => id)
+ok(
+  "the drawn calendar saves onto the plan, on that weekend only",
+  savedKeys.length === 1 && savedKeys[0] === firstWeekend.sessionId,
+  savedKeys.join(", ") || "nothing saved"
+)
+
+// Step 2 again: this month now runs the OTHER weekend, and not the one the
+// saved calendar is on. Every game in the plan is suddenly homeless.
+await stepButton("Gyms & weekends").click()
+await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
+ok(`${secondWeekend.label} goes on in this plan`, await setWeekend(secondWeekend, true))
+ok(`${firstWeekend.label} comes off in this plan`, await setWeekend(firstWeekend, false))
+await page.screenshot({ path: `${SHOTS}/12-step2-weekend-swapped.png` })
+
+await stepButton("Your calendar").click()
+await page.waitForSelector('[data-testid="stranded-gyms"]', { timeout: 60000 })
+await page.waitForTimeout(800)
+const banner = page.locator('[data-testid="stranded-gyms"]')
+const moveButton = page.locator('[data-testid="move-stranded"]')
+ok(
+  "the gym-gone banner offers both ways out, and names the weekend the games can go to",
+  (await page.locator('[data-testid="resolve-world"]').count()) === 1 &&
+    (await moveButton.count()) === 1 &&
+    (await moveButton.innerText()).includes(secondWeekend.label) &&
+    (await moveButton.getAttribute("data-to")) === secondWeekend.sessionId,
+  `${(await banner.innerText()).replace(/\n/g, " ")}`
+)
+await page.screenshot({ path: `${SHOTS}/13-stranded-two-ways-out.png` })
+
+await moveButton.click()
+await page.waitForTimeout(1500)
+const movedOn = await playedOn()
+ok(
+  "the move lands the stranded games on that weekend, and the banner has nothing left to say",
+  movedOn.length === 1 &&
+    movedOn[0] === secondWeekend.sessionId &&
+    (await banner.count()) === 0,
+  `${movedOn.length} weekend(s): ${movedOn.join(", ")} · banner ${await banner.count()}`
+)
+ok(
+  "the move is undoable like any other move",
+  (await page.locator('[data-testid="undo-last"]').count()) === 1,
+  await page.locator('[data-testid="undo-last"]').innerText().catch(() => "")
+)
+await page.locator('[data-testid="undo-last"]').click()
+await page.waitForTimeout(1200)
+ok("undoing it strands them again", (await banner.count()) === 1)
+
+await page.locator('[data-testid="resolve-world"]').click()
+await page.waitForTimeout(1800)
+const resolvedOn = await playedOn()
+const resolveNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+ok(
+  "re-solving in this world redraws the whole calendar into the gyms it still has",
+  (await banner.count()) === 0 &&
+    resolvedOn.length === 1 &&
+    resolvedOn[0] === secondWeekend.sessionId &&
+    /Redrawn in this plan/.test(resolveNotice),
+  `${resolvedOn.join(", ")} · ${resolveNotice.replace(/\n/g, " ")}`
+)
+await page.screenshot({ path: `${SHOTS}/14-resolved-in-this-world.png` })
 
 /* ------------------- rename and delete, from the picker ------------------ */
 // Owner ruling 2026-08-05, #2: plan CRUD lives in the picker.

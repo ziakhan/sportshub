@@ -166,7 +166,7 @@ function PlanWizard() {
           ) : step === 2 ? (
             <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
           ) : step === 3 ? (
-            <CalendarStep seasonId={seasonId} onLoaded={onLoaded} />
+            <CalendarStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
           ) : step === 4 ? (
             <PublishStep seasonId={seasonId} onLoaded={onLoaded} onGoToStep={setStep} />
           ) : (

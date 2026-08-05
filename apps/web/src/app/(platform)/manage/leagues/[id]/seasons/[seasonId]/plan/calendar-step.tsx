@@ -19,11 +19,13 @@ import {
   heldBackPhrase,
   hoursPreviewSentence,
   lightestWeekendIn,
+  packPlanVenues,
   packShownPlacements,
   packedWeekendLoad,
   planCost,
   planPrice,
   planSummary,
+  proposePlan,
   railSuggestions,
   rentalAsk,
   resolveWeekendGyms,
@@ -67,6 +69,7 @@ import {
 } from "@/lib/scheduler/plan-documents"
 import {
   planStateFrom,
+  solvableState,
   strandedPlacements,
   strandedSentence,
   type StrandedPlacement,
@@ -171,6 +174,31 @@ const COPY = {
   assignPlace: "Drag a gym onto a weekend that needs one, or tap the gym and then tap the weekend.",
   nothingToFill: "Every weekend already has a building. There is nothing to fill.",
   noPool: "Your pool has no gym free on those weekends. Turn one on for them back in step 2.",
+  /**
+   * THE EMPTY BOARD LEADS WITH ONE BUTTON (owner ruling 2026-08-05, #1). A plan
+   * that has its weekends and its gym time but no calendar yet is one tap from
+   * the answer, and that tap must not be hidden behind "adjust grouping rules".
+   */
+  drawTitle: "Draw the calendar",
+  drawHint:
+    "The planner fills your chosen weekends from your gyms. Nothing is booked or saved until you say so.",
+  /** The same board with no world to solve in. The fix is a step back, not a
+   *  button here, so the hero points at step 2 instead of pretending. */
+  worldFirst: "Pick your weekends and gym time in step 2 first",
+  worldFirstHint:
+    "A plan runs the weekends you choose, in the gyms you give it. Choose those and the calendar draws itself here.",
+  worldFirstLink: "Go to step 2",
+  /** Said once the solver has answered, whichever button asked it. */
+  drawn:
+    "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Nothing is saved until you save it.",
+  redrawn:
+    "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
+  resolved:
+    "Redrawn in this plan's world, so nothing is left in a gym this plan does not have. Nothing is saved until you save it.",
+  /** Before a redraw throws away hand work. */
+  redrawConfirm:
+    "Redraw replaces the calendar on the board. Your saved plan is untouched until you save.",
+  redraw: "Redraw calendar",
 }
 
 const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }> = [
@@ -332,9 +360,14 @@ function compareLine(summary: AssignmentDiffSummary): string {
 export function CalendarStep({
   seasonId,
   onLoaded,
+  onGoToStep,
 }: {
   seasonId: string
   onLoaded?: (info: PlanHeaderInfo) => void
+  /** The wizard's own step control, so a board with no world to solve in can
+   *  send the operator back to the step that gives it one (owner ruling
+   *  2026-08-05, #1). */
+  onGoToStep?: (step: number) => void
 }) {
   /** The world the board computes in: the season's, or the plan's own saved
    *  one while a snapshot plan is open. */
@@ -448,24 +481,13 @@ export function CalendarStep({
   /** What is in the name box, or null while the box is shut. */
   const [naming, setNaming] = useState<string | null>(null)
 
-  const propose = useCallback(
-    async (lever: PlannerLever) => {
-      const res = await fetch(`/api/seasons/${seasonId}/planner/propose`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lever }),
-      }).catch(() => null)
-      if (!res?.ok) return null
-      return (await res.json()) as {
-        assignment: Record<string, string[]>
-        /** The buildings the proposal was scored on. Apply sends them back
-         *  unchanged, so what you saw is what gets saved. */
-        venues?: Record<string, Record<string, string>>
-        suggestions: PlannerSuggestion[]
-      }
-    },
-    [seasonId]
-  )
+  /**
+   * The solve lives with the other verbs now (see `drawCalendar` below). It used
+   * to POST /api/seasons/[id]/planner/propose, which rebuilds the SEASON's world
+   * on the server: correct for the plan the season runs and wrong for every
+   * other plan, which is why the levers used to be switched off on a plan-scoped
+   * board. The endpoint still exists for other callers.
+   */
 
   /**
    * ONE DOCUMENT, HELD ABOVE THE STEPS (owner ruling 2026-08-05, the staleness
@@ -579,6 +601,26 @@ export function CalendarStep({
   const board = useMemo(() => (state ? applyCourtCaps(state, courtCaps) : null), [state, courtCaps])
 
   /**
+   * IS THERE A WORLD TO SOLVE IN (owner ruling 2026-08-05, #1)? One weekend this
+   * plan runs, with some gym time on it. Capacity answers both halves in one
+   * number: a weekend the plan does not run carries no gyms, and a weekend whose
+   * gyms are shut carries no games, so either way there is nothing to fill.
+   */
+  const worldUsable = useMemo(
+    () =>
+      (board?.windows ?? []).some((win) =>
+        win.weekends.some((w) => w.chosen !== false && w.capacityGames > 0)
+      ),
+    [board]
+  )
+  /** Nothing placed anywhere. Not "no plan open": a plan whose calendar has not
+   *  been drawn yet, which is the state the hero exists for. */
+  const calendarEmpty = useMemo(
+    () => Object.values(assignment).every((keys) => (keys ?? []).length === 0),
+    [assignment]
+  )
+
+  /**
    * THE PLAN'S WORLD MOVED UNDER THE CALENDAR (owner ruling 2026-08-05, #4). The
    * operator went back to step 2 and took a gym off a weekend the calendar was
    * already using, or turned the weekend off outright.
@@ -607,6 +649,50 @@ export function CalendarStep({
     }
     return out
   }, [stranded])
+
+  /**
+   * THE ONE MOVE THE STRANDED GAMES CAN ACTUALLY TAKE (owner ruling 2026-08-05,
+   * #2). A weekend in the SAME MONTH that this plan runs and that still has room
+   * for them, because a grade plays one weekend a month and no button may offer a
+   * move the board would then refuse.
+   *
+   * One weekend at a time, deliberately: the button names the weekend it moves
+   * to, so it acts on the group it names. A second stranded weekend gets its own
+   * click, and each one is its own step on the undo stack.
+   */
+  const strandedMove = useMemo(() => {
+    if (!board || stranded.length === 0) return null
+    const groups = new Map<string, string[]>()
+    for (const s of stranded) {
+      const at = groups.get(s.sessionId) ?? []
+      if (!at.includes(s.unitKey)) at.push(s.unitKey)
+      groups.set(s.sessionId, at)
+    }
+    for (const [fromSessionId, unitKeys] of groups) {
+      const win = board.windows.find((w) =>
+        w.weekends.some((x) => x.sessionId === fromSessionId)
+      )
+      if (!win) continue
+      let best: PlannerWeekend | null = null
+      let bestRatio = Infinity
+      for (const w of win.weekends) {
+        if (w.sessionId === fromSessionId) continue
+        // No gym time is no weekend: an unchosen one reads zero, so this is the
+        // "chosen, with room" test in one number.
+        if (w.capacityGames <= 0) continue
+        const here = weekendDemand(board.units, w, gone.assignment[w.sessionId] ?? [])
+        const need = weekendDemand(board.units, w, unitKeys)
+        if (need <= 0 || here + need > w.capacityGames) continue
+        const ratio = (here + need) / w.capacityGames
+        if (ratio < bestRatio) {
+          best = w
+          bestRatio = ratio
+        }
+      }
+      if (best) return { fromSessionId, unitKeys, to: best }
+    }
+    return null
+  }, [board, stranded, gone.assignment])
 
   const shown: ShownPlacements = useMemo(
     () =>
@@ -801,33 +887,6 @@ export function CalendarStep({
         weekends: seen.get(g.venueId)?.weekends ?? 0,
       }))
   }, [gyms.order, weekendById, venueGrid])
-
-  const runLever = async (lever: PlannerLever) => {
-    setBusy(lever)
-    setError(null)
-    const result = await propose(lever)
-    setBusy(null)
-    if (!result) {
-      setError("That proposal failed. Try again.")
-      return
-    }
-    setAssignment(result.assignment)
-    setVenues(result.venues ?? {})
-    // A whole new calendar rents different weekends, so what the working copy
-    // was thinking about the old ones is not an opinion about these. The court
-    // CORRECTIONS stay: "Haber only gave us three that Saturday" is a fact
-    // about a gym, and a different calendar does not make it untrue.
-    setBlockStatus({})
-    // A whole new calendar is not a move, so it is not something to step back
-    // through one grade at a time. "Undo changes" reloads the saved plan.
-    setUndoStack([])
-    setArmed(null)
-    setArmedVenue(null)
-    setDirty(true)
-    // Straight off the solver and untouched, so a save can say so.
-    setFromLever(true)
-    setNotice(LEVERS.find((l) => l.lever === lever)?.note ?? null)
-  }
 
   /** What an hour would do, against the calendar ON SCREEN — proposal
    *  included. Read only: the endpoint rebuilds the plan on a shifted window
@@ -1469,6 +1528,88 @@ export function CalendarStep({
     )
   }
 
+  /* ------------------------ drawing a whole calendar ---------------------- */
+
+  /**
+   * THE SOLVE RUNS IN THE WORLD ON SCREEN (owner ruling 2026-08-05, #1 and #3).
+   *
+   * It used to be a POST to the season's propose endpoint, which rebuilds the
+   * SEASON's state on the server. On a plan-scoped board — a plan with its own
+   * weekends, its own gyms, its own courts and its own estimates — that answers a
+   * question nobody asked, so the levers were disabled outright and an empty plan
+   * had no way to get a calendar at all.
+   *
+   * proposePlan and packPlanVenues are pure and take a PlannerState, so the board
+   * hands them the state it is DRAWING: the plan's world with every "I don't have
+   * this" court correction already applied. One code path for the season's own
+   * world and for a plan's, and the answer always matches the numbers on screen.
+   */
+  const solveOn = (world: PlannerState, lever: PlannerLever) => {
+    // Only the weekends this plan RUNS. The world keeps the ones it did not take
+    // so the operator can see them; the solver never gets to fill them.
+    const runs = solvableState(world)
+    const assignment = proposePlan(runs, lever)
+    return { assignment, venues: packPlanVenues(runs, assignment) }
+  }
+
+  /**
+   * DRAW THE WHOLE CALENDAR. The hero on an empty board, the redraw button in the
+   * header, the stranded banner's re-solve and the lever row all land here, so
+   * every one of them behaves like any other edit: it lands on the working copy,
+   * it is one step on the undo stack, it rings the weekends it filled, and it
+   * says what it did. Nothing is written anywhere until the plan is saved.
+   *
+   * The court CORRECTIONS survive on purpose: "Haber only gave us three that
+   * Saturday" is a fact about a gym, and a different calendar does not make it
+   * untrue. What the working copy thought about the OLD weekends' bookings does
+   * not survive, because those were opinions about weekends this calendar may not
+   * even use.
+   */
+  const drawCalendar = (lever: PlannerLever, said: string, undoLabel: string) => {
+    if (!board || locked) return
+    const next = solveOn(board, lever)
+    remember(undoLabel)
+    setAssignment(next.assignment)
+    setVenues(next.venues)
+    setBlockStatus({})
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setZoomSession(null)
+    setDirty(true)
+    // Straight off the solver and untouched, so a save can honestly say so.
+    setFromLever(true)
+    flashCards(
+      ...Object.entries(next.assignment)
+        .filter(([, keys]) => keys.length > 0)
+        .map(([sessionId]) => sessionId)
+    )
+    setNotice(said)
+  }
+
+  /**
+   * THE COMPACT-FIRST SOLVE, the one every button that says "draw" or "redraw"
+   * runs. "balance" IS compact-first since the 2026-08-03 ruling (fewest weekends
+   * first, then the cheapest rentals, then the flattest peak), so this is the
+   * default answer and not a lever the operator had to find.
+   */
+  const draw = (said: string, undoLabel = "drawing the calendar") =>
+    drawCalendar("balance", said, undoLabel)
+
+  /** Redrawing over hand work is asked about first: the board is the only place
+   *  those moves exist until somebody saves them. */
+  const redraw = () => {
+    if (dirty && !window.confirm(COPY.redrawConfirm)) return
+    draw(COPY.redrawn, "redrawing the calendar")
+  }
+
+  const runLever = (lever: PlannerLever) =>
+    drawCalendar(
+      lever,
+      LEVERS.find((l) => l.lever === lever)?.note ?? COPY.redrawn,
+      "redrawing the calendar"
+    )
+
   /**
    * BREAK (owner ruling 2026-08-04). The pure core worked out the edit and its
    * price; this only lands it, the same way a drag lands, so it is one step on
@@ -1927,6 +2068,37 @@ export function CalendarStep({
                 Undo: {undoStack[undoStack.length - 1].label}
               </button>
             )}
+            {/* ALWAYS IN REACH (owner ruling 2026-08-05, #3): the whole calendar
+                back from the solver, next to the one step back, whenever a plan
+                is open and its world can hold a calendar. It asks first if the
+                board has hand work on it, and it never touches what is saved. */}
+            {planId && interactive && worldUsable && (
+              <button
+                type="button"
+                data-testid="redraw"
+                disabled={busy !== null}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  redraw()
+                }}
+                className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-100 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="h-3.5 w-3.5 shrink-0"
+                >
+                  <path d="M21 12a9 9 0 1 1-3.1-6.8" />
+                  <path d="M21 4v5h-5" />
+                </svg>
+                {COPY.redraw}
+              </button>
+            )}
             {/* Which of this season's plans the board is a copy of. Switching
                 mid-flight lives here; CHOOSING one is step 1's job. */}
             <PlanChooser
@@ -2039,6 +2211,20 @@ export function CalendarStep({
               </p>
             )}
 
+            {/* AN EMPTY CALENDAR LEADS WITH THE BUTTON (owner ruling 2026-08-05,
+                #1). A plan with weekends and gym time is one tap from its
+                calendar, so the board says so in the middle of the screen instead
+                of leaving five empty months and a row of quiet links. A plan with
+                no world to solve in points at the step that gives it one. */}
+            {calendarEmpty && interactive && !showingKept && (
+              <DrawHero
+                usable={worldUsable}
+                busy={busy !== null}
+                onDraw={() => draw(COPY.drawn)}
+                onGoToStep={onGoToStep}
+              />
+            )}
+
             {/* A GYM THIS PLAN NO LONGER HAS (owner ruling 2026-08-05, #4).
                 Loud, named, and above the calendar, because it is the reason
                 some games below have moved into the dashed block. */}
@@ -2054,6 +2240,45 @@ export function CalendarStep({
                   {strandedSentence(stranded)} Fill them from your pool, place a gym by hand, or move
                   the games.
                 </p>
+                {/* TWO WAYS OUT, AS BUTTONS (owner ruling 2026-08-05, #2): the
+                    whole calendar redrawn in the world this plan has now, or just
+                    these games sent to a weekend that month with room for them.
+                    Both are ordinary undoable edits to the working copy. */}
+                {interactive && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="resolve-world"
+                      disabled={busy !== null}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        draw(COPY.resolved, "redrawing the calendar")
+                      }}
+                      className="border-hoop-600 bg-hoop-600 hover:bg-hoop-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-[12.5px] font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Re-solve in this world
+                    </button>
+                    {strandedMove && (
+                      <button
+                        type="button"
+                        data-testid="move-stranded"
+                        data-to={strandedMove.to.sessionId}
+                        disabled={busy !== null}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          moveBlock(
+                            strandedMove.unitKeys,
+                            strandedMove.fromSessionId,
+                            strandedMove.to.sessionId
+                          )
+                        }}
+                        className="border-hoop-300 text-hoop-900 hover:border-hoop-400 hover:bg-hoop-100 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Move these games to {strandedMove.to.label}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -2364,22 +2589,21 @@ export function CalendarStep({
                           key={l.lever}
                           size="sm"
                           variant="secondary"
-                          disabled={busy !== null || onPlanWorld}
+                          disabled={busy !== null || !worldUsable}
                           onClick={() => runLever(l.lever)}
                         >
-                          {busy === l.lever ? "Working…" : l.label}
+                          {l.label}
                         </Button>
                       ))}
                     </div>
-                    {/* Said where the buttons are, not after they fail: a
-                        proposal is solved against the SEASON, so it would land
-                        on a board drawn in a different world. */}
-                    {onPlanWorld && (
-                      <p
-                        className="text-ink-400 mt-2 text-[11px]"
-                        data-testid="lever-snapshot-note"
-                      >
-                        {PLAN_COPY.leverSnapshot}
+                    {/* EVERY LEVER SOLVES IN THE WORLD ON SCREEN NOW (owner
+                        ruling 2026-08-05, #1). They used to be switched off on a
+                        plan-scoped board because the proposal came from the
+                        season; the solve is the plan's own now, so the only
+                        reason a lever cannot run is a plan with no gym time. */}
+                    {!worldUsable && (
+                      <p className="text-ink-400 mt-2 text-[11px]" data-testid="lever-no-world">
+                        {COPY.worldFirst}.
                       </p>
                     )}
                   </div>
@@ -2418,7 +2642,7 @@ export function CalendarStep({
                         className="text-ink-400 mt-2 text-[11px]"
                         data-testid="hours-snapshot-note"
                       >
-                        {PLAN_COPY.leverSnapshot}
+                        {PLAN_COPY.hoursSnapshot}
                       </p>
                     )}
                     {hoursError && (
@@ -2465,6 +2689,81 @@ export function CalendarStep({
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * THE EMPTY BOARD'S ONE BUTTON (owner ruling 2026-08-05, #1).
+ *
+ * A plan that has said when it runs and where, and has no calendar yet, is one
+ * tap from the whole answer. That tap gets the middle of the screen: a plan whose
+ * board is five empty months and a row of quiet links reads as broken, and the
+ * operator's next move is not a guess anybody should have to make.
+ *
+ * The other half is the honest version of the same screen. A plan with no chosen
+ * weekend, or with gyms that are shut on every weekend it chose, has nothing for
+ * the solver to fill, so the hero does not offer a button that would draw five
+ * empty months again. It names the step that fixes it and goes there.
+ */
+function DrawHero({
+  usable,
+  busy,
+  onDraw,
+  onGoToStep,
+}: {
+  usable: boolean
+  busy: boolean
+  onDraw: () => void
+  onGoToStep?: (step: number) => void
+}) {
+  return (
+    <div
+      data-testid="draw-hero"
+      data-usable={usable ? "1" : "0"}
+      onClick={(e) => e.stopPropagation()}
+      className="border-court-200 bg-court-50/70 mb-3 rounded-2xl border px-5 py-7 text-center"
+    >
+      {usable ? (
+        <>
+          <button
+            type="button"
+            data-testid="draw-calendar"
+            disabled={busy}
+            onClick={onDraw}
+            className="border-court-700 bg-court-600 hover:bg-court-700 inline-flex min-h-[48px] cursor-pointer items-center gap-2 rounded-xl border px-6 text-[15px] font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className="h-4 w-4 shrink-0"
+            >
+              <path d="M4 5h16v15H4z" />
+              <path d="M4 10h16M9 5V3M15 5V3" />
+            </svg>
+            {COPY.drawTitle}
+          </button>
+          <p className="text-ink-500 mx-auto mt-2.5 max-w-md text-[12.5px]">{COPY.drawHint}</p>
+        </>
+      ) : (
+        <>
+          <p className="text-ink-900 text-[15px] font-bold">{COPY.worldFirst}</p>
+          <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">{COPY.worldFirstHint}</p>
+          <button
+            type="button"
+            data-testid="world-first"
+            onClick={() => onGoToStep?.(2)}
+            className="border-court-700 bg-court-600 hover:bg-court-700 mt-3 inline-flex min-h-[40px] cursor-pointer items-center rounded-xl border px-4 text-[13px] font-bold text-white shadow-sm transition-colors"
+          >
+            {COPY.worldFirstLink}
+          </button>
+        </>
+      )}
     </div>
   )
 }

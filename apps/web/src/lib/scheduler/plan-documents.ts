@@ -594,10 +594,15 @@ export const PLAN_COPY = {
    * games go into the dashed block that needs a building, and the rail counts it.
    */
   gymGone: "Gym no longer available",
-  /** The levers solve against the season's world, so they have nothing honest
-   *  to say about a board drawn in a saved one. */
-  leverSnapshot:
-    "Levers use the season's current settings. Make this plan active, or start a new plan.",
+  /**
+   * THE HOURS GROUP IS THE SEASON'S (owner ruling 2026-08-05, #1 correction). The
+   * levers used to wear this line too, because a proposal was solved on the
+   * server against the season; the solve is the plan's own now, so only the hours
+   * chips are still season-scoped. They preview and then WRITE the gyms' real
+   * hours, which is not something a plan the season does not run may do.
+   */
+  hoursSnapshot:
+    "These read and write the season's own gym hours. Change this plan's hours in step 2, or make it the plan the season runs.",
 }
 
 /**

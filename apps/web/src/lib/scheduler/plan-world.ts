@@ -267,6 +267,33 @@ export function planStateFrom(
   }
 }
 
+/**
+ * THE WEEKENDS THE SOLVER IS ALLOWED TO FILL (owner ruling 2026-08-05, #1: "the
+ * planner fills your chosen weekends from your gyms").
+ *
+ * A plan's world deliberately keeps the weekends it did NOT take, because an
+ * operator has to be able to see the Saturday they left out. The solver must
+ * not see them: handed a weekend with no gym behind it, it would place a whole
+ * month there and hand back overflow, so a plan that runs one weekend in October
+ * would come back with games in all five months and a board full of red.
+ *
+ * So the state a solve runs on holds only the weekends this plan runs that have
+ * gym time on them, and a month with none of those is dropped whole: a month the
+ * plan does not run has no games, which is the truth rather than a failure. A
+ * world where every weekend runs comes back as the very same object, so the
+ * season's own board pays nothing for this.
+ */
+export function solvableState(state: PlannerState): PlannerState {
+  const runs = (w: PlannerWeekend) => w.chosen !== false && w.capacityGames > 0
+  if (state.windows.every((win) => win.weekends.every(runs))) return state
+  return {
+    ...state,
+    windows: state.windows
+      .map((win) => ({ ...win, weekends: win.weekends.filter(runs) }))
+      .filter((win) => win.weekends.length > 0),
+  }
+}
+
 /* ---------------------------- writing a world ---------------------------- */
 
 /** Every editor goes through here: the weekends keep their own gyms, the

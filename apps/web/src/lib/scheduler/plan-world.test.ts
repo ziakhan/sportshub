@@ -6,6 +6,7 @@ import {
   gamesPerCourtDay,
   planGridFrom,
   planStateFrom,
+  solvableState,
   strandedPlacements,
   strandedSentence,
   unitIncluded,
@@ -453,6 +454,36 @@ describe("the world moved under the calendar", () => {
     expect(result.stranded).toEqual([])
     expect(strandedSentence([])).toBeNull()
     expect(result.venues).toEqual({ "w-oct": { "age:Grade 7": "v-home" } })
+  })
+})
+
+describe("the weekends the solver is allowed to fill", () => {
+  it("keeps only the weekends the plan runs, and drops a month with none", () => {
+    const state = planStateFrom("s1", {
+      settings: { capturedAt: "x", state: world() },
+    }) as PlannerState
+    const runs = solvableState(state)
+    // The world still shows the November weekend the plan did not take; the
+    // solve does not, and November had nothing else, so the month goes with it.
+    expect(state.windows[0].weekends.map((w) => w.sessionId)).toEqual(["w-oct", "w-nov"])
+    expect(runs.windows).toHaveLength(1)
+    expect(runs.windows[0].weekends.map((w) => w.sessionId)).toEqual(["w-oct"])
+    // Everything else about the world is untouched: same grades, same gyms.
+    expect(runs.units).toBe(state.units)
+    expect(runs.gyms).toBe(state.gyms)
+  })
+
+  it("drops a chosen weekend whose gyms are shut, because it holds no games", () => {
+    const shut = withGymHours(world(), "v-home", "09:00", "09:00")
+    const state = planStateFrom("s1", { settings: { capturedAt: "x", state: shut } }) as PlannerState
+    expect(state.windows[0].weekends[0].capacityGames).toBe(0)
+    expect(solvableState(state).windows).toEqual([])
+  })
+
+  it("hands a world where every weekend runs straight back, unchanged", () => {
+    const all = withWeekendChosen(withGymOnWeekend(world(), "w-nov", "v-home", true), "w-nov", true)
+    const state = planStateFrom("s1", { settings: { capturedAt: "x", state: all } }) as PlannerState
+    expect(solvableState(state)).toBe(state)
   })
 })
 
