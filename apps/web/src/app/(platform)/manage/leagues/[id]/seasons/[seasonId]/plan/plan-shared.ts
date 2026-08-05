@@ -58,9 +58,12 @@ export interface ArmedSection {
 }
 
 /**
- * WHERE IT WAS, for a moment (owner ruling 2026-08-05, #3b). A grade that just
- * left leaves a dashed outline behind it saying so, because a move whose origin
- * says nothing is a move an operator has to reconstruct from memory.
+ * WHERE IT WAS, AND WHERE IT WENT (owner re-ruling 2026-08-05, #2). A grade that
+ * left keeps a dashed hoop-red slot behind it naming its destination, because a
+ * move whose origin says nothing is a move an operator has to reconstruct from
+ * memory. It has no clock on it: it stands until the next interaction with the
+ * board or an Undo, whichever comes first. Four seconds was not long enough to
+ * read it.
  */
 export interface GhostChip {
   sessionId: string
@@ -68,6 +71,8 @@ export interface GhostChip {
   venueId: string | null
   unitKey: string
   label: string
+  /** Where it went, in the words the board uses: a weekend, a gym, or both. */
+  to: string
 }
 
 /**

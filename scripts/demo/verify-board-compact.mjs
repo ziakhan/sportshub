@@ -245,9 +245,12 @@ if ((await page.locator('[data-testid="suggestion-move"]').count()) > 0) {
     flashedCards === 2 && flashedChips === 1,
     `${flashedCards} cards · ${flashedChips} chip`
   )
+  // RE-PINNED 2026-08-05 (owner re-ruling #2): the ghost has no clock on it. It
+  // stands until the board is touched again or the move is undone, so this reads
+  // it straight after the move and the undo below is what clears it.
   const ghosted = await page.locator('[data-testid="move-ghost"]').count()
   ok(
-    "the weekend it left keeps a ghost of it for a moment",
+    "the weekend it left keeps a ghost saying where the grade went",
     ghosted === 1,
     `${ghosted} ghost(s) at the origin`
   )

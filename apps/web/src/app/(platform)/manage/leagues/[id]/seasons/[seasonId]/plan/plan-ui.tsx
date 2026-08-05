@@ -760,6 +760,13 @@ export function VenueTray({
            * them". So it is enabled, and it wears a quiet tag saying what it is:
            * dropping it on a weekend IS the operator asserting they have it (the
            * owner's standing rule — a drag means they checked).
+           *
+           * IT IS A CARD, NOT A FADE (owner ruling 2026-08-05, #1b). The first
+           * pass drew it dashed and pale, which read as disabled, and the owner
+           * could not find the backup gym at all. A gym he can use gets the same
+           * weight as one he already rents: a solid heavier edge and full-strength
+           * ink. Only the DOT stays hollow, because that is the one thing that is
+           * genuinely missing — a weekend.
            */
           const backup = gym.weekends === 0
           return (
@@ -778,9 +785,13 @@ export function VenueTray({
                 e.stopPropagation()
                 onArm(on ? null : gym.venueId)
               }}
-              className={`hover:border-ink-400 inline-flex min-h-[40px] cursor-grab items-center gap-1.5 rounded-lg border bg-white px-2 text-[12px] font-bold shadow-sm transition-colors active:cursor-grabbing ${
-                on ? "border-play-500 ring-play-400 ring-2" : "border-ink-300"
-              } ${backup ? "border-dashed" : ""}`}
+              className={`hover:border-ink-400 inline-flex min-h-[40px] cursor-grab items-center gap-1.5 rounded-lg bg-white px-2 text-[12px] font-bold shadow-sm transition-colors active:cursor-grabbing ${
+                on
+                  ? "border-play-500 ring-play-400 border ring-2"
+                  : backup
+                    ? "border-ink-400 border-2"
+                    : "border-ink-300 border"
+              }`}
             >
               {/* The same six dots the grade chips wear: if it can be picked
                   up, it says so before anybody tries. */}
@@ -803,7 +814,7 @@ export function VenueTray({
                   backup ? "border-ink-400 border border-dashed" : paint.swatch
                 }`}
               />
-              <span className={`text-[13px] font-bold ${backup ? "text-ink-700" : paint.name}`}>
+              <span className={`text-[13px] font-bold ${backup ? "text-ink-900" : paint.name}`}>
                 {gym.short}
               </span>
               <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
@@ -812,7 +823,7 @@ export function VenueTray({
               {backup ? (
                 <span
                   data-testid="tray-backup-tag"
-                  className="border-ink-300 text-ink-500 rounded-md border border-dashed px-1 text-[10.5px] font-semibold"
+                  className="border-ink-400 bg-ink-100 text-ink-700 rounded-md border px-1 text-[10.5px] font-bold"
                 >
                   backup, no weekends yet
                 </span>

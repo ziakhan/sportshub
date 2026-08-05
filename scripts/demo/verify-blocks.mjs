@@ -1048,6 +1048,19 @@ ok(
   trayCount > 0 && backupCount > 0,
   `${trayCount} gym(s), ${backupCount} of them a backup nobody has phoned`
 )
+/**
+ * RE-PINNED 2026-08-05 (owner ruling #1a): the owner could not find the backup
+ * gym anywhere on the calendar view, because it has no weekend and therefore no
+ * colour on the board. The colour key above the calendar names every gym in the
+ * plan's roster, and tags the ones nobody has phoned.
+ */
+const legendNames = await page.locator('[data-testid="gym-legend"]').innerText().catch(() => "")
+const legendBackups = await countOf('[data-testid="legend-backup"]')
+ok(
+  "the colour key above the calendar names the backup gyms too, tagged for what they are",
+  legendBackups === backupCount && legendBackups > 0,
+  `${legendBackups} tagged in the legend · ${backupCount} in the tray · key reads "${legendNames.replace(/\n/g, " · ")}"`
+)
 if (backupCount > 0) {
   const row = backupRows.first()
   const backupVenue = await row.getAttribute("data-venue-id")
@@ -1266,11 +1279,40 @@ try {
       switchSaid
     )
   }
-  // The ghost is a pointer, not a state: it goes out on its own.
-  await page.waitForTimeout(4200)
+  /**
+   * NO TIMER ON EITHER MARK (owner re-ruling 2026-08-05, #2). The first pass
+   * faded the chip's ring at 1.6s and the ghost at 4s and the owner could not
+   * read either in time. They now stand until the operator touches the board
+   * again, or until Undo takes the move back.
+   */
+  await page.waitForTimeout(5000)
+  const stillGhosted = await at.locator('[data-testid="move-ghost"]').count()
+  const stillRinged = await at
+    .locator(`[data-testid="grade-chip"][data-unit="${movedUnit}"][data-flash="1"]`)
+    .count()
   ok(
-    "the ghost fades on its own, without anybody clearing it",
-    (await at.locator('[data-testid="move-ghost"]').count()) === 0
+    "five seconds of doing nothing, and the ghost and the ring are both still there",
+    stillGhosted > 0 && stillRinged === 1,
+    `${stillGhosted} ghost(s) · ${stillRinged} ringed chip`
+  )
+  const ghostSays = (
+    (await at.locator('[data-testid="move-ghost"]').first().textContent()) ?? ""
+  )
+    .replace(/\s+/g, " ")
+    .trim()
+  ok(
+    "the origin says where the grade WENT, not only that it left",
+    /^.+ moved to \S/.test(ghostSays),
+    ghostSays
+  )
+  // Any interaction with the board is what ends them: a click on the glyph
+  // legend touches nothing and moves nothing, and it is still an interaction.
+  await page.locator('[data-testid="board-legend"]').click()
+  await page.waitForTimeout(350)
+  ok(
+    "one click elsewhere on the board clears both, with nothing else changed",
+    (await at.locator('[data-testid="move-ghost"]').count()) === 0 &&
+      (await at.locator('[data-testid="grade-chip"][data-flash="1"]').count()) === 0
   )
   await page.locator('[data-testid="undo-last"]').click()
   await page.waitForTimeout(500)
@@ -1365,6 +1407,63 @@ try {
   await page.waitForTimeout(550)
   ok(
     "one undo brings the whole section back",
+    (await chipsIn(poolVenue.venueId)) === 5,
+    `${await chipsIn(poolVenue.venueId)} back in the rented gym`
+  )
+
+  /* ---- ruling #3: the same verb, with its name on it ---- */
+  // Six dots are a handle for somebody who already suspects there is one. Every
+  // gym section now carries a button that says what it does, and it arms exactly
+  // what the grip arms.
+  const moveAll = at.locator(
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="move-all"]`
+  )
+  ok(
+    "every gym section carries an explicit Move all button beside its other verbs",
+    (await moveAll.count()) === 1,
+    ((await moveAll.first().textContent().catch(() => "")) ?? "").trim()
+  )
+  await moveAll.click()
+  await page.waitForTimeout(350)
+  ok(
+    "tapping it arms the section exactly the way the grip does",
+    (await page.locator('[data-testid="armed-section"]').count()) === 1 &&
+      (await moveAll.getAttribute("aria-pressed")) === "true",
+    (((await page.locator('[data-testid="armed-section"]').textContent()) ?? "").trim() || "").slice(0, 100)
+  )
+  await page.screenshot({ path: `${SHOTS}/9-6-move-all-armed.png` })
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(300)
+  ok(
+    "Escape puts it down again, the same as the grip",
+    (await page.locator('[data-testid="armed-section"]').count()) === 0
+  )
+  await moveAll.click()
+  await page.waitForTimeout(350)
+  const buttonDest = card(scene.other.sessionId).locator('[data-testid="move-section-here"]')
+  ok("the destinations light up for it too", (await buttonDest.count()) === 1)
+  await buttonDest.click()
+  await page.waitForTimeout(600)
+  const buttonSaid = await noticeText()
+  const buttonLanded = await page.evaluate(
+    ({ sessionId, keys }) => {
+      const card = document.querySelector(`[data-session-id="${sessionId}"]`)
+      const here = [...(card?.querySelectorAll('[data-testid="grade-chip"]') ?? [])].map((c) =>
+        c.getAttribute("data-unit")
+      )
+      return keys.filter((k) => here.includes(k)).length
+    },
+    { sessionId: scene.other.sessionId, keys: poolKeys }
+  )
+  ok(
+    "and the whole group lands where the button sent it",
+    buttonLanded === 5 && /moved:/.test(buttonSaid),
+    `${buttonLanded} of 5 · "${buttonSaid}"`
+  )
+  await page.locator('[data-testid="undo-last"]').click()
+  await page.waitForTimeout(550)
+  ok(
+    "one undo brings it back from the button path as well",
     (await chipsIn(poolVenue.venueId)) === 5,
     `${await chipsIn(poolVenue.venueId)} back in the rented gym`
   )

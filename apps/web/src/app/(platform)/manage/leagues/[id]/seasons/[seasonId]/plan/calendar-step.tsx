@@ -628,21 +628,25 @@ export function CalendarStep({
   }, [load])
 
   // Escape always cancels an armed chip, gym, block or section, wherever focus
-  // went. It also clears the ghosts: pressing Escape is an interaction, and the
-  // ghosts last "until the next one" (owner ruling 2026-08-05, #3b).
+  // went. It also ends the marks the last move left: pressing Escape is an
+  // interaction, and they last "until the next one" (owner ruling 2026-08-05,
+  // re-ruled the same day, #2).
   useEffect(() => {
-    if (!armed && !armedVenue && !armedBlock && !armedSection) return
+    const anythingArmed = Boolean(armed || armedVenue || armedBlock || armedSection)
+    const anythingMarked = ghosts.length > 0 || flashUnits.length > 0
+    if (!anythingArmed && !anythingMarked) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setArmed(null)
       setArmedVenue(null)
       setArmedBlock(null)
       setArmedSection(null)
+      setFlashUnits([])
       setGhosts([])
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed, armedVenue, armedBlock, armedSection])
+  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -963,6 +967,17 @@ export function CalendarStep({
         weekends: seen.get(g.venueId)?.weekends ?? 0,
       }))
   }, [gyms.order, weekendById, venueGrid])
+
+  /**
+   * The gyms in the roster that no weekend of this plan has (owner ruling
+   * 2026-08-05, #1). The tray tags them and so does the colour key above the
+   * board, off this one set, so the two can never disagree about which gym is
+   * the spare.
+   */
+  const backupGyms = useMemo(
+    () => new Set(trayGyms.filter((g) => g.weekends === 0).map((g) => g.venueId)),
+    [trayGyms]
+  )
 
   /** What an hour would do, against the calendar ON SCREEN — proposal
    *  included. Read only: the endpoint rebuilds the plan on a shifted window
@@ -1454,11 +1469,19 @@ export function CalendarStep({
   const unitFlashKey = (sessionId: string, unitKey: string) => `${sessionId}|${unitKey}`
 
   /**
-   * THE MOVE, AT GRADE LEVEL (owner ruling 2026-08-05, #3). Three things at
-   * once, for every route that moves anything: the cards ring, the CHIPS THAT
-   * MOVED wear a stronger ring of their own, and the origin keeps a dashed ghost
-   * saying which grade was there. Every verb on this board goes through here, so
-   * a switch, a drag, a tap, a rail click and a block move all read the same.
+   * THE MOVE, AT GRADE LEVEL (owner ruling 2026-08-05, #3, re-ruled the same
+   * day). Three things at once, for every route that moves anything: the cards
+   * ring, the CHIPS THAT MOVED wear a stronger ring of their own, and the origin
+   * keeps a dashed hoop-red slot naming where that grade went. Every verb on
+   * this board goes through here, so a switch, a drag, a tap, a rail click and a
+   * block move all read the same.
+   *
+   * NOTHING HERE IS ON A TIMER. The first pass faded the ring at 1.6s and the
+   * ghost at 4s, and the owner could not read either of them in time. They stand
+   * until the operator touches the board again — a click, a drag or a key — or
+   * until Undo takes the move back. Only the LAST move is ever marked, because
+   * the interaction that starts the next move is itself what clears the previous
+   * one.
    */
   const flashMove = (
     cards: Array<string | null | undefined>,
@@ -1470,12 +1493,29 @@ export function CalendarStep({
     setGhosts(left)
   }
 
+  /**
+   * THE NEXT INTERACTION (owner re-ruling 2026-08-05, #2). Anything the operator
+   * does to the board ends the marks the last move left. It runs in the CAPTURE
+   * phase from the step's own root, so it fires before the handler that was
+   * clicked: a click that starts a new move clears the old marks and then writes
+   * its own, and no handler can hide from it with stopPropagation.
+   */
+  const endMoveMarks = useCallback(() => {
+    setFlashUnits((prev) => (prev.length === 0 ? prev : []))
+    setGhosts((prev) => (prev.length === 0 ? prev : []))
+  }, [])
+
   /** The gym a grade was playing in on a weekend, as the board has it drawn. */
   const gymOf = (sessionId: string | null | undefined, unitKey: string): string | null =>
     (sessionId ? shown.venues[sessionId]?.[unitKey] : null) ?? null
 
-  /** The ghost a grade leaves behind on the weekend and in the gym it left. */
-  const ghostFor = (sessionId: string | null | undefined, unitKey: string): GhostChip[] =>
+  /** The ghost a grade leaves behind on the weekend and in the gym it left,
+   *  carrying the destination so the origin says where to look next. */
+  const ghostFor = (
+    sessionId: string | null | undefined,
+    unitKey: string,
+    to: string
+  ): GhostChip[] =>
     sessionId
       ? [
           {
@@ -1483,6 +1523,7 @@ export function CalendarStep({
             venueId: gymOf(sessionId, unitKey),
             unitKey,
             label: unitByKey.get(unitKey)?.label ?? unitKey,
+            to,
           },
         ]
       : []
@@ -1509,7 +1550,7 @@ export function CalendarStep({
     flashMove(
       [fromSessionId, toSessionId],
       [{ sessionId: toSessionId, unitKey }],
-      ghostFor(fromSessionId, unitKey)
+      ghostFor(fromSessionId, unitKey, weekendName(toSessionId))
     )
     setNotice(`${label} moved: ${weekendName(fromSessionId)} → ${weekendName(toSessionId)}`)
   }
@@ -1545,7 +1586,7 @@ export function CalendarStep({
       ...prev,
       [fromSessionId]: (prev[fromSessionId] ?? []).filter((k) => k !== unitKey),
     }))
-    const left = ghostFor(fromSessionId, unitKey)
+    const left = ghostFor(fromSessionId, unitKey, "the bench")
     setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId]))
     setArmed(null)
     setDirty(true)
@@ -1583,7 +1624,7 @@ export function CalendarStep({
     const label = unitByKey.get(unitKey)?.label ?? "that grade"
     const backup = isBackupGym(sessionId, venueId)
     const short = gymShort(venueId)
-    const left = ghostFor(sessionId, unitKey)
+    const left = ghostFor(sessionId, unitKey, short)
     remember(`move ${label} to ${short}`)
     if (backup) {
       setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
@@ -1642,21 +1683,14 @@ export function CalendarStep({
     return () => window.clearTimeout(timer)
   }, [flashSessions])
 
-  // The chip's own ring, on the same clock as the card it landed on.
-  useEffect(() => {
-    if (flashUnits.length === 0) return
-    const timer = window.setTimeout(() => setFlashUnits([]), 1600)
-    return () => window.clearTimeout(timer)
-  }, [flashUnits])
-
-  /** The ghost outlives the ring on purpose (owner ruling 2026-08-05, #3b): the
-   *  eye follows the thing that moved first, and "Grade 8 was here" is the answer
-   *  to the question it asks next. Four seconds, or until the next interaction. */
-  useEffect(() => {
-    if (ghosts.length === 0) return
-    const timer = window.setTimeout(() => setGhosts([]), 4000)
-    return () => window.clearTimeout(timer)
-  }, [ghosts])
+  /**
+   * The chip's ring and the origin's ghost have NO TIMER (owner re-ruling
+   * 2026-08-05, #2). They are the answer to "what did I just do", and an answer
+   * that erases itself after a second and a half is one the operator has to
+   * catch. They go when the board is touched again, or when Undo takes the move
+   * back. The card ring above keeps its clock: that one is a pointer to where to
+   * look, and the rail's jump uses it too.
+   */
 
   /**
    * CORRECT — "I don't have this" (owner ruling 2026-08-04). The gym said three
@@ -1715,7 +1749,7 @@ export function CalendarStep({
   const moveBlock = (unitKeys: string[], fromSessionId: string, toSessionId: string) => {
     if (locked || unitKeys.length === 0 || fromSessionId === toSessionId) return
     remember(`move ${gradeList(unitKeys)}`)
-    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key))
+    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key, weekendName(toSessionId)))
     let nextAssignment = assignment
     let nextVenues = venues
     for (const key of unitKeys) {
@@ -1835,7 +1869,7 @@ export function CalendarStep({
         toVenueId ? gymShort(toVenueId) : to.label
       }`
     )
-    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key))
+    const left = unitKeys.flatMap((key) => ghostFor(fromSessionId, key, where))
     let nextAssignment = assignment
     let nextVenues = venues
     for (const key of unitKeys) {
@@ -2505,14 +2539,21 @@ export function CalendarStep({
   return (
     <div
       className="border-ink-100 shadow-soft overflow-hidden rounded-2xl border bg-white"
+      /**
+       * ANY interaction with the board ends the last move's marks, and it has to
+       * be seen BEFORE the thing that was touched gets to act (owner re-ruling
+       * 2026-08-05, #2). Capture does that: the marks clear, then the handler
+       * runs, so a click that starts a new move writes its own marks over the
+       * cleared ones and every other click simply puts them out.
+       */
+      onClickCapture={endMoveMarks}
+      onKeyDownCapture={endMoveMarks}
+      onDragStartCapture={endMoveMarks}
       onClick={() => {
         setArmed(null)
         setArmedVenue(null)
         setArmedBlock(null)
         setArmedSection(null)
-        // A click anywhere is the next interaction, and the ghost lasts until
-        // one (owner ruling 2026-08-05, #3b).
-        setGhosts([])
       }}
     >
       {/* Screen head */}
@@ -2800,7 +2841,12 @@ export function CalendarStep({
 
             {/* The colour key for the whole step, above the calendar in both
                 views: which gym is which colour, in full names. */}
-            <GymLegend order={gyms.order} hue={gyms.hue} fillsFirst={fillsFirst} />
+            <GymLegend
+              order={gyms.order}
+              hue={gyms.hue}
+              fillsFirst={fillsFirst}
+              backup={backupGyms}
+            />
 
             {/* WHO CHOOSES THE RENTED GYMS (owner ruling 2026-08-03). Two modes,
                 above the board, because the answer changes what the board is
@@ -3345,16 +3391,24 @@ function DriftLine({
  *
  * The glyph legend under the board answers a different question, so the two
  * stay apart.
+ *
+ * EVERY GYM IN THE ROSTER IS NAMED HERE (owner ruling 2026-08-05, #1). That
+ * includes the backup nobody has phoned: it has no weekend, so it has no colour
+ * anywhere on the calendar, and a key that skipped it left the operator hunting
+ * for a gym he knew he had added. It gets a hollow dot and says what it is.
  */
 function GymLegend({
   order,
   hue,
   fillsFirst,
+  backup,
 }: {
   order: StripVenue[]
   hue: Map<string, number>
   /** The building the league owns, if it has one. */
   fillsFirst: string | null
+  /** The pool gyms this plan has no weekend on: real, rentable, unasked. */
+  backup: Set<string>
 }) {
   if (order.length === 0) return null
   return (
@@ -3364,12 +3418,27 @@ function GymLegend({
     >
       {order.map((gym) => {
         const paint = hueFor(hue, gym.venueId)
+        const spare = backup.has(gym.venueId)
         return (
           <span key={gym.venueId} className="inline-flex items-center gap-1.5 text-[11.5px]">
-            <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
-            <b className={`font-bold ${paint.name}`}>{gym.name}</b>
+            <i
+              aria-hidden
+              className={`h-2.5 w-2.5 flex-none rounded-full ${
+                spare ? "border-ink-400 border border-dashed" : paint.swatch
+              }`}
+            />
+            <b className={`font-bold ${spare ? "text-ink-700" : paint.name}`}>{gym.name}</b>
             {gym.venueId === fillsFirst && (
               <span className="text-ink-400 font-semibold">home gym</span>
+            )}
+            {spare && (
+              <span
+                data-testid="legend-backup"
+                data-venue-id={gym.venueId}
+                className="border-ink-300 text-ink-500 rounded-md border border-dashed px-1 text-[10.5px] font-semibold"
+              >
+                backup
+              </span>
             )}
           </span>
         )
@@ -4104,6 +4173,17 @@ function WeekendCard({
           const armedHere =
             armedSection?.sessionId === weekend.sessionId &&
             armedSection?.venueId === section.venueId
+          /** Everything the grip and the "Move all" button both need to say what
+           *  is travelling: one description of this section, written once. */
+          const asArmed = (): ArmedSection => ({
+            sessionId: weekend.sessionId,
+            venueId: section.venueId,
+            unitKeys: section.unitKeys,
+            window: windowLabel,
+            gym: venueShortName(section.name),
+            weekendLabel: weekend.label,
+          })
+          const canMoveAll = interactive && section.unitKeys.length > 0
           return (
             <div
               key={section.venueId}
@@ -4180,7 +4260,7 @@ function WeekendCard({
                   )
                 }}
               >
-                {interactive && section.unitKeys.length > 0 && (
+                {canMoveAll && (
                   <button
                     type="button"
                     data-testid="section-grip"
@@ -4198,18 +4278,7 @@ function WeekendCard({
                        */
                       if (armedVenue || armed || armedBlock || (armedSection && !armedHere)) return
                       e.stopPropagation()
-                      onArmSection(
-                        armedHere
-                          ? null
-                          : {
-                              sessionId: weekend.sessionId,
-                              venueId: section.venueId,
-                              unitKeys: section.unitKeys,
-                              window: windowLabel,
-                              gym: venueShortName(section.name),
-                              weekendLabel: weekend.label,
-                            }
-                      )
+                      onArmSection(armedHere ? null : asArmed())
                     }}
                     className="text-ink-400 hover:text-ink-700 -ml-0.5 inline-flex min-h-[22px] cursor-grab items-center px-0.5"
                   >
@@ -4295,6 +4364,39 @@ function WeekendCard({
                     {courtsWord(capped)} of {wired} this weekend
                   </span>
                 )}
+                {/**
+                 * MOVE THE WHOLE SECTION, SAID OUT LOUD (owner ruling
+                 * 2026-08-05, #3). The grip does this already, and the owner
+                 * never found it: six dots are a handle for somebody who
+                 * suspects there is one. This is the same verb with its name on
+                 * it, in the row where the section's other verbs live, and one
+                 * tap arms exactly what the grip arms.
+                 *
+                 * Unlike the grip it never steps aside for something already in
+                 * the operator's hand: a button that says "Move all" and then
+                 * quietly puts a gym down instead would be lying. Arming drops
+                 * whatever else was held, which is the board's standing rule of
+                 * one thing at a time.
+                 */}
+                {canMoveAll && (
+                  <button
+                    type="button"
+                    data-testid="move-all"
+                    aria-pressed={Boolean(armedHere)}
+                    aria-label={`Move all ${section.unitKeys.length} grades at ${venueShortName(section.name)} on ${weekend.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onArmSection(armedHere ? null : asArmed())
+                    }}
+                    className={`inline-flex min-h-[28px] cursor-pointer items-center rounded-md border px-2 text-[10.5px] font-bold shadow-sm transition-colors ${
+                      armedHere
+                        ? "border-play-500 bg-play-50 text-play-700 ring-play-400 ring-2"
+                        : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 bg-white"
+                    }`}
+                  >
+                    {armedHere ? "Pick somewhere" : "Move all…"}
+                  </button>
+                )}
                 {/* THE TWO CORRECTING VERBS, quiet until somebody needs them.
                     A rented building is the one you have to ask for, so it is
                     the one that can turn out smaller than the plan thought. */}
@@ -4316,9 +4418,10 @@ function WeekendCard({
               </div>
               <div className="mt-1 flex flex-wrap items-start gap-1">
                 {chips.map((k) => chipFor(k, section.venueId))}
-                {/* WHAT WAS HERE A MOMENT AGO (owner ruling 2026-08-05, #3b). */}
+                {/* WHAT WAS HERE, AND WHERE IT WENT (owner ruling 2026-08-05,
+                    #3b, re-ruled #2: it stands until the next interaction). */}
                 {ghostsAt(section.venueId).map((g) => (
-                  <GhostMark key={`ghost-${g.unitKey}`} label={g.label} />
+                  <GhostMark key={`ghost-${g.unitKey}`} label={g.label} to={g.to} />
                 ))}
               </div>
               {/* A section is armed and this building could be where it goes: the
@@ -4431,7 +4534,7 @@ function WeekendCard({
         {[...ghostsAt(null), ...orphanGhosts].length > 0 && (
           <div className="flex flex-wrap items-start gap-1">
             {[...ghostsAt(null), ...orphanGhosts].map((g) => (
-              <GhostMark key={`ghost-loose-${g.unitKey}`} label={g.label} />
+              <GhostMark key={`ghost-loose-${g.unitKey}`} label={g.label} to={g.to} />
             ))}
           </div>
         )}
@@ -4497,20 +4600,24 @@ function WeekendCard({
 }
 
 /**
- * "GRADE 8 WAS HERE" (owner ruling 2026-08-05, #3b). A dashed outline where a
- * grade sat until a moment ago, so a move reads as a move from both ends. It
- * fades on its own; the fade is motion-safe, and with reduced motion it simply
- * appears and then goes.
+ * "GRADE 8 MOVED TO NOV 15" (owner ruling 2026-08-05, #3b, re-ruled the same day
+ * as #2). The empty slot a grade left behind, in hoop red so the eye finds it in
+ * a column of gym colours, and it names the destination rather than only the
+ * departure: an origin that says "was here" leaves the operator hunting for
+ * where it went.
+ *
+ * No animation and no clock. It stands until the board is touched again or the
+ * move is undone, so there is nothing to catch.
  */
-function GhostMark({ label }: { label: string }) {
+function GhostMark({ label, to }: { label: string; to: string }) {
   return (
     <span
       data-testid="move-ghost"
       data-unit={label}
-      aria-hidden
-      className="border-ink-400 text-ink-400 inline-flex min-h-[34px] items-center rounded-lg border border-dashed px-1.5 text-[11px] font-bold motion-safe:animate-pulse"
+      data-to={to}
+      className="border-hoop-400 bg-hoop-50/60 text-hoop-700 inline-flex min-h-[34px] items-center rounded-lg border border-dashed px-1.5 text-[11px] font-bold"
     >
-      {label} was here
+      {label} moved to {to}
     </span>
   )
 }
@@ -5124,7 +5231,7 @@ function GradeChip({
   interactive: boolean
   /** THIS is the grade that just moved (owner ruling 2026-08-05, #3a). It wears a
    *  stronger mark than the card it landed on, because the card is where to look
-   *  and the chip is what happened. */
+   *  and the chip is what happened, and it keeps it until the next interaction. */
   flash?: boolean
   onArm: (a: Armed | null) => void
   onRemove?: () => void
@@ -5142,7 +5249,7 @@ function GradeChip({
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
   // Arming is a live action, so it outranks the compare ring while it lasts, and
   // the mark on the grade that JUST MOVED outranks everything: it is the answer
-  // to "what did I just do", and it is gone in a second and a half.
+  // to "what did I just do", and it stands until the board is touched again.
   const ring = flash
     ? "outline-play-600 outline outline-[3px] outline-offset-1 motion-safe:transition-all"
     : isArmed
