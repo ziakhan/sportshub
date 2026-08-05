@@ -13,8 +13,10 @@ import {
   BoardHead,
   DrawHero,
   DriftLine,
+  GradeFilter,
   GymLegend,
   StrandedBanner,
+  UndoFloat,
 } from "./board-chrome"
 import { BoardView } from "./board-view"
 import { WeekendZoom } from "./weekend-zoom"
@@ -107,6 +109,13 @@ export function CalendarStep({
     setArmedBlock,
     armedSection,
     setArmedSection,
+    dragging,
+    setDragging,
+    gradeFilter,
+    setGradeFilter,
+    filterUnits,
+    highlight,
+    toggleGrade,
     zoomSession,
     setZoomSession,
     flashSessions,
@@ -177,7 +186,6 @@ export function CalendarStep({
     undoMove,
     move,
     removeUnit,
-    switchGym,
     moveBlock,
     moveSection,
     armSection,
@@ -403,8 +411,22 @@ export function CalendarStep({
                   hue={gyms.hue}
                   armedVenueId={armedVenue}
                   onArm={setArmedVenue}
+                  onDragging={setDragging}
                 />
               </div>
+            )}
+
+            {/* ONE GRADE AT A TIME, WHEN YOU WANT IT (owner ruling 2026-08-05,
+                #4). A lens over the calendar and nothing more: it moves no game
+                and saves nothing. Board only, because the strip already reads
+                one grade's season across the page by itself. */}
+            {view === "board" && !zoomWeekend && (
+              <GradeFilter
+                units={filterUnits}
+                selected={gradeFilter}
+                onToggle={toggleGrade}
+                onClear={() => setGradeFilter([])}
+              />
             )}
 
             {/**
@@ -459,6 +481,8 @@ export function CalendarStep({
                       armedSection={armedSection}
                       placing={interactive && (assignMode === "place" || armedVenue !== null)}
                       interactive={interactive}
+                      dragging={dragging}
+                      highlight={highlight}
                       scrollRef={boardScroll}
                       flashSessions={flashSessions}
                       flashUnits={flashUnits}
@@ -471,11 +495,11 @@ export function CalendarStep({
                       onArm={setArmed}
                       onArmBlock={setArmedBlock}
                       onArmSection={armSection}
+                      onDragging={setDragging}
                       onMove={move}
                       onMoveBlock={moveBlock}
                       onMoveSection={moveSection}
                       onRemove={removeUnit}
-                      onSwitchGym={switchGym}
                       onDrop={onDrop}
                       onDropVenue={onDropVenue}
                       onDropSection={onDropSection}
@@ -581,6 +605,18 @@ export function CalendarStep({
                 onSaveNew={saveAsNew}
                 onSavePlan={savePlan}
                 onActivate={activatePlan}
+              />
+            )}
+
+            {/* ONE STEP BACK, WHEREVER THEY ARE (owner ruling 2026-08-05, #3).
+                The header still carries Undo; this is the same verb, same words,
+                pinned to the corner of the window so a mistaken drag four months
+                across the board is never something to scroll back up for. */}
+            {interactive && undoStack.length > 0 && (
+              <UndoFloat
+                label={undoStack[undoStack.length - 1].label}
+                busy={busy !== null}
+                onUndo={undoMove}
               />
             )}
           </>

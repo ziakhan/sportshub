@@ -39,7 +39,14 @@ import {
   type BlockStatus,
   type SplitAxis,
 } from "./plan-ui"
-import { courtsWord, plural } from "./board-shared"
+import {
+  FILTER_DIM,
+  NOT_TARGET,
+  TARGET_OFFER,
+  TARGET_RING,
+  courtsWord,
+  plural,
+} from "./board-shared"
 import { GhostMark, GradeChip } from "./grade-chip"
 
 /** One weekend: the date, one fraction chip, and its grades UNDER THE GYM THEY
@@ -64,6 +71,8 @@ export function WeekendCard({
   armedSection,
   placing,
   interactive,
+  dragging,
+  highlight,
   flash,
   flashUnits,
   ghosts,
@@ -74,11 +83,11 @@ export function WeekendCard({
   onArm,
   onArmBlock,
   onArmSection,
+  onDragging,
   onMove,
   onMoveBlock,
   onMoveSection,
   onRemove,
-  onSwitchGym,
   onDrop,
   onDropVenue,
   onDropSection,
@@ -115,6 +124,13 @@ export function WeekendCard({
   armedSection: ArmedSection | null
   placing: boolean
   interactive: boolean
+  /** A mouse is mid-drag (owner ruling 2026-08-05, #1). The colours light up
+   *  exactly the same, but the dashed OFFERS stay shut: a button appearing under
+   *  a moving cursor moves the drop point out from under it. */
+  dragging: boolean
+  /** The grades the operator is picking out, or null while the filter is off
+   *  (owner ruling 2026-08-05, #4). Purely visual: nothing about the plan moves. */
+  highlight: Set<string> | null
   /** The rail just sent somebody here. */
   flash: boolean
   /** The grades that just landed here, keyed "<sessionId>|<unitKey>" (owner
@@ -137,6 +153,8 @@ export function WeekendCard({
   onArm: (a: Armed | null) => void
   onArmBlock: (block: ArmedBlock | null) => void
   onArmSection: (section: ArmedSection | null) => void
+  /** A mouse picked something up, or put it down. */
+  onDragging: (dragging: boolean) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onMoveBlock: (unitKeys: string[], from: string, to: string) => void
   onMoveSection: (
@@ -146,7 +164,6 @@ export function WeekendCard({
     toVenueId: string | null
   ) => void
   onRemove: (unitKey: string, from: string) => void
-  onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
   onDropSection: (
@@ -156,7 +173,10 @@ export function WeekendCard({
     venueId: string,
     unitKeys: string[],
     games: number,
-    canPlaceGym: boolean
+    canPlaceGym: boolean,
+    /** A single grade could change into this building (owner ruling
+     *  2026-08-05, #1 and #2): the card has already done the room arithmetic. */
+    canTakeChip: boolean
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
@@ -185,12 +205,6 @@ export function WeekendCard({
    */
   const packed = packedWeekendLoad(units, weekend, keys, blocks)
   const tone = gyms.overflow > 0 ? "over" : packed.tone
-  const droppable = interactive && load.capacity > 0
-  const canTakeArmed =
-    Boolean(armed) &&
-    droppable &&
-    armed?.window === windowLabel &&
-    armed?.fromSessionId !== weekend.sessionId
 
   // The whole story of the weekend, in numbers, composed in the pure core and
   // only rendered here (owner 2026-08-02: which gym filled, which grade
@@ -202,38 +216,37 @@ export function WeekendCard({
   const gamesAt = new Map(gyms.sections.map((s) => [s.venueId, s.games]))
 
   /**
-   * WHERE A GRADE COULD ACTUALLY GO (owner rulings 2026-08-05, #2 and #1).
+   * WHAT EVERY BUILDING ON THIS WEEKEND COULD HOLD (owner rulings 2026-08-05, #1
+   * and #2). The home gym with room left, a pool building we could rent more of,
+   * and the backup gyms the operator could assert — priced against what each one
+   * is already holding, not against the courts this calendar happens to rent.
    *
-   * The switch is offered where the building on the other end could HOLD this
-   * grade — the home gym with room left, a pool building we could rent more of,
-   * or a backup gym the operator is willing to assert. It used to test the courts
-   * this calendar already rents, which are demand-sized, so every destination read
-   * full after the first move and the arrow quietly disappeared.
-   *
-   * Where nothing has room it is still not drawn at all: a disabled arrow with no
-   * reason on it is a mistake path with a mystery attached.
+   * Every drop affordance on this card is answered from these rows and nothing
+   * else, which is the whole of ruling #1: the board offers a destination only
+   * where the arithmetic says the load really fits.
    */
   const rooms = roomsFor(Object.fromEntries(gamesAt))
-  /** The next building along with room in it, wrapping round from where this
-   *  grade sits now. A gym the plan HAS is always offered before a backup: the
-   *  backup costs a phone call and a booking, so it is the answer only when
-   *  nothing the league already holds can take the grade. */
-  const nextWithRoom = (list: BuildingRoom[], venueId: string | null, games: number) => {
-    if (list.length === 0) return null
-    const at = list.findIndex((r) => r.venueId === venueId)
-    for (let i = 1; i <= list.length; i++) {
-      const room = list[(at + i + list.length) % list.length]
-      if (!room || room.venueId === venueId) continue
-      if (room.freeGames >= games) return room
-    }
-    return null
-  }
-  const switchTarget = (venueId: string | null, games: number): BuildingRoom | null =>
-    nextWithRoom(
-      rooms.filter((r) => !r.backup),
-      venueId,
-      games
-    ) ?? nextWithRoom(rooms.filter((r) => r.backup), venueId, games)
+  const roomAt = (venueId: string): BuildingRoom | null =>
+    rooms.find((r) => r.venueId === venueId) ?? null
+  /**
+   * TWO READINGS OF "ROOM", because two verbs answer differently (owner ruling
+   * 2026-08-05, #1: "a weekend with no gym time and no backup capacity is not a
+   * target").
+   *
+   * `freeAll` counts the backup gyms in. Dropping ONE grade or a stranded block
+   * on a weekend never refuses: whatever the attached buildings cannot hold turns
+   * into the dashed "needs a building" slot, and a weekend with a backup gym
+   * behind it can genuinely answer that slot. So the weekend is a target.
+   *
+   * `freeHeld` counts only the buildings this plan already has. A whole SECTION
+   * refuses rather than half-lands, and it refuses on exactly this number, so
+   * offering a section a weekend it would then be refused would be the board
+   * arguing with itself.
+   */
+  const freeAll = rooms.reduce((sum, r) => sum + r.freeGames, 0)
+  const freeHeld = rooms.reduce((sum, r) => sum + (r.backup ? 0 : r.freeGames), 0)
+  /** Games a set of grades would bring to THIS weekend, at its own rate. */
+  const bringing = (unitKeys: string[]) => weekendDemand(units, weekend, unitKeys)
 
   /**
    * WHAT THIS WEEKEND RENTS, and what it has nowhere to put (owner ruling
@@ -246,26 +259,120 @@ export function WeekendCard({
   const rentedBlock = new Map(
     blocks.filter((b) => b.venueId !== null).map((b) => [b.venueId as string, b])
   )
-  /** A gym is picked up and this weekend can be told to take it. */
-  const canTakeVenue = placing && Boolean(armedVenue)
-  /** A stranded block is looking for a lighter weekend, and this is one it
-   *  could land on: the same month, and not the one it is already on. */
+  /** Games each section is really holding, which is what a gym placed on it
+   *  would have to take. */
+  const sectionGamesOf = (venueId: string, fallback: number) =>
+    rentedBlock.get(venueId)?.games ?? fallback
+
+  /* ------------------ VALID TARGETS ONLY (owner ruling #1) ----------------- */
+
+  /**
+   * The three things that can be dropped ON THE WEEKEND AS A WHOLE, each one
+   * measured against the room this weekend really has. A weekend with no gym
+   * time is not a target, and neither is one whose buildings are full: the board
+   * offers the move only where it would take it.
+   */
+  const armedGames = armed ? bringing([armed.unitKey]) : 0
+  const blockGames = armedBlock ? bringing(armedBlock.unitKeys) : 0
+  const sectionGames = armedSection ? bringing(armedSection.unitKeys) : 0
+  const inMonth = (win: string | undefined) => win === windowLabel
+  const canTakeArmed =
+    Boolean(armed) &&
+    interactive &&
+    load.capacity > 0 &&
+    inMonth(armed?.window) &&
+    armed?.fromSessionId !== weekend.sessionId &&
+    freeAll >= armedGames
+  /** A stranded block is looking for a lighter weekend, and this is one that can
+   *  really hold it: the same month, not the one it is on, and room for all of it. */
   const canTakeBlock =
     Boolean(armedBlock) &&
     interactive &&
     load.capacity > 0 &&
-    armedBlock?.window === windowLabel &&
-    armedBlock?.sessionId !== weekend.sessionId
-  /** A whole section is picked up and this weekend is one it could land on:
-   *  the same month, and not the weekend it is already on (owner ruling
-   *  2026-08-05, #4). Whether it FITS is answered when it lands, in one place,
-   *  with the refusal naming what would. */
+    inMonth(armedBlock?.window) &&
+    armedBlock?.sessionId !== weekend.sessionId &&
+    freeAll >= blockGames
+  /** A whole section is picked up and this weekend can take every grade in it
+   *  (owner rulings 2026-08-05, #4 and #1). The refusal copy behind the move
+   *  stays for the edge cases, but the offer is no longer drawn where the board
+   *  already knows the answer is no. */
   const canTakeSection =
     Boolean(armedSection) &&
     interactive &&
     load.capacity > 0 &&
-    armedSection?.window === windowLabel &&
-    armedSection?.sessionId !== weekend.sessionId
+    inMonth(armedSection?.window) &&
+    armedSection?.sessionId !== weekend.sessionId &&
+    freeHeld >= sectionGames
+
+  /**
+   * And the two things that land on ONE BUILDING of this weekend.
+   *
+   * A grade in the operator's hand can change building here, which is the move
+   * the retired ⇄ used to guess at (ruling #2). It is offered per gym, so the
+   * operator names the destination and the board only lights the ones with room.
+   */
+  const chipTargets = new Set<string>()
+  if (armed && interactive && inMonth(armed.window) && armed.fromSessionId) {
+    for (const s of gyms.sections) {
+      const sameSpot =
+        armed.fromSessionId === weekend.sessionId && playsIn[armed.unitKey] === s.venueId
+      if (sameSpot) continue
+      if ((roomAt(s.venueId)?.freeGames ?? 0) >= armedGames) chipTargets.add(s.venueId)
+    }
+  }
+  /** The buildings a whole armed section could move INTO. */
+  const sectionTargets = new Set<string>()
+  if (armedSection && interactive && inMonth(armedSection.window)) {
+    for (const s of gyms.sections) {
+      const sameSpot =
+        armedSection.sessionId === weekend.sessionId && armedSection.venueId === s.venueId
+      if (sameSpot) continue
+      if ((roomAt(s.venueId)?.freeGames ?? 0) >= sectionGames) sectionTargets.add(s.venueId)
+    }
+  }
+  /** A gym is picked up out of the tray, and this is what it could hold here. */
+  const canTakeVenue = placing && Boolean(armedVenue)
+  const armedRoom = armedVenue ? roomAt(armedVenue) : null
+  const venueRoom = armedRoom?.freeGames ?? 0
+  const takesGymAt = (venueId: string, games: number) =>
+    canTakeVenue && Boolean(armedRoom) && venueId !== armedVenue && venueRoom >= games
+  const takesGymInSlot = canTakeVenue && Boolean(armedRoom) && venueRoom >= (emptyBlock?.games ?? 0)
+
+  /**
+   * SOMETHING IS IN THE OPERATOR'S HAND, and this weekend either can take it or
+   * cannot. A weekend that cannot steps back a little so the ones that can are
+   * the only thing the eye lands on; the weekend it CAME FROM never dims, because
+   * that is where the operator is looking when they pick something up.
+   */
+  const holding = Boolean(armed || armedBlock || armedSection || armedVenue)
+  const isSource =
+    (armed != null && armed.fromSessionId === weekend.sessionId) ||
+    armedBlock?.sessionId === weekend.sessionId ||
+    armedSection?.sessionId === weekend.sessionId
+  const isTarget =
+    canTakeArmed ||
+    canTakeBlock ||
+    canTakeSection ||
+    chipTargets.size > 0 ||
+    sectionTargets.size > 0 ||
+    takesGymInSlot ||
+    gyms.sections.some(
+      (s) => s.role === "pool" && takesGymAt(s.venueId, sectionGamesOf(s.venueId, s.games))
+    )
+  /** A drop is refused at the browser level where the board would refuse it
+   *  anyway: no preventDefault, no drop, no argument afterwards. */
+  const droppable =
+    interactive && load.capacity > 0 && (!holding || canTakeArmed || canTakeSection)
+  /** The whole card steps back: nothing held can land anywhere on it. */
+  const cardDim = holding && !isTarget && !isSource
+
+  /**
+   * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4). Weekends where a picked
+   * grade plays wear a quiet emphasis; sections with none of them step back. The
+   * plan does not change by one game.
+   */
+  const highlighted = highlight != null && keys.some((k) => highlight.has(k))
+
   /** The grades that just left this weekend, by the gym they left. */
   const ghostsAt = (venueId: string | null) =>
     ghosts.filter((g) => (venueId === null ? g.venueId === null : g.venueId === venueId))
@@ -282,7 +389,6 @@ export function WeekendCard({
     const changed = diff?.added.includes(key)
     const keptDays = keptOn?.get(`${weekend.sessionId}|${key}`)
     const games = weekendDemand(units, weekend, [key])
-    const next = interactive ? switchTarget(venueId, games) : null
     return (
       <GradeChip
         key={key}
@@ -301,14 +407,23 @@ export function WeekendCard({
         interactive={interactive}
         // THE CHIP THAT MOVED (owner ruling 2026-08-05, #3a).
         flash={flashUnits.includes(`${weekend.sessionId}|${key}`)}
+        highlight={highlight == null ? null : highlight.has(key) ? "on" : "off"}
         onArm={onArm}
+        // A drag lights the board up the same way a tap does (ruling #1).
+        onDragState={(drag) => {
+          onDragging(drag)
+          onArm(
+            drag
+              ? {
+                  unitKey: key,
+                  label: unit.label,
+                  fromSessionId: weekend.sessionId,
+                  window: windowLabel,
+                }
+              : null
+          )
+        }}
         onRemove={() => onRemove(key, weekend.sessionId)}
-        switchTo={
-          next
-            ? { venueId: next.venueId, short: venueShortName(next.name), backup: next.backup }
-            : undefined
-        }
-        onSwitchGym={next ? () => onSwitchGym(weekend.sessionId, key, next.venueId) : undefined}
         diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
         // Comparing is a live question about this grade, and the answer is a
         // date the card has nowhere else to put, so the lens keeps its caption.
@@ -351,9 +466,16 @@ export function WeekendCard({
       onDrop={(e) => droppable && onDrop(e, weekend.sessionId, windowLabel)}
       data-session-id={weekend.sessionId}
       data-flash={flash ? "1" : undefined}
-      className={`mb-2.5 rounded-xl border px-2.5 py-2 shadow-sm ${CARD_TONE[tone]} ${
-        canTakeArmed || canTakeBlock || canTakeSection ? "ring-play-400 ring-2" : ""
-      } ${
+      // The three facts a drive (and a human) can read straight off the card:
+      // is this a place the held thing can go, is it standing back, and does a
+      // picked-out grade play here.
+      data-target={holding ? (isTarget ? "1" : "0") : undefined}
+      data-highlight={highlight == null ? undefined : highlighted ? "1" : "0"}
+      className={`mb-2.5 rounded-xl border px-2.5 py-2 shadow-sm motion-safe:transition-opacity ${
+        CARD_TONE[tone]
+      } ${canTakeArmed || canTakeBlock || canTakeSection ? TARGET_RING : ""} ${
+        cardDim ? NOT_TARGET : ""
+      } ${highlighted ? "ring-court-400 ring-1" : ""} ${
         flash
           ? "outline-play-500 outline outline-2 outline-offset-2 motion-safe:transition-all"
           : ""
@@ -443,8 +565,9 @@ export function WeekendCard({
           const games = block?.games ?? section.games
           // Only a RENTED section takes a gym from the tray. The gym you own is
           // not a rental to re-let, and ringing it as a target would say the
-          // opposite; a grade leaves the home gym through its own switch.
-          const takesGym = canTakeVenue && section.role === "pool"
+          // opposite. And the gym in hand has to have room for these games,
+          // otherwise it is not a target at all (owner ruling 2026-08-05, #1).
+          const takesGym = section.role === "pool" && takesGymAt(section.venueId, games)
           // What the gym has wired here, and what somebody said it can actually
           // give this weekend. `capped` is null unless there is a correction.
           const venue = weekend.venues.find((v) => v.venueId === section.venueId)
@@ -469,18 +592,31 @@ export function WeekendCard({
               : fractionTone(section.games, held)
           /** This section is armed and looking for somewhere: is THIS the place?
            *  Another building on this weekend, or this building on another
-           *  weekend of the same month (owner ruling 2026-08-05, #4). */
-          const takesSection =
-            Boolean(armedSection) &&
-            interactive &&
-            armedSection?.window === windowLabel &&
-            !(
-              armedSection?.sessionId === weekend.sessionId &&
-              armedSection?.venueId === section.venueId
-            )
+           *  weekend of the same month (owner ruling 2026-08-05, #4) — and only
+           *  where the whole group would fit, per ruling #1. */
+          const takesSection = sectionTargets.has(section.venueId)
+          /** A single grade in the operator's hand could change building into
+           *  this one: the move the ⇄ used to guess, now named (ruling #2). */
+          const takesChip = chipTargets.has(section.venueId)
           const armedHere =
             armedSection?.sessionId === weekend.sessionId &&
             armedSection?.venueId === section.venueId
+          /**
+           * Something is held and this building is not where it can go. Only on a
+           * card that is itself standing forward: a dimmed card dimming its own
+           * sections again would put them out altogether.
+           */
+          const asideHere =
+            holding &&
+            !cardDim &&
+            !takesSection &&
+            !takesChip &&
+            !takesGym &&
+            !armedHere &&
+            !(canTakeArmed || canTakeBlock || canTakeSection)
+          /** No grade the operator picked out plays in this building. */
+          const filteredOut =
+            highlight != null && !section.unitKeys.some((k) => highlight.has(k))
           /** Everything the grip and the "Move all" button both need to say what
            *  is travelling: one description of this section, written once. */
           const asArmed = (): ArmedSection => ({
@@ -502,6 +638,7 @@ export function WeekendCard({
               // A rented section is a place to put a gym: dropping one here
               // moves this block into that building. It is also where a whole
               // section lands.
+              data-target={holding ? (takesSection || takesChip || takesGym ? "1" : "0") : undefined}
               onClick={
                 takesSection && armedSection
                   ? (e) => {
@@ -513,14 +650,33 @@ export function WeekendCard({
                         section.venueId
                       )
                     }
-                  : takesGym && armedVenue
+                  : // ONE GRADE INTO THIS BUILDING (owner ruling 2026-08-05, #2).
+                    // The ⇄ is retired; the operator picks the chip up and taps
+                    // the gym they mean, and only the gyms with room take the tap.
+                    takesChip && armed?.fromSessionId
                     ? (e) => {
                         e.stopPropagation()
-                        onPlaceVenue(weekend.sessionId, armedVenue, section.unitKeys, games)
+                        onMoveSection(
+                          [armed.unitKey],
+                          armed.fromSessionId as string,
+                          weekend.sessionId,
+                          section.venueId
+                        )
                       }
-                    : undefined
+                    : takesGym && armedVenue
+                      ? (e) => {
+                          e.stopPropagation()
+                          onPlaceVenue(weekend.sessionId, armedVenue, section.unitKeys, games)
+                        }
+                      : undefined
               }
-              onDragOver={interactive ? (e) => e.preventDefault() : undefined}
+              // A drop is allowed where the board would take it, and nowhere
+              // else: no preventDefault means the browser refuses it outright.
+              onDragOver={
+                interactive && (takesSection || takesChip || takesGym)
+                  ? (e) => e.preventDefault()
+                  : undefined
+              }
               onDrop={
                 interactive
                   ? (e) =>
@@ -533,13 +689,16 @@ export function WeekendCard({
                         games,
                         // The gym you OWN is not a rental to re-let, so only a
                         // rented section takes a gym out of the tray.
-                        section.role === "pool"
+                        section.role === "pool" && takesGym,
+                        takesChip
                       )
                   : undefined
               }
-              className={`border-ink-200 rounded-lg border bg-white/70 px-1.5 py-1 ${
-                takesGym || takesSection ? "ring-play-400 ring-2" : ""
-              } ${armedHere ? "ring-play-500 ring-2" : ""}`}
+              className={`border-ink-200 rounded-lg border bg-white/70 px-1.5 py-1 motion-safe:transition-opacity ${
+                takesGym || takesSection || takesChip ? TARGET_RING : ""
+              } ${armedHere ? "ring-play-500 ring-2" : ""} ${asideHere ? NOT_TARGET : ""} ${
+                filteredOut ? FILTER_DIM : ""
+              }`}
             >
               {/* THE SECTION IS ONE THING YOU CAN PICK UP (owner-approved
                   suggestion 2026-08-05, #4): its header is the handle, so every
@@ -566,6 +725,14 @@ export function WeekendCard({
                       window: windowLabel,
                     })
                   )
+                  // The drag arms the section too, so the destinations light up
+                  // under the cursor (owner ruling 2026-08-05, #1).
+                  onDragging(true)
+                  onArmSection(asArmed())
+                }}
+                onDragEnd={() => {
+                  onDragging(false)
+                  onArmSection(null)
                 }}
               >
                 {canMoveAll && (
@@ -702,7 +869,12 @@ export function WeekendCard({
                         : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 bg-white"
                     }`}
                   >
-                    {armedHere ? "Pick somewhere" : "Move all…"}
+                    {/* The label only swaps for the TAP path. Mid-drag it must
+                        not: a wider word here re-wraps this row, the card grows,
+                        and every weekend under it slides out from under the
+                        cursor that is dragging onto them (owner ruling
+                        2026-08-05, #1 — the same reason the offers stay shut). */}
+                    {armedHere && !dragging ? "Pick somewhere" : "Move all…"}
                   </button>
                 )}
                 {/* THE TWO CORRECTING VERBS, quiet until somebody needs them.
@@ -734,8 +906,10 @@ export function WeekendCard({
               </div>
               {/* A section is armed and this building could be where it goes: the
                   offer is written down rather than left as "tap somewhere here"
-                  (owner ruling 2026-08-05, #4). */}
-              {takesSection && armedSection && (
+                  (owner ruling 2026-08-05, #4). It is drawn only for the tap
+                  path: a button appearing under a moving cursor would shift the
+                  drop out from under the drag (ruling #1). */}
+              {takesSection && armedSection && !dragging && (
                 <button
                   type="button"
                   data-testid="move-section-into"
@@ -749,10 +923,32 @@ export function WeekendCard({
                     )
                   }}
                   aria-label={`Move all ${armedSection.unitKeys.length} grades from ${armedSection.gym} into ${venueShortName(section.name)} on ${weekend.label}`}
-                  className="border-play-300 bg-play-50 text-play-700 mt-1 w-full rounded-md border border-dashed px-1.5 py-0.5 text-[10.5px] font-bold"
+                  className={`mt-1 w-full rounded-md border px-1.5 py-0.5 text-[10.5px] font-bold ${TARGET_OFFER}`}
                 >
                   Move {plural(armedSection.unitKeys.length, "grade", "grades")} into{" "}
                   {venueShortName(section.name)}
+                </button>
+              )}
+              {/* The same offer for ONE grade, which is what replaced the ⇄
+                  (owner ruling 2026-08-05, #2): the operator says which gym. */}
+              {takesChip && armed?.fromSessionId && !dragging && (
+                <button
+                  type="button"
+                  data-testid="move-chip-into"
+                  data-venue-id={section.venueId}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMoveSection(
+                      [armed.unitKey],
+                      armed.fromSessionId as string,
+                      weekend.sessionId,
+                      section.venueId
+                    )
+                  }}
+                  aria-label={`Move ${armed.label} into ${venueShortName(section.name)} on ${weekend.label}`}
+                  className={`mt-1 w-full rounded-md border px-1.5 py-0.5 text-[10.5px] font-bold ${TARGET_OFFER}`}
+                >
+                  Move {armed.label} into {venueShortName(section.name)}
                 </button>
               )}
             </div>
@@ -765,8 +961,9 @@ export function WeekendCard({
         {emptyBlock && (
           <div
             data-testid="rental-slot-empty"
+            data-target={holding ? (takesGymInSlot ? "1" : "0") : undefined}
             onClick={
-              canTakeVenue && armedVenue
+              takesGymInSlot && armedVenue
                 ? (e) => {
                     e.stopPropagation()
                     onPlaceVenue(
@@ -778,14 +975,16 @@ export function WeekendCard({
                   }
                 : undefined
             }
-            onDragOver={placing ? (e) => e.preventDefault() : undefined}
+            // Only a gym that could really hold these games takes the drop
+            // (owner ruling 2026-08-05, #1).
+            onDragOver={placing && takesGymInSlot ? (e) => e.preventDefault() : undefined}
             onDrop={
-              placing
+              placing && takesGymInSlot
                 ? (e) => onDropVenue(e, weekend.sessionId, emptyBlock.unitKeys, emptyBlock.games)
                 : undefined
             }
             className={`border-hoop-300 bg-hoop-50/70 rounded-lg border border-dashed px-1.5 py-1 ${
-              canTakeVenue ? "ring-play-400 ring-2" : ""
+              takesGymInSlot ? TARGET_RING : ""
             }`}
           >
             <div className="flex flex-wrap items-center gap-1.5">
@@ -872,7 +1071,7 @@ export function WeekendCard({
         )}
       </div>
 
-      {canTakeArmed && armed && (
+      {canTakeArmed && armed && !dragging && (
         <button
           type="button"
           data-testid="move-here"
@@ -881,15 +1080,16 @@ export function WeekendCard({
             onMove(armed.unitKey, armed.fromSessionId, weekend.sessionId)
           }}
           aria-label={`Move ${armed.label} to ${weekend.label}`}
-          className="border-play-300 bg-play-50 text-play-700 mt-1.5 w-full rounded-lg border border-dashed px-2 py-1 text-[11px] font-semibold"
+          className={`mt-1.5 w-full rounded-lg border px-2 py-1 text-[11px] font-semibold ${TARGET_OFFER}`}
         >
           Move {armed.label} here
         </button>
       )}
 
       {/* The same offer for a whole section: one tap, every grade in it (owner
-          ruling 2026-08-05, #4). */}
-      {canTakeSection && armedSection && (
+          ruling 2026-08-05, #4). Cross-weekend, which is the move the section
+          grip exists for. */}
+      {canTakeSection && armedSection && !dragging && (
         <button
           type="button"
           data-testid="move-section-here"
@@ -898,7 +1098,7 @@ export function WeekendCard({
             onMoveSection(armedSection.unitKeys, armedSection.sessionId, weekend.sessionId, null)
           }}
           aria-label={`Move all ${armedSection.unitKeys.length} grades from ${armedSection.gym} to ${weekend.label}`}
-          className="border-play-300 bg-play-50 text-play-700 mt-1.5 w-full rounded-lg border border-dashed px-2 py-1 text-[11px] font-semibold"
+          className={`mt-1.5 w-full rounded-lg border px-2 py-1 text-[11px] font-semibold ${TARGET_OFFER}`}
         >
           Move {plural(armedSection.unitKeys.length, "grade", "grades")} here
         </button>

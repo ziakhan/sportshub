@@ -355,21 +355,27 @@ describe("suggestFor", () => {
     })
   })
 
-  it("gives the two-building note both loads, and the move that closes the second gym", () => {
+  /**
+   * RE-PINNED 2026-08-05 (owner ruling #5). This used to hand over the move: 24
+   * games off Feb 6 onto the empty Feb 13, saving one rented court-day. Under
+   * the price list that trade is a loss and always was — a weekend costs 100,000
+   * and the booking it closes is worth 25,000 — so the rail was offering to make
+   * the plan four times more expensive to tidy one court.
+   *
+   * The note still ships with both loads on it, because "Feb 6 rents a court at
+   * Playground" is a true thing about the calendar. It just has nothing to press.
+   */
+  it("gives the two-building note both loads, and refuses a move that would open a weekend", () => {
     const state = nphState()
     const feb6 = state.windows[4].weekends[0]
-    const feb13 = state.windows[4].weekends[1] // 80 cap, empty
     const assignment = {
       [feb6.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr11", "age:Gr12"],
     }
     const two = suggestFor(state, assignment).find((s) => s.kind === "two-building")
     expect(two?.text).toBe(
-      "Feb 6–7 fills Six Park (93 of 96) and rents 1 court at Playground (24 of 80), 117 games in all. " +
-        "Move Gr11 (24 games) from Feb 6–7 (117 of 176) to Feb 13–14 (24 of 80 after). Saves 1 rented court-day on Feb 6–7."
+      "Feb 6–7 fills Six Park (93 of 96) and rents 1 court at Playground (24 of 80), 117 games in all."
     )
-    expect(two?.move?.unitKey).toBe("age:Gr11")
-    expect(two?.move?.toSessionId).toBe(feb13.sessionId)
-    expect(two?.move?.resolves).toBe("two-building")
+    expect(two?.move).toBeUndefined()
   })
 
   it("reads the gyms the caller has on screen, not only the ones saved", () => {
@@ -387,20 +393,26 @@ describe("suggestFor", () => {
     expect(suggestions.some((s) => s.kind === "two-building")).toBe(false)
   })
 
-  it("offers the empty weekend a grade, from the busiest weekend of its month", () => {
+  /**
+   * RE-PINNED 2026-08-05 (owner ruling #5). The empty weekend used to come with
+   * a grade to put on it. Compact-first made that button backwards: bundling the
+   * month onto fewer Saturdays is the plan doing its job, so an idle chosen
+   * weekend is a success and the rail no longer asks anybody to undo it.
+   *
+   * The note stays, because "nothing is on the 14th" is worth seeing.
+   */
+  it("says an empty weekend is empty, and hands over nothing to press", () => {
     const state = nphState()
     const [nov14, nov21] = state.windows[1].weekends
     const assignment = { [nov21.sessionId]: ["age:Gr10", "age:Gr9", "age:Gr12"] } // 93 games
-    const idle = suggestFor(state, assignment).find(
-      (s) => s.kind === "idle-weekend" && s.sessionId === nov14.sessionId
-    )
+    const all = suggestFor(state, assignment)
+    const idle = all.find((s) => s.kind === "idle-weekend" && s.sessionId === nov14.sessionId)
     expect(idle?.text).toBe(
-      "Nov 14–15 has 80 open slots and no grades on it. Spare capacity, or another league's weekend. " +
-        "Move Gr10 (42 games) from Nov 21–22 (93 of 176) to Nov 14–15 (42 of 80 after). Puts the empty weekend to work."
+      "Nov 14–15 has 80 open slots and no grades on it. Spare capacity, or another league's weekend."
     )
-    expect(idle?.move?.resolves).toBe("idle-weekend")
-    expect(idle?.move?.fromSessionId).toBe(nov21.sessionId)
-    expect(idle?.move?.toSessionId).toBe(nov14.sessionId)
+    expect(idle?.move).toBeUndefined()
+    // And nothing else in the month offers to spread it back out either.
+    expect(all.filter((s) => s.move)).toEqual([])
   })
 
   it("says where the grade would LAND when the move takes it off its home gym", () => {

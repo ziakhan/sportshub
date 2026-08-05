@@ -2,6 +2,7 @@
 
 import type { PlacementReason, PlannerUnit } from "@/lib/scheduler/planner-core"
 import type { Armed } from "./plan-shared"
+import { FILTER_DIM, FILTER_MATCH } from "./board-shared"
 import { REASON_GLYPH, ReasonGlyph, WhyPopover } from "./plan-ui"
 
 /**
@@ -27,10 +28,10 @@ export function GradeChip({
   armed,
   interactive,
   flash,
+  highlight,
   onArm,
+  onDragState,
   onRemove,
-  switchTo,
-  onSwitchGym,
   muted,
   diffTone,
   caption,
@@ -57,13 +58,21 @@ export function GradeChip({
    *  stronger mark than the card it landed on, because the card is where to look
    *  and the chip is what happened, and it keeps it until the next interaction. */
   flash?: boolean
+  /**
+   * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4). Null while the filter is
+   * off, which is the ordinary case and changes nothing. "on" is a grade
+   * somebody picked out, "off" is every other grade while a pick is in force.
+   */
+  highlight?: "on" | "off" | null
   onArm: (a: Armed | null) => void
+  /**
+   * PICKED UP WITH A MOUSE (owner ruling 2026-08-05, #1). A drag has to light the
+   * board up exactly the way a tap does, so dragging arms the chip and dropping
+   * it puts it down again. Without this the colour coding only ever appeared for
+   * the thumb path.
+   */
+  onDragState?: (dragging: boolean) => void
   onRemove?: () => void
-  /** The next building with room for this grade, when this weekend has one.
-   *  `backup` means the plan has no gym time there and taking it is the
-   *  operator's own assertion (owner ruling 2026-08-05, #1). */
-  switchTo?: { venueId: string; short: string; backup?: boolean }
-  onSwitchGym?: () => void
   muted?: boolean
   /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
   diffTone?: "agreed" | "changed"
@@ -82,26 +91,35 @@ export function GradeChip({
         ? "ring-court-400 ring-1"
         : diffTone === "changed"
           ? "ring-gold-500 ring-1"
-          : ""
+          : // The highlight is the quietest ring on the chip, so it never
+            // outranks a live answer about what just happened.
+            highlight === "on"
+            ? FILTER_MATCH
+            : ""
   const ink = muted ? "text-ink-400" : (quiet ?? "text-ink-400")
   const glyph = reason ? REASON_GLYPH[reason] : undefined
   const chip = (
     <span
       draggable={interactive}
-      onDragStart={(e) =>
+      onDragStart={(e) => {
         e.dataTransfer.setData(
           "text/plain",
           JSON.stringify({ unitKey: unit.key, fromSessionId, window: windowLabel })
         )
-      }
+        onDragState?.(true)
+      }}
+      onDragEnd={() => onDragState?.(false)}
       data-testid="grade-chip"
       data-diff={diffTone}
       data-flash={flash ? "1" : undefined}
+      data-highlight={highlight ?? undefined}
       data-unit={unit.key}
       data-reason={reason ?? undefined}
       className={`inline-flex min-h-[34px] items-center gap-1 rounded-lg border pl-1 text-[12px] font-bold shadow-sm ${
         muted ? "border-ink-200 bg-ink-50 text-ink-500" : (tint ?? "border-ink-300 bg-white")
-      } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring}`}
+      } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring} ${
+        highlight === "off" ? FILTER_DIM : ""
+      }`}
     >
       {/* THE GRIP (owner ruling 2026-08-05). A chip you can pick up says so
           before you try: six dots and a grab cursor, the way every draggable
@@ -156,36 +174,18 @@ export function GradeChip({
           <ReasonGlyph glyph={glyph} />
         </WhyPopover>
       )}
-      {/* One tap sends the grade to the next gym of this weekend. The chip
-          already sits under the gym it plays in, so this is the move. */}
-      {/* The switch is drawn ONLY where the other gym has room for this grade
-          this weekend (owner ruling 2026-08-05). No mistake paths into full
-          buildings, and no greyed arrow keeping a secret about why. */}
-      {interactive && switchTo && onSwitchGym && (
-        <button
-          type="button"
-          data-testid="switch-gym"
-          data-to={switchTo.venueId}
-          data-backup={switchTo.backup ? "1" : undefined}
-          onClick={(e) => {
-            e.stopPropagation()
-            onSwitchGym()
-          }}
-          aria-label={
-            switchTo.backup
-              ? `Move ${unit.label} to ${switchTo.short}, a gym this plan has not asked about`
-              : `Move ${unit.label} to ${switchTo.short}`
-          }
-          title={
-            switchTo.backup
-              ? `Move to ${switchTo.short} — your backup gym. Taking it says you have it that weekend.`
-              : `Move to ${switchTo.short}`
-          }
-          className={`border-ink-300 hover:border-ink-400 hover:text-ink-900 ml-0.5 inline-flex min-h-[26px] cursor-pointer items-center rounded-md border bg-white/70 px-1 text-[11px] font-bold transition-colors hover:bg-white ${ink}`}
-        >
-          ⇄
-        </button>
-      )}
+      {/**
+       * THE ⇄ IS GONE (owner ruling 2026-08-05, #2: "it guesses").
+       *
+       * It picked the destination itself — the next building along with room in
+       * it — so the operator pressed an arrow and found out afterwards where the
+       * grade had gone. A gym is not a thing to be assigned by wrap-around.
+       *
+       * The move it did is still there and it is now NAMED: pick the chip up and
+       * put it on the gym you want, by drag or by tap, and only the buildings
+       * that can really hold it light up (ruling #1). One less control, and the
+       * operator chooses the building instead of the board.
+       */}
       {interactive && onRemove && (
         <button
           type="button"

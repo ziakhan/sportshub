@@ -34,6 +34,8 @@ export function BoardView({
   armedSection,
   placing,
   interactive,
+  dragging,
+  highlight,
   scrollRef,
   flashSessions,
   flashUnits,
@@ -46,11 +48,11 @@ export function BoardView({
   onArm,
   onArmBlock,
   onArmSection,
+  onDragging,
   onMove,
   onMoveBlock,
   onMoveSection,
   onRemove,
-  onSwitchGym,
   onDrop,
   onDropVenue,
   onDropSection,
@@ -91,6 +93,10 @@ export function BoardView({
    *  slots and the rented sections into drop targets. */
   placing: boolean
   interactive: boolean
+  /** A mouse is mid-drag: the colours light up, the dashed offers stay shut. */
+  dragging: boolean
+  /** The grades the operator picked out, or null while the filter is off. */
+  highlight: Set<string> | null
   /** The horizontal scroller, so the rail can bring a weekend into view. */
   scrollRef: React.RefObject<HTMLDivElement>
   /** Weekends ringed for a moment: where the rail just jumped, and both ends
@@ -117,6 +123,8 @@ export function BoardView({
   onArm: (armed: Armed | null) => void
   onArmBlock: (block: ArmedBlock | null) => void
   onArmSection: (section: ArmedSection | null) => void
+  /** A mouse picked something up, or put it down. */
+  onDragging: (dragging: boolean) => void
   onMove: (unitKey: string, from: string | null, to: string) => void
   onMoveBlock: (unitKeys: string[], from: string, to: string) => void
   onMoveSection: (
@@ -126,7 +134,6 @@ export function BoardView({
     toVenueId: string | null
   ) => void
   onRemove: (unitKey: string, from: string) => void
-  onSwitchGym: (sessionId: string, unitKey: string, venueId: string) => void
   onDrop: (e: React.DragEvent, to: string, toWindow: string) => void
   onDropVenue: (e: React.DragEvent, sessionId: string, unitKeys: string[], games: number) => void
   onDropSection: (
@@ -136,7 +143,8 @@ export function BoardView({
     venueId: string,
     unitKeys: string[],
     games: number,
-    canPlaceGym: boolean
+    canPlaceGym: boolean,
+    canTakeChip: boolean
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
@@ -215,6 +223,8 @@ export function BoardView({
                   armedSection={armedSection}
                   placing={placing}
                   interactive={interactive}
+                  dragging={dragging}
+                  highlight={highlight}
                   flash={flashSessions.includes(w.sessionId)}
                   flashUnits={flashUnits}
                   ghosts={ghostsBySession.get(w.sessionId) ?? EMPTY_GHOSTS}
@@ -225,11 +235,11 @@ export function BoardView({
                   onArm={onArm}
                   onArmBlock={onArmBlock}
                   onArmSection={onArmSection}
+                  onDragging={onDragging}
                   onMove={onMove}
                   onMoveBlock={onMoveBlock}
                   onMoveSection={onMoveSection}
                   onRemove={onRemove}
-                  onSwitchGym={onSwitchGym}
                   onDrop={onDrop}
                   onDropVenue={onDropVenue}
                   onDropSection={onDropSection}
@@ -273,7 +283,23 @@ export function BoardView({
                         weekendLabel="the bench"
                         armed={armed}
                         interactive={interactive}
+                        highlight={highlight == null ? null : highlight.has(u.key) ? "on" : "off"}
                         onArm={onArm}
+                        // A benched grade dragged off the bench lights the board
+                        // up the same way one already on a weekend does.
+                        onDragState={(drag) => {
+                          onDragging(drag)
+                          onArm(
+                            drag
+                              ? {
+                                  unitKey: u.key,
+                                  label: u.label,
+                                  fromSessionId: null,
+                                  window: win.label,
+                                }
+                              : null
+                          )
+                        }}
                         muted
                       />
                     ))}

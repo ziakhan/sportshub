@@ -1,6 +1,7 @@
 "use client"
 
-import type { PlannerWeekend } from "@/lib/scheduler/planner-core"
+import { useEffect, useState } from "react"
+import type { PlannerUnit, PlannerWeekend } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY, isReferencePlan, type PlanRow } from "@/lib/scheduler/plan-documents"
 import { strandedSentence, type StrandedPlacement } from "@/lib/scheduler/plan-world"
 import type { StripVenue } from "@/lib/seasons/venue-strip"
@@ -14,7 +15,7 @@ import {
 import { WhyPopover } from "./plan-ui"
 import { PlanChooser } from "./plan-session"
 import { Segmented } from "./season-strip"
-import { COPY, type BoardSnapshot } from "./board-shared"
+import { COPY, nameList, type BoardSnapshot } from "./board-shared"
 
 /**
  * EVERYTHING AROUND THE CALENDAR. The head the screen wears, the line that says
@@ -182,6 +183,149 @@ export function BoardHead({
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * ONE STEP BACK, WHEREVER YOU ARE ON THE PAGE (owner ruling 2026-08-05, #3).
+ *
+ * The header Undo stays where it is, and it is the right place for it — until
+ * the operator has scrolled four months across and two screens down, at which
+ * point the one control they want after a mistaken drag is off the top of the
+ * window. So the same verb, with the same words on it, also rides the bottom
+ * right corner of the viewport for as long as there is a step to take.
+ *
+ * It never sits on the work rail: on xl the rail is a 340px column pinned to the
+ * right of the stage, so the pill steps in past it. Below xl the rail is not
+ * beside the board at all and the corner is free.
+ */
+export function UndoFloat({
+  label,
+  busy,
+  onUndo,
+}: {
+  /** What the step back would put right: "move Grade 8". */
+  label: string
+  busy: boolean
+  onUndo: () => void
+}) {
+  // Fades in on arrival for anyone who has not asked for less motion; for
+  // anyone who has, it simply appears, which is the same information.
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setShown(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
+  return (
+    <button
+      type="button"
+      data-testid="undo-float"
+      data-undo="move"
+      disabled={busy}
+      onClick={(e) => {
+        e.stopPropagation()
+        onUndo()
+      }}
+      className={`border-ink-800 bg-ink-900 hover:bg-ink-800 fixed bottom-5 right-5 z-50 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border px-4 text-[13px] font-bold text-white shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 xl:right-[372px] ${
+        shown ? "opacity-100" : "opacity-0"
+      } motion-safe:transition-opacity motion-safe:duration-200`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className="h-4 w-4 shrink-0"
+      >
+        <path d="M9 14 4 9l5-5" />
+        <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+      </svg>
+      Undo: {label}
+    </button>
+  )
+}
+
+/**
+ * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4).
+ *
+ * A season board is five months of chips, and the question an operator asks it
+ * most often is about ONE grade: where does Grade 8 play, and in whose gym. This
+ * is that question as a strip of toggles above the calendar. Pick any number of
+ * grades and they stay at full strength with a quiet ring; everything else steps
+ * well back so a grade's whole season reads across the columns in one look.
+ *
+ * It changes NOTHING. No placement moves, no gym changes, nothing is saved and
+ * nothing is dirty afterwards. Escape clears it, and so does the word that says
+ * what is on.
+ */
+export function GradeFilter({
+  units,
+  selected,
+  onToggle,
+  onClear,
+}: {
+  units: PlannerUnit[]
+  selected: string[]
+  onToggle: (key: string) => void
+  onClear: () => void
+}) {
+  if (units.length === 0) return null
+  const picked = units.filter((u) => selected.includes(u.key))
+  return (
+    <div
+      data-testid="grade-filter"
+      data-count={picked.length}
+      onClick={(e) => e.stopPropagation()}
+      className="border-ink-200 bg-ink-50/70 mb-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border px-2.5 py-2"
+    >
+      <span className="text-ink-500 text-[11px] font-bold uppercase tracking-[0.06em]">
+        Highlight
+      </span>
+      {units.map((u) => {
+        const on = selected.includes(u.key)
+        return (
+          <button
+            key={u.key}
+            type="button"
+            data-testid="grade-filter-chip"
+            data-unit={u.key}
+            aria-pressed={on}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle(u.key)
+            }}
+            className={`inline-flex min-h-[30px] cursor-pointer items-center rounded-lg border px-2 text-[11.5px] font-bold transition-colors ${
+              on
+                ? "border-court-600 bg-court-600 text-white"
+                : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-white bg-white/70"
+            }`}
+          >
+            {u.label}
+          </button>
+        )
+      })}
+      {picked.length > 0 && (
+        <span className="text-ink-600 ml-auto inline-flex items-center gap-2 text-[11.5px] font-semibold">
+          <span data-testid="grade-filter-showing">
+            Showing {nameList(picked.map((u) => u.label))}
+          </span>
+          <button
+            type="button"
+            data-testid="grade-filter-clear"
+            onClick={(e) => {
+              e.stopPropagation()
+              onClear()
+            }}
+            className="text-play-700 hover:text-play-800 min-h-[30px] cursor-pointer font-bold underline decoration-dotted underline-offset-2"
+          >
+            Clear
+          </button>
+        </span>
+      )}
     </div>
   )
 }

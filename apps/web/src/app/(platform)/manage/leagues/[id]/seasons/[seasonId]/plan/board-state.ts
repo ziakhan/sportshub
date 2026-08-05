@@ -157,6 +157,21 @@ export function useBoardState({
   /** A gym picked up from the tray, waiting for a weekend. The touch half of
    *  the drag, and the same arm-then-tap pattern the grade chips use. */
   const [armedVenue, setArmedVenue] = useState<string | null>(null)
+  /**
+   * A MOUSE IS MID-DRAG (owner ruling 2026-08-05, #1). Dragging arms whatever is
+   * being dragged, so the valid destinations light up under the cursor exactly
+   * as they do for the tap path. This one bit is what keeps the DASHED OFFERS
+   * shut while it happens: a button appearing under a moving cursor moves the
+   * drop point out from under the drag.
+   */
+  const [dragging, setDragging] = useState(false)
+  /**
+   * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4): the grades the operator
+   * picked out of the strip above the board, by unit key. Purely a lens — no
+   * placement, no gym and no number below it changes — so it lives nowhere near
+   * the working copy and is never saved.
+   */
+  const [gradeFilter, setGradeFilter] = useState<string[]>([])
   const [locked, setLocked] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -292,11 +307,12 @@ export function useBoardState({
   // Escape always cancels an armed chip, gym, block or section, wherever focus
   // went. It also ends the marks the last move left: pressing Escape is an
   // interaction, and they last "until the next one" (owner ruling 2026-08-05,
-  // re-ruled the same day, #2).
+  // re-ruled the same day, #2). And it clears the grade highlight, because a
+  // lens the operator cannot get out of is a trap (owner ruling 2026-08-05, #4).
   useEffect(() => {
     const anythingArmed = Boolean(armed || armedVenue || armedBlock || armedSection)
     const anythingMarked = ghosts.length > 0 || flashUnits.length > 0
-    if (!anythingArmed && !anythingMarked) return
+    if (!anythingArmed && !anythingMarked && gradeFilter.length === 0) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setArmed(null)
@@ -305,10 +321,11 @@ export function useBoardState({
       setArmedSection(null)
       setFlashUnits([])
       setGhosts([])
+      setGradeFilter([])
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits])
+  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits, gradeFilter])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -695,6 +712,28 @@ export function useBoardState({
 
   const unitByKey = useMemo(() => new Map((board?.units ?? []).map((u) => [u.key, u])), [board])
 
+  /**
+   * The grades the filter strip offers, and the picked set as the board reads
+   * it. Null while nothing is picked, which is the ordinary case: every surface
+   * downstream treats null as "the filter is off" and draws itself normally.
+   */
+  const filterUnits = useMemo(
+    () => (board?.units ?? []).filter((u) => u.teams > 0),
+    [board]
+  )
+  const highlight = useMemo(
+    () => (gradeFilter.length === 0 ? null : new Set(gradeFilter)),
+    [gradeFilter]
+  )
+  /** One grade in or out of the highlight. */
+  const toggleGrade = useCallback(
+    (key: string) =>
+      setGradeFilter((prev) =>
+        prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      ),
+    []
+  )
+
   const summary = useMemo(
     // A grade on a weekend this plan stopped running is NOT placed, and the
     // header pill has to say so rather than counting it as settled.
@@ -786,6 +825,14 @@ export function useBoardState({
     setArmedBlock,
     armedSection,
     setArmedSection,
+    dragging,
+    setDragging,
+    /* the lens over the board, which changes nothing under it */
+    gradeFilter,
+    setGradeFilter,
+    filterUnits,
+    highlight,
+    toggleGrade,
     zoomSession,
     setZoomSession,
     flashSessions,

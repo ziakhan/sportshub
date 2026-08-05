@@ -25,11 +25,17 @@ import { plural } from "./board-shared"
 
 /* ----------------------------- the rail ---------------------------------- */
 
-/** What a move buys, in two words. Green fixes a problem, indigo tidies. */
+/**
+ * What a move buys, in two words. Green fixes a problem, indigo tidies.
+ *
+ * "fills the weekend" is gone with the move behind it (owner ruling 2026-08-05,
+ * #5): the rail no longer offers to put an empty Saturday to work, because
+ * running one more Saturday is the second most expensive thing a plan can do and
+ * an idle chosen weekend is compact-first succeeding.
+ */
 const OUTCOME: Record<SuggestionMove["resolves"], { words: string; tone: string }> = {
   shortage: { words: "clears shortage", tone: "bg-court-50 text-court-800" },
   "two-building": { words: "one building", tone: "bg-play-50 text-play-700" },
-  "idle-weekend": { words: "fills the weekend", tone: "bg-play-50 text-play-700" },
 }
 
 /**

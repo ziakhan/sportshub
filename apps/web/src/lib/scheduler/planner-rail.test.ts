@@ -355,10 +355,49 @@ describe("suggestFor: what a tidy-up move is allowed to cost", () => {
     expect(railSuggestions(all).some((s) => s.kind === "two-building")).toBe(false)
   })
 
-  it("keeps the move when it brings the grade home", () => {
-    // The other weekend is the owned building only, so the move is also Grade
-    // 8 coming home: the tidy-up the ruling exists to make.
+  /**
+   * RE-PINNED 2026-08-05 (owner ruling #5). Bringing the grade home is still the
+   * right shape of move, but December's other weekend is EMPTY in this calendar,
+   * so taking it would run one more Saturday to save one rented court. A weekend
+   * is 100,000 and the booking it closes is 25,000: the rail may not offer that.
+   */
+  it("refuses even a come-home move when the destination weekend is not running yet", () => {
     const all = suggestFor(december([gym("playground", "The Playground", 32, "home")]), CALENDAR, {})
+    const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
+    expect(two).toBeDefined()
+    expect(two?.move).toBeUndefined()
+    expect(railSuggestions(all).some((s) => s.kind === "two-building")).toBe(false)
+  })
+
+  /**
+   * And the move the ruling leaves standing: the same tidy-up onto a Saturday
+   * the month is ALREADY running. No new weekend, no new booking, one rental
+   * closed. That is the consolidation compact-first wants, and it still ships.
+   */
+  it("keeps the move when the destination weekend is already in use", () => {
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 6), unit("Gr8", 10), unit("Gr10", 20)],
+      errors: [],
+      windows: [
+        { label: "Oct 2026", weekends: [weekend("oct", "2026-10-03", [PLAYGROUND, SIXPARK])] },
+        {
+          label: "Dec 2026",
+          weekends: [
+            weekend("dec1", "2026-12-05", [SMALL_PLAYGROUND, SIXPARK]),
+            weekend("dec2", "2026-12-19", [gym("playground", "The Playground", 32, "home")]),
+          ],
+        },
+      ],
+    }
+    // dec1 fills its 24-court home gym with Grade 10 and rents Six Park for
+    // Grade 8; dec2 is already running Grade 7 in the building the league owns.
+    const calendarWithBoth: Record<string, string[]> = {
+      oct: ["age:Gr7", "age:Gr8", "age:Gr10"],
+      dec1: ["age:Gr8", "age:Gr10"],
+      dec2: ["age:Gr7"],
+    }
+    const all = suggestFor(state, calendarWithBoth, {})
     const two = all.find((s) => s.kind === "two-building" && s.sessionId === "dec1")
     expect(two?.move?.unitKey).toBe("age:Gr8")
     expect(two?.move?.toSessionId).toBe("dec2")
@@ -395,5 +434,85 @@ describe("suggestFor: what a tidy-up move is allowed to cost", () => {
     expect(move?.move?.toSessionId).toBe("nov2")
     // The cost the rail has to state out loud: Grade 8 does not keep its gym.
     expect(move?.move?.lands).toContain("Lands at Six Park")
+  })
+})
+
+/**
+ * THE OWNER'S CASE, PINNED (owner ruling 2026-08-05, #5).
+ *
+ * He was looking at a month bundled onto one Saturday: the gym the league owns,
+ * full to the brim and not one game over, with the month's other chosen weekend
+ * sitting empty. That is compact-first getting the answer exactly right, and the
+ * rail was offering to take it apart — "put the empty weekend to work" — on a
+ * board with nothing wrong with it.
+ *
+ * A weekend costs 100,000 on the price list and a booking 25,000, so no rail row
+ * may add either. These pin the whole of that: the full home weekend, the same
+ * weekend once it rents a court, and the one exception the ruling keeps.
+ */
+describe("suggestFor: the rail speaks the same economics as the solver", () => {
+  const BIG_HOME = gym("playground", "The Playground", 54, "home")
+
+  /** 12 + 10 + 12 + 20 = 54 teams, two games each, so 54 games exactly. */
+  const FULL_HOUSE = [unit("Gr7", 12), unit("Gr8", 10), unit("Gr9", 12), unit("Gr10", 20)]
+  const EVERYBODY = FULL_HOUSE.map((u) => u.key)
+
+  /** One month, two chosen weekends: the first holds the whole month, the second
+   *  is running and empty. `first` is what the busy weekend has to play in. */
+  function november(first: PlannerVenue[]): PlannerState {
+    return {
+      seasonId: "season",
+      units: FULL_HOUSE,
+      errors: [],
+      windows: [
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("nov1", "2026-11-07", first),
+            weekend("nov2", "2026-11-21", [BIG_HOME]),
+          ],
+        },
+      ],
+    }
+  }
+
+  it("says nothing to press when the home gym is full to the brim and not over", () => {
+    const state = november([BIG_HOME])
+    const all = suggestFor(state, { nov1: EVERYBODY, nov2: [] }, {})
+    // 54 of 54 is a weekend that fits, so there is no shortage and no second
+    // building to close.
+    expect(all.some((s) => s.kind === "overflow")).toBe(false)
+    expect(all.some((s) => s.kind === "two-building")).toBe(false)
+    // The empty Saturday is still worth SAYING, and it is not worth a button.
+    expect(all.filter((s) => s.kind === "idle-weekend").map((s) => s.sessionId)).toEqual(["nov2"])
+    expect(all.filter((s) => s.move)).toEqual([])
+    expect(railSuggestions(all)).toEqual([])
+  })
+
+  it("says nothing to press when that full weekend also rents a court", () => {
+    // The same 54 games, but the owned building is small now, so the month fills
+    // it and rents Six Park for the rest. Moving a grade onto the empty Saturday
+    // would close that rental and run one more weekend, which is a loss.
+    const state = november([gym("playground", "The Playground", 24, "home"), SIXPARK])
+    const all = suggestFor(state, { nov1: EVERYBODY, nov2: [] }, {})
+    const two = all.find((s) => s.kind === "two-building" && s.sessionId === "nov1")
+    expect(two).toBeDefined()
+    expect(two?.text).toContain("rents")
+    expect(all.filter((s) => s.move)).toEqual([])
+    expect(railSuggestions(all)).toEqual([])
+  })
+
+  it("still ships the move when the weekend genuinely cannot be played", () => {
+    // The owned building shrinks below the month's demand: 54 games against 40,
+    // and no building on that Saturday can hold the rest. Feasibility is the one
+    // thing allowed to run another weekend.
+    const state = november([gym("playground", "The Playground", 40, "home")])
+    const all = suggestFor(state, { nov1: EVERYBODY, nov2: [] }, {})
+    expect(all.some((s) => s.kind === "overflow" && s.sessionId === "nov1")).toBe(true)
+    const move = all.find((s) => s.kind === "move-unit")
+    expect(move?.move?.fromSessionId).toBe("nov1")
+    expect(move?.move?.toSessionId).toBe("nov2")
+    expect(move?.move?.resolves).toBe("shortage")
+    expect(railSuggestions(all).some((s) => s.kind === "move-unit")).toBe(true)
   })
 })

@@ -326,8 +326,17 @@ export interface SuggestionMove {
   fromBefore: { demand: number; capacity: number }
   /** The weekend it lands on, with this grade already added. */
   toAfter: { demand: number; capacity: number }
-  /** What taking the move fixes. */
-  resolves: "shortage" | "two-building" | "idle-weekend"
+  /**
+   * What taking the move fixes.
+   *
+   * "idle-weekend" is gone (owner ruling 2026-08-05, #5): a move whose whole
+   * point was to put an empty weekend to work ADDS a weekend, and a weekend is
+   * the second most expensive thing on the price list. Under compact-first an
+   * idle chosen weekend is the plan working, not a problem, so nothing offers a
+   * button to undo it. The note itself still ships (see PlannerSuggestion.kind);
+   * it simply has nothing to press.
+   */
+  resolves: "shortage" | "two-building"
   /** Where the grade ends up standing when it gets there, when that is not the
    *  building it has been playing: "Lands at Six Park (The Playground holds
    *  Grade 10, 42 of 48)." Empty for the ordinary case, where it keeps its own
@@ -2737,6 +2746,26 @@ function usualGyms(state: PlannerState, placement: ShownPlacements): Map<string,
  * other consideration. Then residency: a move made only to close a second
  * building is offered ONLY when it leaves the grade in its own gym, so tidying
  * a weekend can never quietly cost a grade the building it plays in.
+ *
+ * THE RAIL BUYS WITH THE SAME MONEY AS THE SOLVER (owner ruling 2026-08-05, #5).
+ * A third rule sits over both of the others, because the rail was still speaking
+ * the old economics: it offered moves that spread a month back out across more
+ * Saturdays and more bookings, which is exactly what compact-first exists to
+ * stop, and it did it on a board that was already correct.
+ *
+ * The rule, in the price list's own two loudest terms (a weekend 100,000, a
+ * booking 25,000):
+ *
+ *   NO SUGGESTED MOVE MAY RAISE THE BILL. A move is offered only when it runs no
+ *   extra weekend, opens no extra rental booking and strands no extra game.
+ *   Court-days may go up: the list already says the search will rent courts to
+ *   keep a month in one place.
+ *
+ *   The ONE exception is feasibility. A weekend whose demand is past everything
+ *   its buildings hold cannot be played at all, and that weekend has no
+ *   same-weekend fix by construction — the overflow is measured against the
+ *   whole of every building it has. Such a move ships whatever it costs, and
+ *   even then a free way out is preferred over an expensive one.
  */
 export function suggestFor(
   state: PlannerState,
@@ -2770,6 +2799,30 @@ export function suggestFor(
     const at = placement.venues[fromSessionId]?.[unit.key]
     if (at) homes[unit.key] = at
     return homes
+  }
+
+  /**
+   * WHAT THIS CALENDAR COSTS RIGHT NOW, once, so every candidate move can be
+   * priced against it (owner ruling 2026-08-05, #5). Season scope on purpose:
+   * a booking closed in December and one opened in January really do net out,
+   * and the price list is a season's bill.
+   */
+  const billNow = planCost(state, assignment, decidedAll)
+  /** The same bill with one move made. Nothing is mutated. */
+  const billAfter = (unit: PlannerUnit, from: PlannerWeekend, to: PlannerWeekend) =>
+    planCost(
+      state,
+      assignmentWithMove(assignment, unit.key, from.sessionId, to.sessionId),
+      venuesWithoutUnit(decidedAll, unit.key, [from.sessionId, to.sessionId])
+    )
+  /**
+   * A MOVE NOBODY HAS TO PAY FOR. No extra Saturday, no extra phone call to a
+   * gym, no extra game left with nowhere to play. Court-days are deliberately
+   * not in it: the price list already spends those to keep a month together.
+   */
+  const freeOfCharge = (unit: PlannerUnit, from: PlannerWeekend, to: PlannerWeekend) => {
+    const price = planPrice(billNow, billAfter(unit, from, to))
+    return price.weekendsAdded <= 0 && price.buildingsOpened <= 0 && price.gamesUnhoused <= 0
   }
 
   for (const win of state.windows) {
@@ -2843,15 +2896,32 @@ export function suggestFor(
         // The smallest grade that actually clears it: moving a giant fixes the
         // weekend by breaking another one.
         const candidates = [...here].sort((a, b) => a.teams - b.teams)
+        /**
+         * THE CHEAPEST WAY OUT, AND FAILING THAT ANY WAY OUT (owner ruling
+         * 2026-08-05, #5). This weekend cannot be played, so a move ships even
+         * when it costs a Saturday or a booking — but a free destination is
+         * taken over a paid one wherever the month has both, which is the whole
+         * of the exception the price list allows.
+         */
+        let paid: { unit: PlannerUnit; to: PlannerWeekend } | null = null
+        let free: { unit: PlannerUnit; to: PlannerWeekend } | null = null
         for (const unit of candidates) {
           if (demand - gamesOn(unit, w) > w.capacityGames) continue
-          const to = roomFor(unit)[0]
-          if (!to) continue
+          for (const to of roomFor(unit)) {
+            if (!paid) paid = { unit, to }
+            if (freeOfCharge(unit, w, to)) {
+              free = { unit, to }
+              break
+            }
+          }
+          if (free) break
+        }
+        const clears = free ?? paid
+        if (clears) {
           // Feasibility outranks residency: a shortage move ships even when it
           // takes the grade off its own gym, and `lands` is what says so.
-          const { move, text } = moveFor(unit, to, "shortage", "Clears the shortage.")
+          const { move, text } = moveFor(clears.unit, clears.to, "shortage", "Clears the shortage.")
           suggestions.push({ kind: "move-unit", sessionId: w.sessionId, text, move })
-          break
         }
       } else {
         // Buildings from the real packing, not from a guess at the biggest
@@ -2913,6 +2983,16 @@ export function suggestFor(
             )
             const landsAtOwnGym = landed != null && homeVenueOf(to.venues)?.venueId === landed
             if (usual && landed && landed !== usual && !landsAtOwnGym) continue
+            /**
+             * AND IT HAS TO BE FREE (owner ruling 2026-08-05, #5). This is a
+             * tidy-up, not a rescue: the weekend it is about fits. So it may
+             * close a booking and it may not open one, and it may consolidate
+             * onto a Saturday the month is already running but never start a new
+             * one. Under the price list a weekend costs four bookings, so
+             * "saves a rental" on an empty Saturday was the rail quietly
+             * offering to make the plan more expensive.
+             */
+            if (!freeOfCharge(unit, w, to)) continue
             const saved = rentedHere.reduce((sum, s) => sum + s.rentedCourtDays, 0)
             const built = moveFor(
               unit,
@@ -2930,51 +3010,29 @@ export function suggestFor(
         }
       }
 
+      /**
+       * A CHOSEN WEEKEND WITH NOTHING ON IT (owner ruling 2026-08-05, #5).
+       *
+       * This used to carry a "put the empty weekend to work" button, and under
+       * compact-first that button was backwards: bundling the month onto fewer
+       * Saturdays is what the plan is FOR, so an idle weekend is the plan
+       * working. The move it offered added a weekend at 100,000 to a board that
+       * was already correct, and the owner watched the rail ask him to undo his
+       * own plan on a 54-of-54 home weekend.
+       *
+       * The note stays, because "nothing is on the 14th" is a true thing about
+       * the calendar that an operator may well want to see. It simply has
+       * nothing to press. The one case where filling an empty weekend really is
+       * the answer — a weekend somewhere in this month whose games do not fit
+       * anywhere in its own buildings — is already answered above, by the
+       * overflow branch on THAT weekend, which will send a grade here itself.
+       */
       if (assigned.length === 0 && w.capacityGames > 0) {
-        let text = `${w.label} has ${w.capacityGames} open slots and no grades on it. Spare capacity, or another league's weekend.`
-        let move: SuggestionMove | undefined
-        // The busiest weekend of the month is the one with something to give.
-        const busiest = [...win.weekends]
-          .filter((o) => o.sessionId !== w.sessionId && (assignment[o.sessionId] ?? []).length > 1)
-          .sort((a, b) => demandOn(b) - demandOn(a))[0]
-        if (busiest) {
-          const giver = unitsOn(state.units, assignment[busiest.sessionId] ?? [])
-            .filter((u) => u.teams > 0)
-            .sort((a, b) => b.teams - a.teams)
-            .find((u) => gamesOn(u, w) <= w.capacityGames)
-          if (giver) {
-            const from = demandOn(busiest)
-            const games = gamesOn(giver, busiest)
-            const landed = gamesOn(giver, w)
-            const lands = landingClause(
-              giver,
-              w,
-              assigned,
-              unitByKey,
-              homesArriving(w, giver, busiest.sessionId),
-              decidedAll[w.sessionId] ?? {}
-            )
-            move = {
-              unitKey: giver.key,
-              unitLabel: giver.label,
-              games,
-              fromSessionId: busiest.sessionId,
-              fromLabel: busiest.label,
-              toSessionId: w.sessionId,
-              toLabel: w.label,
-              fromBefore: { demand: from, capacity: busiest.capacityGames },
-              toAfter: { demand: landed, capacity: w.capacityGames },
-              resolves: "idle-weekend",
-              lands,
-            }
-            text = `${text} Move ${giver.label} (${gamesWord(games)}) from ${busiest.label} (${from} of ${
-              busiest.capacityGames
-            }) to ${w.label} (${landed} of ${w.capacityGames} after). Puts the empty weekend to work.${
-              lands ? ` ${lands}` : ""
-            }`
-          }
-        }
-        suggestions.push({ kind: "idle-weekend", sessionId: w.sessionId, text, move })
+        suggestions.push({
+          kind: "idle-weekend",
+          sessionId: w.sessionId,
+          text: `${w.label} has ${w.capacityGames} open slots and no grades on it. Spare capacity, or another league's weekend.`,
+        })
       }
     }
   }

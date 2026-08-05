@@ -351,37 +351,19 @@ export function useBoardVerbs(m: BoardModel) {
   const isBackupGym = (sessionId: string, venueId: string) =>
     !weekendById.get(sessionId)?.venues.some((v) => v.venueId === venueId)
 
-  /** The one place a grade changes BUILDING: the chip's gym switcher. A hand
-   *  pick is a decision, so it sticks even if that gym then reads full — and a
-   *  backup gym is a legitimate destination, which is what the assertion below
-   *  makes true on the board (owner ruling 2026-08-05, #1 and #2). */
-  const switchGym = (sessionId: string, unitKey: string, venueId: string) => {
-    if (locked) return
-    const label = unitByKey.get(unitKey)?.label ?? "that grade"
-    const backup = isBackupGym(sessionId, venueId)
-    const short = gymShort(venueId)
-    const left = ghostFor(sessionId, unitKey, short)
-    remember(`move ${label} to ${short}`)
-    if (backup) {
-      setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
-      // The operator asserted the building, so the rental in it is theirs to
-      // book rather than something the pool assumed.
-      setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
-    }
-    setVenues((prev) => ({
-      ...prev,
-      [sessionId]: { ...(prev[sessionId] ?? {}), [unitKey]: venueId },
-    }))
-    setArmed(null)
-    setDirty(true)
-    setFromLever(false)
-    flashMove([sessionId], [{ sessionId, unitKey }], left)
-    setNotice(
-      backup
-        ? `${label} moved: ${short} on ${weekendName(sessionId)}. You placed it, so it is yours to book.`
-        : `${label} moved: ${short} on ${weekendName(sessionId)}`
-    )
-  }
+  /**
+   * A GRADE CHANGES BUILDING THROUGH moveSection NOW (owner ruling 2026-08-05,
+   * #2). There used to be a `switchGym` verb here, behind the ⇄ on every chip,
+   * and the ⇄ chose the destination itself: the next building along with room in
+   * it, wrapping round. The owner's word for that was "it guesses".
+   *
+   * The verb is gone rather than left dead. Moving one grade into a named
+   * building is a section move of one grade, and moveSection already owns every
+   * part of that story: the weekend-rooms arithmetic, the refusal that names
+   * what would fit, the backup-gym assertion, one undo step and one notice. Two
+   * code paths for the same edit is how the two of them drifted apart in the
+   * first place.
+   */
 
   /* --------------------------- the four verbs ----------------------------- */
 
@@ -545,7 +527,8 @@ export function useBoardVerbs(m: BoardModel) {
    */
   const moveSection = (
     unitKeys: string[],
-    fromSessionId: string,
+    /** Null for a grade coming off the bench, which is a section of one. */
+    fromSessionId: string | null,
     toSessionId: string,
     /** The building it was dropped on, or null when it was dropped on the whole
      *  weekend and the packer gets to choose. */
@@ -975,7 +958,8 @@ export function useBoardVerbs(m: BoardModel) {
     venueId: string,
     unitKeys: string[],
     games: number,
-    canPlaceGym: boolean
+    canPlaceGym: boolean,
+    canTakeChip: boolean
   ) => {
     let payload: DragPayload = null
     try {
@@ -994,6 +978,22 @@ export function useBoardVerbs(m: BoardModel) {
       moveSection(payload.unitKeys, payload.sessionId, sessionId, venueId)
       return
     }
+    /**
+     * ONE GRADE, DROPPED ON THE GYM THE OPERATOR MEANT (owner ruling 2026-08-05,
+     * #2). This is what the retired ⇄ used to do by guessing. The card has
+     * already asked weekend-rooms whether this building can hold it, so a drop
+     * that gets here is one the board will take; moveSection lands it.
+     */
+    if (payload?.unitKey && payload.fromSessionId && canTakeChip) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (payload.window !== windowLabel) {
+        setNotice(COPY.oneWeekendPerMonth)
+        return
+      }
+      moveSection([payload.unitKey], payload.fromSessionId, sessionId, venueId)
+      return
+    }
     if (payload?.venueId && canPlaceGym) {
       e.preventDefault()
       e.stopPropagation()
@@ -1002,9 +1002,13 @@ export function useBoardVerbs(m: BoardModel) {
   }
 
   /** Arming a section puts everything else down: one thing is in the operator's
-   *  hand at a time, whichever thing it is. */
+   *  hand at a time, whichever thing it is.
+   *
+   *  Putting one DOWN leaves the marks alone: a drag ends by disarming, and the
+   *  ghosts the drop just wrote are the answer to what it did. */
   const armSection = (section: ArmedSection | null) => {
     setArmedSection(section)
+    if (!section) return
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
@@ -1102,7 +1106,6 @@ export function useBoardVerbs(m: BoardModel) {
     /* moving what is on the board */
     move,
     removeUnit,
-    switchGym,
     moveBlock,
     moveSection,
     armSection,

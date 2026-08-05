@@ -729,11 +729,16 @@ export function VenueTray({
   hue,
   armedVenueId,
   onArm,
+  onDragging,
 }: {
   gyms: TrayGym[]
   hue: Map<string, number>
   armedVenueId: string | null
   onArm: (venueId: string | null) => void
+  /** A mouse picked a gym up, or put it down (owner ruling 2026-08-05, #1). The
+   *  drag arms the gym, so the weekends and sections that could really take it
+   *  light up under the cursor instead of the operator dropping it blind. */
+  onDragging?: (dragging: boolean) => void
 }) {
   return (
     <div className="border-ink-300 bg-ink-50 mt-2 rounded-xl border p-2.5" data-testid="venue-tray">
@@ -778,9 +783,15 @@ export function VenueTray({
               data-venue-id={gym.venueId}
               data-availability={backup ? "backup" : "known"}
               aria-pressed={on}
-              onDragStart={(e) =>
+              onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", JSON.stringify({ venueId: gym.venueId }))
-              }
+                onDragging?.(true)
+                onArm(gym.venueId)
+              }}
+              onDragEnd={() => {
+                onDragging?.(false)
+                onArm(null)
+              }}
               onClick={(e) => {
                 e.stopPropagation()
                 onArm(on ? null : gym.venueId)

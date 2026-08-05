@@ -125,6 +125,36 @@ export const HOURS_CHIPS: HoursChip[] = [
   },
 ]
 
+/**
+ * VALID TARGETS ONLY, EVERYWHERE (owner ruling 2026-08-05, #1).
+ *
+ * While something is in the operator's hand — a grade, a whole gym section, a
+ * rental block, a gym off the tray — the board answers ONE question in colour:
+ * where can this actually go? A destination that the weekend-rooms arithmetic
+ * says could take the load wears the green; everything else steps back. No
+ * dotted offer, no ring and no drop is drawn anywhere the board would then have
+ * to argue with the operator about.
+ *
+ * Written down once so the card, the sections, the empty slot and the offers all
+ * mean the same green and the same quiet.
+ */
+export const TARGET_RING = "ring-court-500 ring-2"
+/** The offer written down inside a target: "Move 3 grades here". */
+export const TARGET_OFFER =
+  "border-court-400 bg-court-50 text-court-800 border-dashed"
+/** Everything that is not a target while something is held. Slightly back, not
+ *  gone: an operator still has to be able to read the weekend they cannot use. */
+export const NOT_TARGET = "opacity-60"
+
+/**
+ * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4). A filter that changes
+ * nothing about the plan: the grades somebody picked stay at full strength with
+ * a quiet ring on them, and everything else drops back far enough that one
+ * grade's whole season reads straight off the board.
+ */
+export const FILTER_MATCH = "ring-court-400 ring-1"
+export const FILTER_DIM = "opacity-[0.35]"
+
 export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 /** Courts in a phrase, because a rental is quoted in them. */
