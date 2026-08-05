@@ -120,6 +120,11 @@ export interface VenueGrid {
   seasonId: string
   seasonLabel: string | null
   leagueName: string | null
+  /** Courts the league holds back at every gym, every day (Season.courtBuffer,
+   *  owner ruling 2026-08-03). Every capacity number the planner shows already
+   *  has these taken out; the grid carries the setting so step 2 can edit it
+   *  where the hours are edited. 0 = plan to the whole building. */
+  courtBuffer: number
   weekends: VenueGridWeekend[]
   venues: VenueGridRow[]
 }
@@ -313,6 +318,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
         label: true,
         startDate: true,
         endDate: true,
+        courtBuffer: true,
         league: { select: { name: true } },
       },
     }),
@@ -522,6 +528,7 @@ export async function buildVenueWeekendGrid(seasonId: string): Promise<VenueGrid
     seasonId,
     seasonLabel: season?.label ?? null,
     leagueName: season?.league?.name ?? null,
+    courtBuffer: Math.max(0, season?.courtBuffer ?? 0),
     weekends,
     venues,
   }

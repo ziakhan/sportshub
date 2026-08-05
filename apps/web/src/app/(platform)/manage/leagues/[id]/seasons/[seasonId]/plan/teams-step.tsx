@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import Link from "next/link"
 import {
   expectedTeamUpdates,
   planningTeams,
@@ -53,11 +52,9 @@ function friendlyGames(games: number): string {
 
 export function TeamsStep({
   seasonId,
-  leagueId,
   onLoaded,
 }: {
   seasonId: string
-  leagueId: string
   onLoaded?: (info: PlanHeaderInfo) => void
 }) {
   const [state, setState] = useState<PlannerState | null>(null)
@@ -316,12 +313,10 @@ export function TeamsStep({
             <p className="text-ink-500 text-sm">
               This season has no grades yet. Add one below and it shows up here as a row.
             </p>
-            <Link
-              href={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=settings#divisions`}
-              className="text-play-700 hover:text-play-800 mt-2 inline-block text-sm font-semibold"
-            >
-              Set gender and tier in season settings →
-            </Link>
+            {/* No door out of planning here (owner ruling 2026-08-03, phase
+                separation): the field that fixes this is on this screen, and
+                sending an operator into the season console mid-plan is how
+                they end up on a schedule they have not built yet. */}
           </div>
         ) : (
           <table className="w-full">
@@ -390,6 +385,15 @@ export function TeamsStep({
                     </td>
                     <td className="py-2.5">
                       <div className="flex flex-wrap items-center gap-1.5">
+                        {/* Planning currency, and nothing else: what this
+                            grade asks the season for. Not a link to its
+                            games — those do not exist yet, and this is the
+                            planning phase (owner ruling 2026-08-03). */}
+                        {planned > 0 && totals.gamesPerTeam > 0 && (
+                          <span data-testid="grade-games" className={CHIP_QUIET}>
+                            {Math.round((planned * totals.gamesPerTeam) / 2)} games
+                          </span>
+                        )}
                         {unit.approved > 0 && (
                           <span
                             data-testid="registered-chip"

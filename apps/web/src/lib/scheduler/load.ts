@@ -205,6 +205,10 @@ export async function loadSchedulerInput(
     allowCrossDivisionScheduling: !!season.allowCrossDivisionScheduling,
     defaultVenueOpenTime: (cfg.defaultVenueOpenTime as string) ?? "09:00",
     defaultVenueCloseTime: (cfg.defaultVenueCloseTime as string) ?? "20:00",
+    // Courts held back at every gym, every day (owner ruling 2026-08-03).
+    // A season setting, not an org one: it is this league's own habit about
+    // how close to the last slot it is willing to plan.
+    courtBuffer: Math.max(0, season.courtBuffer ?? 0),
     divisions: (season.divisions ?? []).map((d: any) => ({
       id: d.id,
       name: d.name,

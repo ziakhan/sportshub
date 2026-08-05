@@ -1387,6 +1387,14 @@ model Season {
   defaultVenueOpenTime  String?
   defaultVenueCloseTime String?
 
+  // Courts the league deliberately leaves empty, at every gym, every day
+  // (owner ruling 2026-08-03). Overruns interleave and teams arrive late in
+  // the summer, so an operator holds a court back rather than plan to the
+  // last slot. Capacity everywhere reads usable courts = max(0, courts −
+  // buffer): the planner's weekends, the rental blocks, the ask sheet and
+  // the scheduler's own slots. 0 = plan to the full building.
+  courtBuffer Int @default(0)
+
   schedulingPhilosophy         SchedulingPhilosophy?
   allowCrossDivisionScheduling Boolean              @default(false)
 

@@ -113,7 +113,7 @@ function PlanWizard() {
 
       <div className="mt-6">
         {step === 1 ? (
-          <TeamsStep seasonId={seasonId} leagueId={leagueId} onLoaded={onLoaded} />
+          <TeamsStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : step === 2 ? (
           <GymsWeekendsStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : step === 3 ? (

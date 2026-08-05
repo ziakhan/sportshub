@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest"
 import {
   assignBlocksFromPool,
   courtDaysNeeded,
+  courtsHeldOn,
   courtsNeeded,
+  heldBackPhrase,
   packPlanVenues,
   packShownPlacements,
   packShownVenues,
@@ -937,6 +939,45 @@ describe("weekendStory: the weekend in numbers", () => {
       expect(line).not.toContain("—")
     }
   })
+
+  /**
+   * THE COURT BUFFER, said out loud (owner ruling 2026-08-03). Capacity is
+   * already the usable number everywhere, so this clause exists to stop a
+   * smaller meter looking like a mistake: the gym holds more, and the league
+   * is holding a court back on purpose.
+   */
+  it("names the courts the season is holding back, last, after the numbers", () => {
+    const units = [unit("Grade 8", 10)]
+    // A five-court gym with one court held: 48 usable games, not 60. The
+    // clause comes last, because it explains the numbers rather than adding
+    // one of its own.
+    const held = { ...gymOf("playground", "The Playground", 4, "home"), courtsHeld: 1 }
+    expect(story(units, weekend("dec19", "2026-12-19", [held, RENTAL]), ["age:Grade 8"]).caption)
+      .toBe("fits in Playground alone, 10 of 48 · 1 court held back")
+    // One gym and nothing to report but the buffer: the meter has already
+    // said 10 of 48, so the caption is the clause alone.
+    expect(story(units, weekend("dec19", "2026-12-19", [held]), ["age:Grade 8"]).caption).toBe(
+      "1 court held back"
+    )
+  })
+
+  it("says nothing about the buffer when the season plans to the whole gym", () => {
+    const units = [unit("Grade 8", 10)]
+    const w = weekend("dec19", "2026-12-19", [gymOf("playground", "The Playground", 4, "home")])
+    expect(story(units, w, ["age:Grade 8"]).caption).not.toContain("held back")
+  })
+
+  it("adds up the held courts across the weekend's gyms", () => {
+    expect(
+      heldBackPhrase([
+        { courtsHeld: 1 },
+        { courtsHeld: 2 },
+        {},
+      ])
+    ).toBe("3 courts held back")
+    expect(heldBackPhrase([{ courtsHeld: 0 }, {}])).toBeNull()
+    expect(courtsHeldOn([{ courtsHeld: 1 }, { courtsHeld: 1 }])).toBe(2)
+  })
 })
 
 describe("packPlanVenues", () => {
@@ -1195,13 +1236,10 @@ describe("proposePlan with rentals in the score", () => {
     )
   })
 
-  it("takes the heavier home weekend over a flatter one that rents", () => {
-    // Two weekends. The first is the owned building, big enough for three of
-    // the four grades; the second only has a rented hall. The flat 2/2 split
-    // has a peak 12 games lower (2,400 against 3,600) but rents a second
-    // court to get it (4,000 against 2,000), so the search takes the heavier
-    // home weekend. Under the old weights the peak would have won.
-    const state: PlannerState = {
+  /** Two weekends: the owned building, big enough for three of the four
+   *  grades, and a bigger hall the league would have to rent. */
+  function homeVsHall(): PlannerState {
+    return {
       seasonId: "season",
       units: [unit("Gr7", 12), unit("Gr8", 12), unit("Gr9", 12), unit("Gr10", 12)],
       errors: [],
@@ -1215,7 +1253,28 @@ describe("proposePlan with rentals in the score", () => {
         },
       ],
     }
+  }
+
+  it("buys courts to keep the month on ONE weekend (compact-first)", () => {
+    // RE-PINNED 2026-08-03: fewer weekends is now the dominant term under
+    // overflow, at 100,000 a weekend against 1,000 a rented court-day. The
+    // whole month fits in the hall, so it goes there whole — four courts over
+    // two days — rather than run two weekends to keep three grades at home.
+    const state = homeVsHall()
     const plan = proposePlan(state, "balance")
+    expect((plan.home ?? []).length).toBe(0)
+    expect((plan.rent ?? []).length).toBe(4)
+    const blocks = planRentalBlocks(state, plan)
+    expect(blocks.reduce((sum, b) => sum + b.courtDays, 0)).toBe(8)
+  })
+
+  it("with the weekends already spread, rented court-days still beat peak", () => {
+    // The other half of the old pin, kept where it is still a real choice: two
+    // weekends either way, so the money decides. The flat 2/2 split has a peak
+    // 12 games lower (2,400 against 3,600) but rents a second court to get it
+    // (4,000 against 2,000), so the search takes the heavier home weekend.
+    const state = homeVsHall()
+    const plan = proposePlan(state, "spread")
     expect((plan.home ?? []).length).toBe(3)
     expect((plan.rent ?? []).length).toBe(1)
     // And one court over the two days is the whole bill.
@@ -1224,8 +1283,11 @@ describe("proposePlan with rentals in the score", () => {
   })
 
   it("still opens a rental rather than strand a game", () => {
-    // The owned building holds 24 of the month's 48 games, so the rest must
-    // be rented: overflow is a million a game and nothing outranks it.
+    // The owned building holds 12 of the month's 24 games. RE-PINNED
+    // 2026-08-03: compact-first puts both grades on one weekend, so the half
+    // the home gym cannot hold is rented — one court over the two days —
+    // instead of a second weekend being opened to avoid the bill. Overflow is
+    // still a million a game, and nothing here is stranded.
     const state: PlannerState = {
       seasonId: "season",
       units: [unit("Gr7", 12), unit("Gr8", 12)],
@@ -1246,7 +1308,11 @@ describe("proposePlan with rentals in the score", () => {
         w.capacityGames
       )
     }
-    expect(planRentalBlocks(state, plan)).toEqual([])
+    expect((plan.a ?? []).sort()).toEqual(["age:Gr7", "age:Gr8"])
+    expect(plan.b).toEqual([])
+    expect(planRentalBlocks(state, plan)).toMatchObject([
+      { sessionId: "a", venueId: "sixpark", courts: 1, courtDays: 2, games: 12 },
+    ])
   })
 })
 

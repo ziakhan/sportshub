@@ -111,6 +111,16 @@ export interface SchedulerInput {
     }>
   }>
   /**
+   * COURTS THE LEAGUE HOLDS BACK (Season.courtBuffer, owner ruling
+   * 2026-08-03). Games overrun and teams still arrive in September, so an
+   * operator keeps a court empty rather than plan to the last slot. It applies
+   * per building per DAY — usable courts = max(0, courts − buffer) — and it
+   * applies here, in the one place slots are built, so planning capacity, the
+   * rental blocks, the ask sheet and the generator all count the same courts.
+   * 0 (the default) plans to the whole building.
+   */
+  courtBuffer?: number
+  /**
    * Optional per-session include list (sessionId → unit keys). A session with
    * an entry only hosts those units; sessions without an entry host any unit.
    * This is how the owner squeezes divisions into the sessions they fit in.
@@ -262,9 +272,12 @@ export function venueRanks(input: SchedulerInput): Map<string, number> {
           windowClose ? minutes(windowClose) : 24 * 60
         )
         const perCourt = Math.max(0, Math.floor((close - open) / input.gameSlotMinutes))
+        // Ranked on the courts games can actually go on, buffer included, so
+        // the ordering agrees with the slots the same input produces.
         capacity.set(
           dv.venueId,
-          (capacity.get(dv.venueId) ?? 0) + perCourt * dv.courts.length
+          (capacity.get(dv.venueId) ?? 0) +
+            perCourt * usableCourts(dv.courts, input.courtBuffer).length
         )
       }
     }
@@ -283,6 +296,22 @@ export function venueRanks(input: SchedulerInput): Map<string, number> {
       return a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : a.i - b.i
     })
   return new Map(ordered.map((v, rank) => [v.venueId, rank]))
+}
+
+/**
+ * The courts of one gym on one day that games may actually be put on: the
+ * courts wired in, less the ones the league holds back (Season.courtBuffer,
+ * owner ruling 2026-08-03). The HELD courts are the last ones in the day's
+ * order, so the preferred courts — the ones an operator numbers 1, 2, 3 — keep
+ * filling first and the empty court is the far end of the gym.
+ *
+ * Never negative: a buffer bigger than the building leaves it with no courts,
+ * which is honest — that weekend has no room, and every meter says so.
+ */
+export function usableCourts<T>(courts: T[], buffer: number | undefined): T[] {
+  const held = Math.max(0, Math.floor(buffer ?? 0))
+  if (held === 0) return courts
+  return courts.slice(0, Math.max(0, courts.length - held))
 }
 
 export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
@@ -315,7 +344,18 @@ export function buildSlots(input: SchedulerInput): SchedulerSlot[] {
         const windowMinutes = (dayEnd.getTime() - dayStart.getTime()) / 60000
         const slotsPerCourt = Math.floor(windowMinutes / input.gameSlotMinutes)
 
+        // The held-back courts never become slots, so nothing downstream —
+        // capacity, packing, the generator — can quietly book one. Held out of
+        // what is LEFT after exclusions, and named by id so the loop below
+        // keeps every court's own position in the day's order.
+        const playable = new Set(
+          usableCourts(
+            excluded ? dv.courts.filter((c) => !excluded.has(c.id)) : dv.courts,
+            input.courtBuffer
+          ).map((c) => c.id)
+        )
         for (const [courtIdx, court] of dv.courts.entries()) {
+          if (!playable.has(court.id)) continue
           if (excluded?.has(court.id)) continue
           for (let i = 0; i < slotsPerCourt; i++) {
             const startAt = new Date(dayStart.getTime() + i * input.gameSlotMinutes * 60000)

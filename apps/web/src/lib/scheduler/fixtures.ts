@@ -73,6 +73,9 @@ export interface MakeInputOptions {
   sessionCount?: number
   /** Courts per day-venue. Default 1. Court ids are stable across days. */
   courts?: number
+  /** Courts the league holds back at every gym, every day (Season.courtBuffer,
+   *  owner ruling 2026-08-03). Default 0 — plan to the whole building. */
+  courtBuffer?: number
   /** Day-venue window, "HH:MM". Defaults 09:00–17:00 (8 hourly slots/court/day). */
   open?: string
   close?: string
@@ -96,6 +99,7 @@ export function makeInput(opts: MakeInputOptions = {}): SchedulerInput {
     days = 2,
     sessionCount = 1,
     courts = 1,
+    courtBuffer = 0,
     open = "09:00",
     close = "17:00",
     baseDate = BASE_DATE,
@@ -142,6 +146,7 @@ export function makeInput(opts: MakeInputOptions = {}): SchedulerInput {
     allowCrossDivisionScheduling,
     defaultVenueOpenTime,
     defaultVenueCloseTime,
+    courtBuffer,
     divisions,
     schedulingGroups,
     sessions,

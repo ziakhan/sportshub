@@ -192,6 +192,17 @@ export async function buildPlannerState(
     track(courtsBySession, s.sessionId, s.venueId, s.courtId)
     track(daysBySession, s.sessionId, s.venueId, s.dayId)
   }
+  // Courts WIRED at each gym each weekend, before the buffer holds any back.
+  // The difference between this and the courts behind the slots is the number
+  // the meters name out loud: "1 court held back".
+  const wiredBySession = new Map<string, Map<string, Set<string>>>()
+  for (const s of input.sessions) {
+    for (const d of s.days) {
+      for (const dv of d.dayVenues) {
+        for (const c of dv.courts) track(wiredBySession, s.id, dv.venueId, c.id)
+      }
+    }
+  }
   const venueIds = [...new Set(slots.map((s) => s.venueId))]
   const venueRows = venueIds.length
     ? await (prisma as any).venue.findMany({
@@ -226,9 +237,11 @@ export async function buildPlannerState(
       const courtDaysHere = courtDaysBySession.get(s.id)
       const courtsHere = courtsBySession.get(s.id)
       const daysHere = daysBySession.get(s.id)
+      const wiredHere = wiredBySession.get(s.id)
       const venues = orderedVenues(
         [...venueSlots.entries()].map(([venueId, capacityGames]) => {
           const courtDays = courtDaysHere?.get(venueId)?.size ?? 0
+          const courts = courtsHere?.get(venueId)?.size ?? 0
           return {
             venueId,
             name: venueName.get(venueId) ?? venueId,
@@ -236,7 +249,9 @@ export async function buildPlannerState(
             role: roleOf.get(venueId) ?? "pool",
             fillOrder: fillOrderOf.get(venueId) ?? 1000,
             courtDays,
-            courts: courtsHere?.get(venueId)?.size ?? 0,
+            courts,
+            // What the buffer is holding here, so the caption can say it.
+            courtsHeld: Math.max(0, (wiredHere?.get(venueId)?.size ?? courts) - courts),
             days: daysHere?.get(venueId)?.size ?? 0,
             // What one court is open for, per day, in hours: the games it
             // holds times the slot length. This is what turns a court-day

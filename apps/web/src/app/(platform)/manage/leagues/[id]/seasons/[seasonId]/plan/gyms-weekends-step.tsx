@@ -123,6 +123,9 @@ export function GymsWeekendsStep({
   const [error, setError] = useState<string | null>(null)
   const [hours, setHours] = useState<Record<string, HoursDraft>>({})
   const [courts, setCourts] = useState<Record<string, string>>({})
+  /** Courts the league keeps empty at every gym, every day. One number for
+   *  the whole season, so it sits above the gym cards rather than inside one. */
+  const [buffer, setBuffer] = useState("0")
   const [exceptionFor, setExceptionFor] = useState<string | null>(null)
   const [exceptionKey, setExceptionKey] = useState<string>("")
   const [exceptionDraft, setExceptionDraft] = useState<HoursDraft>({ start: "", end: "" })
@@ -158,6 +161,7 @@ export function GymsWeekendsStep({
         ])
       )
     )
+    setBuffer(String(data.grid.courtBuffer ?? 0))
     onLoaded?.(data.grid)
   }, [seasonId, onLoaded])
 
@@ -294,6 +298,28 @@ export function GymsWeekendsStep({
           names || "a court"
         } because a game is already scheduled there.`
       }
+    )
+  }
+
+  /**
+   * COURTS HELD BACK (owner ruling 2026-08-03). Games overrun and teams still
+   * turn up in September, so a league plans a court short on purpose. It is
+   * one number for the season, and every capacity on the next screens is
+   * already net of it: the weekends, the rentals and the ask sheet.
+   */
+  const saveBuffer = async () => {
+    const next = Number(buffer)
+    if (!Number.isInteger(next) || next < 0 || next > 10) {
+      setError("Courts held back has to be a whole number from 0 to 10.")
+      return
+    }
+    await call(
+      `/api/seasons/${seasonId}/planner/venues`,
+      json({ courtBuffer: next }, "PATCH"),
+      "court-buffer",
+      next === 0
+        ? "Every court is in the plan now."
+        : `${next} court${next === 1 ? "" : "s"} held back at every gym, every day.`
     )
   }
 
@@ -484,6 +510,59 @@ export function GymsWeekendsStep({
             Pick your home gym, the building you own or control. Every other gym stays in the pool,
             rented by the court when a weekend needs it.
           </p>
+        )}
+
+        {/* Courts the league keeps empty on purpose (owner ruling
+            2026-08-03). It belongs beside the hours because it is the same
+            kind of fact — how much of the building the season is really
+            willing to use — and it is one number for every gym. */}
+        {grid.venues.length > 0 && (
+          <div className="border-ink-100 bg-ink-50/50 mb-3.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 rounded-2xl border px-4 py-3">
+            <label
+              htmlFor="court-buffer"
+              className="text-ink-700 text-xs font-semibold"
+            >
+              Courts left empty
+            </label>
+            {locked ? (
+              <span className="border-ink-100 bg-white text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
+                <b className="text-ink-900">{grid.courtBuffer}</b>
+              </span>
+            ) : (
+              <>
+                <input
+                  id="court-buffer"
+                  data-testid="court-buffer"
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={buffer}
+                  aria-label="Courts left empty at every gym"
+                  onChange={(e) => setBuffer(e.target.value)}
+                  className="border-ink-200 focus:border-play-500 w-16 rounded-lg border bg-white px-2 py-1 text-sm focus:outline-none"
+                />
+                {buffer !== String(grid.courtBuffer) && (
+                  <Button
+                    size="sm"
+                    tone="court"
+                    disabled={busy !== null}
+                    onClick={() => saveBuffer()}
+                  >
+                    {busy === "court-buffer" ? "Saving…" : "Save"}
+                  </Button>
+                )}
+              </>
+            )}
+            <p className="text-ink-400 w-full text-[11.5px]">
+              At every gym, every day. Games run long and teams turn up late, so a court held
+              back is a court you still have.{" "}
+              {grid.courtBuffer > 0
+                ? `Your weekends plan on ${grid.courtBuffer} court${
+                    grid.courtBuffer === 1 ? "" : "s"
+                  } fewer than the gyms hold, and the calendar says so.`
+                : "Zero plans to the whole building."}
+            </p>
+          </div>
         )}
 
         {/* One card per gym, the home gym first and the pool under it. */}

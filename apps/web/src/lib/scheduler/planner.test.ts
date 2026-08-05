@@ -144,12 +144,24 @@ const demandAt = (state: PlannerState, plan: Record<string, string[]>) => {
 }
 
 describe("proposePlan on the NPH shape", () => {
-  it("balance: never overflows, and never exceeds the human plan's 84-game peak", () => {
+  /**
+   * RE-PINNED 2026-08-03 (compact-first is the default). The default objective
+   * is now "use as few weekends as the month allows", so the flat 84-game peak
+   * this used to pin is gone on purpose: a month that fits on one weekend runs
+   * on one weekend, at 146 of 176. Overflow is still forbidden, which is the
+   * half of the old assertion that was ever a law.
+   */
+  it("balance: bundles the month onto one weekend and never overflows", () => {
     const state = nphState()
     const plan = proposePlan(state, "balance")
     const rows = demandAt(state, plan)
     for (const r of rows) expect(r.demand).toBeLessThanOrEqual(r.capacity)
-    expect(Math.max(...rows.map((r) => r.demand))).toBeLessThanOrEqual(84)
+    for (const win of state.windows) {
+      const busy = win.weekends.filter((w) => (plan[w.sessionId] ?? []).length > 0)
+      expect(busy).toHaveLength(1)
+      // And the one weekend it picks holds the WHOLE month: 146 games.
+      expect(weekendDemand(state.units, busy[0], plan[busy[0].sessionId] ?? [])).toBe(146)
+    }
   })
 
   it("every unit appears exactly once per window", () => {
@@ -173,14 +185,17 @@ describe("proposePlan on the NPH shape", () => {
     }
   })
 
-  it("compact uses no more weekends than balance; spread uses them all", () => {
+  it("compact IS balance now; spread still uses every weekend", () => {
     const state = nphState()
     const used = (plan: Record<string, string[]>) =>
       Object.values(plan).filter((k) => k.length > 0).length
     const compact = proposePlan(nphState(), "compact")
     const balance = proposePlan(nphState(), "balance")
     const spread = proposePlan(state, "spread")
-    expect(used(compact)).toBeLessThanOrEqual(used(balance))
+    // Since the 2026-08-03 ruling the two names are one objective, so they are
+    // not merely comparable — they are the same calendar.
+    expect(compact).toEqual(balance)
+    expect(used(balance)).toBe(state.windows.length)
     // 7 units across 13 weekends: spread still can't use more weekends than
     // units-per-window allows, but every window's weekend count ≤ units, so
     // every weekend should host something.
@@ -191,9 +206,16 @@ describe("proposePlan on the NPH shape", () => {
     }
   })
 
-  it("keeps the two giants (Gr10, Gr9) apart when capacity allows", () => {
+  /**
+   * RE-PINNED 2026-08-03. Keeping the two biggest grades on different weekends
+   * is a courtesy worth 40, and bundling the month is worth 100,000, so the
+   * default now puts them together — that is the ruling, not a regression. The
+   * courtesy still decides once the calendar is being spread out, which is the
+   * only shape where there is a choice to make.
+   */
+  it("keeps the two giants (Gr10, Gr9) apart when the month is spread out", () => {
     const state = nphState()
-    const plan = proposePlan(state, "balance")
+    const plan = proposePlan(state, "spread")
     for (const win of state.windows) {
       const together = win.weekends.some(
         (w) =>
@@ -894,14 +916,14 @@ describe("weekendsNeedingAttention", () => {
     expect(flagged[0].load.tone).toBe("over")
   })
 
-  it("the balanced plan on the NPH shape overflows nowhere, and flags its one full house", () => {
+  it("the default plan on the NPH shape has nothing to flag", () => {
     const state = nphState()
     const flagged = weekendsNeedingAttention(state, proposePlan(state, "balance"))
-    // Nothing overflows, but Dec 12–13 is a Burlington-only 80-slot weekend
-    // carrying 74 games: the one weekend a late entry would break.
-    expect(flagged.every((f) => f.load.tone === "tight")).toBe(true)
-    expect(flagged).toHaveLength(1)
-    expect(flagged[0].label).toBe("Dec 12–13")
+    // RE-PINNED 2026-08-03 (compact-first). The month now lands whole on one
+    // 176-slot weekend: 146 games, 83% of the courts, under the 85% line. The
+    // old pin was Dec 12–13 at 74 of 80, a weekend the compact plan does not
+    // use at all. The tight and over paths are pinned on their own above.
+    expect(flagged).toEqual([])
   })
 })
 

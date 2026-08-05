@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { computeSessionCapacity } from "./capacity"
-import { generateSchedule } from "./generate"
+import { buildSlots, generateSchedule } from "./generate"
 import { makeInput, makeTeams } from "./fixtures"
 
 /**
@@ -148,5 +148,48 @@ describe("same-unit clustering (soft)", () => {
     // cycled its teams — the unit returns after a gap instead of running
     // b2b. Alternating every slot would be ordered.length - 1 (= 7).
     expect(switches).toBeLessThanOrEqual(4)
+  })
+})
+
+/**
+ * COURTS THE LEAGUE HOLDS BACK (Season.courtBuffer, owner ruling 2026-08-03).
+ * Games overrun and teams still arrive in September, so an operator plans a
+ * court short on purpose. It is applied in ONE place — buildSlots — so every
+ * number downstream counts the same courts: this report, the planner's weekend
+ * capacity, the rental blocks, the ask sheet, and the generator itself.
+ */
+describe("the court buffer", () => {
+  it("takes the held courts out of the supply, per gym per day", () => {
+    // 2 days × 3 courts × 8 hourly slots = 48. Hold one court back at every
+    // gym every day and the season plans on 32, not 48.
+    const full = computeSessionCapacity(makeInput({ teams: 6, courts: 3 }))[0]
+    const held = computeSessionCapacity(makeInput({ teams: 6, courts: 3, courtBuffer: 1 }))[0]
+    expect(full.slotsTotal).toBe(48)
+    expect(full.courts).toBe(3)
+    expect(held.slotsTotal).toBe(32)
+    expect(held.courts).toBe(2)
+  })
+
+  it("holds back the LAST courts, so the preferred ones keep filling first", () => {
+    const held = buildSlots(makeInput({ teams: 6, courts: 3, courtBuffer: 1 }))
+    expect([...new Set(held.map((s) => s.courtId))].sort()).toEqual(["court-1", "court-2"])
+  })
+
+  it("never goes negative: a buffer past the building leaves it with no room", () => {
+    const none = computeSessionCapacity(makeInput({ teams: 6, courts: 2, courtBuffer: 5 }))[0]
+    expect(none.slotsTotal).toBe(0)
+    expect(none.surplusSlots).toBeLessThan(0)
+  })
+
+  it("the generator cannot book a court that is being held", () => {
+    const result = generateSchedule(makeInput({ teams: 6, courts: 3, courtBuffer: 2 }))
+    expect(result.games.length).toBeGreaterThan(0)
+    expect([...new Set(result.games.map((g) => g.courtId))]).toEqual(["court-1"])
+  })
+
+  it("0 is the default, and plans to the whole building", () => {
+    expect(computeSessionCapacity(makeInput({ teams: 6, courts: 3 }))[0].slotsTotal).toBe(
+      computeSessionCapacity(makeInput({ teams: 6, courts: 3, courtBuffer: 0 }))[0].slotsTotal
+    )
   })
 })

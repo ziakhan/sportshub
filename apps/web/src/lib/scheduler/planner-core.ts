@@ -126,8 +126,17 @@ export interface PlannerVenue {
   courtDays?: number
   /** Courts wired at this gym for this weekend. With `days` it splits
    *  `courtDays` into the two numbers a rental is actually quoted in: how
-   *  many courts, for how many days. */
+   *  many courts, for how many days.
+   *
+   *  USABLE courts: the season's court buffer is already taken out of this
+   *  number and out of `capacityGames`, so every capacity sum in this module
+   *  is what the league is really willing to book. */
   courts?: number
+  /** Courts the buffer is holding empty here this weekend (owner ruling
+   *  2026-08-03). Nothing scores on it — the capacity above is already the
+   *  truth — but the caption names it, so a smaller number never looks like
+   *  a mistake. Absent (or 0) when the season plans to the full building. */
+  courtsHeld?: number
   /** Days of this weekend the gym is open (2 for a Sat–Sun). */
   days?: number
   /** Hours one court is open per day here. What turns a court-day into the
@@ -1241,6 +1250,23 @@ export function reasonPhrase(reason: PlacementReason): string | null {
 /** Courts in a sentence, so "1 courts" never happens. */
 const courtsWord = (n: number) => `${n} court${n === 1 ? "" : "s"}`
 
+/**
+ * Courts the season is deliberately leaving empty on a weekend (the court
+ * buffer, owner ruling 2026-08-03). Every capacity number already has these
+ * taken out, so this exists purely to say so: a meter reading "54 of 60" when
+ * the operator knows the gyms hold 72 is not a smaller season, it is a court
+ * held back, and the caption says which.
+ */
+export function courtsHeldOn(venues: Array<Pick<PlannerVenue, "courtsHeld">>): number {
+  return venues.reduce((sum, v) => sum + Math.max(0, v.courtsHeld ?? 0), 0)
+}
+
+/** "1 court held back", or null when the season plans to the whole building. */
+export function heldBackPhrase(venues: Array<Pick<PlannerVenue, "courtsHeld">>): string | null {
+  const held = courtsHeldOn(venues)
+  return held > 0 ? `${courtsWord(held)} held back` : null
+}
+
 export interface WeekendStory {
   /** The weekend's one line under its meter, with the numbers in it. Empty
    *  when the meter has already said everything true about the weekend. */
@@ -1391,6 +1417,11 @@ export function weekendStory(
   if (capacity > 0 && demand === 0) parts.push("spare capacity")
   else if (capacity > 0 && gyms.overflow === 0 && demand / capacity >= TIGHT_RATIO)
     parts.push("full house")
+
+  // 5. And what the season is holding empty on purpose, last, because it
+  //    explains every number above rather than adding one of its own.
+  const held = heldBackPhrase(weekend.venues)
+  if (held) parts.push(held)
 
   return { caption: parts.join(" · "), chipCaptions }
 }
@@ -1872,17 +1903,50 @@ const RENTED_COURT_DAY_COST = 1_000
 const RESIDENCY_SWITCH_COST = 5
 
 /**
+ * WHAT A WEEKEND COSTS (owner ruling 2026-08-03: compact-first is the
+ * default). A month that fits on one weekend runs on one weekend. Bundling big
+ * is how a league actually wants to run — one address, one setup, one crew,
+ * families out one Saturday instead of three — and everything else is a
+ * refinement inside that shape.
+ *
+ * 100,000 puts it exactly where the ruling puts it: far under overflow (a
+ * million a game, so a weekend is never bundled into a game that cannot be
+ * played) and far over a rented court-day (1,000, so the search WILL rent
+ * courts to keep the month on one weekend). A hundred court-days would have to
+ * ride on one extra weekend before renting became the cheaper answer, and no
+ * month rents anything like that.
+ */
+const WEEKEND_USED_COST = 100_000
+
+/** The spread lever's mirror: what an IDLE weekend costs when the operator has
+ *  asked for the season laid out flat. Left where it was, because spread is
+ *  the alternative shape and not the default any more. */
+const WEEKEND_IDLE_COST = 50_000
+
+/**
  * Deterministic per-window search. Every unit appears exactly once per
  * window (NPH's real rule: each grade plays one weekend per monthly
  * session). Overflow is forbidden when any overflow-free assignment
  * exists; ties break toward the two largest units on different weekends.
+ *
+ * THE OBJECTIVE, in the order the terms outrank each other (owner ruling
+ * 2026-08-03):
+ *   1. overflow          1,000,000 a game — a game with no court is not a plan
+ *   2. weekends used       100,000 a weekend — bundle the month up
+ *   3. rented court-days     1,000 a court-day — then buy the cheapest rooms
+ *   4. peak games              100 a game — then keep the busiest day sane
+ *   5. the two giants apart       40 — then the small courtesies
+ *   6. residency switch            5
+ *
  * Levers:
- *  - balance: flattest peak utilization
- *  - compact: fewest weekends used, then flattest
- *  - spread: every weekend used, then flattest
+ *  - balance: THE DEFAULT, and since 2026-08-03 it means compact-first —
+ *    fewest weekends, then cheapest rentals, then flattest peak.
+ *  - compact: the same objective, kept because the API and the board's lever
+ *    row both still send it.
+ *  - spread: the alternative shape — every weekend used, then the rest.
  *  - one-gym: kept for callers that still send it (the API accepts it), and
- *    now the SAME objective as balance. Consolidation is no longer a lever an
- *    operator has to reach for: rented court-days are the dominant term of
+ *    the SAME objective as balance. Consolidation is no longer a lever an
+ *    operator has to reach for: rented court-days are a dominant term of
  *    every solve, so "pack one gym" is what the search already does.
  *
  * Rentals are the score, not an afterthought: every candidate is really packed
@@ -1916,19 +1980,41 @@ export function proposePlan(
     const assign = new Array(units.length).fill(0)
     const combos = Math.pow(n, units.length)
     if (combos > 300_000) {
-      // Too many units for exact search: largest-first greedy onto the
-      // weekend with most remaining capacity (utilization-aware).
+      // Too many units for an exact search. The greedy has to answer in the
+      // SHAPE the objective asks for, or a big league would get the opposite
+      // plan to a small one:
+      //  - compact-first (the default): largest grade first into a weekend
+      //    ALREADY in use that can still hold it, and only then a fresh one.
+      //  - spread: the old utilization walk, which is what flat means.
       const loads = new Array(n).fill(0)
       const greedy = new Array(units.length).fill(0)
       const order = units
         .map((u, i) => ({ i, teams: u.teams }))
-        .sort((a, b) => b.teams - a.teams)
+        .sort((a, b) => b.teams - a.teams || (units[a.i].key < units[b.i].key ? -1 : 1))
+      const compactFirst = lever !== "spread"
       for (const { i } of order) {
         let pick = 0
         let pickUtil = Infinity
+        let pickRank = -Infinity
+        let pickTie = -Infinity
         for (let k = 0; k < n; k++) {
           const cap = win.weekends[k].capacityGames || 1
           const add = Math.ceil((units[i].teams * win.weekends[k].targetGamesPerTeam) / 2)
+          if (compactFirst) {
+            const room = win.weekends[k].capacityGames - loads[k]
+            const fits = add <= room
+            // A weekend that can hold the grade beats one that cannot; among
+            // those, a weekend already in use beats opening a new one; then the
+            // tightest fit, so the roomy weekends stay whole for what is left.
+            const rank = (fits ? 2 : 0) + (fits && loads[k] > 0 ? 1 : 0)
+            const tie = fits ? -(room - add) : room
+            if (rank > pickRank || (rank === pickRank && tie > pickTie)) {
+              pickRank = rank
+              pickTie = tie
+              pick = k
+            }
+            continue
+          }
           const util = (loads[k] + add) / cap
           if (util < pickUtil) {
             pickUtil = util
@@ -1998,8 +2084,10 @@ export function proposePlan(
       // huge weekend still rents more courts than a flat 74-game one).
       // Availability stays hard via overflow.
       let score = overflow * 1_000_000 + peakGames * 100
-      if (lever === "compact") score += used * 50_000
-      if (lever === "spread") score += (n - used) * 50_000
+      // Compact-first is the default now: balance, compact and one-gym are one
+      // objective, and only spread asks for the season laid out flat.
+      if (lever === "spread") score += (n - used) * WEEKEND_IDLE_COST
+      else score += used * WEEKEND_USED_COST
       const gi = units.findIndex((u) => u.key === giants[0])
       const gj = units.findIndex((u) => u.key === giants[1])
       if (gi >= 0 && gj >= 0 && assign[gi] === assign[gj]) score += 40

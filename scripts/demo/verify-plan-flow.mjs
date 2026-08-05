@@ -288,6 +288,65 @@ if ((await stripToggle.count()) > 0) {
   ok("strip toggle present", false, "Board|Strip toggle not found on step 3")
 }
 
+// ── The court buffer: courts the league holds back ────────────────────────
+// Owner ruling 2026-08-03. This is the ONE write this script makes, and it
+// puts it straight back: set the buffer to 1, read the capacity and the
+// board's own sentence, then restore 0 and check the season is exactly as it
+// was found. Nothing else here persists anything.
+const capacityOf = (planner) =>
+  (planner?.state?.windows ?? [])
+    .flatMap((w) => w.weekends)
+    .reduce((sum, w) => sum + w.capacityGames, 0)
+const plannerNow = () =>
+  page.request.get(`${BASE}/api/seasons/${SEASON}/planner`).then((r) => r.json())
+const setBuffer = (courtBuffer) =>
+  page.request.patch(`${BASE}/api/seasons/${SEASON}/planner/venues`, { data: { courtBuffer } })
+
+const capBefore = capacityOf(await plannerNow())
+const saved = await setBuffer(1)
+ok("the court buffer saves", saved.ok(), `HTTP ${saved.status()}`)
+const withBuffer = await plannerNow()
+const capHeld = capacityOf(withBuffer)
+ok(
+  "holding one court back drops the season's capacity",
+  capHeld < capBefore,
+  `${capBefore} games → ${capHeld}`
+)
+const venuesHeld = (withBuffer?.state?.windows ?? [])
+  .flatMap((w) => w.weekends)
+  .flatMap((w) => w.venues)
+ok(
+  "every gym reports the court it is holding",
+  venuesHeld.length > 0 && venuesHeld.every((v) => (v.courtsHeld ?? 0) === 1),
+  `${venuesHeld.filter((v) => (v.courtsHeld ?? 0) > 0).length} of ${venuesHeld.length} gym-weekends`
+)
+// The weekend's sentence lives behind its "why" chip, so the check opens one
+// the way an operator would. The panel portals to body, so read the document.
+await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
+await page.waitForSelector('[data-testid="hours-toggle"]', { timeout: 60000 })
+await page.waitForTimeout(1500)
+const why = page.locator('[data-testid="weekend-why"]').first()
+let boardHeld = ""
+if ((await why.count()) > 0) {
+  await why.click()
+  await page.waitForTimeout(600)
+  boardHeld = await page.locator("body").innerText()
+}
+ok(
+  "the board says a court is held back",
+  /held back/i.test(boardHeld),
+  boardHeld ? "" : "no weekend-why chip on the board"
+)
+await page.screenshot({ path: `${SHOTS}/6-court-buffer.png`, fullPage: true })
+
+const restored = await setBuffer(0)
+const capRestored = capacityOf(await plannerNow())
+ok(
+  "the world is left exactly as it was found",
+  restored.ok() && capRestored === capBefore,
+  `${capRestored} games`
+)
+
 await browser.close()
 const failed = results.filter((r) => !r.pass)
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
