@@ -201,8 +201,8 @@ const PANEL_WIDTH = 268
 /** Enough for the longest sentence the core composes, at this width. */
 const PANEL_GUESS = 150
 
-function placeFor(rect: DOMRect): Placement {
-  const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - PANEL_WIDTH - 8))
+function placeFor(rect: DOMRect, width: number = PANEL_WIDTH): Placement {
+  const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8))
   const below = window.innerHeight - rect.bottom
   if (below < PANEL_GUESS && rect.top > below) {
     return { left, bottom: window.innerHeight - rect.top + 6 }
@@ -339,6 +339,146 @@ export function WhyPopover({
           document.body
         )}
     </>
+  )
+}
+
+/**
+ * A PANEL YOU CAN ACT IN, one tap away. WhyPopover's sibling: the same
+ * portalled placement and the same outside-click, Escape, resize handling, but
+ * it holds controls rather than a sentence, so it never opens on hover and it
+ * stays open while you use it.
+ */
+export function ActionPopover({
+  label,
+  trigger,
+  children,
+  open,
+  onOpenChange,
+  className = "",
+  testId,
+  width = PANEL_WIDTH,
+}: {
+  /** What the trigger is, said out loud. */
+  label: string
+  trigger: React.ReactNode
+  /** The panel's contents. Rendered only while open. */
+  children: (close: () => void) => React.ReactNode
+  /** Controlled when supplied, so a board can shut one panel by opening
+   *  another. Uncontrolled otherwise. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  className?: string
+  testId?: string
+  width?: number
+}) {
+  const [ownOpen, setOwnOpen] = useState(false)
+  const [at, setAt] = useState<Placement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const panelId = `act-${useId()}`
+  const isOpen = open ?? ownOpen
+
+  const setOpen = useCallback(
+    (next: boolean) => {
+      setOwnOpen(next)
+      onOpenChange?.(next)
+    },
+    [onOpenChange]
+  )
+
+  const place = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (rect) setAt(placeFor(rect, width))
+  }, [width])
+
+  const shut = useCallback(() => {
+    setOpen(false)
+    setAt(null)
+  }, [setOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (!at) place()
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) return
+      shut()
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      e.stopPropagation()
+      shut()
+      triggerRef.current?.focus()
+    }
+    document.addEventListener("mousedown", onDown)
+    document.addEventListener("keydown", onKey, true)
+    window.addEventListener("scroll", place, true)
+    window.addEventListener("resize", place)
+    return () => {
+      document.removeEventListener("mousedown", onDown)
+      document.removeEventListener("keydown", onKey, true)
+      window.removeEventListener("scroll", place, true)
+      window.removeEventListener("resize", place)
+    }
+  }, [isOpen, at, place, shut])
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        data-testid={testId}
+        aria-label={label}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? panelId : undefined}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (isOpen) {
+            shut()
+            return
+          }
+          place()
+          setOpen(true)
+        }}
+        className={`cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-1 ${className}`}
+      >
+        {trigger}
+      </button>
+      {isOpen &&
+        at &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={panelRef}
+            id={panelId}
+            role="dialog"
+            aria-label={label}
+            data-testid={testId ? `${testId}-panel` : "action-popover"}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "fixed",
+              left: at.left,
+              top: at.top,
+              bottom: at.bottom,
+              width,
+            }}
+            className="border-ink-200 z-50 rounded-xl border bg-white p-3 shadow-lg"
+          >
+            {children(shut)}
+          </div>,
+          document.body
+        )}
+    </>
+  )
+}
+
+/** The quiet action a correction and a split both hang off: small, grey, and
+ *  unmistakably a button. */
+export function QuietAction({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="border-ink-200 text-ink-500 hover:border-ink-300 hover:text-ink-800 inline-flex min-h-[24px] items-center rounded-md border bg-white px-1.5 text-[10.5px] font-bold">
+      {children}
+    </span>
   )
 }
 
@@ -595,37 +735,296 @@ export function VenueTray({
         {gyms.map((gym) => {
           const paint = hueFor(hue, gym.venueId)
           const on = armedVenueId === gym.venueId
+          /**
+           * NOBODY HAS ASKED THIS GYM ANYTHING (owner ruling 2026-08-04, the
+           * Haber case). A pool gym attached to no weekend of the season is not
+           * a gym that is free every weekend, and it is not a gym that is busy:
+           * it is a gym nobody has phoned. Offering it as something to place
+           * would be the board asserting availability the league does not have,
+           * so it sits here unpickable and says exactly that.
+           */
+          const unknown = gym.weekends === 0
           return (
             <button
               key={gym.venueId}
               type="button"
-              draggable
+              draggable={!unknown}
+              disabled={unknown}
               data-testid="tray-gym"
               data-venue-id={gym.venueId}
-              aria-pressed={on}
+              data-availability={unknown ? "unknown" : "known"}
+              aria-pressed={unknown ? undefined : on}
               onDragStart={(e) =>
                 e.dataTransfer.setData("text/plain", JSON.stringify({ venueId: gym.venueId }))
               }
               onClick={(e) => {
                 e.stopPropagation()
+                if (unknown) return
                 onArm(on ? null : gym.venueId)
               }}
-              className={`inline-flex min-h-[36px] cursor-grab items-center gap-1.5 rounded-lg border bg-white px-2 text-[12px] font-bold active:cursor-grabbing ${
-                on ? "border-play-400 ring-play-400 ring-2" : "border-ink-200"
+              className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-2 text-[12px] font-bold ${
+                unknown
+                  ? "border-ink-200 border-dashed bg-ink-50 cursor-not-allowed"
+                  : `cursor-grab bg-white active:cursor-grabbing ${
+                      on ? "border-play-400 ring-play-400 ring-2" : "border-ink-200"
+                    }`
               }`}
             >
-              <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
-              <span className={paint.name}>{gym.short}</span>
+              <i
+                aria-hidden
+                className={`h-2.5 w-2.5 flex-none rounded-full ${
+                  unknown ? "border-ink-300 border border-dashed" : paint.swatch
+                }`}
+              />
+              <span className={unknown ? "text-ink-500" : paint.name}>{gym.short}</span>
               <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
                 {courtsWord(gym.courts)}
               </span>
-              <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
-                on {weekendsWord(gym.weekends)}
-              </span>
+              {unknown ? (
+                <span className="text-ink-400 text-[11px] font-semibold">
+                  availability unknown, ask them
+                </span>
+              ) : (
+                <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
+                  on {weekendsWord(gym.weekends)}
+                </span>
+              )}
             </button>
           )
         })}
       </div>
     </div>
+  )
+}
+
+/* ------------------------- the correcting verb ---------------------------- */
+
+/**
+ * "I DON'T HAVE THIS" (owner ruling 2026-08-04).
+ *
+ * The one thing a planning board cannot know: a gym with six courts on the
+ * floor only offered three this Saturday. Every other number on the screen is
+ * derived, so the correction goes in at the source — the courts this gym gives
+ * on this weekend — and the whole board repacks around it.
+ *
+ * The stepper stops at the courts the season actually holds there, because this
+ * is a correction downward: a gym cannot lend courts it does not have, and a
+ * board that let somebody type 12 would be planning a season on a fiction.
+ */
+export function CourtCorrection({
+  gymName,
+  weekendLabel,
+  wired,
+  current,
+  onApply,
+  testId = "court-correction",
+}: {
+  gymName: string
+  weekendLabel: string
+  /** Courts the season holds here: the ceiling, and what "all of them" means. */
+  wired: number
+  /** Courts the working copy is planning on right now. */
+  current: number
+  onApply: (courts: number) => void
+  testId?: string
+}) {
+  return (
+    <ActionPopover
+      label={`How many courts ${gymName} can give on ${weekendLabel}`}
+      testId={testId}
+      width={252}
+      trigger={<QuietAction>I do not have this</QuietAction>}
+    >
+      {(close) => (
+        <CourtCorrectionBody
+          gymName={gymName}
+          weekendLabel={weekendLabel}
+          wired={wired}
+          current={current}
+          onApply={(n) => {
+            onApply(n)
+            close()
+          }}
+          onCancel={close}
+        />
+      )}
+    </ActionPopover>
+  )
+}
+
+function CourtCorrectionBody({
+  gymName,
+  weekendLabel,
+  wired,
+  current,
+  onApply,
+  onCancel,
+}: {
+  gymName: string
+  weekendLabel: string
+  wired: number
+  current: number
+  onApply: (courts: number) => void
+  onCancel: () => void
+}) {
+  const [courts, setCourts] = useState(Math.max(0, Math.min(wired, current)))
+  const step = (delta: number) => setCourts((n) => Math.max(0, Math.min(wired, n + delta)))
+  return (
+    <div>
+      <p className="text-ink-900 text-[12.5px] font-bold">
+        How many courts can you actually get?
+      </p>
+      <p className="text-ink-500 mt-0.5 text-[11.5px]">
+        {gymName} on {weekendLabel}. This weekend only.
+      </p>
+      <div className="mt-2.5 flex items-center gap-2">
+        <button
+          type="button"
+          data-testid="court-step-down"
+          aria-label="One court fewer"
+          disabled={courts <= 0}
+          onClick={() => step(-1)}
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 h-10 w-10 rounded-lg border text-lg font-bold disabled:opacity-40"
+        >
+          &minus;
+        </button>
+        <span
+          data-testid="court-step-value"
+          className="text-ink-900 min-w-[2.5rem] text-center text-[20px] font-bold tabular-nums"
+        >
+          {courts}
+        </span>
+        <button
+          type="button"
+          data-testid="court-step-up"
+          aria-label="One court more"
+          disabled={courts >= wired}
+          onClick={() => step(1)}
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 h-10 w-10 rounded-lg border text-lg font-bold disabled:opacity-40"
+        >
+          +
+        </button>
+        <span className="text-ink-400 text-[11.5px] font-semibold tabular-nums">
+          of {courtsWord(wired)} we hold
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center gap-2">
+        <button
+          type="button"
+          data-testid="court-correction-apply"
+          onClick={() => onApply(courts)}
+          className="border-court-300 bg-court-50 text-court-800 hover:bg-court-100 min-h-[36px] rounded-lg border px-3 text-[12px] font-bold"
+        >
+          {courts === 0 ? "They have nothing" : `That is ${courtsWord(courts)}`}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-ink-500 hover:text-ink-800 min-h-[36px] px-1 text-[12px] font-semibold"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* -------------------------- the breaking verb ----------------------------- */
+
+/** One way of breaking a run of games up, with what it would cost. */
+export interface SplitAxis {
+  key: "gyms" | "weekends"
+  label: string
+  /** What it would do, in the operator's own words. */
+  detail: string | null
+  /** The price, already composed by the pure core. Null when the axis cannot
+   *  be taken, in which case `detail` is the reason. */
+  price: string | null
+  onApply: () => void
+}
+
+/**
+ * BREAK (owner ruling 2026-08-04). The solver never splits a weekend across two
+ * buildings or a month across two weekends: both cost real money and it is
+ * built to avoid them. This is the operator overruling that, and it is the only
+ * thing that can.
+ *
+ * The price comes first, every time. An axis that cannot be taken says why
+ * instead of costing nothing, because a greyed button with no reason is the
+ * board keeping a secret.
+ */
+export function SplitMenu({
+  what,
+  axes,
+  testId = "split-menu",
+}: {
+  /** What is being broken up, named: "Grade 10" or "the Six Park block". */
+  what: string
+  /** Computed lazily by the caller, so the board is not pricing a split nobody
+   *  has asked for on every render. */
+  axes: () => SplitAxis[]
+  testId?: string
+}) {
+  return (
+    <ActionPopover
+      label={`Split ${what}`}
+      testId={testId}
+      width={274}
+      trigger={<QuietAction>Split…</QuietAction>}
+    >
+      {(close) => (
+        <div>
+          <p className="text-ink-900 text-[12.5px] font-bold">Split {what}</p>
+          <p className="text-ink-500 mt-0.5 text-[11.5px]">
+            The planner keeps a group together because two of anything costs
+            more. You can overrule it.
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {axes().map((axis) => (
+              <div
+                key={axis.key}
+                data-testid={`split-axis-${axis.key}`}
+                data-enabled={axis.price !== null}
+                className={`rounded-lg border px-2.5 py-2 ${
+                  axis.price !== null ? "border-ink-200 bg-white" : "border-ink-100 bg-ink-50"
+                }`}
+              >
+                <p
+                  className={`text-[12px] font-bold ${
+                    axis.price !== null ? "text-ink-900" : "text-ink-400"
+                  }`}
+                >
+                  {axis.label}
+                </p>
+                {axis.detail && (
+                  <p className="text-ink-500 mt-0.5 text-[11px]">{axis.detail}</p>
+                )}
+                {axis.price !== null && (
+                  <>
+                    <p
+                      className="text-gold-600 mt-1 text-[11px] font-bold"
+                      data-testid={`split-price-${axis.key}`}
+                    >
+                      {axis.price}
+                    </p>
+                    <button
+                      type="button"
+                      data-testid={`split-apply-${axis.key}`}
+                      onClick={() => {
+                        axis.onApply()
+                        close()
+                      }}
+                      className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 mt-1.5 min-h-[36px] rounded-lg border px-2.5 text-[12px] font-bold"
+                    >
+                      Do it
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </ActionPopover>
   )
 }

@@ -36,7 +36,14 @@ export function Sidebar({
   const sections = buildNavSections({ roles, tenants, organizations })
 
   return (
-    <aside className="border-ink-100 hidden w-[268px] flex-shrink-0 border-r bg-[#fcfcfc] lg:flex lg:flex-col">
+    // data-app-sidebar is the one handle a full-bleed workspace has on this
+    // column. A screen that needs the whole viewport (the season planning
+    // board) sets data-planner-stage on the body and globals.css folds this
+    // away; nothing else about the sidebar changes.
+    <aside
+      data-app-sidebar
+      className="border-ink-100 hidden w-[268px] flex-shrink-0 border-r bg-[#fcfcfc] lg:flex lg:flex-col"
+    >
       <div className="border-ink-100 flex h-[64px] items-center gap-2.5 border-b px-5">
         <span className="bg-play-600 flex h-7 w-7 items-center justify-center rounded-lg text-white">
           <svg

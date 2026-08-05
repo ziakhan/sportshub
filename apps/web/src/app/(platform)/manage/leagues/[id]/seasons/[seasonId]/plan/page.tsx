@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useCallback, useState } from "react"
+import { Suspense, useCallback, useEffect, useState } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { SmartBack } from "@/components/ui"
 import { CalendarStep } from "./calendar-step"
@@ -56,62 +56,102 @@ function PlanWizard() {
 
   const seasonLine = [header?.leagueName, header?.seasonLabel].filter(Boolean).join(" · ")
 
+  /**
+   * THE BOARD TAKES THE WHOLE SCREEN (owner ruling 2026-08-04). Step 3 is a
+   * five-month calendar with a work rail beside it, so on that step the page
+   * drops its own reading width and the app folds its sidebar away.
+   *
+   * A body attribute rather than a context: the sidebar lives in a server
+   * layout two levels up with no client provider between here and there, and
+   * one attribute the CSS keys on beats threading state through a layout that
+   * every other route shares. It is removed on the way out of the step and on
+   * unmount, so no other screen can ever inherit it.
+   */
+  const wide = step === 3
+  useEffect(() => {
+    if (!wide) return
+    document.body.dataset.plannerStage = "board"
+    return () => {
+      delete document.body.dataset.plannerStage
+    }
+  }, [wide])
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className={wide ? "w-full px-3 py-3" : "mx-auto max-w-5xl px-4 py-6"}>
       <SmartBack
         fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}
         fallbackLabel="Back to Plan Your Season"
       />
 
-      <div className="mt-2">
-        <h1 className="text-ink-900 text-2xl font-bold">Plan your season</h1>
-        <p className="text-ink-500 text-sm">
-          {seasonLine || "Five steps: teams, gyms, calendar, publish, schedule."}
-        </p>
-      </div>
+      {/* On the board step the title and the step rail share one line, so the
+          calendar starts near the top of the screen instead of below a
+          letterhead. Everywhere else the page keeps its ordinary heading. */}
+      <div className={wide ? "mt-1 flex flex-wrap items-center gap-x-5 gap-y-2" : ""}>
+        <div className={wide ? "" : "mt-2"}>
+          <h1 className={`text-ink-900 font-bold ${wide ? "text-base" : "text-2xl"}`}>
+            Plan your season
+          </h1>
+          <p className={`text-ink-500 ${wide ? "text-[11.5px]" : "text-sm"}`}>
+            {seasonLine || "Five steps: teams, gyms, calendar, publish, schedule."}
+          </p>
+        </div>
 
-      {/* The rail, always visible. */}
-      <ol className="border-ink-100 shadow-soft mt-5 flex items-center gap-0 overflow-x-auto rounded-2xl border bg-white px-5 py-4">
-        {STEPS.map((s, i) => {
-          // Every step is a real screen now, so the only distinction the rail
-          // draws is the one the operator is standing on.
-          const current = s.n === step
-          return (
-            <li key={s.n} className="flex flex-none items-center">
-              <button
-                type="button"
-                onClick={() => setStep(s.n)}
-                className="brand-focus flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1 py-1"
-                aria-current={current ? "step" : undefined}
-              >
-                <span
-                  className={`flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full text-xs font-bold ${
-                    current ? "bg-court-600 text-white" : "bg-court-100 text-court-700"
-                  }`}
+        {/* The rail, always visible. */}
+        <ol
+          className={`border-ink-100 shadow-soft flex items-center gap-0 overflow-x-auto rounded-2xl border bg-white ${
+            wide ? "px-3 py-1.5" : "mt-5 w-full px-5 py-4"
+          }`}
+        >
+          {STEPS.map((s, i) => {
+            // Every step is a real screen now, so the only distinction the rail
+            // draws is the one the operator is standing on.
+            const current = s.n === step
+            return (
+              <li key={s.n} className="flex flex-none items-center">
+                <button
+                  type="button"
+                  onClick={() => setStep(s.n)}
+                  className="brand-focus flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1 py-1"
+                  aria-current={current ? "step" : undefined}
                 >
-                  {s.n}
-                </span>
-                <span className="text-left">
                   <span
-                    className={`block text-sm font-semibold ${
-                      current ? "text-ink-900" : "text-ink-600"
-                    }`}
+                    className={`flex flex-none items-center justify-center rounded-full font-bold ${
+                      wide ? "h-[22px] w-[22px] text-[11px]" : "h-[26px] w-[26px] text-xs"
+                    } ${current ? "bg-court-600 text-white" : "bg-court-100 text-court-700"}`}
                   >
-                    {s.label}
+                    {s.n}
                   </span>
-                  <span className="text-ink-400 block text-[11.5px]">{s.hint}</span>
-                </span>
-              </button>
-              {i < STEPS.length - 1 && <span className="bg-ink-200 mx-3 h-px w-6 flex-none" aria-hidden />}
-            </li>
-          )
-        })}
-      </ol>
-      <p className="text-ink-400 mt-2.5 px-1 text-xs">
-        Going back to edit a step never loses the work after it. It recomputes it.
-      </p>
+                  <span className="text-left">
+                    <span
+                      className={`block font-semibold ${wide ? "text-[12.5px]" : "text-sm"} ${
+                        current ? "text-ink-900" : "text-ink-600"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                    {/* The hint is orientation for somebody arriving; on the
+                        board it is a second line of chrome above the work. */}
+                    {!wide && <span className="text-ink-400 block text-[11.5px]">{s.hint}</span>}
+                  </span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <span
+                    className={`bg-ink-200 h-px flex-none ${wide ? "mx-2 w-4" : "mx-3 w-6"}`}
+                    aria-hidden
+                  />
+                )}
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+      {!wide && (
+        <p className="text-ink-400 mt-2.5 px-1 text-xs">
+          Going back to edit a step never loses the work after it. It recomputes it.
+        </p>
+      )}
 
-      <div className="mt-6">
+      <div className={wide ? "mt-3" : "mt-6"}>
         {step === 1 ? (
           <TeamsStep seasonId={seasonId} onLoaded={onLoaded} />
         ) : step === 2 ? (

@@ -2833,3 +2833,381 @@ export function gymCountsSentence(
   return `${side(before, true)} becomes ${side(after, false)}.`
 }
 
+
+/* ======================================================================== *
+ * THE FOUR VERBS (owner ruling 2026-08-04).
+ *
+ * Placing a gym already existed. These are the other three, and every one of
+ * them is a PURE function over the working copy: the board hands in what it is
+ * showing and gets back what it would be showing, so a price quoted before an
+ * edit and the board after it are computed by the same code.
+ * ======================================================================== */
+
+/** One weekend's one gym, the way a working copy keys a court cap. */
+export const courtCapKey = (sessionId: string, venueId: string) => `${sessionId}|${venueId}`
+
+/** Courts a gym actually has wired on a weekend, which is the ceiling any
+ *  correction is capped at. */
+export function courtsWiredAt(venue: PlannerVenue): number {
+  return courtsAt(venue)
+}
+
+/**
+ * CORRECT — "I don't have this" (owner ruling 2026-08-04).
+ *
+ * A gym said they can only give three of their six courts that weekend. That
+ * is not a smaller season and it is not a mistake in step 2: it is one gym, one
+ * weekend, and the board has to repack around it immediately.
+ *
+ * The cap rewrites the venue's courts and the capacity behind them at the rate
+ * that gym already runs at, so every downstream number — the section meter, the
+ * weekend fraction, the rental blocks, the ask sheet — follows without any of
+ * them knowing a correction happened. Weekends nobody corrected come back as
+ * the very same objects, so a board with no corrections costs nothing.
+ *
+ * `caps` is keyed by courtCapKey. A cap at or above the wired courts is not a
+ * correction and is ignored; a cap of 0 is a gym that gave nothing.
+ */
+export function applyCourtCaps(
+  state: PlannerState,
+  caps: Record<string, number>
+): PlannerState {
+  if (Object.keys(caps).length === 0) return state
+  let touchedAny = false
+  const windows = state.windows.map((win) => {
+    let touchedWindow = false
+    const weekends = win.weekends.map((w) => {
+      let touched = false
+      const venues = w.venues.map((v) => {
+        const cap = caps[courtCapKey(w.sessionId, v.venueId)]
+        if (cap == null) return v
+        const wired = courtsAt(v)
+        const courts = Math.max(0, Math.min(wired, Math.floor(cap)))
+        if (courts === wired) return v
+        touched = true
+        const perCourt = gamesPerCourt(v)
+        const days = daysAt(v)
+        return {
+          ...v,
+          courts,
+          courtDays: courts * days,
+          capacityGames: Math.max(0, Math.floor(perCourt * courts)),
+        }
+      })
+      if (!touched) return w
+      touchedWindow = true
+      touchedAny = true
+      return {
+        ...w,
+        venues,
+        capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+        largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+      }
+    })
+    return touchedWindow ? { ...win, weekends } : win
+  })
+  return touchedAny ? { ...state, windows } : state
+}
+
+/**
+ * WHAT A CALENDAR COSTS, in the three units an operator pays in: buildings they
+ * have to open, court-days they have to rent, and weekends they have to run.
+ *
+ * Read off the same chronological pass the board draws from, so a price is
+ * never a second opinion about the plan — it is the plan, counted.
+ */
+export interface PlanCost {
+  /** Pool buildings opened across the season, counted once per weekend: two
+   *  weekends at the same gym is two buildings to book. */
+  buildingsOpened: number
+  courtDaysRented: number
+  /** Weekends that actually hold a grade. */
+  weekendsUsed: number
+  /** Games with no building at all. */
+  gamesUnhoused: number
+}
+
+export function planCost(
+  state: PlannerState,
+  assignment: Record<string, string[]>,
+  venues: Record<string, Record<string, string>> = {},
+  /**
+   * Count only these weekends. The whole season is the honest headline — an
+   * edit that opens a building in October and closes one in January really has
+   * cost nothing — but a season total can hide the thing in front of you, so a
+   * caller can also ask what one weekend costs and say both.
+   */
+  only?: ReadonlySet<string>
+): PlanCost {
+  const blocks = packShownPlacements(state, assignment, venues).blocks
+  const cost: PlanCost = {
+    buildingsOpened: 0,
+    courtDaysRented: 0,
+    weekendsUsed: 0,
+    gamesUnhoused: 0,
+  }
+  for (const b of blocks) {
+    if (only && !only.has(b.sessionId)) continue
+    cost.courtDaysRented += b.courtDays
+    if (b.venueId) cost.buildingsOpened += 1
+    else cost.gamesUnhoused += b.games
+  }
+  for (const w of chronologicalWeekends(state)) {
+    if (only && !only.has(w.sessionId)) continue
+    if ((assignment[w.sessionId] ?? []).length > 0) cost.weekendsUsed += 1
+  }
+  return cost
+}
+
+/** What one edit would change, term by term. Positive is more of it. */
+export interface PlanPrice {
+  buildingsOpened: number
+  courtDaysRented: number
+  weekendsAdded: number
+  gamesUnhoused: number
+}
+
+export function planPrice(before: PlanCost, after: PlanCost): PlanPrice {
+  return {
+    buildingsOpened: after.buildingsOpened - before.buildingsOpened,
+    courtDaysRented: after.courtDaysRented - before.courtDaysRented,
+    weekendsAdded: after.weekendsUsed - before.weekendsUsed,
+    gamesUnhoused: after.gamesUnhoused - before.gamesUnhoused,
+  }
+}
+
+/** A signed count wearing its unit: "1 more building", "2 fewer court-days". */
+function priceClause(delta: number, one: string, many: string): string | null {
+  if (delta === 0) return null
+  const n = Math.abs(delta)
+  return `${n} ${delta > 0 ? "more" : "fewer"} ${n === 1 ? one : many}`
+}
+
+/**
+ * THE PRICE, before anything is applied (owner ruling 2026-08-04: a split shows
+ * what it costs first). Zero terms are left out, because "0 more weekends" is a
+ * sentence nobody needs to read, and a split that costs nothing says so.
+ */
+function priceClauses(price: PlanPrice): string[] {
+  return [
+    priceClause(price.buildingsOpened, "building to open", "buildings to open"),
+    priceClause(price.courtDaysRented, "court-day to rent", "court-days to rent"),
+    priceClause(price.weekendsAdded, "weekend in use", "weekends in use"),
+    priceClause(price.gamesUnhoused, "game with no building", "games with no building"),
+  ].filter((p): p is string => p !== null)
+}
+
+export function planPriceSentence(price: PlanPrice): string {
+  const parts = priceClauses(price)
+  return parts.length === 0 ? "Costs nothing: same buildings, same court-days." : `${nameList(parts)}.`
+}
+
+/**
+ * THE PRICE AT BOTH SCOPES (owner ruling 2026-08-04, and the thing the first
+ * drive of it caught).
+ *
+ * A grade moved into a building it will now keep can cost two courts in October
+ * and save two in January, and the season total comes out at zero. That total is
+ * true and it is the number that matters, but "costs nothing" printed under
+ * "Grade 9 moves to Six Park" reads like the board is not paying attention.
+ *
+ * So: the season leads when it has anything to say, and when it comes out even
+ * the weekend in front of the operator says what IT costs and the sentence says
+ * plainly that the season absorbs it.
+ */
+export function splitPriceSentence(season: PlanPrice, weekend: PlanPrice): string {
+  const seasonParts = priceClauses(season)
+  if (seasonParts.length > 0) return `${nameList(seasonParts)} across the season.`
+  const weekendParts = priceClauses(weekend)
+  if (weekendParts.length === 0) return "Costs nothing: same buildings, same court-days."
+  return `${nameList(weekendParts)} that weekend, and the season comes out even.`
+}
+
+/** A cohort's games on one weekend, for the caller sorting a split. */
+function gamesOnWeekend(
+  units: PlannerUnit[],
+  weekend: Pick<PlannerWeekend, "targetGamesPerTeam">,
+  key: string
+): number {
+  const u = units.find((x) => x.key === key)
+  return u ? unitGames(u, weekend.targetGamesPerTeam) : 0
+}
+
+/** What a split did, as data: the cohorts that moved and where they went. */
+export interface SplitResult {
+  assignment: Record<string, string[]>
+  venues: Record<string, Record<string, string>>
+  /** The cohorts that moved. Never empty on a result. */
+  moved: string[]
+  /** The building they moved into, on a split across gyms. */
+  toVenueId: string | null
+  /** The weekend they moved onto, on a split across weekends. */
+  toSessionId: string | null
+}
+
+/**
+ * BREAK, axis one — ACROSS GYMS THIS WEEKEND (owner ruling 2026-08-04).
+ *
+ * The solver never does this: a weekend in two buildings costs a second address
+ * and the search will take a heavier single building every time. This is the
+ * operator overruling that, and it is the only thing that can.
+ *
+ * WHOLE COHORTS ONLY, which is the law the whole planner is built on — a grade
+ * plays one building so a family drives to one address. So a run of cohorts is
+ * dealt out largest-first into the second building until the first one fits,
+ * and a single cohort cannot be split at all: it is one grade and it goes one
+ * place. Null when there is nothing here to divide or nowhere to put it.
+ */
+export function splitAcrossGyms(
+  state: PlannerState,
+  assignment: Record<string, string[]>,
+  venues: Record<string, Record<string, string>>,
+  sessionId: string,
+  unitKeys: string[]
+): SplitResult | null {
+  if (unitKeys.length < 2) return null
+  const weekend = chronologicalWeekends(state).find((w) => w.sessionId === sessionId)
+  if (!weekend) return null
+  const placed = packShownPlacements(state, assignment, venues).venues[sessionId] ?? {}
+  const from = placed[unitKeys[0]] ?? null
+  // Everything being split has to start in one building, or this is not a
+  // split, it is two things that are already apart.
+  if (!from || unitKeys.some((k) => placed[k] !== from)) return null
+
+  const source = weekend.venues.find((v) => v.venueId === from)
+  const ordered = [...unitKeys].sort(
+    (a, b) =>
+      gamesOnWeekend(state.units, weekend, b) - gamesOnWeekend(state.units, weekend, a) ||
+      a.localeCompare(b, "en")
+  )
+  const total = ordered.reduce((sum, k) => sum + gamesOnWeekend(state.units, weekend, k), 0)
+
+  // The cheapest second building with room: the pool is unordered, so this is
+  // a cost question exactly the way filling a block from the pool is.
+  let target: PlannerVenue | null = null
+  let targetCost = Infinity
+  for (const v of orderedVenues(weekend.venues)) {
+    if (v.venueId === from || v.capacityGames <= 0) continue
+    const cost = v.role === "home" ? 0 : courtDaysNeeded(v, total)
+    if (cost < targetCost) {
+      target = v
+      targetCost = cost
+    }
+  }
+  if (!target) return null
+
+  // Deal cohorts across, largest first, until the source fits its own courts.
+  // A source that already fits still splits — the operator asked to — and then
+  // the rule is simply "move the largest one".
+  const room = source?.capacityGames ?? 0
+  const moved: string[] = []
+  let stays = total
+  let goes = 0
+  for (const key of ordered) {
+    const games = gamesOnWeekend(state.units, weekend, key)
+    if (moved.length > 0 && stays <= room) break
+    if (moved.length === ordered.length - 1) break
+    if (goes + games > target.capacityGames && moved.length > 0) break
+    moved.push(key)
+    stays -= games
+    goes += games
+  }
+  if (moved.length === 0) return null
+
+  const nextVenues = { ...venues, [sessionId]: { ...(venues[sessionId] ?? {}) } }
+  // Everything staying is now a decision too: without it the packer is free to
+  // undo the split on the next pass, which is exactly what it is built to do.
+  for (const key of unitKeys) nextVenues[sessionId][key] = from
+  for (const key of moved) nextVenues[sessionId][key] = target.venueId
+  return { assignment, venues: nextVenues, moved, toVenueId: target.venueId, toSessionId: null }
+}
+
+/**
+ * BREAK, axis two — ACROSS TWO WEEKENDS (owner ruling 2026-08-04).
+ *
+ * The lightest other weekend of the same month takes part of the load. A grade
+ * plays one weekend a month, so the cohorts that move are moving inside their
+ * own window and nothing about that rule bends.
+ */
+export function splitAcrossWeekends(
+  state: PlannerState,
+  assignment: Record<string, string[]>,
+  venues: Record<string, Record<string, string>>,
+  sessionId: string,
+  unitKeys: string[]
+): SplitResult | null {
+  if (unitKeys.length < 2) return null
+  const window = state.windows.find((win) =>
+    win.weekends.some((w) => w.sessionId === sessionId)
+  )
+  const weekend = window?.weekends.find((w) => w.sessionId === sessionId)
+  if (!window || !weekend) return null
+
+  const target = lightestWeekendIn(state, window, assignment, sessionId)
+  if (!target) return null
+
+  const ordered = [...unitKeys].sort(
+    (a, b) =>
+      gamesOnWeekend(state.units, weekend, b) - gamesOnWeekend(state.units, weekend, a) ||
+      a.localeCompare(b, "en")
+  )
+  const room = Math.max(
+    0,
+    target.capacityGames - weekendDemand(state.units, target, assignment[target.sessionId] ?? [])
+  )
+  const here = weekend.capacityGames
+  let stays = weekendDemand(state.units, weekend, assignment[sessionId] ?? [])
+
+  const moved: string[] = []
+  let goes = 0
+  for (const key of ordered) {
+    const games = gamesOnWeekend(state.units, weekend, key)
+    if (moved.length > 0 && stays <= here) break
+    if (moved.length === ordered.length - 1) break
+    if (goes + games > room && moved.length > 0) break
+    moved.push(key)
+    stays -= games
+    goes += games
+  }
+  if (moved.length === 0) return null
+
+  let nextAssignment = assignment
+  let nextVenues = venues
+  for (const key of moved) {
+    nextAssignment = assignmentWithMove(nextAssignment, key, sessionId, target.sessionId)
+    nextVenues = venuesWithoutUnit(nextVenues, key, [sessionId, target.sessionId])
+  }
+  return {
+    assignment: nextAssignment,
+    venues: nextVenues,
+    moved,
+    toVenueId: null,
+    toSessionId: target.sessionId,
+  }
+}
+
+/**
+ * The emptiest weekend of a month that is not the one we are standing on: where
+ * a split sends the half it is giving away, and where the board points when it
+ * offers "a different weekend".
+ */
+export function lightestWeekendIn(
+  state: PlannerState,
+  window: PlannerWindow,
+  assignment: Record<string, string[]>,
+  exceptSessionId: string
+): PlannerWeekend | null {
+  let best: PlannerWeekend | null = null
+  let bestLoad = Infinity
+  for (const w of window.weekends) {
+    if (w.sessionId === exceptSessionId) continue
+    if (w.capacityGames <= 0) continue
+    const demand = weekendDemand(state.units, w, assignment[w.sessionId] ?? [])
+    const load = demand / w.capacityGames
+    if (load < bestLoad) {
+      best = w
+      bestLoad = load
+    }
+  }
+  return best
+}

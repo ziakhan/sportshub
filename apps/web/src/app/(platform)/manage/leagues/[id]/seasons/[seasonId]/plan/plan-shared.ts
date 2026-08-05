@@ -25,6 +25,19 @@ export interface Armed {
   window: string
 }
 
+/**
+ * A whole rental block picked up, looking for a lighter weekend (owner ruling
+ * 2026-08-04). The second half of the two-choice prompt a stranded block asks:
+ * the cohorts travel together, because the block is the thing with nowhere to
+ * play, and they can only land inside their own month.
+ */
+export interface ArmedBlock {
+  sessionId: string
+  unitKeys: string[]
+  window: string
+  label: string
+}
+
 /** A weekend card's fill, by what its courts are doing. */
 export const CARD_TONE: Record<WeekendLoad["tone"], string> = {
   over: "border-hoop-300 bg-hoop-50",

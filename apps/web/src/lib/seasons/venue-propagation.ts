@@ -568,11 +568,19 @@ export interface CourtRewireResult {
  * quietly stranding a scheduled game. Adding courts is always safe.
  *
  * An empty `courtIds` is a no-op: a season never means "no courts anywhere".
+ *
+ * SCOPED TO ONE WEEKEND (owner ruling 2026-08-04, the "I don't have this"
+ * correction): pass `scope.sessionId` and only that weekend's day-venues are
+ * rewired. A gym giving three of its six courts on one Saturday is a fact about
+ * that Saturday, and writing it season-wide would be a different, wrong claim.
+ * `scope.allowEmpty` goes with it: on one weekend "no courts" is a real answer
+ * a gym can give, even though it never is for a whole season.
  */
 export async function applyVenueCourtsToSessionDays(
   seasonId: string,
   venueId: string,
-  courtIds: string[]
+  courtIds: string[],
+  scope?: { sessionId?: string; allowEmpty?: boolean }
 ): Promise<CourtRewireResult> {
   const empty: CourtRewireResult = {
     daysRewired: 0,
@@ -582,10 +590,15 @@ export async function applyVenueCourtsToSessionDays(
     blockedCourtIds: [],
   }
   const desired = [...new Set(courtIds)]
-  if (desired.length === 0) return empty
+  if (desired.length === 0 && !scope?.allowEmpty) return empty
 
   const dayVenues = await (prisma as any).seasonSessionDayVenue.findMany({
-    where: { venueId, day: { session: { seasonId } } },
+    where: {
+      venueId,
+      day: {
+        session: { seasonId, ...(scope?.sessionId ? { id: scope.sessionId } : {}) },
+      },
+    },
     select: {
       id: true,
       dayId: true,

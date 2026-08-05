@@ -448,3 +448,23 @@
 /* Hide horizontal scrollbars on social strips (Instagram-style) */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ------------------------------------------------------------------ *
+ * FULL-BLEED WORKSPACE (owner ruling 2026-08-04).
+ *
+ * The season planning board is a five-month calendar with a work rail
+ * beside it, and 268px of app sidebar is a month of season nobody can
+ * see. The step that renders the board sets data-planner-stage on the
+ * body; these two rules are the whole mechanism, and they undo
+ * themselves the moment the attribute goes away.
+ * ------------------------------------------------------------------ */
+body[data-planner-stage="board"] [data-app-sidebar] {
+  display: none;
+}
+/* CLIP, NOT HIDDEN. overflow-x: hidden makes <main> a scroll container,
+   and a scroll container that never scrolls kills position: sticky on
+   everything inside it — which is exactly what the work rail is. clip
+   hides the same overflow without becoming a scrollport. */
+body[data-planner-stage="board"] main {
+  overflow-x: clip;
+}

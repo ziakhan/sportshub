@@ -4,11 +4,13 @@ import { z } from "zod"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
+  applyVenueCourtsToSessionDays,
   attachVenueToSession,
   clearSessionVenueUnavailability,
   defaultCourtIdsForVenue,
   detachVenueFromSession,
   setSessionVenueBookingStatus,
+  type CourtRewireResult,
 } from "@/lib/seasons/venue-propagation"
 
 export const dynamic = "force-dynamic"
@@ -34,9 +36,19 @@ const postSchema = z.object({
   bookingStatus: z.enum(["assumed", "confirmed"]).optional(),
 })
 
-const patchSchema = z.object({
-  bookingStatus: z.enum(["assumed", "confirmed"]),
-})
+const patchSchema = z
+  .object({
+    bookingStatus: z.enum(["assumed", "confirmed"]).optional(),
+    /** COURTS THIS GYM CAN ACTUALLY GIVE ON THIS ONE WEEKEND (owner ruling
+     *  2026-08-04). The planning board's "I don't have this" correction: the
+     *  gym has six on the floor and offered three this Saturday. Zero is a real
+     *  answer — a gym can say no — and it is capped at the courts the season
+     *  holds there, never used to invent new ones. */
+    courts: z.number().int().min(0).max(30).optional(),
+  })
+  .refine((v) => v.bookingStatus !== undefined || v.courts !== undefined, {
+    message: "Send bookingStatus, courts, or both.",
+  })
 
 type Ctx = { params: { id: string; sessionId: string; venueId: string } }
 
@@ -159,27 +171,59 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     const parsed = patchSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "bookingStatus must be assumed or confirmed", details: parsed.error?.errors ?? [] },
+        {
+          error: "Send bookingStatus (assumed or confirmed), courts, or both.",
+          details: parsed.error?.errors ?? [],
+        },
         { status: 400 }
       )
     }
 
-    const { updated } = await setSessionVenueBookingStatus(
-      params.id,
-      params.sessionId,
-      params.venueId,
-      parsed.data.bookingStatus
-    )
-    if (updated === 0) {
+    // The gym has to BE on this weekend before it can have a booking or a court
+    // count. Checked once, up front, so both halves below can assume it.
+    const attached = await (prisma as any).seasonSessionDayVenue.count({
+      where: { venueId: params.venueId, day: { sessionId: params.sessionId } },
+    })
+    if (attached === 0) {
       return NextResponse.json(
         { error: "That gym is not on this weekend, so there is nothing to book." },
         { status: 404 }
       )
     }
+
+    let daysUpdated = 0
+    if (parsed.data.bookingStatus) {
+      const { updated } = await setSessionVenueBookingStatus(
+        params.id,
+        params.sessionId,
+        params.venueId,
+        parsed.data.bookingStatus
+      )
+      daysUpdated = updated
+    }
+
+    // The correction, scoped to this weekend and nowhere else: the season's own
+    // court list, cut to what the gym said it can give.
+    let courts: CourtRewireResult | null = null
+    if (parsed.data.courts != null) {
+      const seasonCourts = await defaultCourtIdsForVenue(
+        params.venueId,
+        gate.seasonVenue!.courtsAvailable
+      )
+      courts = await applyVenueCourtsToSessionDays(
+        params.id,
+        params.venueId,
+        seasonCourts.slice(0, parsed.data.courts),
+        { sessionId: params.sessionId, allowEmpty: true }
+      )
+    }
+
     return NextResponse.json({
       success: true,
       bookingStatus: parsed.data.bookingStatus,
-      daysUpdated: updated,
+      daysUpdated,
+      courts: parsed.data.courts ?? null,
+      ...(courts ?? {}),
     })
   } catch (error) {
     console.error("Session venue booking status error:", error)

@@ -2,11 +2,16 @@
 // first, spill becomes rental blocks, two modes for filling them, and the ask
 // sheet an operator reads down the phone to a gym).
 //
+// Extended 2026-08-04 for the full-bleed workspace: the sticky work rail, the
+// weekend at its own altitude, and the four verbs (place, add a weekend,
+// correct, break).
+//
 // SAFE ON THE OWNER'S LIVE INSTANCE. Everything it does lives on the WORKING
 // COPY: it moves grades with the tap-and-tap path, fills the gaps from the pool,
-// undoes, and places a gym by hand. It never presses Keep, never activates, and
-// never saves a plan. It captures the season's saved calendar before it starts
-// and byte-compares it at the end.
+// corrects a gym's courts, prices a split, undoes, and places a gym by hand. It
+// never presses Keep, never activates, never saves a plan, and it never CREATES
+// a weekend — the add-a-weekend card is opened, read and dismissed. It captures
+// the season's saved calendar before it starts and byte-compares it at the end.
 //
 // Env (defaults = the 2026-08-02 local world):
 //   BASE_URL, SEASON_ID, LEAGUE_ID, SHOT_DIR
@@ -517,11 +522,336 @@ for (let i = 0; i < undos; i++) {
 }
 ok("the drive steps its own placements back out", undos >= 0, `${undos} placement(s) undone`)
 
+/* ========================================================================= *
+ * THE 2026-08-04 WORKSPACE: full-bleed board, a rail that stays put, the
+ * weekend at its own altitude, and the four verbs.
+ *
+ * Still working-copy only. The one verb that writes — adding a weekend — is
+ * opened and read and then dismissed WITHOUT creating anything, because this
+ * runs on the owner's own season.
+ * ========================================================================= */
+
+// Back to a clean board before measuring the new furniture.
+await page.goto(PLAN_URL)
+await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
+await page.waitForTimeout(600)
+
+/* ---- 1. the workspace takes the whole screen ---- */
+const sidebarShown = await page
+  .locator("[data-app-sidebar]")
+  .first()
+  .isVisible()
+  .catch(() => false)
+ok("the app sidebar folds away so the board gets the viewport", sidebarShown === false)
+
+const mainOverflow = await page.evaluate(() => {
+  const main = document.querySelector("main")
+  return main ? getComputedStyle(main).overflowX : ""
+})
+ok(
+  "main clips rather than hides, so the rail can be sticky at all",
+  mainOverflow === "clip",
+  `overflow-x: ${mainOverflow}`
+)
+
+/* ---- 2. the work rail is a persistent side panel ---- */
+const rail = page.locator('[data-testid="work-rail"]')
+ok("the work rail is on screen as its own column", (await rail.count()) === 1)
+const railPos = await rail.evaluate((el) => getComputedStyle(el).position)
+ok("the rail is sticky, so the board scrolls under it", railPos === "sticky", railPos)
+
+const boardBox = await page.locator('[data-testid="board-scroll"]').boundingBox()
+const railBox = await rail.boundingBox()
+ok(
+  "the rail sits beside the board, not under it",
+  Boolean(boardBox && railBox) && railBox.x > boardBox.x,
+  `board x=${Math.round(boardBox?.x ?? -1)} rail x=${Math.round(railBox?.x ?? -1)}`
+)
+
+const openCount = await page
+  .locator('[data-testid="rail-open-count"]')
+  .textContent()
+  .catch(() => "")
+ok(
+  "remaining work is the loudest thing in the rail: a count at the top",
+  /\d+ open|all clear/.test((openCount ?? "").trim()),
+  (openCount ?? "").trim()
+)
+ok(
+  "the rentals behind the plan are counted in the rail now",
+  (await rail.locator('[data-testid="block-summary"]').count()) === 1,
+  ((await rail.locator('[data-testid="block-summary"]').textContent()) ?? "").trim()
+)
+
+/* ---- 3. a rail row is a jump target ---- */
+const jump = page.locator('[data-testid="rail-jump"]').first()
+let jumped = ""
+if ((await jump.count()) > 0) {
+  const wanted = ((await jump.textContent()) ?? "").trim()
+  const scrollBefore = await page
+    .locator('[data-testid="board-scroll"]')
+    .evaluate((el) => el.scrollLeft)
+  await jump.click()
+  await page.waitForTimeout(900)
+  const ringed = await page.evaluate(() => {
+    const card = document.querySelector('[data-session-id].ring-play-500')
+    return card ? (card.textContent ?? "").slice(0, 40) : ""
+  })
+  const scrollAfter = await page
+    .locator('[data-testid="board-scroll"]')
+    .evaluate((el) => el.scrollLeft)
+  jumped = `${wanted} · scrollLeft ${Math.round(scrollBefore)} → ${Math.round(scrollAfter)} · ringed "${ringed}"`
+  ok(
+    "clicking a rail row brings its weekend into view and rings it",
+    ringed.length > 0 && ringed.includes(wanted.split("–")[0].trim()),
+    jumped
+  )
+} else {
+  ok("clicking a rail row brings its weekend into view and rings it", false, "no rail row to jump from")
+}
+await page.screenshot({ path: `${SHOTS}/v3-1-fullbleed-board-and-rail.png`, fullPage: false })
+
+/* ---- 4. the weekend at its own altitude, in planning currency ---- */
+await page.locator('[data-testid="weekend-open"]').first().click()
+await page.waitForSelector('[data-testid="weekend-zoom"]', { timeout: 20000 })
+await page.waitForTimeout(400)
+const zoomText = ((await page.locator('[data-testid="weekend-zoom"]').textContent()) ?? "").replace(
+  /\s+/g,
+  " "
+)
+ok("the weekend date opens the weekend at its own altitude", true, zoomText.slice(0, 90))
+ok(
+  "the zoom is the same planning objects, bigger",
+  (await page.locator('[data-testid="zoom-gym-section"]').count()) > 0 &&
+    (await page.locator('[data-testid="zoom-grade-chip"]').count()) > 0 &&
+    (await page.locator('[data-testid="zoom-fraction"]').count()) === 1,
+  `${await page.locator('[data-testid="zoom-gym-section"]').count()} gym section(s) · ${await page
+    .locator('[data-testid="zoom-grade-chip"]')
+    .count()} grade chip(s)`
+)
+ok(
+  "it carries the weekend's own story, in numbers",
+  (await page.locator('[data-testid="zoom-story"]').count()) === 1,
+  (((await page.locator('[data-testid="zoom-story"]').textContent()) ?? "").trim() || "").slice(0, 90)
+)
+ok(
+  "it says out loud that fixtures are a later phase",
+  /worked out in step 5/.test(zoomText),
+  "no team names, no fixtures, no court grid"
+)
+ok(
+  "the rail is still there at this altitude",
+  (await page.locator('[data-testid="work-rail"]').count()) === 1
+)
+await page.screenshot({ path: `${SHOTS}/v3-2-weekend-zoom.png`, fullPage: false })
+
+await page.locator('[data-testid="weekend-zoom-back"]').click()
+await page.waitForSelector('[data-testid="board-scroll"]', { timeout: 20000 })
+await page.waitForTimeout(500)
+ok(
+  "back to the season restores the board with the working copy intact",
+  (await page.locator('[data-testid="weekend-zoom"]').count()) === 0 &&
+    (await page.locator('[data-testid="weekend-gym-section"]').count()) > 0,
+  `${await page.locator('[data-testid="weekend-gym-section"]').count()} gym sections back`
+)
+
+/* ---- 5. ADD A WEEKEND: the ghost card lists the month's unused Saturdays.
+         READ ONLY on the owner's world: opened, asserted, dismissed. ---- */
+const addCard = page.locator('[data-testid="add-weekend-card"]').first()
+ok("every month column ends with a ghost card to add a weekend", (await addCard.count()) === 1)
+if ((await addCard.count()) === 1) {
+  await addCard.locator('[data-testid="add-weekend-toggle"]').click()
+  await page.waitForTimeout(300)
+  const sats = await addCard.locator('[data-testid="add-weekend-option"]').allTextContents()
+  ok(
+    "it lists that month's unused Saturdays",
+    sats.length > 0,
+    sats.join(" · ")
+  )
+  // Dismissed without creating anything: this is the owner's own season.
+  await addCard.locator('[data-testid="add-weekend-toggle"]').click()
+  await page.waitForTimeout(250)
+  ok(
+    "closing it creates nothing",
+    (await addCard.locator('[data-testid="add-weekend-list"]').count()) === 0
+  )
+}
+
+/* ---- 6. CORRECT: "I don't have this" caps a gym for one weekend ---- */
+const correction = page.locator('[data-testid="court-correction"]').first()
+ok("every rented section offers the correction", (await correction.count()) > 0)
+let correctionSaid = ""
+let strandedAfterCorrection = 0
+if ((await correction.count()) > 0) {
+  const beforeSlots = await page.locator('[data-testid="rental-slot-empty"]').count()
+  await correction.click()
+  await page.waitForSelector('[data-testid="court-correction-panel"]', { timeout: 10000 })
+  const asks = (
+    (await page.locator('[data-testid="court-correction-panel"]').textContent()) ?? ""
+  ).replace(/\s+/g, " ")
+  ok(
+    "it asks how many courts the gym can actually get, with a stepper",
+    /How many courts can you actually get\?/.test(asks) &&
+      (await page.locator('[data-testid="court-step-down"]').count()) === 1,
+    asks.slice(0, 80)
+  )
+  // Wind it all the way down to nothing: the gym said no.
+  for (let i = 0; i < 12; i++) {
+    const down = page.locator('[data-testid="court-step-down"]')
+    if ((await down.count()) === 0 || (await down.isDisabled())) break
+    await down.click()
+  }
+  const value = ((await page.locator('[data-testid="court-step-value"]').textContent()) ?? "").trim()
+  await page.locator('[data-testid="court-correction-apply"]').click()
+  await page.waitForTimeout(700)
+  correctionSaid = await noticeText()
+  ok(
+    "answering caps that gym for that weekend in the working copy",
+    /gives 0 courts|They have nothing|gives \d+ courts/.test(correctionSaid) || value === "0",
+    correctionSaid.slice(0, 110)
+  )
+  strandedAfterCorrection = await page.locator('[data-testid="rental-slot-empty"]').count()
+  ok(
+    "the games it strands come back as a block that asks where they should go",
+    strandedAfterCorrection >= beforeSlots &&
+      (await page.locator('[data-testid="stranded-prompt"]').count()) > 0,
+    `${beforeSlots} → ${strandedAfterCorrection} empty slot(s), ${await page
+      .locator('[data-testid="stranded-prompt"]')
+      .count()} prompt(s)`
+  )
+  const promptText = (
+    (await page.locator('[data-testid="stranded-prompt"]').first().textContent()) ?? ""
+  ).replace(/\s+/g, " ")
+  ok(
+    "the prompt offers a gym this weekend, a different weekend, and leaving it open",
+    /Where should/.test(promptText) &&
+      /A different weekend/.test(promptText) &&
+      /Leave it open/.test(promptText),
+    promptText.slice(0, 120)
+  )
+  await page.screenshot({ path: `${SHOTS}/v3-3-correction-and-stranded.png`, fullPage: false })
+
+  // "A different weekend" arms the whole block and lights the lighter ones.
+  const other = page.locator('[data-testid="stranded-other-weekend"]').first()
+  if ((await other.count()) > 0) {
+    await other.click()
+    await page.waitForTimeout(350)
+    ok(
+      "a different weekend arms the whole block and says where it can land",
+      (await page.locator('[data-testid="armed-block"]').count()) === 1,
+      (((await page.locator('[data-testid="armed-block"]').textContent()) ?? "").trim() || "").slice(0, 100)
+    )
+    await page.keyboard.press("Escape")
+    await page.waitForTimeout(250)
+    ok(
+      "Escape puts it down again",
+      (await page.locator('[data-testid="armed-block"]').count()) === 0
+    )
+  } else {
+    ok("a different weekend arms the whole block and says where it can land", false, "no block to arm")
+    ok("Escape puts it down again", false, "no block to arm")
+  }
+
+  // And the correction steps back out.
+  const undoBtn = page.locator('[data-testid="undo-move"]')
+  if ((await undoBtn.count()) > 0) {
+    await undoBtn.click()
+    await page.waitForTimeout(500)
+  }
+  ok(
+    "one undo puts the courts back",
+    (await page.locator('[data-testid="courts-corrected"]').count()) === 0,
+    `${await page.locator('[data-testid="rental-slot-empty"]').count()} empty slot(s) after undo`
+  )
+}
+
+/* ---- 7. BREAK: the split prices both axes before anything is applied ---- */
+const split = page.locator('[data-testid="split-menu"]').first()
+ok("placed cohorts and rented blocks offer a split", (await split.count()) > 0)
+if ((await split.count()) > 0) {
+  await split.click()
+  await page.waitForSelector('[data-testid="split-menu-panel"]', { timeout: 10000 })
+  await page.waitForTimeout(300)
+  const gymsAxis = page.locator('[data-testid="split-axis-gyms"]')
+  const weekAxis = page.locator('[data-testid="split-axis-weekends"]')
+  ok(
+    "it offers both axes: across gyms this weekend, and across two weekends",
+    (await gymsAxis.count()) === 1 && (await weekAxis.count()) === 1,
+    `${((await gymsAxis.textContent()) ?? "").replace(/\s+/g, " ").slice(0, 60)}`
+  )
+  const gymPrice = await page
+    .locator('[data-testid="split-price-gyms"]')
+    .textContent()
+    .catch(() => null)
+  const weekPrice = await page
+    .locator('[data-testid="split-price-weekends"]')
+    .textContent()
+    .catch(() => null)
+  const priced = [gymPrice, weekPrice].filter(Boolean)
+  ok(
+    "an axis that can be taken is priced in buildings, court-days and weekends",
+    priced.length > 0 &&
+      priced.every((p) => /more|fewer|Costs nothing/.test(p)),
+    priced.map((p) => (p ?? "").trim()).join("  |  ")
+  )
+  const gymsEnabled = await gymsAxis.getAttribute("data-enabled")
+  const weekEnabled = await weekAxis.getAttribute("data-enabled")
+  const disabledReason = await (gymsEnabled === "false" ? gymsAxis : weekAxis).textContent()
+  ok(
+    "an axis that cannot be taken says why instead of going quiet",
+    gymsEnabled === "true" ||
+      weekEnabled === "true" ||
+      /one grade|no second building|no other weekend/i.test(disabledReason ?? ""),
+    `gyms=${gymsEnabled} weekends=${weekEnabled}`
+  )
+  await page.screenshot({ path: `${SHOTS}/v3-4-split-pricing.png`, fullPage: false })
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(250)
+}
+
+/* ---- 8. a pool gym nobody has asked is honest about it ---- */
+await page.locator('[data-testid="assign-mode-place"]').click()
+await page.waitForTimeout(400)
+const trayRows = page.locator('[data-testid="tray-gym"]')
+const trayCount = await trayRows.count()
+const unknownRows = page.locator('[data-testid="tray-gym"][data-availability="unknown"]')
+const unknownCount = await unknownRows.count()
+ok(
+  "a pool gym with no attached weekend still appears in the tray",
+  trayCount > 0 && unknownCount > 0,
+  `${trayCount} gym(s), ${unknownCount} with availability nobody has asked about`
+)
+if (unknownCount > 0) {
+  const row = unknownRows.first()
+  const said = ((await row.textContent()) ?? "").replace(/\s+/g, " ")
+  ok(
+    "it says availability is unknown rather than implying it is free",
+    /availability unknown, ask them/.test(said),
+    said.trim()
+  )
+  ok("and it cannot be picked up", await row.isDisabled())
+}
+await page.screenshot({ path: `${SHOTS}/v3-5-tray-unknown-availability.png`, fullPage: false })
+
 /* ---------------------------- nothing persisted -------------------------- */
 const after = await savedCalendar()
 ok("the season's saved calendar is byte-identical to where it started", after === before)
 const plansAfter = (await listPlans()).map((p) => `${p.name}${p.isActive ? "*" : ""}`).join(", ")
 ok("no plan was created, renamed or activated", plansAfter === plansBefore, `${plansBefore} → ${plansAfter}`)
+
+/* ---- the full-bleed workspace is reversible: it must not leak off step 3 ---- */
+const chromeAt = async () => ({
+  sidebar: await page.locator("[data-app-sidebar]").first().isVisible().catch(() => false),
+  attr: await page.evaluate(() => document.body.dataset.plannerStage ?? ""),
+})
+await page.goto(`${BASE}/manage/leagues/${LEAGUE}`)
+await page.waitForTimeout(1500)
+const offBoard = await chromeAt()
+ok(
+  "leaving the board gives the app its sidebar back",
+  offBoard.sidebar === true && offBoard.attr === "",
+  `sidebar=${offBoard.sidebar} body-attr="${offBoard.attr}"`
+)
 
 const failed = results.filter((r) => !r.pass)
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
