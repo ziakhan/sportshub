@@ -288,7 +288,7 @@ describe("POST /api/seasons/[id]/weekends", () => {
     expect(res.status).toBe(400)
   })
 
-  it("rejects a date that is not a Saturday, and a missing gym", async () => {
+  it("rejects a date that is not a Saturday", async () => {
     actAs(ownerId)
     const sat = new Date(`${saturdayIn(20)}T00:00:00.000Z`)
     sat.setUTCDate(sat.getUTCDate() + 2)
@@ -297,9 +297,38 @@ describe("POST /api/seasons/[id]/weekends", () => {
       ctx()
     )
     expect(notSaturday.status).toBe(400)
+  })
 
-    const noVenue = await POST(jsonRequest("/x", { satDate: saturdayIn(20) }), ctx())
-    expect(noVenue.status).toBe(400)
+  /**
+   * A WEEKEND WITH NO GYM NAMED (owner ruling 2026-08-05, plan worlds). Which
+   * Saturdays exist is a fact about the SEASON's dates; which gym is on one is a
+   * fact about the plan you are working in. So a plan that wants to run a
+   * Saturday the season never created asks for the weekend alone and attaches
+   * its gym inside its own document — and nothing is claimed on any gym's behalf.
+   */
+  it("creates the weekend alone when no gym is named, attaching nothing", async () => {
+    actAs(ownerId)
+    const sat = saturdayIn(26)
+    const res = await POST(jsonRequest("/x", { satDate: sat }), ctx())
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.createdSession).toBe(true)
+    expect(body.daysAttached).toBe(0)
+
+    const session = await (prisma as any).seasonSession.findUnique({
+      where: { id: body.sessionId },
+      select: { days: { select: { date: true, dayVenues: { select: { id: true } } } } },
+    })
+    // Two days, and not one gym on either of them.
+    expect(session.days).toHaveLength(2)
+    expect(session.days.flatMap((d: any) => d.dayVenues)).toEqual([])
+
+    // Idempotent: asking again gets the same weekend rather than a second one.
+    const again = await (await POST(jsonRequest("/x", { satDate: sat }), ctx())).json()
+    expect(again.sessionId).toBe(body.sessionId)
+    expect(again.createdSession).toBe(false)
+
+    await (prisma as any).seasonSession.delete({ where: { id: body.sessionId } })
   })
 
   it("refuses once the season is finalized", async () => {

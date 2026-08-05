@@ -6,6 +6,8 @@ import { applyAssignment } from "@/lib/scheduler/planner"
 import { planDrift } from "@/lib/scheduler/plan-documents"
 import {
   ACTIVE_PLAN_DELETE_MESSAGE,
+  currentSettings,
+  IMPORTED_PLAN_DELETE_MESSAGE,
   IMPORTED_PLAN_NAME,
   IMPORTED_PLAN_READONLY_MESSAGE,
 } from "@/lib/scheduler/season-plans"
@@ -76,6 +78,39 @@ const activeFlags = async () =>
 /** @updatedAt lands on a JS millisecond, so two saves inside the same tick
  *  would tie and the "newest first" assertion would flap. */
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
+
+/**
+ * EVERYTHING A PLAN'S WORLD COULD MOVE IF IT LEAKED, in one comparable object:
+ * the grade estimates, the gym's role and courts, the season's buffer, and every
+ * weekend-gym attachment. Editing a plan the season does not run must leave this
+ * byte-identical (owner ruling 2026-08-05, the architecture).
+ */
+const seasonShape = async () => ({
+  divisions: await (prisma as any).division.findMany({
+    where: { seasonId },
+    select: { id: true, ageGroup: true, expectedTeams: true },
+    orderBy: { id: "asc" },
+  }),
+  season: await (prisma as any).season.findUnique({
+    where: { id: seasonId },
+    select: { courtBuffer: true },
+  }),
+  venues: await (prisma as any).seasonVenue.findMany({
+    where: { seasonId },
+    select: {
+      venueId: true,
+      role: true,
+      courtsAvailable: true,
+      hours: { select: { dayOfWeek: true, openTime: true, closeTime: true }, orderBy: { dayOfWeek: "asc" } },
+    },
+    orderBy: { venueId: "asc" },
+  }),
+  attachments: await (prisma as any).seasonSessionDayVenue.findMany({
+    where: { day: { session: { seasonId } } },
+    select: { venueId: true, startTime: true, endTime: true, day: { select: { sessionId: true, date: true } } },
+    orderBy: [{ id: "asc" }],
+  }),
+})
 
 /** Every weekend of a saved world, by sessionId. */
 const weekendsOf = (settings: any): Record<string, any> =>
@@ -434,7 +469,14 @@ describe("the world a plan remembers", () => {
     expect((await read(solverAId)).settings.capturedAt).toBe(before)
   })
 
-  it("re-reads the world when the calendar is rewritten, and the drift says what moved", async () => {
+  /**
+   * A PLAN OWNS ITS WORLD (owner ruling 2026-08-05, and this test SUPERSEDES
+   * the old "re-reads the world when the calendar is rewritten"). Saving a
+   * calendar onto a plan the season does not run used to re-snapshot the season
+   * over the plan's world, which silently moved every number the operator had
+   * been working with. The plan keeps its own now.
+   */
+  it("KEEPS a plan's own world when its calendar is rewritten", async () => {
     actAs(ownerId)
     const was = (await read(solverAId)).settings
 
@@ -451,18 +493,19 @@ describe("the world a plan remembers", () => {
     expect(res.status).toBe(200)
     const now = (await res.json()).plan.settings
     expectWorld(now)
-    expect(now.capturedAt).not.toBe(was.capturedAt)
+    // Untouched: same capture, same numbers. This is the whole ruling.
+    expect(now.capturedAt).toBe(was.capturedAt)
+    expect(now.state.units.find((u: any) => u.key === "age:Grade 8").teams).toBe(0)
 
-    // The old snapshot against the new one: exactly the sentence the board
-    // puts above the calendar.
-    expect(planDrift(was.state, now.state)).toEqual([
+    // And the drift line still has something honest to say, because the season
+    // really has moved on from the world this plan holds.
+    const live = await currentSettings(seasonId)
+    expect(planDrift(now.state, live.state)).toEqual([
       "Grade 8 planned at 0 teams; the season now expects 9.",
     ])
-    // And a plan saved in the season as it stands has nothing to say.
-    expect(planDrift(now.state, now.state)).toEqual([])
   })
 
-  it("gives a plan saved after the change the world it was actually saved in", async () => {
+  it("gives a plan saved with no world of its own the season as it stands", async () => {
     actAs(ownerId)
     const created = await CREATE_PLAN(
       jsonRequest("/x", { name: "After the change", assignment: { [weekendTwo]: ["age:Grade 8"] } }),
@@ -472,13 +515,242 @@ describe("the world a plan remembers", () => {
     expectWorld(plan.settings)
     const grade8 = plan.settings.state.units.find((u: any) => u.key === "age:Grade 8")
     expect(grade8.teams).toBe(9)
-
-    // The imported reference still remembers the world it was published in, so
-    // there is always something honest to compare against.
-    const imported = await read(importedPlanId)
-    const gone = imported.settings.state.units.find((u: any) => u.key === "age:Grade 8")
-    expect(gone.teams).toBe(0)
-
     await DELETE_PLAN(jsonRequest("/x", undefined, "DELETE"), planCtx(plan.id))
+  })
+
+  /**
+   * THE ACTIVE PLAN IS THE SEASON (owner ruling 2026-08-05, "one truth"). Its
+   * world is read live rather than out of the column, so steps 1 and 2 writing
+   * through to the season cannot leave its snapshot describing a season that no
+   * longer exists — and its drift is empty by construction, which is true.
+   */
+  it("reads the ACTIVE plan's world live, so it never disagrees with the season", async () => {
+    actAs(ownerId)
+    const imported = await read(importedPlanId)
+    const grade8 = imported.settings.state.units.find((u: any) => u.key === "age:Grade 8")
+    // The season now expects 9, and the plan the season RUNS says 9.
+    expect(grade8.teams).toBe(9)
+    const live = await currentSettings(seasonId)
+    expect(planDrift(imported.settings.state, live.state)).toEqual([])
+  })
+})
+
+/* ------------------- the plan's own world, edited by hand ----------------- */
+
+describe("PATCH {settings} — steps 1 and 2 write the plan's world", () => {
+  const read = async (planId: string) =>
+    (await (await GET_PLAN(jsonRequest("/x", undefined, "GET"), planCtx(planId))).json()).plan
+  let ownPlanId: string
+
+  it("creates a FRESH plan: grades prefilled, no gym time assumed", async () => {
+    actAs(ownerId)
+    const res = await CREATE_PLAN(jsonRequest("/x", { name: "Fresh world", fresh: true }), ctx())
+    expect(res.status).toBe(200)
+    const plan = (await res.json()).plan
+    ownPlanId = plan.id
+    // A fresh plan has no calendar at all: there is nothing to solve against
+    // until the operator has said when the league runs.
+    expect(plan.assignment).toEqual({})
+    expect(plan.venues).toEqual({})
+    expect(plan.isActive).toBe(false)
+
+    const state = plan.settings.state
+    // The grades ARE there, with the numbers the season knows.
+    expect(state.units.map((u: any) => u.key).sort()).toEqual(["age:Grade 7", "age:Grade 8"])
+    expect(state.units.find((u: any) => u.key === "age:Grade 8").teams).toBe(9)
+    // And NOT one weekend is chosen, nor one gym attached.
+    for (const w of Object.values(weekendsOf(plan.settings)) as any[]) {
+      expect(w.chosen).toBe(false)
+      expect(w.venues).toEqual([])
+      expect(w.capacityGames).toBe(0)
+    }
+    // The gyms the league HAS are still listed, with their roles: the home gym
+    // is known, the pool is named, and nobody has phoned anybody.
+    expect(state.gyms.map((g: any) => g.venueId)).toEqual([venueId])
+    expect(typeof state.courtBuffer).toBe("number")
+    expect(state.gameSlotMinutes).toBeGreaterThan(0)
+  })
+
+  it("takes the operator's own world and does NOT touch the season", async () => {
+    actAs(ownerId)
+    const before = await seasonShape()
+
+    const plan = await read(ownPlanId)
+    const world = plan.settings.state
+    // Step 1: a grade taken out, another re-estimated. Step 2: the weekend
+    // chosen with the gym on it, on six courts and different hours.
+    const next = {
+      ...world,
+      courtBuffer: 1,
+      units: world.units.map((u: any) =>
+        u.key === "age:Grade 7"
+          ? { ...u, teams: 20, expected: 20, included: true }
+          : { ...u, included: false }
+      ),
+      // And the building the plan says the league OWNS, which the test world
+      // never named: activation has to hand that over too.
+      gyms: world.gyms.map((g: any) => ({
+        ...g,
+        role: "home",
+        courts: 6,
+        openTime: "08:00",
+        closeTime: "14:00",
+      })),
+      windows: world.windows.map((win: any) => ({
+        ...win,
+        weekends: win.weekends.map((w: any) =>
+          w.sessionId !== weekendOne
+            ? w
+            : {
+                ...w,
+                chosen: true,
+                venues: [{ venueId, name: "gym", capacityGames: 0, role: "home", fillOrder: 0 }],
+              }
+        ),
+      })),
+    }
+
+    const res = await PATCH_PLAN(jsonRequest("/x", { settings: { state: next } }, "PATCH"), planCtx(ownPlanId))
+    expect(res.status).toBe(200)
+    const saved = (await res.json()).plan.settings.state
+    expect(saved.courtBuffer).toBe(1)
+    expect(saved.units.find((u: any) => u.key === "age:Grade 7").teams).toBe(20)
+    expect(saved.units.find((u: any) => u.key === "age:Grade 8").included).toBe(false)
+    expect(saved.gyms[0].courts).toBe(6)
+
+    // THE SEASON DID NOT MOVE. Not the estimates, not the gym, not one
+    // attachment: that is the whole architecture in one assertion.
+    expect(await seasonShape()).toEqual(before)
+  })
+
+  it("clamps a world to ids this season really has", async () => {
+    actAs(ownerId)
+    const plan = await read(ownPlanId)
+    const world = plan.settings.state
+    const res = await PATCH_PLAN(
+      jsonRequest(
+        "/x",
+        {
+          settings: {
+            state: {
+              ...world,
+              // A gym and a grade from nowhere, and a weekend that is not ours.
+              gyms: [...world.gyms, { venueId: "not-a-venue", name: "Nowhere", role: "pool", courts: 4 }],
+              units: [...world.units, { key: "age:Grade 99", label: "Grade 99", teams: 40 }],
+              windows: [
+                ...world.windows,
+                {
+                  label: "Never",
+                  weekends: [
+                    {
+                      sessionId: "not-a-session",
+                      label: "Never",
+                      capacityGames: 99,
+                      targetGamesPerTeam: 2,
+                      venues: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        "PATCH"
+      ),
+      planCtx(ownPlanId)
+    )
+    expect(res.status).toBe(200)
+    const saved = (await res.json()).plan.settings.state
+    expect(saved.gyms.map((g: any) => g.venueId)).toEqual([venueId])
+    expect(saved.units.some((u: any) => u.key === "age:Grade 99")).toBe(false)
+    expect(Object.keys(weekendsOf({ state: saved } as any))).not.toContain("not-a-session")
+  })
+
+  it("refuses a world edit on the imported reference, in words", async () => {
+    actAs(ownerId)
+    const imported = await read(importedPlanId)
+    const res = await PATCH_PLAN(
+      jsonRequest("/x", { settings: { state: imported.settings.state } }, "PATCH"),
+      planCtx(importedPlanId)
+    )
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toBe(IMPORTED_PLAN_READONLY_MESSAGE)
+  })
+
+  /**
+   * ACTIVATION APPLIES THE WORLD TOO (owner ruling 2026-08-05, #5). Until now
+   * the season kept its own gyms, hours and estimates and the confirmation had
+   * to say so. A plan that owns its world hands the whole thing over.
+   */
+  it("applies the plan's WORLD to the season on activation, not only its calendar", async () => {
+    actAs(ownerId)
+    // Give the plan a calendar to apply as well, so both halves are checked.
+    await PATCH_PLAN(
+      jsonRequest("/x", { assignment: { [weekendOne]: ["age:Grade 7"] } }, "PATCH"),
+      planCtx(ownPlanId)
+    )
+
+    const res = await ACTIVATE_PLAN(jsonRequest("/x", undefined), planCtx(ownPlanId))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.world).toMatchObject({ courtBuffer: 1 })
+
+    // The estimates the plan holds are the season's now, and a grade the plan
+    // left OUT asks the season for nothing.
+    const divisions = await (prisma as any).division.findMany({
+      where: { seasonId },
+      select: { ageGroup: true, expectedTeams: true },
+    })
+    const byGrade = Object.fromEntries(divisions.map((d: any) => [d.ageGroup, d.expectedTeams]))
+    expect(byGrade["Grade 7"]).toBe(20)
+    expect(byGrade["Grade 8"]).toBe(0)
+
+    // The buffer, the courts and the hours are the season's.
+    const season = await (prisma as any).season.findUnique({
+      where: { id: seasonId },
+      select: { courtBuffer: true },
+    })
+    expect(season.courtBuffer).toBe(1)
+    const link = await (prisma as any).seasonVenue.findFirst({
+      where: { seasonId, venueId },
+      select: { courtsAvailable: true, role: true, hours: true },
+    })
+    expect(link.courtsAvailable).toBe(6)
+    expect(link.role).toBe("home")
+    expect(link.hours.find((h: any) => h.dayOfWeek === 6)).toMatchObject({
+      openTime: "08:00",
+      closeTime: "14:00",
+    })
+
+    // The attachments are the plan's: weekend one has the gym, weekend two does
+    // not, because this plan never chose it.
+    const attached = async (sessionId: string) =>
+      (
+        await (prisma as any).seasonSessionDayVenue.count({
+          where: { venueId, day: { sessionId } },
+        })
+      ) > 0
+    expect(await attached(weekendOne)).toBe(true)
+    expect(await attached(weekendTwo)).toBe(false)
+
+    // And the calendar landed, which is what activation always did.
+    expect((await sessionRow(weekendOne)).unitKeys).toEqual([`division:${grade7Division}`])
+
+    // The plan and the season agree now, so there is no drift left to report.
+    const after = await read(ownPlanId)
+    const live = await currentSettings(seasonId)
+    expect(planDrift(after.settings.state, live.state)).toEqual([])
+  })
+
+  it("refuses to delete the imported reference, with the reason", async () => {
+    actAs(ownerId)
+    // It is no longer active (the plan above took over), so only its being the
+    // published record can be what stops the delete.
+    const imported = await read(importedPlanId)
+    expect(imported.isActive).toBe(false)
+    const res = await DELETE_PLAN(jsonRequest("/x", undefined, "DELETE"), planCtx(importedPlanId))
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toBe(IMPORTED_PLAN_DELETE_MESSAGE)
+    expect(await (prisma as any).seasonPlan.count({ where: { id: importedPlanId } })).toBe(1)
   })
 })

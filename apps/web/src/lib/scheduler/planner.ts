@@ -28,6 +28,7 @@ import {
   weekendLabel,
   type HoursPreview,
   type HoursPreviewWeekend,
+  type PlannerGym,
   type PlannerState,
   type PlannerUnit,
   type PlannerWeekend,
@@ -105,9 +106,22 @@ export async function buildPlannerState(
     // What each gym IS to the league (owner ruling 2026-08-03): the home
     // building it owns, or one of the pool it rents. fillOrder rides along
     // dead, only so a plan snapshot keeps round-tripping.
+    //
+    // The whole roster, not just the attached gyms (owner ruling 2026-08-05): a
+    // plan's world starts from the gyms the league HAS, and a gym nobody has
+    // phoned about any Saturday is still one of them.
     (prisma as any).seasonVenue.findMany({
       where: { seasonId },
-      select: { venueId: true, role: true, fillOrder: true },
+      select: {
+        id: true,
+        venueId: true,
+        role: true,
+        fillOrder: true,
+        courtsAvailable: true,
+        // courtList is the real court set; Venue.courts is a legacy count.
+        venue: { select: { name: true, city: true, _count: { select: { courtList: true } } } },
+        hours: { select: { dayOfWeek: true, openTime: true, closeTime: true } },
+      },
       orderBy: [{ venueId: "asc" }],
     }),
   ])
@@ -117,6 +131,27 @@ export async function buildPlannerState(
   seasonVenues.forEach((sv: any, i: number) => {
     roleOf.set(sv.venueId, sv.role === "home" ? "home" : "pool")
     fillOrderOf.set(sv.venueId, sv.fillOrder ?? 1000 + i)
+  })
+
+  /**
+   * THE SEASON'S GYM ROSTER, with the two facts capacity is made of: how many
+   * courts and when. Hours are the weekend range this season runs at that gym
+   * (Saturday's, falling back to Sunday's, then the season default) — the same
+   * one-range-per-gym model step 2 edits. A plan copies this and then owns it.
+   */
+  const gyms: PlannerGym[] = seasonVenues.map((sv: any) => {
+    const byDow = new Map<number, any>((sv.hours ?? []).map((h: any) => [h.dayOfWeek, h]))
+    const weekend = byDow.get(6) ?? byDow.get(0) ?? null
+    return {
+      venueId: sv.venueId,
+      name: sv.venue?.name ?? sv.venueId,
+      city: sv.venue?.city ?? null,
+      role: roleOf.get(sv.venueId) ?? "pool",
+      courts: sv.courtsAvailable ?? sv.venue?._count?.courtList ?? 0,
+      openTime: weekend?.openTime ?? input.defaultVenueOpenTime ?? null,
+      closeTime: weekend?.closeTime ?? input.defaultVenueCloseTime ?? null,
+      seasonVenueId: sv.id,
+    }
   })
 
   // Grade clusters: divisions sharing ageGroup act as one draggable unit.
@@ -290,6 +325,10 @@ export async function buildPlannerState(
         sessionId: s.id,
         label: weekendLabel(s.days.map((d) => d.date)),
         dateISO: s.days[0].date,
+        dayCount: s.days.length,
+        // Every weekend the SEASON has is a weekend it runs. Choosing weekends
+        // is a plan's decision (planStateFrom), never the season's own state.
+        chosen: true,
         capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
         largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
         venues,
@@ -321,7 +360,18 @@ export async function buildPlannerState(
       0
     )
 
-  return { seasonId, units, windows, errors, gamesPerTeam }
+  return {
+    seasonId,
+    units,
+    windows,
+    errors,
+    gamesPerTeam,
+    // The two numbers capacity is derived from, so a plan's own world can move
+    // its gyms and its hours without asking the season to rebuild anything.
+    courtBuffer: input.courtBuffer ?? 0,
+    gameSlotMinutes: input.gameSlotMinutes,
+    gyms,
+  }
 }
 
 /* ------------------------- what an hour would do ------------------------- */

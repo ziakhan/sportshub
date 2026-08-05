@@ -56,6 +56,44 @@ function Marker({ word }: { word: string }) {
  * cannot draw, and the panel is portalled to the body because the step's card
  * is `overflow-hidden` and would clip anything absolutely positioned inside it.
  */
+/** A pencil, so "rename" is an affordance rather than a word competing with the
+ *  plan's own name (owner ruling 2026-08-05, #2). */
+function PencilMark() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-3.5 w-3.5"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  )
+}
+
+/** A bin. Same reasoning: the row is a name, not a sentence of verbs. */
+function TrashMark() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-3.5 w-3.5"
+    >
+      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+    </svg>
+  )
+}
+
 export function PlanPicker({
   plans,
   selectedId,
@@ -64,7 +102,10 @@ export function PlanPicker({
   label,
   variant = "field",
   testId = "plan-picker",
+  canWrite = false,
   onSelect,
+  onRename,
+  onDelete,
 }: {
   plans: PlanRow[]
   selectedId: string | null
@@ -79,7 +120,11 @@ export function PlanPicker({
    *  empty state offers beside "Start a new plan". */
   variant?: "field" | "button"
   testId?: string
+  /** The season is not finalized, so a row may be renamed and thrown away. */
+  canWrite?: boolean
   onSelect: (planId: string) => void
+  onRename?: (planId: string) => void
+  onDelete?: (planId: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [at, setAt] = useState<{ left: number; top: number } | null>(null)
@@ -192,28 +237,77 @@ export function PlanPicker({
             <div role="listbox" aria-label="Plans for this season">
               {plans.map((plan) => {
                 const on = plan.id === selectedId
+                /** The reference plan is the only record of what the league
+                 *  published, and the active plan is what the season runs. Both
+                 *  can be renamed; neither can be thrown away, and the row says
+                 *  so on the button rather than after pressing it. */
+                const undeletable = isReferencePlan(plan)
+                  ? PLAN_COPY.deleteReference
+                  : plan.isActive
+                    ? PLAN_COPY.deleteActive
+                    : null
                 return (
-                  <button
+                  <div
                     key={plan.id}
-                    type="button"
-                    role="option"
-                    aria-selected={on}
-                    data-testid="plan-option"
-                    data-plan-id={plan.id}
-                    data-active={plan.isActive ? "true" : "false"}
-                    data-source={plan.source}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setOpen(false)
-                      if (!on) onSelect(plan.id)
-                    }}
-                    className={`${ROW} ${on ? "bg-ink-50 text-ink-900" : "text-ink-700 hover:bg-ink-50"}`}
+                    className={`flex items-center gap-0.5 rounded-lg ${on ? "bg-ink-50" : "hover:bg-ink-50"}`}
                   >
-                    <span className="min-w-0 flex-1 truncate">{plan.name}</span>
-                    {planMarkers(plan).map((word) => (
-                      <Marker key={word} word={word} />
-                    ))}
-                  </button>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={on}
+                      data-testid="plan-option"
+                      data-plan-id={plan.id}
+                      data-active={plan.isActive ? "true" : "false"}
+                      data-source={plan.source}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOpen(false)
+                        if (!on) onSelect(plan.id)
+                      }}
+                      className={`${ROW} min-w-0 flex-1 ${on ? "text-ink-900" : "text-ink-700"}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{plan.name}</span>
+                      {planMarkers(plan).map((word) => (
+                        <Marker key={word} word={word} />
+                      ))}
+                    </button>
+                    {canWrite && onRename && (
+                      <button
+                        type="button"
+                        data-testid="plan-rename-open"
+                        data-plan-id={plan.id}
+                        title={`Rename ${plan.name}`}
+                        aria-label={`Rename ${plan.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpen(false)
+                          onRename(plan.id)
+                        }}
+                        className="text-ink-400 hover:text-ink-800 hover:bg-ink-100 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md"
+                      >
+                        <PencilMark />
+                      </button>
+                    )}
+                    {canWrite && onDelete && (
+                      <button
+                        type="button"
+                        data-testid="plan-delete"
+                        data-plan-id={plan.id}
+                        data-blocked={undeletable ? "1" : "0"}
+                        disabled={Boolean(undeletable)}
+                        title={undeletable ?? `Delete ${plan.name}`}
+                        aria-label={undeletable ?? `Delete ${plan.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpen(false)
+                          onDelete(plan.id)
+                        }}
+                        className="text-ink-400 hover:text-hoop-700 hover:bg-hoop-50 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent"
+                      >
+                        <TrashMark />
+                      </button>
+                    )}
+                  </div>
                 )
               })}
             </div>

@@ -11,6 +11,13 @@
  * the single sentence that says where the board stands.
  */
 
+/** sessionId → unit keys ("age:<ageGroup>"), as the board speaks them. Declared
+ *  HERE rather than in season-plans.ts so the client steps and the pure world
+ *  module can name a calendar without importing prisma. */
+export type PlanAssignment = Record<string, string[]>
+/** sessionId → (unit key → venueId). */
+export type PlanVenues = Record<string, Record<string, string>>
+
 /** A row of the dropdown: exactly what GET /api/seasons/[id]/plans returns. */
 export interface PlanRow {
   id: string
@@ -54,6 +61,18 @@ export interface PlanWorldVenue {
    *  2026-08-03 ruling, which is exactly how the drift sentence knows to fall
    *  back to talking about fill order. */
   role?: "home" | "pool"
+  /** Usable courts here this weekend, net of the buffer, and the ones the
+   *  buffer is holding. Absent on older snapshots. */
+  courts?: number
+  courtsHeld?: number
+  courtDays?: number
+  days?: number
+  hoursPerCourtDay?: number
+  /** THIS weekend's own window at this gym, when the operator gave it one.
+   *  Null means the gym's usual range (owner 2026-08-02: one range per gym,
+   *  with a named exception). */
+  startTime?: string | null
+  endTime?: string | null
 }
 
 export interface PlanWorldWeekend {
@@ -62,6 +81,18 @@ export interface PlanWorldWeekend {
   capacityGames: number
   targetGamesPerTeam: number
   venues: PlanWorldVenue[]
+  /** First day of the weekend, so a world can be read in order on its own. */
+  dateISO?: string
+  largestVenueCapacity?: number
+  /** Days this weekend runs (2 for a Sat–Sun). */
+  dayCount?: number
+  /**
+   * DOES THIS PLAN RUN THIS WEEKEND (owner ruling 2026-08-05, #3)? Every
+   * weekend of the season is listed so the operator can pick; this is the pick.
+   * Absent on a snapshot taken before plans chose their own weekends, where
+   * "it had a gym on it" is the honest reading (see weekendChosen).
+   */
+  chosen?: boolean
 }
 
 export interface PlanWorldWindow {
@@ -74,6 +105,39 @@ export interface PlanWorldUnit {
   label: string
   /** The number the plan runs on: the operator's estimate for that grade. */
   teams: number
+  divisionIds?: string[]
+  alternate?: boolean
+  /** Teams really registered, carried as overlay so step 1 can draw the
+   *  warning without a second query. Never folded into `teams`. */
+  approved?: number
+  expected?: number
+  source?: "approved" | "expected" | "none"
+  /**
+   * IS THIS GRADE IN THIS PLAN (owner ruling 2026-08-05, "grade estimates +
+   * in/out")? A grade taken out asks for no games and draws no chip, and it
+   * keeps its number so putting it back costs nothing.
+   */
+  included?: boolean
+}
+
+/**
+ * A gym this plan HAS: what it is to the league, how many courts it gives and
+ * when it is open. The roster is the plan's own, so a plan can list a gym it
+ * has never attached to a single weekend — which is exactly the state a fresh
+ * plan starts its pool in.
+ */
+export interface PlanWorldGym {
+  venueId: string
+  name: string
+  city?: string | null
+  role: "home" | "pool"
+  /** Courts WIRED at this gym for this plan, before the buffer holds any back. */
+  courts: number
+  openTime?: string | null
+  closeTime?: string | null
+  /** The season's link row, so the active plan's write-through and activation
+   *  know which SeasonVenue to touch. */
+  seasonVenueId?: string | null
 }
 
 export interface PlanWorld {
@@ -83,6 +147,15 @@ export interface PlanWorld {
   /** Which season it was read from. Carried so a snapshot can be read on its
    *  own; the board uses the season it is standing in, never this. */
   seasonId?: string
+  /** The gyms this plan has, with their roles, courts and hours. Absent on
+   *  snapshots from before plans owned their gyms, where the roster is read
+   *  back off the weekends (see worldGyms). */
+  gyms?: PlanWorldGym[]
+  /** Courts this plan holds back at every gym, every day. */
+  courtBuffer?: number
+  /** One game's slot in minutes, so capacity can be recomputed from hours
+   *  without asking the season. */
+  gameSlotMinutes?: number
 }
 
 /** What SeasonPlan.settings holds. */
@@ -503,10 +576,24 @@ export const PLAN_COPY = {
   driftBoard: "The board is showing this plan's own settings, so every number here is the world it was saved in.",
   /** Said of the plan the season runs, whose board is the live world. */
   driftActive: "The board is showing the season's settings, because this is the plan the season runs.",
-  /** What activating does NOT do. Settings write-back is a later phase, so the
-   *  warning has to name what stays put. */
+  /**
+   * WHAT ACTIVATING DOES (owner ruling 2026-08-05, #5). It used to apply the
+   * calendar only, and the warning had to name what stayed put; a plan that owns
+   * its world hands the whole thing over, so the sentence says so.
+   */
   activateKeeps:
-    "Activating applies this plan's calendar. The season keeps its current gyms, hours and estimates.",
+    "Activating applies this plan's calendar AND its gym setup: the weekends it runs, the gyms on each one, their courts and hours, the courts held back, and the teams expected in each grade.",
+  /** Why the two plans that cannot be deleted cannot be, said on the button. */
+  deleteReference:
+    "The imported reference is the record of what the league published, so it cannot be deleted.",
+  deleteActive: "This plan runs the season. Activate another one first.",
+  /**
+   * A PLACEMENT WHOSE BUILDING IS GONE (owner ruling 2026-08-05, #4). The
+   * operator took a gym off a weekend on step 2, and games were already there.
+   * Never silent, and never quietly re-drawn somewhere else: it is flagged, the
+   * games go into the dashed block that needs a building, and the rail counts it.
+   */
+  gymGone: "Gym no longer available",
   /** The levers solve against the season's world, so they have nothing honest
    *  to say about a board drawn in a saved one. */
   leverSnapshot:

@@ -351,12 +351,15 @@ describe("activateConfirmText", () => {
     )
   })
 
-  it("lists the drift and names what activating leaves alone", () => {
+  /** Owner ruling 2026-08-05, #5: activating hands over the WORLD too, so the
+   *  confirmation stopped promising the season keeps its own gyms. */
+  it("lists the drift and names what activating applies", () => {
     const text = activateConfirmText("Our plan", ["Grade 12 planned at 27 teams; the season now expects 30."])
     expect(text).toContain("Grade 12 planned at 27 teams")
-    expect(text).toContain(
-      "Activating applies this plan's calendar. The season keeps its current gyms, hours and estimates."
-    )
+    expect(text).toContain("Activating applies this plan's calendar AND its gym setup")
+    expect(text).toContain("the weekends it runs, the gyms on each one")
+    // The old promise is gone, and it must not creep back: it would be a lie.
+    expect(text).not.toContain("The season keeps its current gyms")
   })
 })
 

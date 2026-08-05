@@ -173,17 +173,27 @@ ok(
   homeMarks > 0 && rentalMarks > 0,
   `${homeMarks} home sections · ${rentalMarks} rented sections`
 )
+/**
+ * RE-PINNED 2026-08-05: the first weekend the season HAS is not necessarily a
+ * weekend it has a gym on — turning one off in step 2 is an ordinary thing to do,
+ * and a weekend with no gym has no sections to order. The contract is about
+ * weekends that have one: the gym the league OWNS is drawn first.
+ */
 const firstMark = await page.evaluate(() => {
-  const card = document.querySelector("[data-session-id]")
-  const first = card?.querySelector('[data-testid="weekend-gym-section"]')
+  const cards = [...document.querySelectorAll("[data-session-id]")]
+  const card = cards.find((c) => c.querySelector('[data-testid="weekend-gym-section"]'))
+  const sections = [...(card?.querySelectorAll('[data-testid="weekend-gym-section"]') ?? [])]
+  const roles = sections.map((s) => s.getAttribute("data-role"))
   return {
-    role: first?.getAttribute("data-role") ?? null,
-    mark: first?.querySelector('[data-testid="home-mark"],[data-testid="rental-mark"]')?.textContent?.trim() ?? null,
+    weekend: card?.querySelector('[data-testid="weekend-open"]')?.textContent?.trim() ?? null,
+    roles,
+    first: roles[0] ?? null,
+    hasHome: roles.includes("home"),
   }
 })
 ok(
   "the home gym section comes first on a weekend that has one",
-  firstMark.role === "home" || firstMark.role === "pool",
+  firstMark.first !== null && (firstMark.hasHome ? firstMark.first === "home" : firstMark.first === "pool"),
   JSON.stringify(firstMark)
 )
 const rentalWords = await page.locator('[data-testid="rental-mark"]').first().innerText()
@@ -657,7 +667,16 @@ if ((await jump.count()) > 0) {
 await page.screenshot({ path: `${SHOTS}/v3-1-fullbleed-board-and-rail.png`, fullPage: false })
 
 /* ---- 4. the weekend at its own altitude, in planning currency ---- */
-await page.locator('[data-testid="weekend-open"]').first().click()
+/**
+ * RE-PINNED 2026-08-05: zoom into a weekend that actually HAS gym time, for the
+ * same reason as the section-order check above. A weekend the league does not run
+ * has no gym sections and no grade chips, and zooming it proves nothing.
+ */
+const zoomIndex = await page.evaluate(() => {
+  const cards = [...document.querySelectorAll("[data-session-id]")]
+  return cards.findIndex((c) => c.querySelector('[data-testid="weekend-gym-section"]'))
+})
+await page.locator('[data-testid="weekend-open"]').nth(Math.max(0, zoomIndex)).click()
 await page.waitForSelector('[data-testid="weekend-zoom"]', { timeout: 20000 })
 await page.waitForTimeout(400)
 const zoomText = ((await page.locator('[data-testid="weekend-zoom"]').textContent()) ?? "").replace(
@@ -833,14 +852,24 @@ if ((await split.count()) > 0) {
     .textContent()
     .catch(() => null)
   const priced = [gymPrice, weekPrice].filter(Boolean)
-  ok(
-    "an axis that can be taken is priced in buildings, court-days and weekends",
-    priced.length > 0 &&
-      priced.every((p) => /more|fewer|Costs nothing/.test(p)),
-    priced.map((p) => (p ?? "").trim()).join("  |  ")
-  )
   const gymsEnabled = await gymsAxis.getAttribute("data-enabled")
   const weekEnabled = await weekAxis.getAttribute("data-enabled")
+  /**
+   * RE-PINNED 2026-08-05: a price exists only for an axis that can actually be
+   * taken. On a weekend where neither can be — one grade, or no second building
+   * with room — there is nothing to price, and the check below is the one that
+   * matters: it has to say WHY instead of going quiet.
+   */
+  const anyTakeable = gymsEnabled === "true" || weekEnabled === "true"
+  ok(
+    "an axis that can be taken is priced in buildings, court-days and weekends",
+    anyTakeable
+      ? priced.length > 0 && priced.every((p) => /more|fewer|Costs nothing/.test(p))
+      : priced.length === 0,
+    anyTakeable
+      ? priced.map((p) => (p ?? "").trim()).join("  |  ")
+      : "neither axis can be taken on this weekend, so there is nothing to price"
+  )
   const disabledReason = await (gymsEnabled === "false" ? gymsAxis : weekAxis).textContent()
   ok(
     "an axis that cannot be taken says why instead of going quiet",

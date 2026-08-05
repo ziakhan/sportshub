@@ -14,6 +14,7 @@ import {
   diffAssignments,
   gradeGymStrip,
   gradeHomeGym,
+  gradeLine,
   gymCountsSentence,
   heldBackPhrase,
   hoursPreviewSentence,
@@ -64,6 +65,12 @@ import {
   type PlanRow,
   type PlanSettings,
 } from "@/lib/scheduler/plan-documents"
+import {
+  planStateFrom,
+  strandedPlacements,
+  strandedSentence,
+  type StrandedPlacement,
+} from "@/lib/scheduler/plan-world"
 import type { VenueGrid } from "@/lib/seasons/venue-grid"
 import { venueShortName, type StripVenue } from "@/lib/seasons/venue-strip"
 import {
@@ -265,6 +272,10 @@ interface BoardSnapshot {
 /** One rental, keyed the way the working copy remembers it. */
 const blockKey = (sessionId: string, venueId: string) => `${sessionId}|${venueId}`
 
+/** One shared empty set, so a weekend with nothing stranded does not hand a new
+ *  object down on every repaint. */
+const EMPTY_KEYS: Set<string> = new Set()
+
 /** Which building each grade plays in, as the plan has it SAVED: sessionId →
  *  (unit key → venueId). The board carries this next to the assignment and
  *  hands it back on Apply, so a kept calendar keeps its gyms too. */
@@ -280,50 +291,12 @@ function savedVenueMap(state: PlannerState): Record<string, Record<string, strin
 }
 
 /**
- * A plan's saved world, back in the shape the board computes on. The snapshot
- * deliberately holds no calendar — the plan's assignment and venues columns are
- * the calendar — so every weekend comes back empty and the board fills it from
- * the document it just opened.
- *
- * Anything the snapshot is missing (a row written by an older shape) falls back
- * to something harmless rather than throwing: a plan that cannot be read is
- * still a plan the operator has to be able to open.
+ * A plan's world, back in the shape the board computes on, lives in
+ * lib/scheduler/plan-world.ts now (owner ruling 2026-08-05: "a pure
+ * planStateFrom(plan) ... so all three steps render any plan identically"). The
+ * board used to own that reading privately, which is exactly why step 2 and step
+ * 3 could disagree about the same plan.
  */
-function stateFromSettings(seasonId: string, settings: PlanSettings): PlannerState {
-  const world = settings.state as unknown as PlannerState
-  return {
-    seasonId,
-    units: (world.units ?? []).map((u) => ({
-      ...u,
-      divisionIds: u.divisionIds ?? [],
-      approved: u.approved ?? 0,
-      expected: u.expected ?? 0,
-      source: u.source ?? (u.teams > 0 ? "expected" : "none"),
-    })),
-    windows: (world.windows ?? []).map((win) => ({
-      label: win.label,
-      weekends: (win.weekends ?? []).map((w) => ({
-        ...w,
-        venues: (w.venues ?? []).map((v) => ({
-          ...v,
-          // A snapshot from before the 2026-08-03 venue ruling carries no
-          // roles. The gym that filled first is the one the league owned —
-          // that is what fill order meant in practice — so an old plan opens
-          // as itself instead of as a season that rents everything.
-          role: (v as Partial<PlannerVenue>).role ?? (v.fillOrder === 0 ? "home" : "pool"),
-        })),
-        largestVenueCapacity:
-          w.largestVenueCapacity ?? Math.max(0, ...(w.venues ?? []).map((v) => v.capacityGames)),
-        // The plan's own two columns say where the grades go; the world says
-        // nothing about it on purpose.
-        assigned: [],
-        assignedVenues: {},
-      })),
-    })),
-    errors: [],
-    gamesPerTeam: world.gamesPerTeam || undefined,
-  }
-}
 
 /** The header verdict: the loudest true thing about the plan on screen. */
 function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE; text: string } {
@@ -494,18 +467,17 @@ export function CalendarStep({
     [seasonId]
   )
 
-  /** One plan's whole document. The list row deliberately carries no world, so
-   *  this is the only way to learn the one a plan was saved in. */
-  const fetchPlanDoc = useCallback(
-    async (id: string): Promise<PlanDocument | null> => {
-      const res = await fetch(`/api/seasons/${seasonId}/plans/${id}`, { cache: "no-store" }).catch(
-        () => null
-      )
-      const data = res?.ok ? await res.json().catch(() => null) : null
-      return (data?.plan ?? null) as PlanDocument | null
-    },
-    [seasonId]
-  )
+  /**
+   * ONE DOCUMENT, HELD ABOVE THE STEPS (owner ruling 2026-08-05, the staleness
+   * fix). The board no longer fetches the plan itself: the wizard holds it, and
+   * the board draws whatever version the wizard has. That is what makes coming
+   * back from step 2 show step 2's edits.
+   */
+  const planDoc = session.doc
+  const planVersion = session.docVersion
+  /** Set right before a save that has ALREADY put the result on the board, so
+   *  the redraw effect below does not undo the notice and the local state. */
+  const skipRedraw = useRef(false)
 
   /**
    * Load the world the board computes in, and NOTHING ELSE (owner ruling
@@ -606,12 +578,45 @@ export function CalendarStep({
    */
   const board = useMemo(() => (state ? applyCourtCaps(state, courtCaps) : null), [state, courtCaps])
 
+  /**
+   * THE PLAN'S WORLD MOVED UNDER THE CALENDAR (owner ruling 2026-08-05, #4). The
+   * operator went back to step 2 and took a gym off a weekend the calendar was
+   * already using, or turned the weekend off outright.
+   *
+   * Nothing is quietly re-drawn somewhere else. The stale decision is dropped —
+   * which is what sends those games into the dashed block that needs a building,
+   * because that is exactly what they are — and the fact is kept so the banner,
+   * the chip and the rail can all say the same true thing.
+   */
+  const gone = useMemo(
+    () =>
+      board
+        ? strandedPlacements(board, assignment, venues)
+        : { assignment, venues, stranded: [] as StrandedPlacement[] },
+    [board, assignment, venues]
+  )
+  const stranded = gone.stranded
+  /** The weekends and grades a gone gym or weekend has stranded, for the chips
+   *  and the section headers that have to wear it. */
+  const strandedAt = useMemo(() => {
+    const out = new Map<string, Set<string>>()
+    for (const s of stranded) {
+      const at = out.get(s.sessionId) ?? new Set<string>()
+      at.add(s.unitKey)
+      out.set(s.sessionId, at)
+    }
+    return out
+  }, [stranded])
+
   const shown: ShownPlacements = useMemo(
     () =>
       board
-        ? packShownPlacements(board, assignment, venues)
+        ? // The packer computes on the calendar MINUS the placements whose
+          // building this plan no longer has, so a game in a gym we lost reads
+          // as needing one instead of as settled.
+          packShownPlacements(board, gone.assignment, gone.venues)
         : { venues: {}, reasons: {}, homes: {}, blocks: [] },
-    [board, assignment, venues]
+    [board, gone]
   )
   /** The same walk over the calendar the league KEPT, so the strip's kept side
    *  names the buildings that were saved rather than the ones on trial. */
@@ -630,8 +635,10 @@ export function CalendarStep({
    * taken from the rail immediately changes what the rail says next.
    */
   const suggestions: PlannerSuggestion[] = useMemo(
-    () => (board ? suggestFor(board, assignment, venues) : []),
-    [board, assignment, venues]
+    // On the calendar the plan's world can actually hold, so an idea is never
+    // about a gym this plan no longer has.
+    () => (board ? suggestFor(board, gone.assignment, gone.venues) : []),
+    [board, gone]
   )
 
   /**
@@ -929,22 +936,17 @@ export function CalendarStep({
    * saw when they saved it. The plan the season runs is drawn under the
    * season's own world, because that world is the one it is running in.
    */
-  const openPlan = async (id: string, { ask = false }: { ask?: boolean } = {}) => {
-    if (ask && dirty && !window.confirm(PLAN_COPY.discard)) return
-    drawnPlan.current = id
-    setBusy(`plan:${id}`)
+  const openPlan = (plan: PlanDocument) => {
+    drawnPlan.current = `${plan.id}|${planVersion}`
     setError(null)
-    const plan = await fetchPlanDoc(id)
-    setBusy(null)
-    if (!plan) {
-      setError("Couldn't open that plan. Try again.")
-      return
-    }
     const settings = plan.settings ?? null
     const ownWorld = Boolean(settings) && !plan.isActive
     setPlanSettings(settings)
     setOnPlanWorld(ownWorld)
-    if (ownWorld && settings) setState(stateFromSettings(seasonId, settings))
+    // The plan's own world, read the one shared way. A plan the season RUNS is
+    // drawn under the season's world, because that world is the one it runs in.
+    const own = ownWorld ? planStateFrom(seasonId, plan) : null
+    if (own) setState(own)
     else if (liveState) setState(liveState)
     setAssignment(plan.assignment ?? {})
     setVenues(plan.venues ?? {})
@@ -970,19 +972,31 @@ export function CalendarStep({
   }
 
   /**
-   * OPEN WHAT THE OPERATOR CHOSE. The plan lives above the steps now, so the
-   * board is a follower: it draws whatever plan the wizard is in, and draws
-   * nothing at all until somebody opens one (owner ruling 2026-08-05, #2). A
-   * plan the wizard already drew is left alone, so a save that just rewrote the
-   * board does not get re-opened underneath it.
+   * OPEN WHAT THE OPERATOR CHOSE, AT THE VERSION IT IS NOW (owner ruling
+   * 2026-08-05, #2 and #4). The plan lives above the steps, so the board is a
+   * follower: it draws whatever plan the wizard is in, at whatever version the
+   * wizard holds, and draws nothing at all until somebody opens one.
+   *
+   * THE VERSION IS IN THE KEY, and that is the staleness fix. Step 2 writes the
+   * plan, the wizard's document changes, and stepping to step 3 redraws the
+   * board from THAT document — never from a board state that outlived the plan
+   * it was drawn from. A save made here sets skipRedraw, because it has already
+   * put its own result on screen.
    */
   useEffect(() => {
-    if (!state || !planId || drawnPlan.current === planId) return
-    void openPlan(planId)
+    if (!state || !planId || !planDoc || planDoc.id !== planId) return
+    const key = `${planId}|${planVersion}`
+    if (drawnPlan.current === key) return
+    if (skipRedraw.current) {
+      skipRedraw.current = false
+      drawnPlan.current = key
+      return
+    }
+    openPlan(planDoc)
     // openPlan is recreated every render and is deliberately not a dependency:
-    // the ref above is what makes this run exactly once per chosen plan.
+    // the ref above is what makes this run exactly once per (plan, version).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planId, state])
+  }, [planId, planVersion, planDoc, state])
 
   /**
    * WHERE "ASSUMED" IS WRITTEN DOWN (the 2026-08-03 wiring decision, and the
@@ -1020,11 +1034,15 @@ export function CalendarStep({
     if (data?.grid) setVenueGrid(data.grid)
   }
 
-  /** Back to what the selected plan says, or to the saved calendar when this
-   *  season has no plans yet. */
+  /** Back to what the selected plan says, re-read from the server so "undo my
+   *  changes" cannot land on a document that moved while the board was open. */
   const revert = async () => {
     if (planId) {
-      await openPlan(planId, { ask: false })
+      setBusy(`plan:${planId}`)
+      const fresh = await session.refreshDoc()
+      setBusy(null)
+      if (fresh) openPlan(fresh)
+      else setError("Couldn't reopen that plan. Try again.")
       return
     }
     await load()
@@ -1054,6 +1072,11 @@ export function CalendarStep({
         assignment,
         venues: shown.venues,
         source: fromLever ? "proposed" : "manual",
+        // A COPY CARRIES THE WORLD IT WAS DRAWN IN (owner ruling 2026-08-05). A
+        // plan owns its world, so a copy taken while that world is on the board
+        // is a copy of the world too — otherwise the numbers would change under
+        // the operator the moment they pressed Save a copy.
+        ...(onPlanWorld && planSettings ? { settings: planSettings } : {}),
       }),
     }).catch(() => null)
     const data = res ? await res.json().catch(() => null) : null
@@ -1079,15 +1102,21 @@ export function CalendarStep({
     const wasOnPlanWorld = onPlanWorld
     // The board is ALREADY drawing this plan, so the wizard is told which plan
     // it is in without the open-on-choice effect redrawing it underneath.
-    drawnPlan.current = plan.id
+    skipRedraw.current = true
     await session.refresh()
     session.choose(plan.id)
+    session.setDoc(plan)
     setPlanSettings(plan.settings ?? null)
-    setOnPlanWorld(false)
+    // A copy that carried its world keeps drawing that world; one saved in the
+    // season's world goes back to the season's numbers.
+    setOnPlanWorld(Boolean(plan.settings) && wasOnPlanWorld && !takesOver)
     // A correction the save just wrote moved the season's own capacity, so THAT
     // is the world the board lands in. Without this the stale live world would
     // quietly put the courts back.
-    if (fresh) setState(fresh)
+    if (wasOnPlanWorld && !takesOver && plan.settings) {
+      const own = planStateFrom(seasonId, plan)
+      if (own) setState(own)
+    } else if (fresh) setState(fresh)
     else if (liveState) setState(liveState)
     setVenues(shown.venues)
     setBlockStatus({})
@@ -1105,7 +1134,7 @@ export function CalendarStep({
       takesOver
         ? `Saved as ${plan.name}. It is the calendar this season runs.`
         : wasOnPlanWorld
-          ? `Saved as ${plan.name}, in the season's current settings. The board is showing those now.`
+          ? `Saved as ${plan.name}, with the gyms and estimates this plan was drawn in.`
           : `Saved as ${plan.name}. Use it for the season when you are ready.`
     )
   }
@@ -1136,17 +1165,26 @@ export function CalendarStep({
       setError(data?.error ?? "That didn't save. Try again.")
       return
     }
+    const saved = data.plan as PlanDocument
     const wasOnPlanWorld = onPlanWorld
     // The active plan IS the season's calendar, so where its rentals stand and
     // any gym it corrected are written through with it. A plan the season does
     // not run leaves the gyms alone (writeBookingStatus explains why).
     const fresh = plan.isActive ? await writeSeasonFacts() : null
-    // The calendar was just rewritten in the world the operator is standing in,
-    // so the plan's memory of its world moved with it (the server re-snapshots
-    // on any content change) and the board goes back to the season's numbers.
-    setPlanSettings((data.plan as PlanDocument).settings ?? null)
-    setOnPlanWorld(false)
-    if (fresh) setState(fresh)
+    /**
+     * THE PLAN KEEPS ITS OWN WORLD (owner ruling 2026-08-05). Saving a calendar
+     * onto a plan used to re-snapshot the season over the plan's world, which
+     * silently moved every number on the board; the server leaves it alone now,
+     * so the board stays in the world the operator was working in.
+     */
+    skipRedraw.current = true
+    session.setDoc(saved)
+    setPlanSettings(saved.settings ?? null)
+    setOnPlanWorld(Boolean(saved.settings) && !plan.isActive)
+    if (!plan.isActive && saved.settings) {
+      const own = planStateFrom(seasonId, saved)
+      if (own) setState(own)
+    } else if (fresh) setState(fresh)
     else if (liveState) setState(liveState)
     setVenues(shown.venues)
     setBlockStatus({})
@@ -1167,7 +1205,7 @@ export function CalendarStep({
       plan.isActive
         ? `Saved to ${plan.name}. Everything after this step follows this calendar.`
         : wasOnPlanWorld
-          ? `Saved to ${plan.name}, in the season's current settings. The board is showing those now.`
+          ? `Saved to ${plan.name}, in its own gyms and estimates.`
           : `Saved to ${plan.name}.`
     )
   }
@@ -1198,10 +1236,15 @@ export function CalendarStep({
     const savedVenuesNow = savedVenueMap(next)
     setState(next)
     setLiveState(next)
-    // The season did not take the plan's settings, only its calendar, so the
-    // board goes back to the season's world. The plan keeps the snapshot it
-    // was saved with, and the drift line keeps saying so.
+    /**
+     * THE SEASON TOOK THE WHOLE PLAN (owner ruling 2026-08-05, #5): its calendar
+     * AND its gym setup. So the plan's world and the season's are the same world
+     * now, the board draws the live one, and the drift line has nothing to say —
+     * which is the truth rather than a silence.
+     */
     setOnPlanWorld(false)
+    setPlanSettings(null)
+    skipRedraw.current = true
     setAssignment(savedNow)
     setVenues(savedVenuesNow)
     setKept(savedNow)
@@ -1214,7 +1257,15 @@ export function CalendarStep({
     setDirty(false)
     setFromLever(false)
     await session.refresh()
-    setNotice(`${plan.name} is the season's calendar now. Everything after this step follows it.`)
+    await session.refreshDoc()
+    // A gym a GAME is already on could not be released, and that is a real
+    // difference between the plan and the season the operator has to hear.
+    const blocked = Number(data.world?.blocked ?? 0)
+    setNotice(
+      blocked > 0
+        ? `${plan.name} is the season's calendar and gym setup now, except ${plural(blocked, "weekend", "weekends")} that kept a gym because a game is already scheduled there.`
+        : `${plan.name} is the season's calendar and gym setup now. Everything after this step follows it.`
+    )
   }
 
   /** The board as it stands, remembered before something changes it, WITH the
@@ -1670,8 +1721,10 @@ export function CalendarStep({
   const unitByKey = useMemo(() => new Map((board?.units ?? []).map((u) => [u.key, u])), [board])
 
   const summary = useMemo(
-    () => (board ? planSummary(board, assignment) : null),
-    [board, assignment]
+    // A grade on a weekend this plan stopped running is NOT placed, and the
+    // header pill has to say so rather than counting it as settled.
+    () => (board ? planSummary(board, gone.assignment) : null),
+    [board, gone]
   )
 
   /** Compare mode is a lens, not a freeze: this recomputes on every drag, tap
@@ -1986,6 +2039,24 @@ export function CalendarStep({
               </p>
             )}
 
+            {/* A GYM THIS PLAN NO LONGER HAS (owner ruling 2026-08-05, #4).
+                Loud, named, and above the calendar, because it is the reason
+                some games below have moved into the dashed block. */}
+            {stranded.length > 0 && (
+              <div
+                data-testid="stranded-gyms"
+                data-count={stranded.length}
+                aria-live="polite"
+                className="border-hoop-300 bg-hoop-50 mb-2.5 rounded-xl border px-4 py-2.5"
+              >
+                <p className="text-hoop-900 text-[13px] font-bold">{PLAN_COPY.gymGone}</p>
+                <p className="text-hoop-800 mt-0.5 text-[12px]">
+                  {strandedSentence(stranded)} Fill them from your pool, place a gym by hand, or move
+                  the games.
+                </p>
+              </div>
+            )}
+
             {/* The world this plan was saved in, where it is not the world the
                 season is in now. Above the calendar, because it is a fact about
                 every number below it. */}
@@ -2033,14 +2104,25 @@ export function CalendarStep({
                     {assignMode === "solve" ? COPY.assignSolve : COPY.assignPlace}
                   </span>
                 </div>
-                {assignMode === "place" && (
-                  <VenueTray
-                    gyms={trayGyms}
-                    hue={gyms.hue}
-                    armedVenueId={armedVenue}
-                    onArm={setArmedVenue}
-                  />
-                )}
+                {/**
+                 * THE TRAY IS ALWAYS THERE (owner ruling 2026-08-05, the tray
+                 * regression). It used to be drawn only in "I will place them"
+                 * mode, and when the compact-first pass made "Assign gyms for
+                 * me" the default the pool simply vanished from the board — an
+                 * operator could not see which gyms they had to rent, let alone
+                 * pick one up, without first finding a mode switch.
+                 *
+                 * So it is rendered whenever a plan is open on the board. The
+                 * mode still says who CHOOSES by default; picking a gym up is a
+                 * decision the operator is allowed to make either way, and doing
+                 * so arms the drop targets (see `placing`).
+                 */}
+                <VenueTray
+                  gyms={trayGyms}
+                  hue={gyms.hue}
+                  armedVenueId={armedVenue}
+                  onArm={setArmedVenue}
+                />
               </div>
             )}
 
@@ -2088,14 +2170,18 @@ export function CalendarStep({
                       unitByKey={unitByKey}
                       hue={gyms.hue}
                       armed={armed}
-                      armedVenue={assignMode === "place" ? armedVenue : null}
+                      // A gym picked up from the tray is a decision, whichever
+                      // mode the board is in: the sections become drop targets
+                      // for as long as one is armed.
+                      armedVenue={armedVenue}
                       armedBlock={armedBlock}
-                      placing={interactive && assignMode === "place"}
+                      placing={interactive && (assignMode === "place" || armedVenue !== null)}
                       interactive={interactive}
                       scrollRef={boardScroll}
                       flashSessions={flashSessions}
                       addable={addable}
                       courtCaps={courtCaps}
+                      strandedAt={strandedAt}
                       poolOn={poolOn}
                       onArm={setArmed}
                       onArmBlock={setArmedBlock}
@@ -2145,12 +2231,13 @@ export function CalendarStep({
                 >
                   <WorkRail
                     state={board}
-                    assignment={assignment}
-                    venues={venues}
+                    assignment={gone.assignment}
+                    venues={gone.venues}
                     playsIn={shown.venues}
                     suggestions={suggestions}
                     blocks={blocks}
                     blockCounts={blockCounts}
+                    stranded={stranded}
                     hue={gyms.hue}
                     gymShort={gymShort}
                     // The rail critiques the plan on the board, and now the plan
@@ -2495,6 +2582,7 @@ function BoardView({
   flashSessions,
   addable,
   courtCaps,
+  strandedAt,
   poolOn,
   onArm,
   onArmBlock,
@@ -2550,6 +2638,9 @@ function BoardView({
   /** Gyms somebody corrected, so a section can say it is not the whole
    *  building this weekend. */
   courtCaps: Record<string, number>
+  /** Grades whose building this plan no longer has, per weekend (owner ruling
+   *  2026-08-05, #4): sessionId → the grades stranded there. */
+  strandedAt: Map<string, Set<string>>
   /** The pool gyms a weekend actually holds, for the prompt a stranded block
    *  asks. */
   poolOn: (sessionId: string) => Array<{ venueId: string; short: string }>
@@ -2625,6 +2716,7 @@ function BoardView({
                   interactive={interactive}
                   flash={flashSessions.includes(w.sessionId)}
                   courtCaps={courtCaps}
+                  strandedKeys={strandedAt.get(w.sessionId) ?? EMPTY_KEYS}
                   poolGyms={poolOn(w.sessionId)}
                   onArm={onArm}
                   onArmBlock={onArmBlock}
@@ -2726,6 +2818,7 @@ function WeekendCard({
   interactive,
   flash,
   courtCaps,
+  strandedKeys,
   poolGyms,
   onArm,
   onArmBlock,
@@ -2769,6 +2862,10 @@ function WeekendCard({
   /** The rail just sent somebody here. */
   flash: boolean
   courtCaps: Record<string, number>
+  /** Grades on THIS weekend whose building this plan no longer has (owner ruling
+   *  2026-08-05, #4). Their games are already in the dashed block below; this is
+   *  what makes the card say WHY. */
+  strandedKeys: Set<string>
   /** The pool gyms this weekend actually holds, for the stranded block's own
    *  prompt. */
   poolGyms: Array<{ venueId: string; short: string }>
@@ -2983,6 +3080,19 @@ function WeekendCard({
             headerChip
           ))}
       </div>
+
+      {/* THE BUILDING WENT (owner ruling 2026-08-05, #4). Named on the card the
+          games were on, so the dashed block below is never a mystery. */}
+      {strandedKeys.size > 0 && (
+        <p
+          data-testid="weekend-gym-gone"
+          data-count={strandedKeys.size}
+          className="border-hoop-300 bg-hoop-100 text-hoop-900 mt-1 rounded-md border px-1.5 py-1 text-[10.5px] font-bold"
+        >
+          {PLAN_COPY.gymGone}:{" "}
+          {gradeLine([...strandedKeys].map((k) => unitByKey.get(k)?.label ?? k))}
+        </p>
+      )}
 
       {/* Grades sit under the gym they play in: one building per grade, and
           a family drives to one address (owner 2026-08-02). The gym owns a
@@ -3313,6 +3423,7 @@ function WorkRail({
   suggestions,
   blocks,
   blockCounts,
+  stranded,
   hue,
   gymShort,
   aboutLabel = "this calendar",
@@ -3331,6 +3442,10 @@ function WorkRail({
    *  have no building. */
   blocks: RentalBlock[]
   blockCounts: { total: number; confirmed: number; assumed: number; needed: number }
+  /** Placements whose gym or weekend this plan no longer has (owner ruling
+   *  2026-08-05, #4). Counted as OPEN, because they are: those games have
+   *  nowhere to play until somebody moves them. */
+  stranded: StrandedPlacement[]
   hue: Map<string, number>
   gymShort: (venueId: string) => string
   /** Whose calendar this is critiquing, in the operator's own words. The rail
@@ -3358,11 +3473,11 @@ function WorkRail({
    *  building" sends you. */
   const firstNeeded = blocks.find((b) => b.venueId === null && b.games > 0)?.sessionId ?? null
 
-  /** WHAT IS STILL OPEN. A weekend over its courts and a rental with no
-   *  building are the two things that stop a plan being finishable; an assumed
-   *  booking is a phone call, not a hole, so it is warned about and not
-   *  counted. */
-  const open = problems.length + blockCounts.needed
+  /** WHAT IS STILL OPEN. A weekend over its courts, a rental with no building,
+   *  and a placement whose gym this plan lost are the three things that stop a
+   *  plan being finishable; an assumed booking is a phone call, not a hole, so
+   *  it is warned about and not counted. */
+  const open = problems.length + blockCounts.needed + stranded.length
 
   return (
     <section
@@ -3393,6 +3508,18 @@ function WorkRail({
         <p className="text-ink-500 px-1 text-[11.5px] font-semibold" data-testid="rail-about">
           Ideas for {aboutLabel}
         </p>
+
+        {/* A GYM THIS PLAN NO LONGER HAS, counted where what-is-left is counted
+            (owner ruling 2026-08-05, #4). First, because it is the loudest thing
+            true about the calendar: those games have nowhere to play. */}
+        {stranded.length > 0 && (
+          <RailStanding
+            tone="bad"
+            title={`${plural(stranded.length, "placement has", "placements have")} no building`}
+            detail={strandedSentence(stranded) ?? PLAN_COPY.gymGone}
+            onJump={() => onJump(stranded[0].sessionId)}
+          />
+        )}
 
         {/* THE STANDING FACTS about what this calendar rents. Loud when a
             rental has no building, quiet gold while one is only assumed. */}

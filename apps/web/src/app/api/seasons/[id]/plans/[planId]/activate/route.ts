@@ -3,20 +3,40 @@ import { prisma } from "@youthbasketballhub/db"
 import { applyAssignment, buildPlannerState } from "@/lib/scheduler/planner"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
-import { findOwnedPlan, type PlanAssignment, type PlanVenues } from "@/lib/scheduler/season-plans"
+import {
+  applyPlanWorld,
+  currentSettings,
+  findOwnedPlan,
+  type PlanAssignment,
+  type PlanVenues,
+} from "@/lib/scheduler/season-plans"
+import type { PlanSettings } from "@/lib/scheduler/plan-documents"
 
 export const dynamic = "force-dynamic"
 
 /**
- * POST /api/seasons/[id]/plans/[planId]/activate — make this the calendar the
- * season runs on (owner 2026-08-02).
+ * POST /api/seasons/[id]/plans/[planId]/activate — make this the calendar AND
+ * the gym setup the season runs on (owner 2026-08-02, extended by the
+ * 2026-08-05 world rulings).
  *
- * Two things happen, in this order and no other: the plan is written onto
- * SeasonSession.unitKeys/unitVenues — the same applyAssignment the board's
- * Apply has always called, so every downstream surface keeps reading the
- * column it always has — and only then does the active flag move. Flipping
- * the flag first would leave a plan claiming to run the season it had not
- * been written into yet if the write failed.
+ * A plan owns its world, so activating it has to hand that world over or "use
+ * this plan for the season" would be a half-truth. The order is deliberate and
+ * is not an accident of convenience:
+ *
+ *  1. THE WORLD FIRST (applyPlanWorld): the grade estimates, the courts held
+ *     back, each gym's role, courts and hours, and which gym is on which
+ *     weekend. Capacity has to be right before a calendar is written against it.
+ *  2. THEN THE CALENDAR (applyAssignment): the same write the board's Apply has
+ *     always made, onto SeasonSession.unitKeys/unitVenues, so every downstream
+ *     surface keeps reading the column it always has.
+ *  3. THEN THE FLAG, in one transaction. Flipping it first would leave a plan
+ *     claiming to run a season it had not been written into if a write failed.
+ *  4. THEN ITS OWN SNAPSHOT, re-read from the season it just wrote — so the
+ *     plan and the season agree, and its drift line is empty because there
+ *     really is no drift.
+ *
+ * A gym a GAME is already on is never released; that is reported in `world` so
+ * the operator is told rather than lied to.
  */
 export async function POST(_request: NextRequest, { params }: { params: { id: string; planId: string } }) {
   try {
@@ -31,6 +51,11 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
 
     const plan = await findOwnedPlan(params.id, params.planId)
     if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    // A plan from before plans remembered a world has none to apply, and
+    // inventing one would be worse than leaving the season's alone.
+    const settings = (plan.settings ?? null) as PlanSettings | null
+    const world = settings?.state ? await applyPlanWorld(params.id, settings.state) : null
 
     const { updated } = await applyAssignment(
       params.id,
@@ -51,8 +76,18 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       }),
     ])
 
+    // The season is what this plan says now, so the plan's memory of its world
+    // is the season's own. Read back rather than assumed: a gym a game blocked
+    // is a real difference, and the snapshot has to show it.
+    if (world) {
+      await (prisma as any).seasonPlan.update({
+        where: { id: plan.id },
+        data: { settings: await currentSettings(params.id) },
+      })
+    }
+
     const state = await buildPlannerState(params.id)
-    return NextResponse.json({ success: true, updated, state })
+    return NextResponse.json({ success: true, updated, world, state })
   } catch (error) {
     console.error("Season plan activate error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

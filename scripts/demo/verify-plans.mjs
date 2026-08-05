@@ -341,12 +341,21 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
 
-/* ------------------- the system makes a plan (New plan) ------------------ */
-// Owner 2026-08-02: "I want the system to make a new plan, not me manually
-// generate it." One row in the dropdown: solve, save, open. Nothing is applied
-// to the season — the byte-compare at the end proves it.
-// RE-PINNED 2026-08-05: "New plan" is a button of its own beside the picker,
-// on step 1 and on the board, instead of a row hidden inside the dropdown.
+/* ------------------------ a NEW plan starts fresh ------------------------ */
+/**
+ * RE-PINNED 2026-08-05 (owner ruling, the plan-world architecture). This block
+ * used to pin "the system makes the plan": one tap and the solver handed back a
+ * balanced calendar. That is gone, and it had to go — a plan now owns its own
+ * gym time, so there is nothing to solve against until the operator has said
+ * which weekends the league runs and which gyms it has on them.
+ *
+ * What is pinned instead:
+ *   - the plan is NAMED at creation, with a suggestion already in the box;
+ *   - it starts with NO calendar, NO weekend chosen and NO gym availability;
+ *   - its grades are prefilled, because re-typing twenty numbers is not a
+ *     decision;
+ *   - the pool gyms are still LISTED, by name, with nothing on them.
+ */
 const newRow = page.locator('[data-testid="plan-new"]')
 ok(
   "making a plan is a button beside the picker, not a row inside it",
@@ -357,52 +366,66 @@ await page.screenshot({ path: `${SHOTS}/6-new-plan-row.png` })
 
 const plansBeforeNew = await listPlans()
 await newRow.click()
+await page.waitForSelector('[data-testid="plan-create-input"]', { timeout: 15000 })
+const suggestedName = await page.locator('[data-testid="plan-create-input"]').inputValue()
 ok(
-  "the button says what it is doing while the solver works",
-  /Building a new plan|New plan/.test((await newRow.innerText().catch(() => "")).trim())
+  "New plan asks for a name, with one already suggested",
+  /^Our plan/.test(suggestedName),
+  suggestedName || "empty box"
 )
 
+const FRESH_NAME = "Drive fresh plan"
+await page.fill('[data-testid="plan-create-input"]', FRESH_NAME)
+await page.locator('[data-testid="plan-create-confirm"]').click()
+
 let made = null
-for (let i = 0; i < 90; i++) {
+for (let i = 0; i < 60; i++) {
   const rows = await listPlans()
   made = rows.find((p) => !plansBeforeNew.some((b) => b.id === p.id)) ?? null
   if (made) break
-  await page.waitForTimeout(1000)
+  await page.waitForTimeout(500)
 }
 ok(
-  "one tap makes a plan: the solver builds it and it is saved, unapplied",
-  Boolean(made) && made.isActive === false && made.source === "proposed" && /^Our plan/.test(made.name),
+  "the plan is created under the operator's own name, saved and unapplied",
+  Boolean(made) && made.isActive === false && made.name === FRESH_NAME,
   made ? `${made.name} source=${made.source} active=${made.isActive}` : "no new plan appeared"
 )
 
-await page.waitForTimeout(1200)
-const madeName = made?.name ?? "Our plan"
+await page.waitForTimeout(1500)
+const madeName = made?.name ?? FRESH_NAME
 const newText = (await picker.innerText()).replace(/\n/g, " ")
 ok(
   "the board opens on the new plan, and the season keeps the one it runs",
   newText.includes(madeName) && !/active/i.test(newText),
   newText
 )
-const newState = await page.locator('[data-testid="plan-state"]').innerText()
-ok(
-  "the state line says it is saved and the season still runs NPH plan",
-  newState.includes(madeName) && newState.includes("NPH plan"),
-  newState
-)
-ok(
-  "nothing is left unsaved: no write-back button, no naming dance",
-  (await page.locator('[data-testid="save-plan"]').count()) === 0 &&
-    (await page.locator('[data-testid="plan-name-row"]').count()) === 0
-)
-const newNotice = await page.locator("text=fresh calendar from the planner").count()
-ok("the step says in plain words what just happened", newNotice >= 1)
 const madeDoc = made
   ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`).then((r) => r.json()))?.plan
   : null
+const freshWeekends = (madeDoc?.settings?.state?.windows ?? []).flatMap((w) => w.weekends ?? [])
 ok(
-  "the plan the system made remembers today's world, so it has no drift to report",
-  Boolean(madeDoc?.settings?.state?.windows?.length) && (await driftLine()) === null,
-  `${madeDoc?.settings?.state?.windows?.length ?? 0} months captured · ${(await driftLine()) ?? "no drift line"}`
+  "a FRESH plan chooses no weekend and assumes no gym availability",
+  freshWeekends.length > 0 &&
+    freshWeekends.every((w) => w.chosen === false && (w.venues ?? []).length === 0),
+  `${freshWeekends.length} weekend(s), ${freshWeekends.filter((w) => w.chosen).length} chosen, ` +
+    `${freshWeekends.filter((w) => (w.venues ?? []).length > 0).length} with a gym`
+)
+ok(
+  "it has no calendar at all: there is nothing to solve against yet",
+  Object.keys(madeDoc?.assignment ?? {}).length === 0,
+  `${Object.keys(madeDoc?.assignment ?? {}).length} placed weekend(s)`
+)
+const freshGyms = madeDoc?.settings?.state?.gyms ?? []
+ok(
+  "the gyms the league HAS are still listed, home role included",
+  freshGyms.length >= 2 && freshGyms.some((g) => g.role === "home"),
+  freshGyms.map((g) => `${g.name}:${g.role}`).join(", ") || "no gyms"
+)
+const freshUnits = madeDoc?.settings?.state?.units ?? []
+ok(
+  "its grades are prefilled, so nobody re-types twenty numbers",
+  freshUnits.length > 0 && freshUnits.some((u) => u.teams > 0),
+  `${freshUnits.length} grade(s), ${freshUnits.filter((u) => u.teams > 0).length} with a number`
 )
 ok(
   "the rail follows the plan it is critiquing",
@@ -410,23 +433,63 @@ ok(
   await railAbout.innerText().catch(() => "no rail")
 )
 ok(
-  "a fresh solve carries none of the reference plan's overloads",
-  (await page.locator('[data-testid="rail-problem"]').count()) === 0,
-  `${await page.locator('[data-testid="rail-problem"]').count()} problem row(s)`
-)
-ok(
-  "the board still draws",
+  "the board still draws every weekend of the season, chosen or not",
   (await page.locator("[data-session-id]").count()) > 0,
   `${await page.locator("[data-session-id]").count()} weekends`
 )
 await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
+
+/* ------------------- rename and delete, from the picker ------------------ */
+// Owner ruling 2026-08-05, #2: plan CRUD lives in the picker.
+let renamed = false
+if (made) {
+  await picker.click()
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 })
+  await page.locator(`[data-testid="plan-rename-open"][data-plan-id="${made.id}"]`).click()
+  await page.waitForSelector('[data-testid="plan-rename-input"]', { timeout: 10000 })
+  await page.fill('[data-testid="plan-rename-input"]', "Drive renamed plan")
+  await page.locator('[data-testid="plan-rename-confirm"]').click()
+  for (let i = 0; i < 30; i++) {
+    const rows = await listPlans()
+    renamed = rows.some((p) => p.id === made.id && p.name === "Drive renamed plan")
+    if (renamed) break
+    await page.waitForTimeout(400)
+  }
+}
+ok("a plan renames in place, from the picker", renamed)
+
+// The two plans that cannot be thrown away say so on the button itself.
+await picker.click()
+await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 })
+const activePlanRow = (await listPlans()).find((p) => p.isActive)
+const blockedDelete = activePlanRow
+  ? await page
+      .locator(`[data-testid="plan-delete"][data-plan-id="${activePlanRow.id}"]`)
+      .getAttribute("data-blocked")
+  : null
+ok(
+  "the reference plan the season runs refuses deletion, and says why on the button",
+  blockedDelete === "1",
+  `data-blocked=${blockedDelete}`
+)
+const referenceRefusal = activePlanRow
+  ? await page.request
+      .delete(`${BASE}/api/seasons/${SEASON}/plans/${activePlanRow.id}`)
+      .then(async (r) => ({ status: r.status(), error: (await r.json().catch(() => ({}))).error }))
+  : null
+ok(
+  "and the API refuses it too, with a reason",
+  referenceRefusal?.status === 409 && /active|reference/i.test(referenceRefusal?.error ?? ""),
+  `${referenceRefusal?.status} ${referenceRefusal?.error ?? ""}`
+)
+await page.keyboard.press("Escape")
 
 let madeDeleted = false
 if (made) {
   madeDeleted = (await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`)).ok()
 }
 ok(
-  "the drive's made plan is deleted again",
+  "the drive's fresh plan is deleted again",
   madeDeleted && !(await listPlans()).some((p) => p.id === made.id)
 )
 

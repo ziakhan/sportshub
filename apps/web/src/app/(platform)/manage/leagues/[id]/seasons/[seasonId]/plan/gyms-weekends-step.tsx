@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react"
 import { Button, DateTimePicker } from "@/components/ui"
 import { VenueEditor } from "@/components/venue-editor"
 import { VenueSelector } from "@/components/venue-selector"
@@ -10,6 +10,24 @@ import type {
   VenueGridRow,
   VenueGridWeekend,
 } from "@/lib/seasons/venue-grid"
+import { isReferencePlan, PLAN_COPY, type PlanWorld } from "@/lib/scheduler/plan-documents"
+import {
+  planGridFrom,
+  weekendChosen,
+  withCourtBuffer,
+  withGym,
+  withGymCourts,
+  withGymEveryWeekend,
+  withGymHours,
+  withGymOnWeekend,
+  withGymRole,
+  withWeekend,
+  withWeekendChosen,
+  withWeekendGymHours,
+  worldWeekends,
+  DEFAULT_DAY_COUNT,
+} from "@/lib/scheduler/plan-world"
+import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
 
 /**
  * Step 2, gyms and weekends (owner-approved mock, 2026-08-02, revised the
@@ -45,6 +63,21 @@ import type {
  *      attachment is hatched and says "assumed"; one tap per weekend confirms
  *      it once the gym has said yes. No bulk confirm — a booking is a phone
  *      call, and pretending otherwise is how a season ends up double-booked.
+ *
+ * A PLAN OWNS ITS WORLD (owner ruling 2026-08-05, the architecture). This whole
+ * screen is the SELECTED PLAN's gym time, not the season's:
+ *
+ *   - a plan of the operator's own → every toggle, every court, every hour and
+ *     the buffer are written into the plan document. The season's SeasonVenue
+ *     rows and its weekend attachments do not move until that plan is activated.
+ *   - the ACTIVE plan, or nothing open → the season's own routes, exactly as
+ *     before, because the active plan IS the season.
+ *   - the imported reference → read only. It records what the league published.
+ *
+ * The COLUMNS are the season's either way: which Saturdays exist is a fact about
+ * the season's dates, not an opinion a plan holds. So turning on a weekend the
+ * season has never created still creates the weekend (a session with no gym on
+ * it, which is inert), and then the PLAN attaches its own gym to it.
  */
 
 const CELL_CLS: Record<VenueGridCell["state"], string> = {
@@ -116,7 +149,8 @@ export function GymsWeekendsStep({
   seasonId: string
   onLoaded?: (grid: VenueGrid) => void
 }) {
-  const [grid, setGrid] = useState<VenueGrid | null>(null)
+  const session = usePlanSession()
+  const [seasonGrid, setSeasonGrid] = useState<VenueGrid | null>(null)
   const [locked, setLocked] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -146,31 +180,88 @@ export function GymsWeekendsStep({
       return
     }
     const data = await res.json()
-    setGrid(data.grid)
+    setSeasonGrid(data.grid)
     setLocked(["FINALIZED", "IN_PROGRESS", "COMPLETED"].includes(data.seasonStatus))
-    setHours(
-      Object.fromEntries(
-        (data.grid.venues as VenueGridRow[]).map((v) => [
-          v.seasonVenueId,
-          { start: v.simpleOpen ?? "", end: v.simpleClose ?? "" },
-        ])
-      )
-    )
-    setCourts(
-      Object.fromEntries(
-        (data.grid.venues as VenueGridRow[]).map((v) => [
-          v.seasonVenueId,
-          String(v.courtsAvailable ?? v.courtCount),
-        ])
-      )
-    )
-    setBuffer(String(data.grid.courtBuffer ?? 0))
-    onLoaded?.(data.grid)
-  }, [seasonId, onLoaded])
+  }, [seasonId])
 
   useEffect(() => {
     load()
   }, [load])
+
+  /**
+   * WHOSE GYM TIME THIS SCREEN IS EDITING. The plan ROW decides it — the season
+   * runs the active plan, the reference is read only, anything else is the
+   * operator's own — and the row is known the moment they choose it.
+   *
+   * THE DOCUMENT ARRIVES A MOMENT LATER, and until it does this screen must not
+   * be touchable (found by the 2026-08-05 drive, and it was the worst kind of
+   * bug: a click in that gap took the SEASON path and attached a gym to the
+   * league's real calendar). So `pending` disables every control, and the write
+   * paths below can only ever see a world that is really there.
+   */
+  const planWorldMode = session.editsPlanWorld
+  const pending = planWorldMode && session.world === null
+  const onPlanWorld = planWorldMode && session.world !== null
+  const readOnly = locked || isReferencePlan(session.chosen) || pending
+
+  /**
+   * THE GRID ON SCREEN. The season's columns either way; the cells are the
+   * plan's when a plan of the operator's own is open (owner ruling 2026-08-05,
+   * #3), so what step 3 draws and what this screen draws are one document.
+   */
+  const grid = useMemo(() => {
+    if (!seasonGrid) return null
+    if (!onPlanWorld) return seasonGrid
+    return planGridFrom(seasonGrid, session.world as PlanWorld)
+  }, [seasonGrid, onPlanWorld, session.world])
+
+  /** The drafts follow whichever grid is on screen, and reseed when the plan or
+   *  the document changes so a switch never leaves last plan's hours in a box. */
+  useEffect(() => {
+    if (!grid) return
+    setHours(
+      Object.fromEntries(
+        grid.venues.map((v) => [v.seasonVenueId, { start: v.simpleOpen ?? "", end: v.simpleClose ?? "" }])
+      )
+    )
+    setCourts(
+      Object.fromEntries(
+        grid.venues.map((v) => [v.seasonVenueId, String(v.courtsAvailable ?? v.courtCount)])
+      )
+    )
+    setBuffer(String(grid.courtBuffer ?? 0))
+    onLoaded?.(grid)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonGrid, session.planId, session.docVersion, onPlanWorld])
+
+  /**
+   * ONE WRITE PATH FOR THE PLAN'S WORLD. Every toggle on this screen ends up
+   * here when a plan of the operator's own is open: the pure editor makes the
+   * next world, it is PATCHed onto the plan document, and the grid re-derives
+   * from what came back. Nothing touches the season.
+   */
+  const saveWorld = async (
+    next: PlanWorld,
+    key: string,
+    success: string,
+    tone: "court" | "gold" = "court"
+  ) => {
+    setBusy(key)
+    setError(null)
+    setNotice(null)
+    setNoticeTone(tone)
+    const ok = await session.saveWorld(next)
+    setBusy(null)
+    if (!ok) {
+      setError(session.error ?? "That didn't save. Try again.")
+      return false
+    }
+    setNotice(success)
+    return true
+  }
+
+  /** The plan's world as it stands, for an editor to build the next one from. */
+  const world = () => session.world as PlanWorld
 
   /** `success` may read the response: some saves only know what they did
    *  after the server answers (how many weekends followed, what a game held
@@ -207,12 +298,75 @@ export function GymsWeekendsStep({
    *  yet gets one created on the way in. A weekend marked taken turns on the
    *  same way — the tap IS the override — and the notice names what it
    *  overrode, so nobody wonders where the reason went. */
+  /**
+   * A weekend the SEASON does not have yet, brought into existence (owner ruling
+   * 2026-08-05). Which Saturdays exist is the season's shape, so this is a season
+   * write even while a plan is open — but nothing is attached to anybody's gym,
+   * and the plan then says what it has there in its own document.
+   */
+  const ensureSession = async (weekend: VenueGridWeekend): Promise<string | null> => {
+    if (weekend.sessionId) return weekend.sessionId
+    if (!weekend.satDateISO) return null
+    const res = await fetch(`/api/seasons/${seasonId}/weekends`, json({ satDate: weekend.satDateISO }))
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+    if (!res?.sessionId) {
+      setError("That weekend didn't get created. Try again.")
+      return null
+    }
+    // The columns move with it, so the world below can name the new session.
+    await load()
+    return res.sessionId as string
+  }
+
+  /** A weekend the plan has never held, in the month it belongs to. */
+  const worldWithWeekend = (
+    from: PlanWorld,
+    sessionId: string,
+    weekend: VenueGridWeekend
+  ): PlanWorld => {
+    if (worldWeekends(from).some((w) => w.sessionId === sessionId)) return from
+    const sample = worldWeekends(from)[0]
+    return withWeekend(from, `${weekend.month} ${weekend.dateISO.slice(0, 4)}`, {
+      sessionId,
+      label: weekend.label,
+      dateISO: weekend.dateISO,
+      dayCount: weekend.dayCount ?? DEFAULT_DAY_COUNT,
+      chosen: true,
+      capacityGames: 0,
+      largestVenueCapacity: 0,
+      targetGamesPerTeam: sample?.targetGamesPerTeam ?? 2,
+      venues: [],
+    })
+  }
+
   const toggleCell = async (
     venue: VenueGridRow,
     weekend: VenueGridWeekend,
     cell: VenueGridCell
   ) => {
     const key = `${venue.venueId}:${weekend.key}`
+
+    // THE PLAN'S OWN GYM TIME. One document, one write, no season row touched.
+    if (onPlanWorld) {
+      const on = !isOn(cell.state)
+      const sessionId = on ? await ensureSession(weekend) : cell.sessionId
+      if (!sessionId) return
+      const base = worldWithWeekend(world(), sessionId, weekend)
+      await saveWorld(
+        withGymOnWeekend(base, sessionId, venue.venueId, on),
+        key,
+        on
+          ? `${venue.name} is on for ${weekend.label} in this plan.`
+          : `${venue.name} is off for ${weekend.label} in this plan.`,
+        on && cell.state === "taken" ? "gold" : "court"
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
+
     if (!isOn(cell.state)) {
       const on: string | (() => string) =
         cell.state === "taken"
@@ -262,6 +416,17 @@ export function GymsWeekendsStep({
       setError("The end time has to be after the start time.")
       return
     }
+    if (onPlanWorld) {
+      await saveWorld(
+        withGymHours(world(), venue.venueId, draft.start, draft.end),
+        `${venue.seasonVenueId}:hours`,
+        `${venue.name} runs ${draft.start} to ${draft.end} every weekend of this plan.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     await call(
       `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}/hours`,
       json(
@@ -287,6 +452,17 @@ export function GymsWeekendsStep({
       setError("Courts has to be a whole number from 1 to 30.")
       return
     }
+    if (onPlanWorld) {
+      await saveWorld(
+        withGymCourts(world(), venue.venueId, next),
+        `${venue.seasonVenueId}:courts`,
+        `${venue.name} runs ${next} court${next === 1 ? "" : "s"} in this plan, every weekend it is on.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     await call(
       `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}`,
       json({ courtsAvailable: next }, "PATCH"),
@@ -318,6 +494,19 @@ export function GymsWeekendsStep({
       setError("Courts held back has to be a whole number from 0 to 10.")
       return
     }
+    if (onPlanWorld) {
+      await saveWorld(
+        withCourtBuffer(world(), next),
+        "court-buffer",
+        next === 0
+          ? "This plan uses every court."
+          : `${next} court${next === 1 ? "" : "s"} held back in this plan, at every gym, every day.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     await call(
       `/api/seasons/${seasonId}/planner/venues`,
       json({ courtBuffer: next }, "PATCH"),
@@ -336,13 +525,26 @@ export function GymsWeekendsStep({
    * asked before anything moves.
    */
   const makeHome = async (venue: VenueGridRow) => {
-    if (!grid || locked || busy !== null) return
+    if (!grid || readOnly || busy !== null) return
     const current = grid.venues.find((v) => v.role === "home")
     const replacing = current && current.seasonVenueId !== venue.seasonVenueId ? current : null
     const question = replacing
       ? `Make ${venue.name} your home gym? ${replacing.name} goes into the pool, so its weekends get priced as gym you rent.`
       : `Make ${venue.name} your home gym? Games there cost you nothing, and it gets used before anything you rent.`
     if (!window.confirm(question)) return
+    if (onPlanWorld) {
+      await saveWorld(
+        withGymRole(world(), venue.venueId, "home"),
+        `${venue.seasonVenueId}:role`,
+        replacing
+          ? `${venue.name} is this plan's home gym. ${replacing.name} is in its pool, rented when a weekend needs it.`
+          : `${venue.name} is this plan's home gym. Its games cost you nothing.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     await call(
       `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}`,
       json({ role: "home" }, "PATCH"),
@@ -373,6 +575,22 @@ export function GymsWeekendsStep({
   /** A gym on, or off, for the whole season in one press. Turning it off
    *  everywhere is how an operator asks what a one-gym season looks like. */
   const toggleSeason = async (venue: VenueGridRow, on: boolean) => {
+    if (onPlanWorld) {
+      const running = worldWeekends(world()).filter(weekendChosen).length
+      await saveWorld(
+        withGymEveryWeekend(world(), venue.venueId, on),
+        `${venue.seasonVenueId}:season:${on ? "on" : "off"}`,
+        on
+          ? running === 0
+            ? "This plan runs no weekends yet. Choose the weekends above and the gym goes on with them."
+            : `${venue.name} is on for all ${running} weekend${running === 1 ? "" : "s"} this plan runs.`
+          : `${venue.name} is off for every weekend of this plan.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     await call(
       `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}/toggle-season`,
       json({ on }),
@@ -432,11 +650,32 @@ export function GymsWeekendsStep({
    * unavailable on a weekend the league wants to run.
    */
   const runWeekend = async (weekend: VenueGridWeekend, on: boolean) => {
-    if (locked || busy !== null || !grid) return
+    if (readOnly || busy !== null || !grid) return
     const index = grid.weekends.findIndex((w) => w.key === weekend.key)
     if (index < 0) return
     const key = `weekend:${weekend.key}`
     const home = grid.venues.find((v) => v.role === "home")
+
+    // THE PLAN'S OWN WEEKENDS. Choosing one attaches the home gym in the plan's
+    // document; the pool stays untouched, because nobody has phoned those gyms.
+    if (onPlanWorld) {
+      const sessionId = on ? await ensureSession(weekend) : weekend.sessionId
+      if (!sessionId) return
+      const base = worldWithWeekend(world(), sessionId, weekend)
+      await saveWorld(
+        withWeekendChosen(base, sessionId, on),
+        key,
+        on
+          ? home
+            ? `${weekend.label} is on in this plan, with ${home.name}. Gyms you rent stay off until you turn them on.`
+            : `${weekend.label} is on in this plan. Pick a home gym and it goes on with your weekends.`
+          : `${weekend.label} is off in this plan. No gym is on it.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
 
     if (on) {
       if (!home) {
@@ -496,6 +735,25 @@ export function GymsWeekendsStep({
       setError("Set both a start and an end time.")
       return
     }
+    if (exceptionDraft.start >= exceptionDraft.end) {
+      setError("The end time has to be after the start time.")
+      return
+    }
+    if (onPlanWorld) {
+      if (!cell.sessionId) return
+      await saveWorld(
+        withWeekendGymHours(world(), cell.sessionId, venue.venueId, {
+          startTime: exceptionDraft.start,
+          endTime: exceptionDraft.end,
+        }),
+        `${venue.venueId}:${exceptionKey}:hours`,
+        `${label} at ${venue.name} runs ${exceptionDraft.start} to ${exceptionDraft.end} in this plan. Every other weekend keeps your usual hours.`
+      )
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     // The panel stays open on purpose: the weekend now reads amber and
     // putting it back is one click away.
     await call(
@@ -507,6 +765,19 @@ export function GymsWeekendsStep({
   }
 
   const resetException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
+    if (onPlanWorld) {
+      if (!cell.sessionId) return
+      const done = await saveWorld(
+        withWeekendGymHours(world(), cell.sessionId, venue.venueId, null),
+        `${venue.venueId}:${exceptionKey}:reset`,
+        `${label} is back on your usual hours in this plan.`
+      )
+      if (done) setExceptionFor(null)
+      return
+    }
+    // The plan's world has not arrived yet, so there is nothing to write it
+    // into — and the season is NOT the fallback (see `pending` above).
+    if (planWorldMode) return
     const ok = await call(
       `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}/hours`,
       json({ reset: true }, "PATCH"),
@@ -524,9 +795,22 @@ export function GymsWeekendsStep({
   const months = monthGroups(weekends)
   // Exactly one home gym at a time, and a season is allowed to have none yet.
   const noHome = grid.venues.length > 0 && !grid.venues.some((v) => v.role === "home")
-  /** The league's own weekends: the ones some gym is really on. This is what
-   *  the row above the grid draws, and what the per-gym cells follow. */
-  const running = weekends.map((_, i) => grid.venues.some((v) => isOn(v.cells[i].state)))
+  /**
+   * THE WEEKENDS THE LEAGUE RUNS. On a plan of the operator's own that is the
+   * plan's own pick, which is a different fact from "some gym happens to be on
+   * it": a plan can choose a weekend before it has phoned a single gym, and the
+   * row has to be able to say so.
+   */
+  const chosenIn = onPlanWorld
+    ? new Set(
+        worldWeekends(session.world as PlanWorld)
+          .filter(weekendChosen)
+          .map((w) => w.sessionId)
+      )
+    : null
+  const running = weekends.map((w, i) =>
+    chosenIn ? Boolean(w.sessionId && chosenIn.has(w.sessionId)) : grid.venues.some((v) => isOn(v.cells[i].state))
+  )
   const runningCount = running.filter(Boolean).length
 
   return (
@@ -539,15 +823,57 @@ export function GymsWeekendsStep({
             Choose the weekends the league runs, then say which gym you have on each one.
           </p>
         </div>
-        <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
-          Step 2 of 5
-        </span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* THE PLAN IS THE SUBJECT OF THIS SCREEN (owner ruling 2026-08-05).
+              Switching plans here changes every cell below it, so the control
+              belongs where the cells are. */}
+          <PlanChooser locked={locked} busy={busy !== null} compact testId="step2-plan-chooser" />
+          <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
+            Step 2 of 5
+          </span>
+        </div>
       </div>
+
+      {!session.planId && (
+        <div className="px-5 pt-5">
+          <PlanEmptyState
+            locked={locked}
+            busy={busy !== null}
+            heading="Which plan's gym time is this?"
+            detail="Gym time belongs to a plan: its weekends, its gyms, its courts and hours. Open one of yours, or start a new one. With nothing open you are editing the season's own gym time."
+            testId="step2-plan-empty"
+          />
+        </div>
+      )}
+      {session.planId && (
+        <p
+          className="border-ink-100 bg-court-50/60 text-court-900 border-b px-5 py-2 text-[12px]"
+          data-testid="step2-plan-line"
+          data-world={pending ? "loading" : onPlanWorld ? "plan" : "season"}
+        >
+          Working in <b>{session.chosen?.name ?? "your plan"}</b>.{" "}
+          {isReferencePlan(session.chosen)
+            ? "This is the imported reference, so its gym time is read only."
+            : pending
+              ? "Opening this plan's gym time…"
+              : onPlanWorld
+                ? "These weekends, gyms, courts and hours belong to this plan. The season keeps its own until you use this plan for the season."
+                : "This is the plan the season runs, so this is the season's own gym time."}
+        </p>
+      )}
 
       <div className="p-5">
         {locked && (
           <p className="border-gold-200 bg-gold-50 text-gold-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
             This season is finalized, so gyms and weekends are read only now.
+          </p>
+        )}
+        {!locked && isReferencePlan(session.chosen) && (
+          <p
+            className="border-ink-200 bg-ink-50 text-ink-600 mb-4 rounded-xl border px-4 py-2.5 text-sm"
+            data-testid="step2-reference-note"
+          >
+            {PLAN_COPY.reference}
           </p>
         )}
         {/* The message slot, and it is ALWAYS here (owner 2026-08-02: "when
@@ -606,7 +932,7 @@ export function GymsWeekendsStep({
             <label htmlFor="court-buffer" className="text-ink-700 text-xs font-semibold">
               Courts left empty
             </label>
-            {locked ? (
+            {readOnly ? (
               <span className="border-ink-100 text-ink-700 rounded-lg border bg-white px-2.5 py-1 text-xs">
                 <b className="text-ink-900">{grid.courtBuffer}</b>
               </span>
@@ -700,7 +1026,7 @@ export function GymsWeekendsStep({
                             data-testid="league-weekend"
                             data-on={on ? "1" : "0"}
                             data-weekend={w.key}
-                            disabled={locked || busy !== null}
+                            disabled={readOnly || busy !== null}
                             aria-pressed={on}
                             aria-label={`${w.label}: ${
                               on ? "on, tap to turn the whole weekend off" : "off, tap to run it"
@@ -763,7 +1089,7 @@ export function GymsWeekendsStep({
                 >
                   {isHome ? "Home gym" : "In the pool"}
                 </span>
-                {!isHome && !locked && (
+                {!isHome && !readOnly && (
                   <button
                     type="button"
                     data-testid="make-home"
@@ -787,7 +1113,7 @@ export function GymsWeekendsStep({
                 aria-label={`${venue.name} availability`}
                 className="mt-2.5 flex flex-wrap items-center gap-2"
               >
-                {locked ? (
+                {readOnly ? (
                   <span className="border-ink-100 bg-ink-50 text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
                     <b className="text-ink-900">{courtsNow}</b> courts
                   </span>
@@ -819,8 +1145,8 @@ export function GymsWeekendsStep({
                 )}
                 {/* Two facts, one row: how many courts, and when. The chips
                     of the locked card already read apart. */}
-                {!locked && <span className="bg-ink-200 mx-1 h-5 w-px" aria-hidden />}
-                {locked ? (
+                {!readOnly && <span className="bg-ink-200 mx-1 h-5 w-px" aria-hidden />}
+                {readOnly ? (
                   <span className="border-ink-100 bg-ink-50 text-ink-700 rounded-lg border px-2.5 py-1 text-xs">
                     Available{" "}
                     <b className="text-ink-900">
@@ -877,7 +1203,7 @@ export function GymsWeekendsStep({
               {/* The whole season in one press (owner 2026-08-02: turning a
                   gym off for every weekend is how you ask what the season
                   looks like without it). */}
-              {!locked && (
+              {!readOnly && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="text-ink-400 text-[11px] font-semibold uppercase tracking-[0.06em]">
                     Every weekend
@@ -941,7 +1267,7 @@ export function GymsWeekendsStep({
                           <td key={w.key} className="p-0 align-top">
                             <button
                               type="button"
-                              disabled={locked || busy !== null}
+                              disabled={readOnly || busy !== null}
                               onClick={() => toggleCell(venue, w, cell)}
                               aria-pressed={isOn(cell.state)}
                               aria-label={cellLabel(venue.name, w.label, cell)}
@@ -993,7 +1319,7 @@ export function GymsWeekendsStep({
                     {/* One tap per assumed weekend, and only under the weekends
                         that have something to confirm. Never a bulk button:
                         every one of these is its own phone call. */}
-                    {assumedCount > 0 && !locked && (
+                    {assumedCount > 0 && !readOnly && (
                       <tr>
                         {venue.cells.map((cell, i) => {
                           const w = weekends[i]
@@ -1031,7 +1357,7 @@ export function GymsWeekendsStep({
               <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
                 <button
                   type="button"
-                  disabled={locked}
+                  disabled={readOnly}
                   onClick={() => {
                     const next = exceptionOpen ? null : venue.seasonVenueId
                     setExceptionFor(next)
@@ -1048,16 +1374,25 @@ export function GymsWeekendsStep({
                 >
                   {exceptionOpen ? "Close" : "One weekend runs different hours?"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAdvancedFor(advancedFor === venue.seasonVenueId ? null : venue.seasonVenueId)
-                    setExceptionFor(null)
-                  }}
-                  className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors"
-                >
-                  {advancedFor === venue.seasonVenueId ? "Close advanced" : "Advanced"}
-                </button>
+                {/* Advanced edits the SEASON's own courts and day windows, so
+                    it is not offered while a plan of the operator's own is the
+                    thing on screen: the card above is that plan's gym time, and
+                    a panel that quietly wrote past it into the season would be
+                    exactly the confusion this architecture removes. */}
+                {!onPlanWorld && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdvancedFor(
+                        advancedFor === venue.seasonVenueId ? null : venue.seasonVenueId
+                      )
+                      setExceptionFor(null)
+                    }}
+                    className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors"
+                  >
+                    {advancedFor === venue.seasonVenueId ? "Close advanced" : "Advanced"}
+                  </button>
+                )}
               </div>
 
               {/* One weekend's exception. Everything else keeps the card's range. */}
@@ -1117,7 +1452,7 @@ export function GymsWeekendsStep({
                             <Button
                               size="sm"
                               tone="court"
-                              disabled={locked || busy !== null || !cell?.sessionId}
+                              disabled={readOnly || busy !== null || !cell?.sessionId}
                               onClick={() => cell && saveException(venue, cell, label)}
                             >
                               Save these hours
@@ -1126,7 +1461,7 @@ export function GymsWeekendsStep({
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                disabled={locked || busy !== null}
+                                disabled={readOnly || busy !== null}
                                 onClick={() => resetException(venue, cell, label)}
                               >
                                 Back to your usual hours
@@ -1196,16 +1531,37 @@ export function GymsWeekendsStep({
             <AddGymCard
               seasonId={seasonId}
               onCancel={() => setAddingGym(false)}
-              onAdded={async (name) => {
+              onAdded={async (name, venueId) => {
                 setAddingGym(false)
-                setNotice(`${name} added, on for every weekend the season already has.`)
                 await load()
+                // A gym is a SEASON fact (the league has it or it does not), so
+                // the plan gains it in its pool with no availability at all:
+                // nobody has phoned them about any Saturday yet.
+                if (onPlanWorld && venueId) {
+                  const added = await session.saveWorld(
+                    withGym(world(), {
+                      venueId,
+                      name,
+                      role: "pool",
+                      courts: 0,
+                      openTime: null,
+                      closeTime: null,
+                    })
+                  )
+                  setNotice(
+                    added
+                      ? `${name} is in this plan's pool. Tap the weekends you have it.`
+                      : `${name} added to the season.`
+                  )
+                  return
+                }
+                setNotice(`${name} added, on for every weekend the season already has.`)
               }}
             />
           ) : (
             <button
               type="button"
-              disabled={locked}
+              disabled={readOnly}
               onClick={() => setAddingGym(true)}
               className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -1226,7 +1582,7 @@ function AddGymCard({
   onCancel,
 }: {
   seasonId: string
-  onAdded: (name: string) => void
+  onAdded: (name: string, venueId: string) => void
   onCancel: () => void
 }) {
   const [venue, setVenue] = useState<{ id: string; name: string } | null>(null)
@@ -1260,7 +1616,7 @@ function AddGymCard({
       setError(data?.error ?? "Couldn't add that gym.")
       return
     }
-    onAdded(venue.name)
+    onAdded(venue.name, venue.id)
   }
 
   return (

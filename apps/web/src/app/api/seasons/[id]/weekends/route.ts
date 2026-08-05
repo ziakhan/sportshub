@@ -31,7 +31,15 @@ export const dynamic = "force-dynamic"
 const postSchema = z.object({
   /** The Saturday of the weekend, YYYY-MM-DD or a full ISO date. */
   satDate: z.string().min(8),
-  venueId: z.string().min(1),
+  /**
+   * OPTIONAL since the 2026-08-05 plan-world rulings. A weekend EXISTING is a
+   * fact about the season's shape — its dates — while which gym is on it is a
+   * fact about the plan you are working in. So a plan that wants to run a
+   * Saturday the season never created asks for the weekend alone, and attaches
+   * its gym inside its own document. Left out, nothing is attached to anybody's
+   * season and the session comes back empty.
+   */
+  venueId: z.string().min(1).optional(),
   /** Explicit courts for this weekend; defaults to the season's court set. */
   courtIds: z.array(z.string()).optional(),
 })
@@ -59,34 +67,37 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
     const { satDate, venueId } = parsed.data
 
-    const seasonVenue = await prisma.seasonVenue.findFirst({
-      where: { seasonId: params.id, venueId },
-      select: { id: true, courtsAvailable: true },
-    })
-    if (!seasonVenue) {
-      return NextResponse.json(
-        { error: "That gym is not on this season yet. Add it first." },
-        { status: 404 }
-      )
-    }
+    let courtIds: string[] = []
+    if (venueId) {
+      const seasonVenue = await prisma.seasonVenue.findFirst({
+        where: { seasonId: params.id, venueId },
+        select: { id: true, courtsAvailable: true },
+      })
+      if (!seasonVenue) {
+        return NextResponse.json(
+          { error: "That gym is not on this season yet. Add it first." },
+          { status: 404 }
+        )
+      }
 
-    const courtIds = parsed.data.courtIds?.length
-      ? parsed.data.courtIds
-      : await defaultCourtIdsForVenue(venueId, seasonVenue.courtsAvailable)
-    if (courtIds.length === 0) {
-      return NextResponse.json(
-        { error: "This gym has no courts yet. Add courts before putting it on a weekend." },
-        { status: 400 }
-      )
-    }
+      courtIds = parsed.data.courtIds?.length
+        ? parsed.data.courtIds
+        : await defaultCourtIdsForVenue(venueId, seasonVenue.courtsAvailable)
+      if (courtIds.length === 0) {
+        return NextResponse.json(
+          { error: "This gym has no courts yet. Add courts before putting it on a weekend." },
+          { status: 400 }
+        )
+      }
 
-    // Courts must belong to the gym (IDOR guard — a court id from another
-    // venue would otherwise be schedulable here).
-    const owned = await (prisma as any).court.count({
-      where: { id: { in: courtIds }, venueId },
-    })
-    if (owned !== courtIds.length) {
-      return NextResponse.json({ error: "Those courts are not at this gym" }, { status: 400 })
+      // Courts must belong to the gym (IDOR guard — a court id from another
+      // venue would otherwise be schedulable here).
+      const owned = await (prisma as any).court.count({
+        where: { id: { in: courtIds }, venueId },
+      })
+      if (owned !== courtIds.length) {
+        return NextResponse.json({ error: "Those courts are not at this gym" }, { status: 400 })
+      }
     }
 
     const weekend = await ensureWeekendSession(params.id, satDate)
@@ -95,6 +106,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         { error: "That is not a weekend on this season. Pick a Saturday." },
         { status: 400 }
       )
+    }
+
+    // No gym named: the weekend now exists and nothing is claimed on anybody's
+    // behalf. That is the whole request a plan makes.
+    if (!venueId) {
+      return NextResponse.json({
+        success: true,
+        sessionId: weekend.sessionId,
+        createdSession: weekend.created,
+        daysAttached: 0,
+        alreadyAttached: 0,
+        overrodeUnavailable: 0,
+      })
     }
 
     const overrode = await clearVenueUnavailability(params.id, venueId, [satDate])

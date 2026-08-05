@@ -254,6 +254,32 @@ export interface PlannerWeekend {
   /** Which building each grade plays in this weekend, as saved:
    *  unit key → venueId. Empty when nobody has decided yet. */
   assignedVenues: Record<string, string>
+  /** Days this weekend runs (2 for a Sat–Sun). Carried so a plan's own world
+   *  can recompute capacity from hours without asking the season. */
+  dayCount?: number
+  /** Whether the plan on screen RUNS this weekend (owner ruling 2026-08-05,
+   *  #3). Absent on the season's own state, where every weekend it has is a
+   *  weekend it runs. */
+  chosen?: boolean
+}
+
+/**
+ * A gym the SEASON has, whether or not any weekend uses it (owner ruling
+ * 2026-08-04, the Haber case, and 2026-08-05, plan worlds): a league adds a gym
+ * on purpose, and a planner that only knows the gyms already attached to a
+ * weekend cannot offer the one nobody has phoned yet.
+ */
+export interface PlannerGym {
+  venueId: string
+  name: string
+  city?: string | null
+  role: VenueRole
+  /** Courts WIRED here, before the court buffer holds any back. */
+  courts: number
+  openTime?: string | null
+  closeTime?: string | null
+  /** The SeasonVenue link row, for the writes step 2 and activation make. */
+  seasonVenueId?: string | null
 }
 
 export interface PlannerWindow {
@@ -270,6 +296,14 @@ export interface PlannerState {
    *  guarantee, not a weekend's share. Absent when the season has not said
    *  yet (step 1 then leaves the games clause off its summary). */
   gamesPerTeam?: number
+  /** Courts held back at every gym, every day (Season.courtBuffer). Carried so
+   *  a plan's world can recompute capacity the way buildSlots does. */
+  courtBuffer?: number
+  /** One game's slot in minutes, same reason. */
+  gameSlotMinutes?: number
+  /** Every gym the season has, INCLUDING the ones no weekend uses yet. This is
+   *  the roster a plan's world starts from. */
+  gyms?: PlannerGym[]
 }
 
 export type PlannerLever = "balance" | "compact" | "spread" | "one-gym"
