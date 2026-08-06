@@ -13,7 +13,9 @@
  * BEFORE anything was chosen, so each suite can pin rule 2 in its own words.
  */
 export async function openBoard(page, planUrl, { source = null, active = true } = {}) {
-  await page.goto(planUrl)
+  // A generous navigation timeout, not Playwright's 30s default: a concurrent
+  // seed on the same box has pushed this well past that in practice.
+  await page.goto(planUrl, { timeout: 90000 })
   await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
   const entry = {
     /** The fresh working state: two buttons and no calendar. */

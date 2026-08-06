@@ -54,21 +54,31 @@ for (const p of ["/sign-in", `/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?s
 }
 
 await page.goto(`${BASE}/sign-in`)
-await page.waitForTimeout(2500)
-await page.fill('input[type="email"]', USER)
-await page.fill('input[type="password"]', PASS)
-await page.click('button[type="submit"]')
 let user = null
-for (let i = 0; i < 40; i++) {
-  const s = await page.request
-    .get(`${BASE}/api/auth/session`)
-    .then((r) => r.json())
-    .catch(() => null)
-  if (s?.user) {
-    user = s.user
-    break
+// Three attempts, not one: under load a single try can fail outright (the
+// callback answers but authorize()'s own DB query never got a load-free
+// moment), and that reads exactly like invalid credentials from here. A fresh
+// page and a fresh attempt is the honest retry, not a longer wait on the same
+// stuck one.
+for (let attempt = 0; attempt < 3 && !user; attempt++) {
+  if (attempt > 0) {
+    await page.goto(`${BASE}/sign-in`)
   }
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(2500)
+  await page.fill('input[type="email"]', USER)
+  await page.fill('input[type="password"]', PASS)
+  await page.click('button[type="submit"]')
+  for (let i = 0; i < 40; i++) {
+    const s = await page.request
+      .get(`${BASE}/api/auth/session`)
+      .then((r) => r.json())
+      .catch(() => null)
+    if (s?.user) {
+      user = s.user
+      break
+    }
+    await page.waitForTimeout(500)
+  }
 }
 ok("signed in as the league owner", Boolean(user))
 if (!user) {
@@ -98,8 +108,13 @@ ok("captured the season's saved calendar", before.length > 2, `${before.length} 
 /* ------------------- the APIs carry blocks and the ask ------------------- */
 // A propose is read-only: it solves in memory and writes nothing. It is also
 // how this drive learns what a fresh proposal rents.
+// A generous timeout, not Playwright's 30s default: this solves the whole
+// season and a concurrent seed on the same box can push it well past that.
 const proposal = await page.request
-  .post(`${BASE}/api/seasons/${SEASON}/planner/propose`, { data: { lever: "balance" } })
+  .post(`${BASE}/api/seasons/${SEASON}/planner/propose`, {
+    data: { lever: "balance" },
+    timeout: 90000,
+  })
   .then((r) => r.json())
   .catch(() => null)
 ok(
@@ -280,7 +295,7 @@ ok(
   seasonLine
 )
 await page.locator('[data-testid="ask-sheet-toggle"]').click()
-await page.waitForSelector('[data-testid="ask-sheet-body"]', { timeout: 5000 })
+await page.waitForSelector('[data-testid="ask-sheet-body"]', { timeout: 15000 })
 const months = await countOf('[data-testid="ask-month"]')
 const askBlocks = await countOf('[data-testid="ask-block"]')
 const monthRow = months > 0 ? await page.locator('[data-testid="ask-month"]').first().innerText() : ""
@@ -642,6 +657,24 @@ await gymList.scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
 await page.waitForTimeout(350)
+/**
+ * RE-PINNED 2026-08-06 (wave B, whole-season board): a ghost date is a real
+ * drop target for an armed gym too (see the ghost-date suite above), and now
+ * that most unused Saturdays are thin ghost rows rather than dashed cards, a
+ * ghost is often the ONLY [data-target="1"] element actually on screen once
+ * the gym list has been scrolled into view — searching just rental slots and
+ * pool sections was starving this drag test of a candidate that genuinely
+ * exists. Ghosts are checked last, after the two card-level targets, so the
+ * drive still prefers a real card's slot or section when one is visible.
+ *
+ * SAFE GHOSTS ONLY: a ghost with no session yet (`ghost.sessionId === null`)
+ * lazily POSTs a brand new SeasonSession the moment it is dropped on — a real,
+ * permanent addition to the season's calendar with no delete-a-weekend API to
+ * take it back. This bit the drive once (Oct 3's ghost got a session it never
+ * had before, cleaned up by hand via DELETE /sessions?sessionId=). The ghost
+ * candidates here are filtered to `[data-session-id]` present, exactly the
+ * same safety constraint the ghost-date suite above already uses.
+ */
 const dropSpot = await page.evaluate(() => {
   const on = (el) => {
     const box = el.getBoundingClientRect()
@@ -656,16 +689,20 @@ const dropSpot = await page.evaluate(() => {
     ),
   ]
   const s = sections.findIndex(on)
-  return s >= 0 ? { what: "section", index: s } : null
+  if (s >= 0) return { what: "section", index: s }
+  const ghosts = [
+    ...document.querySelectorAll('[data-testid="ghost-date"][data-target="1"][data-session-id]'),
+  ]
+  const g = ghosts.findIndex(on)
+  return g >= 0 ? { what: "ghost", index: g } : null
 })
+const dragTargetSelector = {
+  slot: '[data-testid="rental-slot-empty"][data-target="1"]',
+  section: '[data-testid="weekend-gym-section"][data-role="pool"][data-target="1"]',
+  ghost: '[data-testid="ghost-date"][data-target="1"][data-session-id]',
+}
 const dragTarget = dropSpot
-  ? page
-      .locator(
-        dropSpot.what === "slot"
-          ? '[data-testid="rental-slot-empty"][data-target="1"]'
-          : '[data-testid="weekend-gym-section"][data-role="pool"][data-target="1"]'
-      )
-      .nth(dropSpot.index)
+  ? page.locator(dragTargetSelector[dropSpot.what]).nth(dropSpot.index)
   : null
 const dropOn = dragTarget
   ? await dragTarget.evaluate(
@@ -682,18 +719,27 @@ if (dragTarget) {
       // From the grip: the middle of a card is the lens toggle now.
       sourcePosition: { x: 8, y: 18 },
       targetPosition: { x: 8, y: 8 },
-      timeout: 20000,
+      timeout: 40000,
     })
     .catch(() => {})
   await page.waitForTimeout(600)
   dragSaid = await noticeText()
 }
+/**
+ * RE-PINNED 2026-08-06 (wave B): a ghost target lands the SAME verb
+ * (placeVenue with no grades) that a bare-date drop already exercises
+ * elsewhere in this file, and it says so in its own words — "is on {weekend}
+ * now, empty" — never "yours to book", which is what a slot or a pool
+ * section's backup assertion says. Both are "the drop landed"; which sentence
+ * is correct depends on which kind of target the drive actually found.
+ */
+const landed = /yours to book/.test(dragSaid) || /now, empty\./.test(dragSaid)
 ok(
   "dragging a gym onto a target the board is offering lands the same way a tap does",
-  /yours to book/.test(dragSaid),
+  landed,
   `dropped on ${dropOn} · before "${beforeDrag}" · after "${dragSaid || "the drop said nothing"}"`
 )
-if (/yours to book/.test(dragSaid)) undos += 1
+if (landed) undos += 1
 await gymList.scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/2-tray-drop.png` })
@@ -708,7 +754,14 @@ await page.keyboard.press("Escape")
 await page.waitForTimeout(200)
 const dragPair = await page.evaluate(() => {
   for (const col of document.querySelectorAll("section")) {
-    const cards = [...col.querySelectorAll("[data-session-id]")]
+    // RE-PINNED 2026-08-06 (wave B, whole-season board): a ghost date carries
+    // [data-session-id] too now (see GhostDateRow), so "any other card" has to
+    // exclude ghost-date rows explicitly — dragging a whole section onto a
+    // 28px dashed row is a different test (the ghost suite above covers the
+    // ghost drop path) and would make this one flaky for the wrong reason.
+    const cards = [...col.querySelectorAll("[data-session-id]")].filter(
+      (c) => c.getAttribute("data-testid") !== "ghost-date"
+    )
     const from = cards.find((c) => c.querySelector('[data-testid="section-handle"]'))
     const to = cards.find((c) => c !== from)
     if (!from || !to) continue
@@ -734,7 +787,7 @@ if (dragPair) {
     .first()
     .dragTo(page.locator(`[data-session-id="${dragPair.to}"]`), {
       targetPosition: { x: 40, y: 6 },
-      timeout: 20000,
+      timeout: 40000,
     })
     .catch(() => {})
   await page.waitForTimeout(700)
@@ -949,12 +1002,21 @@ await page.screenshot({ path: `${SHOTS}/v3-1-fullbleed-board-and-rail.png`, full
  * same reason as the section-order check above. A weekend the league does not run
  * has no gym sections and no grade chips, and zooming it proves nothing.
  */
+/**
+ * RE-PINNED 2026-08-06 (wave B, whole-season board): a ghost date has no
+ * `weekend-open` button at all (only real cards do), so the index has to be
+ * found WITHIN the `weekend-open` list itself — indexing into the combined
+ * cards+ghosts list and then `.nth()`-ing into the shorter opener-only list
+ * would drift by however many ghosts sit before the target card.
+ */
 const zoomIndex = await page.evaluate(() => {
-  const cards = [...document.querySelectorAll("[data-session-id]")]
-  return cards.findIndex((c) => c.querySelector('[data-testid="weekend-gym-section"]'))
+  const openers = [...document.querySelectorAll('[data-testid="weekend-open"]')]
+  return openers.findIndex((el) =>
+    el.closest("[data-session-id]")?.querySelector('[data-testid="weekend-gym-section"]')
+  )
 })
 await page.locator('[data-testid="weekend-open"]').nth(Math.max(0, zoomIndex)).click()
-await page.waitForSelector('[data-testid="weekend-zoom"]', { timeout: 20000 })
+await page.waitForSelector('[data-testid="weekend-zoom"]', { timeout: 40000 })
 await page.waitForTimeout(400)
 const zoomText = ((await page.locator('[data-testid="weekend-zoom"]').textContent()) ?? "").replace(
   /\s+/g,
@@ -987,7 +1049,7 @@ ok(
 await page.screenshot({ path: `${SHOTS}/v3-2-weekend-zoom.png`, fullPage: false })
 
 await page.locator('[data-testid="weekend-zoom-back"]').click()
-await page.waitForSelector('[data-testid="board-scroll"]', { timeout: 20000 })
+await page.waitForSelector('[data-testid="board-scroll"]', { timeout: 40000 })
 await page.waitForTimeout(500)
 ok(
   "back to the season restores the board with the working copy intact",
@@ -996,27 +1058,93 @@ ok(
   `${await page.locator('[data-testid="weekend-gym-section"]').count()} gym sections back`
 )
 
-/* ---- 5. ADD A WEEKEND: the ghost card lists the month's unused Saturdays.
-         READ ONLY on the owner's world: opened, asserted, dismissed. ---- */
-const addCard = page.locator('[data-testid="add-weekend-card"]').first()
-ok("every month column ends with a ghost card to add a weekend", (await addCard.count()) === 1)
-if ((await addCard.count()) === 1) {
-  await addCard.locator('[data-testid="add-weekend-toggle"]').click()
+/* ---- 5. GHOST DATES: the whole season is on the board, unused Saturdays as
+         thin dashed rows, no disclosure to open first (wave B, slice B2).
+         The drop below lands on a ghost whose SESSION ALREADY EXISTS, never
+         one that would need creating: there is no delete-a-weekend API, so a
+         truly-new session (a Saturday the season has no row for at all) would
+         be a permanent addition this script could not clean up. ---- */
+/**
+ * RE-PINNED 2026-08-06 (wave B): AddWeekendCard and its four testids
+ * (add-weekend-card/-toggle/-option/-list) are deleted along with the
+ * disclosure they lived on. Nothing on this board may reintroduce them.
+ */
+ok(
+  "the old add-a-weekend disclosure is gone: no card, no toggle, no option list",
+  (await countOf('[data-testid="add-weekend-card"]')) === 0 &&
+    (await countOf('[data-testid="add-weekend-toggle"]')) === 0 &&
+    (await countOf('[data-testid="add-weekend-option"]')) === 0 &&
+    (await countOf('[data-testid="add-weekend-list"]')) === 0
+)
+const ghostRows = page.locator('[data-testid="ghost-date"]')
+const ghostCount = await ghostRows.count()
+ok(
+  "the board renders a ghost row for every Saturday this plan is not using",
+  ghostCount > 0,
+  `${ghostCount} ghost date(s)`
+)
+const ghostHeights = await ghostRows.evaluateAll((els) =>
+  els.map((el) => Math.round(el.getBoundingClientRect().height))
+)
+ok(
+  "every ghost row stays thin: 32px or under, never a card's height",
+  ghostHeights.length > 0 && ghostHeights.every((h) => h > 0 && h <= 32),
+  `heights: ${ghostHeights.join(", ")}`
+)
+
+/**
+ * A SAFE GHOST TO DROP ON: one whose session already exists (a Saturday the
+ * season's own sessions cover but this plan does not run), so the drop below
+ * exercises the client-side "lazily becomes a card" path without the OTHER
+ * branch — a Saturday with no session at all — which would POST a brand new
+ * SeasonSession the season keeps forever. If this world has none, the
+ * drop/undo pair is skipped rather than risking a write nothing here (or its
+ * cleanup) can take back.
+ */
+const safeGhostId = await page.evaluate(() => {
+  const rows = [...document.querySelectorAll('[data-testid="ghost-date"]')]
+  const withSession = rows.find((el) => el.getAttribute("data-session-id"))
+  return withSession?.getAttribute("data-session-id") ?? null
+})
+ok(
+  "found a ghost date whose session already exists, safe to drop on",
+  Boolean(safeGhostId),
+  safeGhostId ?? "every ghost on this board would need a new session created"
+)
+if (safeGhostId) {
+  const ghostRow = page.locator(`[data-testid="ghost-date"][data-session-id="${safeGhostId}"]`)
+  await ghostRow.scrollIntoViewIfNeeded()
+  await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
   await page.waitForTimeout(300)
-  const sats = await addCard.locator('[data-testid="add-weekend-option"]').allTextContents()
   ok(
-    "it lists that month's unused Saturdays",
-    sats.length > 0,
-    sats.join(" · ")
+    "with a gym armed, the ghost is a full drop target and offers to put it there",
+    (await ghostRow.getAttribute("data-target")) === "1" &&
+      (await ghostRow.locator('[data-testid="ghost-offer"]').count()) === 1,
+    await ghostRow.locator('[data-testid="ghost-offer"]').innerText().catch(() => "no offer drawn")
   )
-  // Dismissed without creating anything: this is the owner's own season.
-  await addCard.locator('[data-testid="add-weekend-toggle"]').click()
-  await page.waitForTimeout(250)
+  await ghostRow.locator('[data-testid="ghost-offer"]').click()
+  await page.waitForTimeout(500)
+  // Landing a bare gym (no grades) is the same "empty container" the bare-date
+  // drop below makes: a building on the date, nothing playing yet, no booking.
+  const container = page.locator(`[data-session-id="${safeGhostId}"] [data-testid="empty-gym"]`)
+  const containerText = ((await container.textContent().catch(() => "")) ?? "").replace(/\s+/g, " ")
   ok(
-    "closing it creates nothing",
-    (await addCard.locator('[data-testid="add-weekend-list"]').count()) === 0
+    "the drop lazily turns the ghost into a card and lands the gym on it, empty",
+    (await container.count()) === 1 &&
+      /empty/.test(containerText) &&
+      (await page.locator(`[data-testid="ghost-date"][data-session-id="${safeGhostId}"]`).count()) === 0,
+    containerText.trim() || "no container drawn"
+  )
+  await page.locator('[data-testid="undo-last"]').click()
+  await page.waitForTimeout(500)
+  ok(
+    "one undo reverts the placement and the date reads as a ghost again",
+    (await page.locator(`[data-session-id="${safeGhostId}"] [data-testid="empty-gym"]`).count()) === 0 &&
+      (await page.locator(`[data-testid="ghost-date"][data-session-id="${safeGhostId}"]`).count()) === 1
   )
 }
+await page.keyboard.press("Escape")
+await page.waitForTimeout(200)
 
 /* ---- 6. CORRECT: "I don't have this" caps a gym for one weekend ---- */
 // RE-PINNED 2026-08-06 (owner ruling #5): the "I do not have this" link is a ⋯
@@ -1028,7 +1156,7 @@ let strandedAfterCorrection = 0
 if ((await correction.count()) > 0) {
   const beforeSlots = await page.locator('[data-testid="rental-slot-empty"]').count()
   await correction.click()
-  await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 10000 })
+  await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 40000 })
   const asks = ((await page.locator('[data-testid="gym-menu-panel"]').textContent()) ?? "").replace(
     /\s+/g,
     " "
@@ -1117,7 +1245,7 @@ const split = page.locator('[data-testid="split-menu"]').first()
 ok("placed cohorts and rented blocks offer a split", (await split.count()) > 0)
 if ((await split.count()) > 0) {
   await split.click()
-  await page.waitForSelector('[data-testid="split-menu-panel"]', { timeout: 10000 })
+  await page.waitForSelector('[data-testid="split-menu-panel"]', { timeout: 40000 })
   await page.waitForTimeout(300)
   const gymsAxis = page.locator('[data-testid="split-axis-gyms"]')
   const weekAxis = page.locator('[data-testid="split-axis-weekends"]')
@@ -1348,7 +1476,7 @@ try {
   await page.goto(PLAN_URL)
   await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
   await page.locator('[data-testid="plan-open"]').click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 })
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 40000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${probeId}"]`).click()
   await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
   await page.waitForTimeout(900)
@@ -1972,7 +2100,7 @@ try {
       )
       const askBeforeUp = await askSeason()
       await filled.locator('[data-testid="gym-menu"]').click()
-      await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 10000 })
+      await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 40000 })
       const startedAt = Number(
         ((await page.locator('[data-testid="court-step-value"]').textContent()) ?? "0").trim()
       )

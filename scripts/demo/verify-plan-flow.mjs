@@ -40,17 +40,27 @@ for (const p of [`/sign-in`, `/manage/leagues/${LEAGUE}/seasons/${SEASON}/manage
 // Sign in. The page needs its hydration beat before filling — a click on a
 // pre-hydration form is a native submit that never logs in.
 await page.goto(`${BASE}/sign-in`)
-await page.waitForTimeout(2500)
-await page.fill('input[type="email"]', USER)
-await page.fill('input[type="password"]', PASS)
-await page.click('button[type="submit"]')
 let user = null
-for (let i = 0; i < 30; i++) {
-  await page.waitForTimeout(1000)
-  const session = await page.request.get(`${BASE}/api/auth/session`).then((r) => r.json())
-  if (session?.user) {
-    user = session.user
-    break
+// Three attempts, not one: under load a single try can fail outright (the
+// callback answers but authorize()'s own DB query never got a load-free
+// moment), and that reads exactly like invalid credentials from here. A fresh
+// page and a fresh attempt is the honest retry, not a longer wait on the same
+// stuck one.
+for (let attempt = 0; attempt < 3 && !user; attempt++) {
+  if (attempt > 0) {
+    await page.goto(`${BASE}/sign-in`)
+  }
+  await page.waitForTimeout(2500)
+  await page.fill('input[type="email"]', USER)
+  await page.fill('input[type="password"]', PASS)
+  await page.click('button[type="submit"]')
+  for (let i = 0; i < 30; i++) {
+    await page.waitForTimeout(1000)
+    const session = await page.request.get(`${BASE}/api/auth/session`).then((r) => r.json()).catch(() => null)
+    if (session?.user) {
+      user = session.user
+      break
+    }
   }
 }
 ok("signed in as owner-nph", !!user)
@@ -61,7 +71,9 @@ if (!user) {
 
 // ── The Plan Your Season tab ──────────────────────────────────────────────
 await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/manage?tab=plan`)
-await page.waitForSelector('[data-testid="plan-tab-rail"]', { timeout: 30000 })
+// A generous timeout: this tab's data includes buildPlannerState, and a
+// concurrent seed on the same box can push a cold render well past 30s.
+await page.waitForSelector('[data-testid="plan-tab-rail"]', { timeout: 90000 })
 const railText = await page.locator('[data-testid="plan-tab-rail"]').innerText()
 ok(
   "plan tab rail shows the five stages",
@@ -104,9 +116,23 @@ await page.screenshot({ path: `${SHOTS}/1-plan-tab.png`, fullPage: true })
 
 // ── Step 1: estimates only ────────────────────────────────────────────────
 await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=1`)
-await page.waitForTimeout(3000)
+// Wait for a real row, not a guessed number of seconds: under load (a
+// concurrent seed, a cold compile) three seconds is not always enough, and a
+// flat timeout reads the half-painted page as a content regression.
+await page.waitForSelector('[data-testid="grade-row"]', { timeout: 60000 })
+await page.waitForTimeout(300)
 const step1 = await page.locator("main").innerText()
 ok("step 1 shows registered counts as overlay chips", /registered/.test(step1))
+/**
+ * NEW 2026-08-06 (wave B intake copy): "estimate, never decide" is the whole
+ * point of step 1 existing before registration does. The words are load-
+ * bearing enough to pin directly rather than trust the looser "registered"
+ * check above to catch a rewrite of them.
+ */
+ok(
+  "step 1 carries the estimate-not-decide intake line",
+  /Registrations inform the numbers, they never decide them/.test(step1)
+)
 /**
  * RE-PINNED 2026-08-05: the chip is correct only while some grade really has no
  * estimate. Once the operator has numbers everywhere its absence IS the right
@@ -143,9 +169,14 @@ ok(
 ok("step 1 offers add-a-grade", /Add a grade/i.test(step1))
 await page.screenshot({ path: `${SHOTS}/2-step1-teams.png`, fullPage: true })
 
-// ── Step 2: gym roles, taken weekends, reserved notice ────────────────────
+// ── Step 2: building roster, league weekend row, reserved notice ──────────
 // Re-pinned 2026-08-03 (venue model v2): fill order is dead on this screen, so
 // the checks read the home gym tag and the pool language instead of ranking.
+// RE-PINNED 2026-08-06 (wave B): the screen is a roster now, not a paint grid.
+// The per-weekend per-gym cells, the whole-season per-gym toggles and the
+// "Booked it" assumed rows are gone (see gyms-weekends-step.tsx); "taken"
+// booking conflicts are data the API still carries (checked below, via the
+// grid endpoint) but this roster no longer shows them cell by cell.
 await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=2`)
 // Wait for the grid itself, not a guessed number of seconds: on a cold dev
 // server this step compiles for a while and a flat timeout screenshots a
@@ -166,11 +197,28 @@ const homeCards = await homeChips.count()
 ok("step 2 tags the home gym", homeCards === 1 && /Home gym/.test(step2), `${gymCards} gyms`)
 ok("step 2 puts every other gym in the pool", gymCards > homeCards && /In the pool/.test(step2))
 const chipTexts = (await roleChips.allInnerTexts()).map((t) => t.trim())
+/**
+ * RE-PINNED 2026-08-06 (wave B intake copy): "the home gym fills first, at full
+ * capacity" is now the INTENDED headline sentence on this screen (see the
+ * screen-head copy below), so "fills first" can no longer be forbidden
+ * vocabulary — only the old numbered ranking ("overflow #2", "fill order")
+ * would mean the roster regressed to talking about order instead of role.
+ */
 ok(
-  "step 2 has no fill-order vocabulary left",
-  !/fills? first|overflow #|fill order/i.test(step2) &&
+  "step 2 has no numbered fill-order vocabulary left",
+  !/overflow #|fill order/i.test(step2) &&
     chipTexts.every((t) => t === "Home gym" || t === "In the pool"),
   chipTexts.join(" · ")
+)
+/**
+ * NEW 2026-08-06 (wave B intake copy): the screen head's own sentence, present
+ * word for word.
+ */
+ok(
+  "step 2 carries its own intake line: buildings, home gym, fills first",
+  /Name your buildings and pick your home gym\. The home gym fills first, at full capacity, before anything is rented\./.test(
+    step2
+  )
 )
 ok(
   "step 2 offers make-home on every gym that is not home",
@@ -180,17 +228,30 @@ ok(
   "step 2 has no reorder arrows",
   (await page.getByRole("button", { name: /move .* (up|down)/i }).count()) === 0
 )
-ok("step 2 shows taken weekends", /Taken|NJC/.test(step2))
-// NEW 2026-08-05 (owner ruling #3): the league's weekends are chosen ONCE, in
-// one row above the per-gym grid, and the per-gym cells follow it.
+/**
+ * RE-PINNED 2026-08-06 (wave B): "Taken: NJC/NSC" was a per-cell reason on the
+ * paint grid, and the grid is gone from this screen — booking conflicts are
+ * board work now. The DATA still carries them (pinned below, off the grid
+ * API, unchanged: "Six Park carries taken weekends in the grid"); what is
+ * pinned here instead is that the roster does not try to fake a per-cell
+ * reading it no longer has.
+ */
+ok(
+  "step 2's roster does not show per-cell taken reasons any more (that data now lives in the grid API only)",
+  !/Taken:/.test(step2)
+)
+// NEW 2026-08-05 (owner ruling #3), reframed 2026-08-06: the league's
+// weekends are chosen ONCE, in one row above the buildings, as GUIDANCE for
+// the draw rather than a booking — the per-gym paint grid it used to sit
+// above is gone.
 const leagueRow = page.locator('[data-testid="league-weekends"]')
 const leagueCells = await page.locator('[data-testid="league-weekend"]').count()
 const gridBox = await page.locator('[data-testid="venue-role-chip"]').first().boundingBox()
 const rowBox = await leagueRow.boundingBox().catch(() => null)
 ok(
-  "step 2 asks when the league runs, once, above the gyms",
+  "step 2 asks when the league would like to run, once, above the buildings",
   (await leagueRow.count()) === 1 &&
-    /When do you want to run sessions/.test(step2) &&
+    /When would you like to run sessions/.test(step2) &&
     leagueCells > 0 &&
     Boolean(rowBox && gridBox && rowBox.y < gridBox.y),
   `${leagueCells} weekend toggles · ${await page.locator('[data-testid="league-weekends-count"]').innerText()}`
@@ -206,7 +267,40 @@ ok(
   leagueOn === gymOn && leagueOn > 0,
   `${leagueOn} weekends on`
 )
-ok("step 2 has whole-season toggles", /all weekends/i.test(step2))
+/**
+ * NEW 2026-08-06 (wave B): this section navigated straight to ?step=2 without
+ * opening a plan, so it is in the "active plan, or nothing open" state — the
+ * row can only read the season's own weekends back, and it has to say it is
+ * read only rather than let a tap mean nothing. The editable half of this
+ * contract (a non-active plan of the operator's own) is driven later in the
+ * "A PLAN OWNS ITS WORLD" section below, where the row starts at 0 of N and a
+ * click really turns one on.
+ */
+ok(
+  "with no plan of the operator's own open, the row says it is read only",
+  (await page.locator('[data-testid="league-weekends-note"]').count()) === 1 &&
+    /Open a plan of your own to choose the weekends it fills first/.test(step2)
+)
+/**
+ * RE-PINNED 2026-08-06 (wave B): the per-gym "toggle all weekends at once"
+ * bulk buttons are gone along with the paint grid they lived on — booking a
+ * building onto a Saturday is board work now, one drop at a time. What is
+ * pinned is the removal, not a replacement bulk verb, because there isn't one
+ * any more.
+ */
+ok(
+  "step 2 has no whole-season per-gym toggle any more (that was the paint grid)",
+  (await page.getByRole("button", { name: /all weekends/i }).count()) === 0
+)
+/**
+ * NEW 2026-08-06 (wave B regression guard): the whole point of the roster
+ * rewrite was deleting the paint grid, the assumed/Booked-it rows and the
+ * cell legend. Nothing on this screen may reintroduce them.
+ */
+ok(
+  "step 2 has no paint grid and no Booked-it rows left",
+  !/Booked it/.test(step2) && !/assumed, not booked yet/.test(step2)
+)
 ok("step 2 still edits courts", (await page.getByLabel(/ courts$/).count()) >= gymCards)
 ok(
   "step 2 notice slot is mounted even when empty",
@@ -237,9 +331,17 @@ const step3 = await page.locator("main").innerText()
 ok("step 3 offers the spread redraw beside Redraw", /Redraw, spread out instead/i.test(step3))
 await page.waitForTimeout(200)
 const step3Hours = await page.locator("main").innerText()
+/**
+ * RE-PINNED 2026-08-06 (owner ruling #6, already in effect before wave B):
+ * "Start early"/"Finish early" were the board-level hours disclosure, and it
+ * is gone with the other one — hours are edited on the gym section they are
+ * about, one date at a time, via the ⋯ menu (driven end to end in
+ * verify-blocks.mjs's "gym-menu-panel" checks). What is pinned here is that
+ * the board-level chips do not come back.
+ */
 ok(
-  "step 3 offers the hours chips",
-  /Start early/i.test(step3Hours) && /Finish early/i.test(step3Hours)
+  "step 3 has no board-level hours chips left (hours moved to the gym section's ⋯ menu)",
+  !/Start early/i.test(step3Hours) && !/Finish early/i.test(step3Hours)
 )
 await page.screenshot({ path: `${SHOTS}/4-step3-board.png`, fullPage: true })
 
@@ -270,9 +372,15 @@ ok(
     weekendsWithGyms.every((w) => w.venues.every((v) => v.role === "home" || v.role === "pool"))
 )
 
+// A generous timeout, not Playwright's 30s default: this solves the whole
+// season and a concurrent seed on the same box can push it well past that.
 const propose = await page.request
-  .post(`${BASE}/api/seasons/${SEASON}/planner/propose`, { data: { lever: "one-gym" } })
+  .post(`${BASE}/api/seasons/${SEASON}/planner/propose`, {
+    data: { lever: "one-gym" },
+    timeout: 90000,
+  })
   .then((r) => r.json())
+  .catch(() => null)
 const venueMaps = Object.values(propose?.venues ?? {})
 ok(
   "propose(one-gym) returns a gym per grade per weekend",
@@ -340,8 +448,10 @@ ok(
 const preview = await page.request
   .post(`${BASE}/api/seasons/${SEASON}/planner/preview-hours`, {
     data: { deltaStartMinutes: -60 },
+    timeout: 90000,
   })
   .then((r) => r.json())
+  .catch(() => null)
 ok(
   "preview-hours answers without writing",
   typeof preview?.preview === "object" && preview?.preview !== null
@@ -526,15 +636,19 @@ if (worldPlan) {
   await page.goto(planUrl(1))
   await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
   await page.locator('[data-testid="plan-open"]').click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 15000 })
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
   await page.waitForTimeout(2000)
 
   const step1Line = page.locator('[data-testid="step1-plan-line"]')
   // Same race as step 2: the row is known first, the document lands a moment
-  // later. "loading" is a correct intermediate state; "season" never is.
+  // later. "loading" is a correct intermediate state; "season" never is. This
+  // polls for up to 45s rather than a fixed handful of 250ms ticks — under
+  // load (a concurrent seed, a cold compile) the document fetch can take much
+  // longer than the happy-path handful of seconds, and a short poll here reads
+  // as a stuck "loading" that a slow server, not a broken one, produced.
   const step1States = new Set()
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 180; i++) {
     const at = await step1Line.getAttribute("data-world").catch(() => null)
     step1States.add(at)
     if (at === "plan") break
@@ -546,16 +660,36 @@ if (worldPlan) {
     `${[...step1States].join(" → ")} · ${(await step1Line.innerText().catch(() => "")).replace(/\n/g, " ").slice(0, 80)}`
   )
 
-  const firstRow = page.locator('[data-testid="grade-row"]').first()
+  // A grade with zero teams starts OUT of a fresh plan (owner ruling
+  // 2026-08-05: "out" greys the row and disables its stepper on purpose), so
+  // picking the very first row is not safe — this picks the first row that is
+  // actually IN the plan, which always has a workable stepper.
+  const firstRow = page.locator('[data-testid="grade-row"][data-in="1"]').first()
   const gradeKey = await firstRow.getAttribute("data-grade")
+  // The stepper is disabled until the plan's world has actually arrived (the
+  // 2026-08-05 fix for the exact race above): wait for it enabled rather than
+  // clicking blind and retrying into a 30s Playwright timeout.
+  await firstRow.locator('button[aria-label^="One more"]').waitFor({ state: "attached" })
+  await page.waitForFunction(
+    (el) => el && !el.disabled,
+    await firstRow.locator('button[aria-label^="One more"]').elementHandle(),
+    { timeout: 45000 }
+  )
   // Three taps of the stepper, then wait for the debounced write to land.
   for (let i = 0; i < 3; i++) {
     await firstRow.locator('button[aria-label^="One more"]').click()
     await page.waitForTimeout(200)
   }
-  await page.waitForTimeout(2500)
-  const afterBump = (await docOf(worldPlan.id))?.settings?.state?.units?.find((u) => u.key === gradeKey)
+  // Polls for up to 30s rather than a fixed 2.5s: under load the debounced
+  // PATCH can take much longer than the happy path to actually land.
+  const unitNow = async () =>
+    (await docOf(worldPlan.id))?.settings?.state?.units?.find((u) => u.key === gradeKey)
   const seasonGrade = (step1Planner?.state?.units ?? []).find((u) => u.key === gradeKey)
+  let afterBump = await unitNow()
+  for (let i = 0; i < 60 && !(afterBump && seasonGrade && afterBump.teams === seasonGrade.expected + 3); i++) {
+    await page.waitForTimeout(500)
+    afterBump = await unitNow()
+  }
   ok(
     "the stepper writes the estimate into the plan document",
     afterBump && seasonGrade && afterBump.teams === seasonGrade.expected + 3,
@@ -563,22 +697,31 @@ if (worldPlan) {
   )
 
   // IN OR OUT of this plan (owner ruling 2026-08-05): only a plan can do this.
-  const inOut = firstRow.locator('[data-testid="grade-in-out"]')
+  // A STABLE locator, keyed by grade rather than reusing `firstRow`: that
+  // locator's own selector includes `data-in="1"`, and the very first click
+  // below flips this row to `data-in="0"` — reusing it after that would
+  // silently re-resolve to a DIFFERENT grade's row that still matches.
+  const thisRow = page.locator(`[data-testid="grade-row"][data-grade="${gradeKey}"]`)
+  const inOut = thisRow.locator('[data-testid="grade-in-out"]')
   ok("step 1 offers in-or-out on a plan of your own", (await inOut.count()) === 1)
   await inOut.click()
-  await page.waitForTimeout(2000)
-  const afterOut = (await docOf(worldPlan.id))?.settings?.state?.units?.find((u) => u.key === gradeKey)
+  let afterOut = await unitNow()
+  for (let i = 0; i < 60 && afterOut?.included !== false; i++) {
+    await page.waitForTimeout(500)
+    afterOut = await unitNow()
+  }
   ok(
     "taking a grade out keeps its number, so putting it back costs nothing",
     afterOut?.included === false && afterOut?.teams === afterBump?.teams,
     `included=${afterOut?.included} teams=${afterOut?.teams}`
   )
   await inOut.click()
-  await page.waitForTimeout(2000)
-  ok(
-    "and it goes back in with the same number",
-    (await docOf(worldPlan.id))?.settings?.state?.units?.find((u) => u.key === gradeKey)?.included === true
-  )
+  let afterBackIn = await unitNow()
+  for (let i = 0; i < 60 && afterBackIn?.included !== true; i++) {
+    await page.waitForTimeout(500)
+    afterBackIn = await unitNow()
+  }
+  ok("and it goes back in with the same number", afterBackIn?.included === true)
   ok(
     "step 1 on a plan the season does not run leaves the season byte-identical",
     (await seasonWorld()) === seasonBefore,
@@ -591,7 +734,7 @@ if (worldPlan) {
   await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
   // Open the plan the way an operator does.
   await page.locator('[data-testid="plan-open"], [data-testid="step2-plan-chooser"] [data-testid="plan-picker"]').first().click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 15000 })
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
   await page.waitForTimeout(2000)
 
@@ -604,9 +747,14 @@ if (worldPlan) {
    * for a plan the season does not run: it says "loading" until the world is
    * there, and every control is disabled until then.
    */
+  // Polls for up to 45s (not a fixed 1.8s window): under load the document
+  // fetch can take far longer than the happy path, and cutting the sample
+  // short would read a slow-but-honest "loading" as if it were "season".
   const planWorldStates = new Set()
-  for (let i = 0; i < 12; i++) {
-    planWorldStates.add(await planLine.getAttribute("data-world").catch(() => null))
+  for (let i = 0; i < 300; i++) {
+    const at = await planLine.getAttribute("data-world").catch(() => null)
+    planWorldStates.add(at)
+    if (at === "plan") break
     await page.waitForTimeout(150)
   }
   ok(
@@ -649,16 +797,23 @@ if (worldPlan) {
   }
   const onAfter = await page.locator('[data-testid="league-weekend"][data-on="1"]').count()
   ok(
-    "tapping a weekend turns it on in the plan, with the home gym",
+    "tapping a weekend turns it on in the plan",
     onAfter === realKeys.length,
     `${onAfter} weekend(s) on`
   )
   await page.screenshot({ path: `${SHOTS}/7-step2-plan-world.png`, fullPage: true })
 
+  /**
+   * RE-PINNED 2026-08-06 (wave B, "attaches NO gym"): choosing a weekend here
+   * used to attach the home gym as a side effect (withWeekendChosen carried
+   * one). That side effect is deliberately gone — B1 calls it out by name —
+   * so a freshly-chosen weekend has zero venues until something is dropped on
+   * it on the board. What is pinned is the new reality, not the old one.
+   */
   const chosen = weekendsIn(await docOf(worldPlan.id)).filter((w) => w.chosen)
   ok(
-    "the plan document holds those weekends, with the home gym attached",
-    chosen.length === realKeys.length && chosen.every((w) => (w.venues ?? []).length === 1),
+    "choosing a weekend attaches no gym any more: putting a building on it is board work now",
+    chosen.length === realKeys.length && chosen.every((w) => (w.venues ?? []).length === 0),
     `${chosen.length} chosen · ${chosen.map((w) => (w.venues ?? []).length).join(",")} gym(s) each`
   )
 
@@ -671,22 +826,27 @@ if (worldPlan) {
 
   /* ── step 2 → step 3 shows the edits, immediately ────────────────────── */
   await page.locator('ol button:has-text("Your calendar")').first().click()
-  await page.waitForTimeout(3000)
-  const boardWeekends = await page.locator("[data-session-id]").count()
+  // Waits for the board itself, not a guessed number of seconds: under load
+  // the step-3 fetch can take much longer than three seconds, and a flat
+  // timeout here reads an empty, still-loading board as a content regression.
+  await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
+  await page.waitForTimeout(500)
   /**
-   * A weekend this plan does not run has no gym and therefore no capacity, which
-   * the board paints as the dashed "unavailable" card (CARD_TONE in
-   * plan-shared.ts). So the count of cards that are NOT dashed is exactly the
-   * count of weekends step 2 just turned on — which is the staleness fix stated
-   * as a number: the board is drawing the document, not its own memory of it.
+   * RE-PINNED 2026-08-06 (wave B, whole-season board): every Saturday the
+   * season spans is on the board now — cards AND thin ghost rows alike — and
+   * BOTH carry `[data-session-id]` whenever a session exists behind them
+   * (GhostDateRow sets it too; only its own `ghost-date` testid tells the two
+   * apart). So "the plan's own world, with no reload" is read off the count
+   * of REAL weekend cards, not off dashed-vs-not: a chosen-but-still-gymless
+   * weekend (exactly what step 2 just produced, per the ruling above) is
+   * dashed too, but it is a card because it is chosen — never a ghost.
    */
-  const liveCards = await page
-    .locator("[data-session-id]")
-    .evaluateAll((cards) => cards.filter((c) => !c.className.includes("border-dashed")).length)
+  const boardWeekends = await page.locator("[data-session-id]").count()
+  const realCards = await page.locator('[data-session-id]:not([data-testid="ghost-date"])').count()
   ok(
     "stepping 2 → 3 draws the plan's own world, with no reload",
-    boardWeekends > 0 && liveCards === realKeys.length,
-    `${boardWeekends} weekend cards, ${liveCards} of them with gym time (expected ${realKeys.length})`
+    boardWeekends > 0 && realCards === realKeys.length,
+    `${boardWeekends} dated row(s) (cards+ghosts), ${realCards} real weekend card(s) (expected ${realKeys.length})`
   )
 
   /* ── one gym list, there whenever a plan is open ─────────────────────── */
@@ -697,16 +857,58 @@ if (worldPlan) {
     `${await tray.count()} gym list`
   )
 
-  /* ── take the gym away: the placements strand, loudly ────────────────── */
-  // Place a grade on the first chosen weekend, save it, then turn that weekend
-  // off in step 2 and come back.
+  /**
+   * GIVE THE FIRST CHOSEN WEEKEND A REAL GYM, so there is a genuine placement
+   * to strand below. Attaching a gym to a weekend is board work now (wave B),
+   * and the board's own drop lands on the CLIENT working copy only — nothing
+   * server-side until Save — so this writes the plan's world directly, the
+   * same PATCH {settings:{state}} path saveWorld uses. It is a plan write, not
+   * a season write: nothing here touches the season's own rows.
+   */
+  const worldDoc = await docOf(worldPlan.id)
+  const homeGym = worldDoc?.settings?.state?.gyms?.find((g) => g.role === "home")
+  ok("the plan's roster carries a home gym to attach", Boolean(homeGym), JSON.stringify(homeGym))
   const firstSession = chosen[0].sessionId
+  const worldWithGym = worldDoc.settings.state
+  for (const win of worldWithGym.windows ?? []) {
+    for (const w of win.weekends ?? []) {
+      if (w.sessionId !== firstSession) continue
+      w.venues = [
+        {
+          venueId: homeGym.venueId,
+          name: homeGym.name,
+          role: "home",
+          capacityGames: 40,
+          fillOrder: 1,
+          courts: homeGym.courts ?? 2,
+          courtDays: 2,
+          days: 2,
+          hoursPerCourtDay: 4,
+        },
+      ]
+      w.capacityGames = 40
+      w.largestVenueCapacity = 40
+    }
+  }
+  const gymAttached = await page.request.patch(
+    `${BASE}/api/seasons/${SEASON}/plans/${worldPlan.id}`,
+    { data: { settings: { state: worldWithGym } } }
+  )
+  ok(
+    "the plan's own world gains a gym on that weekend (a plan write, not a season write)",
+    gymAttached.ok(),
+    `HTTP ${gymAttached.status()}`
+  )
+
+  /* ── take the gym away: the placements strand, loudly ────────────────── */
+  // Place a grade on the first chosen weekend, now that it really has a gym,
+  // then turn that weekend off in step 2 and come back.
   const placeRes = await page.request.patch(
     `${BASE}/api/seasons/${SEASON}/plans/${worldPlan.id}`,
     {
       data: {
         assignment: { [firstSession]: ["age:Grade 7"] },
-        venues: { [firstSession]: { "age:Grade 7": chosen[0].venues[0].venueId } },
+        venues: { [firstSession]: { "age:Grade 7": homeGym.venueId } },
       },
     }
   )
@@ -715,14 +917,29 @@ if (worldPlan) {
   await page.goto(planUrl(2))
   await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
   await page.locator('[data-testid="plan-open"], [data-testid="step2-plan-chooser"] [data-testid="plan-picker"]').first().click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 15000 })
+  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
-  await page.waitForTimeout(2000)
+  await page.waitForSelector(`[data-testid="league-weekend"][data-weekend="${realKeys[0].key}"]`, {
+    timeout: 30000,
+  })
   await page.locator(`[data-testid="league-weekend"][data-weekend="${realKeys[0].key}"]`).click()
-  await page.waitForTimeout(1500)
+  // Waits for the toggle's own PATCH to land, not a guessed number of
+  // seconds — the exact race the earlier realKeys loop already guards.
+  await page
+    .waitForFunction(
+      (key) =>
+        document.querySelector(`[data-testid="league-weekend"][data-weekend="${key}"]`)
+          ?.getAttribute("data-on") === "0",
+      realKeys[0].key,
+      { timeout: 30000 }
+    )
+    .catch(() => {})
 
   await page.locator('ol button:has-text("Your calendar")').first().click()
-  await page.waitForTimeout(3000)
+  // Waits for the board itself rather than a guessed number of seconds — same
+  // reasoning as the earlier step 2 → step 3 transition.
+  await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
+  await page.waitForTimeout(500)
   const strandedBanner = page.locator('[data-testid="stranded-gyms"]')
   ok(
     "a placement whose weekend the plan dropped is flagged, not silently redrawn",
