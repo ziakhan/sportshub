@@ -525,11 +525,19 @@ const setWeekend = async (weekend, on) => {
 }
 
 /* --- 1a. no world to solve in: the hero names the step that gives it one -- */
+/**
+ * RE-PINNED 2026-08-06 (the world-first fix). A fresh plan HAS its home gym, so
+ * the one thing it is short of is dates, and the hero has to say that and only
+ * that: "pick your weekends and gym time" sent the operator to a step that has
+ * no control for gym time any more, which is the circle this fix broke.
+ */
 const hero = page.locator('[data-testid="draw-hero"]')
 ok(
-  "a fresh plan's empty board leads with step 2, not with a button that would draw nothing",
+  "a fresh plan's empty board asks for WEEKENDS, and offers no button that would draw nothing",
   (await hero.count()) === 1 &&
     (await hero.getAttribute("data-usable")) === "0" &&
+    (await hero.getAttribute("data-gap")) === "weekends" &&
+    /Pick your weekends in step 2 first/.test(await hero.innerText()) &&
     (await page.locator('[data-testid="world-first"]').count()) === 1 &&
     (await page.locator('[data-testid="draw-calendar"]').count()) === 0 &&
     // Ruling #3's button is gated on the same fact, so it is not offered either.
@@ -538,7 +546,7 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/8-hero-world-first.png` })
 
-/* --- 1b. give the plan a world: one weekend, and gym time to hold it ----- */
+/* --- 1b. give the plan a world: one weekend. The gyms it already has ----- */
 await page.locator('[data-testid="world-first"]').click()
 await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
 ok("the hero's link lands on step 2", (await page.locator('[data-testid="league-weekends"]').count()) === 1)
@@ -564,18 +572,27 @@ if (!firstWeekend || !secondWeekend) {
 }
 
 /**
- * GYM TIME THE PLAN CAN ACTUALLY HOLD 175 TEAMS IN. The plan's home gym runs
- * three courts, which is 54 games a weekend against a demand of 175, so a plan
- * running one weekend a month would be in overflow everywhere and the "move
- * these games" half of ruling #2 could never be true. This plan says twelve.
+ * A HOME GYM THE PLAN CAN ACTUALLY HOLD 175 TEAMS IN. The plan's home gym runs
+ * three courts, which is 72 games a weekend against a demand of 175, so a plan
+ * running one weekend a month would be in overflow everywhere and every check
+ * below would be reading a board full of red. This plan says twelve.
  *
  * It is a PLAN-ONLY write (withGymCourts on the plan's world, PATCHed onto the
  * plan document), which is exactly the point: the season's own gyms never move.
+ * It is also the only gym setup this drive does: what the plan runs ON is the
+ * building it owns, and the draw is what puts that building on a date.
  */
 const gridVenues =
   (await page.request.get(`${BASE}/api/seasons/${SEASON}/planner/venues`).then((r) => r.json()))
     ?.grid?.venues ?? []
-const homeGym = gridVenues.find((v) => v.role === "home") ?? gridVenues[0]
+// THE PLAN'S OWN home gym, not the grid's guess at one: the draw fills a bare
+// weekend from the building in the plan's roster, so that is the building every
+// check below has to name.
+const planHomeId = freshGyms.find((g) => g.role === "home")?.venueId
+const homeGym =
+  gridVenues.find((v) => v.venueId === planHomeId) ??
+  gridVenues.find((v) => v.role === "home") ??
+  gridVenues[0]
 const homeCourts = page.getByLabel(`${homeGym.name} courts`)
 await homeCourts.scrollIntoViewIfNeeded()
 await homeCourts.fill("12")
@@ -596,63 +613,51 @@ ok(
 ok(`${firstWeekend.label} is on in this plan`, await setWeekend(firstWeekend, true))
 const runningLine = await page.locator('[data-testid="league-weekends-count"]').innerText()
 ok("exactly one weekend is on", /^1 of /.test(runningLine.trim()), runningLine.trim())
+/**
+ * RE-PINNED 2026-08-06 (the fix). This used to be followed by a raw PATCH that
+ * wrote the home gym onto that weekend by hand, because wave B made choosing a
+ * weekend attach nothing and everything downstream still demanded gym time up
+ * front. That was the bug, written down as a workaround.
+ *
+ * The chosen weekend is BARE and that is the whole point: the draw fills it from
+ * the building the league owns. Nothing else is set up here, so what follows is
+ * the owner's own path, exactly as he walks it.
+ */
+const bareChosen = (await planDoc(made.id))?.settings?.state
+const chosenNow = (bareChosen?.windows ?? [])
+  .flatMap((win) => win.weekends ?? [])
+  .filter((w) => w.chosen)
+ok(
+  "the chosen weekend carries no gym at all: choosing a date is not a booking",
+  chosenNow.length === 1 &&
+    chosenNow[0].sessionId === firstWeekend.sessionId &&
+    (chosenNow[0].venues ?? []).length === 0 &&
+    (chosenNow[0].capacityGames ?? 0) === 0,
+  chosenNow
+    .map((w) => `${w.label}: ${(w.venues ?? []).length} gym(s), ${w.capacityGames} games`)
+    .join(" · ") || "nothing chosen"
+)
 await page.screenshot({ path: `${SHOTS}/9-step2-one-weekend.png` })
 
-/**
- * RE-PINNED 2026-08-06 (wave B, "attaches NO gym"): turning a weekend on in
- * step 2 used to attach the home gym as a side effect; that side effect is
- * deliberately gone (putting a building on a date is board work now), so
- * firstWeekend has chosen:true but zero venues at this point. Every check
- * below — the usable hero, the draw, the redraw, the save, the stranding —
- * needs real capacity there to mean anything, so this attaches the home gym
- * directly: the plan's own write path (PATCH settings.state), the same shape
- * saveWorld leaves behind, touching nothing on the season. It is a raw
- * request though, so the client's in-memory document does not know about it
- * until the plan is reopened.
- */
-const worldNow = (await planDoc(made.id))?.settings.state
-for (const win of worldNow.windows ?? []) {
-  for (const w of win.weekends ?? []) {
-    if (w.sessionId !== firstWeekend.sessionId) continue
-    w.venues = [
-      {
-        venueId: homeGym.venueId,
-        name: homeGym.name,
-        role: "home",
-        capacityGames: 60,
-        fillOrder: 1,
-        courts: 12,
-        courtDays: 2,
-        days: 2,
-        hoursPerCourtDay: 4,
-      },
-    ]
-    w.capacityGames = 60
-    w.largestVenueCapacity = 60
-  }
-}
-const gymOnWeekend = await page.request.patch(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`, {
-  data: { settings: { state: worldNow } },
-})
-ok(
-  "the home gym is put on that weekend in the plan's own world, with capacity for 175 teams",
-  gymOnWeekend.ok(),
-  `HTTP ${gymOnWeekend.status()}`
-)
-
 /* ------------- 1c. back on the board: one button, and it works ----------- */
-// A raw PATCH does not update the client's in-memory document, so the plan is
-// reopened fresh rather than just switching steps in place.
-await page.goto(PLAN_URL)
-await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
-await page.locator('[data-testid="plan-open"]').click()
-await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
-await page.locator(`[data-testid="plan-option"][data-plan-id="${made.id}"]`).click()
+/**
+ * RE-PINNED 2026-08-06 (the fix). This used to reload the whole page and pick
+ * the plan out of the chooser again, because a RAW PATCH had gone round the back
+ * of the client and only a fresh open would show it. There is no raw PATCH any
+ * more, so the drive walks step 2 → step 3 the way the owner does: the wizard
+ * holds the document, the board redraws from the version step 2 just wrote, and
+ * that is the exact path the bug was hit on.
+ */
+await stepButton("Your calendar").click()
 await page.waitForSelector('[data-testid="draw-hero"]', { timeout: 60000 })
-await page.waitForTimeout(600)
+await page.waitForTimeout(1200)
+// RE-PINNED 2026-08-06 (the fix): a CHOSEN WEEKEND is the whole requirement now.
+// The plan has no gym time on it and it is usable anyway, because the draw is
+// what puts the league's own building on the dates it chose.
 ok(
-  "a plan with weekends and gym time leads with Draw the calendar",
+  "a plan with a chosen weekend and a home gym leads with Draw the calendar, bare weekend and all",
   (await hero.getAttribute("data-usable")) === "1" &&
+    (await hero.getAttribute("data-gap")) === "" &&
     (await page.locator('[data-testid="draw-calendar"]').count()) === 1 &&
     (await page.locator('[data-testid="world-first"]').count()) === 0 &&
     /Nothing is booked or saved/.test(await hero.innerText()),
@@ -686,34 +691,48 @@ await page.locator('[data-testid="draw-calendar"]').click()
 await page.waitForTimeout(1800)
 const drawnOn = await playedOn()
 /**
- * RE-PINNED 2026-08-06 (pre-existing solver behavior, surfaced here for the
- * first time — this whole "empty board" flow only reaches "Draw the
- * calendar" at all because of the "attaches NO gym" fix above, and nobody had
- * driven it end to end before). The solver assigns each grade a weekend in
- * ITS OWN month, and this plan's world still carries the season's other 13
- * real weekends structurally (freshWorld zeroes `chosen`/`venues`, it does
- * not delete the weekends) — so a month with no weekend THIS plan chose still
- * has a session for the solver to default a grade onto, with zero plan
- * capacity behind it. In this world (one weekend chosen, twelve months worth
- * of grades) that means the draw is NOT confined to the chosen weekend the
- * way the original design intended it to read.
+ * RE-PINNED 2026-08-06, AND EXACT AGAIN (the fix).
  *
- * That is a real, worth-flagging mismatch between this test's premise and the
- * solver's actual month-fallback behavior — not a wave B regression (draw/
- * solve code is untouched by wave B) and not something this pass should
- * paper over by asserting exact session identities that do not hold up. What
- * is pinned here is the part that is true and load-bearing: a draw actually
- * produces a calendar, on the working copy, undoably.
+ * This check used to say only "a draw produces a calendar", with a long note
+ * explaining that the solver defaulted a grade onto every month the plan had not
+ * chosen: those months still carried the season's real sessions structurally, and
+ * a chosen-but-bare weekend was dropped from the solve, so the month it was in
+ * went with it. One chosen weekend came back as games in five months, most of
+ * them on Saturdays this plan never took and with zero capacity behind them.
+ *
+ * The month fallback is dead. The solve is handed the chosen weekends filled from
+ * the home gym, and a month with no chosen weekend is dropped whole, so the
+ * identities hold up and the check names them.
  */
 ok(
-  "the draw produces a calendar on the working copy",
-  drawnOn.length > 0,
+  "the draw fills the weekend the plan chose, and no other",
+  drawnOn.length === 1 && drawnOn[0] === firstWeekend.sessionId,
   `${drawnOn.length} weekend(s) with games: ${drawnOn.join(", ")}`
+)
+/**
+ * NEW 2026-08-06 (the fix, part 3): the draw did not just place games, it put the
+ * league's own building on the weekend it filled. So the card has a real gym
+ * section with a real meter on it, exactly as if the operator had placed it, and
+ * the notice says which building appeared and why.
+ */
+const drawnSections = await page
+  .locator(
+    `[data-session-id="${firstWeekend.sessionId}"] [data-testid="weekend-gym-section"]`
+  )
+  .evaluateAll((rows) =>
+    rows.map((r) => `${r.getAttribute("data-venue-id")}:${r.getAttribute("data-role")}`)
+  )
+ok(
+  "and it puts the home gym on that weekend, so the board draws a real section",
+  drawnSections.some((s) => s === `${homeGym.venueId}:home`),
+  `${drawnSections.length} section(s): ${drawnSections.join(", ")}`
 )
 const drawNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
 ok(
-  "it says what it did, and that nothing is saved",
-  /Here is the calendar/.test(drawNotice) && /Nothing is saved/.test(drawNotice),
+  "it says what it did, which building it used, and that nothing is saved",
+  /Here is the calendar/.test(drawNotice) &&
+    /Nothing is saved/.test(drawNotice) &&
+    /because that is the building your league owns/.test(drawNotice),
   drawNotice.replace(/\n/g, " ")
 )
 const drawState = await page.locator('[data-testid="plan-state"]').innerText()
@@ -742,12 +761,14 @@ await page.locator('[data-testid="redraw"]').click()
 await page.waitForTimeout(1800)
 const redrawNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
 const redrawnOn = await playedOn()
-// RE-PINNED 2026-08-06: same solver-fallback reality as the draw above — see
-// the note there. What is pinned is that Redraw runs the same solve again.
+// RE-PINNED 2026-08-06, AND EXACT AGAIN: the same solve, the same one chosen
+// weekend, the same answer. Redraw is not a different question.
 ok(
   "Redraw asks first, then draws the same calendar again in the same world",
-  /Redrawn from your weekends/.test(redrawNotice) && redrawnOn.length > 0,
-  `${redrawNotice.replace(/\n/g, " ")} · ${redrawnOn.length} weekend(s)`
+  /Redrawn from your weekends/.test(redrawNotice) &&
+    redrawnOn.length === 1 &&
+    redrawnOn[0] === firstWeekend.sessionId,
+  `${redrawNotice.replace(/\n/g, " ")} · ${redrawnOn.join(", ") || "no weekends"}`
 )
 
 /* --------- 2. the world moves under a SAVED calendar: two ways out ------- */
@@ -763,12 +784,29 @@ for (let i = 0; i < 60; i++) {
   if (savedKeys.length > 0) break
   await page.waitForTimeout(500)
 }
-// RE-PINNED 2026-08-06: the save persists the whole working copy, solver
-// defaults and all — see the note above.
+/**
+ * RE-PINNED 2026-08-06, AND EXACT AGAIN: the save persists the working copy, and
+ * the working copy is now one weekend, so the saved calendar is one weekend. It
+ * also carries the gym the draw asserted, written into the plan's own world, so
+ * reopening this plan finds the building on that date rather than the games
+ * stranded.
+ */
+const drawnDoc = made ? await planDoc(made.id) : null
+const savedWeekend = (drawnDoc?.settings?.state?.windows ?? [])
+  .flatMap((win) => win.weekends ?? [])
+  .find((w) => w.sessionId === firstWeekend.sessionId)
 ok(
-  "the drawn calendar saves onto the plan",
-  savedKeys.length > 0,
+  "the drawn calendar saves onto the plan, on the one weekend it chose",
+  savedKeys.length === 1 && savedKeys[0] === firstWeekend.sessionId,
   savedKeys.join(", ") || "nothing saved"
+)
+ok(
+  "and the home gym the draw put down is saved into the plan's own world",
+  (savedWeekend?.venues ?? []).some((v) => v.venueId === homeGym.venueId) &&
+    (savedWeekend?.capacityGames ?? 0) > 0,
+  `${(savedWeekend?.venues ?? []).map((v) => v.name).join(", ") || "no gyms"} · ${
+    savedWeekend?.capacityGames ?? 0
+  } games`
 )
 
 // Step 2 again: this month now runs the OTHER weekend, and not the one the
@@ -783,60 +821,24 @@ ok(`${firstWeekend.label} comes off in this plan`, await setWeekend(firstWeekend
 await page.screenshot({ path: `${SHOTS}/12-step2-weekend-swapped.png` })
 
 /**
- * RE-PINNED 2026-08-06 (wave B): the same gap as firstWeekend above — turning
- * secondWeekend on attaches no gym, and the stranded-move destination test
- * below needs real capacity there, or the board has nowhere to offer the
- * homeless games. Same plan-only write (PATCH settings.state, fetched fresh so
- * it carries the two toggles just made through the UI), same reopen to make
- * the client see it.
+ * RE-PINNED 2026-08-06 (the fix): the raw PATCH that used to put the home gym on
+ * secondWeekend by hand is gone with the one above it, and so is the page
+ * reload. The new weekend is chosen and bare, which is all step 2 does now, and
+ * "Re-solve in this world" below is what fills it. That is the whole point of
+ * the fix, driven the way the owner drives it.
  */
-const worldNow2 = (await planDoc(made.id))?.settings.state
-for (const win of worldNow2.windows ?? []) {
-  for (const w of win.weekends ?? []) {
-    if (w.sessionId !== secondWeekend.sessionId) continue
-    w.venues = [
-      {
-        venueId: homeGym.venueId,
-        name: homeGym.name,
-        role: "home",
-        capacityGames: 60,
-        fillOrder: 1,
-        courts: 12,
-        courtDays: 2,
-        days: 2,
-        hoursPerCourtDay: 4,
-      },
-    ]
-    w.capacityGames = 60
-    w.largestVenueCapacity = 60
-  }
-}
-const gymOnSecond = await page.request.patch(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`, {
-  data: { settings: { state: worldNow2 } },
-})
-ok(
-  "the home gym is put on the second weekend too, so the stranded games have somewhere to go",
-  gymOnSecond.ok(),
-  `HTTP ${gymOnSecond.status()}`
-)
-
-await page.goto(PLAN_URL)
-await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
-await page.locator('[data-testid="plan-open"]').click()
-await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
-await page.locator(`[data-testid="plan-option"][data-plan-id="${made.id}"]`).click()
+await stepButton("Your calendar").click()
 await page.waitForSelector('[data-testid="stranded-gyms"]', { timeout: 60000 })
-await page.waitForTimeout(800)
+await page.waitForTimeout(1200)
 const banner = page.locator('[data-testid="stranded-gyms"]')
 const moveButton = page.locator('[data-testid="move-stranded"]').first()
 /**
  * RE-PINNED 2026-08-06: "resolve-world" is the one way out that is ALWAYS
  * offered, whatever shape the stranding takes. "move-stranded" is the single-
- * group shortcut — per the solver-fallback reality noted above, this world
- * has EIGHT stranded groups (one per month the solver defaulted), not the
- * one this section's original design pictured, and the board answers a mess
- * that size with the universal fix rather than a named single move. Both are
- * legitimate "ways out"; which one is offered depends on the mess's shape.
+ * group shortcut, and it names a destination weekend with capacity already on
+ * it: the weekend this plan just chose is bare until a draw fills it, so on this
+ * path the universal fix is the one offered. Both are legitimate ways out; which
+ * one appears depends on the shape of the mess.
  */
 ok(
   "the gym-gone banner offers a way out",
@@ -867,7 +869,7 @@ if ((await moveButton.count()) === 1) {
   ok(
     "the move lands the stranded games on the weekend it named",
     true,
-    "no single move-stranded button on a mess this shape — resolve-world is the way out, checked below"
+    "no single move-stranded button on a mess this shape: resolve-world is the way out, checked below"
   )
   ok("the move is undoable like any other move", true, "n/a: no single move was made")
 }
@@ -876,10 +878,25 @@ await page.locator('[data-testid="resolve-world"]').click()
 await page.waitForTimeout(1800)
 const resolvedOn = await playedOn()
 const resolveNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+/**
+ * RE-PINNED 2026-08-06, AND EXACT AGAIN (the fix, end to end). The weekend this
+ * plan swapped to has no gym time on it, and nothing in the UI can put one there
+ * any more. Re-solving fills it from the building the league owns: the games land
+ * on the new weekend and only there, and the section that appears is real.
+ */
+const resolvedSections = await page
+  .locator(
+    `[data-session-id="${secondWeekend.sessionId}"] [data-testid="weekend-gym-section"]`
+  )
+  .evaluateAll((rows) => rows.map((r) => r.getAttribute("data-venue-id")))
 ok(
-  "re-solving in this world redraws the calendar into the gyms it still has, and the banner clears",
-  (await banner.count()) === 0 && resolvedOn.length > 0 && /Redrawn in this plan/.test(resolveNotice),
-  `${resolvedOn.join(", ")} · ${resolveNotice.replace(/\n/g, " ")}`
+  "re-solving in this world fills the bare weekend the plan chose, and the banner clears",
+  (await banner.count()) === 0 &&
+    resolvedOn.length === 1 &&
+    resolvedOn[0] === secondWeekend.sessionId &&
+    resolvedSections.includes(homeGym.venueId) &&
+    /Redrawn in this plan/.test(resolveNotice),
+  `${resolvedOn.join(", ")} · sections ${resolvedSections.join(", ") || "none"} · ${resolveNotice.replace(/\n/g, " ")}`
 )
 await page.screenshot({ path: `${SHOTS}/14-resolved-in-this-world.png` })
 

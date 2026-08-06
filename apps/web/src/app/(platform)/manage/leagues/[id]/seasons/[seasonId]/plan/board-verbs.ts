@@ -20,6 +20,7 @@ import {
   type PlannerState,
 } from "@/lib/scheduler/planner-core"
 import {
+  drawnHomeGyms,
   solvableState,
   weekendRooms,
   withWeekend,
@@ -660,11 +661,20 @@ export function useBoardVerbs(m: BoardModel) {
    * world and for a plan's, and the answer always matches the numbers on screen.
    */
   const solveOn = (world: PlannerState, lever: PlannerLever) => {
-    // Only the weekends this plan RUNS. The world keeps the ones it did not take
-    // so the operator can see them; the solver never gets to fill them.
+    // Only the weekends this plan RUNS, each of them able to hold something: the
+    // world keeps the Saturdays it did not take so the operator can see them, and
+    // the solver never gets to fill those. A chosen weekend with no gym time on
+    // it yet is filled from the building the league owns (owner ruling
+    // 2026-08-06), which is what solvableState puts on it.
     const runs = solvableState(world)
     const assignment = proposePlan(runs, lever)
-    return { assignment, venues: packPlanVenues(runs, assignment) }
+    return {
+      assignment,
+      venues: packPlanVenues(runs, assignment),
+      // The home gym the solve had to put on a bare weekend, so the board draws
+      // the same building the calendar was worked out in.
+      asserted: drawnHomeGyms(world, assignment),
+    }
   }
 
   /**
@@ -681,6 +691,13 @@ export function useBoardVerbs(m: BoardModel) {
    * operator checked, and the solver should get to use it. What the working copy
    * thought about the OLD weekends' bookings does not survive, because those were
    * opinions about weekends this calendar may not even use.
+   *
+   * THE DRAW PUTS THE HOME GYM DOWN (owner ruling 2026-08-06, #3). Choosing a
+   * weekend on step 2 attaches no building, so the solve fills a chosen weekend
+   * from the gym the league owns; the same assertion a hand-placed gym makes is
+   * recorded here for every weekend it really used, so the board draws real home
+   * sections with meters and blocks instead of games in a building nothing on
+   * screen has. It rides the same single undo step as the rest of the draw.
    */
   const drawCalendar = (lever: PlannerLever, said: string, undoLabel: string) => {
     if (!board || locked) return
@@ -689,6 +706,13 @@ export function useBoardVerbs(m: BoardModel) {
     setAssignment(next.assignment)
     setVenues(next.venues)
     setBlockStatus({})
+    setAssertedGyms((prev) =>
+      Object.entries(next.asserted).reduce(
+        (acc, [sessionId, venueIds]) =>
+          venueIds.reduce((at, venueId) => withAssertion(at, sessionId, venueId), acc),
+        prev
+      )
+    )
     setArmed(null)
     setArmedVenue(null)
     setArmedBlock(null)
@@ -703,7 +727,16 @@ export function useBoardVerbs(m: BoardModel) {
         .filter(([, keys]) => keys.length > 0)
         .map(([sessionId]) => sessionId)
     )
-    setNotice(said)
+    // The sections that just appeared on weekends that were empty are the
+    // league's own building, and the notice says so rather than leaving it to be
+    // worked out from the colours.
+    const homeSessions = Object.keys(next.asserted)
+    const homeGym = next.asserted[homeSessions[0]]?.[0]
+    setNotice(
+      homeSessions.length > 0 && homeGym
+        ? `${said} ${COPY.drawnHome(gymShort(homeGym), homeSessions.length)}`
+        : said
+    )
   }
 
   /**

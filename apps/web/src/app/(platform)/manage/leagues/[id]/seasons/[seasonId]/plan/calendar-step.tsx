@@ -93,6 +93,7 @@ export function CalendarStep({
   const {
     board,
     worldUsable,
+    worldGap,
     calendarEmpty,
     onPlanWorld,
     assignment,
@@ -305,6 +306,7 @@ export function CalendarStep({
             {calendarEmpty && interactive && !showingKept && (
               <DrawHero
                 usable={worldUsable}
+                gap={worldGap}
                 busy={busy !== null}
                 onDraw={() => draw(COPY.drawn)}
                 onGoToStep={onGoToStep}

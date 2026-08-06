@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest"
 import type { PlanWorld, PlanWorldGym } from "./plan-documents"
-import { planRentalBlocks, rentalAsk, type PlannerState } from "./planner-core"
 import {
+  packPlanVenues,
+  planRentalBlocks,
+  proposePlan,
+  rentalAsk,
+  type PlannerState,
+} from "./planner-core"
+import {
+  drawnHomeGyms,
+  homeGymCapacity,
+  homeGymOf,
+  weekendSolvable,
+  worldReadiness,
   weekendGymHours,
   withWeekendHours,
   withWeekendHoursInWorld,
@@ -500,6 +511,227 @@ describe("the weekends the solver is allowed to fill", () => {
     const all = withWeekendChosen(withGymOnWeekend(world(), "w-nov", "v-home", true), "w-nov", true)
     const state = planStateFrom("s1", { settings: { capturedAt: "x", state: all } }) as PlannerState
     expect(solvableState(state)).toBe(state)
+  })
+})
+
+/**
+ * THE OWNER'S OWN PATH, 2026-08-06 (the blocking bug, and the ruling that fixed
+ * it: "the draw fills your chosen weekends from your gyms").
+ *
+ * New plan, teams estimated on step 1, weekends chosen on step 2, step 3. Wave B
+ * made choosing a weekend attach NO gym, which was right, but three consumers
+ * still demanded gym time up front: the hero, the solve, and the draw. Step 2 had
+ * no control left for attaching any, so the operator went round in a circle.
+ *
+ * These pin the way out of it end to end: a plan whose weekends are BARE is
+ * usable, the solve fills exactly those weekends from the building the league
+ * owns, and the draw records that building so the board draws it.
+ */
+describe("the draw fills your chosen weekends from your gyms", () => {
+  /** Three months of two weekends each, none of them chosen and none of them
+   *  carrying a gym: a fresh plan, exactly as freshWorld leaves one. */
+  function fresh(): PlanWorld {
+    const weekend = (sessionId: string, label: string, dateISO: string) => ({
+      sessionId,
+      label,
+      dateISO,
+      dayCount: 2,
+      chosen: false,
+      targetGamesPerTeam: 2,
+      capacityGames: 0,
+      largestVenueCapacity: 0,
+      venues: [],
+    })
+    return {
+      seasonId: "s1",
+      gameSlotMinutes: 60,
+      courtBuffer: 0,
+      gamesPerTeam: 10,
+      gyms: [HOME, POOL],
+      units: [
+        { key: "age:Grade 7", label: "Grade 7", divisionIds: ["d7"], teams: 10, included: true },
+        { key: "age:Grade 8", label: "Grade 8", divisionIds: ["d8"], teams: 8, included: true },
+      ],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("w-oct-1", "Oct 3–4", "2026-10-03"),
+            weekend("w-oct-2", "Oct 24–25", "2026-10-24"),
+          ],
+        },
+        {
+          label: "Nov 2026",
+          weekends: [
+            weekend("w-nov-1", "Nov 7–8", "2026-11-07"),
+            weekend("w-nov-2", "Nov 21–22", "2026-11-21"),
+          ],
+        },
+        {
+          label: "Dec 2026",
+          weekends: [
+            weekend("w-dec-1", "Dec 5–6", "2026-12-05"),
+            weekend("w-dec-2", "Dec 19–20", "2026-12-19"),
+          ],
+        },
+      ],
+    }
+  }
+
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  const chooseAll = (w: PlanWorld, sessionIds: string[]) =>
+    sessionIds.reduce((acc, id) => withWeekendChosen(acc, id, true), w)
+  /** Every weekend of a state, flat, so a test can ask about the ones it did
+   *  not choose as easily as the ones it did. */
+  const flat = (s: PlannerState) => s.windows.flatMap((win) => win.weekends)
+
+  it("is usable the moment weekends are chosen, with no gym time on them", () => {
+    const chosen = chooseAll(fresh(), ["w-oct-1", "w-nov-2", "w-dec-1"])
+    const state = stateOf(chosen)
+    // The premise: the weekends really are bare. Wave B's ruling, not an oversight.
+    expect(
+      flat(state)
+        .filter((w) => w.chosen)
+        .every((w) => w.venues.length === 0 && w.capacityGames === 0)
+    ).toBe(true)
+    expect(worldReadiness(state)).toEqual({ usable: true, gap: null })
+  })
+
+  it("names the missing half when there is one, and never both at once", () => {
+    // Nothing chosen: the plan has its gyms and no dates to run them on.
+    expect(worldReadiness(stateOf(fresh()))).toEqual({ usable: false, gap: "weekends" })
+    // Weekends chosen, and no building the league owns to fill them from.
+    const homeless = { ...fresh(), gyms: [POOL] }
+    expect(worldReadiness(stateOf(chooseAll(homeless, ["w-oct-1"])))).toEqual({
+      usable: false,
+      gap: "gym",
+    })
+    // Neither, which is a plan on a season that has nothing set up yet.
+    expect(worldReadiness(stateOf(homeless))).toEqual({ usable: false, gap: "both" })
+    // A home gym that never opens is no home gym: it can hold nothing.
+    const shut = withGymHours(fresh(), "v-home", "09:00", "09:00")
+    expect(worldReadiness(stateOf(chooseAll(shut, ["w-oct-1"])))).toEqual({
+      usable: false,
+      gap: "gym",
+    })
+    expect(worldReadiness(null)).toEqual({ usable: false, gap: "both" })
+  })
+
+  it("puts the home gym on every chosen weekend of the solve, at its usable capacity", () => {
+    const state = stateOf(chooseAll(fresh(), ["w-oct-1", "w-nov-2", "w-dec-1"]))
+    const runs = solvableState(state)
+    expect(flat(runs).map((w) => w.sessionId)).toEqual(["w-oct-1", "w-nov-2", "w-dec-1"])
+    for (const w of flat(runs)) {
+      expect(w.venues.map((v) => v.venueId)).toEqual(["v-home"])
+      // 3 courts × 2 days × 12 games (09:00–21:00, 60-minute slots) = 72, which
+      // is the same arithmetic step 2 would have given it.
+      expect(w.capacityGames).toBe(72)
+      expect(w.venues[0].role).toBe("home")
+    }
+    expect(homeGymOf(state)?.venueId).toBe("v-home")
+    expect(homeGymCapacity(state)).toBe(72)
+    // The buffer is honoured, because it is the same arithmetic.
+    expect(homeGymCapacity(stateOf(withCourtBuffer(fresh(), 1)))).toBe(48)
+  })
+
+  it("draws games onto the chosen weekends and nowhere else", () => {
+    const chosenIds = ["w-oct-1", "w-nov-2", "w-dec-1"]
+    const state = stateOf(chooseAll(fresh(), chosenIds))
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, "balance")
+    const played = Object.entries(assignment)
+      .filter(([, keys]) => keys.length > 0)
+      .map(([sessionId]) => sessionId)
+      .sort()
+    expect(played).toEqual([...chosenIds].sort())
+    // Every grade plays every month, which is the whole point of choosing three.
+    for (const id of chosenIds) expect(assignment[id]).toEqual(["age:Grade 7", "age:Grade 8"])
+    // And the packer puts them in the building the solve was given.
+    const venues = packPlanVenues(runs, assignment)
+    for (const id of chosenIds) {
+      expect(venues[id]).toEqual({ "age:Grade 7": "v-home", "age:Grade 8": "v-home" })
+    }
+    // The draw records that building on each of them, so the board can draw it.
+    expect(drawnHomeGyms(state, assignment)).toEqual({
+      "w-oct-1": ["v-home"],
+      "w-nov-2": ["v-home"],
+      "w-dec-1": ["v-home"],
+    })
+  })
+
+  /**
+   * THE MONTH FALLBACK IS DEAD. It used to be that a chosen-but-bare weekend was
+   * dropped from the solve, so the month it was in went with it and the solver
+   * defaulted that month's grades onto whichever structural session it could
+   * find. One chosen weekend in October came back as games in five months, most
+   * of them on Saturdays the plan never took and with zero capacity behind them.
+   */
+  it("kills the month fallback: one chosen weekend takes the games, and no other", () => {
+    const state = stateOf(chooseAll(fresh(), ["w-nov-1"]))
+    const runs = solvableState(state)
+    // October and December have no chosen weekend, so those months are gone from
+    // the solve whole. They are still on the BOARD, which is what the operator
+    // needs to see, but nothing may be placed on them.
+    expect(runs.windows.map((win) => win.label)).toEqual(["Nov 2026"])
+    expect(flat(runs).map((w) => w.sessionId)).toEqual(["w-nov-1"])
+    expect(flat(state)).toHaveLength(6)
+
+    const assignment = proposePlan(runs, "balance")
+    expect(Object.keys(assignment)).toEqual(["w-nov-1"])
+    expect(assignment["w-nov-1"]).toEqual(["age:Grade 7", "age:Grade 8"])
+    // Said the other way round, because this is the bug: not one game on a
+    // weekend this plan did not choose.
+    const unchosen = flat(state)
+      .filter((w) => !w.chosen)
+      .map((w) => w.sessionId)
+    for (const id of unchosen) expect(assignment[id] ?? []).toEqual([])
+    expect(drawnHomeGyms(state, assignment)).toEqual({ "w-nov-1": ["v-home"] })
+  })
+
+  it("records the home gym only where the draw really put games", () => {
+    const state = stateOf(chooseAll(fresh(), ["w-oct-1", "w-oct-2"]))
+    // One month, two chosen weekends: compact-first puts both grades on one of
+    // them, so the other is a weekend the league chose and did not need.
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, "balance")
+    const used = Object.entries(assignment).filter(([, keys]) => keys.length > 0)
+    expect(used).toHaveLength(1)
+    expect(drawnHomeGyms(state, assignment)).toEqual({ [used[0][0]]: ["v-home"] })
+    // A building on a date nobody plays on is a booking the league never made.
+    expect(Object.keys(drawnHomeGyms(state, {}))).toEqual([])
+  })
+
+  it("leaves a weekend that already has its own gyms alone", () => {
+    // The Saturday the operator placed a pool gym on by hand keeps it, and the
+    // home gym is not pushed in beside it.
+    const painted = withGymOnWeekend(chooseAll(fresh(), ["w-oct-1"]), "w-oct-1", "v-pool", true)
+    const runs = solvableState(stateOf(painted))
+    expect(flat(runs)[0].venues.map((v) => v.venueId)).toEqual(["v-pool"])
+    expect(drawnHomeGyms(stateOf(painted), { "w-oct-1": ["age:Grade 7"] })).toEqual({})
+  })
+
+  it("reads the season's own board the way it always did", () => {
+    // The season's state carries no `chosen` at all: every weekend it has is a
+    // weekend it runs, and the ones with gym time on them are the solvable ones.
+    const seasonBoard: PlannerState = {
+      ...stateOf(fresh()),
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            { ...flat(stateOf(world()))[0], chosen: undefined },
+            { ...flat(stateOf(fresh()))[1], chosen: undefined },
+          ],
+        },
+      ],
+    }
+    expect(seasonBoard.windows[0].weekends.map(weekendSolvable)).toEqual([true, false])
+    const runs = solvableState(seasonBoard)
+    expect(flat(runs).map((w) => w.sessionId)).toEqual(["w-oct"])
+    // Nothing was synthesized onto the bare one: a season weekend nobody
+    // attached a gym to is not a weekend anybody chose.
+    expect(worldReadiness(seasonBoard)).toEqual({ usable: true, gap: null })
   })
 })
 

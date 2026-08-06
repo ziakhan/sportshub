@@ -276,30 +276,150 @@ export function planStateFrom(
 }
 
 /**
- * THE WEEKENDS THE SOLVER IS ALLOWED TO FILL (owner ruling 2026-08-05, #1: "the
- * planner fills your chosen weekends from your gyms").
+ * THE BUILDING THE LEAGUE OWNS, off the plan's own roster. Null when the plan
+ * has no home gym at all, which is a thing step 2 has to fix.
+ */
+export function homeGymOf(state: Pick<PlannerState, "gyms">): PlanWorldGym | null {
+  return (state.gyms ?? []).find((g) => g.role === "home") ?? null
+}
+
+/** Games the home gym could hold on one ordinary weekend of this plan: the
+ *  courts it gives less the buffer, over the hours it runs. Zero when the plan
+ *  has no home gym, when every court is held back, or when it never opens. */
+export function homeGymCapacity(state: PlannerState, dayCount = DEFAULT_DAY_COUNT): number {
+  const home = homeGymOf(state)
+  return home ? plannerVenueOn(home, { dayCount }, state).capacityGames : 0
+}
+
+/**
+ * A WEEKEND THE DRAW IS ALLOWED TO FILL (owner ruling 2026-08-06: "the draw
+ * fills your chosen weekends from your gyms").
  *
- * A plan's world deliberately keeps the weekends it did NOT take, because an
- * operator has to be able to see the Saturday they left out. The solver must
- * not see them: handed a weekend with no gym behind it, it would place a whole
- * month there and hand back overflow, so a plan that runs one weekend in October
- * would come back with games in all five months and a board full of red.
+ * One this plan CHOSE, whether or not it carries gym time yet, or one that
+ * already really runs. The second half is the season's own board and the older
+ * worlds, where `chosen` was never written down and a weekend with capacity on
+ * it was the only weekend there was.
  *
- * So the state a solve runs on holds only the weekends this plan runs that have
- * gym time on them, and a month with none of those is dropped whole: a month the
- * plan does not run has no games, which is the truth rather than a failure. A
- * world where every weekend runs comes back as the very same object, so the
- * season's own board pays nothing for this.
+ * What it is NOT is the structural leftover: a Saturday the season has a session
+ * for, that this plan did not take, with nothing behind it. Handed one of those
+ * the solver would put a whole month on it and hand back overflow.
+ */
+export function weekendSolvable(w: PlannerWeekend): boolean {
+  return w.chosen === true || (w.chosen !== false && w.capacityGames > 0)
+}
+
+/** The chosen weekends of this plan that can hold nothing yet, each paired with
+ *  the home gym, in the shape withAssertedGyms takes. Empty when the plan has no
+ *  home gym, because there is then nothing to put on them. */
+function chosenBareWeekends(state: PlannerState): Record<string, string[]> {
+  const home = homeGymOf(state)
+  if (!home) return {}
+  const out: Record<string, string[]> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      if (w.chosen === true && w.capacityGames <= 0) out[w.sessionId] = [home.venueId]
+    }
+  }
+  return out
+}
+
+/**
+ * THE WEEKENDS THE SOLVER IS ALLOWED TO FILL, AND WHAT THEY HOLD (owner ruling
+ * 2026-08-06: "the draw fills your chosen weekends from your gyms").
+ *
+ * Two things at once, because they are the same sentence read twice.
+ *
+ * WHICH WEEKENDS. A plan's world deliberately keeps the Saturdays it did NOT
+ * take, so an operator can see the one they left out. The solver must not see
+ * them: handed a weekend with nothing behind it, it would place a whole month
+ * there and hand back overflow, so a plan running one weekend in October used to
+ * come back with games in all five months and a board full of red. A month with
+ * no chosen weekend is dropped WHOLE, because a month the plan does not run has
+ * no games, and that is the truth rather than a failure.
+ *
+ * WHAT THEY HOLD. Choosing a weekend on step 2 attaches no gym (the 2026-08-06
+ * ruling: buildings are placed on the board, not painted on a grid), so a chosen
+ * weekend usually arrives BARE. It is still a weekend this league runs, and what
+ * it runs on is the building the league owns: the home gym goes on it at its
+ * usable capacity, exactly the arithmetic step 2 would have given it. That is
+ * what lets the solve fill the weekends the operator asked for instead of
+ * quietly falling back onto the ones they did not.
+ *
+ * A world where every weekend already runs comes back as the very same object,
+ * so the season's own board pays nothing for any of this.
  */
 export function solvableState(state: PlannerState): PlannerState {
+  const filled = withAssertedGyms(state, chosenBareWeekends(state))
   const runs = (w: PlannerWeekend) => w.chosen !== false && w.capacityGames > 0
-  if (state.windows.every((win) => win.weekends.every(runs))) return state
+  if (filled.windows.every((win) => win.weekends.every(runs))) return filled
   return {
-    ...state,
-    windows: state.windows
+    ...filled,
+    windows: filled.windows
       .map((win) => ({ ...win, weekends: win.weekends.filter(runs) }))
       .filter((win) => win.weekends.length > 0),
   }
+}
+
+/**
+ * THE HOME GYM THE DRAW PUT ON A WEEKEND (owner ruling 2026-08-06, #3).
+ *
+ * The solve is allowed to fill a chosen weekend that has no gym time on it yet,
+ * because the league owns a building. The board then has to SHOW that: real
+ * sections, a real meter, and rental blocks for whatever spills. So a draw
+ * records the same assertion a hand-placed gym makes, for every chosen-bare
+ * weekend it actually put games on, and one Undo takes the whole draw back with
+ * it.
+ *
+ * Weekends the draw left empty get nothing: a building on a date nobody plays on
+ * is a booking the league never made.
+ */
+export function drawnHomeGyms(
+  state: PlannerState,
+  assignment: PlanAssignment
+): Record<string, string[]> {
+  const bare = chosenBareWeekends(state)
+  const out: Record<string, string[]> = {}
+  for (const [sessionId, venueIds] of Object.entries(bare)) {
+    if ((assignment[sessionId] ?? []).length === 0) continue
+    out[sessionId] = venueIds
+  }
+  return out
+}
+
+/**
+ * IS THERE A WORLD TO DRAW IN (owner ruling 2026-08-06, replacing the 2026-08-05
+ * reading)?
+ *
+ * It used to be "a chosen weekend with gym time already on it", which was true
+ * right up until choosing a weekend stopped attaching a gym. After that the
+ * operator could pick every weekend they wanted, come to step 3, and be sent
+ * back to step 2 to do a thing step 2 no longer has a control for.
+ *
+ * Two facts now, and the hero names whichever is missing:
+ *  - the league has a HOME GYM with courts and hours, which is what a bare
+ *    weekend gets filled from;
+ *  - at least one weekend is CHOSEN (or already runs, on the season's own
+ *    board).
+ *
+ * `usable` is read off the solve itself rather than off the two facts, so the
+ * button can never be offered for a draw that would come back empty.
+ */
+export type WorldGap = "weekends" | "gym" | "both"
+
+export interface WorldReadiness {
+  /** There is at least one weekend the draw could really fill. */
+  usable: boolean
+  /** What the operator has to go and do, or null when nothing is missing. */
+  gap: WorldGap | null
+}
+
+export function worldReadiness(state: PlannerState | null): WorldReadiness {
+  if (!state) return { usable: false, gap: "both" }
+  const chosenAny = state.windows.some((win) => win.weekends.some(weekendSolvable))
+  const homeOk = homeGymCapacity(state) > 0
+  const usable = solvableState(state).windows.some((win) => win.weekends.length > 0)
+  if (usable) return { usable: true, gap: null }
+  return { usable: false, gap: !chosenAny ? (homeOk ? "weekends" : "both") : "gym" }
 }
 
 /* ------------------- where a grade could actually go --------------------- */

@@ -26,6 +26,7 @@ import {
   weekendGymHours,
   withAssertedGyms,
   withWeekendHours,
+  worldReadiness,
   type BoardColumn,
   type BuildingRoom,
   type StrandedPlacement,
@@ -432,18 +433,19 @@ export function useBoardState({
   )
 
   /**
-   * IS THERE A WORLD TO SOLVE IN (owner ruling 2026-08-05, #1)? One weekend this
-   * plan runs, with some gym time on it. Capacity answers both halves in one
-   * number: a weekend the plan does not run carries no gyms, and a weekend whose
-   * gyms are shut carries no games, so either way there is nothing to fill.
+   * IS THERE A WORLD TO SOLVE IN (owner ruling 2026-08-06, replacing the
+   * 2026-08-05 reading)? A home gym with courts and hours, and a weekend this
+   * plan chose to run. GYM TIME ALREADY ATTACHED IS NO LONGER PART OF IT: since
+   * choosing a weekend stopped attaching a gym, requiring one here sent the
+   * operator back to a step that has no control for it, which is a circle.
+   *
+   * worldReadiness reads it off the solve itself, so the Draw button is offered
+   * exactly when a draw would come back with something on it, and `gap` names
+   * whichever half the operator still owes.
    */
-  const worldUsable = useMemo(
-    () =>
-      (board?.windows ?? []).some((win) =>
-        win.weekends.some((w) => w.chosen !== false && w.capacityGames > 0)
-      ),
-    [board]
-  )
+  const readiness = useMemo(() => worldReadiness(board), [board])
+  const worldUsable = readiness.usable
+  const worldGap = readiness.gap
   /** Nothing placed anywhere. Not "no plan open": a plan whose calendar has not
    *  been drawn yet, which is the state the hero exists for. */
   const calendarEmpty = useMemo(
@@ -952,6 +954,7 @@ export function useBoardState({
     setOnPlanWorld,
     board,
     worldUsable,
+    worldGap,
     calendarEmpty,
     load,
     /* the calendar on the board */

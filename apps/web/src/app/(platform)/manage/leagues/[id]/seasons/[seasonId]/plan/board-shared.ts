@@ -49,15 +49,36 @@ export const COPY = {
     "Fills your home gym first, then rents as few gyms as possible, as full as possible. Adjust anything afterward.",
   drawHint:
     "The planner fills your chosen weekends from your gyms. Nothing is booked or saved until you say so.",
-  /** The same board with no world to solve in. The fix is a step back, not a
-   *  button here, so the hero points at step 2 instead of pretending. */
-  worldFirst: "Pick your weekends and gym time in step 2 first",
-  worldFirstHint:
-    "A plan runs the weekends you choose, in the gyms you give it. Choose those and the calendar draws itself here.",
+  /**
+   * THE SAME BOARD WITH NO WORLD TO DRAW IN. The fix is a step back, not a button
+   * here, so the hero points at step 2 instead of pretending.
+   *
+   * It NAMES what is missing (owner ruling 2026-08-06). It used to say "pick your
+   * weekends and gym time", which stopped being possible the day choosing a
+   * weekend stopped attaching a gym: the operator was sent back to a step with no
+   * control for the thing it was asking for. There are two things it can be short
+   * of, and the hero says which.
+   */
+  worldFirst: {
+    weekends: "Pick your weekends in step 2 first",
+    gym: "Add a home gym in step 2 first",
+    both: "Pick your weekends and add a home gym in step 2 first",
+  },
+  worldFirstHint: {
+    weekends:
+      "A plan runs the weekends you choose. Choose them and the draw fills them from your gyms.",
+    gym: "The draw fills your chosen weekends from the building your league owns, so it needs one with courts and hours on it.",
+    both: "A plan runs the weekends you choose, filled from the building your league owns. Give it both and the calendar draws itself here.",
+  },
   worldFirstLink: "Go to step 2",
   /** Said once the solver has answered, whichever button asked it. */
   drawn:
     "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Nothing is saved until you save it.",
+  /** Added when the draw put the league's own building on weekends that had
+   *  nothing on them yet (owner ruling 2026-08-06, #3), so the sections that
+   *  appeared are never a surprise. */
+  drawnHome: (gym: string, weekends: number) =>
+    `${gym} is on ${plural(weekends, "weekend", "weekends")} it filled, because that is the building your league owns.`,
   redrawn:
     "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
   resolved:

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react"
 import type { PlannerUnit, PlannerWeekend } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY, isReferencePlan, type PlanRow } from "@/lib/scheduler/plan-documents"
-import { strandedSentence, type StrandedPlacement } from "@/lib/scheduler/plan-world"
+import {
+  strandedSentence,
+  type StrandedPlacement,
+  type WorldGap,
+} from "@/lib/scheduler/plan-world"
 import { PILL_TONE, type Armed, type ArmedBlock, type ArmedSection } from "./plan-shared"
 import { WhyPopover } from "./plan-ui"
 import { PlanChooser } from "./plan-session"
@@ -522,25 +526,32 @@ export function StrandedBanner({
  * operator's next move is not a guess anybody should have to make.
  *
  * The other half is the honest version of the same screen. A plan with no chosen
- * weekend, or with gyms that are shut on every weekend it chose, has nothing for
- * the solver to fill, so the hero does not offer a button that would draw five
- * empty months again. It names the step that fixes it and goes there.
+ * weekend, or with no home gym to fill one from, has nothing for the solver to
+ * work with, so the hero does not offer a button that would draw five empty
+ * months again. It names WHICH of the two is missing (owner ruling 2026-08-06)
+ * and goes to the step that fixes it: "pick your weekends and gym time" was
+ * unactionable from the day choosing a weekend stopped attaching a gym.
  */
 export function DrawHero({
   usable,
+  gap,
   busy,
   onDraw,
   onGoToStep,
 }: {
   usable: boolean
+  /** What the plan is short of, when it is short of something. */
+  gap: WorldGap | null
   busy: boolean
   onDraw: () => void
   onGoToStep?: (step: number) => void
 }) {
+  const missing = gap ?? "both"
   return (
     <div
       data-testid="draw-hero"
       data-usable={usable ? "1" : "0"}
+      data-gap={usable ? "" : missing}
       onClick={(e) => e.stopPropagation()}
       className="border-court-200 bg-court-50/70 mb-3 rounded-2xl border px-5 py-7 text-center"
     >
@@ -583,8 +594,10 @@ export function DrawHero({
         </>
       ) : (
         <>
-          <p className="text-ink-900 text-[15px] font-bold">{COPY.worldFirst}</p>
-          <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">{COPY.worldFirstHint}</p>
+          <p className="text-ink-900 text-[15px] font-bold">{COPY.worldFirst[missing]}</p>
+          <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">
+            {COPY.worldFirstHint[missing]}
+          </p>
           <button
             type="button"
             data-testid="world-first"
