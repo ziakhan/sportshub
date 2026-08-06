@@ -10,7 +10,7 @@
  * the strip RENDER copy, they never compose it, so what an operator reads is
  * unit-tested against the same packing the plan saves.
  */
-import { venueShortName } from "@/lib/seasons/venue-strip"
+import { venueShortName } from "../seasons/venue-strip"
 
 /**
  * How a weekend is named everywhere an operator sees one: "Oct 24–25", or
