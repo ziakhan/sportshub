@@ -488,11 +488,11 @@ async function seed() {
     where: { OR: [{ name: { startsWith: HOME_GYM } }, { name: { startsWith: RENTAL_GYM } }] },
     select: { id: true, name: true, city: true, courtList: { select: { id: true, name: true }, orderBy: { name: "asc" } } },
   })
-  const pick = (wanted: string) =>
+  const matchVenue = (wanted: string) =>
     venueRows.find((v: any) => v.name === wanted) ??
     venueRows.find((v: any) => v.name.startsWith(wanted))
-  const home = pick(HOME_GYM)
-  const rental = pick(RENTAL_GYM)
+  const home = matchVenue(HOME_GYM)
+  const rental = matchVenue(RENTAL_GYM)
   if (!home || !rental) throw new Error(`Venues missing: need "${HOME_GYM}" and "${RENTAL_GYM}" in the venue registry.`)
   const GYMS = [
     { ...home, role: "home" as const, courts: home.courtList },
