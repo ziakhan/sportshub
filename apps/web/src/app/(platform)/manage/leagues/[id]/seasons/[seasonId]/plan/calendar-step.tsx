@@ -4,6 +4,7 @@ import { AskSheet, GymList } from "./plan-ui"
 import { PlanEmptyState } from "./plan-session"
 import { StripView } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
+import { PLAN_COPY } from "@/lib/scheduler/plan-documents"
 import { COPY, headerPill } from "./board-shared"
 import { useBoardState } from "./board-state"
 import { useBoardPlans } from "./board-plans"
@@ -141,6 +142,8 @@ export function CalendarStep({
     keptShown,
     plans,
     planId,
+    session,
+    openState,
     selectedPlan,
     activePlan,
     drift,
@@ -187,6 +190,7 @@ export function CalendarStep({
     onDropVenue,
     onDropSection,
     draw,
+    fenceWindow,
     redraw,
     redrawSpread,
     splitAxesFor,
@@ -196,6 +200,51 @@ export function CalendarStep({
     jumpToWeekend,
     gradeList,
   } = verbs
+
+  /**
+   * A PLAN THE BOARD HAS NOT READ IS NOT DRAWN (the cold-open data-loss fix,
+   * 2026-08-06).
+   *
+   * Choosing a plan is instant and reading it is a round trip. In between, the
+   * board is still holding the SEASON's world, and drawing that under this
+   * plan's name is not a slower truth, it is a different plan: the season's
+   * gyms, the season's courts, the season's weekends, with the plan's name in
+   * the picker above them. An operator who saved in that gap wrote the season's
+   * world over their own.
+   *
+   * So the wait is shown instead of the board. The one that failed says so and
+   * offers the read again, because the alternative is a screen that looks
+   * finished and is lying.
+   */
+  if (openState === "opening" || openState === "unreadable") {
+    const name = selectedPlan?.name ?? "that plan"
+    const failed = openState === "unreadable"
+    return (
+      <div
+        className="border-ink-100 shadow-soft rounded-2xl border bg-white px-6 py-10 text-center"
+        data-testid="plan-opening"
+        data-state={openState}
+      >
+        <p className="text-ink-900 text-[15px] font-bold">
+          {failed ? PLAN_COPY.unreadable(name) : PLAN_COPY.opening(name)}
+        </p>
+        <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">
+          {failed ? PLAN_COPY.unreadableHint : PLAN_COPY.openingHint}
+        </p>
+        {failed && (
+          <button
+            type="button"
+            data-testid="plan-reopen"
+            onClick={() => void session.refreshDoc()}
+            disabled={session.docBusy}
+            className="border-court-700 bg-court-600 hover:bg-court-700 mt-3 inline-flex min-h-[40px] cursor-pointer items-center rounded-xl border px-4 text-[13px] font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {PLAN_COPY.unreadableRetry}
+          </button>
+        )}
+      </div>
+    )
+  }
 
   if (!board) {
     return <p className="text-ink-500 p-6 text-sm">{error ?? "Working out your calendar…"}</p>
@@ -445,6 +494,7 @@ export function CalendarStep({
                       onSetHours={setWeekendHours}
                       onOpenWeekend={setZoomSession}
                       onGhostDrop={dropOnGhost}
+                      onFenceWindow={interactive ? fenceWindow : undefined}
                       splitAxesFor={splitAxesFor}
                     />
                   )

@@ -7,6 +7,7 @@ import type {
   PlanWorldVenue,
   PlanWorldWeekend,
   PlanSettings,
+  WindowPhase,
 } from "./plan-documents"
 import {
   buildingCapacityAt,
@@ -18,6 +19,7 @@ import {
   type PlannerUnit,
   type PlannerVenue,
   type PlannerWeekend,
+  type PlannerWindow,
   type VenueRole,
 } from "./planner-core"
 // Types only: venue-grid.ts imports prisma, and step 2 is a client component.
@@ -215,6 +217,9 @@ export function planStateFrom(
     units,
     windows: (world.windows ?? []).map((win) => ({
       label: win.label,
+      // What the month is FOR travels with it (owner ruling 2026-08-06): the
+      // solve drops a fenced one and the board draws it as its own band.
+      phase: win.phase,
       weekends: (win.weekends ?? []).map((w) => {
         const on = weekendChosen(w)
         const venueRows: PlannerVenue[] = on
@@ -308,14 +313,32 @@ export function weekendSolvable(w: PlannerWeekend): boolean {
   return w.chosen === true || (w.chosen !== false && w.capacityGames > 0)
 }
 
+/**
+ * A MONTH THIS PLAN HAS FENCED AS PLAYOFFS (owner ruling 2026-08-06).
+ *
+ * The last month of a league season is usually not league games at all. Playoffs
+ * are drawn from standings that do not exist until the regular season ends, so
+ * there is nothing for the solver to place there and nothing for the league to
+ * owe: no games, no grade sessions, no rentals in the ask.
+ *
+ * Absent means regular, so every world written before the fence existed reads
+ * exactly as it always did.
+ */
+export function windowFenced(window: Pick<PlannerWindow, "phase">): boolean {
+  return window.phase === "playoffs"
+}
+
 /** The chosen weekends of this plan that can hold nothing yet, each paired with
- *  the home gym, in the shape withAssertedGyms takes. Empty when the plan has no
- *  home gym, because there is then nothing to put on them. */
+ *  the home gym, in the shape withAssertedGyms takes. A fenced month is skipped:
+ *  putting the home gym on a playoffs Saturday would be booking a building for
+ *  games nobody is going to schedule there. Empty when the plan has no home gym,
+ *  because there is then nothing to put on them. */
 function chosenBareWeekends(state: PlannerState): Record<string, string[]> {
   const home = homeGymOf(state)
   if (!home) return {}
   const out: Record<string, string[]> = {}
   for (const win of state.windows) {
+    if (windowFenced(win)) continue
     for (const w of win.weekends) {
       if (w.chosen === true && w.capacityGames <= 0) out[w.sessionId] = [home.venueId]
     }
@@ -345,16 +368,23 @@ function chosenBareWeekends(state: PlannerState): Record<string, string[]> {
  * what lets the solve fill the weekends the operator asked for instead of
  * quietly falling back onto the ones they did not.
  *
+ * A MONTH FENCED AS PLAYOFFS is dropped whole and unconditionally (owner ruling
+ * 2026-08-06), whatever gym time it has on it: playoffs are drawn from standings
+ * that do not exist yet, so no grade is owed a session there and no rental is
+ * asked for it. It stays on the BOARD as its own quiet band, because the league
+ * still plays that month; it is simply not this solve's business.
+ *
  * A world where every weekend already runs comes back as the very same object,
  * so the season's own board pays nothing for any of this.
  */
 export function solvableState(state: PlannerState): PlannerState {
   const filled = withAssertedGyms(state, chosenBareWeekends(state))
   const runs = (w: PlannerWeekend) => w.chosen !== false && w.capacityGames > 0
-  if (filled.windows.every((win) => win.weekends.every(runs))) return filled
+  if (filled.windows.every((win) => !windowFenced(win) && win.weekends.every(runs))) return filled
   return {
     ...filled,
     windows: filled.windows
+      .filter((win) => !windowFenced(win))
       .map((win) => ({ ...win, weekends: win.weekends.filter(runs) }))
       .filter((win) => win.weekends.length > 0),
   }
@@ -415,7 +445,11 @@ export interface WorldReadiness {
 
 export function worldReadiness(state: PlannerState | null): WorldReadiness {
   if (!state) return { usable: false, gap: "both" }
-  const chosenAny = state.windows.some((win) => win.weekends.some(weekendSolvable))
+  // A month fenced as playoffs is not a month with weekends to offer: a plan
+  // whose only chosen Saturdays are in March has still chosen nothing to solve.
+  const chosenAny = state.windows.some(
+    (win) => !windowFenced(win) && win.weekends.some(weekendSolvable)
+  )
   const homeOk = homeGymCapacity(state) > 0
   const usable = solvableState(state).windows.some((win) => win.weekends.length > 0)
   if (usable) return { usable: true, gap: null }
@@ -908,6 +942,102 @@ export function withWeekendChosen(
   })
 }
 
+/**
+ * WHAT A MONTH IS FOR, IN THIS PLAN (owner ruling 2026-08-06, the March fence).
+ *
+ * Fencing a month as playoffs takes it out of the solve entirely: no league
+ * games are placed there, no grade is owed a session there, and nothing in it
+ * reaches the ask. The month stays on the board as its own quiet band, because
+ * the league does play it, and the operator can hand it back to the regular
+ * season with the same control.
+ *
+ * Anything already placed in the month goes with it. That is the honest reading
+ * of the instruction: a month that is not league games cannot be holding league
+ * games, and the alternative is a fenced March quietly keeping a calendar
+ * nothing on the screen will ever recompute.
+ */
+export function withWindowPhase(
+  world: PlanWorld,
+  label: string,
+  phase: WindowPhase
+): PlanWorld {
+  return rebuild({
+    ...world,
+    windows: (world.windows ?? []).map((win) =>
+      win.label !== label
+        ? win
+        : {
+            ...win,
+            phase,
+            weekends:
+              phase === "playoffs"
+                ? (win.weekends ?? []).map((w) => ({ ...w, chosen: false, venues: [] }))
+                : (win.weekends ?? []),
+          }
+    ),
+  })
+}
+
+/** The months this plan has fenced, by label, for the calendar the plan holds:
+ *  a grade placed in a fenced month is not playing a league game there. */
+export function fencedWindowLabels(world: PlanWorld): Set<string> {
+  return new Set((world.windows ?? []).filter(windowFenced).map((win) => win.label))
+}
+
+/**
+ * EVERY MONTH FENCE THE BOARD IS HOLDING, written into the plan's own world
+ * (owner ruling 2026-08-06). The other half of withWindowPhases below: the board
+ * computes on a fence the instant it is pressed, and this is what a save writes
+ * down, the same way assertions and per-date hours work.
+ */
+export function withWindowPhasesInWorld(
+  world: PlanWorld,
+  fences: Record<string, WindowPhase>
+): PlanWorld {
+  let next = world
+  for (const [label, phase] of Object.entries(fences)) next = withWindowPhase(next, label, phase)
+  return next
+}
+
+/**
+ * A MONTH FENCE, IN THE SHAPE THE BOARD COMPUTES ON (owner ruling 2026-08-06).
+ *
+ * The board applies it the instant the operator presses it, so the solve, the
+ * ask, the rail and the column all move together and one Undo takes it back.
+ * withWindowPhasesInWorld is the other half, run when the plan is saved.
+ *
+ * A fenced month keeps its dates and loses its gym time: playoffs are drawn
+ * later, so a building booked there is a booking for games nobody is going to
+ * schedule. A month nobody fenced comes back as the very same object.
+ */
+export function withWindowPhases(
+  state: PlannerState,
+  fences: Record<string, WindowPhase>
+): PlannerState {
+  if (Object.keys(fences).length === 0) return state
+  let touched = false
+  const windows = state.windows.map((win) => {
+    const phase = fences[win.label]
+    if (!phase || (win.phase ?? "regular") === phase) return win
+    touched = true
+    return {
+      ...win,
+      phase,
+      weekends:
+        phase === "playoffs"
+          ? win.weekends.map((w) => ({
+              ...w,
+              chosen: false,
+              venues: [],
+              capacityGames: 0,
+              largestVenueCapacity: 0,
+            }))
+          : win.weekends,
+    }
+  })
+  return touched ? { ...state, windows } : state
+}
+
 /** A gym on, or off, for every weekend this plan runs. Turning it on never
  *  invents a weekend: a weekend the plan does not run stays not run. */
 export function withGymEveryWeekend(world: PlanWorld, venueId: string, on: boolean): PlanWorld {
@@ -1110,6 +1240,13 @@ export interface BoardColumn {
   weekends: PlannerWeekend[]
   /** Every date of the month, in order, cards and ghosts together. */
   dates: BoardDate[]
+  /**
+   * A month this plan has FENCED as playoffs (owner ruling 2026-08-06). The
+   * column draws one quiet band instead of its dates: nothing is placed there,
+   * nothing is owed there, and nothing in it is a drop target, because the games
+   * that month are drawn from standings that do not exist yet.
+   */
+  fenced: boolean
 }
 
 /** The day part of an ISO date, which is the only part two sources agree on. */
@@ -1186,6 +1323,7 @@ export function boardColumns(
   const columns: BoardColumn[] = state.windows.map((win) => ({
     label: win.label,
     weekends: win.weekends,
+    fenced: windowFenced(win),
     dates: win.weekends.map((w) =>
       isGhostWeekend(w, hasContent)
         ? ghostOf(w)
@@ -1220,7 +1358,9 @@ export function boardColumns(
     seen.add(day)
     let column = byMonth.get(day.slice(0, 7))
     if (!column) {
-      column = { label: monthColumnLabel(sat.satDateISO), weekends: [], dates: [] }
+      // A month the plan's world has never held cannot be fenced: fencing is a
+      // decision recorded on a window, and this one does not exist yet.
+      column = { label: monthColumnLabel(sat.satDateISO), weekends: [], dates: [], fenced: false }
       byMonth.set(day.slice(0, 7), column)
       // In its own place in the season, not appended to the end of it.
       const at = columns.findIndex((c) => {
@@ -1381,6 +1521,7 @@ export function worldFromState(state: PlannerState): PlanWorld {
     })),
     windows: state.windows.map((win) => ({
       label: win.label,
+      phase: win.phase,
       weekends: win.weekends.map((w) => ({
         sessionId: w.sessionId,
         label: w.label,

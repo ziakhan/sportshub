@@ -17,7 +17,11 @@ import {
   type PlannerWeekend,
   type ShownPlacements,
 } from "@/lib/scheduler/planner-core"
-import { planDrift, type PlanSettings } from "@/lib/scheduler/plan-documents"
+import {
+  planDrift,
+  type PlanSettings,
+  type WindowPhase,
+} from "@/lib/scheduler/plan-documents"
 import {
   bareWeekend,
   boardColumns,
@@ -26,6 +30,7 @@ import {
   weekendGymHours,
   withAssertedGyms,
   withWeekendHours,
+  withWindowPhases,
   worldReadiness,
   type BoardColumn,
   type BuildingRoom,
@@ -148,6 +153,14 @@ export function useBoardState({
    */
   const [assertedGyms, setAssertedGyms] = useState<Record<string, string[]>>({})
   /**
+   * A MONTH THIS PLAN HAS FENCED AS PLAYOFFS, in the working copy (owner ruling
+   * 2026-08-06): window label → phase. Held here rather than written straight
+   * through, so it behaves like every other edit on this board — the numbers move
+   * at once, one Undo takes it back, and the save is what writes it into the
+   * plan's own world.
+   */
+  const [fences, setFences] = useState<Record<string, WindowPhase>>({})
+  /**
    * A DROP THAT LANDED ON A DATE THE PLAN WAS NOT USING (owner ruling
    * 2026-08-06, slice B2): what the operator dropped, and the weekend it is
    * waiting for.
@@ -263,6 +276,18 @@ export function useBoardState({
   /** The plan the BOARD is currently drawing, so the effect below opens a
    *  chosen plan once and a save that already drew it is left alone. */
   const drawnPlan = useRef<string | null>(null)
+  /**
+   * The plan that is OPEN, readable from inside the async season load (the
+   * cold-open fix, 2026-08-06). `load` is a useCallback with one identity for
+   * the life of the screen — putting planId in its dependencies would re-run the
+   * season fetch on every plan change — so the latest value has to reach it
+   * through a ref. Written in an effect, which commits long before any fetch
+   * this screen starts can land.
+   */
+  const openPlanId = useRef<string | null>(planId)
+  useEffect(() => {
+    openPlanId.current = planId
+  }, [planId])
   /** True while the board is a solver's answer nobody has touched by hand, so
    *  a save can honestly call itself "proposed" rather than the operator's own
    *  work. Any hand edit clears it. */
@@ -322,12 +347,39 @@ export function useBoardState({
     const hasSaved = Object.values(saved).some((keys) => keys.length > 0)
     const savedVenues = savedVenueMap(next)
 
-    setState(next)
+    // THE SEASON'S OWN FACTS, always. They are true whichever plan is open, and
+    // they are what drift, the gym grid and the lock are measured against.
     setLiveState(next)
-    setPlanSettings(null)
-    setOnPlanWorld(false)
     setVenueGrid(venueData?.grid ?? null)
     setLocked(isLocked)
+    setKept(hasSaved ? saved : null)
+    setKeptVenues(hasSaved ? savedVenues : {})
+    if (!hasSaved) setSide("proposal")
+    onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
+
+    /**
+     * THE BOARD BELONGS TO WHICHEVER PLAN IS OPEN (the cold-open data-loss fix,
+     * 2026-08-06). Everything below throws the working copy away and puts the
+     * SEASON's world on the board, which is right on a screen with no plan on it
+     * and catastrophic on one that has.
+     *
+     * This is an async load: it starts on mount and lands whenever the season
+     * answers. On a cold open the operator picks a plan while it is still in
+     * flight, so it used to land AFTER the plan had been opened and quietly
+     * replace that plan's world with the season's — planSettings back to null,
+     * the plan's gyms and courts gone, the drift line claiming the plan never
+     * remembered its settings. A save then wrote that season world over the
+     * plan's own, and the plan permanently lost its twelve-court home gym.
+     *
+     * The ref rather than the `planId` value on purpose: `load` must keep ONE
+     * identity for the life of the screen, or the effect that runs it would fire
+     * again on every plan change and the fetch storm would be the new bug.
+     */
+    if (openPlanId.current) return
+
+    setState(next)
+    setPlanSettings(null)
+    setOnPlanWorld(false)
     setArmed(null)
     setArmedVenue(null)
     // Statuses come back from the gyms themselves on a fresh load: whatever
@@ -337,13 +389,10 @@ export function useBoardState({
     setHourOverrides({})
     setAssertedGyms({})
     setEmptyGyms({})
+    setFences({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
-    setKept(hasSaved ? saved : null)
-    setKeptVenues(hasSaved ? savedVenues : {})
-    if (!hasSaved) setSide("proposal")
-    onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
     // An empty board until a plan is opened. Nothing is selected by default.
     setAssignment({})
     setVenues({})
@@ -421,15 +470,23 @@ export function useBoardState({
    * correction is then a fraction of; and the courts land last (owner ruling
    * 2026-08-06, #5).
    */
+  /**
+   * The month FENCE goes on first (owner ruling 2026-08-06): what a month is for
+   * outranks everything anybody attached to it, and a fenced month has no gym
+   * time for the hours and the courts below to be a correction to.
+   */
   const board = useMemo(
     () =>
       state
         ? applyCourtCaps(
-            withWeekendHours(withAssertedGyms(state, assertedGyms), hourOverrides),
+            withWeekendHours(
+              withAssertedGyms(withWindowPhases(state, fences), assertedGyms),
+              hourOverrides
+            ),
             courtOverrides
           )
         : null,
-    [state, assertedGyms, hourOverrides, courtOverrides]
+    [state, fences, assertedGyms, hourOverrides, courtOverrides]
   )
 
   /**
@@ -972,6 +1029,8 @@ export function useBoardState({
     setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    fences,
+    setFences,
     emptyGyms,
     setEmptyGyms,
     placedGyms,
@@ -1038,6 +1097,9 @@ export function useBoardState({
     plans,
     planId,
     planDoc,
+    /** Chosen, read, or neither: what the step draws and what a save is allowed
+     *  to write (the cold-open fix, 2026-08-06). */
+    openState: session.openState,
     planVersion,
     drawnPlan,
     skipRedraw,

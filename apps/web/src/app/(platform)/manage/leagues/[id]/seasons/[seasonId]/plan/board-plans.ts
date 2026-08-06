@@ -4,13 +4,16 @@ import { useEffect } from "react"
 import { currentAssignment, type PlannerState } from "@/lib/scheduler/planner-core"
 import {
   activateConfirmText,
+  canWriteToPlan,
   suggestPlanName,
+  PLAN_COPY,
   type PlanDocument,
 } from "@/lib/scheduler/plan-documents"
 import {
   planStateFrom,
   withAssertedGymsInWorld,
   withWeekendHoursInWorld,
+  withWindowPhasesInWorld,
   worldFromState,
 } from "@/lib/scheduler/plan-world"
 import { plural, savedVenueMap } from "./board-shared"
@@ -58,6 +61,8 @@ export function useBoardPlans(m: BoardModel) {
     setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    fences,
+    setFences,
     setEmptyGyms,
     setUndoStack,
     setDirty,
@@ -78,6 +83,13 @@ export function useBoardPlans(m: BoardModel) {
     setNaming,
     load,
   } = m
+
+  /**
+   * MAY THIS BOARD WRITE? Only onto a plan whose document is the one on screen,
+   * or onto no plan at all (a copy taken off the season's own board). Every save
+   * path asks this first (the cold-open data-loss fix, 2026-08-06).
+   */
+  const writable = canWriteToPlan(planId, planDoc)
 
   /**
    * Open a plan on the board: its calendar, its gyms, its WORLD, and a clean
@@ -113,6 +125,7 @@ export function useBoardPlans(m: BoardModel) {
     // opened.
     setAssertedGyms({})
     setEmptyGyms({})
+    setFences({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -146,7 +159,15 @@ export function useBoardPlans(m: BoardModel) {
    * put its own result on screen.
    */
   useEffect(() => {
-    if (!state || !planId || !planDoc || planDoc.id !== planId) return
+    /**
+     * THE SEASON, NOT THE BOARD (the cold-open fix, 2026-08-06). This used to
+     * wait for `state`, the world the board is drawing — which load() only sets
+     * when no plan is open now, so a mount that already has a plan chosen would
+     * have waited for a world nothing was ever going to put there. What opening
+     * a plan really needs is the SEASON to have answered: openPlan reads
+     * liveState for the one plan that has no world of its own.
+     */
+    if (!liveState || !planId || !planDoc || planDoc.id !== planId) return
     const key = `${planId}|${planVersion}`
     if (drawnPlan.current === key) return
     if (skipRedraw.current) {
@@ -158,7 +179,7 @@ export function useBoardPlans(m: BoardModel) {
     // openPlan is recreated every render and is deliberately not a dependency:
     // the ref above is what makes this run exactly once per (plan, version).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planId, planVersion, planDoc, state])
+  }, [planId, planVersion, planDoc, liveState])
 
   /**
    * WHERE "ASSUMED" IS WRITTEN DOWN (the 2026-08-03 wiring decision, and the
@@ -221,6 +242,13 @@ export function useBoardPlans(m: BoardModel) {
   const saveAsNew = async () => {
     const name = (naming ?? "").trim()
     if (!name) return
+    // A copy of a plan the board has not finished reading is a copy of the wrong
+    // world (the cold-open fix, 2026-08-06). Copying the SEASON deliberately is
+    // fine, which is why this only refuses while a plan is chosen and unread.
+    if (!writable) {
+      setError(PLAN_COPY.saveUnread)
+      return
+    }
     setBusy("save-new")
     setError(null)
     // Save the buildings the board is SHOWING — the same chronological pass
@@ -293,6 +321,7 @@ export function useBoardPlans(m: BoardModel) {
     // over.
     setAssertedGyms({})
     setEmptyGyms({})
+    setFences({})
     setHourOverrides({})
     setUndoStack([])
     setDirty(false)
@@ -315,6 +344,21 @@ export function useBoardPlans(m: BoardModel) {
   const savePlan = async () => {
     const plan = selectedPlan
     if (!plan) return
+    /**
+     * NEVER WRITE A WORLD WE HAVE NOT READ (the cold-open data-loss fix,
+     * 2026-08-06). `worldWithAssertions` falls back to `worldFromState(state)`
+     * when planSettings is null, and on a board that has not finished opening
+     * this plan that state is the SEASON's world. Saving then wrote the season's
+     * gyms, courts and hours straight over the plan's own, silently and for good.
+     *
+     * The test is not "does it have settings" — a plan written before plans
+     * remembered their world honestly has none, and saving onto it is right. It
+     * is "is the document on screen this plan's document".
+     */
+    if (!writable) {
+      setError(PLAN_COPY.saveUnread)
+      return
+    }
     setBusy("save-plan")
     setError(null)
     // A gym the operator asserted travels with the calendar, EXCEPT on the plan
@@ -372,6 +416,7 @@ export function useBoardPlans(m: BoardModel) {
     // the season's attachment, so the working copy stops carrying them.
     setAssertedGyms({})
     setEmptyGyms({})
+    setFences({})
     setHourOverrides({})
     setUndoStack([])
     setDirty(false)
@@ -563,13 +608,21 @@ export function useBoardPlans(m: BoardModel) {
   const worldWithAssertions = () => {
     const nothingAsserted = Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)
     const noHours = Object.keys(hourOverrides).length === 0
-    if (nothingAsserted && noHours) return null
+    // A month fenced as playoffs is a decision about the plan, so it travels
+    // with the save exactly as an assertion does (owner ruling 2026-08-06).
+    const noFences = Object.keys(fences).length === 0
+    if (nothingAsserted && noHours && noFences) return null
     const base = planSettings?.state ?? (state ? worldFromState(state) : null)
     if (!base) return null
-    // The gyms first: hours for a gym the world does not have on that weekend
-    // would be written against nothing.
-    return withWeekendHoursInWorld(withAssertedGymsInWorld(base, assertedGyms), hourOverrides)
+    // The FENCE first: it clears a month's gym time, so an assertion or an hours
+    // exception inside a month being fenced must not be written back over it.
+    // Then the gyms, because hours for a gym the world does not have on that
+    // weekend would be written against nothing.
+    return withWeekendHoursInWorld(
+      withAssertedGymsInWorld(withWindowPhasesInWorld(base, fences), assertedGyms),
+      hourOverrides
+    )
   }
 
-  return { openPlan, revert, saveAsNew, savePlan, activatePlan }
+  return { openPlan, revert, saveAsNew, savePlan, activatePlan, writable }
 }

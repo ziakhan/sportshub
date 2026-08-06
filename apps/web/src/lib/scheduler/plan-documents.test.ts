@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest"
 import {
   activateConfirmText,
+  canWriteToPlan,
   DRIFT_LIMIT,
   isReferencePlan,
   PLAN_NAME_MAX,
   planDrift,
   planMarkers,
+  planOpenState,
   planStateLine,
   suggestPlanName,
   type PlanRow,
@@ -387,5 +389,53 @@ describe("planStateLine", () => {
     expect(planStateLine({ selected: row({ name: "Ours" }), active: null, dirty: false })).toBe(
       "Saved to Ours."
     )
+  })
+})
+
+/**
+ * OPENING A PLAN IS NOT INSTANT (the cold-open data-loss bug, 2026-08-06).
+ *
+ * Choosing a plan sets a name; reading it is a round trip. The board used to
+ * keep drawing whatever world was already on it during that gap, which on a cold
+ * open is the SEASON's, and a save made there wrote the season's gyms, courts and
+ * hours over the plan's own. These pin the one question both the draw and the
+ * save now ask.
+ */
+describe("has the board actually read this plan", () => {
+  const doc = (id: string) => ({ id })
+
+  it("knows the four states a chosen plan can be in", () => {
+    expect(planOpenState(null, null)).toBe("none")
+    // Named, not read: the board is holding somebody else's world.
+    expect(planOpenState("p1", null)).toBe("opening")
+    // Read, but it is the plan we were looking at BEFORE, which is the same
+    // thing as not having read this one.
+    expect(planOpenState("p1", doc("p2"))).toBe("opening")
+    expect(planOpenState("p1", doc("p1"))).toBe("open")
+    // Waiting will not help, so the operator gets told rather than spun.
+    expect(planOpenState("p1", null, true)).toBe("unreadable")
+    // A failed read of the PREVIOUS plan is not this plan's problem once the
+    // right document lands.
+    expect(planOpenState("p1", doc("p1"), true)).toBe("open")
+    // Nothing chosen is never a failure: that is the season's own board.
+    expect(planOpenState(null, null, true)).toBe("none")
+  })
+
+  it("refuses to write onto a plan it has not read, and only then", () => {
+    expect(canWriteToPlan("p1", doc("p1"))).toBe(true)
+    expect(canWriteToPlan("p1", null)).toBe(false)
+    expect(canWriteToPlan("p1", doc("p2"))).toBe(false)
+    // No plan open: this is a copy taken off the season's own board, which is a
+    // deliberate thing an operator does and must keep working.
+    expect(canWriteToPlan(null, null)).toBe(true)
+  })
+
+  it("lets a plan that never had a world be written to", () => {
+    // The test is "have we read it", NOT "does it have settings". A row saved
+    // before plans remembered their world has none, honestly, and saving onto it
+    // is right. Refusing here would lock the oldest plans out of the board.
+    const old = { id: "p1", settings: null }
+    expect(planOpenState("p1", old)).toBe("open")
+    expect(canWriteToPlan("p1", old)).toBe(true)
   })
 })

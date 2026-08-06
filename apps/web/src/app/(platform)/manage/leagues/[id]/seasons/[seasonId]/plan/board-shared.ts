@@ -1,5 +1,6 @@
 import type { DragEvent } from "react"
 import type { PlannerLever, PlannerState, PlanSummary } from "@/lib/scheduler/planner-core"
+import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import { PILL_TONE, type GhostChip } from "./plan-shared"
 import type { BlockStatus } from "./plan-ui"
 
@@ -198,6 +199,10 @@ export interface BoardSnapshot {
    *  has to take the assertion back with it, or the board would keep computing on
    *  gym time nobody claimed. */
   assertedGyms: Record<string, string[]>
+  /** The months fenced as playoffs (owner ruling 2026-08-06): window label →
+   *  phase. Fencing takes a month's gym time and its games with it, so undoing
+   *  one has to hand the whole month back. */
+  fences: Record<string, WindowPhase>
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean

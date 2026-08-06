@@ -11,9 +11,11 @@ import {
 } from "react"
 import {
   isReferencePlan,
+  planOpenState,
   suggestPlanName,
   PLAN_NAME_MAX,
   type PlanDocument,
+  type PlanOpenState,
   type PlanRow,
   type PlanWorld,
 } from "@/lib/scheduler/plan-documents"
@@ -72,6 +74,15 @@ export interface PlanSession {
   loading: boolean
   /** True while the document is being fetched or written. */
   docBusy: boolean
+  /**
+   * The last read of the OPEN plan's document failed, so the board is holding a
+   * world that is not that plan's and waiting will not change it (the cold-open
+   * fix, 2026-08-06). Cleared the moment a read is attempted again.
+   */
+  docFailed: boolean
+  /** Where the open plan stands: chosen, read, or neither. Every surface that
+   *  draws or writes a plan asks this and nothing else. */
+  openState: PlanOpenState
   creating: boolean
   error: string | null
   /** The plan just created, so a step can say so once. */
@@ -116,6 +127,9 @@ export function PlanSessionProvider({
   const [doc, setDocState] = useState<PlanDocument | null>(null)
   const [docVersion, setDocVersion] = useState(0)
   const [docBusy, setDocBusy] = useState(false)
+  /** The open plan's document could not be read (the cold-open fix). Kept apart
+   *  from `error`, which every other verb on this screen also writes to. */
+  const [docFailed, setDocFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -162,15 +176,22 @@ export function PlanSessionProvider({
   useEffect(() => {
     if (!planId) {
       setDocState(null)
+      setDocFailed(false)
       return
     }
     let live = true
     setDocBusy(true)
+    setDocFailed(false)
     void fetchDoc(planId).then((next) => {
       if (!live) return
       setDocBusy(false)
       if (next) setDoc(next)
-      else setError("Couldn't open that plan. Try again.")
+      else {
+        // The board is holding somebody else's world and must not draw or save
+        // it under this plan's name (the cold-open fix, 2026-08-06).
+        setDocFailed(true)
+        setError("Couldn't open that plan. Try again.")
+      }
     })
     return () => {
       live = false
@@ -180,9 +201,11 @@ export function PlanSessionProvider({
   const refreshDoc = useCallback(async () => {
     if (!planId) return null
     setDocBusy(true)
+    setDocFailed(false)
     const next = await fetchDoc(planId)
     setDocBusy(false)
     if (next) setDoc(next)
+    else setDocFailed(true)
     return next
   }, [planId, fetchDoc, setDoc])
 
@@ -306,6 +329,8 @@ export function PlanSessionProvider({
       chosen,
       doc: doc && doc.id === planId ? doc : null,
       world: doc && doc.id === planId ? (doc.settings?.state ?? null) : null,
+      docFailed,
+      openState: planOpenState(planId, doc, docFailed),
       docVersion,
       // The active plan IS the season, so its edits go to the season's rows. The
       // reference plan is content-locked, so its world is read only too.
@@ -334,6 +359,7 @@ export function PlanSessionProvider({
     plans,
     planId,
     doc,
+    docFailed,
     docVersion,
     loading,
     docBusy,

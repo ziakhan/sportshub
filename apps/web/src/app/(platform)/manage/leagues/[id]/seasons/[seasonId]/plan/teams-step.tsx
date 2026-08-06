@@ -560,6 +560,9 @@ export function TeamsStep({
                 /** Out of THIS plan: the row stays, greyed, with its number
                  *  intact, because putting it back must not cost a retype. */
                 const out = onPlanWorld && !row.included
+                /** The "+" of this row's stepper, so the empty-estimate chip can
+                 *  hand the operator straight to the control that fills it. */
+                const plusId = `grade-plus-${row.key.replace(/[^a-z0-9]+/gi, "-")}`
                 return (
                   <tr
                     key={row.key}
@@ -592,6 +595,7 @@ export function TeamsStep({
                         </b>
                         <button
                           type="button"
+                          id={plusId}
                           disabled={readOnly || out || value >= MAX_PER_GRADE}
                           onClick={() => bump(row, 1)}
                           aria-label={`One more ${row.label} team`}
@@ -643,7 +647,34 @@ export function TeamsStep({
                               : `${row.approved} registered`}
                           </span>
                         )}
-                        {notPlanned && !out && (
+                        {/**
+                          * A GRADE WITH NO ESTIMATE (owner 2026-08-06: "not user
+                          * friendly or obvious it can be clicked").
+                          *
+                          * This was four grey words at the end of a row. It reads
+                          * as a status the operator has to accept, when it is
+                          * really the one row on the table with something left to
+                          * do — and the thing that does it, the stepper, is a few
+                          * inches to the left with nothing pointing at it.
+                          *
+                          * So it wears the treatment every other actionable thing
+                          * on this screen wears: a dashed outline, a pointer, a
+                          * hover, and copy that names the next move. It changes
+                          * NOTHING about the plan; it puts the cursor on the
+                          * control that always did the work.
+                          */}
+                        {notPlanned && !out && !readOnly && (
+                          <button
+                            type="button"
+                            data-testid="not-planned"
+                            aria-label={`${row.label} has no estimate yet. Add one.`}
+                            onClick={() => document.getElementById(plusId)?.focus()}
+                            className="border-ink-300 text-ink-500 hover:border-court-400 hover:bg-court-50 hover:text-court-800 inline-flex min-h-[26px] cursor-pointer items-center rounded-full border border-dashed bg-white px-2 py-0.5 text-[11px] font-semibold transition-colors"
+                          >
+                            Not in the plan yet · add an estimate
+                          </button>
+                        )}
+                        {notPlanned && !out && readOnly && (
                           <span data-testid="not-planned" className="text-ink-400 text-xs">
                             Not in the plan yet
                           </span>

@@ -19,6 +19,7 @@ import {
   type PlannerLever,
   type PlannerState,
 } from "@/lib/scheduler/planner-core"
+import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import {
   drawnHomeGyms,
   solvableState,
@@ -83,6 +84,8 @@ export function useBoardVerbs(m: BoardModel) {
     setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    fences,
+    setFences,
     emptyGyms,
     setEmptyGyms,
     undoStack,
@@ -135,6 +138,7 @@ export function useBoardVerbs(m: BoardModel) {
           hourOverrides,
           assertedGyms,
           emptyGyms,
+          fences,
           dirty,
         },
       ].slice(-UNDO_DEPTH)
@@ -254,6 +258,7 @@ export function useBoardVerbs(m: BoardModel) {
     setHourOverrides(last.hourOverrides)
     setAssertedGyms(last.assertedGyms)
     setEmptyGyms(last.emptyGyms)
+    setFences(last.fences)
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
@@ -396,6 +401,59 @@ export function useBoardVerbs(m: BoardModel) {
         : held >= wired
           ? `${gymShort(venueId)} is back to all ${courtsWord(wired)} on ${weekend.label}.`
           : `${gymShort(venueId)} gives ${courtsWord(held)} on ${weekend.label}. Anything that no longer fits is below, waiting for somewhere to go.`
+    )
+  }
+
+  /**
+   * WHAT A MONTH IS FOR (owner ruling 2026-08-06, the March fence).
+   *
+   * A league's last month is usually not league games: playoffs come out of
+   * standings that do not exist until the regular season ends. Fencing the month
+   * takes it out of the solve entirely — nothing is placed there, no grade is
+   * owed a weekend in it, and nothing in it reaches the ask — and the column
+   * becomes one quiet band instead of a row of dates.
+   *
+   * An ordinary undoable edit to the working copy, like every other verb here.
+   * It takes the month's gym time AND its games with it, because a month that is
+   * not league games cannot be holding league games; one Undo hands the whole
+   * month back.
+   */
+  const fenceWindow = (label: string, phase: WindowPhase) => {
+    if (locked || !board) return
+    const window = board.windows.find((w) => w.label === label)
+    if (!window) return
+    const sessions = window.weekends.map((w) => w.sessionId)
+    const played = sessions.filter((id) => (assignment[id] ?? []).length > 0).length
+    remember(phase === "playoffs" ? `fencing ${label}` : `${label} as regular season`)
+    setFences((prev) => ({ ...prev, [label]: phase }))
+    if (phase === "playoffs") {
+      // Nothing plays in a fenced month, so the calendar lets it go with the
+      // gym time. The grades land back on the bench of the months that remain.
+      setAssignment((prev) => {
+        const next = { ...prev }
+        for (const id of sessions) delete next[id]
+        return next
+      })
+      setVenues((prev) => {
+        const next = { ...prev }
+        for (const id of sessions) delete next[id]
+        return next
+      })
+    }
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setArmedSection(null)
+    setZoomSession(null)
+    setDirty(true)
+    setFromLever(false)
+    flashCards(...sessions)
+    setNotice(
+      phase === "playoffs"
+        ? `${label} is playoffs. Nothing is planned there and no grade is owed a weekend in it${
+            played > 0 ? `, so ${plural(played, "weekend", "weekends")} came off the calendar` : ""
+          }.`
+        : `${label} is back in the regular season. Choose the weekends it runs in step 2, then redraw.`
     )
   }
 
@@ -1303,6 +1361,7 @@ export function useBoardVerbs(m: BoardModel) {
     onDropSection,
     /* what the board computes for you */
     draw,
+    fenceWindow,
     redraw,
     redrawSpread,
     runLever,

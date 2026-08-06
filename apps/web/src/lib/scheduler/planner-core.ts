@@ -11,6 +11,9 @@
  * unit-tested against the same packing the plan saves.
  */
 import { venueShortName } from "../seasons/venue-strip"
+// Type only: plan-documents is the leaf of this corner of the tree (it imports
+// nothing), so naming its phase here costs no runtime edge.
+import type { WindowPhase } from "./plan-documents"
 
 /**
  * How a weekend is named everywhere an operator sees one: "Oct 24–25", or
@@ -291,6 +294,10 @@ export interface PlannerGym {
 export interface PlannerWindow {
   label: string
   weekends: PlannerWeekend[]
+  /** A month this plan has FENCED as playoffs (owner ruling 2026-08-06): no
+   *  league games are placed in it and nothing is owed there. Absent means the
+   *  ordinary regular-season month, which is every month of every older world. */
+  phase?: WindowPhase
 }
 
 export interface PlannerState {

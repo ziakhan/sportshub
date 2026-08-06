@@ -95,9 +95,25 @@ export interface PlanWorldWeekend {
   chosen?: boolean
 }
 
+/**
+ * WHAT A MONTH IS FOR (owner ruling 2026-08-06, the March fence). A league's
+ * last month is usually not a month of league games at all: it is playoffs, and
+ * playoffs are drawn from standings nobody has yet. A plan that keeps asking the
+ * solver to fill March is a plan that is permanently short of gym time it never
+ * needed.
+ *
+ * So a month can be FENCED. Per plan, because two plans of the same season can
+ * disagree about when the regular season ends, and absent by default, because
+ * the owner is the one who knows which month it is.
+ */
+export type WindowPhase = "regular" | "playoffs"
+
 export interface PlanWorldWindow {
   label: string
   weekends: PlanWorldWeekend[]
+  /** Absent means "regular", so every world written before the fence existed
+   *  reads exactly the way it always did. */
+  phase?: WindowPhase
 }
 
 export interface PlanWorldUnit {
@@ -530,6 +546,80 @@ export function planMarkers(plan: PlanRow): string[] {
   return marks
 }
 
+/* --------------------- opening a plan is not instant ---------------------- */
+
+/**
+ * THE BOARD MAY NOT DRAW, OR WRITE, A PLAN IT HAS NOT READ (the cold-open
+ * data-loss bug, 2026-08-06).
+ *
+ * Choosing a plan is instant; READING it is two round trips. The list endpoint
+ * hands back rows only (id, name, source, isActive), so the moment an operator
+ * picks a plan the screen knows its NAME and nothing else: not its weekends, not
+ * its gyms, not the world it was saved in. The document arrives afterwards.
+ *
+ * In that gap the board used to keep drawing whatever was already on it, which
+ * on a cold open is the SEASON's own world. Everything downstream then read that
+ * world as the plan's: the picker named the plan, the drift line said "saved
+ * before plans remembered their settings" (because the client held no settings),
+ * and the gym list showed the season's attachments. It looked like a plan. It was
+ * not one.
+ *
+ * The damage was on the way out rather than on the way in. Saving takes the
+ * world the board is holding, so a save made in that gap wrote the SEASON's gyms,
+ * courts and hours over the plan's own — the operator's twelve-court home gym
+ * came back as the season's three. A plan quietly lost the thing that makes it a
+ * plan.
+ *
+ * So it is one question with one answer, asked before the board draws anything
+ * and again before it writes anything: is the document on screen the document
+ * this plan is? Nothing else is allowed to stand in for it, least of all the
+ * world that happened to be there first.
+ */
+export type PlanOpenState =
+  /** No plan is chosen. The board is the season's, and says so. */
+  | "none"
+  /** Chosen, and the document has not arrived. Nothing may be drawn or saved. */
+  | "opening"
+  /** Chosen, and the document could not be read. Same rule, plus a way out. */
+  | "unreadable"
+  /** The document on screen IS this plan. Everything is allowed. */
+  | "open"
+
+export function planOpenState(
+  planId: string | null,
+  doc: Pick<PlanDocument, "id"> | null | undefined,
+  /** The last read of THIS plan failed, so waiting will not help. */
+  failed = false
+): PlanOpenState {
+  if (!planId) return "none"
+  if (doc && doc.id === planId) return "open"
+  return failed ? "unreadable" : "opening"
+}
+
+/**
+ * IS THE WORLD ON THE BOARD THE WORLD IT CLAIMS TO BE, so a save may write it
+ * down? Two ways for that to be true, and they are the same sentence:
+ *
+ *  - no plan is chosen, so the board is the SEASON's own world and a copy taken
+ *    off it is a copy of exactly that. A deliberate thing an operator does;
+ *  - a plan is chosen AND the document on screen is that plan's.
+ *
+ * The one refusal is the gap between those: named, not read. A board that has
+ * not read the plan cannot know which world it is in, and a save is where not
+ * knowing becomes permanent.
+ *
+ * Deliberately NOT "does it have settings": a plan written before plans
+ * remembered their world honestly has none, and saving onto it is fine. What is
+ * never fine is saving onto a plan whose world we simply have not looked at.
+ */
+export function canWriteToPlan(
+  planId: string | null,
+  doc: Pick<PlanDocument, "id"> | null | undefined
+): boolean {
+  const state = planOpenState(planId, doc)
+  return state === "open" || state === "none"
+}
+
 /** What the API takes, so the box can stop the operator before the server has
  *  to. */
 export const PLAN_NAME_MAX = 60
@@ -603,6 +693,21 @@ export const PLAN_COPY = {
    */
   hoursSnapshot:
     "These read and write the season's own gym hours. Change this plan's hours in step 2, or make it the plan the season runs.",
+  /**
+   * WHILE A PLAN IS STILL BEING READ (the cold-open fix, 2026-08-06). Said in
+   * place of the board rather than over it: what is underneath at that moment is
+   * the season's world, and showing it under this plan's name is the lie the
+   * whole guard exists to stop.
+   */
+  opening: (name: string) => `Opening ${name}…`,
+  openingHint: "Reading its weekends, its gyms and the world it was saved in.",
+  unreadable: (name: string) => `We could not read ${name}`,
+  unreadableHint:
+    "Nothing on this board is that plan's calendar, so it is not safe to work on. Try opening it again.",
+  unreadableRetry: "Try again",
+  /** Refused, on the save itself. Never a silent no. */
+  saveUnread:
+    "That plan has not finished opening, so saving now would write the wrong gyms and hours over it. Give it a moment and try again.",
 }
 
 /**
