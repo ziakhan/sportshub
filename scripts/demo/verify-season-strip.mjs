@@ -184,10 +184,14 @@ await page.waitForSelector("[data-session-id]", { timeout: 20000 })
 if ((await page.locator('[data-testid="season-strip"]').count()) > 0) fail("the strip did not close")
 const chips = await page.locator('[data-session-id] span[draggable="true"]').count()
 if (chips !== keptPlacements) fail(`the board lost chips in the refactor: ${chips}`)
-await page.click('[data-testid="compare-toggle"]')
-await page.waitForSelector('[data-testid="compare-banner"]', { timeout: 10000 })
-await page.click('[data-testid="compare-toggle"]')
-console.log(`board still whole: ${chips} chips, compare lens still opens`)
+/**
+ * RE-PINNED 2026-08-06 (owner ruling #6): the compare LENS over the board is
+ * gone. Comparing is what the strip is for, and it shows both calendars whole
+ * rather than repainting the chips of one.
+ */
+if ((await page.locator('[data-testid="compare-toggle"]').count()) > 0)
+  fail("the compare lens is retired and must not be on the board")
+console.log(`board still whole: ${chips} chips`)
 
 // ————————————————————————————— nothing moved —————————————————————————————
 await page.reload()

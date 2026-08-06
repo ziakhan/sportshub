@@ -3,15 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   applyCourtCaps,
+  courtCapKey,
   currentAssignment,
-  diffAssignments,
   packShownPlacements,
   planSummary,
   rentalAsk,
   suggestFor,
   weekendDemand,
-  weekendShortDays,
-  type HoursPreview,
+  withRentedCourts,
   type PlacementReason,
   type PlannerState,
   type PlannerSuggestion,
@@ -22,7 +21,9 @@ import { planDrift, type PlanSettings } from "@/lib/scheduler/plan-documents"
 import {
   strandedPlacements,
   weekendRooms,
+  weekendGymHours,
   withAssertedGyms,
+  withWeekendHours,
   type BuildingRoom,
   type StrandedPlacement,
 } from "@/lib/scheduler/plan-world"
@@ -33,14 +34,7 @@ import type { BlockStatus, TrayGym } from "./plan-ui"
 import { usePlanSession } from "./plan-session"
 import type { StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
-import {
-  LOCKED_STATUSES,
-  blockKey,
-  compareLine,
-  savedVenueMap,
-  type BoardSnapshot,
-  type HoursChip,
-} from "./board-shared"
+import { LOCKED_STATUSES, blockKey, savedVenueMap, type BoardSnapshot } from "./board-shared"
 
 /**
  * THE WORKING COPY, AND EVERYTHING DERIVED FROM IT.
@@ -95,17 +89,43 @@ export function useBoardState({
    */
   const [blockStatus, setBlockStatus] = useState<Record<string, BlockStatus>>({})
   /**
-   * "I DON'T HAVE THIS", in the working copy (owner ruling 2026-08-04):
-   * "<sessionId>|<venueId>" → the courts that gym can actually give that
-   * weekend. Step 2 knows how many courts a building has; only the operator
-   * knows how many of them the gym offered for one Saturday in November.
+   * THE COURTS WE HOLD AT ONE GYM ON ONE DATE, in the working copy (owner ruling
+   * 2026-08-04, made two-way 2026-08-06 #5): "<sessionId>|<venueId>" → courts.
    *
-   * The board computes on a state with these applied, so a correction repacks
-   * everything downstream of it and nothing has to know it happened. They are
-   * written onto the weekend's own attachment on save, and only for the plan
-   * the season actually runs.
+   * Step 2 knows how many courts a building has; only the operator knows what
+   * happened when they phoned it about one Saturday in November. Both answers are
+   * the same number read in two directions:
+   *
+   *  - BELOW the demand-sized rental it is "I don't have this": capacity shrinks,
+   *    the board repacks around it, and whatever no longer fits comes back as
+   *    games looking for a building.
+   *  - ABOVE it, the operator rented more of the building than the games needed.
+   *    Capacity was never the constraint, so nothing repacks; the block is billed
+   *    at what they booked and the section says "4 used of 6 rented".
+   *
+   * Written onto the weekend's own attachment on save, and only for the plan the
+   * season actually runs.
    */
-  const [courtCaps, setCourtCaps] = useState<Record<string, number>>({})
+  const [courtOverrides, setCourtOverrides] = useState<Record<string, number>>({})
+  /**
+   * THE HOURS ONE GYM RUNS ON ONE DATE (owner ruling 2026-08-06, #5):
+   * "<sessionId>|<venueId>" → the window the operator was given. The other half
+   * of the ⋯ menu, keyed the same way as the courts, and applied to the state the
+   * board draws so every capacity below it follows at once.
+   */
+  const [hourOverrides, setHourOverrides] = useState<
+    Record<string, { startTime: string; endTime: string }>
+  >({})
+  /**
+   * A GYM PUT ON A DATE THAT HAS NOTHING IN IT YET (owner ruling 2026-08-06, #2):
+   * sessionId → the venueIds the operator placed there with no games.
+   *
+   * Placing a building is not a booking, so this costs nothing anywhere: it is
+   * not a rental block, it is not in the ask, and it never will be until a grade
+   * lands in it. It is here so the board can DRAW the container the operator just
+   * put down, and so one Undo takes it away again.
+   */
+  const [emptyGyms, setEmptyGyms] = useState<Record<string, string[]>>({})
   /**
    * BACKUP GYMS THE OPERATOR ASSERTED, in the working copy (owner ruling
    * 2026-08-05, #1): sessionId → the venueIds they put on that weekend.
@@ -150,11 +170,14 @@ export function useBoardState({
   /** The board's horizontal scroller, so the rail can bring a weekend to the
    *  operator instead of asking them to go and find it. */
   const boardScroll = useRef<HTMLDivElement>(null)
-  /** Which way rentals get filled: the pool answers, or the operator places.
-   *  Two modes, said out loud, because "who chose this gym" is the question an
-   *  operator has about every rented weekend. */
-  const [assignMode, setAssignMode] = useState<"solve" | "place">("solve")
-  /** A gym picked up from the tray, waiting for a weekend. The touch half of
+  /**
+   * THE MODE IS GONE (owner ruling 2026-08-06, #6). There used to be a switch
+   * above the board saying who chooses the rented gyms, "assign gyms for me" or
+   * "I will place them", and it decided whether the pool was even drawn. It was a
+   * setting standing in front of two verbs: filling the gaps is a button now, and
+   * picking a gym up has always been something the operator can just do.
+   */
+  /** A gym picked up from the gym list, waiting for a weekend. The touch half of
    *  the drag, and the same arm-then-tap pattern the grade chips use. */
   const [armedVenue, setArmedVenue] = useState<string | null>(null)
   /**
@@ -172,26 +195,34 @@ export function useBoardState({
    * the working copy and is never saved.
    */
   const [gradeFilter, setGradeFilter] = useState<string[]>([])
+  /**
+   * THE GYM LENS (owner ruling 2026-08-06, #4): the buildings the operator picked
+   * out of the gym list, by venueId. The same kind of lens as the grade one and
+   * it combines with it as an INTERSECTION — "Grade 8 at Six Park" is a question
+   * with one answer, not two overlapping highlights. Nothing under it moves.
+   */
+  const [gymFilter, setGymFilter] = useState<string[]>([])
   const [locked, setLocked] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [armed, setArmed] = useState<Armed | null>(null)
-  const [showRules, setShowRules] = useState(false)
-  /** The hours group: which chip is open, and what the server says it does. */
-  const [showHours, setShowHours] = useState(false)
-  const [hoursChip, setHoursChip] = useState<HoursChip | null>(null)
-  const [hoursPreview, setHoursPreview] = useState<HoursPreview | null>(null)
-  const [hoursError, setHoursError] = useState<string | null>(null)
+  /**
+   * THE THREE DISCLOSURES UNDER THE BOARD ARE GONE (owner ruling 2026-08-06, #6).
+   * "Adjust grouping rules" hid a row of levers behind a word nobody pressed, and
+   * the one lever worth reaching for is now a button beside Redraw. "Change the
+   * hours" moved every gym on every weekend at once, which is not a thing anybody
+   * phones a gym about; per-date hours live in the ⋯ menu on the section they are
+   * about. "Compare with the kept plan" was a lens over a question the strip
+   * already answers side by side.
+   */
   /** The calendar as SAVED, captured before any proposal touches the board.
-   *  Null until the league has kept one. This is what compare mode measures
-   *  against, so it must never be the working assignment. */
+   *  Null until the league has kept one, and what the strip's kept side draws. */
   const [kept, setKept] = useState<Record<string, string[]> | null>(null)
   /** The gyms that kept calendar was saved with, so the strip can show the
    *  buildings you kept rather than the ones you are trying out. */
   const [keptVenues, setKeptVenues] = useState<Record<string, Record<string, string>>>({})
-  const [comparing, setComparing] = useState(false)
   /** Board by default: it is where a month gets rearranged. The strip is the
    *  season read left to right, and it is one tap away. */
   const [view, setView] = useState<"board" | "strip">("board")
@@ -280,8 +311,10 @@ export function useBoardState({
     // Statuses come back from the gyms themselves on a fresh load: whatever
     // the working copy was thinking is gone with the board it was thinking on.
     setBlockStatus({})
-    setCourtCaps({})
+    setCourtOverrides({})
+    setHourOverrides({})
     setAssertedGyms({})
+    setEmptyGyms({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -312,7 +345,8 @@ export function useBoardState({
   useEffect(() => {
     const anythingArmed = Boolean(armed || armedVenue || armedBlock || armedSection)
     const anythingMarked = ghosts.length > 0 || flashUnits.length > 0
-    if (!anythingArmed && !anythingMarked && gradeFilter.length === 0) return
+    const anyLens = gradeFilter.length > 0 || gymFilter.length > 0
+    if (!anythingArmed && !anythingMarked && !anyLens) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setArmed(null)
@@ -321,11 +355,15 @@ export function useBoardState({
       setArmedSection(null)
       setFlashUnits([])
       setGhosts([])
+      // BOTH LENSES (owner ruling 2026-08-06, #4). They combine, so they clear
+      // together: leaving one of them on would be a board still hiding things
+      // after the operator asked for it back.
       setGradeFilter([])
+      setGymFilter([])
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits, gradeFilter])
+  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits, gradeFilter, gymFilter])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -354,9 +392,22 @@ export function useBoardState({
    * is part of the world the board computes in, and "they only gave us three
    * courts" is a correction to that world like any other.
    */
+  /**
+   * The order is load-bearing. The gyms an operator asserted go in FIRST, because
+   * a gym that is not on the weekend yet cannot be given hours or courts; the
+   * per-date HOURS come next, because they re-derive the capacity a court
+   * correction is then a fraction of; and the courts land last (owner ruling
+   * 2026-08-06, #5).
+   */
   const board = useMemo(
-    () => (state ? applyCourtCaps(withAssertedGyms(state, assertedGyms), courtCaps) : null),
-    [state, assertedGyms, courtCaps]
+    () =>
+      state
+        ? applyCourtCaps(
+            withWeekendHours(withAssertedGyms(state, assertedGyms), hourOverrides),
+            courtOverrides
+          )
+        : null,
+    [state, assertedGyms, hourOverrides, courtOverrides]
   )
 
   /**
@@ -534,7 +585,16 @@ export function useBoardState({
    * hand blocks back too; the board deliberately ignores them, because a
    * working copy is not what the server last said.
    */
-  const blocks = shown.blocks
+  /**
+   * Billed at what the operator says they RENTED, where that is more than the
+   * games needed (owner ruling 2026-08-06, #5). Everything downstream reads this
+   * one list — the sections, the weekend fraction, the rail and the ask sheet —
+   * so "4 used of 6 rented" is one fact and not four opinions.
+   */
+  const blocks = useMemo(
+    () => withRentedCourts(shown.blocks, courtOverrides),
+    [shown.blocks, courtOverrides]
+  )
   const ask = useMemo(() => (board ? rentalAsk(board, blocks) : null), [board, blocks])
 
   /** How the gyms themselves stand, from step 2's own grid: the base every
@@ -613,7 +673,10 @@ export function useBoardState({
     const seen = new Map<string, { courts: number; weekends: number }>()
     for (const w of weekendById.values()) {
       for (const v of w.venues) {
-        if (v.role !== "pool") continue
+        // EVERY GYM, THE ONE THE LEAGUE OWNS INCLUDED (owner ruling 2026-08-06,
+        // #1). The tray listed only the pool because only a rental could be
+        // placed; the merged list is also the colour key, and a key that skips
+        // the home gym is a key with a hole where the busiest building goes.
         const at = seen.get(v.venueId) ?? { courts: 0, weekends: 0 }
         at.courts = Math.max(at.courts, v.courts ?? v.courtDays ?? 0)
         at.weekends += 1
@@ -630,31 +693,32 @@ export function useBoardState({
      * "we have two and we have not phoned one of them". It shows, with zero
      * weekends, and the tray draws that as unpickable and says why.
      */
-    const poolOnSeason = new Set(
-      (venueGrid?.venues ?? []).filter((v) => v.role === "pool").map((v) => v.venueId)
-    )
-    const courtsOnSeason = new Map(
-      (venueGrid?.venues ?? []).map((v) => [v.venueId, v.courtsAvailable ?? v.courtCount ?? 0])
-    )
+    const onSeason = new Map((venueGrid?.venues ?? []).map((v) => [v.venueId, v]))
     return gyms.order
-      .filter((g) => seen.has(g.venueId) || poolOnSeason.has(g.venueId))
-      .map((g) => ({
-        venueId: g.venueId,
-        name: g.name,
-        short: g.short,
-        courts: seen.get(g.venueId)?.courts ?? courtsOnSeason.get(g.venueId) ?? 0,
-        weekends: seen.get(g.venueId)?.weekends ?? 0,
-      }))
-  }, [gyms.order, weekendById, venueGrid])
+      .filter((g) => seen.has(g.venueId) || onSeason.has(g.venueId))
+      .map((g) => {
+        const row = onSeason.get(g.venueId)
+        return {
+          venueId: g.venueId,
+          name: g.name,
+          short: g.short,
+          courts:
+            seen.get(g.venueId)?.courts ?? row?.courtsAvailable ?? row?.courtCount ?? 0,
+          weekends: seen.get(g.venueId)?.weekends ?? 0,
+          role: (g.venueId === fillsFirst || row?.role === "home" ? "home" : "pool") as
+            | "home"
+            | "pool",
+        }
+      })
+  }, [gyms.order, weekendById, venueGrid, fillsFirst])
 
   /**
    * The gyms in the roster that no weekend of this plan has (owner ruling
-   * 2026-08-05, #1). The tray tags them and so does the colour key above the
-   * board, off this one set, so the two can never disagree about which gym is
-   * the spare.
+   * 2026-08-05, #1). The gym list tags them off this one set, and the board reads
+   * the same set, so the two can never disagree about which gym is the spare.
    */
   const backupGyms = useMemo(
-    () => new Set(trayGyms.filter((g) => g.weekends === 0).map((g) => g.venueId)),
+    () => new Set(trayGyms.filter((g) => g.role === "pool" && g.weekends === 0).map((g) => g.venueId)),
     [trayGyms]
   )
 
@@ -705,9 +769,26 @@ export function useBoardState({
   const roomsOn = useCallback(
     (sessionId: string, used: Record<string, number>): BuildingRoom[] => {
       const weekend = weekendById.get(sessionId)
-      return board && weekend ? weekendRooms(board, weekend, used, courtCaps) : []
+      return board && weekend ? weekendRooms(board, weekend, used, courtOverrides) : []
     },
-    [board, weekendById, courtCaps]
+    [board, weekendById, courtOverrides]
+  )
+
+  /**
+   * THE HOURS ONE GYM RUNS ON ONE DATE, and whether they are that date's own
+   * (owner ruling 2026-08-06, #5). Read off the board's world, so the ⋯ menu
+   * opens on exactly the window every capacity below it was computed from.
+   */
+  const hoursOn = useCallback(
+    (sessionId: string, venueId: string) => {
+      const weekend = weekendById.get(sessionId)
+      const base =
+        board && weekend
+          ? weekendGymHours(board, weekend, venueId)
+          : { startTime: "09:00", endTime: "21:00" }
+      return { ...base, custom: Boolean(hourOverrides[courtCapKey(sessionId, venueId)]) }
+    },
+    [board, weekendById, hourOverrides]
   )
 
   const unitByKey = useMemo(() => new Map((board?.units ?? []).map((u) => [u.key, u])), [board])
@@ -725,6 +806,12 @@ export function useBoardState({
     () => (gradeFilter.length === 0 ? null : new Set(gradeFilter)),
     [gradeFilter]
   )
+  /** The same, for the buildings (owner ruling 2026-08-06, #4). Null while the
+   *  gym lens is off, which every surface downstream reads as "draw normally". */
+  const gymHighlight = useMemo(
+    () => (gymFilter.length === 0 ? null : new Set(gymFilter)),
+    [gymFilter]
+  )
   /** One grade in or out of the highlight. */
   const toggleGrade = useCallback(
     (key: string) =>
@@ -733,6 +820,40 @@ export function useBoardState({
       ),
     []
   )
+  /** One gym in or out of the lens. */
+  const toggleGym = useCallback(
+    (venueId: string) =>
+      setGymFilter((prev) =>
+        prev.includes(venueId) ? prev.filter((v) => v !== venueId) : [...prev, venueId]
+      ),
+    []
+  )
+  /** Both lenses off, in one verb: the Clear the strip offers, and what Escape
+   *  does from anywhere. */
+  const clearLenses = useCallback(() => {
+    setGradeFilter([])
+    setGymFilter([])
+  }, [])
+  /** The gyms the lens is on, in the operator's own words, for the shared
+   *  "showing" line. */
+  const lensGyms = useMemo(
+    () => trayGyms.filter((g) => gymFilter.includes(g.venueId)).map((g) => g.name),
+    [trayGyms, gymFilter]
+  )
+
+  /**
+   * THE GYMS THE OPERATOR PUT ON A DATE THAT HAS NOTHING IN IT (owner ruling
+   * 2026-08-06, #2): sessionId → venueIds, whether the gym had to be asserted or
+   * was already on the weekend with no games in it. The card draws a container
+   * for each one it is not already drawing a section for.
+   */
+  const placedGyms = useMemo(() => {
+    const out = new Map<string, Set<string>>()
+    for (const [sessionId, venueIds] of Object.entries(emptyGyms)) {
+      if ((venueIds ?? []).length > 0) out.set(sessionId, new Set(venueIds))
+    }
+    return out
+  }, [emptyGyms])
 
   const summary = useMemo(
     // A grade on a weekend this plan stopped running is NOT placed, and the
@@ -741,24 +862,13 @@ export function useBoardState({
     [board, gone]
   )
 
-  /** Compare mode is a lens, not a freeze: this recomputes on every drag, tap
-   *  and lever, so the diff always describes the board on screen. A board
-   *  lens, deliberately: the strip shows the two calendars whole instead. */
-  const compare = useMemo(() => {
-    if (view !== "board" || !comparing || !board || !kept) return null
-    const diff = diffAssignments(board, kept, assignment)
-    const byWeekend = new Map(diff.weekends.map((w) => [w.sessionId, w]))
-    const days = new Map<string, string>()
-    for (const win of board.windows)
-      for (const w of win.weekends) days.set(w.sessionId, weekendShortDays(w.label))
-    // For a grade that landed on a new weekend: which weekend the kept
-    // calendar plays it on, keyed the way the chip asks for it.
-    const keptOn = new Map<string, string>()
-    for (const m of diff.summary.moved) {
-      keptOn.set(`${m.toSessionId}|${m.unitKey}`, days.get(m.fromSessionId) ?? "")
-    }
-    return { line: compareLine(diff.summary), byWeekend, keptOn }
-  }, [view, comparing, board, kept, assignment])
+  /**
+   * COMPARE IS GONE FROM THE BOARD (owner ruling 2026-08-06, #6). It was a lens
+   * that repainted every chip against the kept calendar, and the strip already
+   * shows the two calendars whole, side by side, which is the reading anybody
+   * actually does. diffAssignments and the rest of the pure diff are untouched in
+   * the core: the strip and the API still use them.
+   */
 
   /**
    * SATURDAYS THIS SEASON IS NOT USING, month by month (owner ruling
@@ -808,10 +918,15 @@ export function useBoardState({
     setUndoStack,
     blockStatus,
     setBlockStatus,
-    courtCaps,
-    setCourtCaps,
+    courtOverrides,
+    setCourtOverrides,
+    hourOverrides,
+    setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    emptyGyms,
+    setEmptyGyms,
+    placedGyms,
     dirty,
     setDirty,
     fromLever,
@@ -827,12 +942,18 @@ export function useBoardState({
     setArmedSection,
     dragging,
     setDragging,
-    /* the lens over the board, which changes nothing under it */
+    /* the two lenses over the board, which change nothing under them */
     gradeFilter,
     setGradeFilter,
+    gymFilter,
+    setGymFilter,
     filterUnits,
     highlight,
+    gymHighlight,
+    lensGyms,
     toggleGrade,
+    toggleGym,
+    clearLenses,
     zoomSession,
     setZoomSession,
     flashSessions,
@@ -843,8 +964,6 @@ export function useBoardState({
     setGhosts,
     boardScroll,
     /* the screen's own switches */
-    assignMode,
-    setAssignMode,
     locked,
     busy,
     setBusy,
@@ -852,31 +971,18 @@ export function useBoardState({
     setNotice,
     error,
     setError,
-    showRules,
-    setShowRules,
-    showHours,
-    setShowHours,
-    hoursChip,
-    setHoursChip,
-    hoursPreview,
-    setHoursPreview,
-    hoursError,
-    setHoursError,
     view,
     setView,
     side,
     setSide,
-    comparing,
-    setComparing,
     naming,
     setNaming,
-    /* the calendar the league kept, for compare */
+    /* the calendar the league kept, which the strip reads beside the proposal */
     kept,
     setKept,
     keptVenues,
     setKeptVenues,
     keptShown,
-    compare,
     /* the plan document the board is a copy of */
     session,
     plans,
@@ -913,6 +1019,7 @@ export function useBoardState({
     setVenueGrid,
     poolOn,
     roomsOn,
+    hoursOn,
     summary,
     addable,
   }

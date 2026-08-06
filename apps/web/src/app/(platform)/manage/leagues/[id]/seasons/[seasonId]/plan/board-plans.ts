@@ -10,6 +10,7 @@ import {
 import {
   planStateFrom,
   withAssertedGymsInWorld,
+  withWeekendHoursInWorld,
   worldFromState,
 } from "@/lib/scheduler/plan-world"
 import { plural, savedVenueMap } from "./board-shared"
@@ -51,10 +52,13 @@ export function useBoardPlans(m: BoardModel) {
     shown,
     blockStatus,
     setBlockStatus,
-    courtCaps,
-    setCourtCaps,
+    courtOverrides,
+    setCourtOverrides,
+    hourOverrides,
+    setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    setEmptyGyms,
     setUndoStack,
     setDirty,
     fromLever,
@@ -102,10 +106,13 @@ export function useBoardPlans(m: BoardModel) {
     // A plan document holds a calendar, not bookings: the statuses come back
     // from the gyms themselves (step 2's grid) the moment a plan is opened.
     setBlockStatus({})
-    setCourtCaps({})
-    // The plan's own world says which gyms it has on which weekends, so nothing
-    // is asserted on a board that has only just opened.
+    setCourtOverrides({})
+    setHourOverrides({})
+    // The plan's own world says which gyms it has on which weekends, and on what
+    // hours, so nothing is asserted or overridden on a board that has just
+    // opened.
     setAssertedGyms({})
+    setEmptyGyms({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -280,10 +287,13 @@ export function useBoardPlans(m: BoardModel) {
     setBlockStatus({})
     // A plan the season does not run never marked anybody's gym, so its
     // corrections are still only the board's opinion and they stay on it.
-    if (takesOver) setCourtCaps({})
-    // The new plan's world carries the assertions (or the season does, where this
-    // save took over), so the working copy hands them over.
+    if (takesOver) setCourtOverrides({})
+    // The new plan's world carries the assertions and the per-date hours (or the
+    // season does, where this save took over), so the working copy hands them
+    // over.
     setAssertedGyms({})
+    setEmptyGyms({})
+    setHourOverrides({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
@@ -357,10 +367,12 @@ export function useBoardPlans(m: BoardModel) {
     else if (liveState) setState(liveState)
     setVenues(shown.venues)
     setBlockStatus({})
-    if (plan.isActive) setCourtCaps({})
-    // The assertion is written down now — in the plan's world, or on the season's
-    // attachment — so the working copy stops carrying it.
+    if (plan.isActive) setCourtOverrides({})
+    // The assertion and the hours are written down now, in the plan's world or on
+    // the season's attachment, so the working copy stops carrying them.
     setAssertedGyms({})
+    setEmptyGyms({})
+    setHourOverrides({})
     setUndoStack([])
     setDirty(false)
     setFromLever(false)
@@ -423,8 +435,10 @@ export function useBoardPlans(m: BoardModel) {
     setKept(savedNow)
     setKeptVenues(savedVenuesNow)
     setBlockStatus({})
-    setCourtCaps({})
+    setCourtOverrides({})
+    setHourOverrides({})
     setAssertedGyms({})
+    setEmptyGyms({})
     setUndoStack([])
     setArmed(null)
     setArmedVenue(null)
@@ -451,7 +465,7 @@ export function useBoardPlans(m: BoardModel) {
    * board's base is the one the season just recorded.
    */
   const writeCourtCaps = async (): Promise<PlannerState | null> => {
-    const rows = Object.entries(courtCaps)
+    const rows = Object.entries(courtOverrides)
     if (rows.length === 0) return null
     await Promise.all(
       rows.map(([key, courts]) => {
@@ -496,6 +510,31 @@ export function useBoardPlans(m: BoardModel) {
   }
 
   /**
+   * THE PER-DATE HOURS, written onto the SEASON (owner ruling 2026-08-06, #5).
+   * The same one-weekend exception step 2's grid cell writes, and only for the
+   * plan the season runs: on any other plan the hours are the plan's own and
+   * travel in its world (see worldWithAssertions).
+   */
+  const writeWeekendHours = async () => {
+    const rows = Object.entries(hourOverrides)
+    if (rows.length === 0) return
+    await Promise.all(
+      rows.map(([key, window]) => {
+        const [sessionId, venueId] = key.split("|")
+        if (!sessionId || !venueId) return Promise.resolve(null)
+        return fetch(
+          `/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}/hours`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(window),
+          }
+        ).catch(() => null)
+      })
+    )
+  }
+
+  /**
    * Everything the working copy owes the season, in one errand, handing back
    * the season's world if a correction moved it. The caller decides which world
    * the board lands in, so a stale `liveState` can never overwrite a capacity
@@ -505,6 +544,7 @@ export function useBoardPlans(m: BoardModel) {
     // The gyms first: a correction to a gym the season did not have yet would
     // otherwise be written against nothing.
     await writeAssertedGyms()
+    await writeWeekendHours()
     await writeBookingStatus()
     return writeCourtCaps()
   }
@@ -521,10 +561,14 @@ export function useBoardPlans(m: BoardModel) {
    * what the operator just told us.
    */
   const worldWithAssertions = () => {
-    if (Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)) return null
+    const nothingAsserted = Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)
+    const noHours = Object.keys(hourOverrides).length === 0
+    if (nothingAsserted && noHours) return null
     const base = planSettings?.state ?? (state ? worldFromState(state) : null)
     if (!base) return null
-    return withAssertedGymsInWorld(base, assertedGyms)
+    // The gyms first: hours for a gym the world does not have on that weekend
+    // would be written against nothing.
+    return withWeekendHoursInWorld(withAssertedGymsInWorld(base, assertedGyms), hourOverrides)
   }
 
   return { openPlan, revert, saveAsNew, savePlan, activatePlan }

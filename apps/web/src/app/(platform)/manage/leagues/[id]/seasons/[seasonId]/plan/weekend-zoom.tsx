@@ -58,7 +58,7 @@ export function WeekendZoom({
   statusOf,
   unitByKey,
   hue,
-  courtCaps,
+  courtOverrides,
   interactive,
   onBack,
   onCorrectCourts,
@@ -74,7 +74,7 @@ export function WeekendZoom({
   statusOf: (sessionId: string, venueId: string) => BlockStatus
   unitByKey: Map<string, PlannerUnit>
   hue: Map<string, number>
-  courtCaps: Record<string, number>
+  courtOverrides: Record<string, number>
   interactive: boolean
   onBack: () => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
@@ -161,7 +161,7 @@ export function WeekendZoom({
             section.role === "pool" ? statusOf(weekend.sessionId, section.venueId) : null
           const venue = weekend.venues.find((v) => v.venueId === section.venueId)
           const wired = venue ? courtsWiredAt(venue) : 0
-          const capped = courtCaps[courtCapKey(weekend.sessionId, section.venueId)] ?? null
+          const capped = courtOverrides[courtCapKey(weekend.sessionId, section.venueId)] ?? null
           const hours = block ? Math.round(block.hoursNeeded) : null
           return (
             <div

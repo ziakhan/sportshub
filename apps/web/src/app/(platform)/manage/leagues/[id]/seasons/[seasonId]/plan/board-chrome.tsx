@@ -4,14 +4,7 @@ import { useEffect, useState } from "react"
 import type { PlannerUnit, PlannerWeekend } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY, isReferencePlan, type PlanRow } from "@/lib/scheduler/plan-documents"
 import { strandedSentence, type StrandedPlacement } from "@/lib/scheduler/plan-world"
-import type { StripVenue } from "@/lib/seasons/venue-strip"
-import {
-  PILL_TONE,
-  hueFor,
-  type Armed,
-  type ArmedBlock,
-  type ArmedSection,
-} from "./plan-shared"
+import { PILL_TONE, type Armed, type ArmedBlock, type ArmedSection } from "./plan-shared"
 import { WhyPopover } from "./plan-ui"
 import { PlanChooser } from "./plan-session"
 import { Segmented } from "./season-strip"
@@ -45,6 +38,8 @@ export function BoardHead({
   worldUsable,
   onUndo,
   onRedraw,
+  onRedrawSpread,
+  onFillFromPool,
   onViewChange,
 }: {
   planId: string | null
@@ -61,6 +56,12 @@ export function BoardHead({
   worldUsable: boolean
   onUndo: () => void
   onRedraw: () => void
+  /** The same solve, told to use every weekend instead of as few as it can
+   *  (owner ruling 2026-08-06, #6, replacing the lever row). */
+  onRedrawSpread: () => void
+  /** Every weekend with no building takes the cheapest gym in the pool that is
+   *  free that weekend. A verb, not half of a mode (owner ruling 2026-08-06). */
+  onFillFromPool: () => void
   onViewChange: (next: "board" | "strip") => void
 }) {
   return (
@@ -145,6 +146,41 @@ export function BoardHead({
                 <path d="M21 4v5h-5" />
               </svg>
               {COPY.redraw}
+            </button>
+          )}
+          {/* THE ONE ALTERNATIVE SHAPE, BESIDE THE BUTTON IT IS AN ALTERNATIVE TO
+              (owner ruling 2026-08-06, #6). It used to be a chip behind "adjust
+              grouping rules", which describes nothing it does. */}
+          {planId && interactive && worldUsable && (
+            <button
+              type="button"
+              data-testid="redraw-spread"
+              disabled={busy !== null}
+              onClick={(e) => {
+                e.stopPropagation()
+                onRedrawSpread()
+              }}
+              className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-[12px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {COPY.redrawSpread}
+            </button>
+          )}
+          {/* FILLING THE GAPS IS A VERB (owner ruling 2026-08-06, #6). It used to
+              be drawn only in "assign gyms for me" mode, which meant the operator
+              had to find a mode switch before they could find the button. */}
+          {planId && interactive && view === "board" && (
+            <button
+              type="button"
+              data-testid="assign-from-pool"
+              title={COPY.fillHint}
+              disabled={busy !== null}
+              onClick={(e) => {
+                e.stopPropagation()
+                onFillFromPool()
+              }}
+              className="border-play-600 bg-play-600 hover:bg-play-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-[12.5px] font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {COPY.fillFromPool}
             </button>
           )}
           {/* Which of this season's plans the board is a copy of. Switching
@@ -265,16 +301,25 @@ export function UndoFloat({
 export function GradeFilter({
   units,
   selected,
+  gymsShowing,
   onToggle,
   onClear,
 }: {
   units: PlannerUnit[]
   selected: string[]
+  /** The gyms the OTHER lens is on, in full names (owner ruling 2026-08-06, #4).
+   *  The two lenses combine as an intersection, so they share one "showing" line
+   *  and one Clear: two of them would leave the board half hidden. */
+  gymsShowing: string[]
   onToggle: (key: string) => void
   onClear: () => void
 }) {
   if (units.length === 0) return null
   const picked = units.filter((u) => selected.includes(u.key))
+  const showing = [
+    picked.length > 0 ? nameList(picked.map((u) => u.label)) : null,
+    gymsShowing.length > 0 ? nameList(gymsShowing) : null,
+  ].filter(Boolean) as string[]
   return (
     <div
       data-testid="grade-filter"
@@ -308,11 +353,9 @@ export function GradeFilter({
           </button>
         )
       })}
-      {picked.length > 0 && (
+      {showing.length > 0 && (
         <span className="text-ink-600 ml-auto inline-flex items-center gap-2 text-[11.5px] font-semibold">
-          <span data-testid="grade-filter-showing">
-            Showing {nameList(picked.map((u) => u.label))}
-          </span>
+          <span data-testid="grade-filter-showing">Showing {showing.join(" at ")}</span>
           <button
             type="button"
             data-testid="grade-filter-clear"
@@ -597,65 +640,11 @@ export function DriftLine({
 }
 
 /**
- * Which colour is which gym (owner 2026-08-02: "there is no clear indication
- * that blue is Burlington and the green is Six Park"). It sits ABOVE the
- * calendar, in both views, because a key nobody scrolls to is not a key, and it
- * names the gyms in full: the columns and the strip abbreviate, this does not.
+ * THE COLOUR KEY IS THE GYM LIST NOW (owner ruling 2026-08-06, #1).
  *
- * The glyph legend under the board answers a different question, so the two
- * stay apart.
- *
- * EVERY GYM IN THE ROSTER IS NAMED HERE (owner ruling 2026-08-05, #1). That
- * includes the backup nobody has phoned: it has no weekend, so it has no colour
- * anywhere on the calendar, and a key that skipped it left the operator hunting
- * for a gym he knew he had added. It gets a hollow dot and says what it is.
+ * There used to be a legend here: a row that named every gym in its colour and
+ * could not be touched, sitting directly above a tray of the same gyms that
+ * could. Two rows, one question, and the backup gym appeared in both wearing two
+ * different tags. GymList (plan-ui) is the single row: same colours, same names,
+ * same tags, and every card both picks its gym up and spotlights it.
  */
-export function GymLegend({
-  order,
-  hue,
-  fillsFirst,
-  backup,
-}: {
-  order: StripVenue[]
-  hue: Map<string, number>
-  /** The building the league owns, if it has one. */
-  fillsFirst: string | null
-  /** The pool gyms this plan has no weekend on: real, rentable, unasked. */
-  backup: Set<string>
-}) {
-  if (order.length === 0) return null
-  return (
-    <div
-      className="mb-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 px-1"
-      data-testid="gym-legend"
-    >
-      {order.map((gym) => {
-        const paint = hueFor(hue, gym.venueId)
-        const spare = backup.has(gym.venueId)
-        return (
-          <span key={gym.venueId} className="inline-flex items-center gap-1.5 text-[11.5px]">
-            <i
-              aria-hidden
-              className={`h-2.5 w-2.5 flex-none rounded-full ${
-                spare ? "border-ink-400 border border-dashed" : paint.swatch
-              }`}
-            />
-            <b className={`font-bold ${spare ? "text-ink-700" : paint.name}`}>{gym.name}</b>
-            {gym.venueId === fillsFirst && (
-              <span className="text-ink-400 font-semibold">home gym</span>
-            )}
-            {spare && (
-              <span
-                data-testid="legend-backup"
-                data-venue-id={gym.venueId}
-                className="border-ink-300 text-ink-500 rounded-md border border-dashed px-1 text-[10.5px] font-semibold"
-              >
-                backup
-              </span>
-            )}
-          </span>
-        )
-      })}
-    </div>
-  )
-}

@@ -7,21 +7,17 @@ import {
   courtCapKey,
   courtsNeeded,
   courtsWiredAt,
-  lightestWeekendIn,
   packPlanVenues,
   planCost,
   planPrice,
   proposePlan,
-  shiftClock,
   splitAcrossGyms,
   splitAcrossWeekends,
   splitPriceSentence,
   venuesWithoutUnit,
   weekendDemand,
-  type HoursPreview,
   type PlannerLever,
   type PlannerState,
-  type PlannerVenue,
 } from "@/lib/scheduler/planner-core"
 import { solvableState, weekendRooms } from "@/lib/scheduler/plan-world"
 import type { BlockStatus, SplitAxis } from "./plan-ui"
@@ -35,7 +31,6 @@ import {
   nameList,
   plural,
   type DragPayload,
-  type HoursChip,
 } from "./board-shared"
 import type { BoardModel } from "./board-state"
 
@@ -66,10 +61,14 @@ export function useBoardVerbs(m: BoardModel) {
     setVenues,
     blockStatus,
     setBlockStatus,
-    courtCaps,
-    setCourtCaps,
+    courtOverrides,
+    setCourtOverrides,
+    hourOverrides,
+    setHourOverrides,
     assertedGyms,
     setAssertedGyms,
+    emptyGyms,
+    setEmptyGyms,
     undoStack,
     setUndoStack,
     dirty,
@@ -88,10 +87,6 @@ export function useBoardVerbs(m: BoardModel) {
     setBusy,
     setError,
     setNotice,
-    setHoursChip,
-    setHoursPreview,
-    setHoursError,
-    venueGrid,
     blocks,
     fillsFirst,
     gyms,
@@ -101,82 +96,14 @@ export function useBoardVerbs(m: BoardModel) {
     shown,
   } = m
 
-  /** What an hour would do, against the calendar ON SCREEN — proposal
-   *  included. Read only: the endpoint rebuilds the plan on a shifted window
-   *  in memory and writes nothing. */
-  const previewHours = async (chip: HoursChip) => {
-    setBusy(`hours:${chip.key}`)
-    setHoursError(null)
-    setHoursChip(chip)
-    setHoursPreview(null)
-    const res = await fetch(`/api/seasons/${seasonId}/planner/preview-hours`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        deltaStartMinutes: chip.deltaStartMinutes,
-        deltaEndMinutes: chip.deltaEndMinutes,
-        assignment,
-      }),
-    }).catch(() => null)
-    setBusy(null)
-    const data = res?.ok ? await res.json().catch(() => null) : null
-    if (!data?.preview) {
-      setHoursError("Couldn't work that one out. Try again.")
-      return
-    }
-    setHoursPreview(data.preview as HoursPreview)
-  }
-
-  /** Book it for real: the same season-venue hours route step 2 saves with,
-   *  once per gym, then the board reloads on the new gym time. */
-  const applyHours = async (chip: HoursChip) => {
-    const rows = (venueGrid?.venues ?? []).filter((v) => v.simpleOpen && v.simpleClose)
-    if (rows.length === 0) {
-      setHoursError("Set the hours for your gyms on step 2 first.")
-      return
-    }
-    const writes = rows.map((venue) => ({
-      venue,
-      start: shiftClock(venue.simpleOpen as string, chip.deltaStartMinutes),
-      end: shiftClock(venue.simpleClose as string, chip.deltaEndMinutes),
-    }))
-    if (writes.some((w) => w.start >= w.end)) {
-      setHoursError("That would close a gym before it opens.")
-      return
-    }
-    setBusy("hours-apply")
-    setHoursError(null)
-    const results = await Promise.all(
-      writes.map((w) =>
-        fetch(`/api/seasons/${seasonId}/venues/${w.venue.seasonVenueId}/hours`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            // The step-2 hours model: one range, Saturday and Sunday alike.
-            hours: [
-              { dayOfWeek: 6, openTime: w.start, closeTime: w.end },
-              { dayOfWeek: 0, openTime: w.start, closeTime: w.end },
-            ],
-          }),
-        })
-          .then((res) => res.ok)
-          .catch(() => false)
-      )
-    )
-    setBusy(null)
-    if (results.some((ok) => !ok)) {
-      setHoursError("Some gyms did not take the new hours. Try again.")
-      return
-    }
-    setHoursChip(null)
-    setHoursPreview(null)
-    await load()
-    setNotice(
-      writes.length === 1
-        ? `${writes[0].venue.name} runs ${writes[0].start} to ${writes[0].end} every weekend now.`
-        : `${writes.length} gyms moved their hours. The calendar is back on your real gym time.`
-    )
-  }
+  /**
+   * THE SEASON-WIDE HOURS CHIPS ARE GONE (owner ruling 2026-08-06, #6). They
+   * previewed and then wrote an hour onto every gym on every weekend at once,
+   * which is a thing nobody negotiates and a thing an operator could not undo.
+   * Hours are agreed one building and one date at a time, so they are edited on
+   * the section they are about (setWeekendHours below), and the season-wide
+   * range stays where it always belonged, on step 2.
+   */
 
   /** The board as it stands, remembered before something changes it, WITH the
    *  name of the thing about to happen so the Undo button can say what it puts
@@ -185,7 +112,17 @@ export function useBoardVerbs(m: BoardModel) {
     setUndoStack((prev) =>
       [
         ...prev,
-        { label, assignment, venues, blockStatus, courtCaps, assertedGyms, dirty },
+        {
+          label,
+          assignment,
+          venues,
+          blockStatus,
+          courtOverrides,
+          hourOverrides,
+          assertedGyms,
+          emptyGyms,
+          dirty,
+        },
       ].slice(-UNDO_DEPTH)
     )
 
@@ -299,8 +236,10 @@ export function useBoardVerbs(m: BoardModel) {
     setAssignment(last.assignment)
     setVenues(last.venues)
     setBlockStatus(last.blockStatus)
-    setCourtCaps(last.courtCaps)
+    setCourtOverrides(last.courtOverrides)
+    setHourOverrides(last.hourOverrides)
     setAssertedGyms(last.assertedGyms)
+    setEmptyGyms(last.emptyGyms)
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
@@ -422,13 +361,54 @@ export function useBoardVerbs(m: BoardModel) {
     const venue = weekend?.venues.find((v) => v.venueId === venueId)
     if (!weekend || !venue) return
     const wired = courtsWiredAt(venue)
+    const held = Math.max(0, Math.min(wired, Math.floor(courts)))
+    /** What the games here actually need, which is what the rental was sized at
+     *  before anybody said otherwise. */
+    const block = blocks.find((b) => b.sessionId === sessionId && b.venueId === venueId)
+    const used = block?.courts ?? 0
     remember(`the courts at ${gymShort(venueId)}`)
-    setCourtCaps((prev) => {
+    setCourtOverrides((prev) => ({ ...prev, [courtCapKey(sessionId, venueId)]: held }))
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setArmedSection(null)
+    setDirty(true)
+    setFromLever(false)
+    flashCards(sessionId)
+    setNotice(
+      held > used
+        ? // UP is not a correction: nothing repacks, and the ask grows.
+          `You rented ${courtsWord(held)} at ${gymShort(venueId)} on ${weekend.label}. The games here use ${used}, and the ask sheet asks for all ${held}.`
+        : held >= wired
+          ? `${gymShort(venueId)} is back to all ${courtsWord(wired)} on ${weekend.label}.`
+          : `${gymShort(venueId)} gives ${courtsWord(held)} on ${weekend.label}. Anything that no longer fits is below, waiting for somewhere to go.`
+    )
+  }
+
+  /**
+   * THIS GYM, THIS DATE, THESE HOURS (owner ruling 2026-08-06, #5). The other
+   * half of the ⋯ menu, and an ordinary undoable edit to the working copy: the
+   * capacity of that one building on that one weekend moves, everything derived
+   * from it follows, and nothing is written anywhere until the plan is saved.
+   */
+  const setWeekendHours = (
+    sessionId: string,
+    venueId: string,
+    /** Null puts the date back on the gym's usual range. */
+    window: { startTime: string; endTime: string } | null
+  ) => {
+    if (locked) return
+    const weekend = weekendById.get(sessionId)
+    if (!weekend) return
+    if (window && window.startTime >= window.endTime) {
+      setNotice("That would close the gym before it opens.")
+      return
+    }
+    remember(`the hours at ${gymShort(venueId)}`)
+    setHourOverrides((prev) => {
       const next = { ...prev }
-      // Back at the full building is not a correction, it is the absence of
-      // one, so the entry goes rather than sitting there saying nothing.
-      if (courts >= wired) delete next[courtCapKey(sessionId, venueId)]
-      else next[courtCapKey(sessionId, venueId)] = Math.max(0, courts)
+      if (window) next[courtCapKey(sessionId, venueId)] = window
+      else delete next[courtCapKey(sessionId, venueId)]
       return next
     })
     setArmed(null)
@@ -439,9 +419,9 @@ export function useBoardVerbs(m: BoardModel) {
     setFromLever(false)
     flashCards(sessionId)
     setNotice(
-      courts >= wired
-        ? `${gymShort(venueId)} is back to all ${courtsWord(wired)} on ${weekend.label}.`
-        : `${gymShort(venueId)} gives ${courtsWord(courts)} on ${weekend.label}. Anything that no longer fits is below, waiting for somewhere to go.`
+      window
+        ? `${gymShort(venueId)} runs ${window.startTime} to ${window.endTime} on ${weekend.label}. Every number on that weekend follows.`
+        : `${gymShort(venueId)} is back on its usual hours for ${weekend.label}.`
     )
   }
 
@@ -543,13 +523,22 @@ export function useBoardVerbs(m: BoardModel) {
     // A same-weekend move takes these grades OUT of the building they are in, so
     // that room counts as free for the group that is moving.
     const used = usageOn(toSessionId, sameWeekend ? unitKeys : [])
-    const rooms = weekendRooms(board, to, used, courtCaps)
+    const rooms = weekendRooms(board, to, used, courtOverrides)
     const room = toVenueId ? rooms.find((r) => r.venueId === toVenueId) : null
+    /**
+     * ONE CAPACITY RULE FOR THE WHOLE BOARD (owner ruling 2026-08-06, #3).
+     *
+     * A section used to be measured against the gyms this plan ALREADY has there,
+     * while a single chip was measured against those plus the backups it could
+     * asssert. Two readings of the same weekend meant the board could offer a
+     * section a destination and then refuse it, or refuse one it was perfectly
+     * willing to take a chip on. The offer and the refusal read the same number
+     * now, and the number counts what the drop MAY assert: the home gym on a date
+     * the plan runs, and the backup gyms behind it.
+     */
     const free = toVenueId
       ? (room?.freeGames ?? 0)
-      : // A weekend, not a building: only the gyms this plan HAS there count.
-        // Asserting a backup gym is something the operator does by naming it.
-        rooms.reduce((sum, r) => sum + (r.backup ? 0 : r.freeGames), 0)
+      : rooms.reduce((sum, r) => sum + r.freeGames, 0)
     const where = toVenueId
       ? `${gymShort(toVenueId)} on ${to.label}`
       : `${to.label}`
@@ -568,6 +557,22 @@ export function useBoardVerbs(m: BoardModel) {
       return
     }
     const backup = Boolean(toVenueId && room?.backup)
+    /**
+     * A DATE WITH NO ROOM OF ITS OWN TAKES THE GROUP BY ASSERTION (owner ruling
+     * 2026-08-06, #3). The offer above counted the backup gyms behind this
+     * weekend, so the move has to actually put one there: the cheapest way to
+     * cover what the gyms this plan already has cannot, biggest room first, so
+     * one building answers it wherever one can.
+     */
+    const assertHere: string[] = []
+    if (!toVenueId) {
+      let short = need - rooms.reduce((sum, r) => sum + (r.backup ? 0 : r.freeGames), 0)
+      for (const r of [...rooms].filter((r) => r.backup).sort((a, b) => b.freeGames - a.freeGames)) {
+        if (short <= 0) break
+        assertHere.push(r.venueId)
+        short -= r.freeGames
+      }
+    }
     remember(
       `move ${plural(unitKeys.length, "grade", "grades")} to ${
         toVenueId ? gymShort(toVenueId) : to.label
@@ -591,9 +596,17 @@ export function useBoardVerbs(m: BoardModel) {
         },
       }
     }
-    if (backup && toVenueId) {
-      setAssertedGyms((prev) => withAssertion(prev, toSessionId, toVenueId))
-      setBlockStatus((prev) => ({ ...prev, [blockKey(toSessionId, toVenueId)]: "confirmed" }))
+    const asserted = backup && toVenueId ? [toVenueId] : assertHere
+    if (asserted.length > 0) {
+      setAssertedGyms((prev) =>
+        asserted.reduce((acc, venueId) => withAssertion(acc, toSessionId, venueId), prev)
+      )
+      setBlockStatus((prev) => ({
+        ...prev,
+        ...Object.fromEntries(
+          asserted.map((venueId) => [blockKey(toSessionId, venueId), "confirmed" as BlockStatus])
+        ),
+      }))
     }
     setAssignment(nextAssignment)
     setVenues(nextVenues)
@@ -610,7 +623,9 @@ export function useBoardVerbs(m: BoardModel) {
     )
     setNotice(
       `${gradeList(unitKeys)} moved: ${sameWeekend ? where : `${weekendName(fromSessionId)} → ${where}`}${
-        backup ? ". You placed it, so it is yours to book." : ""
+        asserted.length > 0
+          ? `. You said you have ${nameList(asserted.map(gymShort))} that weekend, so it is yours to book.`
+          : ""
       }`
     )
   }
@@ -700,6 +715,19 @@ export function useBoardVerbs(m: BoardModel) {
       LEVERS.find((l) => l.lever === lever)?.note ?? COPY.redrawn,
       "redrawing the calendar"
     )
+
+  /**
+   * THE ONE ALTERNATIVE SHAPE, AS A BUTTON (owner ruling 2026-08-06, #6). The
+   * lever row lived behind "adjust grouping rules", a phrase that describes none
+   * of what those buttons did. Three of the four levers are the same answer as
+   * Redraw since the 2026-08-03 compact-first ruling; the one that is genuinely
+   * different is "use every weekend", so it sits next to Redraw with its own
+   * name on it and asks the same question before it throws hand work away.
+   */
+  const redrawSpread = () => {
+    if (dirty && !window.confirm(COPY.redrawConfirm)) return
+    runLever("spread")
+  }
 
   /**
    * BREAK (owner ruling 2026-08-04). The pure core worked out the edit and its
@@ -852,12 +880,36 @@ export function useBoardVerbs(m: BoardModel) {
     const backup = isBackupGym(sessionId, venueId)
     // What the BUILDING could hold here, with the grades that are moving into it
     // not counted against it (see weekendRooms: this is ruling #2's math).
-    const room = weekendRooms(board, weekend, usageOn(sessionId, unitKeys), courtCaps).find(
+    const room = weekendRooms(board, weekend, usageOn(sessionId, unitKeys), courtOverrides).find(
       (r) => r.venueId === venueId
     )
     if (!room) {
       setNotice(
         `${short} has no gym time we can use on ${weekend.label}. Give it hours back in step 2.`
+      )
+      return
+    }
+    /**
+     * A BUILDING ON AN EMPTY DATE (owner ruling 2026-08-06, #2). Nothing plays
+     * here yet, so there is nothing to fit and nothing to bill: the gym lands as
+     * an empty container, the date now has a building on it, and the operator can
+     * drop grades into it. Placing a building is not a booking. Filling it is.
+     *
+     * This is what the board used to refuse with "that weekend has more games
+     * than its buildings hold", which was a sentence about a weekend that had no
+     * games at all.
+     */
+    if (games <= 0 && unitKeys.length === 0) {
+      remember(`placing ${short} on ${weekend.label}`)
+      if (backup) setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
+      setEmptyGyms((prev) => withAssertion(prev, sessionId, venueId))
+      setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
+      setArmed(null)
+      setDirty(true)
+      setFromLever(false)
+      flashMove([sessionId], [], [])
+      setNotice(
+        `${short} is on ${weekend.label} now, empty. Drop grades into it, and it costs nothing until you do.`
       )
       return
     }
@@ -1117,13 +1169,13 @@ export function useBoardVerbs(m: BoardModel) {
     /* what the board computes for you */
     draw,
     redraw,
+    redrawSpread,
     runLever,
     splitAxesFor,
-    /* the corrections, and the two that really write */
+    /* one gym on one date, and the one verb that really writes */
     correctCourts,
+    setWeekendHours,
     addWeekend,
-    previewHours,
-    applyHours,
     /* bringing a weekend to the operator */
     jumpToWeekend,
   }

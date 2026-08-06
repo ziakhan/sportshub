@@ -398,6 +398,27 @@ export function ActionPopover({
     setAt(null)
   }, [setOpen])
 
+  /**
+   * A PANEL THAT FITS ON THE SCREEN (owner ruling 2026-08-06, #5, found by the
+   * drive). placeFor guesses a height before the panel exists, and the ⋯ menu is
+   * taller than the guess: opened low on a long board it hung off the bottom of
+   * the window and its Apply button could not be clicked at all.
+   *
+   * So the panel is measured once it is really there and pulled back up by
+   * exactly what overflows. It settles in one pass, and a panel already inside
+   * the window is left alone, so nothing moves under a cursor for no reason.
+   */
+  useEffect(() => {
+    if (!isOpen || !at || at.top == null) return
+    const box = panelRef.current?.getBoundingClientRect()
+    if (!box) return
+    const overflow = box.bottom - (window.innerHeight - 8)
+    if (overflow <= 1) return
+    const top = Math.max(8, at.top - overflow)
+    if (Math.abs(top - at.top) < 1) return
+    setAt({ ...at, top })
+  }, [isOpen, at])
+
   useEffect(() => {
     if (!isOpen) return
     if (!at) place()
@@ -463,6 +484,10 @@ export function ActionPopover({
               top: at.top,
               bottom: at.bottom,
               width,
+              // Taller than the window is the operator's problem to scroll, not
+              // a reason to lose the buttons at the bottom of it.
+              maxHeight: "calc(100vh - 16px)",
+              overflowY: "auto",
             }}
             className="border-ink-200 z-50 rounded-xl border bg-white p-3 shadow-lg"
           >
@@ -704,7 +729,7 @@ export function BlockSummary({
   )
 }
 
-/** One gym of the pool, ready to be placed. */
+/** One gym of the league's roster, as the gym list draws it. */
 export interface TrayGym {
   venueId: string
   name: string
@@ -713,76 +738,88 @@ export interface TrayGym {
   courts: number
   /** Weekends of the season it is actually available on. */
   weekends: number
+  /** The building the league owns, or one it rents. */
+  role: "home" | "pool"
 }
 
 /**
- * THE POOL, as something you can pick up (owner ruling 2026-08-03, the "I will
- * place them" half). Every gym the league rents, with the two numbers that
- * decide whether it can take a weekend: how many courts it has, and how many
- * weekends of the season it is free on.
+ * ONE GYM LIST (owner ruling 2026-08-06, #1). There used to be two rows above the
+ * calendar saying almost the same thing: a colour key that named every gym and
+ * could not be picked up, and a tray you could pick a gym up from that only
+ * listed the rented ones. An operator had to learn which row answered which
+ * question, and the backup gym appeared in both wearing two different tags.
  *
- * Drag for a mouse, tap-then-tap for a thumb, the same pattern the grade chips
- * already use — so the board has one way of moving things, not two.
+ * So there is one row of gym cards, and each card is the whole truth about that
+ * building: its colour, its name, its courts, whether the league owns it or
+ * keeps it as a backup, and how many weekends of this plan it is on.
+ *
+ * It does two things, and the card says which part does which:
+ *  - the GRIP picks the gym up. Drag it for a mouse, tap it for a thumb, and the
+ *    weekends that could really take it light up (ruling #1, 2026-08-05).
+ *  - the CARD toggles the gym lens: that gym's sections and chips stay at full
+ *    strength and everything else steps back, which is how "where does Six Park
+ *    actually get used" gets answered in one look.
  */
-export function VenueTray({
+export function GymList({
   gyms,
   hue,
+  fillsFirst,
   armedVenueId,
+  lens,
+  interactive,
   onArm,
+  onToggleLens,
   onDragging,
 }: {
   gyms: TrayGym[]
   hue: Map<string, number>
+  /** The building the league owns, if it has one. */
+  fillsFirst: string | null
   armedVenueId: string | null
+  /** The gyms the lens is on, by venueId. Empty is the ordinary case. */
+  lens: string[]
+  /** A locked season still reads the list; it just cannot pick anything up. */
+  interactive: boolean
   onArm: (venueId: string | null) => void
+  onToggleLens: (venueId: string) => void
   /** A mouse picked a gym up, or put it down (owner ruling 2026-08-05, #1). The
    *  drag arms the gym, so the weekends and sections that could really take it
    *  light up under the cursor instead of the operator dropping it blind. */
   onDragging?: (dragging: boolean) => void
 }) {
+  if (gyms.length === 0) return null
   return (
-    <div className="border-ink-300 bg-ink-50 mt-2 rounded-xl border p-2.5" data-testid="venue-tray">
-      <p className="text-ink-500 text-[11px] font-bold uppercase tracking-[0.06em]">
-        Gyms you rent · drag one onto a weekend
+    <div
+      className="border-ink-200 bg-ink-50/70 mb-2.5 rounded-xl border p-2"
+      data-testid="gym-list"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <p className="text-ink-500 px-0.5 text-[11px] font-bold uppercase tracking-[0.06em]">
+        Your gyms · drag one onto a weekend · tap one to spotlight it
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {gyms.length === 0 && (
-          <p className="text-ink-500 text-[12px]">
-            No rented gyms on this season yet. Add one back in step 2.
-          </p>
-        )}
         {gyms.map((gym) => {
           const paint = hueFor(hue, gym.venueId)
-          const on = armedVenueId === gym.venueId
+          const held = armedVenueId === gym.venueId
+          const lit = lens.includes(gym.venueId)
           /**
            * A BACKUP GYM IS USABLE (owner ruling 2026-08-05, #1, replacing the
-           * 2026-08-04 reading of the Haber case).
-           *
-           * A pool gym attached to no weekend of this plan is a gym nobody has
-           * phoned — and that is exactly what a league keeps one for. It used to
-           * sit here unpickable, which made the tray say "you have one gym to
-           * rent" when the truth was "you have two and you have not asked one of
-           * them". So it is enabled, and it wears a quiet tag saying what it is:
-           * dropping it on a weekend IS the operator asserting they have it (the
-           * owner's standing rule — a drag means they checked).
-           *
-           * IT IS A CARD, NOT A FADE (owner ruling 2026-08-05, #1b). The first
-           * pass drew it dashed and pale, which read as disabled, and the owner
-           * could not find the backup gym at all. A gym he can use gets the same
-           * weight as one he already rents: a solid heavier edge and full-strength
-           * ink. Only the DOT stays hollow, because that is the one thing that is
-           * genuinely missing — a weekend.
+           * 2026-08-04 reading of the Haber case). A pool gym attached to no
+           * weekend of this plan is a gym nobody has phoned, and that is exactly
+           * what a league keeps one for: dropping it on a weekend IS the operator
+           * asserting they have it. Only the DOT stays hollow, because a weekend
+           * is the one thing that is genuinely missing.
            */
-          const backup = gym.weekends === 0
+          const backup = gym.role === "pool" && gym.weekends === 0
           return (
-            <button
+            <div
               key={gym.venueId}
-              type="button"
-              draggable
-              data-testid="tray-gym"
+              data-testid="gym-card"
               data-venue-id={gym.venueId}
+              data-role={gym.role}
               data-availability={backup ? "backup" : "known"}
-              aria-pressed={on}
+              data-lens={lit ? "1" : undefined}
+              draggable={interactive}
               onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", JSON.stringify({ venueId: gym.venueId }))
                 onDragging?.(true)
@@ -792,58 +829,88 @@ export function VenueTray({
                 onDragging?.(false)
                 onArm(null)
               }}
-              onClick={(e) => {
-                e.stopPropagation()
-                onArm(on ? null : gym.venueId)
-              }}
-              className={`hover:border-ink-400 inline-flex min-h-[40px] cursor-grab items-center gap-1.5 rounded-lg bg-white px-2 text-[12px] font-bold shadow-sm transition-colors active:cursor-grabbing ${
-                on
+              className={`inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white pr-2 shadow-sm transition-colors ${
+                held
                   ? "border-play-500 ring-play-400 border ring-2"
-                  : backup
-                    ? "border-ink-400 border-2"
-                    : "border-ink-300 border"
+                  : lit
+                    ? "border-court-500 ring-court-400 border ring-2"
+                    : backup
+                      ? "border-ink-400 hover:border-ink-500 border-2"
+                      : "border-ink-300 hover:border-ink-400 border"
               }`}
             >
-              {/* The same six dots the grade chips wear: if it can be picked
-                  up, it says so before anybody tries. */}
-              <svg
-                viewBox="0 0 10 16"
-                aria-hidden
-                focusable="false"
-                className="text-ink-400 h-3.5 w-2 shrink-0"
-              >
-                <circle cx="3" cy="4" r="1.1" fill="currentColor" />
-                <circle cx="7" cy="4" r="1.1" fill="currentColor" />
-                <circle cx="3" cy="8" r="1.1" fill="currentColor" />
-                <circle cx="7" cy="8" r="1.1" fill="currentColor" />
-                <circle cx="3" cy="12" r="1.1" fill="currentColor" />
-                <circle cx="7" cy="12" r="1.1" fill="currentColor" />
-              </svg>
-              <i
-                aria-hidden
-                className={`h-2.5 w-2.5 flex-none rounded-full ${
-                  backup ? "border-ink-400 border border-dashed" : paint.swatch
-                }`}
-              />
-              <span className={`text-[13px] font-bold ${backup ? "text-ink-900" : paint.name}`}>
-                {gym.short}
-              </span>
-              <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
-                {courtsWord(gym.courts)}
-              </span>
-              {backup ? (
-                <span
-                  data-testid="tray-backup-tag"
-                  className="border-ink-400 bg-ink-100 text-ink-700 rounded-md border px-1 text-[10.5px] font-bold"
+              {/* THE GRIP IS THE PICK-UP (owner ruling 2026-08-06, #1). A card
+                  that both places a gym and spotlights it needs to say which
+                  part does which, and a thumb needs a target for the half that
+                  cannot be dragged. */}
+              {interactive && (
+                <button
+                  type="button"
+                  data-testid="gym-grab"
+                  aria-pressed={held}
+                  aria-label={`Pick up ${gym.name} to place it on a weekend`}
+                  title={`Pick up ${gym.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onArm(held ? null : gym.venueId)
+                  }}
+                  className="text-ink-400 hover:text-ink-800 inline-flex min-h-[40px] cursor-grab items-center px-1.5 active:cursor-grabbing"
                 >
-                  backup, no weekends yet
+                  <svg viewBox="0 0 10 16" aria-hidden focusable="false" className="h-4 w-2.5">
+                    <circle cx="3" cy="4" r="1.1" fill="currentColor" />
+                    <circle cx="7" cy="4" r="1.1" fill="currentColor" />
+                    <circle cx="3" cy="8" r="1.1" fill="currentColor" />
+                    <circle cx="7" cy="8" r="1.1" fill="currentColor" />
+                    <circle cx="3" cy="12" r="1.1" fill="currentColor" />
+                    <circle cx="7" cy="12" r="1.1" fill="currentColor" />
+                  </svg>
+                </button>
+              )}
+              <button
+                type="button"
+                data-testid={lit ? "gym-lens" : "gym-lens-toggle"}
+                data-venue-id={gym.venueId}
+                aria-pressed={lit}
+                aria-label={`Spotlight ${gym.name} on the calendar`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleLens(gym.venueId)
+                }}
+                className="inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 py-1 pl-0.5 text-left"
+              >
+                <i
+                  aria-hidden
+                  className={`h-2.5 w-2.5 flex-none rounded-full ${
+                    backup ? "border-ink-400 border border-dashed" : paint.swatch
+                  }`}
+                />
+                <span className={`text-[13px] font-bold ${backup ? "text-ink-900" : paint.name}`}>
+                  {gym.name}
                 </span>
-              ) : (
+                <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
+                  {courtsWord(gym.courts)}
+                </span>
+                {gym.venueId === fillsFirst && (
+                  <span
+                    data-testid="gym-home-tag"
+                    className="border-ink-300 text-ink-600 rounded-md border px-1 text-[10.5px] font-bold"
+                  >
+                    home gym
+                  </span>
+                )}
+                {backup && (
+                  <span
+                    data-testid="gym-backup-tag"
+                    className="border-ink-400 bg-ink-100 text-ink-700 rounded-md border px-1 text-[10.5px] font-bold"
+                  >
+                    backup
+                  </span>
+                )}
                 <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
                   on {weekendsWord(gym.weekends)}
                 </span>
-              )}
-            </button>
+              </button>
+            </div>
           )
         })}
       </div>
@@ -977,6 +1044,233 @@ function CourtCorrectionBody({
           Cancel
         </button>
       </div>
+    </div>
+  )
+}
+
+/* --------------------- this gym, on this one date ------------------------- */
+
+/**
+ * THE ⋯ MENU ON EVERY GYM SECTION (owner ruling 2026-08-06, #5).
+ *
+ * Everything about ONE gym on ONE date, where an operator is already looking: the
+ * hours it runs that weekend, and how many of its courts we hold. Both are facts
+ * only the person who phoned the gym knows, and both used to live somewhere else
+ * (the hours in a disclosure at the foot of the page that moved every gym on
+ * every weekend, the courts behind a link that could only ever go down).
+ *
+ * The courts stepper is TWO WAY, and the two directions mean different things:
+ *  - DOWN is the correction that already existed: the gym has six on the floor
+ *    and offered three, so capacity shrinks and whatever no longer fits comes
+ *    back as games looking for a building.
+ *  - UP is the operator saying they rented more of the building than the games
+ *    needed. Capacity was never the constraint there, so nothing repacks; the
+ *    section reads "4 used of 6 rented" and the ask sheet asks for six.
+ */
+export function GymMenu({
+  gymName,
+  weekendLabel,
+  wired,
+  courts,
+  usedCourts,
+  hours,
+  hoursOverridden,
+  onCourts,
+  onHours,
+  onResetHours,
+}: {
+  gymName: string
+  weekendLabel: string
+  /** Courts on the floor at this gym: the ceiling either direction stops at. */
+  wired: number
+  /** Courts the plan holds here on this date right now. */
+  courts: number
+  /** Courts the games in this section actually need. */
+  usedCourts: number
+  /** The window this gym runs on this date, as the board has it. */
+  hours: { startTime: string; endTime: string }
+  /** True when those hours are this date's own, not the gym's usual range. */
+  hoursOverridden: boolean
+  onCourts: (courts: number) => void
+  onHours: (startTime: string, endTime: string) => void
+  onResetHours: () => void
+}) {
+  return (
+    <ActionPopover
+      label={`${gymName} on ${weekendLabel}: hours and courts`}
+      testId="gym-menu"
+      width={284}
+      trigger={
+        <QuietAction>
+          <span aria-hidden className="px-0.5 text-[13px] leading-none">
+            ⋯
+          </span>
+        </QuietAction>
+      }
+    >
+      {(close) => (
+        <GymMenuBody
+          gymName={gymName}
+          weekendLabel={weekendLabel}
+          wired={wired}
+          courts={courts}
+          usedCourts={usedCourts}
+          hours={hours}
+          hoursOverridden={hoursOverridden}
+          onCourts={(n) => {
+            onCourts(n)
+            close()
+          }}
+          onHours={(start, end) => {
+            onHours(start, end)
+            close()
+          }}
+          onResetHours={() => {
+            onResetHours()
+            close()
+          }}
+        />
+      )}
+    </ActionPopover>
+  )
+}
+
+function GymMenuBody({
+  gymName,
+  weekendLabel,
+  wired,
+  courts,
+  usedCourts,
+  hours,
+  hoursOverridden,
+  onCourts,
+  onHours,
+  onResetHours,
+}: {
+  gymName: string
+  weekendLabel: string
+  wired: number
+  courts: number
+  usedCourts: number
+  hours: { startTime: string; endTime: string }
+  hoursOverridden: boolean
+  onCourts: (courts: number) => void
+  onHours: (startTime: string, endTime: string) => void
+  onResetHours: () => void
+}) {
+  const [held, setHeld] = useState(Math.max(0, Math.min(wired, courts)))
+  const [start, setStart] = useState(hours.startTime)
+  const [end, setEnd] = useState(hours.endTime)
+  const step = (delta: number) => setHeld((n) => Math.max(0, Math.min(wired, n + delta)))
+  const badWindow = start >= end
+  return (
+    <div>
+      <p className="text-ink-900 text-[12.5px] font-bold">
+        {gymName} on {weekendLabel}
+      </p>
+      <p className="text-ink-500 mt-0.5 text-[11.5px]">This date only. Nothing else moves.</p>
+
+      {/* WHEN IT IS OPEN, that weekend. */}
+      <p className="text-ink-400 mt-2.5 text-[11px] font-bold uppercase tracking-[0.06em]">
+        Hours this date
+      </p>
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+        <input
+          type="time"
+          data-testid="gym-hours-start"
+          aria-label={`When ${gymName} opens on ${weekendLabel}`}
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          className="border-ink-200 text-ink-900 min-h-[36px] rounded-lg border px-2 text-[12px] font-semibold tabular-nums"
+        />
+        <span className="text-ink-400 text-[11.5px] font-semibold">to</span>
+        <input
+          type="time"
+          data-testid="gym-hours-end"
+          aria-label={`When ${gymName} closes on ${weekendLabel}`}
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+          className="border-ink-200 text-ink-900 min-h-[36px] rounded-lg border px-2 text-[12px] font-semibold tabular-nums"
+        />
+      </div>
+      {badWindow && (
+        <p className="text-hoop-700 mt-1 text-[11px] font-semibold">
+          That would close the gym before it opens.
+        </p>
+      )}
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          data-testid="gym-hours-apply"
+          disabled={badWindow || (start === hours.startTime && end === hours.endTime)}
+          onClick={() => onHours(start, end)}
+          className="border-court-300 bg-court-50 text-court-800 hover:bg-court-100 min-h-[36px] cursor-pointer rounded-lg border px-3 text-[12px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Set these hours
+        </button>
+        {hoursOverridden && (
+          <button
+            type="button"
+            data-testid="gym-hours-reset"
+            onClick={onResetHours}
+            className="text-ink-500 hover:text-ink-800 min-h-[36px] cursor-pointer px-1 text-[12px] font-semibold underline decoration-dotted underline-offset-2"
+          >
+            Back to its usual hours
+          </button>
+        )}
+      </div>
+
+      {/* HOW MUCH OF IT WE HOLD, that weekend. */}
+      <p className="text-ink-400 mt-3 text-[11px] font-bold uppercase tracking-[0.06em]">
+        Courts this date
+      </p>
+      <p className="text-ink-500 mt-0.5 text-[11.5px]">
+        The games here need {courtsWord(usedCourts)}. Fewer if the gym could not give them all,
+        more if you rented more of the building.
+      </p>
+      <div className="mt-1.5 flex items-center gap-2">
+        <button
+          type="button"
+          data-testid="court-step-down"
+          aria-label="One court fewer"
+          disabled={held <= 0}
+          onClick={() => step(-1)}
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 h-10 w-10 cursor-pointer rounded-lg border text-lg font-bold disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          &minus;
+        </button>
+        <span
+          data-testid="court-step-value"
+          className="text-ink-900 min-w-[2.5rem] text-center text-[20px] font-bold tabular-nums"
+        >
+          {held}
+        </span>
+        <button
+          type="button"
+          data-testid="court-step-up"
+          aria-label="One court more"
+          disabled={held >= wired}
+          onClick={() => step(1)}
+          className="border-ink-200 text-ink-700 hover:bg-ink-50 h-10 w-10 cursor-pointer rounded-lg border text-lg font-bold disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          +
+        </button>
+        <span className="text-ink-400 text-[11.5px] font-semibold tabular-nums">
+          of {courtsWord(wired)} on the floor
+        </span>
+      </div>
+      <button
+        type="button"
+        data-testid="court-correction-apply"
+        onClick={() => onCourts(held)}
+        className="border-court-300 bg-court-50 text-court-800 hover:bg-court-100 mt-2 min-h-[36px] cursor-pointer rounded-lg border px-3 text-[12px] font-bold"
+      >
+        {held === 0
+          ? "They have nothing"
+          : held > usedCourts
+            ? `We rented ${courtsWord(held)}`
+            : `That is ${courtsWord(held)}`}
+      </button>
     </div>
   )
 }

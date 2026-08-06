@@ -151,8 +151,11 @@ if (MODE === "locked") {
   if (liveChip > 0) fail(`${liveChip} chips still tappable on a finalized season`)
   if ((await page.locator('[data-testid="save-as-new"], [data-testid="save-plan"]').count()) > 0)
     fail("a finalized season must not offer to save")
-  if ((await page.locator("button:has-text('Adjust grouping rules')").count()) > 0)
-    fail("a finalized season must not offer the levers")
+  // RE-PINNED 2026-08-06 (owner ruling #6): the lever disclosure is gone. The
+  // one lever left is a button beside Redraw, and a finalized season draws
+  // neither of them.
+  if ((await page.locator('[data-testid="redraw-spread"], [data-testid="redraw"]').count()) > 0)
+    fail("a finalized season must not offer to redraw")
 
   const pill = await page.locator("text=/All grades fit|weekends? tight|weekends? over|grades? not placed/").first().textContent()
   console.log(`header pill: ${pill?.trim()}`)
@@ -367,11 +370,11 @@ try {
     fail("the reloaded board lost the move")
   console.log("reload opens on the saved calendar")
 
-  // 6) The quiet levers: a proposal makes it dirty again, undo puts it back.
-  await page.click("button:has-text('Adjust grouping rules')")
-  await page.waitForSelector("text=oldest grades together", { timeout: 10000 })
-  await page.click("button:has-text('Fewest weekends')")
-  await page.waitForSelector("text=as few weekends in use", { timeout: 20000 })
+  // 6) RE-PINNED 2026-08-06 (owner ruling #6): the levers were a row of chips
+  // behind "adjust grouping rules", a phrase that described none of them. The
+  // one that is genuinely a different answer is a button beside Redraw.
+  await page.click('[data-testid="redraw-spread"]')
+  await page.waitForSelector("text=every weekend of the season in use", { timeout: 20000 })
   // Dirty against the plan it came from, so it can be written straight back.
   if ((await page.locator('[data-testid="save-plan"]').count()) !== 1)
     fail("a lever proposal should be savable")

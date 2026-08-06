@@ -1,8 +1,8 @@
 "use client"
 
-import { AskSheet, VenueTray } from "./plan-ui"
+import { AskSheet, GymList } from "./plan-ui"
 import { PlanEmptyState } from "./plan-session"
-import { Segmented, StripView } from "./season-strip"
+import { StripView } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
 import { COPY, headerPill } from "./board-shared"
 import { useBoardState } from "./board-state"
@@ -14,7 +14,6 @@ import {
   DrawHero,
   DriftLine,
   GradeFilter,
-  GymLegend,
   StrandedBanner,
   UndoFloat,
 } from "./board-chrome"
@@ -99,7 +98,8 @@ export function CalendarStep({
     assignment,
     venues,
     undoStack,
-    courtCaps,
+    courtOverrides,
+    placedGyms,
     dirty,
     armed,
     setArmed,
@@ -112,43 +112,32 @@ export function CalendarStep({
     dragging,
     setDragging,
     gradeFilter,
-    setGradeFilter,
+    gymFilter,
     filterUnits,
     highlight,
+    gymHighlight,
+    lensGyms,
     toggleGrade,
+    toggleGym,
+    clearLenses,
     zoomSession,
     setZoomSession,
     flashSessions,
     flashUnits,
     ghosts,
     boardScroll,
-    assignMode,
-    setAssignMode,
     locked,
     busy,
     notice,
     error,
-    showRules,
-    setShowRules,
-    showHours,
-    setShowHours,
-    hoursChip,
-    setHoursChip,
-    hoursPreview,
-    setHoursPreview,
-    hoursError,
-    setHoursError,
     view,
     setView,
     side,
     setSide,
-    comparing,
-    setComparing,
     naming,
     setNaming,
     kept,
     keptShown,
-    compare,
     plans,
     planId,
     selectedPlan,
@@ -177,6 +166,7 @@ export function CalendarStep({
     venueGrid,
     poolOn,
     roomsOn,
+    hoursOn,
     summary,
     addable,
   } = m
@@ -196,12 +186,11 @@ export function CalendarStep({
     onDropSection,
     draw,
     redraw,
-    runLever,
+    redrawSpread,
     splitAxesFor,
     correctCourts,
+    setWeekendHours,
     addWeekend,
-    previewHours,
-    applyHours,
     jumpToWeekend,
     gradeList,
   } = verbs
@@ -255,6 +244,8 @@ export function CalendarStep({
         worldUsable={worldUsable}
         onUndo={undoMove}
         onRedraw={redraw}
+        onRedrawSpread={redrawSpread}
+        onFillFromPool={fillFromPool}
         onViewChange={(next) => {
           setView(next)
           setArmed(null)
@@ -272,17 +263,7 @@ export function CalendarStep({
             {error}
           </p>
         )}
-        {compare && !error && (
-          <div
-            className="border-gold-400 bg-gold-50 mb-4 rounded-xl border px-4 py-2.5"
-            aria-live="polite"
-            data-testid="compare-banner"
-          >
-            <p className="text-ink-900 text-sm font-semibold">{compare.line}</p>
-            <p className="text-ink-500 mt-0.5 text-xs">{COPY.compareLegend}</p>
-          </div>
-        )}
-        {notice && !error && !compare && (
+        {notice && !error && (
           <p
             className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm"
             data-testid="board-notice"
@@ -346,75 +327,22 @@ export function CalendarStep({
                 every number below it. */}
             <DriftLine drift={drift} unknown={worldUnknown} onPlanWorld={onPlanWorld} />
 
-            {/* The colour key for the whole step, above the calendar in both
-                views: which gym is which colour, in full names. */}
-            <GymLegend
-              order={gyms.order}
+            {/* ONE GYM LIST (owner ruling 2026-08-06, #1). The colour key and
+                the tray were the same row twice; this is the one of them. Drag a
+                card (or tap its grip) to place that gym, tap the card to
+                spotlight it. Above the calendar in both views, because it is
+                also the key. */}
+            <GymList
+              gyms={trayGyms}
               hue={gyms.hue}
               fillsFirst={fillsFirst}
-              backup={backupGyms}
+              armedVenueId={armedVenue}
+              lens={gymFilter}
+              interactive={interactive && !showingKept}
+              onArm={setArmedVenue}
+              onToggleLens={toggleGym}
+              onDragging={setDragging}
             />
-
-            {/* WHO CHOOSES THE RENTED GYMS (owner ruling 2026-08-03). Two modes,
-                above the board, because the answer changes what the board is
-                for: reading the pool's answer, or placing gyms yourself. */}
-            {view === "board" && interactive && !showingKept && (
-              <div className="mb-2.5">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <Segmented
-                    label="How rented gyms get chosen"
-                    value={assignMode}
-                    testId="assign-mode"
-                    options={[
-                      { value: "solve" as const, label: "Assign gyms for me" },
-                      { value: "place" as const, label: "I will place them" },
-                    ]}
-                    onChange={(next) => {
-                      setAssignMode(next)
-                      setArmed(null)
-                      setArmedVenue(null)
-                    }}
-                  />
-                  {assignMode === "solve" && (
-                    <button
-                      type="button"
-                      data-testid="assign-from-pool"
-                      disabled={busy !== null}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        fillFromPool()
-                      }}
-                      className="border-play-600 bg-play-600 hover:bg-play-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-xs font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Fill the gaps from my pool
-                    </button>
-                  )}
-                  <span className="text-ink-400 text-[11.5px]">
-                    {assignMode === "solve" ? COPY.assignSolve : COPY.assignPlace}
-                  </span>
-                </div>
-                {/**
-                 * THE TRAY IS ALWAYS THERE (owner ruling 2026-08-05, the tray
-                 * regression). It used to be drawn only in "I will place them"
-                 * mode, and when the compact-first pass made "Assign gyms for
-                 * me" the default the pool simply vanished from the board — an
-                 * operator could not see which gyms they had to rent, let alone
-                 * pick one up, without first finding a mode switch.
-                 *
-                 * So it is rendered whenever a plan is open on the board. The
-                 * mode still says who CHOOSES by default; picking a gym up is a
-                 * decision the operator is allowed to make either way, and doing
-                 * so arms the drop targets (see `placing`).
-                 */}
-                <VenueTray
-                  gyms={trayGyms}
-                  hue={gyms.hue}
-                  armedVenueId={armedVenue}
-                  onArm={setArmedVenue}
-                  onDragging={setDragging}
-                />
-              </div>
-            )}
 
             {/* ONE GRADE AT A TIME, WHEN YOU WANT IT (owner ruling 2026-08-05,
                 #4). A lens over the calendar and nothing more: it moves no game
@@ -424,8 +352,9 @@ export function CalendarStep({
               <GradeFilter
                 units={filterUnits}
                 selected={gradeFilter}
+                gymsShowing={lensGyms}
                 onToggle={toggleGrade}
-                onClear={() => setGradeFilter([])}
+                onClear={clearLenses}
               />
             )}
 
@@ -455,7 +384,7 @@ export function CalendarStep({
                       statusOf={statusOf}
                       unitByKey={unitByKey}
                       hue={gyms.hue}
-                      courtCaps={courtCaps}
+                      courtOverrides={courtOverrides}
                       interactive={interactive}
                       onBack={() => setZoomSession(null)}
                       onCorrectCourts={correctCourts}
@@ -473,22 +402,23 @@ export function CalendarStep({
                       unitByKey={unitByKey}
                       hue={gyms.hue}
                       armed={armed}
-                      // A gym picked up from the tray is a decision, whichever
-                      // mode the board is in: the sections become drop targets
-                      // for as long as one is armed.
+                      // A gym picked up off the gym list arms every place it
+                      // could land, for as long as it is held.
                       armedVenue={armedVenue}
                       armedBlock={armedBlock}
                       armedSection={armedSection}
-                      placing={interactive && (assignMode === "place" || armedVenue !== null)}
                       interactive={interactive}
                       dragging={dragging}
                       highlight={highlight}
+                      gymHighlight={gymHighlight}
                       scrollRef={boardScroll}
                       flashSessions={flashSessions}
                       flashUnits={flashUnits}
                       ghosts={ghosts}
                       addable={addable}
-                      courtCaps={courtCaps}
+                      courtOverrides={courtOverrides}
+                      hoursOn={hoursOn}
+                      placedGyms={placedGyms}
                       strandedAt={strandedAt}
                       poolOn={poolOn}
                       roomsOn={roomsOn}
@@ -505,10 +435,10 @@ export function CalendarStep({
                       onDropSection={onDropSection}
                       onPlaceVenue={placeVenue}
                       onCorrectCourts={correctCourts}
+                      onSetHours={setWeekendHours}
                       onOpenWeekend={setZoomSession}
                       onAddWeekend={addWeekend}
                       splitAxesFor={splitAxesFor}
-                      compare={compare}
                     />
                   )
                 ) : (
@@ -569,33 +499,8 @@ export function CalendarStep({
 
             {interactive && !showingKept && (
               <BoardTools
-                showRules={showRules}
-                showHours={showHours}
-                onToggleRules={() => setShowRules((v) => !v)}
-                onToggleHours={() => {
-                  setShowHours((v) => !v)
-                  setHoursChip(null)
-                  setHoursPreview(null)
-                  setHoursError(null)
-                }}
-                kept={kept}
-                view={view}
-                comparing={comparing}
-                onToggleCompare={() => setComparing((v) => !v)}
                 busy={busy}
                 dirty={dirty}
-                worldUsable={worldUsable}
-                onPlanWorld={onPlanWorld}
-                hoursChip={hoursChip}
-                hoursPreview={hoursPreview}
-                hoursError={hoursError}
-                previewHours={previewHours}
-                applyHours={applyHours}
-                onCancelHours={() => {
-                  setHoursChip(null)
-                  setHoursPreview(null)
-                }}
-                runLever={runLever}
                 plans={plans}
                 selectedPlan={selectedPlan}
                 activePlan={activePlan}

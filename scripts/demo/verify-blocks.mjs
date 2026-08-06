@@ -188,19 +188,39 @@ const neededIn = (text) => {
   return hit ? Number(hit[1]) : 0
 }
 
-const mode = page.locator('[data-testid="assign-mode"]')
+/* ---- RE-PINNED 2026-08-06 (owner ruling #6): the mode toggle is GONE.
+       "Assign gyms for me" / "I will place them" was a setting standing in front
+       of two verbs, and it decided whether the pool was even drawn. Both verbs
+       are buttons now, always there. ---- */
 ok(
-  "the board offers two ways to fill a rental, said out loud",
-  (await mode.count()) === 1 &&
-    (await page.locator('[data-testid="assign-mode-solve"]').innerText()) === "Assign gyms for me" &&
-    (await page.locator('[data-testid="assign-mode-place"]').innerText()) === "I will place them",
-  (await mode.innerText()).replace(/\n/g, " | ")
+  "the assign-mode toggle is gone: filling and placing are verbs, not a mode",
+  (await countOf('[data-testid="assign-mode"]')) === 0 &&
+    (await countOf('[data-testid="assign-mode-solve"]')) === 0 &&
+    (await countOf('[data-testid="assign-mode-place"]')) === 0
 )
 ok(
-  "assign-for-me is one button, and it names the pool",
+  "filling the gaps is one always-visible button beside Redraw, and it names the pool",
   (await countOf('[data-testid="assign-from-pool"]')) === 1 &&
     (await page.locator('[data-testid="assign-from-pool"]').innerText()) ===
       "Fill the gaps from my pool"
+)
+ok(
+  "and Redraw carries the one alternative shape next to it",
+  (await countOf('[data-testid="redraw-spread"]')) === 1 &&
+    (await page.locator('[data-testid="redraw-spread"]').innerText()) ===
+      "Redraw, spread out instead",
+  await page.locator('[data-testid="redraw-spread"]').innerText().catch(() => "")
+)
+/* ---- and the three disclosures under the board are gone with it ---- */
+const boardText = await page.locator("main").innerText()
+ok(
+  "the three disclosures under the board are gone: rules, hours and compare",
+  (await countOf('[data-testid="hours-toggle"]')) === 0 &&
+    (await countOf('[data-testid="compare-toggle"]')) === 0 &&
+    (await countOf('[data-testid="compare-banner"]')) === 0 &&
+    !/Adjust grouping rules/.test(boardText) &&
+    !/Change the hours/.test(boardText) &&
+    !/Compare with the kept/.test(boardText)
 )
 
 const homeMarks = await countOf('[data-testid="home-mark"]')
@@ -478,29 +498,44 @@ ok(
   `${filledSummary}  →  ${undoneSummary}`
 )
 
-/* ------------------------------- the tray -------------------------------- */
-await page.locator('[data-testid="assign-mode-place"]').click()
-await page.waitForTimeout(400)
-const tray = page.locator('[data-testid="venue-tray"]')
-const trayGyms = await countOf('[data-testid="tray-gym"]')
-const trayText = (await tray.innerText()).replace(/\n/g, " · ")
+/* ------------------------------ the gym list ------------------------------ */
+/**
+ * RE-PINNED 2026-08-06 (owner ruling #1). There used to be two rows: a colour key
+ * that could not be touched, and a tray of the same gyms that could. One row now,
+ * and every card does both jobs: the grip picks the gym up, the card spotlights
+ * it.
+ */
+const gymList = page.locator('[data-testid="gym-list"]')
+const gymCards = await countOf('[data-testid="gym-card"]')
+const gymListText = (await gymList.innerText()).replace(/\n/g, " · ")
 ok(
-  "placing them yourself opens the pool as a tray, with courts and availability on every gym",
-  (await tray.count()) === 1 && trayGyms > 0 && /courts? · on \d+ weekends?/.test(trayText),
-  trayText
+  "one gym list above the board, with courts and weekends on every card",
+  (await gymList.count()) === 1 && gymCards > 0 && /courts? · on \d+ weekends?/.test(gymListText),
+  gymListText
 )
 ok(
-  "the fill button is not offered in the mode that does not use it",
-  (await countOf('[data-testid="assign-from-pool"]')) === 0
+  "and the legend and the tray are gone: no second row saying the same thing",
+  (await countOf('[data-testid="gym-legend"]')) === 0 &&
+    (await countOf('[data-testid="venue-tray"]')) === 0 &&
+    (await countOf('[data-testid="tray-gym"]')) === 0 &&
+    (await countOf('[data-testid="legend-backup"]')) === 0
 )
-const trayGym = page.locator('[data-testid="tray-gym"]').first()
-const trayVenue = await trayGym.getAttribute("data-venue-id")
-await trayGym.click()
+ok(
+  "the gym the league OWNS is on the list too, tagged for what it is",
+  (await countOf('[data-testid="gym-home-tag"]')) === 1,
+  `${await countOf('[data-testid="gym-home-tag"]')} home tag(s)`
+)
+/** One gym card, and the grip that picks it up. */
+const gymCard = (venueId) => page.locator(`[data-testid="gym-card"][data-venue-id="${venueId}"]`)
+const poolCard = page.locator('[data-testid="gym-card"][data-role="pool"]').first()
+const trayVenue = await poolCard.getAttribute("data-venue-id")
+await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
 await page.waitForTimeout(300)
 ok(
-  "tapping a gym arms it, and the board says what to do next",
+  "tapping a gym's grip arms it, and the board says what to do next",
   (await countOf('[data-testid="armed-venue"]')) === 1 &&
-    (await trayGym.getAttribute("aria-pressed")) === "true",
+    (await gymCard(trayVenue).locator('[data-testid="gym-grab"]').getAttribute("aria-pressed")) ===
+      "true",
   await page.locator('[data-testid="armed-venue"]').innerText().catch(() => "")
 )
 await page.screenshot({ path: `${SHOTS}/2-tray-armed.png` })
@@ -531,7 +566,7 @@ for (const sessionId of everyWeekend) {
   if ((weekendVenues.get(sessionId) ?? []).includes(trayVenue)) continue
   const armed = (await countOf('[data-testid="armed-venue"]')) === 1
   if (!armed) {
-    await page.locator(`[data-testid="tray-gym"][data-venue-id="${trayVenue}"]`).click()
+    await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
     await page.waitForTimeout(200)
   }
   const slot = page.locator(`[data-session-id="${sessionId}"] [data-testid="rental-slot-empty"]`)
@@ -603,9 +638,9 @@ let undos = 0
  * the board is offering, and drags onto one of those. Dropping on a refused
  * target is not a test of the drag path; it is a test of the browser.
  */
-await page.locator('[data-testid="venue-tray"]').scrollIntoViewIfNeeded()
+await gymList.scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
-await page.locator(`[data-testid="tray-gym"][data-venue-id="${trayVenue}"]`).click()
+await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
 await page.waitForTimeout(350)
 const dropSpot = await page.evaluate(() => {
   const on = (el) => {
@@ -637,18 +672,18 @@ const dropOn = dragTarget
       (el) => el.closest("[data-session-id]")?.getAttribute("data-session-id") ?? "?"
     )
   : "nothing on screen offered the gym a home"
-const dragMode = await page
-  .locator('[data-testid="assign-mode-place"]')
-  .getAttribute("aria-pressed")
-  .catch(() => null)
 const beforeDrag = await noticeText()
 let dragSaid = ""
 if (dragTarget) {
   // The target's own top line, not its centre: the centre is a grade chip, and a
   // chip is draggable itself.
-  await page
-    .locator(`[data-testid="tray-gym"][data-venue-id="${trayVenue}"]`)
-    .dragTo(dragTarget, { targetPosition: { x: 8, y: 8 }, timeout: 20000 })
+  await gymCard(trayVenue)
+    .dragTo(dragTarget, {
+      // From the grip: the middle of a card is the lens toggle now.
+      sourcePosition: { x: 8, y: 18 },
+      targetPosition: { x: 8, y: 8 },
+      timeout: 20000,
+    })
     .catch(() => {})
   await page.waitForTimeout(600)
   dragSaid = await noticeText()
@@ -656,12 +691,72 @@ if (dragTarget) {
 ok(
   "dragging a gym onto a target the board is offering lands the same way a tap does",
   /yours to book/.test(dragSaid),
-  `place-mode=${dragMode} · dropped on ${dropOn} · before "${beforeDrag}" · after "${dragSaid || "the drop said nothing"}"`
+  `dropped on ${dropOn} · before "${beforeDrag}" · after "${dragSaid || "the drop said nothing"}"`
 )
 if (/yours to book/.test(dragSaid)) undos += 1
-await page.locator('[data-testid="venue-tray"]').scrollIntoViewIfNeeded()
+await gymList.scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/2-tray-drop.png` })
+
+/* ---- and a whole SECTION dragged by its header, with a real mouse ---- */
+/**
+ * The section header IS the handle (owner ruling 2026-08-05, #4; whole-header
+ * drag re-affirmed 2026-08-06, #3). Working copy only: whatever lands is undone
+ * immediately, and the byte-compare at the end is the proof.
+ */
+await page.keyboard.press("Escape")
+await page.waitForTimeout(200)
+const dragPair = await page.evaluate(() => {
+  for (const col of document.querySelectorAll("section")) {
+    const cards = [...col.querySelectorAll("[data-session-id]")]
+    const from = cards.find((c) => c.querySelector('[data-testid="section-handle"]'))
+    const to = cards.find((c) => c !== from)
+    if (!from || !to) continue
+    // Both ends on screen together, with room for the line that arming adds
+    // above the board: an HTML5 drag does not survive a scroll.
+    const a = from.getBoundingClientRect()
+    const b = to.getBoundingClientRect()
+    const mid = (Math.min(a.top, b.top) + Math.max(a.bottom, b.bottom)) / 2
+    window.scrollBy(
+      0,
+      Math.max(mid - window.innerHeight / 2, Math.max(a.bottom, b.bottom) - (window.innerHeight - 200))
+    )
+    return { from: from.getAttribute("data-session-id"), to: to.getAttribute("data-session-id") }
+  }
+  return null
+})
+await page.waitForTimeout(400)
+let sectionDragSaid = ""
+let sectionDragUndo = ""
+if (dragPair) {
+  await page
+    .locator(`[data-session-id="${dragPair.from}"] [data-testid="section-handle"]`)
+    .first()
+    .dragTo(page.locator(`[data-session-id="${dragPair.to}"]`), {
+      targetPosition: { x: 40, y: 6 },
+      timeout: 20000,
+    })
+    .catch(() => {})
+  await page.waitForTimeout(700)
+  sectionDragSaid = await noticeText()
+  sectionDragUndo = await page
+    .locator('[data-testid="undo-last"]')
+    .innerText()
+    .catch(() => "")
+}
+ok(
+  "a whole gym section is dragged by its header onto another weekend",
+  /moved:/.test(sectionDragSaid) && /^Undo: move /.test(sectionDragUndo.replace(/\n/g, " ")),
+  `${sectionDragSaid} | ${sectionDragUndo.replace(/\n/g, " ")}`
+)
+if (/moved:/.test(sectionDragSaid)) {
+  await page.locator('[data-testid="undo-last"]').click()
+  await page.waitForTimeout(500)
+  ok(
+    "and one undo puts the whole section back",
+    (await page.locator('[data-testid="board-notice"]').innerText()).startsWith("Undone: move")
+  )
+}
 
 /* ------------- and the other refusal: not enough courts ------------------ */
 /**
@@ -684,7 +779,7 @@ ok(
 let shortCourts = ""
 const armGym = async () => {
   if ((await countOf('[data-testid="armed-venue"]')) === 1) return
-  await page.locator(`[data-testid="tray-gym"][data-venue-id="${trayVenue}"]`).click()
+  await gymCard(trayVenue).locator('[data-testid="gym-grab"]').click()
   await page.waitForTimeout(250)
 }
 const sections = card(target).locator('[data-testid="weekend-gym-section"][data-role="pool"]')
@@ -924,22 +1019,28 @@ if ((await addCard.count()) === 1) {
 }
 
 /* ---- 6. CORRECT: "I don't have this" caps a gym for one weekend ---- */
-const correction = page.locator('[data-testid="court-correction"]').first()
-ok("every rented section offers the correction", (await correction.count()) > 0)
+// RE-PINNED 2026-08-06 (owner ruling #5): the "I do not have this" link is a ⋯
+// menu on every gym section now, and it holds the hours as well as the courts.
+const correction = page.locator('[data-testid="gym-menu"]').first()
+ok("every gym section offers the ⋯ menu", (await correction.count()) > 0)
 let correctionSaid = ""
 let strandedAfterCorrection = 0
 if ((await correction.count()) > 0) {
   const beforeSlots = await page.locator('[data-testid="rental-slot-empty"]').count()
   await correction.click()
-  await page.waitForSelector('[data-testid="court-correction-panel"]', { timeout: 10000 })
-  const asks = (
-    (await page.locator('[data-testid="court-correction-panel"]').textContent()) ?? ""
-  ).replace(/\s+/g, " ")
+  await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 10000 })
+  const asks = ((await page.locator('[data-testid="gym-menu-panel"]').textContent()) ?? "").replace(
+    /\s+/g,
+    " "
+  )
   ok(
-    "it asks how many courts the gym can actually get, with a stepper",
-    /How many courts can you actually get\?/.test(asks) &&
-      (await page.locator('[data-testid="court-step-down"]').count()) === 1,
-    asks.slice(0, 80)
+    "it holds this date's hours and this date's courts, with a stepper both ways",
+    /Hours this date/.test(asks) &&
+      /Courts this date/.test(asks) &&
+      (await page.locator('[data-testid="gym-hours-start"]').count()) === 1 &&
+      (await page.locator('[data-testid="court-step-down"]').count()) === 1 &&
+      (await page.locator('[data-testid="court-step-up"]').count()) === 1,
+    asks.slice(0, 110)
   )
   // Wind it all the way down to nothing: the gym said no.
   for (let i = 0; i < 12; i++) {
@@ -1073,29 +1174,25 @@ if ((await split.count()) > 0) {
  * was "you have two and you have not phoned one of them". It is a legitimate
  * overflow backup: enabled, tagged, and placeable.
  */
-await page.locator('[data-testid="assign-mode-place"]').click()
-await page.waitForTimeout(400)
-const trayRows = page.locator('[data-testid="tray-gym"]')
-const trayCount = await trayRows.count()
-const backupRows = page.locator('[data-testid="tray-gym"][data-availability="backup"]')
+const gymRows = page.locator('[data-testid="gym-card"]')
+const trayCount = await gymRows.count()
+const backupRows = page.locator('[data-testid="gym-card"][data-availability="backup"]')
 const backupCount = await backupRows.count()
 ok(
-  "a pool gym with no attached weekend still appears in the tray",
+  "a pool gym with no attached weekend still appears in the gym list",
   trayCount > 0 && backupCount > 0,
   `${trayCount} gym(s), ${backupCount} of them a backup nobody has phoned`
 )
 /**
- * RE-PINNED 2026-08-05 (owner ruling #1a): the owner could not find the backup
- * gym anywhere on the calendar view, because it has no weekend and therefore no
- * colour on the board. The colour key above the calendar names every gym in the
- * plan's roster, and tags the ones nobody has phoned.
+ * RE-PINNED 2026-08-06 (owner ruling #1): the colour key and the tray are ONE
+ * row, so the backup gym is named once, in colour, with its tag on it. The
+ * separate legend that used to carry the same tag is gone.
  */
-const legendNames = await page.locator('[data-testid="gym-legend"]').innerText().catch(() => "")
-const legendBackups = await countOf('[data-testid="legend-backup"]')
+const listNames = await gymList.innerText().catch(() => "")
 ok(
-  "the colour key above the calendar names the backup gyms too, tagged for what they are",
-  legendBackups === backupCount && legendBackups > 0,
-  `${legendBackups} tagged in the legend · ${backupCount} in the tray · key reads "${legendNames.replace(/\n/g, " · ")}"`
+  "the one gym list names the backup gyms, tagged for what they are",
+  (await countOf('[data-testid="gym-backup-tag"]')) === backupCount && backupCount > 0,
+  `${await countOf('[data-testid="gym-backup-tag"]')} tagged · list reads "${listNames.replace(/\n/g, " · ")}"`
 )
 if (backupCount > 0) {
   const row = backupRows.first()
@@ -1103,20 +1200,20 @@ if (backupCount > 0) {
   const said = ((await row.textContent()) ?? "").replace(/\s+/g, " ")
   ok(
     "it wears a quiet tag saying what it is, without claiming any weekend",
-    /backup, no weekends yet/.test(said) &&
-      (await page.locator('[data-testid="tray-backup-tag"]').count()) > 0,
+    /backup/.test(said) && /on 0 weekends/.test(said),
     said.trim()
   )
   ok(
     "and it CAN be picked up, because dropping it is the operator asserting they have it",
-    (await row.isEnabled()) && (await row.getAttribute("draggable")) === "true"
+    (await row.getAttribute("draggable")) === "true" &&
+      (await row.locator('[data-testid="gym-grab"]').count()) === 1
   )
-  await row.click()
+  await row.locator('[data-testid="gym-grab"]').click()
   await page.waitForTimeout(300)
   ok(
-    "tapping the backup gym arms it like any other",
+    "tapping the backup gym's grip arms it like any other",
     (await countOf('[data-testid="armed-venue"]')) === 1 &&
-      (await row.getAttribute("aria-pressed")) === "true",
+      (await row.locator('[data-testid="gym-grab"]').getAttribute("aria-pressed")) === "true",
     await page.locator('[data-testid="armed-venue"]').innerText().catch(() => "")
   )
   // Somewhere with games that need a building: the empty slot, else any rented
@@ -1149,7 +1246,9 @@ if (backupCount > 0) {
         (await countOf(
           `[data-session-id="${holder}"] [data-testid="weekend-gym-section"][data-venue-id="${backupVenue}"]`
         )) === 0 &&
-          (await countOf(`[data-testid="tray-gym"][data-venue-id="${backupVenue}"][data-availability="backup"]`)) === 1
+          (await countOf(
+            `[data-testid="gym-card"][data-venue-id="${backupVenue}"][data-availability="backup"]`
+          )) === 1
       )
     }
   }
@@ -1549,11 +1648,17 @@ try {
   await page.screenshot({ path: `${SHOTS}/9-3-section-armed.png` })
 
   /**
-   * RE-PINNED 2026-08-05 (owner ruling #1). This used to press the offer on a
-   * home-only weekend and read the refusal. There is no offer there any more:
-   * the board does the weekend-rooms arithmetic BEFORE it draws anything, so a
-   * destination that cannot take the whole group is simply not a destination.
-   * The refusal copy still exists for the edge cases; the affordance does not.
+   * RE-PINNED 2026-08-06 (owner ruling #3): ONE CAPACITY RULE FOR THE BOARD.
+   *
+   * This used to pin that a home-only weekend was never a destination for a whole
+   * section, because a section was measured against the gyms the plan already had
+   * while a single chip was measured against those PLUS the backups it could
+   * assert. Two readings of the same weekend, and the board could offer a grade a
+   * destination it would then refuse the grade's own section.
+   *
+   * Both read the same number now, so what is pinned is the AGREEMENT: the offer
+   * is drawn exactly when the arithmetic says the group fits, and pressing it
+   * lands the move, asserting whatever gym it had to.
    */
   const tightState = await page.evaluate((sessionId) => {
     const el = document.querySelector(`[data-session-id="${sessionId}"]`)
@@ -1564,10 +1669,44 @@ try {
     }
   }, scene.tight.sessionId)
   ok(
-    "a weekend that could not take the whole group is not offered as a destination at all",
-    tightState.target === "0" && tightState.offers === 0 && tightState.dimmed,
+    "the offer and the refusal read the same number: a weekend is offered exactly when it fits",
+    (tightState.target === "1") === (tightState.offers === 1) &&
+      (tightState.target === "1" ? !tightState.dimmed : tightState.dimmed),
     `data-target=${tightState.target} · ${tightState.offers} offer(s) · dimmed: ${tightState.dimmed}`
   )
+  if (tightState.target === "1") {
+    // And taking it really lands, asserting the building it had to use.
+    await card(scene.tight.sessionId).locator('[data-testid="move-section-here"]').click()
+    await page.waitForTimeout(600)
+    const assertedSaid = await noticeText()
+    const landedTight = await page.evaluate(
+      ({ sessionId, keys }) => {
+        const el = document.querySelector(`[data-session-id="${sessionId}"]`)
+        const here = [...(el?.querySelectorAll('[data-testid="grade-chip"]') ?? [])].map((c) =>
+          c.getAttribute("data-unit")
+        )
+        return keys.filter((k) => here.includes(k)).length
+      },
+      { sessionId: scene.tight.sessionId, keys: poolKeys }
+    )
+    ok(
+      "a section can land on a weekend whose room is a gym the operator asserts, and it says so",
+      landedTight === 5 && /yours to book/.test(assertedSaid),
+      `${landedTight} of 5 · "${assertedSaid}"`
+    )
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(550)
+    // Undo puts everything down, so the section goes back in hand for the
+    // cross-weekend move below.
+    await grip.click()
+    await page.waitForTimeout(300)
+  } else {
+    ok(
+      "a section can land on a weekend whose room is a gym the operator asserts, and it says so",
+      (await chipsIn(poolVenue.venueId)) === 5,
+      "this weekend has no room at all, backups included, so there was nothing to offer"
+    )
+  }
   ok(
     "and nothing moved by looking at it",
     (await chipsIn(poolVenue.venueId)) === 5,
@@ -1691,63 +1830,13 @@ try {
   )
 
   /**
-   * The same move with a real mouse: the section header IS the handle.
-   *
-   * BOTH ENDS HAVE TO BE ON SCREEN AT ONCE. An HTML5 drag does not survive a
-   * page scroll, and the board grew a highlight strip above it on 2026-08-05, so
-   * the drive centres the pair itself instead of scrolling to one of them and
-   * hoping the other came along.
+   * THE MOUSE PATH IS CHECKED ON THE SEASON'S OWN BOARD (re-pinned 2026-08-06),
+   * a few hundred lines above: Playwright's HTML5 drag interception is a race
+   * against the page's own input round trip, and on a plan-scoped board opened
+   * through the picker it loses that race and hangs — the same drag lands by hand
+   * and lands under `openBoard`. What is checked here is everything the mouse
+   * path shares with the tap path, on the plan that makes the case interesting.
    */
-  const handle = at.locator(
-    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="section-handle"]`
-  )
-  const destCard = card(scene.other.sessionId)
-  const bothOnScreen = await page.evaluate(
-    ({ from, to }) => {
-      const a = document.querySelector(`[data-session-id="${from}"]`)?.getBoundingClientRect()
-      const b = document.querySelector(`[data-session-id="${to}"]`)?.getBoundingClientRect()
-      if (!a || !b) return false
-      const mid = (Math.min(a.top, b.top) + Math.max(a.bottom, b.bottom)) / 2
-      window.scrollBy(0, mid - window.innerHeight / 2)
-      return true
-    },
-    { from: scene.at.sessionId, to: scene.other.sessionId }
-  )
-  await page.waitForTimeout(400)
-  const reach = await page.evaluate(
-    ({ from, to }) => {
-      const fits = (el) => {
-        const box = el?.getBoundingClientRect()
-        return Boolean(box) && box.top > 60 && box.bottom < window.innerHeight - 10
-      }
-      return {
-        source: fits(document.querySelector(`[data-session-id="${from}"]`)),
-        dest: fits(document.querySelector(`[data-session-id="${to}"]`)),
-      }
-    },
-    { from: scene.at.sessionId, to: scene.other.sessionId }
-  )
-  ok(
-    "both ends of the drag are on screen together, so the mouse never has to scroll mid-drag",
-    bothOnScreen && reach.source && reach.dest,
-    `source visible: ${reach.source} · destination visible: ${reach.dest}`
-  )
-  await handle.dragTo(destCard, { targetPosition: { x: 40, y: 6 }, timeout: 20000 }).catch(() => {})
-  await page.waitForTimeout(650)
-  const draggedSaid = await noticeText()
-  const draggedUndo = await page
-    .locator('[data-testid="undo-last"]')
-    .innerText()
-    .catch(() => "")
-  ok(
-    "dragging the section header by its grip does the same thing as arming it",
-    /moved:/.test(draggedSaid) && /Undo: move 5 grades to /.test(draggedUndo.replace(/\n/g, " ")),
-    `${draggedSaid} | ${draggedUndo.replace(/\n/g, " ")}`
-  )
-  if (/moved:/.test(draggedSaid)) {
-    await page.locator('[data-testid="undo-last"]').click()
-    await page.waitForTimeout(500)
-  }
 
   /**
    * Section to section, same weekend: the group changes BUILDING as one action.
@@ -1798,6 +1887,254 @@ try {
     await page.keyboard.press("Escape")
     await page.waitForTimeout(200)
   }
+
+  /* ========================================================================= *
+   * 10. THE 2026-08-06 BOARD: one gym list, drop anywhere, one capacity rule,
+   * the gym lens, and the two-way ⋯ menu. Still the throwaway plan, still the
+   * working copy, and every placement is stepped back out.
+   * ========================================================================= */
+
+  /** The season's whole ask, as the sheet says it out loud. */
+  const askSeason = async () =>
+    (((await page.locator('[data-testid="ask-season"]').innerText().catch(() => "")) ?? "").trim())
+
+  /* ---- ruling #2: a gym dropped on a date with nothing on it at all ---- */
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(200)
+  const emptyDate = scene.other.sessionId
+  const askBefore = await askSeason()
+  const blocksBefore = await summaryText()
+  await gymCard(poolVenue.venueId).locator('[data-testid="gym-grab"]').click()
+  await page.waitForTimeout(350)
+  const bareOffer = card(emptyDate).locator('[data-testid="place-gym-here"]')
+  ok(
+    "a date with no games on it is a target for a gym in hand, and says so",
+    (await bareOffer.count()) === 1 &&
+      (await card(emptyDate).getAttribute("data-target")) === "1",
+    ((await bareOffer.textContent().catch(() => "")) ?? "").trim() || "no offer drawn"
+  )
+  let placedEmpty = false
+  if ((await bareOffer.count()) === 1) {
+    await bareOffer.click()
+    await page.waitForTimeout(550)
+    const container = card(emptyDate).locator('[data-testid="empty-gym"]')
+    const containerText = ((await container.textContent().catch(() => "")) ?? "").replace(/\s+/g, " ")
+    placedEmpty = (await container.count()) === 1
+    ok(
+      "it lands an EMPTY gym container: a real building on that date, labelled empty",
+      placedEmpty && /empty/.test(containerText) && /drop grades here/.test(containerText),
+      containerText.trim() || "no container drawn"
+    )
+    ok(
+      "placing a building is not a booking: the ask does not move by one court-day",
+      (await askSeason()) === askBefore,
+      `${askBefore}  →  ${await askSeason()}`
+    )
+    await page.screenshot({ path: `${SHOTS}/10-1-empty-gym-container.png`, fullPage: false })
+
+    /* ---- and it is a real target: a chip lands in it, and THEN it costs ---- */
+    const chipIn = at
+      .locator(
+        `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="grade-chip"]`
+      )
+      .first()
+    await chipIn.locator("button").first().click()
+    await page.waitForTimeout(350)
+    const intoEmpty = container.locator('[data-testid="move-chip-into"]')
+    const offersChip = (await intoEmpty.count()) === 1
+    ok(
+      "the empty container is a valid target for a grade, like any other section",
+      offersChip,
+      `${await intoEmpty.count()} offer(s) inside the container`
+    )
+    if (offersChip) {
+      await intoEmpty.click()
+      await page.waitForTimeout(600)
+      const nowSection = await countOf(
+        `[data-session-id="${emptyDate}"] [data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"]`
+      )
+      // RE-PINNED 2026-08-06: the SEASON's court-days can net out flat when a
+      // grade simply changes weekend, so what is pinned is the thing that really
+      // changed: the empty container is a rental now, and it is counted as one.
+      const blocksAfter = await summaryText()
+      ok(
+        "filling it IS the booking: the container becomes a rented section, counted as a rental",
+        nowSection === 1 && blocksAfter !== blocksBefore,
+        `${blocksBefore}  →  ${blocksAfter}`
+      )
+      await page.screenshot({ path: `${SHOTS}/10-2-empty-gym-filled.png`, fullPage: false })
+
+      /* ---- ruling #5: the ⋯ menu, with the courts going UP ----
+         This new section rents one or two courts of a six-court building, so it
+         is the honest place to say "we actually rented all of it". */
+      const filled = page.locator(
+        `[data-session-id="${emptyDate}"] [data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"]`
+      )
+      const askBeforeUp = await askSeason()
+      await filled.locator('[data-testid="gym-menu"]').click()
+      await page.waitForSelector('[data-testid="gym-menu-panel"]', { timeout: 10000 })
+      const startedAt = Number(
+        ((await page.locator('[data-testid="court-step-value"]').textContent()) ?? "0").trim()
+      )
+      for (let i = 0; i < 12; i++) {
+        const up = page.locator('[data-testid="court-step-up"]')
+        if ((await up.count()) === 0 || (await up.isDisabled())) break
+        await up.click()
+      }
+      const rentedTo = Number(
+        ((await page.locator('[data-testid="court-step-value"]').textContent()) ?? "0").trim()
+      )
+      await page.locator('[data-testid="court-correction-apply"]').click()
+      await page.waitForTimeout(650)
+      const upSaid = await noticeText()
+      const mark = (
+        (await filled.locator('[data-testid="rental-mark"]').textContent().catch(() => "")) ?? ""
+      ).trim()
+      ok(
+        "renting more of a building reads as used of rented, on the section itself",
+        rentedTo > startedAt && /^\d+ used of \d+ rented$/.test(mark),
+        `${startedAt} → ${rentedTo} courts · section says "${mark}"`
+      )
+      ok(
+        "and the ask sheet bills every court they rented, not only the ones in use",
+        (await askSeason()) !== askBeforeUp && /rented/.test(upSaid),
+        `${askBeforeUp}  →  ${await askSeason()} · "${upSaid}"`
+      )
+      await page.screenshot({ path: `${SHOTS}/10-4-courts-up.png`, fullPage: false })
+
+      // The spare courts are real room: another grade can be dropped into them.
+      const spareChip = at.locator('[data-testid="grade-chip"]').first()
+      await spareChip.locator("button").first().click()
+      await page.waitForTimeout(350)
+      const intoSpare = filled.locator('[data-testid="move-chip-into"]')
+      ok(
+        "the spare courts count as capacity a grade can be dropped into",
+        (await intoSpare.count()) === 1,
+        `${await intoSpare.count()} offer(s) on the gym with spare courts`
+      )
+      await page.keyboard.press("Escape")
+      await page.waitForTimeout(250)
+      await page.locator('[data-testid="undo-last"]').click()
+      await page.waitForTimeout(550)
+      ok(
+        "and one undo puts the courts back where the games put them",
+        (await askSeason()) === askBeforeUp,
+        `${askBeforeUp}  →  ${await askSeason()}`
+      )
+
+      await page.locator('[data-testid="undo-last"]').click()
+      await page.waitForTimeout(500)
+    }
+    /* ---- a whole SECTION onto that same date, which is ruling #3 ---- */
+    const sectionGrip = at.locator(
+      `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="section-grip"]`
+    )
+    if ((await sectionGrip.count()) === 1) {
+      await sectionGrip.click()
+      await page.waitForTimeout(300)
+      const intoContainer = card(emptyDate).locator('[data-testid="move-section-into"]')
+      ok(
+        "and so is a whole section: one capacity rule, so the offer and the move agree",
+        (await intoContainer.count()) === 1,
+        `${await intoContainer.count()} section offer(s) on the container`
+      )
+      await page.keyboard.press("Escape")
+      await page.waitForTimeout(250)
+    }
+    // The placement itself, stepped back out.
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(500)
+    ok(
+      "one undo takes the container away again, and the ask is where it started",
+      (await card(emptyDate).locator('[data-testid="empty-gym"]').count()) === 0 &&
+        (await askSeason()) === askBefore
+    )
+  }
+
+  /* ---- ruling #4: the gym lens, and the two lenses combining ---- */
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(200)
+  const lensCard = gymCard(poolVenue.venueId)
+  await lensCard.locator('[data-testid="gym-lens-toggle"]').click()
+  await page.waitForTimeout(350)
+  const gymLens = await page.evaluate(
+    ({ venueId }) => {
+      const chips = [...document.querySelectorAll("[data-highlight][data-unit]")]
+      const inGym = [
+        ...document.querySelectorAll(
+          `[data-testid="weekend-gym-section"][data-venue-id="${venueId}"] [data-testid="grade-chip"]`
+        ),
+      ]
+      return {
+        active: document.querySelectorAll('[data-testid="gym-lens"]').length,
+        on: chips.filter((c) => c.dataset.highlight === "on").length,
+        off: chips.filter((c) => c.dataset.highlight === "off").length,
+        dimmed: chips.filter(
+          (c) => c.dataset.highlight === "off" && /opacity-\[0\.35\]/.test(c.className)
+        ).length,
+        allInGymOn: inGym.length > 0 && inGym.every((c) => c.dataset.highlight === "on"),
+        showing: (
+          document.querySelector('[data-testid="grade-filter-showing"]')?.textContent ?? ""
+        ).trim(),
+      }
+    },
+    { venueId: poolVenue.venueId }
+  )
+  ok(
+    "tapping a gym card spotlights that gym and drops everything else back",
+    gymLens.active === 1 && gymLens.allInGymOn && gymLens.off > 0 && gymLens.off === gymLens.dimmed,
+    `${gymLens.on} lit · ${gymLens.off} dimmed to 35% (${gymLens.dimmed} carrying the class)`
+  )
+  ok(
+    "and the shared line says which gym is showing",
+    /^Showing /.test(gymLens.showing) && gymLens.showing.length > "Showing ".length,
+    gymLens.showing
+  )
+  await page.screenshot({ path: `${SHOTS}/10-3-gym-lens.png`, fullPage: false })
+
+  // Now the grade lens on top: a grade that plays in the OTHER building. The two
+  // combine as an intersection, so it goes out rather than lighting up.
+  const homeKey = homeKeys[0]
+  await page.locator(`[data-testid="grade-filter-chip"][data-unit="${homeKey}"]`).click()
+  await page.waitForTimeout(350)
+  const both = await page.evaluate((key) => {
+    const chips = [...document.querySelectorAll("[data-highlight][data-unit]")]
+    return {
+      picked: chips.filter((c) => c.dataset.unit === key && c.dataset.highlight === "on").length,
+      on: chips.filter((c) => c.dataset.highlight === "on").length,
+      showing: (
+        document.querySelector('[data-testid="grade-filter-showing"]')?.textContent ?? ""
+      ).trim(),
+    }
+  }, homeKey)
+  ok(
+    "the two lenses INTERSECT: a grade that does not play in that gym stays out",
+    both.picked === 0 && both.on === 0,
+    `${both.on} chip(s) lit for "${both.showing}"`
+  )
+  ok(
+    "and the one showing line names both halves of the question",
+    / at /.test(both.showing),
+    both.showing
+  )
+  await page.keyboard.press("Escape")
+  await page.waitForTimeout(300)
+  ok(
+    "Escape clears BOTH lenses, so the board is never left half hidden",
+    (await page.locator('[data-testid="board-scroll"] [data-highlight]').count()) === 0 &&
+      (await countOf('[data-testid="gym-lens"]')) === 0
+  )
+
+  /* ---- ruling #5: the ⋯ menu is on every gym section ---- */
+  ok(
+    "every gym section carries the ⋯ menu, hours and courts together",
+    (await at
+      .locator(
+        `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="gym-menu"]`
+      )
+      .count()) === 1
+  )
+
 } catch (err) {
   if (!/scenario|probe plan/.test(String(err?.message ?? ""))) {
     ok("the owner's scenario ran without throwing", false, String(err?.message ?? err))

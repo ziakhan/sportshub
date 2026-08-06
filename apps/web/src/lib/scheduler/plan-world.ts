@@ -232,6 +232,11 @@ export function planStateFrom(
                   courtDays: v.courtDays,
                   days: v.days,
                   hoursPerCourtDay: v.hoursPerCourtDay,
+                  // The hours this gym runs on THIS weekend, where the plan gave
+                  // it an exception (owner ruling 2026-08-06, #5). Carried so the
+                  // per-date editor opens on what is really booked.
+                  startTime: v.startTime ?? gym?.openTime ?? null,
+                  endTime: v.endTime ?? gym?.closeTime ?? null,
                 }
               })
             )
@@ -469,6 +474,85 @@ export function withAssertedGyms(
   return touchedAny ? { ...state, windows } : state
 }
 
+/**
+ * THIS GYM, THIS DATE, THESE HOURS (owner ruling 2026-08-06, #5).
+ *
+ * The per-weekend hours editor, in the shape the BOARD computes on. withWeekend-
+ * GymHours does the same thing to a plan's world, and both have to exist: the
+ * world is what a save writes down, and this is what the operator sees move the
+ * instant they press it, without a round trip.
+ *
+ * The arithmetic is buildSlots', the same one every capacity on this screen is
+ * derived from: courts × days × floor(window ÷ slot). Nothing downstream has to
+ * know an exception happened — the section meter, the weekend fraction, the
+ * blocks, the ask sheet and the solver all read the capacity that comes out.
+ *
+ * Keyed by courtCapKey ("<sessionId>|<venueId>"), so the two working-copy
+ * overrides on this board are keyed the same way. A gym nobody gave hours to
+ * comes back as the very same object.
+ */
+export function withWeekendHours(
+  state: PlannerState,
+  hours: Record<string, { startTime: string; endTime: string }>
+): PlannerState {
+  if (Object.keys(hours).length === 0) return state
+  const slot = state.gameSlotMinutes ?? DEFAULT_SLOT_MINUTES
+  let touchedAny = false
+  const windows = state.windows.map((win) => {
+    let touchedWindow = false
+    const weekends = win.weekends.map((w) => {
+      let touched = false
+      const venues = w.venues.map((v) => {
+        const want = hours[courtCapKey(w.sessionId, v.venueId)]
+        if (!want) return v
+        const perCourtDay = gamesPerCourtDay(want.startTime, want.endTime, slot)
+        const courts = Math.max(0, v.courts ?? courtsWiredAt(v))
+        const days = Math.max(1, v.days ?? w.dayCount ?? DEFAULT_DAY_COUNT)
+        touched = true
+        return {
+          ...v,
+          startTime: want.startTime,
+          endTime: want.endTime,
+          courts,
+          days,
+          courtDays: courts * days,
+          hoursPerCourtDay: perCourtDay * (slot / 60),
+          capacityGames: courts * days * perCourtDay,
+        }
+      })
+      if (!touched) return w
+      touchedWindow = true
+      touchedAny = true
+      return {
+        ...w,
+        venues,
+        capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+        largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+      }
+    })
+    return touchedWindow ? { ...win, weekends } : win
+  })
+  return touchedAny ? { ...state, windows } : state
+}
+
+/**
+ * The hours a gym runs on one weekend as the board has them: the exception where
+ * there is one, else the gym's own range, else the default day. What the per-date
+ * editor opens on.
+ */
+export function weekendGymHours(
+  state: PlannerState,
+  weekend: PlannerWeekend,
+  venueId: string
+): { startTime: string; endTime: string } {
+  const venue = weekend.venues.find((v) => v.venueId === venueId)
+  const gym = (state.gyms ?? []).find((g) => g.venueId === venueId)
+  return {
+    startTime: venue?.startTime ?? gym?.openTime ?? DEFAULT_OPEN,
+    endTime: venue?.endTime ?? gym?.closeTime ?? DEFAULT_CLOSE,
+  }
+}
+
 /* ---------------------------- writing a world ---------------------------- */
 
 /** Every editor goes through here: the weekends keep their own gyms, the
@@ -616,6 +700,28 @@ export function withAssertedGymsInWorld(
   let next = world
   for (const [sessionId, venueIds] of Object.entries(asserted)) {
     for (const venueId of venueIds ?? []) next = withGymOnWeekend(next, sessionId, venueId, true)
+  }
+  return next
+}
+
+/**
+ * EVERY PER-DATE HOURS EXCEPTION THE BOARD MADE, written into the plan's own
+ * world (owner ruling 2026-08-06, #5). The board applies them to the state it
+ * draws the instant they are pressed (withWeekendHours); this is the other half
+ * of that promise, run when the plan document is saved, so reopening the plan
+ * finds the gym really running those hours on that date.
+ *
+ * Keyed by courtCapKey, the way the working copy holds them.
+ */
+export function withWeekendHoursInWorld(
+  world: PlanWorld,
+  hours: Record<string, { startTime: string; endTime: string }>
+): PlanWorld {
+  let next = world
+  for (const [key, window] of Object.entries(hours)) {
+    const [sessionId, venueId] = key.split("|")
+    if (!sessionId || !venueId) continue
+    next = withWeekendGymHours(next, sessionId, venueId, window)
   }
   return next
 }

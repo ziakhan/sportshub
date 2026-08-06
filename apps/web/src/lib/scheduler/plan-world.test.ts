@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 import type { PlanWorld, PlanWorldGym } from "./plan-documents"
-import type { PlannerState } from "./planner-core"
+import { planRentalBlocks, rentalAsk, type PlannerState } from "./planner-core"
 import {
+  weekendGymHours,
+  withWeekendHours,
+  withWeekendHoursInWorld,
   freshWorld,
   gamesPerCourtDay,
   planGridFrom,
@@ -644,6 +647,114 @@ describe("a backup gym the operator asserted", () => {
       settings: { capturedAt: "x", state: next },
     }) as PlannerState
     expect(saved.windows[0].weekends[0].capacityGames).toBe(216)
+  })
+
+  /**
+   * PLACING A BUILDING IS NOT A BOOKING (owner ruling 2026-08-06, #2). A gym
+   * dropped on a date with nothing on it is availability the operator asserted,
+   * and availability is free: nobody phones a gym to say "we may need you". The
+   * bill starts when games land in it.
+   */
+  it("costs nothing until games land in it", () => {
+    const state = stateOf(world())
+    const placed = withAssertedGyms(state, { "w-nov": ["v-pool"] })
+    // The weekend runs and the gym is on it...
+    expect(placed.windows[0].weekends[1].venues.map((v) => v.venueId)).toEqual(["v-pool"])
+    // ...and the calendar rents nothing, because nothing plays there.
+    const empty = planRentalBlocks(placed, { "w-nov": [] })
+    expect(empty).toEqual([])
+    expect(rentalAsk(placed, empty).season).toEqual({
+      courtDays: 0,
+      courtHours: 0,
+      gamesUnhoused: 0,
+    })
+    // One grade into it, and the same gym on the same date is a rental.
+    const filled = planRentalBlocks(
+      placed,
+      { "w-nov": ["age:Grade 7"] },
+      { "w-nov": { "age:Grade 7": "v-pool" } }
+    )
+    expect(filled).toHaveLength(1)
+    expect(filled[0].venueId).toBe("v-pool")
+    expect(filled[0].courts).toBeGreaterThan(0)
+    expect(rentalAsk(placed, filled).season.courtDays).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * THIS GYM, THIS DATE, THESE HOURS (owner ruling 2026-08-06, #5). The per-date
+ * editor's own arithmetic: one gym on one weekend moves, and every capacity
+ * downstream of it moves with it. Nothing else in the season is touched.
+ */
+describe("a gym's hours on one date", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+
+  it("costs nothing and changes nothing when nobody has edited any", () => {
+    const state = stateOf(world())
+    expect(withWeekendHours(state, {})).toBe(state)
+    // A gym that is not on that weekend has no hours to change.
+    expect(
+      withWeekendHours(state, { "w-oct|v-pool": { startTime: "09:00", endTime: "12:00" } })
+    ).toBe(state)
+  })
+
+  it("re-derives capacity from the new window, at the courts that gym gives", () => {
+    const state = stateOf(world())
+    const next = withWeekendHours(state, {
+      "w-oct|v-home": { startTime: "12:00", endTime: "18:00" },
+    })
+    const home = next.windows[0].weekends[0].venues[0]
+    expect(home.startTime).toBe("12:00")
+    expect(home.endTime).toBe("18:00")
+    // 3 courts × 2 days × 6 games, where the full day held 12 each.
+    expect(home.capacityGames).toBe(36)
+    expect(home.hoursPerCourtDay).toBe(6)
+    expect(next.windows[0].weekends[0].capacityGames).toBe(36)
+    // The state it came from is untouched: the board's world is derived.
+    expect(state.windows[0].weekends[0].capacityGames).toBe(72)
+  })
+
+  it("moves the one date and nothing else", () => {
+    const both = withGymEveryWeekend(withWeekendChosen(world(), "w-nov", true), "v-home", true)
+    const state = stateOf(both)
+    const next = withWeekendHours(state, {
+      "w-oct|v-home": { startTime: "09:00", endTime: "10:00" },
+    })
+    expect(next.windows[0].weekends[0].capacityGames).toBe(6)
+    expect(next.windows[0].weekends[1].capacityGames).toBe(
+      state.windows[0].weekends[1].capacityGames
+    )
+  })
+
+  it("reads back the hours the editor should open on", () => {
+    const state = stateOf(world())
+    // No exception: the gym's own season range.
+    expect(weekendGymHours(state, state.windows[0].weekends[0], "v-home")).toEqual({
+      startTime: "09:00",
+      endTime: "21:00",
+    })
+    const next = withWeekendHours(state, {
+      "w-oct|v-home": { startTime: "13:00", endTime: "17:00" },
+    })
+    expect(weekendGymHours(next, next.windows[0].weekends[0], "v-home")).toEqual({
+      startTime: "13:00",
+      endTime: "17:00",
+    })
+  })
+
+  it("is written into the plan's own world when the plan is saved", () => {
+    const saved = withWeekendHoursInWorld(world(), {
+      "w-oct|v-home": { startTime: "12:00", endTime: "18:00" },
+    })
+    const oct = weekendOf(saved, "w-oct") as NonNullable<ReturnType<typeof weekendOf>>
+    expect((oct.venues ?? [])[0].startTime).toBe("12:00")
+    expect(oct.capacityGames).toBe(36)
+    // And the board reads the saved world exactly the way it read the edit.
+    const state = planStateFrom("s1", {
+      settings: { capturedAt: "x", state: saved },
+    }) as PlannerState
+    expect(state.windows[0].weekends[0].capacityGames).toBe(36)
   })
 })
 

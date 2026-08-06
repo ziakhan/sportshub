@@ -7,13 +7,16 @@ import {
   planCost,
   planPrice,
   planPriceSentence,
+  planRentalBlocks,
   splitAcrossGyms,
   splitPriceSentence,
   splitAcrossWeekends,
+  withRentedCourts,
   type PlannerState,
   type PlannerUnit,
   type PlannerVenue,
   type PlannerWeekend,
+  type RentalBlock,
 } from "./planner"
 
 /**
@@ -146,6 +149,58 @@ describe("applyCourtCaps", () => {
 
   it("courtsWiredAt reads the ceiling a correction is capped at", () => {
     expect(courtsWiredAt(venue("pool", "Six Park East", "pool", 6))).toBe(6)
+  })
+})
+
+/**
+ * THE OTHER WAY UP (owner ruling 2026-08-06, #5). The same per-date number, read
+ * as "the courts we hold there": below the demand-sized rental it is the
+ * correction above, above it the operator rented more of the building than the
+ * games needed and the ask has to say so.
+ */
+describe("withRentedCourts", () => {
+  /** The rental a weekend of 24 games at a 4-court gym is sized at. */
+  const blocks = (): RentalBlock[] =>
+    planRentalBlocks(world(), BOTH_ON_W1, { w1: { "age:Gr9": "pool", "age:Gr10": "pool" } })
+
+  it("hands back the very same blocks when nobody has rented more", () => {
+    const base = blocks()
+    expect(withRentedCourts(base, {})).toBe(base)
+    // A number at or under the demand-sized rental changes nothing: that is the
+    // correction's job, and the correction has already made the block smaller.
+    const rented = base.find((b) => b.venueId === "pool") as RentalBlock
+    expect(withRentedCourts(base, { [courtCapKey("w1", "pool")]: rented.courts })).toBe(base)
+  })
+
+  it("bills the courts the operator says they rented, hours and all", () => {
+    const base = blocks()
+    const before = base.find((b) => b.venueId === "pool") as RentalBlock
+    expect(before.courts).toBe(2)
+    const after = withRentedCourts(base, { [courtCapKey("w1", "pool")]: 4 }).find(
+      (b) => b.venueId === "pool"
+    ) as RentalBlock
+    expect(after.courts).toBe(4)
+    expect(after.courtDays).toBe(8)
+    // 6 court-hours a court-day at this gym, so the ask doubles with the courts.
+    expect(after.hoursNeeded).toBe(48)
+    // The games are what they always were: renting more does not play more.
+    expect(after.games).toBe(before.games)
+  })
+
+  it("leaves the block with no building alone: there is nothing rented to bill", () => {
+    const homeless: RentalBlock[] = [
+      {
+        sessionId: "w1",
+        venueId: null,
+        courts: 1,
+        days: 2,
+        courtDays: 2,
+        hoursNeeded: 12,
+        games: 6,
+        unitKeys: ["age:Gr9"],
+      },
+    ]
+    expect(withRentedCourts(homeless, { [courtCapKey("w1", "pool")]: 4 })).toBe(homeless)
   })
 })
 

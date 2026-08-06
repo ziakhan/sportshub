@@ -7,7 +7,6 @@ import {
   type PlannerState,
   type PlannerUnit,
   type RentalBlock,
-  type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import type { BuildingRoom } from "@/lib/scheduler/plan-world"
 import type { Armed, ArmedBlock, ArmedSection, GhostChip } from "./plan-shared"
@@ -32,16 +31,18 @@ export function BoardView({
   armedVenue,
   armedBlock,
   armedSection,
-  placing,
   interactive,
   dragging,
   highlight,
+  gymHighlight,
   scrollRef,
   flashSessions,
   flashUnits,
   ghosts,
   addable,
-  courtCaps,
+  courtOverrides,
+  hoursOn,
+  placedGyms,
   strandedAt,
   poolOn,
   roomsOn,
@@ -58,10 +59,10 @@ export function BoardView({
   onDropSection,
   onPlaceVenue,
   onCorrectCourts,
+  onSetHours,
   onOpenWeekend,
   onAddWeekend,
   splitAxesFor,
-  compare,
 }: {
   state: PlannerState
   assignment: Record<string, string[]>
@@ -89,14 +90,14 @@ export function BoardView({
   armedBlock: ArmedBlock | null
   /** A whole gym section picked up, looking for a building or a weekend. */
   armedSection: ArmedSection | null
-  /** True while the operator is placing gyms by hand, which is what turns the
-   *  slots and the rented sections into drop targets. */
-  placing: boolean
   interactive: boolean
   /** A mouse is mid-drag: the colours light up, the dashed offers stay shut. */
   dragging: boolean
-  /** The grades the operator picked out, or null while the filter is off. */
+  /** The grades the operator picked out, or null while that lens is off. */
   highlight: Set<string> | null
+  /** The gyms the operator picked out, or null while that lens is off. The two
+   *  combine as an intersection (owner ruling 2026-08-06, #4). */
+  gymHighlight: Set<string> | null
   /** The horizontal scroller, so the rail can bring a weekend into view. */
   scrollRef: React.RefObject<HTMLDivElement>
   /** Weekends ringed for a moment: where the rail just jumped, and both ends
@@ -109,9 +110,16 @@ export function BoardView({
   /** Saturdays each month is not using yet, for the ghost card at the foot of
    *  the column. */
   addable: Map<string, Array<{ satDateISO: string; label: string }>>
-  /** Gyms somebody corrected, so a section can say it is not the whole
-   *  building this weekend. */
-  courtCaps: Record<string, number>
+  /** Gyms somebody gave a court number of their own, so a section can say it is
+   *  not the whole building this weekend, or that we rented more of it. */
+  courtOverrides: Record<string, number>
+  /** The hours one gym runs on one weekend, and whether that is an exception. */
+  hoursOn: (
+    sessionId: string,
+    venueId: string
+  ) => { startTime: string; endTime: string; custom: boolean }
+  /** Gyms placed on a weekend with no games in them yet: sessionId → venueIds. */
+  placedGyms: Map<string, Set<string>>
   /** Grades whose building this plan no longer has, per weekend (owner ruling
    *  2026-08-05, #4): sessionId → the grades stranded there. */
   strandedAt: Map<string, Set<string>>
@@ -148,10 +156,14 @@ export function BoardView({
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
+  onSetHours: (
+    sessionId: string,
+    venueId: string,
+    window: { startTime: string; endTime: string } | null
+  ) => void
   onOpenWeekend: (sessionId: string) => void
   onAddWeekend: (satDateISO: string, label: string) => void
   splitAxesFor: (sessionId: string, unitKeys: string[]) => SplitAxis[]
-  compare: { byWeekend: Map<string, WeekendDiff>; keptOn: Map<string, string> } | null
 }) {
   /** The rentals of each weekend, so a card never filters the whole season. */
   const blocksBySession = useMemo(() => {
@@ -221,14 +233,16 @@ export function BoardView({
                   armedVenue={armedVenue}
                   armedBlock={armedBlock}
                   armedSection={armedSection}
-                  placing={placing}
                   interactive={interactive}
                   dragging={dragging}
                   highlight={highlight}
+                  gymHighlight={gymHighlight}
                   flash={flashSessions.includes(w.sessionId)}
                   flashUnits={flashUnits}
                   ghosts={ghostsBySession.get(w.sessionId) ?? EMPTY_GHOSTS}
-                  courtCaps={courtCaps}
+                  courtOverrides={courtOverrides}
+                  hoursFor={(venueId) => hoursOn(w.sessionId, venueId)}
+                  placedGyms={placedGyms.get(w.sessionId) ?? EMPTY_KEYS}
                   strandedKeys={strandedAt.get(w.sessionId) ?? EMPTY_KEYS}
                   poolGyms={poolOn(w.sessionId)}
                   roomsFor={(used) => roomsOn(w.sessionId, used)}
@@ -245,11 +259,10 @@ export function BoardView({
                   onDropSection={onDropSection}
                   onPlaceVenue={onPlaceVenue}
                   onCorrectCourts={onCorrectCourts}
+                  onSetHours={onSetHours}
                   onOpenWeekend={onOpenWeekend}
                   splitAxesFor={splitAxesFor}
                   onDisarm={() => onArm(null)}
-                  diff={compare?.byWeekend.get(w.sessionId)}
-                  keptOn={compare?.keptOn}
                 />
               ))}
 
@@ -283,7 +296,15 @@ export function BoardView({
                         weekendLabel="the bench"
                         armed={armed}
                         interactive={interactive}
-                        highlight={highlight == null ? null : highlight.has(u.key) ? "on" : "off"}
+                        // A benched grade is in no building, so the GYM lens can
+                        // never light it: it is dimmed whenever that lens is on.
+                        highlight={
+                          highlight == null && gymHighlight == null
+                            ? null
+                            : gymHighlight == null && highlight?.has(u.key)
+                              ? "on"
+                              : "off"
+                        }
                         onArm={onArm}
                         // A benched grade dragged off the bench lights the board
                         // up the same way one already on a weekend does.

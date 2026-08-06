@@ -15,7 +15,6 @@ import {
   type PlannerUnit,
   type PlannerWeekend,
   type RentalBlock,
-  type WeekendDiff,
 } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY } from "@/lib/scheduler/plan-documents"
 import type { BuildingRoom } from "@/lib/scheduler/plan-world"
@@ -32,8 +31,8 @@ import {
 } from "./plan-shared"
 import {
   BlockStatusMark,
-  CourtCorrection,
   Fraction,
+  GymMenu,
   SplitMenu,
   WhyPopover,
   type BlockStatus,
@@ -41,6 +40,7 @@ import {
 } from "./plan-ui"
 import {
   FILTER_DIM,
+  FILTER_MATCH,
   NOT_TARGET,
   TARGET_OFFER,
   TARGET_RING,
@@ -69,14 +69,16 @@ export function WeekendCard({
   armedVenue,
   armedBlock,
   armedSection,
-  placing,
   interactive,
   dragging,
   highlight,
+  gymHighlight,
   flash,
   flashUnits,
   ghosts,
-  courtCaps,
+  courtOverrides,
+  hoursFor,
+  placedGyms,
   strandedKeys,
   poolGyms,
   roomsFor,
@@ -93,11 +95,10 @@ export function WeekendCard({
   onDropSection,
   onPlaceVenue,
   onCorrectCourts,
+  onSetHours,
   onOpenWeekend,
   splitAxesFor,
   onDisarm,
-  diff,
-  keptOn,
 }: {
   weekend: PlannerWeekend
   windowLabel: string
@@ -122,7 +123,6 @@ export function WeekendCard({
   armedBlock: ArmedBlock | null
   /** A whole gym section picked up, waiting for a building or a weekend. */
   armedSection: ArmedSection | null
-  placing: boolean
   interactive: boolean
   /** A mouse is mid-drag (owner ruling 2026-08-05, #1). The colours light up
    *  exactly the same, but the dashed OFFERS stay shut: a button appearing under
@@ -131,6 +131,10 @@ export function WeekendCard({
   /** The grades the operator is picking out, or null while the filter is off
    *  (owner ruling 2026-08-05, #4). Purely visual: nothing about the plan moves. */
   highlight: Set<string> | null
+  /** The gyms the operator is picking out, or null while that lens is off (owner
+   *  ruling 2026-08-06, #4). It combines with the grade lens as an INTERSECTION:
+   *  "Grade 8 at Six Park" is one question. */
+  gymHighlight: Set<string> | null
   /** The rail just sent somebody here. */
   flash: boolean
   /** The grades that just landed here, keyed "<sessionId>|<unitKey>" (owner
@@ -138,7 +142,15 @@ export function WeekendCard({
   flashUnits: string[]
   /** "Grade 8 was here", for the grades that just left this weekend. */
   ghosts: GhostChip[]
-  courtCaps: Record<string, number>
+  courtOverrides: Record<string, number>
+  /** The hours one gym runs on THIS weekend, and whether they are this date's own
+   *  rather than the gym's usual range (owner ruling 2026-08-06, #5). What the ⋯
+   *  menu opens on. */
+  hoursFor: (venueId: string) => { startTime: string; endTime: string; custom: boolean }
+  /** Gyms the operator put on this weekend that have no games in them yet (owner
+   *  ruling 2026-08-06, #2). Each one is drawn as an empty container: a real
+   *  building on a real date, costing nothing, ready to be filled. */
+  placedGyms: Set<string>
   /** Grades on THIS weekend whose building this plan no longer has (owner ruling
    *  2026-08-05, #4). Their games are already in the dashed block below; this is
    *  what makes the card say WHY. */
@@ -180,13 +192,15 @@ export function WeekendCard({
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
+  /** This gym, this date, these hours. Null puts it back on its usual range. */
+  onSetHours: (
+    sessionId: string,
+    venueId: string,
+    window: { startTime: string; endTime: string } | null
+  ) => void
   onOpenWeekend: (sessionId: string) => void
   splitAxesFor: (sessionId: string, unitKeys: string[]) => SplitAxis[]
   onDisarm: () => void
-  /** Set only in compare mode: this weekend against the kept calendar. */
-  diff?: WeekendDiff
-  /** "<sessionId>|<unitKey>" → the days the kept calendar plays it on. */
-  keptOn?: Map<string, string>
 }) {
   const load = weekendLoad(units, weekend, keys)
   // Grouping only: the buildings are already decided by the season-long pass,
@@ -229,22 +243,19 @@ export function WeekendCard({
   const roomAt = (venueId: string): BuildingRoom | null =>
     rooms.find((r) => r.venueId === venueId) ?? null
   /**
-   * TWO READINGS OF "ROOM", because two verbs answer differently (owner ruling
-   * 2026-08-05, #1: "a weekend with no gym time and no backup capacity is not a
-   * target").
+   * ONE READING OF "ROOM", FOR EVERYTHING (owner ruling 2026-08-06, #3).
    *
-   * `freeAll` counts the backup gyms in. Dropping ONE grade or a stranded block
-   * on a weekend never refuses: whatever the attached buildings cannot hold turns
-   * into the dashed "needs a building" slot, and a weekend with a backup gym
-   * behind it can genuinely answer that slot. So the weekend is a target.
+   * There used to be two. A single chip was measured against every building
+   * behind this weekend, backups included, because taking a backup is the
+   * operator asserting they have it. A whole SECTION was measured against only
+   * the gyms this plan already had, so the board would light a weekend up for one
+   * grade and refuse the section that grade was in, and a date with nothing on it
+   * was a target for neither.
    *
-   * `freeHeld` counts only the buildings this plan already has. A whole SECTION
-   * refuses rather than half-lands, and it refuses on exactly this number, so
-   * offering a section a weekend it would then be refused would be the board
-   * arguing with itself.
+   * Both count what the drop MAY assert now, and moveSection asserts it (see
+   * board-verbs), so the offer and the refusal can never disagree again.
    */
   const freeAll = rooms.reduce((sum, r) => sum + r.freeGames, 0)
-  const freeHeld = rooms.reduce((sum, r) => sum + (r.backup ? 0 : r.freeGames), 0)
   /** Games a set of grades would bring to THIS weekend, at its own rate. */
   const bringing = (unitKeys: string[]) => weekendDemand(units, weekend, unitKeys)
 
@@ -276,10 +287,17 @@ export function WeekendCard({
   const blockGames = armedBlock ? bringing(armedBlock.unitKeys) : 0
   const sectionGames = armedSection ? bringing(armedSection.unitKeys) : 0
   const inMonth = (win: string | undefined) => win === windowLabel
+  /**
+   * IS THERE ANYWHERE ON THIS WEEKEND TO PUT ANYTHING? The attached capacity used
+   * to answer this, which quietly ruled out every date the plan had no gym on —
+   * including the empty ones a gym can simply be placed on (owner ruling
+   * 2026-08-06, #2). Room is room, whoever has to assert it.
+   */
+  const anyRoom = freeAll > 0
   const canTakeArmed =
     Boolean(armed) &&
     interactive &&
-    load.capacity > 0 &&
+    anyRoom &&
     inMonth(armed?.window) &&
     armed?.fromSessionId !== weekend.sessionId &&
     freeAll >= armedGames
@@ -288,21 +306,21 @@ export function WeekendCard({
   const canTakeBlock =
     Boolean(armedBlock) &&
     interactive &&
-    load.capacity > 0 &&
+    anyRoom &&
     inMonth(armedBlock?.window) &&
     armedBlock?.sessionId !== weekend.sessionId &&
     freeAll >= blockGames
   /** A whole section is picked up and this weekend can take every grade in it
-   *  (owner rulings 2026-08-05, #4 and #1). The refusal copy behind the move
-   *  stays for the edge cases, but the offer is no longer drawn where the board
-   *  already knows the answer is no. */
+   *  (owner rulings 2026-08-05 #4, 2026-08-06 #3). The same arithmetic a single
+   *  chip is offered on, so a group is never refused a weekend the board just
+   *  offered one of its grades. */
   const canTakeSection =
     Boolean(armedSection) &&
     interactive &&
-    load.capacity > 0 &&
+    anyRoom &&
     inMonth(armedSection?.window) &&
     armedSection?.sessionId !== weekend.sessionId &&
-    freeHeld >= sectionGames
+    freeAll >= sectionGames
 
   /**
    * And the two things that land on ONE BUILDING of this weekend.
@@ -311,9 +329,23 @@ export function WeekendCard({
    * the retired ⇄ used to guess at (ruling #2). It is offered per gym, so the
    * operator names the destination and the board only lights the ones with room.
    */
+  /**
+   * THE BUILDINGS ON THIS CARD, sections and empty containers alike (owner ruling
+   * 2026-08-06, #2). An empty gym is a building on a real date with room in it,
+   * so it takes a chip and a section exactly as a filled one does.
+   */
+  const emptyGymRows = [...placedGyms]
+    .filter((venueId) => !gyms.sections.some((s) => s.venueId === venueId))
+    .map((venueId) => roomAt(venueId))
+    .filter((room): room is BuildingRoom => room !== null)
+  const dropTargets: Array<{ venueId: string; games: number }> = [
+    ...gyms.sections.map((s) => ({ venueId: s.venueId, games: s.games })),
+    ...emptyGymRows.map((r) => ({ venueId: r.venueId, games: 0 })),
+  ]
+
   const chipTargets = new Set<string>()
   if (armed && interactive && inMonth(armed.window) && armed.fromSessionId) {
-    for (const s of gyms.sections) {
+    for (const s of dropTargets) {
       const sameSpot =
         armed.fromSessionId === weekend.sessionId && playsIn[armed.unitKey] === s.venueId
       if (sameSpot) continue
@@ -323,20 +355,32 @@ export function WeekendCard({
   /** The buildings a whole armed section could move INTO. */
   const sectionTargets = new Set<string>()
   if (armedSection && interactive && inMonth(armedSection.window)) {
-    for (const s of gyms.sections) {
+    for (const s of dropTargets) {
       const sameSpot =
         armedSection.sessionId === weekend.sessionId && armedSection.venueId === s.venueId
       if (sameSpot) continue
       if ((roomAt(s.venueId)?.freeGames ?? 0) >= sectionGames) sectionTargets.add(s.venueId)
     }
   }
-  /** A gym is picked up out of the tray, and this is what it could hold here. */
-  const canTakeVenue = placing && Boolean(armedVenue)
+  /** A gym is picked up out of the gym list, and this is what it could hold here. */
+  const canTakeVenue = interactive && Boolean(armedVenue)
   const armedRoom = armedVenue ? roomAt(armedVenue) : null
   const venueRoom = armedRoom?.freeGames ?? 0
   const takesGymAt = (venueId: string, games: number) =>
     canTakeVenue && Boolean(armedRoom) && venueId !== armedVenue && venueRoom >= games
   const takesGymInSlot = canTakeVenue && Boolean(armedRoom) && venueRoom >= (emptyBlock?.games ?? 0)
+  /**
+   * DROP A GYM ANYWHERE, INCLUDING ON A DATE WITH NOTHING ON IT (owner ruling
+   * 2026-08-06, #2). Where the weekend has games looking for a building, the slot
+   * takes the gym and houses them. Where it has none, the whole card takes it and
+   * the gym lands as an empty container: a building placed is not a booking.
+   */
+  const takesGymBare =
+    canTakeVenue &&
+    Boolean(armedRoom) &&
+    !emptyBlock &&
+    !placedGyms.has(armedVenue as string) &&
+    !gyms.sections.some((s) => s.venueId === armedVenue)
 
   /**
    * SOMETHING IS IN THE OPERATOR'S HAND, and this weekend either can take it or
@@ -356,22 +400,30 @@ export function WeekendCard({
     chipTargets.size > 0 ||
     sectionTargets.size > 0 ||
     takesGymInSlot ||
+    takesGymBare ||
     gyms.sections.some(
       (s) => s.role === "pool" && takesGymAt(s.venueId, sectionGamesOf(s.venueId, s.games))
     )
   /** A drop is refused at the browser level where the board would refuse it
    *  anyway: no preventDefault, no drop, no argument afterwards. */
   const droppable =
-    interactive && load.capacity > 0 && (!holding || canTakeArmed || canTakeSection)
+    interactive && (!holding ? anyRoom : canTakeArmed || canTakeSection || takesGymBare)
   /** The whole card steps back: nothing held can land anywhere on it. */
   const cardDim = holding && !isTarget && !isSource
 
   /**
-   * THE GRADE HIGHLIGHT (owner ruling 2026-08-05, #4). Weekends where a picked
-   * grade plays wear a quiet emphasis; sections with none of them step back. The
-   * plan does not change by one game.
+   * THE TWO LENSES (owner rulings 2026-08-05 #4 and 2026-08-06 #4). A grade lens,
+   * a gym lens, and they COMBINE: a chip is lit when the grade is picked out AND
+   * it plays in a picked-out building. Either lens on its own reads as "any" for
+   * the other. Nothing under either of them moves by one game.
    */
-  const highlighted = highlight != null && keys.some((k) => highlight.has(k))
+  const anyLens = highlight != null || gymHighlight != null
+  const lit = (key: string, venueId: string | null) =>
+    (highlight == null || highlight.has(key)) &&
+    (gymHighlight == null || (venueId != null && gymHighlight.has(venueId)))
+  const highlighted = anyLens && keys.some((k) => lit(k, playsIn[k] ?? null))
+  /** A gym the lens is on wears the ring itself, even with nothing in it. */
+  const litGym = (venueId: string) => gymHighlight != null && gymHighlight.has(venueId)
 
   /** The grades that just left this weekend, by the gym they left. */
   const ghostsAt = (venueId: string | null) =>
@@ -385,9 +437,6 @@ export function WeekendCard({
   const chipFor = (key: string, venueId: string | null) => {
     const unit = unitByKey.get(key)
     if (!unit) return null
-    const agreed = diff?.agreed.includes(key)
-    const changed = diff?.added.includes(key)
-    const keptDays = keptOn?.get(`${weekend.sessionId}|${key}`)
     const games = weekendDemand(units, weekend, [key])
     return (
       <GradeChip
@@ -407,7 +456,7 @@ export function WeekendCard({
         interactive={interactive}
         // THE CHIP THAT MOVED (owner ruling 2026-08-05, #3a).
         flash={flashUnits.includes(`${weekend.sessionId}|${key}`)}
-        highlight={highlight == null ? null : highlight.has(key) ? "on" : "off"}
+        highlight={!anyLens ? null : lit(key, venueId) ? "on" : "off"}
         onArm={onArm}
         // A drag lights the board up the same way a tap does (ruling #1).
         onDragState={(drag) => {
@@ -424,10 +473,6 @@ export function WeekendCard({
           )
         }}
         onRemove={() => onRemove(key, weekend.sessionId)}
-        diffTone={agreed ? "agreed" : changed ? "changed" : undefined}
-        // Comparing is a live question about this grade, and the answer is a
-        // date the card has nowhere else to put, so the lens keeps its caption.
-        caption={changed ? (keptDays ? `kept: ${keptDays}` : "not in the kept plan") : undefined}
       />
     )
   }
@@ -458,19 +503,30 @@ export function WeekendCard({
           onMoveBlock(armedBlock.unitKeys, armedBlock.sessionId, weekend.sessionId)
         else if (armed && canTakeArmed)
           onMove(armed.unitKey, armed.fromSessionId, weekend.sessionId)
+        // A GYM ONTO A BARE DATE (owner ruling 2026-08-06, #2): no games here to
+        // house, so the building lands empty and waits to be filled.
+        else if (armedVenue && takesGymBare)
+          onPlaceVenue(weekend.sessionId, armedVenue, [], 0)
         else onDisarm()
       }}
       onDragOver={(e) => {
         if (droppable) e.preventDefault()
       }}
-      onDrop={(e) => droppable && onDrop(e, weekend.sessionId, windowLabel)}
+      onDrop={(e) => {
+        if (!droppable) return
+        if (armedVenue && takesGymBare) {
+          onDropVenue(e, weekend.sessionId, [], 0)
+          return
+        }
+        onDrop(e, weekend.sessionId, windowLabel)
+      }}
       data-session-id={weekend.sessionId}
       data-flash={flash ? "1" : undefined}
       // The three facts a drive (and a human) can read straight off the card:
       // is this a place the held thing can go, is it standing back, and does a
       // picked-out grade play here.
       data-target={holding ? (isTarget ? "1" : "0") : undefined}
-      data-highlight={highlight == null ? undefined : highlighted ? "1" : "0"}
+      data-highlight={!anyLens ? undefined : highlighted ? "1" : "0"}
       className={`mb-2.5 rounded-xl border px-2.5 py-2 shadow-sm motion-safe:transition-opacity ${
         CARD_TONE[tone]
       } ${canTakeArmed || canTakeBlock || canTakeSection ? TARGET_RING : ""} ${
@@ -561,6 +617,9 @@ export function WeekendCard({
            * made the sections add up to more than the weekend does.
            */
           const rentedCourts = block?.courts ?? section.rentedCourts
+          /** What the games here need, before anybody said they rented more: the
+           *  "4" in "4 used of 6 rented" (owner ruling 2026-08-06, #5). */
+          const usedCourts = section.rentedCourts
           const chips = section.unitKeys.filter((k) => !slotKeys.has(k))
           const games = block?.games ?? section.games
           // Only a RENTED section takes a gym from the tray. The gym you own is
@@ -572,7 +631,13 @@ export function WeekendCard({
           // give this weekend. `capped` is null unless there is a correction.
           const venue = weekend.venues.find((v) => v.venueId === section.venueId)
           const wired = venue ? courtsWiredAt(venue) : 0
-          const capped = courtCaps[courtCapKey(weekend.sessionId, section.venueId)] ?? null
+          const capped = courtOverrides[courtCapKey(weekend.sessionId, section.venueId)] ?? null
+          /** What the ⋯ menu opens on: the courts we hold here, which is what
+           *  somebody said we hold, else what this section is really using, and
+           *  the whole building where the league owns it. */
+          const heldCourts =
+            capped ?? (section.role === "pool" ? Math.max(rentedCourts, usedCourts) : wired)
+          const hoursHere = hoursFor(section.venueId)
           /** Games this section really has room for. */
           const held =
             section.role === "pool" && venue
@@ -614,9 +679,10 @@ export function WeekendCard({
             !takesGym &&
             !armedHere &&
             !(canTakeArmed || canTakeBlock || canTakeSection)
-          /** No grade the operator picked out plays in this building. */
+          /** Nothing the operator picked out is in this building: no picked grade
+           *  plays here, or the gym lens is on and this is not one of its gyms. */
           const filteredOut =
-            highlight != null && !section.unitKeys.some((k) => highlight.has(k))
+            anyLens && !section.unitKeys.some((k) => lit(k, section.venueId))
           /** Everything the grip and the "Move all" button both need to say what
            *  is travelling: one description of this section, written once. */
           const asArmed = (): ArmedSection => ({
@@ -697,7 +763,7 @@ export function WeekendCard({
               className={`border-ink-200 rounded-lg border bg-white/70 px-1.5 py-1 motion-safe:transition-opacity ${
                 takesGym || takesSection || takesChip ? TARGET_RING : ""
               } ${armedHere ? "ring-play-500 ring-2" : ""} ${asideHere ? NOT_TARGET : ""} ${
-                filteredOut ? FILTER_DIM : ""
+                filteredOut ? FILTER_DIM : litGym(section.venueId) ? FILTER_MATCH : ""
               }`}
             >
               {/* THE SECTION IS ONE THING YOU CAN PICK UP (owner-approved
@@ -816,12 +882,18 @@ export function WeekendCard({
                         somebody has crammed past its courts, the block is what
                         this building can actually give and the empty slot below
                         carries the rest. Two numbers that add up to the ask,
-                        instead of two readings of the whole of it. */}
+                        instead of two readings of the whole of it.
+
+                        AND WHEN THE OPERATOR RENTED MORE THAN THE GAMES NEED
+                        (owner ruling 2026-08-06, #5), the section says both
+                        numbers: what is used, and what is being paid for. */}
                     <span
                       data-testid="rental-mark"
                       className="text-ink-600 text-[10.5px] font-bold"
                     >
-                      rented {rentedCourts} of {courtsWord(wired || rentedCourts)}
+                      {rentedCourts > usedCourts
+                        ? `${usedCourts} used of ${rentedCourts} rented`
+                        : `rented ${rentedCourts} of ${courtsWord(wired || rentedCourts)}`}
                     </span>
                     {/* "Confirmed" is the default and says nothing, so it is
                         never drawn (owner ruling 2026-08-05). Only a booking
@@ -830,13 +902,25 @@ export function WeekendCard({
                   </>
                 )}
                 {/* A gym somebody has already corrected says so, so a smaller
-                    meter never reads as a mistake. */}
-                {capped != null && (
+                    meter never reads as a mistake. Renting MORE is not a
+                    correction and says nothing here: the rental mark above
+                    already reads "4 used of 6 rented". */}
+                {capped != null && capped < wired && (
                   <span
                     data-testid="courts-corrected"
                     className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold"
                   >
                     {courtsWord(capped)} of {wired} this weekend
+                  </span>
+                )}
+                {/* A gym on hours of its own that weekend, said where the hours
+                    were set (owner ruling 2026-08-06, #5). */}
+                {hoursHere.custom && (
+                  <span
+                    data-testid="hours-custom"
+                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
+                  >
+                    {hoursHere.startTime} to {hoursHere.endTime}
                   </span>
                 )}
                 {/**
@@ -877,16 +961,25 @@ export function WeekendCard({
                     {armedHere && !dragging ? "Pick somewhere" : "Move all…"}
                   </button>
                 )}
-                {/* THE TWO CORRECTING VERBS, quiet until somebody needs them.
-                    A rented building is the one you have to ask for, so it is
-                    the one that can turn out smaller than the plan thought. */}
-                {interactive && section.role === "pool" && wired > 0 && (
-                  <CourtCorrection
+                {/* EVERYTHING ABOUT THIS GYM ON THIS DATE (owner ruling
+                    2026-08-06, #5): its hours and its courts, both ways, in a ⋯
+                    menu on the section they are about. It replaces the "I do not
+                    have this" link, which could only ever go down and said
+                    nothing about hours at all. */}
+                {interactive && wired > 0 && (
+                  <GymMenu
                     gymName={venueShortName(section.name)}
                     weekendLabel={weekend.label}
                     wired={wired}
-                    current={capped ?? wired}
-                    onApply={(n) => onCorrectCourts(weekend.sessionId, section.venueId, n)}
+                    courts={heldCourts}
+                    usedCourts={usedCourts}
+                    hours={hoursHere}
+                    hoursOverridden={hoursHere.custom}
+                    onCourts={(n) => onCorrectCourts(weekend.sessionId, section.venueId, n)}
+                    onHours={(startTime, endTime) =>
+                      onSetHours(weekend.sessionId, section.venueId, { startTime, endTime })
+                    }
+                    onResetHours={() => onSetHours(weekend.sessionId, section.venueId, null)}
                   />
                 )}
                 {interactive && section.unitKeys.length > 0 && (
@@ -955,6 +1048,148 @@ export function WeekendCard({
           )
         })}
 
+        {/* A BUILDING WITH NOTHING IN IT YET (owner ruling 2026-08-06, #2). The
+            operator put this gym on this date, so it is here: a real container on
+            a real weekend, costing nothing until a grade lands in it, and a drop
+            target like any other section. */}
+        {emptyGymRows.map((room) => {
+          const paint = hueFor(hue, room.venueId)
+          const takesSection = sectionTargets.has(room.venueId)
+          const takesChip = chipTargets.has(room.venueId)
+          const hoursHere = hoursFor(room.venueId)
+          const wired = room.courts
+          return (
+            <div
+              key={`empty-${room.venueId}`}
+              data-testid="empty-gym"
+              data-venue-id={room.venueId}
+              data-role={room.role}
+              data-target={holding ? (takesSection || takesChip ? "1" : "0") : undefined}
+              onClick={
+                takesSection && armedSection
+                  ? (e) => {
+                      e.stopPropagation()
+                      onMoveSection(
+                        armedSection.unitKeys,
+                        armedSection.sessionId,
+                        weekend.sessionId,
+                        room.venueId
+                      )
+                    }
+                  : takesChip && armed?.fromSessionId
+                    ? (e) => {
+                        e.stopPropagation()
+                        onMoveSection(
+                          [armed.unitKey],
+                          armed.fromSessionId as string,
+                          weekend.sessionId,
+                          room.venueId
+                        )
+                      }
+                    : undefined
+              }
+              onDragOver={
+                interactive && (takesSection || takesChip) ? (e) => e.preventDefault() : undefined
+              }
+              onDrop={
+                interactive
+                  ? (e) =>
+                      onDropSection(
+                        e,
+                        weekend.sessionId,
+                        windowLabel,
+                        room.venueId,
+                        [],
+                        0,
+                        false,
+                        takesChip
+                      )
+                  : undefined
+              }
+              className={`border-ink-300 rounded-lg border border-dashed bg-white/60 px-1.5 py-1 motion-safe:transition-opacity ${
+                takesSection || takesChip ? TARGET_RING : ""
+              } ${litGym(room.venueId) ? FILTER_MATCH : anyLens ? FILTER_DIM : ""}`}
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
+                <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
+                <span className={`min-w-0 truncate text-[13px] font-bold ${paint.name}`}>
+                  {venueShortName(room.name)}
+                </span>
+                <span className="text-ink-500 text-[10.5px] font-bold">empty</span>
+                <span className="text-ink-400 text-[10.5px] font-semibold">
+                  drop grades here
+                </span>
+                {hoursHere.custom && (
+                  <span
+                    data-testid="hours-custom"
+                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
+                  >
+                    {hoursHere.startTime} to {hoursHere.endTime}
+                  </span>
+                )}
+                {interactive && wired > 0 && (
+                  <GymMenu
+                    gymName={venueShortName(room.name)}
+                    weekendLabel={weekend.label}
+                    wired={wired}
+                    courts={
+                      courtOverrides[courtCapKey(weekend.sessionId, room.venueId)] ?? room.courts
+                    }
+                    usedCourts={0}
+                    hours={hoursHere}
+                    hoursOverridden={hoursHere.custom}
+                    onCourts={(n) => onCorrectCourts(weekend.sessionId, room.venueId, n)}
+                    onHours={(startTime, endTime) =>
+                      onSetHours(weekend.sessionId, room.venueId, { startTime, endTime })
+                    }
+                    onResetHours={() => onSetHours(weekend.sessionId, room.venueId, null)}
+                  />
+                )}
+              </div>
+              {takesSection && armedSection && !dragging && (
+                <button
+                  type="button"
+                  data-testid="move-section-into"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMoveSection(
+                      armedSection.unitKeys,
+                      armedSection.sessionId,
+                      weekend.sessionId,
+                      room.venueId
+                    )
+                  }}
+                  aria-label={`Move all ${armedSection.unitKeys.length} grades from ${armedSection.gym} into ${venueShortName(room.name)} on ${weekend.label}`}
+                  className={`mt-1 w-full rounded-md border px-1.5 py-0.5 text-[10.5px] font-bold ${TARGET_OFFER}`}
+                >
+                  Move {plural(armedSection.unitKeys.length, "grade", "grades")} into{" "}
+                  {venueShortName(room.name)}
+                </button>
+              )}
+              {takesChip && armed?.fromSessionId && !dragging && (
+                <button
+                  type="button"
+                  data-testid="move-chip-into"
+                  data-venue-id={room.venueId}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMoveSection(
+                      [armed.unitKey],
+                      armed.fromSessionId as string,
+                      weekend.sessionId,
+                      room.venueId
+                    )
+                  }}
+                  aria-label={`Move ${armed.label} into ${venueShortName(room.name)} on ${weekend.label}`}
+                  className={`mt-1 w-full rounded-md border px-1.5 py-0.5 text-[10.5px] font-bold ${TARGET_OFFER}`}
+                >
+                  Move {armed.label} into {venueShortName(room.name)}
+                </button>
+              )}
+            </div>
+          )
+        })}
+
         {/* NO BUILDING FOR IT (owner ruling 2026-08-03): the slot somebody has
             to go and rent, sized in the units a gym quotes on, with the grades
             that have nowhere to play sitting inside it. */}
@@ -977,9 +1212,9 @@ export function WeekendCard({
             }
             // Only a gym that could really hold these games takes the drop
             // (owner ruling 2026-08-05, #1).
-            onDragOver={placing && takesGymInSlot ? (e) => e.preventDefault() : undefined}
+            onDragOver={interactive && takesGymInSlot ? (e) => e.preventDefault() : undefined}
             onDrop={
-              placing && takesGymInSlot
+              interactive && takesGymInSlot
                 ? (e) => onDropVenue(e, weekend.sessionId, emptyBlock.unitKeys, emptyBlock.games)
                 : undefined
             }
@@ -1046,30 +1281,30 @@ export function WeekendCard({
           </div>
         )}
 
-        {/* Where the kept calendar plays a grade this weekend and the board
-            no longer does: a hole you can see, in its place. */}
-        {(diff?.removed.length ?? 0) > 0 && (
-          <div className="flex flex-wrap items-start gap-1">
-            {(diff?.removed ?? []).map((k) => {
-              const unit = unitByKey.get(k)
-              if (!unit) return null
-              return (
-                <span
-                  key={`kept-${k}`}
-                  className="border-ink-300 text-ink-400 inline-flex items-center rounded-lg border border-dashed px-1.5 py-0.5 text-[11px] font-bold"
-                >
-                  {unit.label} · kept here
-                </span>
-              )
-            })}
-          </div>
-        )}
-        {keys.length === 0 && (diff?.removed.length ?? 0) === 0 && (
+        {keys.length === 0 && emptyGymRows.length === 0 && (
           <span className="text-ink-300 text-[11px]">
-            {load.capacity > 0 ? "No grades here" : "Gym not yours"}
+            {load.capacity > 0 ? "No grades here" : "No gym on this date yet"}
           </span>
         )}
       </div>
+
+      {/* A GYM CAN LAND ON A DATE WITH NOTHING ON IT (owner ruling 2026-08-06,
+          #2), so the offer is written down there too, for the tap path. */}
+      {takesGymBare && armedVenue && !dragging && (
+        <button
+          type="button"
+          data-testid="place-gym-here"
+          data-venue-id={armedVenue}
+          onClick={(e) => {
+            e.stopPropagation()
+            onPlaceVenue(weekend.sessionId, armedVenue, [], 0)
+          }}
+          aria-label={`Put ${armedRoom?.name ?? "this gym"} on ${weekend.label}`}
+          className={`mt-1.5 w-full rounded-lg border px-2 py-1 text-[11px] font-semibold ${TARGET_OFFER}`}
+        >
+          Put {venueShortName(armedRoom?.name ?? "this gym")} here
+        </button>
+      )}
 
       {canTakeArmed && armed && !dragging && (
         <button

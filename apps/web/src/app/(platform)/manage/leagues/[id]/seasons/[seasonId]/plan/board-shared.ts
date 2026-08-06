@@ -1,9 +1,4 @@
-import type {
-  AssignmentDiffSummary,
-  PlannerLever,
-  PlannerState,
-  PlanSummary,
-} from "@/lib/scheduler/planner-core"
+import type { PlannerLever, PlannerState, PlanSummary } from "@/lib/scheduler/planner-core"
 import { PILL_TONE, type GhostChip } from "./plan-shared"
 import type { BlockStatus } from "./plan-ui"
 
@@ -25,20 +20,15 @@ export const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
 export const COPY = {
   opened:
     "We placed every grade for you, balanced across your gym time. Drag anything you'd do differently, then keep it.",
-  rules:
-    "Grouping is automatic because these are league truths, not choices: oldest grades together, youngest together, the middle split by size, the two biggest grades kept apart, and each grade leaning to the gym it usually plays in. These three only change how tightly the weekends pack.",
   oneWeekendPerMonth:
     "Every grade gets one weekend a month, so move it to another weekend in the same month.",
-  compareSame: "This is the kept calendar, unchanged.",
-  compareLegend:
-    "Green agrees with what you kept, amber moved to another weekend that month, and a dashed chip is where the kept calendar had that grade.",
-  hours:
-    "These change WHEN your gyms are open, not who plays which weekend. One hour, every weekend, every gym. Nothing is booked until you apply it.",
-  /** The two ways a weekend that needs a rented gym gets one (owner ruling
-   *  2026-08-03). Both act on the calendar in front of you and neither books
-   *  anything. */
-  assignSolve: "We take the cheapest gym in your pool that can hold the games. Nothing is booked.",
-  assignPlace: "Drag a gym onto a weekend that needs one, or tap the gym and then tap the weekend.",
+  /** The verb that fills every weekend with no building from the pool. A button
+   *  in the header now (owner ruling 2026-08-06, #6), not half of a mode. */
+  fillFromPool: "Fill the gaps from my pool",
+  fillHint: "We take the cheapest gym in your pool that can hold the games. Nothing is booked.",
+  /** The one alternative shape worth a button of its own: the same solve, told to
+   *  use every weekend instead of as few as it can. */
+  redrawSpread: "Redraw, spread out instead",
   nothingToFill: "Every weekend already has a building. There is nothing to fill.",
   noPool: "Your pool has no gym free on those weekends. Turn one on for them back in step 2.",
   /**
@@ -91,39 +81,13 @@ export const LEVERS: Array<{ lever: PlannerLever; label: string; note: string }>
   },
 ]
 
-/** Hours, not grouping (owner 2026-08-02). Each chip moves the day window an
- *  hour and says what that does to this plan before anything is booked. */
-export interface HoursChip {
-  key: string
-  label: string
-  hint: string
-  deltaStartMinutes: number
-  deltaEndMinutes: number
-}
-
-export const HOURS_CHIPS: HoursChip[] = [
-  {
-    key: "start-early",
-    label: "Start early",
-    hint: "Every gym opens an hour earlier",
-    deltaStartMinutes: -60,
-    deltaEndMinutes: 0,
-  },
-  {
-    key: "start-late",
-    label: "Start late",
-    hint: "Every gym opens an hour later",
-    deltaStartMinutes: 60,
-    deltaEndMinutes: 0,
-  },
-  {
-    key: "finish-early",
-    label: "Finish early",
-    hint: "Every gym closes an hour earlier",
-    deltaStartMinutes: 0,
-    deltaEndMinutes: -60,
-  },
-]
+/**
+ * THE HOURS CHIPS ARE GONE (owner ruling 2026-08-06, #6). "Start early" moved
+ * every gym on every weekend of the season by an hour, which is not a thing
+ * anybody phones a gym about: hours are agreed one building and one date at a
+ * time, and that is where they are edited now (the ⋯ menu on the section). The
+ * season-wide range is still step 2's, where it belongs.
+ */
 
 /**
  * VALID TARGETS ONLY, EVERYWHERE (owner ruling 2026-08-05, #1).
@@ -185,10 +149,19 @@ export interface BoardSnapshot {
    *  Filling the gaps from the pool is one step back, gyms and statuses
    *  together, because those two are one decision. */
   blockStatus: Record<string, BlockStatus>
-  /** The courts each gym was giving that weekend, where somebody corrected it
-   *  ("<sessionId>|<venueId>" → courts). A correction repacks the whole board,
-   *  so undoing one has to put the courts back before anything else. */
-  courtCaps: Record<string, number>
+  /** The courts each gym was holding that weekend, where somebody said otherwise
+   *  ("<sessionId>|<venueId>" → courts, either direction — owner ruling
+   *  2026-08-06, #5). It repacks or re-bills the whole board, so undoing one has
+   *  to put the courts back before anything else. */
+  courtOverrides: Record<string, number>
+  /** The hours each gym was running that weekend, where somebody gave it its own
+   *  ("<sessionId>|<venueId>" → the window). Capacity is derived from these, so
+   *  they travel with the courts. */
+  hourOverrides: Record<string, { startTime: string; endTime: string }>
+  /** The gyms placed on a date with nothing in it yet: sessionId → venueIds. They
+   *  cost nothing anywhere, and undoing a placement has to take the container
+   *  away with it. */
+  emptyGyms: Record<string, string[]>
   /** The backup gyms the operator had asserted, weekend by weekend (owner ruling
    *  2026-08-05, #1): sessionId → venueIds. Undoing a placement onto a backup gym
    *  has to take the assertion back with it, or the board would keep computing on
@@ -260,21 +233,7 @@ export function headerPill(summary: PlanSummary): { tone: keyof typeof PILL_TONE
 }
 
 /**
- * The verdict on the board against the calendar the league kept: how much of
- * their own plan we reproduce, and what we do differently. Zero clauses are
- * left out, because "0 missing" is a sentence nobody needs to read.
+ * The compare LINE went with the compare lens (owner ruling 2026-08-06, #6). The
+ * pure diff it read — diffAssignments and its summary — is untouched in the core,
+ * where the strip and the API still use it.
  */
-export function compareLine(summary: AssignmentDiffSummary): string {
-  const { placements, agreedCount, moved, missing, extra } = summary
-  const parts: string[] = []
-  if (moved.length > 0) parts.push(`${moved.length} moved`)
-  if (missing.length > 0) parts.push(`${missing.length} missing`)
-  if (extra.length > 0) parts.push(`${extra.length} added`)
-  if (parts.length === 0 && agreedCount === placements) return COPY.compareSame
-  const lead = `Agrees with the kept calendar on ${agreedCount} of ${plural(
-    placements,
-    "placement",
-    "placements"
-  )}.`
-  return parts.length > 0 ? `${lead} ${parts.join(", ")}.` : lead
-}

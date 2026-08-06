@@ -152,11 +152,13 @@ if ((await railAbout.count()) > 0) {
   ok("the rail says whose plan it is critiquing", true, "no rail on this board, nothing to label")
 }
 
-const legend = page.locator('[data-testid="gym-legend"]')
+// RE-PINNED 2026-08-06 (owner ruling #1): the colour key and the gym tray are
+// one row now, and it is still the row above the calendar.
+const legend = page.locator('[data-testid="gym-list"]')
 const legendBox = await legend.boundingBox().catch(() => null)
 const boardBox = await page.locator("[data-session-id]").first().boundingBox()
 ok(
-  "the gym legend still sits above the board",
+  "the gym list still sits above the board",
   Boolean(legendBox && boardBox && legendBox.y < boardBox.y),
   legendBox && boardBox ? `legend y=${Math.round(legendBox.y)}, board y=${Math.round(boardBox.y)}` : "missing"
 )

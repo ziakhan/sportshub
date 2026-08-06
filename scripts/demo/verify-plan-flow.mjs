@@ -226,15 +226,16 @@ ok(
   boardEntry.empty && boardEntry.weekends === 0,
   boardEntry.picker
 )
-// The levers and hours chips live behind quiet disclosures that render once
-// the board's data is in; wait for the triggers, open both, then assert.
-await page.waitForSelector('[data-testid="hours-toggle"]', { timeout: 60000 })
-await page.getByRole("button", { name: "Adjust grouping rules" }).click()
+/**
+ * RE-PINNED 2026-08-06 (owner ruling #6): the two disclosures under the board
+ * are gone. The lever worth a button is beside Redraw, and the hours are edited
+ * on the gym section they are about, one date at a time.
+ */
+await page.waitForSelector('[data-testid="redraw-spread"]', { timeout: 60000 })
 await page.waitForTimeout(500)
 const step3 = await page.locator("main").innerText()
-ok("step 3 offers the one-gym lever", /Pack one gym/i.test(step3))
-await page.locator('[data-testid="hours-toggle"]').click()
-await page.waitForTimeout(500)
+ok("step 3 offers the spread redraw beside Redraw", /Redraw, spread out instead/i.test(step3))
+await page.waitForTimeout(200)
 const step3Hours = await page.locator("main").innerText()
 ok(
   "step 3 offers the hours chips",
@@ -418,7 +419,7 @@ ok(
 // The weekend's sentence lives behind its "why" chip, so the check opens one
 // the way an operator would. The panel portals to body, so read the document.
 await openBoard(page, `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
-await page.waitForSelector('[data-testid="hours-toggle"]', { timeout: 60000 })
+await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
 await page.waitForTimeout(1200)
 /**
  * RE-PINNED 2026-08-05: only a weekend that HAS a gym can be holding a court
@@ -688,12 +689,12 @@ if (worldPlan) {
     `${boardWeekends} weekend cards, ${liveCards} of them with gym time (expected ${realKeys.length})`
   )
 
-  /* ── the tray is there whenever a plan is open ───────────────────────── */
-  const tray = page.locator('[data-testid="venue-tray"]')
+  /* ── one gym list, there whenever a plan is open ─────────────────────── */
+  const tray = page.locator('[data-testid="gym-list"]')
   ok(
-    "the venue tray is on the board with a plan open, in either assign mode",
+    "the gym list is on the board with a plan open",
     (await tray.count()) === 1,
-    `${await tray.count()} tray`
+    `${await tray.count()} gym list`
   )
 
   /* ── take the gym away: the placements strand, loudly ────────────────── */

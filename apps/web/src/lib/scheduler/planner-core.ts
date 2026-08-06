@@ -142,6 +142,12 @@ export interface PlannerVenue {
   /** Hours one court is open per day here. What turns a court-day into the
    *  number a gym manager answers ("we need 24 court-hours"). */
   hoursPerCourtDay?: number
+  /** THE HOURS THIS GYM RUNS ON THIS WEEKEND (owner ruling 2026-08-06, #5), when
+   *  they are not simply the gym's usual range. Carried so the per-date editor
+   *  can open on what is really booked instead of guessing, and so a world that
+   *  round-trips through a plan document keeps the exception it was given. */
+  startTime?: string | null
+  endTime?: string | null
 }
 
 /** Courts wired at a gym. A hand-built venue that only knows its court-days
@@ -3252,6 +3258,44 @@ export function applyCourtCaps(state: PlannerState, caps: Record<string, number>
     return touchedWindow ? { ...win, weekends } : win
   })
   return touchedAny ? { ...state, windows } : state
+}
+
+/**
+ * "WE RENTED MORE OF IT THAN THAT" (owner ruling 2026-08-06, #5 — the other half
+ * of the two-way court editor).
+ *
+ * A rental block is demand-sized: four courts, because four courts hold the games
+ * that landed there. An operator who actually booked six is not correcting the
+ * board's arithmetic, they are telling it what they bought — so the block is
+ * billed at six, the section reads "4 used of 6 rented", and the ask sheet asks
+ * the gym for six.
+ *
+ * It only ever raises. A number BELOW the demand-sized rental is the correction
+ * that already exists (applyCourtCaps), which shrinks the building's capacity and
+ * makes the block smaller on its own; billing that smaller block is right.
+ *
+ * `rented` is keyed by courtCapKey, the same map the correction uses, because
+ * "the courts we hold at that gym on that date" is one fact with one home.
+ * Blocks with no building are left alone: there is nothing rented to bill.
+ */
+export function withRentedCourts(
+  blocks: RentalBlock[],
+  rented: Record<string, number>
+): RentalBlock[] {
+  if (Object.keys(rented).length === 0) return blocks
+  let touched = false
+  const out = blocks.map((block) => {
+    if (!block.venueId) return block
+    const want = rented[courtCapKey(block.sessionId, block.venueId)]
+    if (want == null || want <= block.courts) return block
+    touched = true
+    const courtDays = want * block.days
+    // Court-hours per court-day are whatever this block was already quoted at,
+    // so the hours follow the courts without the venue having to be handed in.
+    const perCourtDay = block.courtDays > 0 ? block.hoursNeeded / block.courtDays : 0
+    return { ...block, courts: want, courtDays, hoursNeeded: courtDays * perCourtDay }
+  })
+  return touched ? out : blocks
 }
 
 /**
