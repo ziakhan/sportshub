@@ -4,6 +4,7 @@ import { useState } from "react"
 import {
   courtCapKey,
   courtsCapacityAt,
+  courtsNeeded,
   courtsWiredAt,
   gradeLine,
   packedWeekendLoad,
@@ -33,6 +34,7 @@ import {
   BlockStatusMark,
   Fraction,
   GymMenu,
+  type MoveTarget,
   SplitMenu,
   WhyPopover,
   type BlockStatus,
@@ -46,6 +48,7 @@ import {
   TARGET_RING,
   courtsWord,
   plural,
+  armAfterDragStarts,
 } from "./board-shared"
 import { GhostMark, GradeChip } from "./grade-chip"
 
@@ -256,6 +259,45 @@ export function WeekendCard({
    * board-verbs), so the offer and the refusal can never disagree again.
    */
   const freeAll = rooms.reduce((sum, r) => sum + r.freeGames, 0)
+  /**
+   * THE OTHER BUILDINGS THIS BLOCK COULD MOVE INTO, ON THIS WEEKEND (owner
+   * ruling 2026-08-06, #4). Same rooms arithmetic every drop is measured
+   * against, so the menu can never offer a move the board would then refuse:
+   * the gym itself is out, and so is anything that could not hold the games.
+   *
+   * The status is what moving there WOULD be, in the operator's own vocabulary:
+   * a booking the plan has (the gym is on this weekend and confirmed), one the
+   * solver assumed, or a building the plan has not claimed at all, where
+   * choosing it is the claim.
+   */
+  const moveTargetsFor = (fromVenueId: string, unitKeys: string[], games: number): MoveTarget[] => {
+    if (unitKeys.length === 0) return []
+    // The grades that are moving do not count against the room they land in.
+    const free = roomsFor(
+      Object.fromEntries(
+        [...gamesAt].map(([venueId, count]) => [
+          venueId,
+          venueId === fromVenueId ? Math.max(0, count - games) : count,
+        ])
+      )
+    )
+    return free
+      .filter((r) => r.venueId !== fromVenueId && r.freeGames >= games)
+      .map((r) => {
+        const venue = weekend.venues.find((v) => v.venueId === r.venueId)
+        const status: MoveTarget["status"] = !venue
+          ? "asserts"
+          : statusOf(weekend.sessionId, r.venueId) === "assumed"
+            ? "assumed"
+            : "booked"
+        return {
+          venueId: r.venueId,
+          name: venueShortName(r.name),
+          courts: venue ? courtsNeeded(venue, games) : Math.max(1, Math.ceil(games / Math.max(1, r.capacityGames / Math.max(1, r.courts)))),
+          status,
+        }
+      })
+  }
   /** Games a set of grades would bring to THIS weekend, at its own rate. */
   const bringing = (unitKeys: string[]) => weekendDemand(units, weekend, unitKeys)
 
@@ -792,9 +834,12 @@ export function WeekendCard({
                     })
                   )
                   // The drag arms the section too, so the destinations light up
-                  // under the cursor (owner ruling 2026-08-05, #1).
-                  onDragging(true)
-                  onArmSection(asArmed())
+                  // under the cursor (owner ruling 2026-08-05, #1) — a frame
+                  // later, or the arming cancels the drag it came from.
+                  armAfterDragStarts(() => {
+                    onDragging(true)
+                    onArmSection(asArmed())
+                  })
                 }}
                 onDragEnd={() => {
                   onDragging(false)
@@ -975,6 +1020,24 @@ export function WeekendCard({
                     usedCourts={usedCourts}
                     hours={hoursHere}
                     hoursOverridden={hoursHere.custom}
+                    /* SOMEWHERE ELSE THIS WEEKEND (owner ruling 2026-08-06, #4).
+                       Worked out when the menu opens, off the same rooms
+                       arithmetic every drop is measured against, so it can never
+                       offer a building the move would then refuse. */
+                    moveTargets={() =>
+                      moveTargetsFor(section.venueId, section.unitKeys, games)
+                    }
+                    onMoveTo={
+                      section.unitKeys.length > 0
+                        ? (venueId) =>
+                            onMoveSection(
+                              section.unitKeys,
+                              weekend.sessionId,
+                              weekend.sessionId,
+                              venueId
+                            )
+                        : undefined
+                    }
                     onCourts={(n) => onCorrectCourts(weekend.sessionId, section.venueId, n)}
                     onHours={(startTime, endTime) =>
                       onSetHours(weekend.sessionId, section.venueId, { startTime, endTime })

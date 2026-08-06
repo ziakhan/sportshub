@@ -18,6 +18,7 @@ import {
   withGym,
   withGymCourts,
   withGymHours,
+  withGymOnWeekend,
   withGymRole,
   withWeekend,
   withWeekendChosen,
@@ -110,6 +111,12 @@ export function GymsWeekendsStep({
    *  the whole season, so it sits above the gym cards rather than inside one. */
   const [buffer, setBuffer] = useState("0")
   const [advancedFor, setAdvancedFor] = useState<string | null>(null)
+  /**
+   * WHICH POOL GYM HAS ITS BOOKINGS PICKER OPEN (owner ruling 2026-08-06).
+   * Collapsed by default and one at a time: a league that has phoned nobody
+   * should see a row of gym cards, not a wall of date grids.
+   */
+  const [bookingsFor, setBookingsFor] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
 
   const load = useCallback(async () => {
@@ -353,6 +360,29 @@ export function GymsWeekendsStep({
           names || "a court"
         } because a game is already scheduled there.`
       }
+    )
+  }
+
+  /**
+   * DATES YOU HAVE ALREADY BOOKED HERE (owner ruling 2026-08-06).
+   *
+   * Optional, always. Availability stopped being a restriction the same day: the
+   * draw books whatever it needs and marks it assumed, so nothing here is a
+   * prerequisite for anything. What this buys is CERTAINTY — a weekend the
+   * operator really has is one the solver prefers and the ask sheet stops asking
+   * about.
+   *
+   * A booking is the whole day and every court, because that is what the plan's
+   * model of a gym is: attaching it to the weekend IS the confirmed availability.
+   */
+  const toggleBooking = async (venue: VenueGridRow, sessionId: string, on: boolean) => {
+    if (readOnly || !onPlanWorld) return
+    await saveWorld(
+      withGymOnWeekend(world(), venue.venueId, sessionId, on),
+      `${venue.seasonVenueId}:booking:${sessionId}`,
+      on
+        ? `${venue.name} is booked that weekend in this plan, full day, all courts.`
+        : `${venue.name} is not booked that weekend any more. The planner will assume it if it needs it.`
     )
   }
 
@@ -752,6 +782,15 @@ export function GymsWeekendsStep({
           const courtsNow = String(venue.courtsAvailable ?? venue.courtCount)
           const courtsDraft = courts[venue.seasonVenueId] ?? courtsNow
           const courtsDirty = courtsDraft !== courtsNow
+          /** The weekends this plan has REALLY booked at this gym: a cell that
+           *  is on in the plan's own grid is a confirmed booking (owner ruling
+           *  2026-08-06), full day and every court. */
+          const bookedSessions = new Set(
+            venue.cells
+              .filter((c) => c.sessionId && (c.state === "on" || c.state === "custom"))
+              .map((c) => c.sessionId as string)
+          )
+          const bookedCount = bookedSessions.size
 
           return (
             <div
@@ -886,6 +925,86 @@ export function GymsWeekendsStep({
                   ? "Saturday and Sunday run different hours right now. Saving makes them the same."
                   : "The same hours every weekend. A single date that runs different hours is set on the board."}
               </p>
+
+              {/**
+                * DATES ALREADY BOOKED HERE (owner ruling 2026-08-06). Optional,
+                * collapsed, and only ever asked of a gym the league RENTS: nobody
+                * phones the building they own.
+                *
+                * The skip line is the point of it. A league that has booked
+                * nothing is not behind — the draw will assume what it needs and
+                * hand back a call list — so the affordance has to say that out
+                * loud, or an operator reads a date grid as homework.
+                */}
+              {!isHome && onPlanWorld && !readOnly && (
+                <div className="border-ink-100 mt-2.5 border-t pt-2.5">
+                  <button
+                    type="button"
+                    data-testid="bookings-open"
+                    data-venue-id={venue.venueId}
+                    data-open={bookingsFor === venue.seasonVenueId ? "1" : "0"}
+                    onClick={() =>
+                      setBookingsFor(
+                        bookingsFor === venue.seasonVenueId ? null : venue.seasonVenueId
+                      )
+                    }
+                    className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center gap-1.5 rounded-lg border border-dashed bg-white px-2.5 text-xs font-bold transition-colors"
+                  >
+                    {bookingsFor === venue.seasonVenueId
+                      ? "Close booked dates"
+                      : "Already have dates booked here?"}
+                    {bookedCount > 0 && (
+                      <span
+                        data-testid="bookings-count"
+                        className="border-court-200 bg-court-50 text-court-800 rounded-full border px-1.5 text-[10.5px]"
+                      >
+                        {bookedCount}
+                      </span>
+                    )}
+                  </button>
+                  {bookingsFor === venue.seasonVenueId && (
+                    <div data-testid="bookings-picker" className="mt-2.5">
+                      <p className="text-ink-500 mb-2 text-[11.5px]">
+                        Tick the weekends you have already booked at {venue.name}. Each one is the
+                        full day and every court, and the planner will use them before it books
+                        anything new.
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {weekends
+                          .filter((w) => w.sessionId)
+                          .map((w) => {
+                            const on = bookedSessions.has(w.sessionId as string)
+                            return (
+                              <button
+                                key={w.sessionId}
+                                type="button"
+                                data-testid="booking-cell"
+                                data-session-id={w.sessionId}
+                                data-on={on ? "1" : "0"}
+                                aria-pressed={on}
+                                disabled={busy !== null}
+                                onClick={() =>
+                                  void toggleBooking(venue, w.sessionId as string, !on)
+                                }
+                                className={`inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border px-2 text-[11.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                  on
+                                    ? "border-court-500 bg-court-600 text-white"
+                                    : "border-ink-300 text-ink-600 hover:border-ink-400 hover:bg-ink-50 border-dashed bg-white"
+                                }`}
+                              >
+                                {w.label}
+                              </button>
+                            )
+                          })}
+                      </div>
+                      <p className="text-ink-400 mt-2 text-[11.5px]" data-testid="bookings-skip">
+                        No bookings yet? Fine. The planner will assume what it needs and give you a
+                        call list.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Advanced edits the SEASON's own courts and day windows, so it
                   is not offered while a plan of the operator's own is the thing

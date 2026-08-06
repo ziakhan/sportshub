@@ -831,12 +831,15 @@ export function useBoardState({
   const poolOn = useCallback(
     (sessionId: string) => {
       const weekend = weekendById.get(sessionId)
-      if (!weekend) return []
-      return weekend.venues
-        .filter((v) => v.role === "pool" && v.capacityGames > 0)
-        .map((v) => ({ venueId: v.venueId, short: venueShortName(v.name) }))
+      if (!board || !weekend) return []
+      // EVERY POOL GYM THE PLAN HAS, not only the ones already attached (owner
+      // ruling 2026-08-06). A gym nobody phoned is not a phone call any more, it
+      // is a room: taking it is the availability claim.
+      return weekendRooms(board, weekend, {}, courtOverrides)
+        .filter((r) => r.role === "pool" && r.freeGames > 0)
+        .map((r) => ({ venueId: r.venueId, short: venueShortName(r.name) }))
     },
-    [weekendById]
+    [board, weekendById, courtOverrides]
   )
 
   /**

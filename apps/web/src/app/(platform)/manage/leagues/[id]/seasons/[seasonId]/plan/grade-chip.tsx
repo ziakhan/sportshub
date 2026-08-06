@@ -2,7 +2,7 @@
 
 import type { PlacementReason, PlannerUnit } from "@/lib/scheduler/planner-core"
 import type { Armed } from "./plan-shared"
-import { FILTER_DIM, FILTER_MATCH } from "./board-shared"
+import { armAfterDragStarts, FILTER_DIM, FILTER_MATCH } from "./board-shared"
 import { REASON_GLYPH, ReasonGlyph, WhyPopover } from "./plan-ui"
 
 /**
@@ -106,7 +106,10 @@ export function GradeChip({
           "text/plain",
           JSON.stringify({ unitKey: unit.key, fromSessionId, window: windowLabel })
         )
-        onDragState?.(true)
+        // A frame later, never inside the event (see armAfterDragStarts): the
+        // arming redraws the line above the board, and a DOM change above the
+        // drag source cancels the drag in Chrome.
+        armAfterDragStarts(() => onDragState?.(true))
       }}
       onDragEnd={() => onDragState?.(false)}
       data-testid="grade-chip"

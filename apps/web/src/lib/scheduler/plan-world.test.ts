@@ -8,7 +8,7 @@ import {
   type PlannerState,
 } from "./planner-core"
 import {
-  drawnHomeGyms,
+  drawnGyms,
   fencedWindowLabels,
   windowFenced,
   withWindowPhase,
@@ -505,15 +505,42 @@ describe("the weekends the solver is allowed to fill", () => {
     expect(runs.gyms).toBe(state.gyms)
   })
 
-  it("drops a chosen weekend whose gyms are shut, because it holds no games", () => {
+  /**
+   * RE-PINNED 2026-08-06 (availability is no longer a restriction ANYWHERE). A
+   * chosen weekend whose HOME gym is shut used to be dropped from the solve. It
+   * is not: the plan has a pool gym, and the draw may book it as assumed. What
+   * still holds is that the weekend has to have SOMETHING to be filled from.
+   */
+  it("fills a chosen weekend from the pool when the home gym is shut", () => {
     const shut = withGymHours(world(), "v-home", "09:00", "09:00")
     const state = planStateFrom("s1", { settings: { capturedAt: "x", state: shut } }) as PlannerState
     expect(state.windows[0].weekends[0].capacityGames).toBe(0)
+    const runs = solvableState(state)
+    expect(runs.windows[0].weekends.map((w) => w.sessionId)).toEqual(["w-oct"])
+    // The pool gym is the room: 6 courts × 2 days × 12 games (08:00–20:00).
+    expect(runs.windows[0].weekends[0].capacityGames).toBe(144)
+  })
+
+  it("drops a chosen weekend only when no gym has a court to give", () => {
+    // Courts are the one thing left that can make a weekend genuinely empty:
+    // hours are not a refusal any more, and neither is an unattached gym.
+    const none = withGymCourts(withGymCourts(world(), "v-home", 0), "v-pool", 0)
+    const state = planStateFrom("s1", { settings: { capturedAt: "x", state: none } }) as PlannerState
     expect(solvableState(state).windows).toEqual([])
   })
 
-  it("hands a world where every weekend runs straight back, unchanged", () => {
-    const all = withWeekendChosen(withGymOnWeekend(world(), "w-nov", "v-home", true), "w-nov", true)
+  /**
+   * RE-PINNED 2026-08-06: the identity shortcut now needs every gym to be on
+   * every weekend already, because the solve puts the whole roster on the table.
+   * A world with a gym left off a weekend is a world the solve has something to
+   * add to, which is the point of the ruling.
+   */
+  it("hands a world with nothing left to offer straight back, unchanged", () => {
+    const all = withGymEveryWeekend(
+      withWeekendChosen(withGymOnWeekend(world(), "w-nov", "v-home", true), "w-nov", true),
+      "v-pool",
+      true
+    )
     const state = planStateFrom("s1", { settings: { capturedAt: "x", state: all } }) as PlannerState
     expect(solvableState(state)).toBe(state)
   })
@@ -606,17 +633,27 @@ describe("the draw fills your chosen weekends from your gyms", () => {
   it("names the missing half when there is one, and never both at once", () => {
     // Nothing chosen: the plan has its gyms and no dates to run them on.
     expect(worldReadiness(stateOf(fresh()))).toEqual({ usable: false, gap: "weekends" })
-    // Weekends chosen, and no building the league owns to fill them from.
+    /**
+     * RE-PINNED 2026-08-06: a league with no building of its OWN can still draw
+     * a calendar. The draw books its pool gyms as assumed, so a plan with pool
+     * gyms and a chosen weekend is usable; "gym" is now about having no gym at
+     * all, and a gym somebody left shut is still a gym.
+     */
     const homeless = { ...fresh(), gyms: [POOL] }
     expect(worldReadiness(stateOf(chooseAll(homeless, ["w-oct-1"])))).toEqual({
-      usable: false,
-      gap: "gym",
+      usable: true,
+      gap: null,
     })
-    // Neither, which is a plan on a season that has nothing set up yet.
-    expect(worldReadiness(stateOf(homeless))).toEqual({ usable: false, gap: "both" })
-    // A home gym that never opens is no home gym: it can hold nothing.
     const shut = withGymHours(fresh(), "v-home", "09:00", "09:00")
     expect(worldReadiness(stateOf(chooseAll(shut, ["w-oct-1"])))).toEqual({
+      usable: true,
+      gap: null,
+    })
+    // No gyms at all, and no weekend either: a season nobody has set up.
+    const bare = { ...fresh(), gyms: [] }
+    expect(worldReadiness(stateOf(bare))).toEqual({ usable: false, gap: "both" })
+    // Weekends chosen and still no building anywhere to put them in.
+    expect(worldReadiness(stateOf(chooseAll(bare, ["w-oct-1"])))).toEqual({
       usable: false,
       gap: "gym",
     })
@@ -628,11 +665,12 @@ describe("the draw fills your chosen weekends from your gyms", () => {
     const runs = solvableState(state)
     expect(flat(runs).map((w) => w.sessionId)).toEqual(["w-oct-1", "w-nov-2", "w-dec-1"])
     for (const w of flat(runs)) {
-      expect(w.venues.map((v) => v.venueId)).toEqual(["v-home"])
-      // 3 courts × 2 days × 12 games (09:00–21:00, 60-minute slots) = 72, which
-      // is the same arithmetic step 2 would have given it.
-      expect(w.capacityGames).toBe(72)
+      // RE-PINNED 2026-08-06: the whole roster is on the table, home FIRST. The
+      // objective is what decides which of them get booked, not availability.
+      expect(w.venues.map((v) => v.venueId)).toEqual(["v-home", "v-pool"])
       expect(w.venues[0].role).toBe("home")
+      // 3 × 2 × 12 at the home gym, plus 6 × 2 × 12 at the pool gym.
+      expect(w.capacityGames).toBe(72 + 144)
     }
     expect(homeGymOf(state)?.venueId).toBe("v-home")
     expect(homeGymCapacity(state)).toBe(72)
@@ -657,12 +695,15 @@ describe("the draw fills your chosen weekends from your gyms", () => {
     for (const id of chosenIds) {
       expect(venues[id]).toEqual({ "age:Grade 7": "v-home", "age:Grade 8": "v-home" })
     }
-    // The draw records that building on each of them, so the board can draw it.
-    expect(drawnHomeGyms(state, assignment)).toEqual({
+    // The draw records the buildings it used, so the board can draw them. The
+    // home gym holds this world on its own, so nothing is assumed.
+    const drawn = drawnGyms(state, assignment, venues)
+    expect(drawn.added).toEqual({
       "w-oct-1": ["v-home"],
       "w-nov-2": ["v-home"],
       "w-dec-1": ["v-home"],
     })
+    expect(drawn.assumed).toEqual([])
   })
 
   /**
@@ -691,7 +732,9 @@ describe("the draw fills your chosen weekends from your gyms", () => {
       .filter((w) => !w.chosen)
       .map((w) => w.sessionId)
     for (const id of unchosen) expect(assignment[id] ?? []).toEqual([])
-    expect(drawnHomeGyms(state, assignment)).toEqual({ "w-nov-1": ["v-home"] })
+    expect(drawnGyms(state, assignment, packPlanVenues(runs, assignment)).added).toEqual({
+      "w-nov-1": ["v-home"],
+    })
   })
 
   it("records the home gym only where the draw really put games", () => {
@@ -702,9 +745,10 @@ describe("the draw fills your chosen weekends from your gyms", () => {
     const assignment = proposePlan(runs, "balance")
     const used = Object.entries(assignment).filter(([, keys]) => keys.length > 0)
     expect(used).toHaveLength(1)
-    expect(drawnHomeGyms(state, assignment)).toEqual({ [used[0][0]]: ["v-home"] })
+    const venues = packPlanVenues(runs, assignment)
+    expect(drawnGyms(state, assignment, venues).added).toEqual({ [used[0][0]]: ["v-home"] })
     // A building on a date nobody plays on is a booking the league never made.
-    expect(Object.keys(drawnHomeGyms(state, {}))).toEqual([])
+    expect(Object.keys(drawnGyms(state, {}, {}).added)).toEqual([])
   })
 
   it("leaves a weekend that already has its own gyms alone", () => {
@@ -712,8 +756,15 @@ describe("the draw fills your chosen weekends from your gyms", () => {
     // home gym is not pushed in beside it.
     const painted = withGymOnWeekend(chooseAll(fresh(), ["w-oct-1"]), "w-oct-1", "v-pool", true)
     const runs = solvableState(stateOf(painted))
-    expect(flat(runs)[0].venues.map((v) => v.venueId)).toEqual(["v-pool"])
-    expect(drawnHomeGyms(stateOf(painted), { "w-oct-1": ["age:Grade 7"] })).toEqual({})
+    // The pool gym it already has stays first; the home gym joins it as a room
+    // the draw MAY book, which is the 2026-08-06 availability ruling.
+    expect(flat(runs)[0].venues.map((v) => v.venueId)).toEqual(["v-home", "v-pool"])
+    // Nothing was placed in the home gym, so nothing is recorded for it.
+    expect(
+      drawnGyms(stateOf(painted), { "w-oct-1": ["age:Grade 7"] }, {
+        "w-oct-1": { "age:Grade 7": "v-pool" },
+      }).added
+    ).toEqual({})
   })
 
   it("reads the season's own board the way it always did", () => {
@@ -838,10 +889,52 @@ describe("where a grade could go on a weekend", () => {
     expect(pool.capacityGames).toBe(24)
   })
 
-  it("leaves out a gym with no hours: that is an impossibility, not a room", () => {
+  /**
+   * RE-PINNED 2026-08-06 (the overriding ruling: availability is no longer a
+   * restriction ANYWHERE). This used to leave a gym with no usable hours out of
+   * the rooms entirely, on the grounds that it was a true impossibility. Hours
+   * are availability, and availability stopped being a refusal: putting games
+   * there IS the claim, for the full day and every court. So the gym is a room,
+   * priced at the ordinary day.
+   */
+  it("offers a gym somebody left shut: hours are not a refusal any more", () => {
     const shut = withGymHours(world(), "v-pool", "10:00", "10:00")
     const state = stateOf(shut)
+    const rooms = weekendRooms(state, oct(state))
+    expect(rooms.map((r) => r.venueId)).toEqual(["v-home", "v-pool"])
+    const pool = rooms.find((r) => r.venueId === "v-pool") as BuildingRoom
+    // 6 courts × 2 days × 12 games on the default 09:00–21:00 day.
+    expect(pool.capacityGames).toBe(144)
+    expect(pool.backup).toBe(true)
+  })
+
+  it("leaves out only a building with no courts at all", () => {
+    const none = withGymCourts(world(), "v-pool", 0)
+    const state = stateOf(none)
     expect(weekendRooms(state, oct(state)).map((r) => r.venueId)).toEqual(["v-home"])
+  })
+
+  /**
+   * NEW 2026-08-06: an hours EXCEPTION on one date is a fact about this
+   * calendar, not a ceiling on the building. A gym running a short Saturday is
+   * still a room at its full day, because a move may claim the whole day.
+   */
+  it("prices an attached gym at its full day, not at the slice this date rents", () => {
+    const short = withWeekendGymHours(
+      withGymEveryWeekend(world(), "v-pool", true),
+      "w-oct",
+      "v-pool",
+      { startTime: "09:00", endTime: "12:00" }
+    )
+    const state = stateOf(short)
+    // The weekend really does run three hours there...
+    const attached = oct(state).venues.find((v) => v.venueId === "v-pool")
+    expect(attached?.capacityGames).toBe(36)
+    // ...and the ROOM is still the whole building: 6 courts × 2 days × 12.
+    const pool = weekendRooms(state, oct(state)).find(
+      (r) => r.venueId === "v-pool"
+    ) as BuildingRoom
+    expect(pool.capacityGames).toBe(144)
   })
 })
 
@@ -1357,7 +1450,7 @@ describe("a month fenced as playoffs", () => {
     expect(assignment["w-mar"] ?? []).toEqual([])
     // And the draw never books the home gym there, which would be a rental for
     // games nobody is going to schedule.
-    expect(drawnHomeGyms(state, assignment)).toEqual({
+    expect(drawnGyms(state, assignment, packPlanVenues(runs, assignment)).added).toEqual({
       "w-oct": ["v-home"],
       "w-nov": ["v-home"],
     })
@@ -1440,5 +1533,59 @@ describe("a month fenced as playoffs", () => {
       "Oct 2026",
       "Nov 2026",
     ])
+  })
+})
+
+/**
+ * AVAILABILITY IS NO LONGER A RESTRICTION ANYWHERE (owner ruling 2026-08-06,
+ * the overriding one).
+ *
+ * The only thing that can stop a placement is the games already in that building
+ * that weekend. Placing or moving IS the availability claim, for the whole day
+ * and every court. These pin the two halves: what a room is worth now, and what
+ * the draw is allowed to book.
+ */
+describe("availability is not a restriction", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  const oct = (s: PlannerState) => s.windows[0].weekends[0]
+
+  it("prices every roster gym at its whole building, attached or not", () => {
+    const state = stateOf(world())
+    const rooms = weekendRooms(state, oct(state))
+    // The home gym is attached, the pool gym has never been asked about, and
+    // they are priced the same way: courts × days × the full day.
+    expect(rooms.map((r) => [r.venueId, r.capacityGames])).toEqual([
+      ["v-home", 72],
+      ["v-pool", 144],
+    ])
+    // Only the second is a claim nobody has made yet, and the row says so.
+    expect(rooms.map((r) => r.backup)).toEqual([false, true])
+  })
+
+  it("counts only the games already there against a room", () => {
+    const state = stateOf(world())
+    const rooms = weekendRooms(state, oct(state), { "v-pool": 100 })
+    const pool = rooms.find((r) => r.venueId === "v-pool") as BuildingRoom
+    expect(pool.usedGames).toBe(100)
+    expect(pool.freeGames).toBe(44)
+    // The one honest refusal: what is in it, not whether anybody phoned it.
+    const full = weekendRooms(state, oct(state), { "v-pool": 144 })
+    expect((full.find((r) => r.venueId === "v-pool") as BuildingRoom).freeGames).toBe(0)
+  })
+
+  it("lets the draw book a pool gym as assumed when the home gym runs out", () => {
+    // 40 teams at 2 games each is 40 games; the home gym holds 72, so nothing
+    // is rented. Push it past that and the pool gym gets booked.
+    const big = withUnitTeams(world(), "age:Grade 7", 100)
+    const state = stateOf(big)
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, "balance")
+    const venues = packPlanVenues(runs, assignment)
+    const drawn = drawnGyms(state, assignment, venues)
+    expect(Object.values(venues["w-oct"] ?? {})).toContain("v-pool")
+    // The home gym is never "assumed": nobody phones their own building.
+    expect(drawn.assumed).toEqual([{ sessionId: "w-oct", venueId: "v-pool" }])
+    expect(drawn.added["w-oct"]).toEqual(["v-pool"])
   })
 })

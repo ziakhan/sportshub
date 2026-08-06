@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { PlacementReason, RentalAsk } from "@/lib/scheduler/planner-core"
 import { FRACTION_TONE, hueFor, type FractionTone } from "./plan-shared"
+import { armAfterDragStarts } from "./board-shared"
 
 /**
  * The three small things step 3 is built out of (owner-approved mock,
@@ -822,8 +823,13 @@ export function GymList({
               draggable={interactive}
               onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", JSON.stringify({ venueId: gym.venueId }))
-                onDragging?.(true)
-                onArm(gym.venueId)
+                // A frame later, never inside the event: arming draws a line
+                // above this card, and moving the drag source mid-dragstart is
+                // what made gyms undraggable (see armAfterDragStarts).
+                armAfterDragStarts(() => {
+                  onDragging?.(true)
+                  onArm(gym.venueId)
+                })
               }}
               onDragEnd={() => {
                 onDragging?.(false)
@@ -1067,6 +1073,31 @@ function CourtCorrectionBody({
  *    needed. Capacity was never the constraint there, so nothing repacks; the
  *    section reads "4 used of 6 rented" and the ask sheet asks for six.
  */
+/**
+ * SOMEWHERE ELSE THIS WEEKEND (owner ruling 2026-08-06, #4). One row per other
+ * building in the roster that has room for these games on this date, priced in
+ * the courts it would take and labelled with what booking it would be.
+ *
+ * SAME WEEKEND ONLY, deliberately. Moving to another DATE is what dragging is
+ * for, and a menu that offered both would be a list of every gym times every
+ * Saturday of the season.
+ */
+export interface MoveTarget {
+  venueId: string
+  name: string
+  /** Courts these games would take in that building. */
+  courts: number
+  /** What moving there would be: a booking the league has, one the solver
+   *  assumed, or a claim the operator is making by choosing it. */
+  status: "booked" | "assumed" | "asserts"
+}
+
+const MOVE_STATUS: Record<MoveTarget["status"], { words: string; tone: string }> = {
+  booked: { words: "booked", tone: "border-court-200 bg-court-50 text-court-800" },
+  assumed: { words: "assumed", tone: "border-gold-400 bg-gold-50 text-ink-800" },
+  asserts: { words: "asserts availability", tone: "border-ink-200 bg-ink-50 text-ink-500" },
+}
+
 export function GymMenu({
   gymName,
   weekendLabel,
@@ -1075,9 +1106,11 @@ export function GymMenu({
   usedCourts,
   hours,
   hoursOverridden,
+  moveTargets,
   onCourts,
   onHours,
   onResetHours,
+  onMoveTo,
 }: {
   gymName: string
   weekendLabel: string
@@ -1091,13 +1124,17 @@ export function GymMenu({
   hours: { startTime: string; endTime: string }
   /** True when those hours are this date's own, not the gym's usual range. */
   hoursOverridden: boolean
+  /** The other buildings this block could move into on THIS weekend, worked out
+   *  when the menu opens so it never offers a room that has since filled. */
+  moveTargets?: () => MoveTarget[]
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
+  onMoveTo?: (venueId: string) => void
 }) {
   return (
     <ActionPopover
-      label={`${gymName} on ${weekendLabel}: hours and courts`}
+      label={`${gymName} on ${weekendLabel}: move it, or set its hours and courts`}
       testId="gym-menu"
       width={284}
       trigger={
@@ -1117,6 +1154,14 @@ export function GymMenu({
           usedCourts={usedCourts}
           hours={hours}
           hoursOverridden={hoursOverridden}
+          moveTargets={moveTargets}
+          onMoveTo={
+            onMoveTo &&
+            ((venueId) => {
+              onMoveTo(venueId)
+              close()
+            })
+          }
           onCourts={(n) => {
             onCourts(n)
             close()
@@ -1143,9 +1188,11 @@ function GymMenuBody({
   usedCourts,
   hours,
   hoursOverridden,
+  moveTargets,
   onCourts,
   onHours,
   onResetHours,
+  onMoveTo,
 }: {
   gymName: string
   weekendLabel: string
@@ -1154,17 +1201,59 @@ function GymMenuBody({
   usedCourts: number
   hours: { startTime: string; endTime: string }
   hoursOverridden: boolean
+  moveTargets?: () => MoveTarget[]
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
+  onMoveTo?: (venueId: string) => void
 }) {
   const [held, setHeld] = useState(Math.max(0, Math.min(wired, courts)))
   const [start, setStart] = useState(hours.startTime)
   const [end, setEnd] = useState(hours.endTime)
   const step = (delta: number) => setHeld((n) => Math.max(0, Math.min(wired, n + delta)))
   const badWindow = start >= end
+  const targets = moveTargets ? moveTargets() : []
   return (
     <div>
+      {/* MOVE IT, FIRST (owner ruling 2026-08-06, #4). Same weekend only: every
+          other building in the roster with room for these games, priced in the
+          courts it would take and honest about what booking it would be. */}
+      {onMoveTo && (
+        <div className="border-ink-100 mb-2.5 border-b pb-2.5" data-testid="move-to">
+          <p className="text-ink-500 mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em]">
+            Move to another gym
+          </p>
+          {targets.length === 0 ? (
+            <p className="text-ink-500 text-[11.5px]" data-testid="move-to-empty">
+              No other gym has room this weekend. Drag to another weekend, or add gym time.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {targets.map((t) => (
+                <button
+                  key={t.venueId}
+                  type="button"
+                  data-testid="move-to-option"
+                  data-venue-id={t.venueId}
+                  data-status={t.status}
+                  onClick={() => onMoveTo(t.venueId)}
+                  className="border-ink-200 hover:border-court-400 hover:bg-court-50 flex min-h-[36px] cursor-pointer items-center gap-2 rounded-lg border bg-white px-2 text-left transition-colors"
+                >
+                  <span className="text-ink-900 text-[12px] font-bold">{t.name}</span>
+                  <span className="text-ink-500 text-[11px] tabular-nums">
+                    {courtsWord(t.courts)}
+                  </span>
+                  <span
+                    className={`ml-auto rounded-full border px-1.5 py-0.5 text-[10.5px] font-bold ${MOVE_STATUS[t.status].tone}`}
+                  >
+                    {MOVE_STATUS[t.status].words}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <p className="text-ink-900 text-[12.5px] font-bold">
         {gymName} on {weekendLabel}
       </p>

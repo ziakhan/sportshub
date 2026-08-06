@@ -21,7 +21,7 @@ import {
 } from "@/lib/scheduler/planner-core"
 import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import {
-  drawnHomeGyms,
+  drawnGyms,
   solvableState,
   weekendRooms,
   withWeekend,
@@ -726,12 +726,14 @@ export function useBoardVerbs(m: BoardModel) {
     // 2026-08-06), which is what solvableState puts on it.
     const runs = solvableState(world)
     const assignment = proposePlan(runs, lever)
+    const venues = packPlanVenues(runs, assignment)
     return {
       assignment,
-      venues: packPlanVenues(runs, assignment),
-      // The home gym the solve had to put on a bare weekend, so the board draws
-      // the same building the calendar was worked out in.
-      asserted: drawnHomeGyms(world, assignment),
+      venues,
+      // The buildings the solve had to put down, so the board draws the same
+      // gyms the calendar was worked out in. The rented ones come back marked
+      // assumed: nobody has phoned them (owner ruling 2026-08-06).
+      drawn: drawnGyms(world, assignment, venues),
     }
   }
 
@@ -763,9 +765,16 @@ export function useBoardVerbs(m: BoardModel) {
     remember(undoLabel)
     setAssignment(next.assignment)
     setVenues(next.venues)
-    setBlockStatus({})
+    // EVERY RENTAL THE SOLVER MADE IS ASSUMED (owner ruling 2026-08-06). It put
+    // those buildings down itself, so they are gold until somebody phones them;
+    // the league's own gym is not in the list, because nobody phones their own.
+    setBlockStatus(
+      Object.fromEntries(
+        next.drawn.assumed.map((a) => [blockKey(a.sessionId, a.venueId), "assumed" as BlockStatus])
+      )
+    )
     setAssertedGyms((prev) =>
-      Object.entries(next.asserted).reduce(
+      Object.entries(next.drawn.added).reduce(
         (acc, [sessionId, venueIds]) =>
           venueIds.reduce((at, venueId) => withAssertion(at, sessionId, venueId), acc),
         prev
@@ -788,11 +797,10 @@ export function useBoardVerbs(m: BoardModel) {
     // The sections that just appeared on weekends that were empty are the
     // league's own building, and the notice says so rather than leaving it to be
     // worked out from the colours.
-    const homeSessions = Object.keys(next.asserted)
-    const homeGym = next.asserted[homeSessions[0]]?.[0]
+    const rented = new Set(next.drawn.assumed.map((a) => a.venueId))
     setNotice(
-      homeSessions.length > 0 && homeGym
-        ? `${said} ${COPY.drawnHome(gymShort(homeGym), homeSessions.length)}`
+      rented.size > 0
+        ? `${said} ${COPY.drawnAssumed(nameList([...rented].map(gymShort)))}`
         : said
     )
   }
@@ -1059,10 +1067,12 @@ export function useBoardVerbs(m: BoardModel) {
    * told it something it did not know. The drop IS the availability assertion, so
    * it lands, and the working copy carries the assertion until the plan is saved.
    *
-   * Refusals are down to true impossibilities: a building whose own courts cannot
-   * hold the games even if we rented all of them, and a weekend whose spill is
-   * games rather than a whole grade to move. Anything that lands is CONFIRMED,
-   * because an operator who placed it is asserting the building is theirs.
+   * ONE REFUSAL IS LEFT (owner ruling 2026-08-06, the overriding one): the games
+   * already in that building that weekend. Availability is not a restriction
+   * anywhere on this board — placing IS the availability claim, for the whole day
+   * and every court — so nothing here asks whether the gym was attached, phoned
+   * or given hours. Anything that lands is CONFIRMED, because an operator who
+   * placed it is asserting the building is theirs.
    */
   const placeVenue = (sessionId: string, venueId: string, unitKeys: string[], games: number) => {
     if (!board || locked) return
@@ -1077,9 +1087,10 @@ export function useBoardVerbs(m: BoardModel) {
       (r) => r.venueId === venueId
     )
     if (!room) {
-      setNotice(
-        `${short} has no gym time we can use on ${weekend.label}. Give it hours back in step 2.`
-      )
+      // Not an availability refusal any more (owner ruling 2026-08-06): every
+      // gym in the roster is a room on every weekend. The only way to land here
+      // is a building with no courts at all, or one this plan no longer has.
+      setNotice(`${short} has no courts this plan can use. Check it in step 2.`)
       return
     }
     /**

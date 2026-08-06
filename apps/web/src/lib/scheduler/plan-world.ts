@@ -328,19 +328,40 @@ export function windowFenced(window: Pick<PlannerWindow, "phase">): boolean {
   return window.phase === "playoffs"
 }
 
-/** The chosen weekends of this plan that can hold nothing yet, each paired with
- *  the home gym, in the shape withAssertedGyms takes. A fenced month is skipped:
- *  putting the home gym on a playoffs Saturday would be booking a building for
- *  games nobody is going to schedule there. Empty when the plan has no home gym,
- *  because there is then nothing to put on them. */
-function chosenBareWeekends(state: PlannerState): Record<string, string[]> {
-  const home = homeGymOf(state)
-  if (!home) return {}
+/**
+ * WHAT THE DRAW MAY BOOK ON EACH CHOSEN WEEKEND (owner ruling 2026-08-06, the
+ * overriding one): every gym in the roster it does not already have there.
+ *
+ * It used to be the home gym and nothing else, so a league whose own building
+ * could not hold a weekend came back overflowing while three pool gyms it has
+ * phone numbers for sat unused. Availability is not a restriction: the solver may
+ * book any of them, and the booking is ASSUMED until somebody confirms it.
+ *
+ * Nothing here decides WHICH gyms get used — the objective does, and it already
+ * prices the home gym at nothing, a confirmed weekend at what it costs, and each
+ * new building-weekend at 25,000. This only puts them on the table.
+ *
+ * A fenced month is skipped whole: booking a building for playoffs nobody has
+ * drawn yet is a rental for games that do not exist.
+ */
+function drawableGyms(state: PlannerState): Record<string, string[]> {
+  const roster = state.gyms ?? []
+  if (roster.length === 0) return {}
+  // The building the league owns first, then the rest by name, so a draw of the
+  // same world twice puts the same gyms on the table in the same order.
+  const order = [...roster].sort(
+    (a, b) =>
+      (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
+      a.name.localeCompare(b.name, "en")
+  )
   const out: Record<string, string[]> = {}
   for (const win of state.windows) {
     if (windowFenced(win)) continue
     for (const w of win.weekends) {
-      if (w.chosen === true && w.capacityGames <= 0) out[w.sessionId] = [home.venueId]
+      if (w.chosen !== true) continue
+      const have = new Set(w.venues.map((v) => v.venueId))
+      const add = order.filter((g) => !have.has(g.venueId)).map((g) => g.venueId)
+      if (add.length > 0) out[w.sessionId] = add
     }
   }
   return out
@@ -378,7 +399,7 @@ function chosenBareWeekends(state: PlannerState): Record<string, string[]> {
  * so the season's own board pays nothing for any of this.
  */
 export function solvableState(state: PlannerState): PlannerState {
-  const filled = withAssertedGyms(state, chosenBareWeekends(state))
+  const filled = withAssertedGyms(state, drawableGyms(state))
   const runs = (w: PlannerWeekend) => w.chosen !== false && w.capacityGames > 0
   if (filled.windows.every((win) => !windowFenced(win) && win.weekends.every(runs))) return filled
   return {
@@ -391,29 +412,55 @@ export function solvableState(state: PlannerState): PlannerState {
 }
 
 /**
- * THE HOME GYM THE DRAW PUT ON A WEEKEND (owner ruling 2026-08-06, #3).
+ * THE GYMS THE DRAW PUT ON A WEEKEND (owner rulings 2026-08-06, #3 and the
+ * overriding availability one).
  *
- * The solve is allowed to fill a chosen weekend that has no gym time on it yet,
- * because the league owns a building. The board then has to SHOW that: real
- * sections, a real meter, and rental blocks for whatever spills. So a draw
- * records the same assertion a hand-placed gym makes, for every chosen-bare
- * weekend it actually put games on, and one Undo takes the whole draw back with
- * it.
+ * The solve fills a chosen weekend from the building the league owns and, where
+ * that is not enough, from any pool gym in the roster. The board then has to SHOW
+ * that: real sections, real meters, real rental blocks. So a draw records the
+ * same assertion a hand-placed gym makes, for every building a grade actually
+ * landed in, and one Undo takes the whole draw back with it.
  *
+ * The rented ones come back marked ASSUMED, because nobody has phoned them yet.
  * Weekends the draw left empty get nothing: a building on a date nobody plays on
  * is a booking the league never made.
  */
-export function drawnHomeGyms(
+export interface DrawnGyms {
+  /** sessionId → the venueIds the draw put there, for the board's assertion
+   *  mechanism, so the sections, meters and blocks are real. */
+  added: Record<string, string[]>
+  /**
+   * The ones the league has NOT booked: every rented building the solver put
+   * down itself. They land assumed (owner ruling 2026-08-06), which is what the
+   * gold chip and the ask sheet's "Booked it / I do not have this" are for. The
+   * building the league OWNS is never in here: nobody phones their own gym.
+   */
+  assumed: Array<{ sessionId: string; venueId: string }>
+}
+
+export function drawnGyms(
   state: PlannerState,
-  assignment: PlanAssignment
-): Record<string, string[]> {
-  const bare = chosenBareWeekends(state)
-  const out: Record<string, string[]> = {}
-  for (const [sessionId, venueIds] of Object.entries(bare)) {
+  assignment: PlanAssignment,
+  /** Where the draw actually put each grade: sessionId → (unit key → venueId). */
+  venues: PlanVenues
+): DrawnGyms {
+  const drawable = drawableGyms(state)
+  const roleOf = new Map((state.gyms ?? []).map((g) => [g.venueId, g.role]))
+  const added: Record<string, string[]> = {}
+  const assumed: Array<{ sessionId: string; venueId: string }> = []
+  for (const [sessionId, mayBook] of Object.entries(drawable)) {
     if ((assignment[sessionId] ?? []).length === 0) continue
-    out[sessionId] = venueIds
+    // Only the buildings a grade really landed in. A gym the solve was offered
+    // and did not need is not a booking anybody made.
+    const used = new Set(Object.values(venues[sessionId] ?? {}))
+    const here = mayBook.filter((venueId) => used.has(venueId))
+    if (here.length === 0) continue
+    added[sessionId] = here
+    for (const venueId of here) {
+      if (roleOf.get(venueId) !== "home") assumed.push({ sessionId, venueId })
+    }
   }
-  return out
+  return { added, assumed }
 }
 
 /**
@@ -426,8 +473,10 @@ export function drawnHomeGyms(
  * back to step 2 to do a thing step 2 no longer has a control for.
  *
  * Two facts now, and the hero names whichever is missing:
- *  - the league has a HOME GYM with courts and hours, which is what a bare
- *    weekend gets filled from;
+ *  - the league has a GYM with courts, which is what a bare weekend gets filled
+ *    from. Since the 2026-08-06 availability ruling any roster gym will do: the
+ *    home gym is preferred and the rest are booked as assumed, so a league that
+ *    owns no building can still draw a calendar;
  *  - at least one weekend is CHOSEN (or already runs, on the season's own
  *    board).
  *
@@ -450,10 +499,14 @@ export function worldReadiness(state: PlannerState | null): WorldReadiness {
   const chosenAny = state.windows.some(
     (win) => !windowFenced(win) && win.weekends.some(weekendSolvable)
   )
-  const homeOk = homeGymCapacity(state) > 0
+  // ANY gym with courts, not only the home one: the draw books the rest as
+  // assumed (owner ruling 2026-08-06).
+  const gymOk = (state.gyms ?? []).some(
+    (g) => usableCourtCount(g.courts, state.courtBuffer ?? 0) > 0
+  )
   const usable = solvableState(state).windows.some((win) => win.weekends.length > 0)
   if (usable) return { usable: true, gap: null }
-  return { usable: false, gap: !chosenAny ? (homeOk ? "weekends" : "both") : "gym" }
+  return { usable: false, gap: !chosenAny ? (gymOk ? "weekends" : "both") : "gym" }
 }
 
 /* ------------------- where a grade could actually go --------------------- */
@@ -495,24 +548,28 @@ export interface BuildingRoom {
 }
 
 /**
- * WHERE A GRADE COULD GO ON THIS WEEKEND (owner ruling 2026-08-05, #2 — the
- * switch-guard bug, and #1 — backup gyms are usable).
+ * WHERE A GRADE COULD GO ON THIS WEEKEND (owner ruling 2026-08-06, the
+ * overriding one: AVAILABILITY IS NO LONGER A RESTRICTION ANYWHERE).
  *
- * The guard used to test a destination against the courts the calendar RENTS
- * there. Those are demand-sized by construction, so every destination read full
- * the moment anything moved and the ⇄ affordance vanished. What actually decides
- * whether a grade can move is what the BUILDING could hold:
+ * The only thing that can stop a placement is the games already in that building
+ * that weekend. Nothing else: not whether the plan attached the gym, not whether
+ * anybody phoned it, not what hours step 2 happens to hold for it. Placing or
+ * moving something IS the availability claim, and it claims the whole day and
+ * every court — confirmed when the operator does it by hand, assumed when the
+ * solver does it.
  *
- *  - the home gym: its usable capacity, less what is already in it;
- *  - a pool gym attached this weekend: its WIRED courts × this weekend's slots,
- *    less what is already in it — renting more of it is exactly what the move
- *    does, so the current rental is not the ceiling;
- *  - a pool gym this plan has no availability for (a backup): the same
- *    arithmetic, marked `backup`, because dropping onto it is the assertion.
+ * So every gym in the plan's roster is a room on every weekend, priced the same
+ * way: its WIRED courts less the buffer, over its full day, minus the games
+ * already sitting in it. An attached gym is not measured against the slice of
+ * itself this calendar happens to rent, and a gym nobody has asked about is not
+ * measured against zero — both are the same building with the same floor.
  *
- * A court correction ("Haber only gave us three that Saturday") is a real
- * ceiling and is honoured. A gym with no hours holds nothing and is left out
- * entirely: that is a true impossibility, not a room to offer.
+ * TWO THINGS STILL BITE, and neither is availability:
+ *  - games already placed there. That is the one honest refusal, and it is the
+ *    only one any caller may print;
+ *  - a court correction ("Haber only gave us three that Saturday"), because the
+ *    operator typed that number about that date on purpose. It is a ceiling they
+ *    asserted, not a booking they failed to make.
  */
 export function weekendRooms(
   state: PlannerState,
@@ -546,32 +603,84 @@ export function weekendRooms(
     }
   }
 
-  for (const venue of orderedVenues(weekend.venues)) {
-    const gym = roster.find((g) => g.venueId === venue.venueId)
-    // The building's own courts win over the ones this weekend happens to rent,
-    // and whichever is BIGGER is the honest ceiling: a season row that has
-    // fallen behind must never shrink a gym the weekend is already using.
-    const wired = gym ? usableCourtCount(gym.courts, buffer) : 0
-    const cap = capFor(venue.venueId)
-    const courts = Math.min(Math.max(wired, courtsWiredAt(venue)), cap ?? Number.POSITIVE_INFINITY)
-    rows.push(row(venue, courts, buildingCapacityAt(venue, courts), false))
+  /**
+   * THE WHOLE BUILDING, FULL DAY, EVERY COURT. One price for every gym in the
+   * roster, whether this weekend has it attached or has never heard of it: what
+   * the building could hold if the league took all of it, which since the
+   * 2026-08-06 ruling is exactly what placing something there claims.
+   *
+   * A gym the weekend already rents is measured against the SAME number, not
+   * against the slice it happens to rent, because renting more of it is what the
+   * move does. The only thing that shrinks it is a court correction, which the
+   * operator typed about that date on purpose.
+   */
+  const roomFor = (gym: PlanWorldGym, attached: PlannerVenue | null): BuildingRoom => {
+    /**
+     * A GYM WITH NO USABLE RANGE STILL RUNS A DAY (owner ruling 2026-08-06).
+     * Hours are availability, and availability stopped being a refusal: a gym
+     * somebody left shut, or never gave hours to, is priced at the ordinary day
+     * the plan assumes everywhere else. Placing games there claims that day.
+     */
+    const opens =
+      gamesPerCourtDay(
+        gym.openTime ?? DEFAULT_OPEN,
+        gym.closeTime ?? DEFAULT_CLOSE,
+        state.gameSlotMinutes
+      ) > 0
+    const full = plannerVenueOn(
+      opens ? gym : { ...gym, openTime: null, closeTime: null },
+      { dayCount: weekend.dayCount },
+      state
+    )
+    const cap = capFor(gym.venueId)
+    // The roster is the authority on the floor; a weekend already using more
+    // courts than the roster claims keeps them, because that is real too.
+    const wired = Math.max(usableCourtCount(gym.courts, buffer), attached ? courtsWiredAt(attached) : 0)
+    const courts = Math.min(wired, cap ?? Number.POSITIVE_INFINITY)
+    // Priced at the building's OWN full day, and never below what the weekend is
+    // already holding it at: an hours exception on this date is a fact about
+    // this calendar, not a ceiling on the building.
+    const capacityGames = Math.max(
+      buildingCapacityAt(full, courts),
+      attached ? buildingCapacityAt(attached, courts) : 0
+    )
+    return row(
+      { ...full, name: attached?.name ?? full.name, role: attached?.role ?? full.role },
+      courts,
+      capacityGames,
+      attached === null
+    )
   }
 
-  // The gyms the plan HAS but has not asked about this weekend, in name order so
-  // the tray and the ⇄ walk them the same way twice.
-  const attached = new Set(weekend.venues.map((v) => v.venueId))
-  const backups = roster
-    .filter((g) => !attached.has(g.venueId))
+  const attachedBy = new Map(weekend.venues.map((v) => [v.venueId, v]))
+  // Attached first, in the board's own order, so the sections and the ⋯ menu
+  // walk them the same way twice.
+  for (const venue of orderedVenues(weekend.venues)) {
+    const gym = roster.find((g) => g.venueId === venue.venueId)
+    if (gym) rows.push(roomFor(gym, venue))
+    // A weekend carrying a gym the roster dropped is still holding real games,
+    // so it keeps its row at what the attachment says.
+    else {
+      const cap = capFor(venue.venueId)
+      const courts = Math.min(courtsWiredAt(venue), cap ?? Number.POSITIVE_INFINITY)
+      rows.push(row(venue, courts, buildingCapacityAt(venue, courts), false))
+    }
+  }
+
+  /**
+   * And every OTHER gym the plan has, in name order. None of them is skipped any
+   * more: a gym with no hours recorded still runs a default day, and "we have not
+   * phoned them" was never a reason the operator could not put games there. Only
+   * a gym with no courts at all, or one a court correction has closed outright,
+   * genuinely holds nothing.
+   */
+  const others = roster
+    .filter((g) => !attachedBy.has(g.venueId))
     .sort((a, b) => a.name.localeCompare(b.name, "en"))
-  for (const gym of backups) {
-    const venue = plannerVenueOn(gym, { dayCount: weekend.dayCount }, state)
-    const cap = capFor(gym.venueId)
-    const courts = Math.min(venue.courts ?? 0, cap ?? Number.POSITIVE_INFINITY)
-    const capacityGames = cap == null ? venue.capacityGames : buildingCapacityAt(venue, courts)
-    // A gym with no hours on it holds nothing. Offering it would be a mistake
-    // path with a mystery attached, which is the thing the guard exists to stop.
-    if (capacityGames <= 0) continue
-    rows.push(row(venue, courts, capacityGames, true))
+  for (const gym of others) {
+    const room = roomFor(gym, null)
+    if (room.capacityGames <= 0) continue
+    rows.push(room)
   }
   return rows
 }

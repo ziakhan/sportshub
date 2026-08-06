@@ -47,7 +47,7 @@ export const COPY = {
    * than infer it from the board afterwards.
    */
   drawHow:
-    "Fills your home gym first, then rents as few gyms as possible, as full as possible. Adjust anything afterward.",
+    "Fills your home gym first, then rents as few gyms as possible, as full as possible. Rented gyms it books are assumed until you confirm them.",
   drawHint:
     "The planner fills your chosen weekends from your gyms. Nothing is booked or saved until you say so.",
   /**
@@ -62,24 +62,23 @@ export const COPY = {
    */
   worldFirst: {
     weekends: "Pick your weekends in step 2 first",
-    gym: "Add a home gym in step 2 first",
-    both: "Pick your weekends and add a home gym in step 2 first",
+    gym: "Add a gym in step 2 first",
+    both: "Pick your weekends and add a gym in step 2 first",
   },
   worldFirstHint: {
     weekends:
       "A plan runs the weekends you choose. Choose them and the draw fills them from your gyms.",
-    gym: "The draw fills your chosen weekends from the building your league owns, so it needs one with courts and hours on it.",
-    both: "A plan runs the weekends you choose, filled from the building your league owns. Give it both and the calendar draws itself here.",
+    gym: "The draw fills your chosen weekends from your gyms, starting with the one you own, so it needs at least one with courts on it.",
+    both: "A plan runs the weekends you choose, filled from your gyms. Give it both and the calendar draws itself here.",
   },
   worldFirstLink: "Go to step 2",
   /** Said once the solver has answered, whichever button asked it. */
   drawn:
     "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Nothing is saved until you save it.",
-  /** Added when the draw put the league's own building on weekends that had
-   *  nothing on them yet (owner ruling 2026-08-06, #3), so the sections that
-   *  appeared are never a surprise. */
-  drawnHome: (gym: string, weekends: number) =>
-    `${gym} is on ${plural(weekends, "weekend", "weekends")} it filled, because that is the building your league owns.`,
+  /** Added when the draw booked gyms the league has not phoned (owner ruling
+   *  2026-08-06), so the gold blocks that appeared are never a surprise. */
+  drawnAssumed: (gyms: string) =>
+    `It booked ${gyms} where your own gym ran out. Those are assumed until you confirm them.`,
   redrawn:
     "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
   resolved:
@@ -206,6 +205,30 @@ export interface BoardSnapshot {
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean
+}
+
+/**
+ * ARM AFTER THE DRAG HAS STARTED, NEVER DURING IT (owner bug report 2026-08-06:
+ * "I cannot drag the gyms at all").
+ *
+ * Every drag source on this board arms what is being dragged, so the valid
+ * destinations light up under the cursor. Doing that from inside the `dragstart`
+ * handler is what broke it: arming renders the line above the board that says
+ * what is in your hand, and inserting a node ABOVE the drag source moves that
+ * source in the layout while the browser is still working out what is being
+ * dragged. Chrome answers by cancelling — dragstart, then dragend, in the same
+ * breath, with nothing ever picked up.
+ *
+ * The event has to end with the DOM exactly as the browser found it. One frame
+ * later the drag is the browser's and React can move whatever it likes, so every
+ * drag source hands its state changes to this.
+ */
+export function armAfterDragStarts(arm: () => void): void {
+  if (typeof window === "undefined" || !window.requestAnimationFrame) {
+    arm()
+    return
+  }
+  window.requestAnimationFrame(arm)
 }
 
 /** One rental, keyed the way the working copy remembers it. */
