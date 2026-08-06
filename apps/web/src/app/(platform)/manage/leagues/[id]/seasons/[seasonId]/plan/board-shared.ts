@@ -1,3 +1,4 @@
+import type { DragEvent } from "react"
 import type { PlannerLever, PlannerState, PlanSummary } from "@/lib/scheduler/planner-core"
 import { PILL_TONE, type GhostChip } from "./plan-shared"
 import type { BlockStatus } from "./plan-ui"
@@ -37,6 +38,15 @@ export const COPY = {
    * the answer, and that tap must not be hidden behind "adjust grouping rules".
    */
   drawTitle: "Draw the calendar",
+  /**
+   * WHAT THE BUTTON IS ABOUT TO DO, in one line (owner ruling 2026-08-06, slice
+   * B2). The draw has a shape — the building you own fills before anything is
+   * rented, and what spills takes as few rented gyms as it can, as full as it
+   * can — and an operator should know that shape before they press it rather
+   * than infer it from the board afterwards.
+   */
+  drawHow:
+    "Fills your home gym first, then rents as few gyms as possible, as full as possible. Adjust anything afterward.",
   drawHint:
     "The planner fills your chosen weekends from your gyms. Nothing is booked or saved until you say so.",
   /** The same board with no world to solve in. The fix is a step back, not a
@@ -191,6 +201,46 @@ export type DragPayload =
       window?: string
     }
   | null
+
+/**
+ * WHAT LANDED ON A GHOST DATE (owner ruling 2026-08-06, slice B2). A date the
+ * plan is not using takes the same things every card takes — a gym off the gym
+ * list, one grade, a whole block, a whole section — and they reduce to two
+ * intents: put a building on this date, or bring these grades to it.
+ */
+export type GhostIntent =
+  | { kind: "gym"; venueId: string }
+  | { kind: "grades"; unitKeys: string[]; fromSessionId: string | null }
+
+/** A ghost drop waiting for the weekend it landed on to exist on the board. */
+export interface PendingDrop {
+  sessionId: string
+  intent: GhostIntent
+}
+
+/** What a drag is carrying, as a ghost date reads it. Null when it is not one
+ *  of ours, or carries nothing a date can take. */
+export function ghostIntentFromDrag(e: DragEvent): GhostIntent | null {
+  let payload: DragPayload = null
+  try {
+    payload = JSON.parse(e.dataTransfer.getData("text/plain")) as DragPayload
+  } catch {
+    return null
+  }
+  if (!payload) return null
+  if (payload.venueId) return { kind: "gym", venueId: payload.venueId }
+  if (payload.section && Array.isArray(payload.unitKeys) && payload.sessionId) {
+    return { kind: "grades", unitKeys: payload.unitKeys, fromSessionId: payload.sessionId }
+  }
+  if (payload.unitKey) {
+    return {
+      kind: "grades",
+      unitKeys: [payload.unitKey],
+      fromSessionId: payload.fromSessionId ?? null,
+    }
+  }
+  return null
+}
 
 /** One shared empty set, so a weekend with nothing stranded does not hand a new
  *  object down on every repaint. */

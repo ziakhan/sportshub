@@ -568,7 +568,18 @@ export function DrawHero({
             </svg>
             {COPY.drawTitle}
           </button>
-          <p className="text-ink-500 mx-auto mt-2.5 max-w-md text-[12.5px]">{COPY.drawHint}</p>
+          {/* WHAT THE BUTTON IS ABOUT TO DO (owner ruling 2026-08-06, slice B2).
+              The shape of the draw, in one line, BEFORE it is pressed: the
+              building you own fills first, and what spills takes as few rented
+              gyms as it can. Above the promise that nothing is saved, because
+              what it does is the question somebody asks first. */}
+          <p
+            className="text-ink-700 mx-auto mt-2.5 max-w-md text-[12.5px] font-semibold"
+            data-testid="draw-how"
+          >
+            {COPY.drawHow}
+          </p>
+          <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">{COPY.drawHint}</p>
         </>
       ) : (
         <>

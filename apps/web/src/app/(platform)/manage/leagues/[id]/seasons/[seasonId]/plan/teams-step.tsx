@@ -431,7 +431,7 @@ export function TeamsStep({
         <div>
           <p className="text-ink-900 text-[15px] font-bold">How many teams do you expect?</p>
           <p className="text-ink-500 text-xs">
-            One number per grade. Pre-filled from last season where there is history.
+            Estimate your teams. Registrations inform the numbers, they never decide them.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -723,7 +723,7 @@ export function TeamsStep({
             {totals.gamesPerTeam > 0 && games > 0
               ? ` at ${totals.gamesPerTeam} game${totals.gamesPerTeam === 1 ? "" : "s"} each.`
               : "."}{" "}
-            Next we&apos;ll find the gym time to hold them.
+            Next you&apos;ll name the buildings that hold them.
           </div>
         )}
 

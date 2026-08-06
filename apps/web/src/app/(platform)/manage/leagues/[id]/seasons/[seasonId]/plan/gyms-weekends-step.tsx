@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button, DateTimePicker } from "@/components/ui"
 import { VenueEditor } from "@/components/venue-editor"
 import { VenueSelector } from "@/components/venue-selector"
@@ -17,113 +17,59 @@ import {
   withCourtBuffer,
   withGym,
   withGymCourts,
-  withGymEveryWeekend,
   withGymHours,
-  withGymOnWeekend,
   withGymRole,
   withWeekend,
   withWeekendChosen,
-  withWeekendGymHours,
   worldWeekends,
   DEFAULT_DAY_COUNT,
 } from "@/lib/scheduler/plan-world"
 import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
 
 /**
- * Step 2, gyms and weekends (owner-approved mock, 2026-08-02, revised the
- * same day after the owner drove it). One card per gym, one column per
- * weekend, and three rulings the screen is built around:
+ * Step 2, YOUR BUILDINGS (owner ruling 2026-08-06). This screen used to be two
+ * screens wearing one coat: a roster of gyms AND a weekend-by-weekend paint
+ * grid where an operator booked each building into each Saturday. The painting
+ * is gone. Booking a building onto a date is board work, and the board is where
+ * it happens now.
  *
- *   1. EVERY weekend of the season is here, month by month, not just the ones
- *      that already exist. "We currently don't have visibility."
- *   2. A cell is a one-tap on/off toggle. Tapping it never opens a panel.
- *   3. Hours are ONE from-to range per gym, the same every weekend. This is
- *      the estimate phase. A single weekend that runs different hours lives
- *      behind a quiet link, and shows up amber on the grid so it is never
- *      invisible.
+ * What is left is the honest half, and it is a roster:
  *
- * Owner ruling 2026-08-02 added a fourth state: a weekend the season does not
- * have this gym on, WITH the reason (Six Park East is taken by the NJC/NSC
- * circuits on six known 2026-27 weekends). It is pre-marked from what we
- * know, it is dashed gold so it never reads as a weekend nobody got to yet,
- * and tapping it is still just "turn the gym on" — the operator always wins,
- * and the notice says what was overridden.
+ *   1. ONE CARD PER BUILDING. What it is to the league (the home gym, or one in
+ *      the pool it rents), how many courts it runs, and the one from-to range it
+ *      is available. That is the whole card.
+ *   2. THE HOME GYM FILLS FIRST, at full capacity, before anything is rented.
+ *      One quiet action per card names it, and because home is exclusive the
+ *      operator is asked first: the old home gym goes to the pool in the same
+ *      write.
+ *   3. COURTS HELD BACK is one number for the whole league, so it sits above the
+ *      cards rather than inside one.
  *
- * Owner rulings 2026-08-03 (venue model v2) replaced ranking with roles:
- *
- *   4. FILL ORDER IS GONE from this screen. No arrows, no "fills first", no
- *      "overflow #2". A gym is either the building the league owns or a gym it
- *      rents, and that is the only thing a card says about it.
- *   5. Each card wears its ROLE. The home gym costs nothing and always fills
- *      first; every other gym is in the pool, rented by the court when a
- *      weekend needs it. One quiet action per card names a new home gym, and
- *      because home is exclusive the operator is asked first: the server sends
- *      the old home gym to the pool in the same write.
- *   6. A weekend can be ours on paper without being booked. An assumed
- *      attachment is hatched and says "assumed"; one tap per weekend confirms
- *      it once the gym has said yes. No bulk confirm — a booking is a phone
- *      call, and pretending otherwise is how a season ends up double-booked.
+ * And one league-level question sits on top of the roster: WHEN WOULD YOU LIKE
+ * TO RUN SESSIONS? Those weekends are a preference the draw fills first, not a
+ * booking. Choosing one attaches no building to anything (owner ruling
+ * 2026-08-06) — gyms and games go on dates on the board, any date, including
+ * ones this row never picked.
  *
  * A PLAN OWNS ITS WORLD (owner ruling 2026-08-05, the architecture). This whole
- * screen is the SELECTED PLAN's gym time, not the season's:
+ * screen is the SELECTED PLAN's, not the season's:
  *
- *   - a plan of the operator's own → every toggle, every court, every hour and
- *     the buffer are written into the plan document. The season's SeasonVenue
- *     rows and its weekend attachments do not move until that plan is activated.
- *   - the ACTIVE plan, or nothing open → the season's own routes, exactly as
- *     before, because the active plan IS the season.
+ *   - a plan of the operator's own → the roles, courts, hours, buffer and chosen
+ *     weekends are written into the plan document. The season's SeasonVenue rows
+ *     do not move until that plan is activated.
+ *   - the ACTIVE plan, or nothing open → the season's own routes, because the
+ *     active plan IS the season.
  *   - the imported reference → read only. It records what the league published.
  *
- * The COLUMNS are the season's either way: which Saturdays exist is a fact about
- * the season's dates, not an opinion a plan holds. So turning on a weekend the
- * season has never created still creates the weekend (a session with no gym on
- * it, which is inert), and then the PLAN attaches its own gym to it.
+ * The WEEKEND COLUMNS are the season's either way: which Saturdays exist is a
+ * fact about the season's dates, not an opinion a plan holds. So choosing a
+ * weekend the season has never created still creates the weekend (a session with
+ * no gym on it, which is inert), and the plan then records that it wants it.
  */
 
-const CELL_CLS: Record<VenueGridCell["state"], string> = {
-  on: "border-court-200 bg-court-50 text-court-800 hover:border-court-400",
-  off: "border-ink-200 border-dashed bg-ink-50 text-ink-400 hover:border-ink-400",
-  custom: "border-gold-200 bg-gold-50 text-gold-800 hover:border-gold-400",
-  // Dashed like off (the gym is not on this weekend) but gold like custom
-  // (there is something to read here).
-  taken: "border-gold-300 border-dashed bg-gold-50/70 text-gold-800 hover:border-gold-500",
-}
-
-/** An assumed booking keeps its colour and gains a texture: the weekend still
- *  reads as one we are counting on, it just stops looking like a weekend the
- *  gym has already said yes to. */
-const ASSUMED_HATCH: CSSProperties = {
-  backgroundImage:
-    "repeating-linear-gradient(135deg, rgba(20,83,45,0.16) 0 2px, transparent 2px 5px)",
-}
-
-/** Attached, however its hours read. Taken and off both mean not ours. */
+/** Attached, however its hours read. Taken and off both mean not ours. Still
+ *  needed to read the SEASON's own weekends back off the grid. */
 const isOn = (state: VenueGridCell["state"]) => state === "on" || state === "custom"
-
-/** Ours on paper, nobody has booked it yet. */
-const isAssumed = (cell: VenueGridCell) => isOn(cell.state) && cell.bookingStatus === "assumed"
-
-/** What a cell says out loud. Booking status only ever qualifies a weekend we
- *  have — "off, assumed" would be nonsense. */
-function cellLabel(venueName: string, weekend: string, cell: VenueGridCell): string {
-  const head = `${venueName}, ${weekend}: `
-  if (cell.state === "off") return `${head}off, tap to turn it on`
-  if (cell.state === "taken") {
-    return `${head}not available, ${cell.reason ?? "marked unavailable"}, tap to turn it on anyway`
-  }
-  const booking = cell.bookingStatus === "assumed" ? ", assumed, not booked yet" : ""
-  const hours = cell.state === "custom" ? `, ${cell.startTime} to ${cell.endTime}` : ""
-  return `${head}on${hours}${booking}, tap to turn it off`
-}
-
-/** What fits in a 62px cell: "Taken: NJC/NSC" reads as "NJC/NSC". */
-function shortReason(reason: string | null): string | null {
-  if (!reason) return null
-  const tail = reason.includes(":") ? reason.slice(reason.indexOf(":") + 1) : reason
-  const value = tail.trim()
-  if (!value) return null
-  return value.length > 9 ? `${value.slice(0, 8)}…` : value
-}
 
 interface HoursDraft {
   start: string
@@ -163,9 +109,6 @@ export function GymsWeekendsStep({
   /** Courts the league keeps empty at every gym, every day. One number for
    *  the whole season, so it sits above the gym cards rather than inside one. */
   const [buffer, setBuffer] = useState("0")
-  const [exceptionFor, setExceptionFor] = useState<string | null>(null)
-  const [exceptionKey, setExceptionKey] = useState<string>("")
-  const [exceptionDraft, setExceptionDraft] = useState<HoursDraft>({ start: "", end: "" })
   const [advancedFor, setAdvancedFor] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
 
@@ -294,15 +237,11 @@ export function GymsWeekendsStep({
     body: JSON.stringify(body),
   })
 
-  /** One tap: on becomes off, off becomes on. A weekend that has no session
-   *  yet gets one created on the way in. A weekend marked taken turns on the
-   *  same way — the tap IS the override — and the notice names what it
-   *  overrode, so nobody wonders where the reason went. */
   /**
    * A weekend the SEASON does not have yet, brought into existence (owner ruling
    * 2026-08-05). Which Saturdays exist is the season's shape, so this is a season
    * write even while a plan is open — but nothing is attached to anybody's gym,
-   * and the plan then says what it has there in its own document.
+   * and the plan then says what it wants there in its own document.
    */
   const ensureSession = async (weekend: VenueGridWeekend): Promise<string | null> => {
     if (weekend.sessionId) return weekend.sessionId
@@ -338,71 +277,6 @@ export function GymsWeekendsStep({
       targetGamesPerTeam: sample?.targetGamesPerTeam ?? 2,
       venues: [],
     })
-  }
-
-  const toggleCell = async (
-    venue: VenueGridRow,
-    weekend: VenueGridWeekend,
-    cell: VenueGridCell
-  ) => {
-    const key = `${venue.venueId}:${weekend.key}`
-
-    // THE PLAN'S OWN GYM TIME. One document, one write, no season row touched.
-    if (onPlanWorld) {
-      const on = !isOn(cell.state)
-      const sessionId = on ? await ensureSession(weekend) : cell.sessionId
-      if (!sessionId) return
-      const base = worldWithWeekend(world(), sessionId, weekend)
-      await saveWorld(
-        withGymOnWeekend(base, sessionId, venue.venueId, on),
-        key,
-        on
-          ? `${venue.name} is on for ${weekend.label} in this plan.`
-          : `${venue.name} is off for ${weekend.label} in this plan.`,
-        on && cell.state === "taken" ? "gold" : "court"
-      )
-      return
-    }
-    // The plan's world has not arrived yet, so there is nothing to write it
-    // into — and the season is NOT the fallback (see `pending` above).
-    if (planWorldMode) return
-
-    if (!isOn(cell.state)) {
-      const on: string | (() => string) =
-        cell.state === "taken"
-          ? () => {
-              // Amber, not green: claiming a weekend somebody else had is
-              // worth reading twice.
-              setNoticeTone("gold")
-              return `${venue.name} is on for ${weekend.label}. It was marked ${
-                cell.reason ?? "unavailable"
-              }.`
-            }
-          : `${venue.name} is on for ${weekend.label}.`
-      if (cell.sessionId) {
-        await call(
-          `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}`,
-          { method: "POST" },
-          key,
-          on
-        )
-      } else if (cell.satDateISO) {
-        await call(
-          `/api/seasons/${seasonId}/weekends`,
-          json({ satDate: cell.satDateISO, venueId: venue.venueId }),
-          key,
-          on
-        )
-      }
-      return
-    }
-    if (!cell.sessionId) return
-    await call(
-      `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}`,
-      { method: "DELETE" },
-      key,
-      `${venue.name} is off for ${weekend.label}.`
-    )
   }
 
   /** The whole hours model on this screen: one range, every weekend. */
@@ -555,236 +429,34 @@ export function GymsWeekendsStep({
     )
   }
 
-  /** The gym said yes. One weekend, one tap, and every day of that weekend
-   *  moves together — a gym does not rent you Saturday and think about
-   *  Sunday. */
-  const confirmBooking = async (
-    venue: VenueGridRow,
-    weekend: VenueGridWeekend,
-    cell: VenueGridCell
-  ) => {
-    if (!cell.sessionId) return
-    await call(
-      `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}`,
-      json({ bookingStatus: "confirmed" }, "PATCH"),
-      `${venue.venueId}:${weekend.key}:booked`,
-      `${venue.name} is booked for ${weekend.label}.`
-    )
-  }
-
-  /** A gym on, or off, for the whole season in one press. Turning it off
-   *  everywhere is how an operator asks what a one-gym season looks like. */
-  const toggleSeason = async (venue: VenueGridRow, on: boolean) => {
-    if (onPlanWorld) {
-      const running = worldWeekends(world()).filter(weekendChosen).length
-      await saveWorld(
-        withGymEveryWeekend(world(), venue.venueId, on),
-        `${venue.seasonVenueId}:season:${on ? "on" : "off"}`,
-        on
-          ? running === 0
-            ? "This plan runs no weekends yet. Choose the weekends above and the gym goes on with them."
-            : `${venue.name} is on for all ${running} weekend${running === 1 ? "" : "s"} this plan runs.`
-          : `${venue.name} is off for every weekend of this plan.`
-      )
-      return
-    }
-    // The plan's world has not arrived yet, so there is nothing to write it
-    // into — and the season is NOT the fallback (see `pending` above).
-    if (planWorldMode) return
-    await call(
-      `/api/seasons/${seasonId}/venues/${venue.seasonVenueId}/toggle-season`,
-      json({ on }),
-      `${venue.seasonVenueId}:season:${on ? "on" : "off"}`,
-      (data) => {
-        const changed = Number(data?.weekendsChanged ?? 0)
-        const blocked = Number(data?.weekendsBlocked ?? 0)
-        const unavailable = Number(data?.weekendsUnavailable ?? 0)
-        setNoticeTone(blocked > 0 || unavailable > 0 ? "gold" : "court")
-        if (Number(data?.weekends ?? 0) === 0) {
-          return "This season has no weekends yet. Tap one on the grid and it gets created."
-        }
-        const lead =
-          changed === 0
-            ? `${venue.name} was already ${on ? "on" : "off"} for every weekend.`
-            : `${venue.name} is ${on ? "on" : "off"} for ${changed} weekend${
-                changed === 1 ? "" : "s"
-              }.`
-        const parts = [lead]
-        if (blocked > 0) {
-          parts.push(
-            `${blocked} weekend${
-              blocked === 1 ? "" : "s"
-            } kept it because a game is already scheduled there.`
-          )
-        }
-        // "On all weekends" never claims a building somebody else has: the
-        // marked ones stayed put, and the operator gets told which and why.
-        if (unavailable > 0) {
-          const reason = data?.unavailableReason
-          parts.push(
-            `Left ${unavailable} weekend${unavailable === 1 ? "" : "s"} marked ${
-              reason ?? "unavailable"
-            }.`
-          )
-        }
-        return parts.join(" ")
-      }
-    )
-  }
-
   /**
-   * THE LEAGUE'S WEEKENDS, CHOSEN ONCE (owner ruling 2026-08-05, #3).
+   * WHEN WOULD YOU LIKE TO RUN SESSIONS (owner ruling 2026-08-05 #3, revised
+   * 2026-08-06). One league-level row, above the buildings, and it is a
+   * PREFERENCE: the draw fills these weekends first.
    *
-   * "When do you want to run sessions?" is a league question, not a per-gym
-   * one: an operator should not have to paint the same eleven weekends across
-   * three gym cards to say the season runs on them. So the season calendar sits
-   * above the grid as one row of toggles, and the per-gym cells FOLLOW it:
+   * Choosing one attaches NO gym, not even the home gym. Putting a building on a
+   * date is board work now, on any date the season has, including ones this row
+   * never picked. Turning a weekend off says the league would rather not run it,
+   * and takes what the plan had there off with it.
    *
-   *  - a weekend turned on attaches the HOME GYM, because that is the building
-   *    the league already has and does not have to ask anybody for;
-   *  - the pool is deliberately left alone. Nobody has phoned those gyms about
-   *    that Saturday, and a board that ticked them would be asserting
-   *    availability the league does not have.
-   *
-   * The grid underneath stays exactly as it was, because a gym really can be
-   * unavailable on a weekend the league wants to run.
+   * Only a plan can hold this answer: the season substrate has no "we would like
+   * this weekend" of its own, so with the active plan open (or nothing open) the
+   * row reads the season's weekends back and says so rather than inventing a
+   * meaning for a tap.
    */
   const runWeekend = async (weekend: VenueGridWeekend, on: boolean) => {
-    if (readOnly || busy !== null || !grid) return
-    const index = grid.weekends.findIndex((w) => w.key === weekend.key)
-    if (index < 0) return
+    if (readOnly || busy !== null || !grid || !onPlanWorld) return
     const key = `weekend:${weekend.key}`
-    const home = grid.venues.find((v) => v.role === "home")
-
-    // THE PLAN'S OWN WEEKENDS. Choosing one attaches the home gym in the plan's
-    // document; the pool stays untouched, because nobody has phoned those gyms.
-    if (onPlanWorld) {
-      const sessionId = on ? await ensureSession(weekend) : weekend.sessionId
-      if (!sessionId) return
-      const base = worldWithWeekend(world(), sessionId, weekend)
-      await saveWorld(
-        withWeekendChosen(base, sessionId, on),
-        key,
-        on
-          ? home
-            ? `${weekend.label} is on in this plan, with ${home.name}. Gyms you rent stay off until you turn them on.`
-            : `${weekend.label} is on in this plan. Pick a home gym and it goes on with your weekends.`
-          : `${weekend.label} is off in this plan. No gym is on it.`
-      )
-      return
-    }
-    // The plan's world has not arrived yet, so there is nothing to write it
-    // into — and the season is NOT the fallback (see `pending` above).
-    if (planWorldMode) return
-
-    if (on) {
-      if (!home) {
-        setError("Pick your home gym first, then choose the weekends you want to run.")
-        return
-      }
-      const cell = home.cells[index]
-      if (cell?.sessionId) {
-        await call(
-          `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${home.venueId}`,
-          { method: "POST" },
-          key,
-          `${weekend.label} is on, with ${home.name}. Gyms you rent stay off until you turn them on.`
-        )
-      } else if (weekend.satDateISO) {
-        await call(
-          `/api/seasons/${seasonId}/weekends`,
-          json({ satDate: weekend.satDateISO, venueId: home.venueId }),
-          key,
-          `${weekend.label} is on, with ${home.name}. Gyms you rent stay off until you turn them on.`
-        )
-      }
-      return
-    }
-
-    // Off means off: every gym the season has on that weekend comes off it, so
-    // "we are not running that weekend" is one tap and not one tap per gym.
-    const attached = grid.venues
-      .map((v) => ({ venue: v, cell: v.cells[index] }))
-      .filter((row) => isOn(row.cell.state) && row.cell.sessionId)
-    if (attached.length === 0) return
-    setBusy(key)
-    setError(null)
-    setNotice(null)
-    setNoticeTone("court")
-    const results = await Promise.all(
-      attached.map((row) =>
-        fetch(
-          `/api/seasons/${seasonId}/sessions/${row.cell.sessionId}/venues/${row.venue.venueId}`,
-          { method: "DELETE" }
-        )
-          .then((res) => res.ok)
-          .catch(() => false)
-      )
+    const sessionId = on ? await ensureSession(weekend) : weekend.sessionId
+    if (!sessionId) return
+    const base = worldWithWeekend(world(), sessionId, weekend)
+    await saveWorld(
+      withWeekendChosen(base, sessionId, on),
+      key,
+      on
+        ? `${weekend.label} is one this plan fills first. Put gyms and games on it from the board.`
+        : `${weekend.label} is off in this plan. The draw skips it.`
     )
-    setBusy(null)
-    if (results.some((ok) => !ok)) {
-      setError("That weekend did not come off. Try again.")
-    } else {
-      setNotice(`${weekend.label} is off. No gym is on it.`)
-    }
-    await load()
-  }
-
-  const saveException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
-    if (!exceptionDraft.start || !exceptionDraft.end) {
-      setError("Set both a start and an end time.")
-      return
-    }
-    if (exceptionDraft.start >= exceptionDraft.end) {
-      setError("The end time has to be after the start time.")
-      return
-    }
-    if (onPlanWorld) {
-      if (!cell.sessionId) return
-      await saveWorld(
-        withWeekendGymHours(world(), cell.sessionId, venue.venueId, {
-          startTime: exceptionDraft.start,
-          endTime: exceptionDraft.end,
-        }),
-        `${venue.venueId}:${exceptionKey}:hours`,
-        `${label} at ${venue.name} runs ${exceptionDraft.start} to ${exceptionDraft.end} in this plan. Every other weekend keeps your usual hours.`
-      )
-      return
-    }
-    // The plan's world has not arrived yet, so there is nothing to write it
-    // into — and the season is NOT the fallback (see `pending` above).
-    if (planWorldMode) return
-    // The panel stays open on purpose: the weekend now reads amber and
-    // putting it back is one click away.
-    await call(
-      `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}/hours`,
-      json({ startTime: exceptionDraft.start, endTime: exceptionDraft.end }, "PATCH"),
-      `${venue.venueId}:${exceptionKey}:hours`,
-      `${label} at ${venue.name} runs ${exceptionDraft.start} to ${exceptionDraft.end}. Every other weekend keeps your usual hours.`
-    )
-  }
-
-  const resetException = async (venue: VenueGridRow, cell: VenueGridCell, label: string) => {
-    if (onPlanWorld) {
-      if (!cell.sessionId) return
-      const done = await saveWorld(
-        withWeekendGymHours(world(), cell.sessionId, venue.venueId, null),
-        `${venue.venueId}:${exceptionKey}:reset`,
-        `${label} is back on your usual hours in this plan.`
-      )
-      if (done) setExceptionFor(null)
-      return
-    }
-    // The plan's world has not arrived yet, so there is nothing to write it
-    // into — and the season is NOT the fallback (see `pending` above).
-    if (planWorldMode) return
-    const ok = await call(
-      `/api/seasons/${seasonId}/sessions/${cell.sessionId}/venues/${venue.venueId}/hours`,
-      json({ reset: true }, "PATCH"),
-      `${venue.venueId}:${exceptionKey}:reset`,
-      `${label} is back on your usual hours.`
-    )
-    if (ok) setExceptionFor(null)
   }
 
   if (!grid) {
@@ -796,10 +468,15 @@ export function GymsWeekendsStep({
   // Exactly one home gym at a time, and a season is allowed to have none yet.
   const noHome = grid.venues.length > 0 && !grid.venues.some((v) => v.role === "home")
   /**
-   * THE WEEKENDS THE LEAGUE RUNS. On a plan of the operator's own that is the
-   * plan's own pick, which is a different fact from "some gym happens to be on
-   * it": a plan can choose a weekend before it has phoned a single gym, and the
-   * row has to be able to say so.
+   * THE WEEKENDS THE LEAGUE WOULD LIKE TO RUN. On a plan of the operator's own
+   * that is the plan's own pick, which is a different fact from "some building
+   * happens to be on it": a plan can want a weekend before it has phoned a
+   * single gym, and the row has to be able to say so.
+   *
+   * With the active plan open, or nothing open, there is no such answer to hold
+   * — the season substrate only knows which weekends have a building on them.
+   * So the row shows that, and says it is read only rather than pretending a tap
+   * means something.
    */
   const chosenIn = onPlanWorld
     ? new Set(
@@ -808,8 +485,11 @@ export function GymsWeekendsStep({
           .map((w) => w.sessionId)
       )
     : null
+  const weekendsEditable = onPlanWorld && !readOnly
   const running = weekends.map((w, i) =>
-    chosenIn ? Boolean(w.sessionId && chosenIn.has(w.sessionId)) : grid.venues.some((v) => isOn(v.cells[i].state))
+    chosenIn
+      ? Boolean(w.sessionId && chosenIn.has(w.sessionId))
+      : grid.venues.some((v) => isOn(v.cells[i].state))
   )
   const runningCount = running.filter(Boolean).length
 
@@ -818,15 +498,16 @@ export function GymsWeekendsStep({
       {/* Screen head */}
       <div className="border-ink-200 bg-ink-50/60 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
         <div>
-          <p className="text-ink-900 text-[15px] font-bold">Gym time</p>
+          <p className="text-ink-900 text-[15px] font-bold">Your buildings</p>
           <p className="text-ink-500 text-xs">
-            Choose the weekends the league runs, then say which gym you have on each one.
+            Name your buildings and pick your home gym. The home gym fills first, at full capacity,
+            before anything is rented.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {/* THE PLAN IS THE SUBJECT OF THIS SCREEN (owner ruling 2026-08-05).
-              Switching plans here changes every cell below it, so the control
-              belongs where the cells are. */}
+              Switching plans here changes every card below it, so the control
+              belongs where the cards are. */}
           <PlanChooser locked={locked} busy={busy !== null} compact testId="step2-plan-chooser" />
           <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
             Step 2 of 5
@@ -839,8 +520,8 @@ export function GymsWeekendsStep({
           <PlanEmptyState
             locked={locked}
             busy={busy !== null}
-            heading="Which plan's gym time is this?"
-            detail="Gym time belongs to a plan: its weekends, its gyms, its courts and hours. Open one of yours, or start a new one. With nothing open you are editing the season's own gym time."
+            heading="Which plan's buildings are these?"
+            detail="Buildings belong to a plan: its home gym, its pool, its courts and hours, and the weekends it would like to run. Open one of yours, or start a new one. With nothing open you are editing the season's own."
             testId="step2-plan-empty"
           />
         </div>
@@ -853,19 +534,19 @@ export function GymsWeekendsStep({
         >
           Working in <b>{session.chosen?.name ?? "your plan"}</b>.{" "}
           {isReferencePlan(session.chosen)
-            ? "This is the imported reference, so its gym time is read only."
+            ? "This is the imported reference, so its buildings are read only."
             : pending
-              ? "Opening this plan's gym time…"
+              ? "Opening this plan's buildings…"
               : onPlanWorld
-                ? "These weekends, gyms, courts and hours belong to this plan. The season keeps its own until you use this plan for the season."
-                : "This is the plan the season runs, so this is the season's own gym time."}
+                ? "These buildings, courts, hours and weekends belong to this plan. The season keeps its own until you use this plan for the season."
+                : "This is the plan the season runs, so these are the season's own buildings."}
         </p>
       )}
 
       <div className="p-5">
         {locked && (
           <p className="border-gold-200 bg-gold-50 text-gold-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            This season is finalized, so gyms and weekends are read only now.
+            This season is finalized, so your buildings are read only now.
           </p>
         )}
         {!locked && isReferencePlan(session.chosen) && (
@@ -879,8 +560,8 @@ export function GymsWeekendsStep({
         {/* The message slot, and it is ALWAYS here (owner 2026-08-02: "when
             I'm removing the gym on and off, I'm seeing a message on top which
             is fluctuating and shifting the whole layout"). The line keeps its
-            space whether or not it has anything to say, so toggling a cell
-            never moves a card under the operator's finger. */}
+            space whether or not it has anything to say, so a toggle never moves
+            a card under the operator's finger. */}
         <div className="mb-4">
           <p
             data-testid="step2-notice"
@@ -907,8 +588,97 @@ export function GymsWeekendsStep({
 
         {grid.venues.length === 0 && weekends.length > 0 && (
           <p className="border-ink-200 text-ink-500 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
-            No gyms on this season yet. Add the first one below, then tap the weekends you have it.
+            No buildings on this season yet. Add the first one below and name it your home gym.
           </p>
+        )}
+
+        {/* WHEN THE LEAGUE WOULD LIKE TO RUN (owner ruling 2026-08-05 #3,
+            reframed 2026-08-06). One row, chosen once, above the buildings, and
+            it books nothing: it tells the draw which weekends to fill first. */}
+        {weekends.length > 0 && (
+          <div
+            data-testid="league-weekends"
+            className="border-ink-300 mb-3.5 rounded-2xl border bg-white p-4 shadow-sm"
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <p className="text-ink-900 text-[14px] font-bold">
+                When would you like to run sessions?
+              </p>
+              <span
+                className="text-ink-500 text-[11.5px] font-bold tabular-nums"
+                data-testid="league-weekends-count"
+              >
+                {runningCount} of {weekends.length} weekends on
+              </span>
+            </div>
+            <p className="text-ink-500 mt-0.5 text-[11.5px]">
+              The draw fills these first. You can place gyms and games on any date on the board.
+            </p>
+            {/* Only a plan holds this answer, so the row says whose it is
+                rather than letting a tap mean nothing. */}
+            {!weekendsEditable && !readOnly && (
+              <p className="text-ink-400 mt-1 text-[11.5px]" data-testid="league-weekends-note">
+                These are the weekends the season already has a building on. Open a plan of your own
+                to choose the weekends it fills first.
+              </p>
+            )}
+            <div className="mt-2.5 overflow-x-auto pb-1">
+              <table className="border-separate border-spacing-1">
+                <thead>
+                  <tr>
+                    {months.map((m, i) => (
+                      <th
+                        key={`league-${m.month}-${i}`}
+                        scope="colgroup"
+                        colSpan={m.span}
+                        className={`text-ink-500 px-1 pb-0.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] ${
+                          i > 0 ? "border-ink-200 border-l pl-2" : ""
+                        }`}
+                      >
+                        {m.month}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {weekends.map((w, i) => {
+                      const on = running[i]
+                      const key = `weekend:${w.key}`
+                      return (
+                        <td key={w.key} className="p-0 align-top">
+                          <button
+                            type="button"
+                            data-testid="league-weekend"
+                            data-on={on ? "1" : "0"}
+                            data-weekend={w.key}
+                            disabled={!weekendsEditable || busy !== null}
+                            aria-pressed={on}
+                            aria-label={`${w.label}: ${
+                              on
+                                ? "on, tap so the draw skips it"
+                                : "off, tap to fill it first"
+                            }`}
+                            onClick={() => runWeekend(w, !on)}
+                            className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                              on
+                                ? "border-court-500 bg-court-100 text-court-900 hover:border-court-600"
+                                : "border-ink-300 text-ink-500 hover:border-ink-500 hover:bg-ink-50 border-dashed bg-white"
+                            }`}
+                          >
+                            <span className="block leading-tight">{w.dayLabel}</span>
+                            <span className="block text-[9.5px] font-semibold">
+                              {busy === key ? "…" : on ? "on" : "off"}
+                            </span>
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {/* A season with no home gym yet is one tick away from pricing every
@@ -973,98 +743,15 @@ export function GymsWeekendsStep({
           </div>
         )}
 
-        {/* WHEN THE LEAGUE RUNS (owner ruling 2026-08-05, #3). One row, chosen
-            once, above every gym card: the season's own weekends. */}
-        {weekends.length > 0 && (
-          <div
-            data-testid="league-weekends"
-            className="border-ink-300 mb-3.5 rounded-2xl border bg-white p-4 shadow-sm"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <p className="text-ink-900 text-[14px] font-bold">
-                When do you want to run sessions?
-              </p>
-              <span
-                className="text-ink-500 text-[11.5px] font-bold tabular-nums"
-                data-testid="league-weekends-count"
-              >
-                {runningCount} of {weekends.length} weekends on
-              </span>
-            </div>
-            <p className="text-ink-500 mt-0.5 text-[11.5px]">
-              Tap the weekends this league plays. Your home gym goes on with them; gyms you rent
-              stay off until you have asked them, and the grid below is where a gym says it cannot
-              make one of these weekends.
-            </p>
-            <div className="mt-2.5 overflow-x-auto pb-1">
-              <table className="border-separate border-spacing-1">
-                <thead>
-                  <tr>
-                    {months.map((m, i) => (
-                      <th
-                        key={`league-${m.month}-${i}`}
-                        scope="colgroup"
-                        colSpan={m.span}
-                        className={`text-ink-500 px-1 pb-0.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] ${
-                          i > 0 ? "border-ink-200 border-l pl-2" : ""
-                        }`}
-                      >
-                        {m.month}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {weekends.map((w, i) => {
-                      const on = running[i]
-                      const key = `weekend:${w.key}`
-                      return (
-                        <td key={w.key} className="p-0 align-top">
-                          <button
-                            type="button"
-                            data-testid="league-weekend"
-                            data-on={on ? "1" : "0"}
-                            data-weekend={w.key}
-                            disabled={readOnly || busy !== null}
-                            aria-pressed={on}
-                            aria-label={`${w.label}: ${
-                              on ? "on, tap to turn the whole weekend off" : "off, tap to run it"
-                            }`}
-                            onClick={() => runWeekend(w, !on)}
-                            className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                              on
-                                ? "border-court-500 bg-court-100 text-court-900 hover:border-court-600"
-                                : "border-ink-300 text-ink-500 hover:border-ink-500 hover:bg-ink-50 border-dashed bg-white"
-                            }`}
-                          >
-                            <span className="block leading-tight">{w.dayLabel}</span>
-                            <span className="block text-[9.5px] font-semibold">
-                              {busy === key ? "…" : on ? "on" : "off"}
-                            </span>
-                          </button>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* One card per gym, the home gym first and the pool under it. */}
+        {/* One card per building, the home gym first and the pool under it. */}
         {grid.venues.map((venue) => {
           const isHome = venue.role === "home"
-          const assumedCount = venue.cells.filter(isAssumed).length
           const draft = hours[venue.seasonVenueId] ?? { start: "", end: "" }
           const dirty =
             draft.start !== (venue.simpleOpen ?? "") || draft.end !== (venue.simpleClose ?? "")
           const courtsNow = String(venue.courtsAvailable ?? venue.courtCount)
           const courtsDraft = courts[venue.seasonVenueId] ?? courtsNow
           const courtsDirty = courtsDraft !== courtsNow
-          const exceptionOpen = exceptionFor === venue.seasonVenueId
-          const liveWeekends = weekends.filter((w, i) => isOn(venue.cells[i].state) && w.sessionId)
 
           return (
             <div
@@ -1197,282 +884,29 @@ export function GymsWeekendsStep({
               <p className="text-ink-400 mt-1.5 text-[11.5px]">
                 {venue.hoursVary
                   ? "Saturday and Sunday run different hours right now. Saving makes them the same."
-                  : "The same hours every weekend. You can fine tune a single weekend below."}
+                  : "The same hours every weekend. A single date that runs different hours is set on the board."}
               </p>
 
-              {/* The whole season in one press (owner 2026-08-02: turning a
-                  gym off for every weekend is how you ask what the season
-                  looks like without it). */}
-              {!readOnly && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="text-ink-400 text-[11px] font-semibold uppercase tracking-[0.06em]">
-                    Every weekend
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy !== null}
-                    onClick={() => toggleSeason(venue, true)}
-                  >
-                    {busy === `${venue.seasonVenueId}:season:on` ? "Working…" : "On all weekends"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={busy !== null}
-                    onClick={() => toggleSeason(venue, false)}
-                  >
-                    {busy === `${venue.seasonVenueId}:season:off` ? "Working…" : "Off all weekends"}
-                  </Button>
-                </div>
-              )}
-
-              {/* The weekend grid: month bands, then one cell per weekend. */}
-              <div className="mt-3 overflow-x-auto pb-1">
-                <table className="border-separate border-spacing-1">
-                  <thead>
-                    <tr>
-                      {months.map((m, i) => (
-                        <th
-                          key={`${m.month}-${i}`}
-                          scope="colgroup"
-                          colSpan={m.span}
-                          className={`text-ink-400 px-1 pb-0.5 text-left text-[10px] font-bold uppercase tracking-[0.08em] ${
-                            i > 0 ? "border-ink-100 border-l pl-2" : ""
-                          }`}
-                        >
-                          {m.month}
-                        </th>
-                      ))}
-                    </tr>
-                    <tr>
-                      {weekends.map((w) => (
-                        <th
-                          key={w.key}
-                          scope="col"
-                          className="text-ink-500 px-1 pb-1 text-center text-[10.5px] font-bold"
-                        >
-                          {w.dayLabel}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      {venue.cells.map((cell, i) => {
-                        const w = weekends[i]
-                        const key = `${venue.venueId}:${w.key}`
-                        const assumed = isAssumed(cell)
-                        return (
-                          <td key={w.key} className="p-0 align-top">
-                            <button
-                              type="button"
-                              disabled={readOnly || busy !== null}
-                              onClick={() => toggleCell(venue, w, cell)}
-                              aria-pressed={isOn(cell.state)}
-                              aria-label={cellLabel(venue.name, w.label, cell)}
-                              title={
-                                cell.state === "taken"
-                                  ? (cell.reason ?? undefined)
-                                  : assumed
-                                    ? "Assumed for now. Nobody has booked this weekend with the gym yet."
-                                    : undefined
-                              }
-                              style={assumed ? ASSUMED_HATCH : undefined}
-                              className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                                CELL_CLS[cell.state]
-                              } ${assumed ? "border-dashed" : ""}`}
-                            >
-                              {busy === key ? (
-                                "…"
-                              ) : cell.state === "off" ? (
-                                "Off"
-                              ) : cell.state === "taken" ? (
-                                <span className="block leading-tight">Taken</span>
-                              ) : cell.state === "custom" ? (
-                                <span className="block leading-tight">
-                                  {cell.hoursLabel ?? "Custom"}
-                                </span>
-                              ) : (
-                                "Yes"
-                              )}
-                              {cell.state === "taken" && shortReason(cell.reason) && (
-                                <span className="text-gold-700 block text-[9px] font-semibold">
-                                  {shortReason(cell.reason)}
-                                </span>
-                              )}
-                              {isOn(cell.state) && cell.daysOn < cell.dayCount && (
-                                <span className="text-ink-400 block text-[9px] font-semibold">
-                                  {cell.daysOn} of {cell.dayCount} days
-                                </span>
-                              )}
-                              {assumed && (
-                                <span className="text-ink-500 block text-[9px] font-semibold">
-                                  assumed
-                                </span>
-                              )}
-                            </button>
-                          </td>
-                        )
-                      })}
-                    </tr>
-                    {/* One tap per assumed weekend, and only under the weekends
-                        that have something to confirm. Never a bulk button:
-                        every one of these is its own phone call. */}
-                    {assumedCount > 0 && !readOnly && (
-                      <tr>
-                        {venue.cells.map((cell, i) => {
-                          const w = weekends[i]
-                          const key = `${venue.venueId}:${w.key}:booked`
-                          if (!isAssumed(cell)) return <td key={w.key} className="p-0" />
-                          return (
-                            <td key={w.key} className="p-0 pt-1 align-top">
-                              <button
-                                type="button"
-                                disabled={busy !== null}
-                                onClick={() => confirmBooking(venue, w, cell)}
-                                aria-label={`${venue.name} is booked for ${w.label}`}
-                                title={`The gym said yes to ${w.label}`}
-                                className="border-court-400 text-court-800 hover:border-court-600 hover:bg-court-50 min-h-[28px] w-[62px] cursor-pointer rounded-lg border bg-white px-1 text-[9.5px] font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {busy === key ? "…" : "Booked it"}
-                              </button>
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              {assumedCount > 0 && (
-                <p className="text-ink-500 mt-1.5 text-[11.5px]">
-                  {assumedCount === 1
-                    ? "One weekend here is assumed. Tap Booked it once the gym says yes."
-                    : `${assumedCount} weekends here are assumed. Tap Booked it under each one the gym says yes to.`}
-                </p>
-              )}
-
-              {/* Quiet links: the exception, and the full venue editor. */}
-              <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
-                <button
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => {
-                    const next = exceptionOpen ? null : venue.seasonVenueId
-                    setExceptionFor(next)
-                    setAdvancedFor(null)
-                    const firstKey = liveWeekends[0]?.key ?? ""
-                    setExceptionKey(firstKey)
-                    const idx = weekends.findIndex((w) => w.key === firstKey)
-                    setExceptionDraft({
-                      start: (idx >= 0 ? venue.cells[idx].startTime : null) ?? draft.start,
-                      end: (idx >= 0 ? venue.cells[idx].endTime : null) ?? draft.end,
-                    })
-                  }}
-                  className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {exceptionOpen ? "Close" : "One weekend runs different hours?"}
-                </button>
-                {/* Advanced edits the SEASON's own courts and day windows, so
-                    it is not offered while a plan of the operator's own is the
-                    thing on screen: the card above is that plan's gym time, and
-                    a panel that quietly wrote past it into the season would be
-                    exactly the confusion this architecture removes. */}
-                {!onPlanWorld && (
+              {/* Advanced edits the SEASON's own courts and day windows, so it
+                  is not offered while a plan of the operator's own is the thing
+                  on screen: the card above is that plan's building, and a panel
+                  that quietly wrote past it into the season would be exactly the
+                  confusion this architecture removes. */}
+              {!onPlanWorld && (
+                <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={() =>
                       setAdvancedFor(
                         advancedFor === venue.seasonVenueId ? null : venue.seasonVenueId
                       )
-                      setExceptionFor(null)
-                    }}
+                    }
                     className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors"
                   >
                     {advancedFor === venue.seasonVenueId ? "Close advanced" : "Advanced"}
                   </button>
-                )}
-              </div>
-
-              {/* One weekend's exception. Everything else keeps the card's range. */}
-              {exceptionOpen &&
-                (() => {
-                  const idx = weekends.findIndex((w) => w.key === exceptionKey)
-                  const cell = idx >= 0 ? venue.cells[idx] : null
-                  const label = idx >= 0 ? weekends[idx].label : "that weekend"
-                  return (
-                    <div className="border-ink-100 bg-ink-50/60 mt-3 rounded-xl border p-3">
-                      {liveWeekends.length === 0 ? (
-                        <p className="text-ink-500 text-xs">
-                          Turn this gym on for a weekend first, then you can give that one weekend
-                          its own hours.
-                        </p>
-                      ) : (
-                        <>
-                          <p className="text-ink-500 mb-2.5 text-xs">
-                            Pick the weekend that runs different hours. Your usual range stays
-                            exactly as it is everywhere else.
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <select
-                              value={exceptionKey}
-                              onChange={(e) => {
-                                setExceptionKey(e.target.value)
-                                const j = weekends.findIndex((w) => w.key === e.target.value)
-                                setExceptionDraft({
-                                  start: (j >= 0 ? venue.cells[j].startTime : null) ?? draft.start,
-                                  end: (j >= 0 ? venue.cells[j].endTime : null) ?? draft.end,
-                                })
-                              }}
-                              aria-label="Weekend with different hours"
-                              className="border-ink-200 focus:border-play-500 rounded-lg border px-2 py-1.5 text-sm focus:outline-none"
-                            >
-                              {liveWeekends.map((w) => (
-                                <option key={w.key} value={w.key}>
-                                  {w.label}
-                                </option>
-                              ))}
-                            </select>
-                            <DateTimePicker
-                              mode="time"
-                              value={exceptionDraft.start}
-                              onChange={(v) => setExceptionDraft((d) => ({ ...d, start: v }))}
-                              className="w-24"
-                              placeholder="Start"
-                            />
-                            <span className="text-ink-400 text-xs">to</span>
-                            <DateTimePicker
-                              mode="time"
-                              value={exceptionDraft.end}
-                              onChange={(v) => setExceptionDraft((d) => ({ ...d, end: v }))}
-                              className="w-24"
-                              placeholder="End"
-                            />
-                            <Button
-                              size="sm"
-                              tone="court"
-                              disabled={readOnly || busy !== null || !cell?.sessionId}
-                              onClick={() => cell && saveException(venue, cell, label)}
-                            >
-                              Save these hours
-                            </Button>
-                            {cell?.state === "custom" && (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                disabled={readOnly || busy !== null}
-                                onClick={() => resetException(venue, cell, label)}
-                              >
-                                Back to your usual hours
-                              </Button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )
-                })()}
+                </div>
+              )}
 
               {/* Advanced: courts and the full seven-day window, unchanged. */}
               {advancedFor === venue.seasonVenueId && (
@@ -1498,33 +932,6 @@ export function GymsWeekendsStep({
           )
         })}
 
-        {/* Legend, straight from the mock. */}
-        <div className="text-ink-500 mt-2 flex flex-wrap gap-4 text-xs">
-          <span className="inline-flex items-center gap-1.5">
-            <i className="border-court-200 bg-court-50 inline-block h-3 w-3 rounded border" />
-            you have the gym
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i className="border-ink-200 bg-ink-100 inline-block h-3 w-3 rounded border border-dashed" />
-            off (tap any weekend to turn it on)
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i
-              style={ASSUMED_HATCH}
-              className="border-court-200 bg-court-50 inline-block h-3 w-3 rounded border border-dashed"
-            />
-            assumed, nobody has booked it yet
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i className="border-gold-200 bg-gold-50 inline-block h-3 w-3 rounded border" />
-            custom hours that weekend
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <i className="border-gold-300 bg-gold-50/70 inline-block h-3 w-3 rounded border border-dashed" />
-            taken that weekend (tap to take it anyway)
-          </span>
-        </div>
-
         {/* Add a gym: the same create-or-attach endpoint the season uses. */}
         <div className="mt-4">
           {addingGym ? (
@@ -1534,8 +941,8 @@ export function GymsWeekendsStep({
               onAdded={async (name, venueId) => {
                 setAddingGym(false)
                 await load()
-                // A gym is a SEASON fact (the league has it or it does not), so
-                // the plan gains it in its pool with no availability at all:
+                // A building is a SEASON fact (the league has it or it does not),
+                // so the plan gains it in its pool with no availability at all:
                 // nobody has phoned them about any Saturday yet.
                 if (onPlanWorld && venueId) {
                   const added = await session.saveWorld(
@@ -1550,12 +957,12 @@ export function GymsWeekendsStep({
                   )
                   setNotice(
                     added
-                      ? `${name} is in this plan's pool. Tap the weekends you have it.`
+                      ? `${name} is in this plan's pool. Set its courts and hours, then place it on dates from the board.`
                       : `${name} added to the season.`
                   )
                   return
                 }
-                setNotice(`${name} added, on for every weekend the season already has.`)
+                setNotice(`${name} added to the season.`)
               }}
             />
           ) : (
@@ -1574,8 +981,8 @@ export function GymsWeekendsStep({
   )
 }
 
-/** Add-a-gym: VenueSelector plus the two facts the grid needs (courts and
- *  the hours), attached to the weekends the season already has. */
+/** Add-a-gym: VenueSelector plus the two facts every later screen needs, the
+ *  courts and the hours. */
 function AddGymCard({
   seasonId,
   onAdded,
@@ -1623,7 +1030,7 @@ function AddGymCard({
     <div className="border-ink-100 bg-ink-50/60 rounded-xl border p-4">
       <p className="text-ink-900 text-sm font-bold">Add a gym</p>
       <p className="text-ink-500 mb-3 mt-0.5 text-xs">
-        Set the hours you have it, then tap the weekends on the grid.
+        Name the building, its courts and the hours you have it.
       </p>
       <VenueSelector
         value={venue?.id ?? ""}

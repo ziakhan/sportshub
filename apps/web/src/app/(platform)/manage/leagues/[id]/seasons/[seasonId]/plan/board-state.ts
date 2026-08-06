@@ -19,11 +19,14 @@ import {
 } from "@/lib/scheduler/planner-core"
 import { planDrift, type PlanSettings } from "@/lib/scheduler/plan-documents"
 import {
+  bareWeekend,
+  boardColumns,
   strandedPlacements,
   weekendRooms,
   weekendGymHours,
   withAssertedGyms,
   withWeekendHours,
+  type BoardColumn,
   type BuildingRoom,
   type StrandedPlacement,
 } from "@/lib/scheduler/plan-world"
@@ -34,7 +37,13 @@ import type { BlockStatus, TrayGym } from "./plan-ui"
 import { usePlanSession } from "./plan-session"
 import type { StripSide } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
-import { LOCKED_STATUSES, blockKey, savedVenueMap, type BoardSnapshot } from "./board-shared"
+import {
+  LOCKED_STATUSES,
+  blockKey,
+  savedVenueMap,
+  type BoardSnapshot,
+  type PendingDrop,
+} from "./board-shared"
 
 /**
  * THE WORKING COPY, AND EVERYTHING DERIVED FROM IT.
@@ -137,6 +146,18 @@ export function useBoardState({
    * plan's own world, or onto the season's attachment on the plan it runs.
    */
   const [assertedGyms, setAssertedGyms] = useState<Record<string, string[]>>({})
+  /**
+   * A DROP THAT LANDED ON A DATE THE PLAN WAS NOT USING (owner ruling
+   * 2026-08-06, slice B2): what the operator dropped, and the weekend it is
+   * waiting for.
+   *
+   * A ghost date may have no session behind it at all, in which case the drop
+   * creates one; either way the board has to be DRAWING that weekend before the
+   * ordinary verbs can land anything on it, and a verb cannot see a weekend that
+   * was added in the same tick. So the intent waits here for exactly one render
+   * and board-verbs lands it the moment the weekend exists.
+   */
+  const [pendingDrop, setPendingDrop] = useState<PendingDrop | null>(null)
   /** The weekend the operator is standing inside, or null on the season board.
    *  Client state, not a route: the working copy IS the page, and a navigation
    *  would throw it away to show the same numbers bigger. */
@@ -871,28 +892,52 @@ export function useBoardState({
    */
 
   /**
-   * SATURDAYS THIS SEASON IS NOT USING, month by month (owner ruling
-   * 2026-08-04). Step 2's grid already enumerates every Saturday in the
-   * season's span and marks the ones no session has claimed; a month column
-   * offers exactly those, so the two screens can never disagree about which
-   * weekends exist.
+   * THE WHOLE SEASON, MONTH BY MONTH (owner ruling 2026-08-06, slice B2). Every
+   * Saturday the season spans has a place on the board: the ones this plan uses
+   * as cards, the ones it does not as thin ghost rows.
+   *
+   * Two sources, one answer. The plan's own weekends give the cards and the
+   * ghosts for dates the season already has a session for; step 2's grid gives
+   * the Saturdays no session has ever claimed, which is the half that used to be
+   * hidden behind "Add a weekend". They can never disagree about which dates
+   * exist, because the grid enumerates the season's span and the merge keys on
+   * the date itself.
    */
-  const addable = useMemo(() => {
-    const out = new Map<string, Array<{ satDateISO: string; label: string }>>()
-    if (!board || !venueGrid) return out
-    const monthOf = (iso: string) => iso.slice(0, 7)
-    const free = (venueGrid.weekends ?? []).filter((w) => !w.sessionId && w.satDateISO)
-    for (const win of board.windows) {
-      const months = new Set(win.weekends.map((w) => monthOf(w.dateISO)))
-      out.set(
-        win.label,
-        free
-          .filter((w) => months.has(monthOf(w.satDateISO as string)))
-          .map((w) => ({ satDateISO: w.satDateISO as string, label: w.label }))
-      )
-    }
-    return out
-  }, [board, venueGrid])
+  const columns: BoardColumn[] = useMemo(
+    () =>
+      board
+        ? boardColumns(
+            board,
+            venueGrid?.weekends ?? [],
+            (sessionId) =>
+              (assignment[sessionId] ?? []).length > 0 ||
+              (emptyGyms[sessionId] ?? []).length > 0
+          )
+        : [],
+    [board, venueGrid, assignment, emptyGyms]
+  )
+
+  /**
+   * WHAT A DATE WITH NOTHING ON IT COULD HOLD (owner ruling 2026-08-06, slice
+   * B2, under the one capacity rule of #3). No gym is attached to a ghost, so
+   * every gym in the plan's roster reads as a backup — and a backup is a real
+   * destination, because taking one IS the operator asserting they have it.
+   *
+   * The same weekendRooms arithmetic every other drop on this board is measured
+   * against, so a ghost can never be offered a load a card would refuse. Named
+   * with a gym it answers for THAT building, which is what a gym dropped from
+   * the gym list is measured against; without one it answers for the date.
+   */
+  const ghostRoom = useCallback(
+    (key: string, dayCount: number, venueId?: string) => {
+      if (!board) return 0
+      const rooms = weekendRooms(board, bareWeekend(key, dayCount), {}, courtOverrides)
+      return venueId
+        ? (rooms.find((r) => r.venueId === venueId)?.freeGames ?? 0)
+        : rooms.reduce((sum, r) => sum + r.freeGames, 0)
+    },
+    [board, courtOverrides]
+  )
 
   return {
     seasonId,
@@ -954,6 +999,8 @@ export function useBoardState({
     toggleGrade,
     toggleGym,
     clearLenses,
+    pendingDrop,
+    setPendingDrop,
     zoomSession,
     setZoomSession,
     flashSessions,
@@ -1021,7 +1068,8 @@ export function useBoardState({
     roomsOn,
     hoursOn,
     summary,
-    addable,
+    columns,
+    ghostRoom,
   }
 }
 

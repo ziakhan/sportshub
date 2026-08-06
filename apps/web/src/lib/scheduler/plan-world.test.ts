@@ -5,8 +5,12 @@ import {
   weekendGymHours,
   withWeekendHours,
   withWeekendHoursInWorld,
+  bareWeekend,
+  boardColumns,
   freshWorld,
   gamesPerCourtDay,
+  isGhostWeekend,
+  monthColumnLabel,
   planGridFrom,
   planStateFrom,
   solvableState,
@@ -29,6 +33,7 @@ import {
   withUnitTeams,
   withWeekendChosen,
   withWeekendGymHours,
+  withWeekendInState,
   worldFromState,
   worldGyms,
   worldWeekends,
@@ -248,11 +253,15 @@ describe("editing a plan's world", () => {
     expect(nov?.venues.map((v) => v.venueId)).toEqual(["v-pool"])
   })
 
-  it("choosing a weekend attaches the HOME gym and leaves the pool alone", () => {
+  it("choosing a weekend attaches no gym at all: the board places buildings", () => {
     const next = withWeekendChosen(world(), "w-nov", true)
     const nov = weekendOf(next, "w-nov")
-    expect(nov?.venues.map((v) => v.venueId)).toEqual(["v-home"])
-    expect(nov?.capacityGames).toBe(72)
+    expect(weekendChosen(nov as never)).toBe(true)
+    // A preference, not a booking: nothing is claimed anywhere.
+    expect(nov?.venues).toEqual([])
+    expect(nov?.capacityGames).toBe(0)
+    // And the weekend that already had the home gym on it keeps it.
+    expect(weekendOf(next, "w-oct")?.venues.map((v) => v.venueId)).toEqual(["v-home"])
   })
 
   it("un-choosing a weekend takes every gym off it", () => {
@@ -872,5 +881,170 @@ describe("step 2's grid, drawn from a plan", () => {
     const home = grid.venues.find((v) => v.venueId === "v-home")
     expect(home?.cells[0].state).toBe("custom")
     expect(home?.cells[0].hoursLabel).toBe("12:00–18:00")
+  })
+})
+
+/**
+ * THE BOARD SHOWS THE WHOLE SEASON (owner ruling 2026-08-06, slice B2). Every
+ * Saturday the season spans has a place in its month column: the dates this plan
+ * uses as cards, the ones it does not as ghosts. Two sources have to agree about
+ * which dates exist — the plan's own weekends, and step 2's grid of every
+ * Saturday in the span — and these are the contracts that keep them agreeing.
+ */
+describe("the whole season, month by month", () => {
+  const boardState = () =>
+    planStateFrom("s1", {
+      settings: { capturedAt: "x", state: world() },
+      assignment: {},
+      venues: {},
+    }) as PlannerState
+
+  /** Step 2's grid columns, in the shape the board reads them. */
+  const saturdays = [
+    { satDateISO: "2026-10-24", sessionId: "w-oct", label: "Oct 24–25" },
+    { satDateISO: "2026-11-07", sessionId: "w-nov", label: "Nov 7–8" },
+    { satDateISO: "2026-11-21", sessionId: null, label: "Nov 21–22" },
+  ]
+
+  it("draws a used date as a card and an unused one as a ghost", () => {
+    const columns = boardColumns(boardState(), [])
+    expect(columns).toHaveLength(1)
+    expect(columns[0].dates.map((d) => d.kind)).toEqual(["weekend", "ghost"])
+    const ghost = columns[0].dates[1]
+    expect(ghost.kind === "ghost" && ghost.ghost.sessionId).toBe("w-nov")
+    expect(ghost.kind === "ghost" && ghost.ghost.label).toBe("Nov 7–8")
+  })
+
+  it("keeps a date the operator has put something on as a card", () => {
+    // Nothing about the world changed: the working copy has a grade on it, and
+    // that alone is what makes it a card again.
+    const columns = boardColumns(boardState(), [], (sessionId) => sessionId === "w-nov")
+    expect(columns[0].dates.map((d) => d.kind)).toEqual(["weekend", "weekend"])
+  })
+
+  it("adds the Saturdays the season has no session for, in date order", () => {
+    const columns = boardColumns(boardState(), saturdays)
+    // Oct 24 is a card, Nov 7 and the session-less Nov 21 are ghosts, in order.
+    expect(columns[0].dates.map((d) => d.dateISO)).toEqual([
+      "2026-10-24",
+      "2026-11-07",
+      "2026-11-21",
+    ])
+    const grown = columns[0].dates[2]
+    // No session behind it: the first drop is what creates one.
+    expect(grown.kind === "ghost" && grown.ghost.sessionId).toBeNull()
+  })
+
+  it("gives a month with nothing but ghosts its own column, in its place", () => {
+    const columns = boardColumns(boardState(), [
+      { satDateISO: "2026-09-12", sessionId: null, label: "Sep 12–13" },
+      ...saturdays,
+      { satDateISO: "2026-12-05", sessionId: null, label: "Dec 5–6" },
+    ])
+    expect(columns.map((c) => c.label)).toEqual(["Sep 2026", "Oct 2026", "Dec 2026"])
+    // A ghost month holds no weekends, so nothing may be counted off it.
+    expect(columns[0].weekends).toEqual([])
+    expect(columns[0].dates).toHaveLength(1)
+  })
+
+  it("never draws the same Saturday twice, whichever source it came from", () => {
+    const columns = boardColumns(boardState(), [
+      // The grid spells its dates as full ISO timestamps; the plan does not.
+      { satDateISO: "2026-10-24T00:00:00.000Z", sessionId: "w-oct", label: "Oct 24–25" },
+      ...saturdays,
+    ])
+    expect(columns[0].dates.map((d) => d.dateISO)).toEqual([
+      "2026-10-24",
+      "2026-11-07",
+      "2026-11-21",
+    ])
+  })
+
+  it("spells a month column the way a planner window spells it", () => {
+    expect(monthColumnLabel("2026-10-24")).toBe("Oct 2026")
+    expect(monthColumnLabel("2027-01-02T00:00:00.000Z")).toBe("Jan 2027")
+  })
+
+  it("is a ghost only when the plan did not choose it and nothing is on it", () => {
+    const bare = { sessionId: "w", chosen: false, venues: [], assigned: [] }
+    expect(isGhostWeekend(bare)).toBe(true)
+    // Chosen but empty keeps its card: the operator said this plan runs it.
+    expect(isGhostWeekend({ ...bare, chosen: true })).toBe(false)
+    expect(isGhostWeekend({ ...bare, assigned: ["age:Grade 7"] })).toBe(false)
+    expect(isGhostWeekend(bare, () => true)).toBe(false)
+    // A snapshot that never carried the question reads it the one way this
+    // module always has: a weekend with a gym on it was a weekend that ran.
+    expect(isGhostWeekend({ ...bare, chosen: undefined })).toBe(true)
+    expect(
+      isGhostWeekend({
+        ...bare,
+        chosen: undefined,
+        venues: [{ venueId: "v", name: "A gym", capacityGames: 10, role: "home", fillOrder: 0 }],
+      })
+    ).toBe(false)
+  })
+})
+
+/**
+ * DROPPING ON A GHOST (owner ruling 2026-08-06, slice B2). A date with no gym on
+ * it is a real destination, because what a drop MAY assert is what counts, and
+ * the season can grow a weekend the moment somebody drops on one it never had.
+ */
+describe("a date the plan was not using", () => {
+  const boardState = () =>
+    planStateFrom("s1", {
+      settings: { capturedAt: "x", state: world() },
+      assignment: {},
+      venues: {},
+    }) as PlannerState
+
+  it("is measured against every gym in the roster, as a backup each", () => {
+    const rooms = weekendRooms(boardState(), bareWeekend("nothing-here"))
+    expect(rooms.map((r) => r.venueId).sort()).toEqual(["v-home", "v-pool"])
+    // Nothing is attached, so taking any of them is the operator asserting it.
+    expect(rooms.every((r) => r.backup)).toBe(true)
+    expect(rooms.every((r) => r.freeGames > 0)).toBe(true)
+  })
+
+  it("takes a new weekend into the month it belongs to, in date order", () => {
+    const next = withWeekendInState(boardState(), "Oct 2026", {
+      sessionId: "w-new",
+      label: "Nov 21–22",
+      dateISO: "2026-11-21",
+      dayCount: 2,
+    })
+    expect(next.windows[0].weekends.map((w) => w.sessionId)).toEqual([
+      "w-oct",
+      "w-nov",
+      "w-new",
+    ])
+    const grown = next.windows[0].weekends[2]
+    // The date exists; nobody has claimed a building on it.
+    expect(grown.venues).toEqual([])
+    expect(grown.chosen).toBe(false)
+    expect(grown.capacityGames).toBe(0)
+    // And it runs at the month's own rate, so a grade brings the same games here.
+    expect(grown.targetGamesPerTeam).toBe(2)
+  })
+
+  it("opens a month the plan had no weekend in at all", () => {
+    const next = withWeekendInState(boardState(), "Dec 2026", {
+      sessionId: "w-dec",
+      label: "Dec 5–6",
+      dateISO: "2026-12-05",
+    })
+    expect(next.windows.map((w) => w.label)).toEqual(["Oct 2026", "Dec 2026"])
+    expect(next.windows[1].weekends.map((w) => w.sessionId)).toEqual(["w-dec"])
+  })
+
+  it("hands the same state back when the weekend is already on it", () => {
+    const state = boardState()
+    expect(
+      withWeekendInState(state, "Oct 2026", {
+        sessionId: "w-nov",
+        label: "Nov 7–8",
+        dateISO: "2026-11-07",
+      })
+    ).toBe(state)
   })
 })

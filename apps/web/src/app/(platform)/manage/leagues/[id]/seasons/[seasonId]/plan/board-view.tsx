@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import {
   weekendDemand,
   type PlacementReason,
@@ -8,10 +8,18 @@ import {
   type PlannerUnit,
   type RentalBlock,
 } from "@/lib/scheduler/planner-core"
-import type { BuildingRoom } from "@/lib/scheduler/plan-world"
+import type { BoardColumn, BuildingRoom, GhostDate } from "@/lib/scheduler/plan-world"
 import type { Armed, ArmedBlock, ArmedSection, GhostChip } from "./plan-shared"
 import { GLYPH_LEGEND, ReasonGlyph, type BlockStatus, type SplitAxis } from "./plan-ui"
-import { EMPTY_GHOSTS, EMPTY_KEYS } from "./board-shared"
+import {
+  EMPTY_GHOSTS,
+  EMPTY_KEYS,
+  NOT_TARGET,
+  TARGET_RING,
+  ghostIntentFromDrag,
+  plural,
+  type GhostIntent,
+} from "./board-shared"
 import { GradeChip } from "./grade-chip"
 import { WeekendCard } from "./weekend-card"
 
@@ -39,7 +47,9 @@ export function BoardView({
   flashSessions,
   flashUnits,
   ghosts,
-  addable,
+  columns,
+  ghostRoom,
+  gymShort,
   courtOverrides,
   hoursOn,
   placedGyms,
@@ -61,7 +71,7 @@ export function BoardView({
   onCorrectCourts,
   onSetHours,
   onOpenWeekend,
-  onAddWeekend,
+  onGhostDrop,
   splitAxesFor,
 }: {
   state: PlannerState
@@ -107,9 +117,16 @@ export function BoardView({
   flashUnits: string[]
   /** "Grade 8 was here", for a few seconds, wherever a grade just left. */
   ghosts: GhostChip[]
-  /** Saturdays each month is not using yet, for the ghost card at the foot of
-   *  the column. */
-  addable: Map<string, Array<{ satDateISO: string; label: string }>>
+  /** THE WHOLE SEASON, month by month (owner ruling 2026-08-06, slice B2): every
+   *  Saturday it spans, as a card where the plan uses it and as a thin ghost row
+   *  where it does not. */
+  columns: BoardColumn[]
+  /** What a date with nothing on it could hold, if the operator asserted the
+   *  gyms behind it, either across the whole date or at one named building. The
+   *  one number a ghost's drop offer is measured against. */
+  ghostRoom: (key: string, dayCount: number, venueId?: string) => number
+  /** A gym in the words a one-line offer has room for. */
+  gymShort: (venueId: string) => string
   /** Gyms somebody gave a court number of their own, so a section can say it is
    *  not the whole building this weekend, or that we rented more of it. */
   courtOverrides: Record<string, number>
@@ -162,7 +179,9 @@ export function BoardView({
     window: { startTime: string; endTime: string } | null
   ) => void
   onOpenWeekend: (sessionId: string) => void
-  onAddWeekend: (satDateISO: string, label: string) => void
+  /** A gym or some grades landed on a date this plan was not using. The verb
+   *  creates the weekend where the season has none, then lands the drop. */
+  onGhostDrop: (ghost: GhostDate, windowLabel: string, intent: GhostIntent) => void
   splitAxesFor: (sessionId: string, unitKeys: string[]) => SplitAxis[]
 }) {
   /** The rentals of each weekend, so a card never filters the whole season. */
@@ -188,16 +207,16 @@ export function BoardView({
           // 2026-08-02: "the meters are barely visible, the lines are too
           // short"). A long season scrolls sideways on purpose; it does not
           // crush its own columns to fit.
-          gridTemplateColumns: `repeat(${state.windows.length}, minmax(280px, 1fr))`,
-          minWidth: `${state.windows.length * 280}px`,
+          gridTemplateColumns: `repeat(${columns.length}, minmax(280px, 1fr))`,
+          minWidth: `${columns.length * 280}px`,
           // A two-month season should not stretch its columns across the whole
           // page just because there is room. The ceiling went up with the
           // full-bleed workspace (owner ruling 2026-08-04): the screen is wider
           // now, and a column that can breathe is the whole point of taking it.
-          maxWidth: `${state.windows.length * 380}px`,
+          maxWidth: `${columns.length * 380}px`,
         }}
       >
-        {state.windows.map((win, i) => {
+        {columns.map((win, i) => {
           const inWindow = new Set(win.weekends.flatMap((w) => assignment[w.sessionId] ?? []))
           const missing = state.units.filter((u) => u.teams > 0 && !inWindow.has(u.key))
           /** WHAT A BENCHED GRADE WOULD BRING (owner ruling 2026-08-05). A chip
@@ -206,7 +225,8 @@ export function BoardView({
            *  number an operator is about to move is on the thing they pick up,
            *  not only on the thing they drop. */
           const monthRate =
-            win.weekends.find((w) => w.chosen !== false && w.capacityGames > 0) ?? win.weekends[0]
+            win.weekends.find((w) => w.chosen !== false && w.capacityGames > 0) ??
+            win.weekends[0] ?? { targetGamesPerTeam: 2 }
           return (
             <section
               key={win.label}
@@ -215,66 +235,79 @@ export function BoardView({
               <h3 className="text-ink-600 border-ink-200 mb-2 border-b pb-1.5 pl-1 text-[11.5px] font-bold uppercase tracking-[0.08em]">
                 Session {i + 1} · {win.label.split(" ")[0]}
               </h3>
-              {win.weekends.map((w) => (
-                <WeekendCard
-                  key={w.sessionId}
-                  weekend={w}
-                  windowLabel={win.label}
-                  units={state.units}
-                  keys={assignment[w.sessionId] ?? []}
-                  playsIn={playsIn[w.sessionId] ?? {}}
-                  whyIn={whyIn[w.sessionId] ?? {}}
-                  cameFrom={cameFrom[w.sessionId] ?? {}}
-                  blocks={blocksBySession.get(w.sessionId) ?? []}
-                  statusOf={statusOf}
-                  unitByKey={unitByKey}
-                  hue={hue}
-                  armed={armed}
-                  armedVenue={armedVenue}
-                  armedBlock={armedBlock}
-                  armedSection={armedSection}
-                  interactive={interactive}
-                  dragging={dragging}
-                  highlight={highlight}
-                  gymHighlight={gymHighlight}
-                  flash={flashSessions.includes(w.sessionId)}
-                  flashUnits={flashUnits}
-                  ghosts={ghostsBySession.get(w.sessionId) ?? EMPTY_GHOSTS}
-                  courtOverrides={courtOverrides}
-                  hoursFor={(venueId) => hoursOn(w.sessionId, venueId)}
-                  placedGyms={placedGyms.get(w.sessionId) ?? EMPTY_KEYS}
-                  strandedKeys={strandedAt.get(w.sessionId) ?? EMPTY_KEYS}
-                  poolGyms={poolOn(w.sessionId)}
-                  roomsFor={(used) => roomsOn(w.sessionId, used)}
-                  onArm={onArm}
-                  onArmBlock={onArmBlock}
-                  onArmSection={onArmSection}
-                  onDragging={onDragging}
-                  onMove={onMove}
-                  onMoveBlock={onMoveBlock}
-                  onMoveSection={onMoveSection}
-                  onRemove={onRemove}
-                  onDrop={onDrop}
-                  onDropVenue={onDropVenue}
-                  onDropSection={onDropSection}
-                  onPlaceVenue={onPlaceVenue}
-                  onCorrectCourts={onCorrectCourts}
-                  onSetHours={onSetHours}
-                  onOpenWeekend={onOpenWeekend}
-                  splitAxesFor={splitAxesFor}
-                  onDisarm={() => onArm(null)}
-                />
-              ))}
-
-              {/* ADD A WEEKEND (owner ruling 2026-08-04). The month ends with
-                  the Saturdays it is not using. This one really writes, so it
-                  says so and asks first. */}
-              {interactive && (addable.get(win.label)?.length ?? 0) > 0 && (
-                <AddWeekendCard
-                  monthLabel={win.label}
-                  saturdays={addable.get(win.label) ?? []}
-                  onAdd={onAddWeekend}
-                />
+              {win.dates.map((date) =>
+                date.kind === "ghost" ? (
+                  /* A DATE THIS PLAN IS NOT USING (owner ruling 2026-08-06,
+                     slice B2). One thin dashed row, and a full drop target: the
+                     first thing dropped on it turns it into a card. */
+                  <GhostDateRow
+                    key={date.key}
+                    ghost={date.ghost}
+                    windowLabel={win.label}
+                    interactive={interactive}
+                    dragging={dragging}
+                    roomFor={(venueId) =>
+                      ghostRoom(date.ghost.sessionId ?? date.key, date.ghost.dayCount, venueId)
+                    }
+                    units={state.units}
+                    rate={monthRate}
+                    armed={armed}
+                    armedVenue={armedVenue}
+                    armedBlock={armedBlock}
+                    armedSection={armedSection}
+                    gymShort={gymShort}
+                    onGhostDrop={onGhostDrop}
+                  />
+                ) : (
+                  <WeekendCard
+                    key={date.weekend.sessionId}
+                    weekend={date.weekend}
+                    windowLabel={win.label}
+                    units={state.units}
+                    keys={assignment[date.weekend.sessionId] ?? []}
+                    playsIn={playsIn[date.weekend.sessionId] ?? {}}
+                    whyIn={whyIn[date.weekend.sessionId] ?? {}}
+                    cameFrom={cameFrom[date.weekend.sessionId] ?? {}}
+                    blocks={blocksBySession.get(date.weekend.sessionId) ?? []}
+                    statusOf={statusOf}
+                    unitByKey={unitByKey}
+                    hue={hue}
+                    armed={armed}
+                    armedVenue={armedVenue}
+                    armedBlock={armedBlock}
+                    armedSection={armedSection}
+                    interactive={interactive}
+                    dragging={dragging}
+                    highlight={highlight}
+                    gymHighlight={gymHighlight}
+                    flash={flashSessions.includes(date.weekend.sessionId)}
+                    flashUnits={flashUnits}
+                    ghosts={ghostsBySession.get(date.weekend.sessionId) ?? EMPTY_GHOSTS}
+                    courtOverrides={courtOverrides}
+                    hoursFor={(venueId) => hoursOn(date.weekend.sessionId, venueId)}
+                    placedGyms={placedGyms.get(date.weekend.sessionId) ?? EMPTY_KEYS}
+                    strandedKeys={strandedAt.get(date.weekend.sessionId) ?? EMPTY_KEYS}
+                    poolGyms={poolOn(date.weekend.sessionId)}
+                    roomsFor={(used) => roomsOn(date.weekend.sessionId, used)}
+                    onArm={onArm}
+                    onArmBlock={onArmBlock}
+                    onArmSection={onArmSection}
+                    onDragging={onDragging}
+                    onMove={onMove}
+                    onMoveBlock={onMoveBlock}
+                    onMoveSection={onMoveSection}
+                    onRemove={onRemove}
+                    onDrop={onDrop}
+                    onDropVenue={onDropVenue}
+                    onDropSection={onDropSection}
+                    onPlaceVenue={onPlaceVenue}
+                    onCorrectCourts={onCorrectCourts}
+                    onSetHours={onSetHours}
+                    onOpenWeekend={onOpenWeekend}
+                    splitAxesFor={splitAxesFor}
+                    onDisarm={() => onArm(null)}
+                  />
+                )
               )}
 
               {missing.length > 0 && (
@@ -350,76 +383,159 @@ export function BoardView({
   )
 }
 
-/* ------------------------- the adding verb -------------------------------- */
+/* -------------------------- a date nobody is using ------------------------ */
 
 /**
- * ADD A WEEKEND (owner ruling 2026-08-04). Every month column ends with the
- * Saturdays it is not using, because "there is no room in November" and "we
- * never put the 21st on the season" look identical on a board that only draws
- * the weekends that exist.
+ * A GHOST DATE (owner ruling 2026-08-06, slice B2). The board shows the whole
+ * season, so every Saturday the season spans is here — and the ones this plan
+ * is not using are one thin dashed row each: the date, and the words "not
+ * planned".
  *
- * Shut by default: a column of unused dates under every month would be louder
- * than the plan. One tap opens the list, one tap shuts it, and the dates
- * themselves are the only things that write anything.
+ * IT REPLACES "ADD A WEEKEND", which was a disclosure at the foot of every month
+ * hiding the unused Saturdays behind a toggle and a confirm dialog. Two things
+ * were wrong with it: the dates a plan could grow into were the one thing an
+ * operator had to go looking for, and a date that exists but is not used looked
+ * exactly like a date that does not exist at all.
+ *
+ * A ghost is a FULL drop target under the board's one capacity rule (ruling
+ * 2026-08-06, #3): what counts is what a drop MAY assert, and nothing is
+ * attached to an unused date, so every gym in the plan's roster is behind it.
+ * Drop a gym and the building lands there empty; drop grades and they bring a
+ * building with them. Either way the first drop turns the ghost into a card.
+ *
+ * THIN IS THE POINT. A season has more unused Saturdays than used ones, so this
+ * row stays one line high and one shade quieter than everything around it. When
+ * it is a live target it says what would happen IN THAT SAME LINE — the offer
+ * replaces the "not planned", so nothing below it ever moves under the cursor.
  */
-function AddWeekendCard({
-  monthLabel,
-  saturdays,
-  onAdd,
+function GhostDateRow({
+  ghost,
+  windowLabel,
+  interactive,
+  dragging,
+  roomFor,
+  units,
+  rate,
+  armed,
+  armedVenue,
+  armedBlock,
+  armedSection,
+  gymShort,
+  onGhostDrop,
 }: {
-  monthLabel: string
-  saturdays: Array<{ satDateISO: string; label: string }>
-  onAdd: (satDateISO: string, label: string) => void
+  ghost: GhostDate
+  windowLabel: string
+  interactive: boolean
+  /** A mouse is mid-drag, so the written offer stays shut: a button appearing
+   *  under a moving cursor moves the drop point out from under it. */
+  dragging: boolean
+  /** Games this date could hold if the gyms behind it were asserted: across the
+   *  whole date, or at one named building. */
+  roomFor: (venueId?: string) => number
+  units: PlannerUnit[]
+  /** The month's own games rate, so a grade brings the same number here it
+   *  would bring to any card in this column. */
+  rate: { targetGamesPerTeam: number }
+  armed: Armed | null
+  armedVenue: string | null
+  armedBlock: ArmedBlock | null
+  armedSection: ArmedSection | null
+  gymShort: (venueId: string) => string
+  onGhostDrop: (ghost: GhostDate, windowLabel: string, intent: GhostIntent) => void
 }) {
-  const [open, setOpen] = useState(false)
+  const holding = Boolean(armed || armedBlock || armedSection || armedVenue)
+  const inMonth = (win: string | undefined) => win === windowLabel
+  const room = roomFor()
+  const bringing = (unitKeys: string[]) => weekendDemand(units, rate, unitKeys)
+  const fits = (unitKeys: string[]) => room >= bringing(unitKeys)
+
+  /**
+   * WHAT WOULD LAND HERE, and whether this date can really take it. A grade
+   * stays inside its own month, because a grade plays one weekend a month; a gym
+   * has no month of its own and can go on any date — but it has to be a building
+   * that could really open here, or the offer would be one the board then argues
+   * with (owner ruling 2026-08-05, #1: valid targets only).
+   */
+  const offer: { intent: GhostIntent; label: string } | null = armedVenue
+    ? roomFor(armedVenue) > 0
+      ? { intent: { kind: "gym", venueId: armedVenue }, label: `Put ${gymShort(armedVenue)} here` }
+      : null
+    : armedSection && inMonth(armedSection.window) && fits(armedSection.unitKeys)
+      ? {
+          intent: {
+            kind: "grades",
+            unitKeys: armedSection.unitKeys,
+            fromSessionId: armedSection.sessionId,
+          },
+          label: `Move ${plural(armedSection.unitKeys.length, "grade", "grades")} here`,
+        }
+      : armedBlock && inMonth(armedBlock.window) && fits(armedBlock.unitKeys)
+        ? {
+            intent: {
+              kind: "grades",
+              unitKeys: armedBlock.unitKeys,
+              fromSessionId: armedBlock.sessionId,
+            },
+            label: `Move ${plural(armedBlock.unitKeys.length, "grade", "grades")} here`,
+          }
+        : armed && inMonth(armed.window) && fits([armed.unitKey])
+          ? {
+              intent: {
+                kind: "grades",
+                unitKeys: [armed.unitKey],
+                fromSessionId: armed.fromSessionId,
+              },
+              label: `Move ${armed.label} here`,
+            }
+          : null
+  const canTake = interactive && room > 0 && offer !== null
+
   return (
     <div
-      data-testid="add-weekend-card"
-      className="border-ink-200 rounded-xl border border-dashed p-2"
-      onClick={(e) => e.stopPropagation()}
+      data-testid="ghost-date"
+      data-date={ghost.dateISO.slice(0, 10)}
+      data-session-id={ghost.sessionId ?? undefined}
+      data-target={holding ? (canTake ? "1" : "0") : undefined}
+      onClick={(e) => {
+        if (!canTake || !offer) return
+        e.stopPropagation()
+        onGhostDrop(ghost, windowLabel, offer.intent)
+      }}
+      // A drop is refused at the browser level where the board would refuse it,
+      // so there is never an argument about it afterwards. A drag arms whatever
+      // it is carrying, which is why the same test answers for both paths.
+      onDragOver={(e) => {
+        if (canTake) e.preventDefault()
+      }}
+      onDrop={(e) => {
+        if (!canTake) return
+        const intent = ghostIntentFromDrag(e)
+        if (!intent) return
+        if (intent.kind === "gym" ? roomFor(intent.venueId) <= 0 : !fits(intent.unitKeys)) return
+        e.preventDefault()
+        e.stopPropagation()
+        onGhostDrop(ghost, windowLabel, intent)
+      }}
+      className={`border-ink-200 mb-1.5 flex min-h-[28px] items-center gap-2 rounded-lg border border-dashed px-2 py-0.5 motion-safe:transition-opacity ${
+        canTake ? `${TARGET_RING} bg-court-50/60` : holding ? NOT_TARGET : ""
+      }`}
     >
-      <button
-        type="button"
-        data-testid="add-weekend-toggle"
-        aria-expanded={open}
-        onClick={(e) => {
-          e.stopPropagation()
-          setOpen((v) => !v)
-        }}
-        className="text-ink-600 hover:text-ink-900 flex min-h-[32px] w-full cursor-pointer items-center gap-1.5 rounded-md px-1 text-left text-[11.5px] font-bold transition-colors hover:bg-white"
-      >
-        <span aria-hidden className="text-[13px] leading-none">
-          +
-        </span>
-        Add a weekend
-        <span className="text-ink-400 ml-auto font-semibold tabular-nums">
-          {saturdays.length} free
-        </span>
-      </button>
-      {open && (
-        <div className="mt-1.5" data-testid="add-weekend-list">
-          <p className="text-ink-400 text-[10.5px]">
-            Saturdays {monthLabel.split(" ")[0]} is not using yet. Adding one creates the weekend
-            and puts your home gym on it.
-          </p>
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {saturdays.map((sat) => (
-              <button
-                key={sat.satDateISO}
-                type="button"
-                data-testid="add-weekend-option"
-                data-sat={sat.satDateISO}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onAdd(sat.satDateISO, sat.label)
-                }}
-                className="border-ink-300 text-ink-800 hover:border-play-400 hover:bg-play-50 hover:text-play-700 min-h-[32px] cursor-pointer rounded-lg border bg-white px-2 text-[11.5px] font-bold shadow-sm transition-colors"
-              >
-                {sat.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <span className="text-ink-500 text-[11.5px] font-semibold">{ghost.label}</span>
+      {canTake && offer && !dragging ? (
+        <button
+          type="button"
+          data-testid="ghost-offer"
+          onClick={(e) => {
+            e.stopPropagation()
+            onGhostDrop(ghost, windowLabel, offer.intent)
+          }}
+          aria-label={`${offer.label}, ${ghost.label}`}
+          className="text-court-800 ml-auto cursor-pointer truncate text-[10.5px] font-bold underline decoration-dotted underline-offset-2"
+        >
+          {offer.label}
+        </button>
+      ) : (
+        <span className="text-ink-300 ml-auto text-[10.5px]">not planned</span>
       )}
     </div>
   )

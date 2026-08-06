@@ -18,15 +18,19 @@ import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
  *
  * The rail is always visible and every step stays clickable, because after
  * setup these same five steps become the season's home page. All five are
- * built for real: teams, gyms and weekends, the calendar, publish, and the
+ * built for real: teams, your buildings, the calendar, publish, and the
  * registration watch screen that opens scheduling.
+ *
+ * Step 2 stopped being "gyms and weekends" on 2026-08-06: painting a gym onto
+ * each Saturday moved to the board, so the step is a roster of buildings and the
+ * rail says so.
  */
 
 // Hints carry real apostrophes: they render as JS expressions, not JSX text,
 // so react/no-unescaped-entities does not apply and nothing needs escaping.
 const STEPS = [
   { n: 1, label: "Teams", hint: "who's coming" },
-  { n: 2, label: "Gyms & weekends", hint: "where and when" },
+  { n: 2, label: "Your buildings", hint: "gyms, courts, hours" },
   { n: 3, label: "Your calendar", hint: "we compute it" },
   { n: 4, label: "Publish", hint: "post the card" },
   { n: 5, label: "Schedule", hint: "when you're ready" },
@@ -101,7 +105,7 @@ function PlanWizard() {
               Plan your season
             </h1>
             <p className={`text-ink-500 ${wide ? "text-[11.5px]" : "text-sm"}`}>
-              {seasonLine || "Five steps: teams, gyms, calendar, publish, schedule."}
+              {seasonLine || "Five steps: teams, buildings, calendar, publish, schedule."}
             </p>
           </div>
 

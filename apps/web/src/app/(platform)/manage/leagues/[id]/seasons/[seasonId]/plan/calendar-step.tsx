@@ -168,7 +168,8 @@ export function CalendarStep({
     roomsOn,
     hoursOn,
     summary,
-    addable,
+    columns,
+    ghostRoom,
   } = m
   const { revert, saveAsNew, savePlan, activatePlan } = planDocs
   const {
@@ -190,7 +191,7 @@ export function CalendarStep({
     splitAxesFor,
     correctCourts,
     setWeekendHours,
-    addWeekend,
+    dropOnGhost,
     jumpToWeekend,
     gradeList,
   } = verbs
@@ -415,7 +416,11 @@ export function CalendarStep({
                       flashSessions={flashSessions}
                       flashUnits={flashUnits}
                       ghosts={ghosts}
-                      addable={addable}
+                      // THE WHOLE SEASON, cards and ghost dates together (owner
+                      // ruling 2026-08-06, slice B2).
+                      columns={columns}
+                      ghostRoom={ghostRoom}
+                      gymShort={gymShort}
                       courtOverrides={courtOverrides}
                       hoursOn={hoursOn}
                       placedGyms={placedGyms}
@@ -437,7 +442,7 @@ export function CalendarStep({
                       onCorrectCourts={correctCourts}
                       onSetHours={setWeekendHours}
                       onOpenWeekend={setZoomSession}
-                      onAddWeekend={addWeekend}
+                      onGhostDrop={dropOnGhost}
                       splitAxesFor={splitAxesFor}
                     />
                   )

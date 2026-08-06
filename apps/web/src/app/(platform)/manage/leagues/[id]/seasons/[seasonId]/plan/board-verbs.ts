@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import {
   assignBlocksFromPool,
   assignmentWithMove,
@@ -19,7 +19,14 @@ import {
   type PlannerLever,
   type PlannerState,
 } from "@/lib/scheduler/planner-core"
-import { solvableState, weekendRooms } from "@/lib/scheduler/plan-world"
+import {
+  solvableState,
+  weekendRooms,
+  withWeekend,
+  withWeekendInState,
+  worldWeekends,
+  type GhostDate,
+} from "@/lib/scheduler/plan-world"
 import type { BlockStatus, SplitAxis } from "./plan-ui"
 import type { ArmedSection, GhostChip } from "./plan-shared"
 import {
@@ -31,6 +38,8 @@ import {
   nameList,
   plural,
   type DragPayload,
+  type GhostIntent,
+  type PendingDrop,
 } from "./board-shared"
 import type { BoardModel } from "./board-state"
 
@@ -54,7 +63,13 @@ export function useBoardVerbs(m: BoardModel) {
     seasonId,
     board,
     locked,
-    load,
+    setState,
+    setLiveState,
+    planSettings,
+    setPlanSettings,
+    setVenueGrid,
+    pendingDrop,
+    setPendingDrop,
     assignment,
     setAssignment,
     venues,
@@ -88,8 +103,6 @@ export function useBoardVerbs(m: BoardModel) {
     setError,
     setNotice,
     blocks,
-    fillsFirst,
-    gyms,
     gymShort,
     weekendById,
     unitByKey,
@@ -754,42 +767,131 @@ export function useBoardVerbs(m: BoardModel) {
     setNotice(said)
   }
 
+  /* ------------------------ dropping on a ghost date ---------------------- */
+
   /**
-   * ADD A WEEKEND (owner ruling 2026-08-04). The one verb here that is not a
-   * working copy: a weekend is season structure, so this really does create a
-   * session and attach the building the league owns. Everything else about the
-   * plan is left alone, and the board reloads onto the wider season.
+   * A DROP ON A DATE THE PLAN WAS NOT USING (owner ruling 2026-08-06, slice B2).
    *
-   * The pool is deliberately NOT attached: nobody has asked those gyms about a
-   * Saturday that did not exist a second ago, and the tray says so.
+   * This replaces "Add a weekend", which was a disclosure at the foot of every
+   * month column hiding a list of dates behind a confirm dialog. The dates are
+   * on the board now, as ghosts, and the drop IS the intent: the operator has
+   * dragged a gym or a grade onto a Saturday, which is not something to ask them
+   * about twice. No confirm, deliberately — the same standing rule the rest of
+   * this board runs on ("a drag means they checked"), and one Undo takes the
+   * placement back exactly like any other.
+   *
+   * Three cases, one path:
+   *  - the date has a session this plan already draws: nothing to create;
+   *  - it has a session the board is not drawing (the plan's world predates it):
+   *    the weekend is put into the state the board computes on;
+   *  - it has no session at all: one POST creates it first. The weekend alone,
+   *    with NO gym attached — a weekend EXISTING is a fact about the season's
+   *    shape, while which building is on it is this plan's business, and the
+   *    ordinary assertion path below is what puts one there.
+   *
+   * The intent then waits one render (see pendingDrop): every verb on this board
+   * reads the weekend it is acting on out of the state it was rendered with, so
+   * a weekend added in this tick is not one they can see yet.
    */
-  const addWeekend = async (satDateISO: string, label: string) => {
-    if (locked || !fillsFirst) return
-    const home = gyms.order.find((g) => g.venueId === fillsFirst)?.name ?? "your home gym"
-    if (
-      !window.confirm(
-        `Add ${label} to this season?\n\nThis one is real: it creates the weekend and puts ${home} on it. Your gyms you rent are not added, because nobody has asked them about ${label} yet.\n\nThe calendar on your board is not changed and nothing is booked.`
-      )
-    )
-      return
-    setBusy("add-weekend")
-    setError(null)
-    const res = await fetch(`/api/seasons/${seasonId}/weekends`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ satDate: satDateISO, venueId: fillsFirst }),
-    }).catch(() => null)
-    const data = res ? await res.json().catch(() => null) : null
-    setBusy(null)
-    if (!res?.ok || !data?.success) {
-      setError(data?.error ?? "That weekend did not save. Try again.")
-      return
+  const dropOnGhost = async (ghost: GhostDate, windowLabel: string, intent: GhostIntent) => {
+    if (locked || !board) return
+    let sessionId = ghost.sessionId
+    if (!sessionId) {
+      setBusy("add-weekend")
+      setError(null)
+      const res = await fetch(`/api/seasons/${seasonId}/weekends`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ satDate: ghost.dateISO }),
+      }).catch(() => null)
+      const data = res ? await res.json().catch(() => null) : null
+      setBusy(null)
+      if (!res?.ok || !data?.sessionId) {
+        setError(data?.error ?? "That weekend did not save. Try again.")
+        return
+      }
+      sessionId = data.sessionId as string
     }
-    await load()
-    setNotice(
-      `${label} is on the season now, with ${home} on it. Nothing else moved, so drag a grade onto it when you want it used.`
-    )
+    if (!weekendById.has(sessionId)) {
+      const weekend = {
+        sessionId,
+        label: ghost.label,
+        dateISO: ghost.dateISO,
+        dayCount: ghost.dayCount,
+      }
+      setState((prev) => (prev ? withWeekendInState(prev, windowLabel, weekend) : prev))
+      // A plan owns its world, so the plan's own copy grows the same date. Saving
+      // then finds the weekend really there, with whatever the drop asserted on
+      // it, instead of a placement stranded on a Saturday the plan never had.
+      if (planSettings) {
+        setPlanSettings((prev) =>
+          prev
+            ? {
+                ...prev,
+                state: withWeekend(prev.state, windowLabel, {
+                  ...weekend,
+                  chosen: false,
+                  venues: [],
+                  capacityGames: 0,
+                  largestVenueCapacity: 0,
+                  // The rate the rest of this plan runs at, so the date reads
+                  // the same in the plan's world as it does on the board.
+                  targetGamesPerTeam: worldWeekends(prev.state)[0]?.targetGamesPerTeam ?? 2,
+                }),
+              }
+            : prev
+        )
+      }
+      refreshSeasonShape()
+    }
+    setPendingDrop({ sessionId, intent })
   }
+
+  /**
+   * THE SEASON GREW A WEEKEND, so the world the board falls back to grows with
+   * it, and so does step 2's grid. Deliberately not awaited: the drop lands on
+   * the working copy at once and neither of these changes a single number on it.
+   * Without it a later save would put the board back in a season world where
+   * that Saturday does not exist.
+   */
+  const refreshSeasonShape = () => {
+    void (async () => {
+      const [res, venueRes] = await Promise.all([
+        fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(() => null),
+        fetch(`/api/seasons/${seasonId}/planner/venues`, { cache: "no-store" }).catch(() => null),
+      ])
+      const data = res?.ok ? await res.json().catch(() => null) : null
+      const venueData = venueRes?.ok ? await venueRes.json().catch(() => null) : null
+      if (data?.state) setLiveState(data.state as PlannerState)
+      if (venueData?.grid) setVenueGrid(venueData.grid)
+    })()
+  }
+
+  /**
+   * ...AND THEN IT LANDS, through the ordinary verbs and nothing else. A gym
+   * becomes an empty container on that date; grades move onto it and assert the
+   * building they need, which is exactly what they do on any other weekend with
+   * room to assert. One undo step, one notice, both written by the verb that did
+   * the work.
+   *
+   * The ref is the guard against a double landing: React remounts effects in
+   * development, and a drop that applied twice would be two moves the operator
+   * made once. Object identity is what it compares, so a second drop of the same
+   * shape still lands.
+   */
+  const landed = useRef<PendingDrop | null>(null)
+  useEffect(() => {
+    if (!pendingDrop || landed.current === pendingDrop) return
+    if (!weekendById.has(pendingDrop.sessionId)) return
+    landed.current = pendingDrop
+    setPendingDrop(null)
+    const { sessionId, intent } = pendingDrop
+    if (intent.kind === "gym") placeVenue(sessionId, intent.venueId, [], 0)
+    else moveSection(intent.unitKeys, intent.fromSessionId, sessionId, null)
+    // The verbs are rebuilt every render and are deliberately not dependencies:
+    // the ref above is what makes this run exactly once per drop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingDrop, weekendById])
 
   /* ----------------------- filling the rental blocks ---------------------- */
 
@@ -1175,7 +1277,7 @@ export function useBoardVerbs(m: BoardModel) {
     /* one gym on one date, and the one verb that really writes */
     correctCourts,
     setWeekendHours,
-    addWeekend,
+    dropOnGhost,
     /* bringing a weekend to the operator */
     jumpToWeekend,
   }

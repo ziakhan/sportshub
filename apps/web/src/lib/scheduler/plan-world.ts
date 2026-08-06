@@ -759,32 +759,31 @@ export function withWeekendGymHours(
 }
 
 /**
- * DOES THIS PLAN RUN THIS WEEKEND (owner ruling 2026-08-05, #3 — the league
- * chooses its weekends once, per plan). Turning one ON attaches the HOME gym,
- * because that is the building the league already has and does not have to ask
- * anybody for; the pool is deliberately left alone, since nobody has phoned
- * those gyms about that Saturday. Turning one OFF takes every gym off it.
+ * WHEN WOULD THE LEAGUE LIKE TO RUN (owner ruling 2026-08-05 #3, revised
+ * 2026-08-06). A chosen weekend is a PREFERENCE and nothing else: the draw
+ * fills these dates first. Choosing one attaches NO gym, not even the home
+ * gym — buildings and games are placed on the board, on any date, and step 2
+ * is only the league saying which weekends it would rather use.
+ *
+ * Turning one OFF still takes every gym off it, because a weekend the plan does
+ * not run holds nothing.
  */
 export function withWeekendChosen(
   world: PlanWorld,
   sessionId: string,
   chosen: boolean
 ): PlanWorld {
-  const home = worldGyms(world).find((g) => g.role === "home") ?? null
   return rebuild({
     ...world,
     windows: (world.windows ?? []).map((win) => ({
       ...win,
-      weekends: (win.weekends ?? []).map((w) => {
-        if (w.sessionId !== sessionId) return w
-        if (!chosen) return { ...w, chosen: false, venues: [] }
-        const had = (w.venues ?? []).length > 0
-        const venues =
-          had || !home
-            ? (w.venues ?? [])
-            : [venueOnWeekend(home, { dayCount: w.dayCount }, world)]
-        return { ...w, chosen: true, venues }
-      }),
+      weekends: (win.weekends ?? []).map((w) =>
+        w.sessionId !== sessionId
+          ? w
+          : chosen
+            ? { ...w, chosen: true }
+            : { ...w, chosen: false, venues: [] }
+      ),
     })),
   })
 }
@@ -940,6 +939,276 @@ export function strandedSentence(stranded: StrandedPlacement[]): string | null {
   }
   const games = stranded.length
   return `${parts.join(", and ")}. ${games === 1 ? "One placement needs" : `${games} placements need`} a building.`
+}
+
+/* ----------------------- the board's whole season ------------------------ */
+
+/**
+ * THE BOARD SHOWS THE WHOLE SEASON (owner ruling 2026-08-06, slice B2).
+ *
+ * A month column used to draw only the weekends this plan had already taken,
+ * with the Saturdays it had not hidden behind an "Add a weekend" disclosure at
+ * the foot of the column. So "there is no room in November" and "we never put
+ * the 21st on this plan" looked identical, and the dates a plan could still
+ * grow into were the one thing an operator had to go and find.
+ *
+ * Every Saturday of the season's span is on the board now. A date with anything
+ * on it is a full card; a date the plan is not using is a GHOST: one thin
+ * dashed row, the date, and the words "not planned". A ghost is a real drop
+ * target under the board's one capacity rule, and the first drop turns it into
+ * a card.
+ */
+
+/** A date this plan is not using: thin, dashed, and droppable. */
+export interface GhostDate {
+  /** Stable key for React and for a drive: the session, else the Saturday. */
+  key: string
+  /** The Saturday this weekend starts on. */
+  dateISO: string
+  label: string
+  /**
+   * The session behind it, or NULL when the season has no weekend on this
+   * Saturday at all. A drop onto one of those creates the session first (see
+   * dropOnGhost in board-verbs): the drop itself is the intent, so nothing is
+   * asked, and a weekend EXISTING is season shape rather than a booking.
+   */
+  sessionId: string | null
+  /** Days the weekend runs, for the room arithmetic a drop is measured against. */
+  dayCount: number
+}
+
+/** One row of a month column: a weekend with something on it, or a ghost. */
+export type BoardDate =
+  | { kind: "weekend"; key: string; dateISO: string; weekend: PlannerWeekend }
+  | { kind: "ghost"; key: string; dateISO: string; ghost: GhostDate }
+
+export interface BoardColumn {
+  label: string
+  /** The weekends this month really has, for the bench and the month's own
+   *  games rate. Ghost dates are deliberately not in here: nothing plays on
+   *  them, so nothing may be counted off them. */
+  weekends: PlannerWeekend[]
+  /** Every date of the month, in order, cards and ghosts together. */
+  dates: BoardDate[]
+}
+
+/** The day part of an ISO date, which is the only part two sources agree on. */
+const dayKey = (iso: string | null | undefined): string => String(iso ?? "").slice(0, 10)
+
+/**
+ * The month column a date belongs in, spelled exactly the way buildPlannerState
+ * spells a window ("Oct 2026"). A Saturday whose month has no session at all
+ * still needs a column, and it has to be the same column the month would have
+ * had if the season had one.
+ */
+export function monthColumnLabel(dateISO: string): string {
+  const d = new Date(dateISO)
+  return `${d.toLocaleString("en-CA", { month: "short", timeZone: "UTC" })} ${d.getUTCFullYear()}`
+}
+
+/**
+ * IS THIS DATE A GHOST? A weekend this plan did not choose, with no gym time on
+ * it and nothing on the board. A weekend the operator DID choose keeps its card
+ * even while it is empty: they said this plan runs it, and a card is what says
+ * so back.
+ */
+export function isGhostWeekend(
+  weekend: Pick<PlannerWeekend, "sessionId" | "chosen" | "venues" | "assigned">,
+  /** Whether the working copy has anything on it: grades, or a gym somebody
+   *  placed by hand. The saved calendar alone is not enough to answer. */
+  hasContent: (sessionId: string) => boolean = () => false
+): boolean {
+  // The module's one reading of "does this plan run this weekend"
+  // (weekendChosen), so a ghost and a chosen weekend can never both be true.
+  const chosen = weekend.chosen ?? weekend.venues.length > 0
+  return (
+    !chosen &&
+    weekend.venues.length === 0 &&
+    (weekend.assigned ?? []).length === 0 &&
+    !hasContent(weekend.sessionId)
+  )
+}
+
+/**
+ * EVERY SATURDAY OF THE SEASON, IN ITS MONTH COLUMN. The plan's own weekends
+ * give the cards and most of the ghosts; step 2's grid gives the Saturdays the
+ * season never created a session for, which is the other half of "the whole
+ * season" and the half that used to be invisible.
+ *
+ * A month with nothing but ghosts still gets a column, in its chronological
+ * place, because a month you have not planned is a fact about the season and
+ * not an absence.
+ */
+export function boardColumns(
+  state: PlannerState,
+  /** Every Saturday the season spans, from step 2's grid. */
+  saturdays: Array<{
+    satDateISO: string | null
+    sessionId: string | null
+    label: string
+    dayCount?: number
+  }>,
+  hasContent: (sessionId: string) => boolean = () => false
+): BoardColumn[] {
+  const ghostOf = (weekend: PlannerWeekend): BoardDate => ({
+    kind: "ghost",
+    key: weekend.sessionId,
+    dateISO: weekend.dateISO,
+    ghost: {
+      key: weekend.sessionId,
+      dateISO: weekend.dateISO,
+      label: weekend.label,
+      sessionId: weekend.sessionId,
+      dayCount: weekend.dayCount ?? DEFAULT_DAY_COUNT,
+    },
+  })
+
+  const columns: BoardColumn[] = state.windows.map((win) => ({
+    label: win.label,
+    weekends: win.weekends,
+    dates: win.weekends.map((w) =>
+      isGhostWeekend(w, hasContent)
+        ? ghostOf(w)
+        : { kind: "weekend" as const, key: w.sessionId, dateISO: w.dateISO, weekend: w }
+    ),
+  }))
+
+  const seen = new Set(
+    state.windows.flatMap((win) => win.weekends.map((w) => dayKey(w.dateISO)))
+  )
+  /**
+   * THE COLUMN A CALENDAR MONTH IS ALREADY IN. A window is named after the month
+   * it STARTS in, and a season is free to hang a first-of-November weekend under
+   * October; a Saturday of that month belongs beside it either way. Only a month
+   * no column holds at all gets a column of its own.
+   */
+  const byMonth = new Map<string, BoardColumn>()
+  for (const column of columns) {
+    for (const w of column.weekends) {
+      const month = dayKey(w.dateISO).slice(0, 7)
+      if (month && !byMonth.has(month)) byMonth.set(month, column)
+    }
+  }
+  /** The day a column starts on, for putting a new month in its place. */
+  const startsOn = (column: BoardColumn) =>
+    column.dates.map((d) => dayKey(d.dateISO)).filter(Boolean).sort()[0] ?? ""
+
+  for (const sat of saturdays) {
+    if (!sat.satDateISO) continue
+    const day = dayKey(sat.satDateISO)
+    if (!day || seen.has(day)) continue
+    seen.add(day)
+    let column = byMonth.get(day.slice(0, 7))
+    if (!column) {
+      column = { label: monthColumnLabel(sat.satDateISO), weekends: [], dates: [] }
+      byMonth.set(day.slice(0, 7), column)
+      // In its own place in the season, not appended to the end of it.
+      const at = columns.findIndex((c) => {
+        const start = startsOn(c)
+        return start !== "" && start > day
+      })
+      columns.splice(at < 0 ? columns.length : at, 0, column)
+    }
+    column.dates.push({
+      kind: "ghost",
+      key: day,
+      dateISO: sat.satDateISO,
+      ghost: {
+        key: day,
+        dateISO: sat.satDateISO,
+        label: sat.label,
+        sessionId: sat.sessionId,
+        dayCount: sat.dayCount ?? DEFAULT_DAY_COUNT,
+      },
+    })
+  }
+
+  for (const column of columns) {
+    column.dates.sort((a, b) => dayKey(a.dateISO).localeCompare(dayKey(b.dateISO)))
+  }
+  return columns
+}
+
+/**
+ * A DATE WITH NOTHING ON IT, in the shape the room arithmetic reads. What a
+ * ghost is measured against: no gyms attached, so weekendRooms answers with the
+ * whole roster as backups — which is exactly the board's one capacity rule
+ * (owner ruling 2026-08-06, #3), where what a drop MAY assert is what counts.
+ */
+export function bareWeekend(sessionId: string, dayCount = DEFAULT_DAY_COUNT): PlannerWeekend {
+  return {
+    sessionId,
+    label: "",
+    dateISO: "",
+    dayCount,
+    chosen: false,
+    capacityGames: 0,
+    largestVenueCapacity: 0,
+    venues: [],
+    targetGamesPerTeam: 2,
+    assigned: [],
+    assignedVenues: {},
+  }
+}
+
+/**
+ * A WEEKEND THE SEASON HAS JUST GROWN, in the state the board computes on
+ * (owner ruling 2026-08-06, slice B2). The season-level twin of `withWeekend`,
+ * which does the same to a plan's saved world.
+ *
+ * It lands with no gyms and unchosen, because that is the truth of it: the date
+ * exists now, and nobody has claimed a building on it. The drop that created it
+ * asserts its gym a moment later through the ordinary assertion path, and the
+ * ghost becomes a card the instant it does.
+ */
+export function withWeekendInState(
+  state: PlannerState,
+  windowLabel: string,
+  weekend: { sessionId: string; label: string; dateISO: string; dayCount?: number }
+): PlannerState {
+  if (state.windows.some((win) => win.weekends.some((w) => w.sessionId === weekend.sessionId))) {
+    return state
+  }
+  const window = state.windows.find((win) => win.label === windowLabel)
+  const row: PlannerWeekend = {
+    sessionId: weekend.sessionId,
+    label: weekend.label,
+    dateISO: weekend.dateISO,
+    dayCount: weekend.dayCount ?? DEFAULT_DAY_COUNT,
+    chosen: false,
+    capacityGames: 0,
+    largestVenueCapacity: 0,
+    venues: [],
+    // The month's own rate, so a grade dropped here brings the same games it
+    // would bring to any other weekend of that month.
+    targetGamesPerTeam:
+      window?.weekends[0]?.targetGamesPerTeam ??
+      state.windows.flatMap((win) => win.weekends)[0]?.targetGamesPerTeam ??
+      2,
+    assigned: [],
+    assignedVenues: {},
+  }
+  if (!window) {
+    const at = state.windows.findIndex(
+      (win) => (win.weekends[0]?.dateISO ?? "") > weekend.dateISO
+    )
+    const windows = [...state.windows]
+    windows.splice(at < 0 ? windows.length : at, 0, { label: windowLabel, weekends: [row] })
+    return { ...state, windows }
+  }
+  return {
+    ...state,
+    windows: state.windows.map((win) =>
+      win.label !== windowLabel
+        ? win
+        : {
+            ...win,
+            weekends: [...win.weekends, row].sort((a, b) =>
+              dayKey(a.dateISO).localeCompare(dayKey(b.dateISO))
+            ),
+          }
+    ),
+  }
 }
 
 /* --------------------------- building a world ---------------------------- */
