@@ -482,12 +482,17 @@ async function seed() {
   const org = await p.organization.findUnique({ where: { slug: "north-pole-hoops" }, select: { id: true } })
 
   // ── Venues: REUSE ONLY. Never create Venue/Court rows. ────────────────
+  // Exact name first, prefix as fallback: the box registry says "The
+  // Playground Burlington" where local says "The Playground" — same building.
   const venueRows = await p.venue.findMany({
-    where: { name: { in: [HOME_GYM, RENTAL_GYM] } },
+    where: { OR: [{ name: { startsWith: HOME_GYM } }, { name: { startsWith: RENTAL_GYM } }] },
     select: { id: true, name: true, city: true, courtList: { select: { id: true, name: true }, orderBy: { name: "asc" } } },
   })
-  const home = venueRows.find((v: any) => v.name === HOME_GYM)
-  const rental = venueRows.find((v: any) => v.name === RENTAL_GYM)
+  const pick = (wanted: string) =>
+    venueRows.find((v: any) => v.name === wanted) ??
+    venueRows.find((v: any) => v.name.startsWith(wanted))
+  const home = pick(HOME_GYM)
+  const rental = pick(RENTAL_GYM)
   if (!home || !rental) throw new Error(`Venues missing: need "${HOME_GYM}" and "${RENTAL_GYM}" in the venue registry.`)
   const GYMS = [
     { ...home, role: "home" as const, courts: home.courtList },
