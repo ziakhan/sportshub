@@ -196,6 +196,8 @@ export async function loadSchedulerInput(
   const input: SchedulerInput = {
     gamesGuaranteed: (cfg.gamesGuaranteed as number) ?? 0,
     gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
+    fridayStartTime: (cfg.fridayStartTime as string | null) ?? null,
+    fridayEndTime: (cfg.fridayEndTime as string | null) ?? null,
     gameLengthMinutes: (cfg.gameLengthMinutes as number) ?? 40,
     idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 2,
     // Stable per-season variety: rotates repeat matchups + time assignments

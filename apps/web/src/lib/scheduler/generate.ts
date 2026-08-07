@@ -77,6 +77,9 @@ export interface SchedulerUnit {
 export interface SchedulerInput {
   gamesGuaranteed: number
   gameSlotMinutes: number
+  /** The league's Friday-evening window, when it set one (owner 2026-08-07). */
+  fridayStartTime?: string | null
+  fridayEndTime?: string | null
   gameLengthMinutes: number
   idealGamesPerDayPerTeam: number
   schedulingPhilosophy: SchedulerPhilosophy

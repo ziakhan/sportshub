@@ -1394,6 +1394,11 @@ model Season {
   // buffer): the planner's weekends, the rental blocks, the ask sheet and
   // the scheduler's own slots. 0 = plan to the full building.
   courtBuffer Int @default(0)
+  /// The Friday-evening window this league may add to a weekend (owner
+  /// 2026-08-07, NJC/NSC constraint: Fri-Sun blocks are real). Null = the
+  /// planner's 18:00-22:00 default; these make it configuration, not code.
+  fridayStartTime String?
+  fridayEndTime   String?
 
   schedulingPhilosophy         SchedulingPhilosophy?
   allowCrossDivisionScheduling Boolean              @default(false)
@@ -1436,6 +1441,7 @@ model Season {
   teamSubmissions    TeamSubmission[]
   submissionRequests TeamSubmissionRequest[]
   sessions           SeasonSession[]
+  rounds          SessionRound[]
   seasonVenues       SeasonVenue[]
   venueUnavailability SeasonVenueUnavailability[]
   rosters            SeasonRoster[]
@@ -1826,6 +1832,11 @@ model SeasonSession {
   label              String?
   phase              SessionPhase @default(REGULAR)
   targetGamesPerTeam Int?
+  /// The ROUND this weekend materializes (owner 2026-08-07: "sessions are
+  /// announced, weekends are booked"). Nullable — rounds are optional
+  /// structure, and a league that defines none behaves exactly as before.
+  roundId String?
+  round   SessionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
   // Which scheduling units play this session (owner 2026-08-01: NPH's real
   // calendar gives every grade its OWN weekends). Unit keys as the engine
   // knows them ("division:<id>" / "group:<id>"); empty = every unit.
@@ -1849,6 +1860,27 @@ model SeasonSession {
 enum SessionPhase {
   REGULAR
   PLAYOFF
+}
+
+/// A month-anchored round the league ANNOUNCES ("Session 1 · October", "the
+/// January session" — owner naming 2026-08-07). Weekends are its per-grade
+/// materialization via SeasonSession.roundId. Optional per league.
+model SessionRound {
+  id       String @id @default(uuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  ordinal Int
+  /// Null reads as the derived "Session <ordinal>".
+  label String?
+  /// "2026-10" — the month the league anchors this round to.
+  monthAnchor String?
+
+  sessions  SeasonSession[]
+  createdAt DateTime        @default(now())
+
+  @@unique([seasonId, ordinal])
+  @@index([seasonId])
 }
 
 model SeasonSessionDay {

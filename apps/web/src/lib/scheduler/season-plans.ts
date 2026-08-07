@@ -158,6 +158,7 @@ const worldWeekendSchema = z.object({
   capacityGames: z.number().min(0).max(100000),
   largestVenueCapacity: z.number().min(0).max(100000).optional(),
   targetGamesPerTeam: z.number().min(0).max(20),
+  roundName: z.string().max(60).optional(),
   venues: z.array(worldVenueSchema).max(40),
 })
 
@@ -186,6 +187,8 @@ export const planWorldSchema = z.object({
   gyms: z.array(gymSchema).max(40).optional(),
   courtBuffer: z.number().int().min(0).max(10).optional(),
   gameSlotMinutes: z.number().int().min(10).max(240).optional(),
+  fridayStart: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+  fridayEnd: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
 })
 
 export const planSettingsSchema = z.object({

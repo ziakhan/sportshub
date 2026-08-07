@@ -96,14 +96,40 @@ export function usableCourtCount(courts: number, courtBuffer: number | undefined
  * season range, and the courts are what the world says the gym gives less the
  * buffer.
  */
-/** The Friday evening a session may take: 18:00 to 22:00, one block, at a gym
- *  the session is already using (owner ruling 2026-08-06). */
+/** The Friday evening a session may take: one block, at a gym the session is
+ *  already using (owner ruling 2026-08-06). The 18:00-22:00 pair is the
+ *  DEFAULT, not the law: a league sets its own on the season (owner
+ *  2026-08-07, the NJC/NSC Fri-Sun constraint) and every number and every
+ *  sentence below reads the window the state carries. */
 export const FRIDAY_START = "18:00"
 export const FRIDAY_END = "22:00"
 
-/** Games ONE court holds on a Friday evening at this plan's slot length. */
-export function fridayGamesPerCourt(slotMinutes?: number): number {
-  return gamesPerCourtDay(FRIDAY_START, FRIDAY_END, slotMinutes)
+type FridayWindowSource = Pick<PlanWorld, "fridayStart" | "fridayEnd">
+
+/** The Friday window this world runs: its own, else the default. */
+export function fridayWindow(world: FridayWindowSource): { start: string; end: string } {
+  return { start: world.fridayStart ?? FRIDAY_START, end: world.fridayEnd ?? FRIDAY_END }
+}
+
+/** "6-10 PM", read off the actual window rather than hardcoded. */
+export function fridayWindowLabel(world: FridayWindowSource): string {
+  const { start, end } = fridayWindow(world)
+  const say = (t: string) => {
+    const m = clockMinutes(t) ?? 0
+    const h = Math.floor(m / 60)
+    const mins = m % 60
+    const hour12 = ((h + 11) % 12) + 1
+    return `${hour12}${mins > 0 ? `:${String(mins).padStart(2, "0")}` : ""}`
+  }
+  const endM = clockMinutes(end) ?? 0
+  return `${say(start)}-${say(end)} ${endM >= 12 * 60 ? "PM" : "AM"}`
+}
+
+/** Games ONE court holds on a Friday evening at this plan's slot length and
+ *  this league's window. */
+export function fridayGamesPerCourt(slotMinutes?: number, window?: FridayWindowSource): number {
+  const w = fridayWindow(window ?? {})
+  return gamesPerCourtDay(w.start, w.end, slotMinutes)
 }
 
 export function venueOnWeekend(
@@ -114,7 +140,7 @@ export function venueOnWeekend(
     endTime?: string | null
     fridayCourts?: number
   },
-  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes">
+  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes" | "fridayStart" | "fridayEnd">
 ): PlanWorldVenue {
   const days = Math.max(1, weekend.dayCount ?? DEFAULT_DAY_COUNT)
   const open = weekend.startTime ?? gym.openTime ?? DEFAULT_OPEN
@@ -129,7 +155,7 @@ export function venueOnWeekend(
    * one holds what it always held plus the Friday evening.
    */
   const fridayCourts = Math.max(0, Math.min(courts, Math.floor(weekend.fridayCourts ?? 0)))
-  const fridayGames = fridayCourts * fridayGamesPerCourt(world.gameSlotMinutes)
+  const fridayGames = fridayCourts * fridayGamesPerCourt(world.gameSlotMinutes, world)
   return {
     venueId: gym.venueId,
     name: gym.name,
@@ -327,6 +353,8 @@ export function planStateFrom(
     gamesPerTeam: world.gamesPerTeam || undefined,
     courtBuffer: world.courtBuffer ?? 0,
     gameSlotMinutes: world.gameSlotMinutes ?? DEFAULT_SLOT_MINUTES,
+    fridayStart: world.fridayStart,
+    fridayEnd: world.fridayEnd,
     gyms: gyms.map((g) => ({ ...g })),
   }
 }
@@ -733,7 +761,7 @@ export function fridayFit(
    * not do. If the only building big enough would mix them, the answer is
    * silence, not a suggestion with a problem inside it.
    */
-  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes)
+  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes, state)
   if (perCourt <= 0) return null
   const courts = Math.ceil(need / perCourt)
   /** The building the absorbed group is in now. Folding it into ITSELF removes
@@ -762,8 +790,8 @@ export function fridayFit(
     venueName: host.name,
     courts,
     hostCourts: courtsWiredAt(host),
-    startTime: FRIDAY_START,
-    endTime: FRIDAY_END,
+    startTime: fridayWindow(state).start,
+    endTime: fridayWindow(state).end,
     games: need,
     unitKeys,
     gender,
@@ -784,7 +812,8 @@ export function fridayFit(
 export function fridaySentence(fit: FridayFit, unitLabels: string[] = []): string {
   const who = unitLabels.length > 0 ? nameThem(unitLabels) : "Those grades"
   const wired = `${fit.courts} of ${fit.hostCourts} courts`
-  return `${who} already play this weekend. Add Friday evening (${wired}, 6-10 PM) at ${venueShortLabel(fit.venueName)} to fit them into the gym you already book - no third gym.`
+  const when = fridayWindowLabel({ fridayStart: fit.startTime, fridayEnd: fit.endTime })
+  return `${who} already play this weekend. Add Friday evening (${wired}, ${when}) at ${venueShortLabel(fit.venueName)} to fit them into the gym you already book - no third gym.`
 }
 
 /** "Grade 9 Girls", or "Grade 9 Girls and Grade 10 Girls". */
@@ -810,7 +839,7 @@ export function withFridayBlocks(
   fridays: Record<string, number>
 ): PlannerState {
   if (Object.keys(fridays).length === 0) return state
-  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes)
+  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes, state)
   let touchedAny = false
   const windows = state.windows.map((win) => {
     let touchedWindow = false
@@ -897,7 +926,7 @@ export function withFridayBlock(
 function plannerVenueOn(
   gym: PlanWorldGym,
   weekend: { dayCount?: number },
-  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes"> & { gyms?: PlanWorldGym[] }
+  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes" | "fridayStart" | "fridayEnd"> & { gyms?: PlanWorldGym[] }
 ): PlannerVenue {
   const venue = venueOnWeekend(gym, weekend, world)
   return {
@@ -1680,6 +1709,9 @@ export type BoardDate =
 
 export interface BoardColumn {
   label: string
+  /** The round every weekend of this month shares, when they share one: the
+   *  name the column header wears (owner 2026-08-07). */
+  roundName?: string
   /** The weekends this month really has, for the bench and the month's own
    *  games rate. Ghost dates are deliberately not in here: nothing plays on
    *  them, so nothing may be counted off them. */
@@ -1761,6 +1793,7 @@ export function boardColumns(
 
   const columns: BoardColumn[] = state.windows.map((win) => ({
     label: win.label,
+    ...(win.roundName ? { roundName: win.roundName } : {}),
     weekends: win.weekends,
     dates: win.weekends.map((w) =>
       isGhostWeekend(w, hasContent)
@@ -1985,6 +2018,8 @@ export function worldFromState(state: PlannerState): PlanWorld {
     gyms: gymsFromState(state),
     courtBuffer: state.courtBuffer ?? 0,
     gameSlotMinutes: state.gameSlotMinutes ?? DEFAULT_SLOT_MINUTES,
+    ...(state.fridayStart ? { fridayStart: state.fridayStart } : {}),
+    ...(state.fridayEnd ? { fridayEnd: state.fridayEnd } : {}),
   }
 }
 

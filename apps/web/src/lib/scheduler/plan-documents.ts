@@ -183,6 +183,9 @@ export interface PlanWorld {
   /** One game's slot in minutes, so capacity can be recomputed from hours
    *  without asking the season. */
   gameSlotMinutes?: number
+  /** The league's Friday-evening window, when it set one (owner 2026-08-07). */
+  fridayStart?: string
+  fridayEnd?: string
 }
 
 /** What SeasonPlan.settings holds. */

@@ -83,6 +83,7 @@ export function WeekendCard({
   flashUnits,
   ghosts,
   courtOverrides,
+  fridayWhen = "6-10 PM",
   hoursFor,
   placedGyms,
   strandedKeys,
@@ -153,6 +154,8 @@ export function WeekendCard({
   /** The hours one gym runs on THIS weekend, and whether they are this date's own
    *  rather than the gym's usual range (owner ruling 2026-08-06, #5). What the ⋯
    *  menu opens on. */
+  /** The league's Friday window in words, from the state. */
+  fridayWhen?: string
   hoursFor: (venueId: string) => { startTime: string; endTime: string; custom: boolean }
   /** Gyms the operator put on this weekend that have no games in them yet (owner
    *  ruling 2026-08-06, #2). Each one is drawn as an empty container: a real
@@ -1037,6 +1040,7 @@ export function WeekendCard({
                     hours={hoursHere}
                     hoursOverridden={hoursHere.custom}
                     fridayCourts={venue?.fridayCourts}
+                    fridayWhen={fridayWhen}
                     onDropFriday={
                       (venue?.fridayCourts ?? 0) > 0 && onDropFriday
                         ? () => onDropFriday(weekend.sessionId, section.venueId)
@@ -1204,6 +1208,7 @@ export function WeekendCard({
                     }
                     usedCourts={0}
                     hours={hoursHere}
+                    fridayWhen={fridayWhen}
                     hoursOverridden={hoursHere.custom}
                     onCourts={(n) => onCorrectCourts(weekend.sessionId, room.venueId, n)}
                     onHours={(startTime, endTime) =>

@@ -33,6 +33,8 @@ export const seasonDefaultsSchema = z
     defaultWeekendStyle: z.enum(["SAME_DAY", "SPLIT_DAYS"]).nullable().optional(),
     defaultVenueOpenTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
     defaultVenueCloseTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
+    fridayStartTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
+    fridayEndTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
     // Money (live-inherited)
     teamFee: z.number().min(0).nullable().optional(),
     depositPct: z.number().int().min(1).max(99).nullable().optional(),
@@ -71,6 +73,10 @@ export const SYSTEM_DEFAULTS = {
   defaultWeekendStyle: "SAME_DAY" as string,
   defaultVenueOpenTime: "09:00",
   defaultVenueCloseTime: "20:00",
+  // The Friday-evening window a weekend may add (owner 2026-08-07, the
+  // NJC/NSC Fri-Sun constraint). Null = the planner's 18:00-22:00 default.
+  fridayStartTime: null as string | null,
+  fridayEndTime: null as string | null,
   teamFee: null as number | null,
   depositPct: null as number | null,
   balanceDueDaysBeforeStart: 14,

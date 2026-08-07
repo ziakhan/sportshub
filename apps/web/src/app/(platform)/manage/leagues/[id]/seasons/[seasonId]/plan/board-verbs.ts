@@ -23,6 +23,7 @@ import type { FridayFit } from "@/lib/scheduler/plan-world"
 import {
   bookingStatusFor,
   drawnGyms,
+  fridayWindowLabel,
   solvableState,
   weekendRooms,
   withWeekend,
@@ -433,7 +434,7 @@ export function useBoardVerbs(m: BoardModel) {
     setFromLever(false)
     flashCards(fit.sessionId)
     setNotice(
-      `${weekendName(fit.sessionId)} runs Friday evening too: ${courtsWord(fit.courts)} at ${gymShort(fit.venueId)}, 6-10 PM. The games spread across the session when it is scheduled.`
+      `${weekendName(fit.sessionId)} runs Friday evening too: ${courtsWord(fit.courts)} at ${gymShort(fit.venueId)}, ${fridayWindowLabel({ fridayStart: fit.startTime, fridayEnd: fit.endTime })}. The games spread across the session when it is scheduled.`
     )
   }
 

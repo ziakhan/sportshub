@@ -290,6 +290,9 @@ function weekendRate(venues: PlannerVenue[], fallback?: VenueRate): VenueRate | 
 }
 
 export interface PlannerWeekend {
+  /** The round this weekend materializes, in the league's own words
+   *  ("Session 1", "the October session"). Absent = no rounds defined. */
+  roundName?: string
   sessionId: string
   label: string
   dateISO: string
@@ -330,6 +333,9 @@ export interface PlannerGym {
 }
 
 export interface PlannerWindow {
+  /** Set when every weekend of this window shares one round: the name the
+   *  column wears instead of a derived "Session N". */
+  roundName?: string
   label: string
   weekends: PlannerWeekend[]
   /** A month this plan has FENCED as playoffs (owner ruling 2026-08-06): no
@@ -352,6 +358,11 @@ export interface PlannerState {
   courtBuffer?: number
   /** One game's slot in minutes, same reason. */
   gameSlotMinutes?: number
+  /** The Friday-evening window this league may add to a weekend (owner
+   *  2026-08-07, NJC/NSC constraint). Absent = the planner's 18:00-22:00
+   *  default; Season.fridayStartTime/EndTime make it configuration. */
+  fridayStart?: string
+  fridayEnd?: string
   /** Every gym the season has, INCLUDING the ones no weekend uses yet. This is
    *  the roster a plan's world starts from. */
   gyms?: PlannerGym[]

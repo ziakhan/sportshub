@@ -12,7 +12,6 @@ import { ClubsTab } from "./components/clubs-tab"
 import { NeedsAttention } from "./components/needs-attention"
 import { SeasonReport } from "./components/season-report"
 import { ScheduleReadiness } from "./components/capacity-words"
-import { SessionsTab } from "./components/sessions-tab"
 import { VenuesTab } from "./components/venues-tab"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
@@ -337,15 +336,9 @@ export default function LeagueManagePage() {
               scheduleGamesCount={scheduleGames.length}
             />
             {/* Supply before demand (owner 2026-07-31): venues + courts
-                first, then the sessions that consume them. */}
+                first, then the sessions that consume them. Sessions & rounds
+                itself moved to Settings (owner 2026-08-07, Stage 1). */}
             <VenuesTab seasonId={seasonId} venues={venues} sessions={sessions} refresh={fetchAll} />
-            <SessionsTab
-              seasonId={seasonId}
-              sessions={sessions}
-              venues={venues}
-              seasonStatus={league?.leagueStatus}
-              refresh={fetchAll}
-            />
             <ScheduleTab
               seasonId={seasonId}
               league={league}
@@ -374,6 +367,8 @@ export default function LeagueManagePage() {
             seasonId={seasonId}
             league={league}
             divisions={divisions}
+            sessions={sessions}
+            venues={venues}
             schedulingGroups={schedulingGroups}
             schedSettings={schedSettings}
             setSchedSettings={setSchedSettings}

@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react"
 import { format } from "date-fns"
 import { Button, PanelHeader, DateTimePicker, Badge } from "@/components/ui"
-import { inputClass, panelClass } from "./types"
-
-const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
+import { inputClass, panelClass, LOCKED_STATUSES, monthAnchorLabel } from "./types"
 
 interface DayDraft {
   date: string
@@ -33,6 +31,7 @@ export function SessionsTab({
   sessions,
   venues,
   seasonStatus,
+  rounds,
   refresh,
 }: {
   seasonId: string
@@ -42,6 +41,9 @@ export function SessionsTab({
    *  form venue-less forever). */
   venues: any[]
   seasonStatus?: string
+  /** This season's rounds (owner 2026-08-07, Stage 1), optional structure —
+   *  omitted or empty renders exactly as before rounds existed. */
+  rounds?: any[]
   refresh: () => void
 }) {
   const locked = LOCKED_STATUSES.includes(seasonStatus ?? "")
@@ -134,6 +136,27 @@ export function SessionsTab({
                   )}
                 </span>
                 <div className="flex items-center gap-3">
+                  {/* Which round this weekend materializes (owner 2026-08-07,
+                      Stage 1) — optional, so it only shows once the league has
+                      defined at least one round. */}
+                  {rounds && rounds.length > 0 && (
+                    <select
+                      value={s.roundId ?? ""}
+                      disabled={locked}
+                      onChange={(e) => void save(s.id, { roundId: e.target.value || null })}
+                      aria-label="Round"
+                      title="Which round this weekend belongs to"
+                      className={inputClass + " py-1 text-xs"}
+                    >
+                      <option value="">No round</option>
+                      {rounds.map((r: any) => (
+                        <option key={r.id} value={r.id}>
+                          Session {r.ordinal}
+                          {monthAnchorLabel(r.monthAnchor, true) ? ` · ${monthAnchorLabel(r.monthAnchor, true)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   {/* WHAT THIS WEEKEND IS FOR (owner's 2026-08-06 analysis,
                       C1). Playoff weekends are a SEASON setting, set here and
                       nowhere else: planning excludes their dates entirely —

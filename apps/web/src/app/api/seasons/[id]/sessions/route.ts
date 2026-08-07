@@ -41,6 +41,8 @@ const updateSessionSchema = z.object({
    *  weekend is a season fact, set here and nowhere else: planning excludes
    *  its dates entirely, and the scheduler never treats it as supply. */
   phase: z.enum(["REGULAR", "PLAYOFF"]).optional(),
+  /** The round this weekend materializes (owner 2026-08-07). Null detaches. */
+  roundId: z.string().nullable().optional(),
 })
 
 async function authorize(seasonId: string) {
@@ -174,8 +176,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (
         data.label !== undefined ||
         data.targetGamesPerTeam !== undefined ||
-        data.phase !== undefined
+        data.phase !== undefined ||
+        data.roundId !== undefined
       ) {
+        // A round id has to be this season's own, or null to detach.
+        if (data.roundId) {
+          const round = await (prisma as any).sessionRound.findFirst({
+            where: { id: data.roundId, seasonId: params.id },
+            select: { id: true },
+          })
+          if (!round) throw Object.assign(new Error("Round not found"), { status: 404 })
+        }
         await tx.seasonSession.update({
           where: { id: sessionId },
           data: {
@@ -184,6 +195,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
               ? { targetGamesPerTeam: data.targetGamesPerTeam }
               : {}),
             ...(data.phase !== undefined ? { phase: data.phase } : {}),
+            ...(data.roundId !== undefined ? { roundId: data.roundId } : {}),
           },
         })
       }
@@ -252,6 +264,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         id: s.id,
         label: s.label,
         phase: s.phase,
+        roundId: s.roundId ?? null,
         targetGamesPerTeam: s.targetGamesPerTeam ?? null,
         leagueId: params.id,
         venueId: firstDayVenue?.venueId ?? null,

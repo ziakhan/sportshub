@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
-import { inputClass, panelClass, type SchedSettings } from "./types"
+import { inputClass, panelClass, LOCKED_STATUSES, monthAnchorLabel, type SchedSettings } from "./types"
 import { RegistrationSettingsTab } from "./registration-settings-tab"
 import { SchedulingTab } from "./scheduling-tab"
 import { RulesSettings } from "./rules-settings"
 import { DivisionsTab } from "./divisions-tab"
+import { SessionsTab } from "./sessions-tab"
 
 /**
  * ⚙ Settings — ONE page, ordered by importance, with a per-section status
@@ -70,6 +71,8 @@ export function SettingsTab({
   seasonId,
   league,
   divisions,
+  sessions,
+  venues,
   schedulingGroups,
   schedSettings,
   setSchedSettings,
@@ -79,6 +82,8 @@ export function SettingsTab({
   seasonId: string
   league: any
   divisions: any[]
+  sessions: any[]
+  venues: any[]
   schedulingGroups: any[]
   schedSettings: SchedSettings
   setSchedSettings: React.Dispatch<React.SetStateAction<SchedSettings>>
@@ -121,6 +126,15 @@ export function SettingsTab({
       label: "Divisions",
       state: divisions.length > 0 ? "ok" : "attention",
       hint: divisions.length > 0 ? `${divisions.length} created` : "None yet",
+    },
+    {
+      id: "sessions",
+      label: "Sessions & rounds",
+      state: sessions.length > 0 ? "ok" : "attention",
+      hint:
+        sessions.length > 0
+          ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}`
+          : "None yet",
     },
     {
       id: "registration",
@@ -201,8 +215,8 @@ export function SettingsTab({
   // FIRST, season-specific ones after (owner 2026-07-31: "grouped up on
   // top… additional settings at the bottom").
   const orderIds = orgName
-    ? ["registration", "game-format", "rules", "basics", "divisions"]
-    : ["basics", "divisions", "registration", "game-format", "rules"]
+    ? ["registration", "game-format", "rules", "basics", "divisions", "sessions"]
+    : ["basics", "divisions", "registration", "game-format", "sessions", "rules"]
   const orderedSections = orderIds
     .map((id) => sections.find((s) => s.id === id))
     .filter(Boolean) as typeof sections
@@ -347,6 +361,19 @@ export function SettingsTab({
           hideFormatSettings={showsSummary("game-format")}
           sessionCount={league?._count?.sessions ?? undefined}
         />
+        </section>
+      )
+    if (id === "sessions")
+      return (
+        <section key={id} id="sessions" className="scroll-mt-24">
+          <SectionHeading n={n} title="Sessions & rounds" state={state} />
+          <SessionsRoundsSection
+            seasonId={seasonId}
+            sessions={sessions}
+            venues={venues}
+            seasonStatus={league?.leagueStatus}
+            refresh={refresh}
+          />
         </section>
       )
     return (
@@ -555,6 +582,256 @@ function BasicsSettings({
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Sessions & rounds (owner 2026-08-07, Stage 1): rounds first, the
+ * month-anchored windows a league ANNOUNCES ("Session 1 · October"), then
+ * the sessions panel that moved here from the Schedule tab, unchanged
+ * except for its new per-row round picker. Rounds are optional structure —
+ * a season with none renders exactly as before.
+ */
+function SessionsRoundsSection({
+  seasonId,
+  sessions,
+  venues,
+  seasonStatus,
+  refresh,
+}: {
+  seasonId: string
+  sessions: any[]
+  venues: any[]
+  seasonStatus?: string
+  refresh: () => void
+}) {
+  const [rounds, setRounds] = useState<any[]>([])
+
+  const loadRounds = async () => {
+    const res = await fetch(`/api/seasons/${seasonId}/rounds`)
+    const data = await res.json().catch(() => ({ rounds: [] }))
+    setRounds(data.rounds || [])
+  }
+
+  useEffect(() => {
+    loadRounds()
+  }, [seasonId]) // eslint-disable-line
+
+  return (
+    <div className="space-y-4">
+      <RoundsEditor
+        seasonId={seasonId}
+        rounds={rounds}
+        sessions={sessions}
+        seasonStatus={seasonStatus}
+        reloadRounds={loadRounds}
+        refreshAll={refresh}
+      />
+      <SessionsTab
+        seasonId={seasonId}
+        sessions={sessions}
+        venues={venues}
+        seasonStatus={seasonStatus}
+        rounds={rounds}
+        refresh={refresh}
+      />
+    </div>
+  )
+}
+
+/** Compact rounds editor: add/rename/remove rounds, plus a one-tap "group
+ *  weekends by month" for leagues that want rounds but don't want to build
+ *  them by hand. */
+function RoundsEditor({
+  seasonId,
+  rounds,
+  sessions,
+  seasonStatus,
+  reloadRounds,
+  refreshAll,
+}: {
+  seasonId: string
+  rounds: any[]
+  sessions: any[]
+  seasonStatus?: string
+  reloadRounds: () => Promise<void>
+  refreshAll: () => void
+}) {
+  const locked = LOCKED_STATUSES.includes(seasonStatus ?? "")
+  const [monthDraft, setMonthDraft] = useState("")
+  const [labelDrafts, setLabelDrafts] = useState<Record<string, string>>({})
+  const [adding, setAdding] = useState(false)
+  const [grouping, setGrouping] = useState(false)
+
+  const addRound = async () => {
+    setAdding(true)
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/rounds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ monthAnchor: monthDraft || undefined }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        window.alert(data.error || "Couldn't add the round.")
+        return
+      }
+      setMonthDraft("")
+      await reloadRounds()
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const renameRound = async (roundId: string, label: string) => {
+    const res = await fetch(`/api/seasons/${seasonId}/rounds/${roundId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ label: label.trim() || null }),
+    })
+    if (res.ok) await reloadRounds()
+  }
+
+  const removeRound = async (round: any) => {
+    const name = round.label || `Session ${round.ordinal}`
+    if (
+      !window.confirm(
+        `Remove "${name}"? Its weekends aren't deleted, they just come loose from this round.`
+      )
+    )
+      return
+    const res = await fetch(`/api/seasons/${seasonId}/rounds/${round.id}`, { method: "DELETE" })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      window.alert(data.error || "Couldn't remove the round.")
+      return
+    }
+    await reloadRounds()
+    refreshAll()
+  }
+
+  // Group by month: earliest day of each session, in date order, one round
+  // per distinct month — then every session in that month points at it.
+  // Date-only slice (not a Date parse) matches the pattern the session
+  // editor already uses so a UTC-midnight date never reads as the prior day.
+  const groupByMonth = async () => {
+    setGrouping(true)
+    try {
+      const dated = sessions
+        .map((s: any) => ({ id: s.id, day: s.days?.[0]?.date }))
+        .filter((s: any) => !!s.day)
+        .sort((a: any, b: any) => String(a.day).localeCompare(String(b.day)))
+      const months: string[] = []
+      for (const s of dated) {
+        const month = String(s.day).slice(0, 7)
+        if (!months.includes(month)) months.push(month)
+      }
+      if (months.length === 0) return
+
+      const roundIdForMonth: Record<string, string> = {}
+      for (let i = 0; i < months.length; i++) {
+        const res = await fetch(`/api/seasons/${seasonId}/rounds`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ordinal: i + 1, monthAnchor: months[i] }),
+        })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          window.alert(data.error || "Couldn't create rounds.")
+          return
+        }
+        const data = await res.json()
+        roundIdForMonth[months[i]] = data.round.id
+      }
+
+      for (const s of dated) {
+        const roundId = roundIdForMonth[String(s.day).slice(0, 7)]
+        if (!roundId) continue
+        await fetch(`/api/seasons/${seasonId}/sessions?sessionId=${s.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roundId }),
+        })
+      }
+
+      await reloadRounds()
+      refreshAll()
+    } finally {
+      setGrouping(false)
+    }
+  }
+
+  const sorted = [...rounds].sort((a, b) => a.ordinal - b.ordinal)
+
+  return (
+    <div className={`reveal ${panelClass}`}>
+      <PanelHeader title="Rounds" />
+      <p className="text-ink-500 mb-3 text-xs">
+        Rounds are optional. A season with none behaves exactly as it does today. Use rounds to
+        announce a session window, like &quot;Session 1 · October,&quot; before booking specific
+        weekends.
+      </p>
+
+      {sorted.length === 0 && (
+        <p className="text-ink-500 mb-2 text-xs">No rounds yet. Sessions work fine without them.</p>
+      )}
+
+      {sorted.map((round) => (
+        <div
+          key={round.id}
+          className="border-ink-100 mb-1.5 flex flex-wrap items-center gap-2 rounded-lg border bg-white px-2.5 py-1.5"
+        >
+          <span className="text-ink-900 w-32 shrink-0 text-sm font-medium">
+            {round.label || `Session ${round.ordinal}`}
+          </span>
+          <span className="text-ink-400 w-28 shrink-0 text-xs">
+            {monthAnchorLabel(round.monthAnchor) || "No month set"}
+          </span>
+          <input
+            value={labelDrafts[round.id] ?? round.label ?? ""}
+            onChange={(e) => setLabelDrafts((prev) => ({ ...prev, [round.id]: e.target.value }))}
+            onBlur={(e) => {
+              const next = e.target.value.trim()
+              if (next !== (round.label ?? "")) renameRound(round.id, next)
+            }}
+            placeholder={`Rename (Session ${round.ordinal})`}
+            disabled={locked}
+            className={inputClass + " min-w-40 flex-1"}
+          />
+          {!locked && (
+            <button
+              onClick={() => removeRound(round)}
+              className="hover:text-hoop-700 text-xs text-red-500"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+      ))}
+
+      {!locked && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <input
+            type="month"
+            value={monthDraft}
+            onChange={(e) => setMonthDraft(e.target.value)}
+            aria-label="Month for the new round (optional)"
+            className={inputClass}
+          />
+          <Button size="sm" variant="subtle" onClick={addRound} disabled={adding}>
+            {adding ? "Adding…" : "+ Add round"}
+          </Button>
+          <button
+            onClick={groupByMonth}
+            disabled={grouping || rounds.length > 0}
+            title={rounds.length > 0 ? "Rounds are already defined." : undefined}
+            className="text-play-700 hover:text-play-800 text-xs font-semibold disabled:cursor-not-allowed disabled:text-ink-300 disabled:hover:text-ink-300"
+          >
+            {grouping ? "Grouping…" : "Group weekends into rounds by month"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

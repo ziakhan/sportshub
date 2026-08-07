@@ -123,6 +123,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       "idealGamesPerDayPerTeam",
       "defaultVenueOpenTime",
       "defaultVenueCloseTime",
+      "fridayStartTime",
+      "fridayEndTime",
       "playoffFormat",
       "playoffTeams",
       "playoffMinGames",

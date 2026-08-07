@@ -1309,6 +1309,7 @@ export function GymMenu({
   hours,
   hoursOverridden,
   fridayCourts,
+  fridayWhen = "6-10 PM",
   onCourts,
   onHours,
   onResetHours,
@@ -1328,6 +1329,8 @@ export function GymMenu({
   hoursOverridden: boolean
   /** Courts held on the Friday evening here, when this session took one. */
   fridayCourts?: number
+  /** The league's Friday window in words ("6-10 PM"), from the state. */
+  fridayWhen?: string
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
@@ -1356,6 +1359,7 @@ export function GymMenu({
           hours={hours}
           hoursOverridden={hoursOverridden}
           fridayCourts={fridayCourts}
+          fridayWhen={fridayWhen}
           onDropFriday={
             onDropFriday &&
             (() => {
@@ -1390,6 +1394,7 @@ function GymMenuBody({
   hours,
   hoursOverridden,
   fridayCourts,
+  fridayWhen = "6-10 PM",
   onCourts,
   onHours,
   onResetHours,
@@ -1403,6 +1408,8 @@ function GymMenuBody({
   hours: { startTime: string; endTime: string }
   hoursOverridden: boolean
   fridayCourts?: number
+  /** The league's Friday window in words ("6-10 PM"), from the state. */
+  fridayWhen?: string
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
@@ -1431,7 +1438,7 @@ function GymMenuBody({
       {(fridayCourts ?? 0) > 0 && onDropFriday && (
         <div className="border-court-200 bg-court-50 mb-2.5 rounded-lg border px-2 py-1.5">
           <p className="text-ink-800 text-[11.5px] font-bold">
-            Friday evening: {courtsWord(fridayCourts as number)}, 6-10 PM
+            Friday evening: {courtsWord(fridayCourts as number)}, {fridayWhen}
           </p>
           <button
             type="button"

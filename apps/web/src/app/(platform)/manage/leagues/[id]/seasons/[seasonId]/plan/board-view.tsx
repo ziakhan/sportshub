@@ -8,6 +8,7 @@ import {
   type PlannerUnit,
   type RentalBlock,
 } from "@/lib/scheduler/planner-core"
+import { fridayWindowLabel } from "@/lib/scheduler/plan-world"
 import type { BoardColumn, BuildingRoom, GhostDate } from "@/lib/scheduler/plan-world"
 import { BTN_SECONDARY } from "./plan-shared"
 import type { Armed, ArmedBlock, ArmedSection, GhostChip } from "./plan-shared"
@@ -249,7 +250,7 @@ export function BoardView({
             >
               <h3 className="text-ink-600 border-ink-200 mb-2 flex items-center justify-between gap-2 border-b pb-1.5 pl-1 text-[11.5px] font-bold uppercase tracking-[0.08em]">
                 <span>
-                  {`Session ${i + 1}`} · {win.label.split(" ")[0]}
+                  {win.roundName ?? `Session ${i + 1}`} · {win.label.split(" ")[0]}
                 </span>
               </h3>
               {(() => {
@@ -329,6 +330,7 @@ export function BoardView({
                   <WeekendCard
                     key={date.weekend.sessionId}
                     weekend={date.weekend}
+                    fridayWhen={fridayWindowLabel(state)}
                     windowLabel={win.label}
                     units={state.units}
                     keys={assignment[date.weekend.sessionId] ?? []}

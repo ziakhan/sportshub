@@ -99,7 +99,13 @@ export async function buildPlannerState(
     }),
     (prisma as any).seasonSession.findMany({
       where: { seasonId },
-      select: { id: true, unitKeys: true, unitVenues: true, targetGamesPerTeam: true },
+      select: {
+        id: true,
+        unitKeys: true,
+        unitVenues: true,
+        targetGamesPerTeam: true,
+        round: { select: { ordinal: true, label: true } },
+      },
       orderBy: { id: "asc" },
     }),
     // What each gym IS to the league (owner ruling 2026-08-03): the home
@@ -254,11 +260,19 @@ export async function buildPlannerState(
 
   const sessionMeta = new Map<
     string,
-    { unitKeys: string[]; unitVenues: Record<string, string>; target: number | null }
+    {
+      unitKeys: string[]
+      unitVenues: Record<string, string>
+      target: number | null
+      roundName: string | null
+    }
   >(
     sessions.map((s: any) => [
       s.id,
       {
+        // The ROUND this weekend materializes, in the words the league uses
+        // (owner 2026-08-07): its label, else the derived "Session N".
+        roundName: s.round ? (s.round.label ?? `Session ${s.round.ordinal}`) : null,
         unitKeys: s.unitKeys ?? [],
         unitVenues:
           s.unitVenues && typeof s.unitVenues === "object" && !Array.isArray(s.unitVenues)
@@ -338,6 +352,7 @@ export async function buildPlannerState(
         largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
         venues,
         targetGamesPerTeam: meta?.target ?? s.targetGamesPerTeam ?? 2,
+        ...(meta?.roundName ? { roundName: meta.roundName } : {}),
         assigned,
         assignedVenues,
       }
@@ -349,10 +364,16 @@ export async function buildPlannerState(
     const k = monthKey(w.dateISO)
     windowMap.set(k, [...(windowMap.get(k) ?? []), w])
   }
-  const windows: PlannerWindow[] = [...windowMap.entries()].map(([label, wks]) => ({
-    label,
-    weekends: wks,
-  }))
+  const windows: PlannerWindow[] = [...windowMap.entries()].map(([label, wks]) => {
+    // When every weekend of the month materializes ONE round, the column can
+    // wear the round's announced name instead of a derived ordinal.
+    const names = [...new Set(wks.map((w) => w.roundName).filter(Boolean))]
+    return {
+      label,
+      weekends: wks,
+      ...(names.length === 1 && wks.every((w) => w.roundName) ? { roundName: names[0] as string } : {}),
+    }
+  })
 
   // Games each team is promised for the SEASON. Not the sum of every
   // weekend's target: a grade plays one weekend per window, so that sum
@@ -375,6 +396,8 @@ export async function buildPlannerState(
     // its gyms and its hours without asking the season to rebuild anything.
     courtBuffer: input.courtBuffer ?? 0,
     gameSlotMinutes: input.gameSlotMinutes,
+    fridayStart: input.fridayStartTime ?? undefined,
+    fridayEnd: input.fridayEndTime ?? undefined,
     gyms,
   }
 }
